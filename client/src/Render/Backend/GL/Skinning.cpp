@@ -63,7 +63,9 @@ struct Vertex { BufferedDraw::Vertex attributes;float normal[4];float bone; };
 std::vector<Vertex> vertices;
 // DESVIACION: uvOffset suma el desplazamiento de textura de la malla en el
 // shader; la ruta que arma los vértices en CPU ya lo trae aplicado y envía 0.
-const char* shaderSource=R"GLSL(#version 330 compatibility
+const char* shaderSource=R"GLSL(layout(location=0) in vec3 aPosition;
+layout(location=1) in vec4 aColor;
+layout(location=2) in vec4 aUV;
 layout(location=6) in vec4 rawNormal;
 layout(location=7) in float vertexBone;
 uniform samplerBuffer palette;
@@ -83,7 +85,7 @@ vec3 rotateBone(vec3 p,int b) {
 }
 void main() {
     int b=paletteBase+int(vertexBone)*3;
-    vec3 p=rotateBone(gl_Vertex.xyz,int(vertexBone))*scales.x;
+    vec3 p=rotateBone(aPosition,int(vertexBone))*scales.x;
     p+=vec3(texelFetch(palette,b).w,texelFetch(palette,b+1).w,texelFetch(palette,b+2).w);
     p=p*scales.y+origin;
     if(shadowMode) {
@@ -91,21 +93,17 @@ void main() {
         p=vec3(l.x+(l.x+2000.0)*l.z/(l.z-4000.0)+shadowOrigin.x,l.y+shadowOrigin.y,shadowOrigin.z+5.0);
     }
     vec4 position=vec4(p,1);
-    gl_Position=gl_ModelViewProjectionMatrix*position;
-    vec4 color=gl_Color;
+    gl_Position=uModelViewProjection*position;
+    vec4 color=aColor;
     if(useLight) {
         vec3 normal=rotateBone(rawNormal.xyz,int(rawNormal.w));
         float light=max((direction.y*normal.y+direction.x*normal.x+direction.z*normal.z)*coefficients.x+coefficients.y,coefficients.z);
         color.rgb=light*bodyLight;
     }
-#ifdef EXPLICIT_FRAGMENT
-    color=clamp(color,0,1);
-#endif
-    gl_FrontColor=color;gl_BackColor=color;
-    gl_TexCoord[0]=gl_TextureMatrix[0]*(gl_MultiTexCoord0+vec4(uvOffset,0,0));
-    vec4 eye=gl_ModelViewMatrix*position;
+    vColor=clamp(color,0.0,1.0);
+    vUV=uTextureMatrix*(aUV+vec4(uvOffset,0,0));
     // El cliente no activa planos de recorte de usuario (issue #240).
-    gl_FogFragCoord=abs(eye.z);
+    vFogDistance=abs((uModelView*position).z);
 }
 )GLSL";
 GLuint uniformProgram=0;
@@ -123,15 +121,9 @@ void SelectUniforms(GLuint next){
 bool Initialize() {
     if(program) return true;
     if(failed) return false;
-    const GLuint shader=glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(shader,1,&shaderSource,nullptr);glCompileShader(shader);
-    GLint ok;glGetShaderiv(shader,GL_COMPILE_STATUS,&ok);
-    if(!ok) { char log[2048]{};glGetShaderInfoLog(shader,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteShader(shader);failed=true;return false; }
-    program=glCreateProgram();glAttachShader(program,shader);glLinkProgram(program);glDeleteShader(shader);
-    glGetProgramiv(program,GL_LINK_STATUS,&ok);
-    if(!ok) { char log[2048]{};glGetProgramInfoLog(program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(program);program=0;failed=true;return false; }
+    program=FragmentPipelineGL::Create(shaderSource);
+    if(!program) { failed=true;return false; }
     glGenVertexArrays(1,&array);glGenBuffers(1,&buffer);glGenBuffers(1,&boneBuffer);glGenTextures(1,&boneTexture);
-    FragmentPipelineGL::Create(program,shaderSource);
     SelectUniforms(program);
     return true;
 }
@@ -243,25 +235,19 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     }
     BufferedDraw::Flush();if(!Initialize()) return false;
     if(!UploadPalette()) return false;
-    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex),true);
-    BufferedDraw::Activate(material.Program(),array,buffer);material.Apply();
-    SelectUniforms(material.Program());
+    BufferedDraw::Activate(program,array,buffer);FragmentPipelineGL::Apply(program);
+    SelectUniforms(program);
     const float noOffset[2]{};
     SetUniforms(gpuLight,bodyLight,noOffset);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,elements);
     glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Vertex),vertices.data(),GL_STREAM_DRAW);
     if(!layoutReady) {
-    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
-    glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
-    glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
-    glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.uv));
-    glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
-    glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
-    glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.uv));
-    glEnableVertexAttribArray(6);glVertexAttribPointer(6,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,normal));
-    glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,bone));
-        glClientActiveTexture(client);layoutReady=true;
+        glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
+        glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
+        glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.uv));
+        glEnableVertexAttribArray(6);glVertexAttribPointer(6,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,normal));
+        glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,bone));
+        layoutReady=true;
     }
     RenderProfile::Draw(indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
@@ -271,20 +257,13 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     return true;
 }
 void ResidentLayout(unsigned residentBuffer) {
-    // Los dos programas comparten el VAO: la variante moderna lee los
-    // atributos genéricos (0 posición, 1 color, 2 UV) y la de referencia los
-    // arrays de compatibilidad. El color siempre es constante por envío.
-    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
+    // El color siempre es constante por envío (atributo 1 deshabilitado).
     glBindBuffer(GL_ARRAY_BUFFER,residentBuffer);
     glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,position));
     glDisableVertexAttribArray(1);
     glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,uv));
-    glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(StaticVertex),(void*)offsetof(StaticVertex,position));
-    glDisableClientState(GL_COLOR_ARRAY);
-    glClientActiveTexture(GL_TEXTURE0);glTexCoordPointer(2,GL_FLOAT,sizeof(StaticVertex),(void*)offsetof(StaticVertex,uv));
     glEnableVertexAttribArray(6);glVertexAttribPointer(6,4,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,normal));
     glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,bone));
-    glClientActiveTexture(client);
 }
 bool DrawResident(const ResidentDraw& d) {
     const PoseMesh* found=FindPose(d.model,d.key,d.world,d.positionCount);
@@ -300,22 +279,15 @@ bool DrawResident(const ResidentDraw& d) {
     }
     BufferedDraw::Flush();if(!Initialize()) return false;
     if(!UploadPalette()) return false;
-    FragmentPipelineGL::Draw material(program,&d.color[3],1,4*sizeof(float),true);
-    BufferedDraw::Activate(material.Program(),d.array,0);material.Apply();
-    SelectUniforms(material.Program());
+    BufferedDraw::Activate(program,d.array,0);FragmentPipelineGL::Apply(program);
+    SelectUniforms(program);
     const float offset[2]{d.uOffset,d.vOffset};
     SetUniforms(d.lit,d.bodyLight,offset,d.shadow?d.shadowOrigin:nullptr);
     // UV por vértice sólo si la malla se texturiza; si no, el valor actual
     // capturado, como la ruta CPU. El estado de los arrays queda en el VAO.
-    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
-    glClientActiveTexture(GL_TEXTURE0);
-    if(d.textured) { glEnableVertexAttribArray(2);glEnableClientState(GL_TEXTURE_COORD_ARRAY); }
-    else {
-        glDisableVertexAttribArray(2);glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        glVertexAttrib4fv(2,d.uv);glMultiTexCoord4fv(GL_TEXTURE0,d.uv);
-    }
-    glClientActiveTexture(client);
-    glVertexAttrib4fv(1,d.color);glColor4fv(d.color);
+    if(d.textured) glEnableVertexAttribArray(2);
+    else { glDisableVertexAttribArray(2);glVertexAttrib4fv(2,d.uv); }
+    glVertexAttrib4fv(1,d.color);
     RenderProfile::Draw(d.indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(d.indices),GL_UNSIGNED_INT,nullptr);
     return true;
@@ -324,8 +296,7 @@ void Release() {
     BufferedDraw::Suspend();
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
-    FragmentPipelineGL::Release(program);
-    if(program) glDeleteProgram(program);
+    if(program) FragmentPipelineGL::Release(program);
     uniformLocations.clear();uniformProgram=0;lastShadow=-1;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }

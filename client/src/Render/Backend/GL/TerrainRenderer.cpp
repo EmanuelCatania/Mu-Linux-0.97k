@@ -19,6 +19,8 @@
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
+#include "Render/RenderState.h"
+#include "Render/Gfx.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -41,7 +43,9 @@ char textureFailure[160]="Terreno: referencia (textura no admitida)";
 struct Location { int page=0,layer=0; };
 std::map<GLuint,Location> locations;
 struct Operation { const TerrainDraw::Tile* tile;Location texture;int mode;Location upper{}; };
-const char* vertex=R"GLSL(#version 330 compatibility
+const char* vertex=R"GLSL(#version 330 core
+invariant gl_Position;
+uniform mat4 uModelViewProjection,uModelView,uTextureMatrix;
 layout(location=0) in vec4 position0;
 layout(location=1) in vec4 position1;
 layout(location=2) in vec4 position2;
@@ -67,18 +71,22 @@ void main() {
     // Limitar color primario antes de interpolar, igual que R3a.
     shade=clamp(shade,0,1);upperShade=clamp(upperShade,0,1);
     vec4 tex=fetchDraw(record+1+corner);
-    uv=(gl_TextureMatrix[0]*vec4(tex.xy,0,1)).xy;
-    upperUV=(gl_TextureMatrix[0]*vec4(tex.zw,0,1)).xy;
+    uv=(uTextureMatrix*vec4(tex.xy,0,1)).xy;
+    upperUV=(uTextureMatrix*vec4(tex.zw,0,1)).xy;
     vec4 pos=vec4(p.xyz,1);
-    gl_Position=gl_ModelViewProjectionMatrix*pos;
-    vec4 eye=gl_ModelViewMatrix*pos;
+    gl_Position=uModelViewProjection*pos;
+    vec4 eye=uModelView*pos;
     // El cliente no activa planos de recorte de usuario (issue #240).
     fogDistance=abs(eye.z);
 }
 )GLSL";
-const char* fragment=R"GLSL(#version 330 compatibility
+const char* fragment=R"GLSL(#version 330 core
 uniform sampler2DArray tiles,upperTiles;
 uniform int fogMode;
+uniform vec3 fogValues;
+uniform vec4 fogColor;
+uniform int alphaFunction;
+uniform float alphaReference;
 uniform bool waterNoFog;
 uniform vec4 framebufferLevels;
 in vec4 shade,upperShade;
@@ -89,15 +97,21 @@ flat in int operation;
 out vec4 color;
 vec4 fogged(vec4 c) {
     float f=1;
-    if(fogMode==1) f=(gl_Fog.end-fogDistance)*gl_Fog.scale;
-    if(fogMode==2) f=exp(-gl_Fog.density*fogDistance);
-    if(fogMode==3) { float d=gl_Fog.density*fogDistance;f=exp(-d*d); }
-    if(fogMode!=0)c.rgb=mix(gl_Fog.color.rgb,c.rgb,clamp(f,0,1));
+    if(fogMode==1) f=fogValues.y==fogValues.x?(fogDistance<=fogValues.y?1.0:0.0):(fogValues.y-fogDistance)/(fogValues.y-fogValues.x);
+    if(fogMode==2) f=exp(-fogValues.z*fogDistance);
+    if(fogMode==3) { float d=fogValues.z*fogDistance;f=exp(-d*d); }
+    if(fogMode!=0)c.rgb=mix(fogColor.rgb,c.rgb,clamp(f,0.0,1.0));
     return c;
 }
 
 void main() {
     color=fogged(texture(tiles,vec3(uv,layers.x))*shade);
+    // Alpha test de la capa superpuesta (antes, el test fijo de OpenGL).
+    if(operation==1&&alphaFunction!=0){
+        float a=color.a,r=alphaReference;int f=alphaFunction;
+        bool pass=f==1?false:f==2?a<r:f==3?a==r:f==4?a<=r:f==5?a>r:f==6?a!=r:f==7?a>=r:true;
+        if(!pass)discard;
+    }
     if(operation<3)return;
     // La base ya habría pasado por UNORM antes del blend de la segunda capa.
     vec4 base=floor(clamp(color,0,1)*framebufferLevels+0.5)/max(framebufferLevels,vec4(1));
@@ -116,31 +130,48 @@ void main() {
 )GLSL";
 void Bind(unsigned target,GLuint name) { RenderProfileGL::ObserveTexture(target,name);glBindTexture(target,name); }
 void Program(GLuint name) { RenderProfileGL::ObserveProgram(name);glUseProgram(name); }
+// Bindings y pixel store que la pasada modifica; el estado de mezcla,
+// profundidad y caras se guarda en la pila de atributos de RenderState.
 struct Guard {
-    GLint oldProgram=0,oldArray=0,oldBuffer=0,active=0,unpack=0,pack=0;
+    GLint oldProgram=0,oldArray=0,oldBuffer=0,active=0,unpack=0,pack=0,packAlignment=4,unpackAlignment=4;
     struct Unit { GLint two=0,array=0,sampler=0; } units[4];
     Guard() {
         BufferedDraw::Suspend();
+        Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribColorBuffer|Gfx::AttribDepth);
         glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
         glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
         glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&unpack);glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING,&pack);
-        glPushAttrib(GL_ALL_ATTRIB_BITS);glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+        glGetIntegerv(GL_PACK_ALIGNMENT,&packAlignment);glGetIntegerv(GL_UNPACK_ALIGNMENT,&unpackAlignment);
         for(int i=0;i<4;++i) { glActiveTexture(GL_TEXTURE0+i);
             glGetIntegerv(GL_TEXTURE_BINDING_2D,&units[i].two);glGetIntegerv(GL_TEXTURE_BINDING_2D_ARRAY,&units[i].array);
             glGetIntegerv(GL_SAMPLER_BINDING,&units[i].sampler);glBindSampler(i,0);
         }
-        glBindBuffer(GL_PIXEL_PACK_BUFFER,0);glPixelStorei(GL_PACK_ALIGNMENT,1);glPixelStorei(GL_PACK_ROW_LENGTH,0);glPixelStorei(GL_PACK_SKIP_PIXELS,0);glPixelStorei(GL_PACK_SKIP_ROWS,0);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER,0);glPixelStorei(GL_PACK_ALIGNMENT,1);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0);glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-        glPixelStorei(GL_UNPACK_ROW_LENGTH,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);glPixelStorei(GL_UNPACK_SKIP_ROWS,0);
-        glPixelStorei(GL_UNPACK_IMAGE_HEIGHT,0);glPixelStorei(GL_UNPACK_SKIP_IMAGES,0);
-        glPixelStorei(GL_UNPACK_SWAP_BYTES,GL_FALSE);
     }
     ~Guard() {
         for(int i=0;i<4;++i) { glActiveTexture(GL_TEXTURE0+i);Bind(GL_TEXTURE_2D,units[i].two);Bind(GL_TEXTURE_2D_ARRAY,units[i].array);glBindSampler(i,units[i].sampler); }
         glActiveTexture(active);Program(oldProgram);glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);glPopClientAttrib();RenderProfileGL::PopAttributes();
+        glPixelStorei(GL_PACK_ALIGNMENT,packAlignment);glPixelStorei(GL_UNPACK_ALIGNMENT,unpackAlignment);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);
+        BufferedDraw::Suspend();Gfx::PopAttrib();
     }
 };
+// Código del comparador para el shader (0 = sin test), como FragmentPipeline.
+int AlphaCode(Gfx::Compare c) {
+    switch(c){
+    case Gfx::Compare::Never:return 1;case Gfx::Compare::Less:return 2;case Gfx::Compare::Equal:return 3;
+    case Gfx::Compare::LessEqual:return 4;case Gfx::Compare::Greater:return 5;case Gfx::Compare::NotEqual:return 6;
+    case Gfx::Compare::GreaterEqual:return 7;default:return 0;
+    }
+}
+GLenum GLCompare(Gfx::Compare c) {
+    switch(c){
+    case Gfx::Compare::Never:return GL_NEVER;case Gfx::Compare::Less:return GL_LESS;case Gfx::Compare::Equal:return GL_EQUAL;
+    case Gfx::Compare::LessEqual:return GL_LEQUAL;case Gfx::Compare::Greater:return GL_GREATER;case Gfx::Compare::NotEqual:return GL_NOTEQUAL;
+    case Gfx::Compare::GreaterEqual:return GL_GEQUAL;default:return GL_ALWAYS;
+    }
+}
 bool Init() {
     if(program)return true;
     GLuint shaders[2]{glCreateShader(GL_VERTEX_SHADER),glCreateShader(GL_FRAGMENT_SHADER)};
@@ -290,19 +321,17 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     Guard guard;
     // DESVIACION: los estados especiales conservan la pasada completa actual;
     // nunca se redibuja una pasada que ya haya enviado una parte nueva.
-    GLint depth=0,env=0,mode=0,sampleBuffers=0;GLfloat matrix[16]{};
-    glGetIntegerv(GL_DEPTH_FUNC,&depth);glGetIntegerv(GL_SAMPLE_BUFFERS,&sampleBuffers);
-    glActiveTexture(GL_TEXTURE0);glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&env);glGetFloatv(GL_TEXTURE_MATRIX,matrix);
+    const auto& state=RenderState::Get();
+    GLint sampleBuffers=0;glGetIntegerv(GL_SAMPLE_BUFFERS,&sampleBuffers);
+    const float* matrix=RenderState::Top(Gfx::Matrix::Texture);
     if(guard.units[0].sampler){result.reason="Terreno: referencia (sampler ajeno)";return result;}
     if(guard.active!=GL_TEXTURE0){result.reason="Terreno: referencia (unidad activa)";return result;}
-    if(depth!=GL_LEQUAL){result.reason="Terreno: referencia (depth distinto)";return result;}
-    if(env!=GL_MODULATE){result.reason="Terreno: referencia (texture env)";return result;}
-    if(glIsEnabled(GL_LIGHTING)){result.reason="Terreno: referencia (lighting)";return result;}
+    if(state.depthFunction!=Gfx::Compare::LessEqual){result.reason="Terreno: referencia (depth distinto)";return result;}
+    if(state.texEnv!=Gfx::TexEnv::Modulate){result.reason="Terreno: referencia (texture env)";return result;}
+    if(RenderState::Enabled(Gfx::Cap::Lighting)){result.reason="Terreno: referencia (lighting)";return result;}
     if(glIsEnabled(GL_FRAMEBUFFER_SRGB)){result.reason="Terreno: referencia (sRGB)";return result;}
     if(sampleBuffers){result.reason="Terreno: referencia (multisampling)";return result;}
     if(matrix[3]!=0||matrix[7]!=0||matrix[15]!=1){result.reason="Terreno: referencia (UV proyectiva)";return result;}
-    GLint textureUnits=0;glGetIntegerv(GL_MAX_TEXTURE_UNITS,&textureUnits);
-    for(int i=1;i<textureUnits;++i) { glActiveTexture(GL_TEXTURE0+i);if(glIsEnabled(GL_TEXTURE_2D)||glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP)){result.reason="Terreno: referencia (multitextura)";return result;} }
     if(!Init()){result.reason="Terreno: referencia (shader no disponible)";return result;}
     std::vector<Operation> ops;ops.reserve(tiles.size()*2);
     for(const auto& t:tiles) {
@@ -316,16 +345,16 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     if(cachedMap!=f.map){heights.clear();cachedMap=f.map;ClearPages();}
     if(epoch!=f.textureEpoch){ClearPages();epoch=f.textureEpoch;}
     if(!EnsureSources(ops,result.dataBytes)){ClearPages();result.reason=textureFailure;return result;}
-    GLint bits[4]{},equationRGB=0,equationAlpha=0,polygon[2]{},front=0,cull=0,alphaFunction=0;
-    const GLenum bitNames[]{GL_RED_BITS,GL_GREEN_BITS,GL_BLUE_BITS,GL_ALPHA_BITS};
-    for(int i=0;i<4;++i)glGetIntegerv(bitNames[i],bits+i);
+    GLint bits[4]{},equationRGB=0,equationAlpha=0,polygon[2]{},front=0,cull=0;
+    const GLenum bitNames[]{GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE,GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE,GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE,GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE};
+    for(int i=0;i<4;++i)glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER,GL_BACK_LEFT,bitNames[i],bits+i);
     glGetIntegerv(GL_BLEND_EQUATION_RGB,&equationRGB);glGetIntegerv(GL_BLEND_EQUATION_ALPHA,&equationAlpha);
     glGetIntegerv(GL_POLYGON_MODE,polygon);glGetIntegerv(GL_FRONT_FACE,&front);glGetIntegerv(GL_CULL_FACE_MODE,&cull);
-    glGetIntegerv(GL_ALPHA_TEST_FUNC,&alphaFunction);GLfloat alphaReference=0;glGetFloatv(GL_ALPHA_TEST_REF,&alphaReference);
-    float view[16]{},projection[16]{};glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
+    const GLint alphaFunction=static_cast<GLint>(GLCompare(state.alphaFunction));const GLfloat alphaReference=state.alphaReference;
+    const float* view=RenderState::Top(Gfx::Matrix::ModelView);const float* projection=RenderState::Top(Gfx::Matrix::Projection);
     const bool fusion=f.compose&&bits[0]==8&&bits[1]==8&&bits[2]==8&&(bits[3]==0||bits[3]==8)
         &&equationRGB==GL_FUNC_ADD&&equationAlpha==GL_FUNC_ADD&&polygon[0]==GL_FILL&&polygon[1]==GL_FILL
-        &&!glIsEnabled(GL_STENCIL_TEST)&&!glIsEnabled(GL_POLYGON_SMOOTH)&&!glIsEnabled(GL_COLOR_LOGIC_OP)
+        &&!RenderState::Enabled(Gfx::Cap::StencilTest)&&!RenderState::Enabled(Gfx::Cap::PolygonSmooth)&&!RenderState::Enabled(Gfx::Cap::ColorLogicOp)
         &&!glIsEnabled(GL_SAMPLE_ALPHA_TO_COVERAGE)&&!glIsEnabled(GL_SAMPLE_ALPHA_TO_ONE);
     ops.clear();
     for(const auto& t:tiles) {
@@ -372,9 +401,15 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     }
     if(!TextureData(3,metadata,1024,rows,records.data(),metadataRows!=rows)){metadataRows=0;result.reason="Terreno: referencia (memoria instancias)";return result;}metadataRows=rows;result.dataBytes+=records.size()*sizeof(float);
     glActiveTexture(GL_TEXTURE0);Program(program);glBindVertexArray(vao);
-    const bool originalFog=glIsEnabled(GL_FOG)!=0;glGetIntegerv(GL_FOG_MODE,&mode);
-    const int fogMode=!originalFog?0:mode==GL_LINEAR?1:mode==GL_EXP?2:3;
+    const int fogMode=!RenderState::Enabled(Gfx::Cap::Fog)?0:state.fogMode==Gfx::FogMode::Linear?1:state.fogMode==Gfx::FogMode::Exp?2:3;
     const GLint first=glGetUniformLocation(program,"firstInstance"),fog=glGetUniformLocation(program,"fogMode");
+    const GLint alphaLocation=glGetUniformLocation(program,"alphaFunction");
+    glUniformMatrix4fv(glGetUniformLocation(program,"uModelViewProjection"),1,GL_FALSE,RenderState::ModelViewProjection());
+    glUniformMatrix4fv(glGetUniformLocation(program,"uModelView"),1,GL_FALSE,view);
+    glUniformMatrix4fv(glGetUniformLocation(program,"uTextureMatrix"),1,GL_FALSE,matrix);
+    glUniform3f(glGetUniformLocation(program,"fogValues"),state.fogStart,state.fogEnd,state.fogDensity);
+    glUniform4fv(glGetUniformLocation(program,"fogColor"),1,state.fogColor);
+    glUniform1f(glGetUniformLocation(program,"alphaReference"),alphaReference);
     glUniform1i(glGetUniformLocation(program,"waterNoFog"),f.fogPolicy?1:0);
     glUniform4f(glGetUniformLocation(program,"framebufferLevels"),255,255,255,bits[3]?255.f:0.f);
     int lastMode=-1,lastPage=-1,lastUpper=-1;
@@ -384,10 +419,10 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
             &&ResidentIndex(ops[end].tile->x,ops[end].tile->y)==ResidentIndex(op.tile->x,op.tile->y)+(end-begin))++end;
         // Este estado sólo vive dentro de la pasada; no toca el caché legacy.
         if(lastMode!=Pipeline(op.mode)) {
-            RenderProfileGL::SetEnabled(GL_BLEND,op.mode==1||op.mode==2);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0||op.mode>=3);
-            if(RenderProfile::active)RenderProfileGL::DepthWrite(op.mode!=2);glDepthMask(op.mode!=2);
-            if(op.mode==1||op.mode==2) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;
-                if(RenderProfile::active)RenderProfileGL::BlendFunction(src,dst);glBlendFunc(src,dst);}
+            Gfx::SetEnabled(Gfx::Cap::Blend,op.mode==1||op.mode==2);Gfx::SetEnabled(Gfx::Cap::CullFace,op.mode==0||op.mode>=3);
+            Gfx::DepthMask(op.mode!=2);
+            if(op.mode==1||op.mode==2)Gfx::BlendFunc(op.mode==1?Gfx::Factor::SrcAlpha:Gfx::Factor::One,op.mode==1?Gfx::Factor::OneMinusSrcAlpha:Gfx::Factor::One);
+            glUniform1i(alphaLocation,op.mode==1?AlphaCode(state.alphaFunction):0);
             glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);lastMode=Pipeline(op.mode);
         }
         if(lastPage!=op.texture.page){Bind(GL_TEXTURE_2D_ARRAY,pages[op.texture.page].name);lastPage=op.texture.page;}
@@ -407,7 +442,7 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
 bool SourceTexture(std::uint32_t handle) { return locations.find(handle)!=locations.end(); }
 bool BoundSourceTexture() {
     if(locations.empty())return false;
-    GLint handle=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&handle);return SourceTexture(handle);
+    return SourceTexture(RenderState::Get().texture);
 }
 void Release() {
     if(!program)return;

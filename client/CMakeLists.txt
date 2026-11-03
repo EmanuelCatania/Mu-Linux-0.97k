@@ -63,6 +63,7 @@ set(MU_SOURCES
     src/Render/Backend/GL/Materials.cpp
     src/Render/Backend/GL/FragmentPipeline.cpp
     src/Render/RenderProfile.cpp
+    src/Render/RenderState.cpp
     src/Render/Backend/GL/ProfileQueries.cpp
     src/Render/Backend/GL/BufferedDraw.cpp
     src/Render/WorldEffects.cpp
@@ -455,7 +456,6 @@ set(MU_HEADERS
     src/Platform/IFileSystem.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
-    src/Render/GLCallBarrier.h
     src/Render/GlyphAtlas.h
     src/Render/Gfx.h
     src/Render/Backend/GL/LegacyGL.h
@@ -465,10 +465,10 @@ set(MU_HEADERS
     src/Render/TerrainDraw.h
     src/Render/BMDDevice.h
     src/Render/Materials.h
-    src/Render/FragmentStage.h
     src/Render/Backend/GL/FragmentPipeline.h
     src/Render/Backend/GL/TerrainRenderer.h
     src/Render/RenderProfile.h
+    src/Render/RenderState.h
     src/Render/ProfileStats.h
     src/Render/Backend/GL/ProfileUploads.h
     src/Render/Backend/GL/ProfileQueries.h
@@ -637,7 +637,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Backend/GL/Gfx.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -763,7 +763,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
         src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
         src/Render/Backend/GL/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp
         src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
-        src/Render/Backend/GL/Skinning.cpp)
+        src/Render/Backend/GL/Skinning.cpp src/Render/Backend/GL/Gfx.cpp src/Render/RenderState.cpp)
     target_include_directories(mu_bmd_device_test PRIVATE src ${MU_MINIAUDIO_INCLUDE_DIR})
     target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
     target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)

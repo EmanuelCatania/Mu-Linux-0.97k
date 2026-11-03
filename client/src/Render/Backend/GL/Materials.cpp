@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "Render/Backend/GL/LegacyGL.h"
+#include "Render/Gfx.h"
 #include "Render/Materials.h"
 #include "Render/BMDDevice.h"
 #include "Render/MeshDraw.h"
+#include "Render/RenderState.h"
 #include "Render/ResourceTables.h"
-#include <array>
 #include <cstring>
 #include <vector>
 
@@ -14,17 +14,17 @@ namespace Materials {
 namespace {
 bool enabled=false;
 unsigned twoSidedDepth=0;
-template<class T> void Cached(Switch value,T& cache,unsigned cap) {
+template<class T> void Cached(Switch value,T& cache,Gfx::Cap cap) {
     if(value==Switch::Keep)return;
     const bool next=value==Switch::On;
     if((cache!=0)==next)return;
-    cache=next?1:0;if(next)glEnable(cap);else glDisable(cap);
+    cache=next?1:0;Gfx::SetEnabled(cap,next);
 }
 void DepthWrite(Switch value) {
     if(value==Switch::Keep)return;
     const bool next=value==Switch::On;
     if((DAT_083a42e8!=0)==next)return;
-    DAT_083a42e8=next?1:0;glDepthMask(next?1:0);
+    DAT_083a42e8=next?1:0;Gfx::DepthMask(next);
 }
 }
 bool Enabled(){return enabled;}
@@ -37,31 +37,27 @@ bool Apply(const Material& m) {
     if(!enabled)return false;
     if(m.blend!=Blend::Keep&&DAT_083a412c!=static_cast<int>(m.blend)) {
         DAT_083a412c=static_cast<int>(m.blend);
-        if(m.blend==Blend::Opaque)glDisable(GL_BLEND);
+        if(m.blend==Blend::Opaque)Gfx::Disable(Gfx::Cap::Blend);
         else {
-            glEnable(GL_BLEND);
+            using F=Gfx::Factor;
+            Gfx::Enable(Gfx::Cap::Blend);
             switch(m.blend) {
-            case Blend::LightMap:glBlendFunc(GL_ZERO,GL_SRC_COLOR);break;
-            case Blend::Alpha:glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);break;
-            case Blend::Add:glBlendFunc(GL_ONE,GL_ONE);break;
+            case Blend::LightMap:Gfx::BlendFunc(F::Zero,F::SrcColor);break;
+            case Blend::Alpha:Gfx::BlendFunc(F::SrcAlpha,F::OneMinusSrcAlpha);break;
+            case Blend::Add:Gfx::BlendFunc(F::One,F::One);break;
             // Los nombres históricos no describen sus factores reales.
-            case Blend::Attenuate:glBlendFunc(GL_ZERO,GL_ONE_MINUS_SRC_COLOR);break;
-            case Blend::InverseAdd:glBlendFunc(GL_ONE_MINUS_SRC_COLOR,GL_ONE);break;
+            case Blend::Attenuate:Gfx::BlendFunc(F::Zero,F::OneMinusSrcColor);break;
+            case Blend::InverseAdd:Gfx::BlendFunc(F::OneMinusSrcColor,F::One);break;
             default:break;
             }
         }
     }
-    Cached(twoSidedDepth?Switch::Off:m.cull,DAT_083a411c,GL_CULL_FACE);DepthWrite(m.depthWrite);
-    Cached(m.alphaTest,DAT_083a411d,GL_ALPHA_TEST);Cached(m.texture,DAT_083a4125,GL_TEXTURE_2D);
-    if(m.depthTest==Switch::Off) {
-        // Conservar las dos lecturas/barreras del helper de referencia.
-        glGetError();Cached(m.depthTest,DAT_083a411e,GL_DEPTH_TEST);glGetError();
-    } else Cached(m.depthTest,DAT_083a411e,GL_DEPTH_TEST);
+    Cached(twoSidedDepth?Switch::Off:m.cull,DAT_083a411c,Gfx::Cap::CullFace);DepthWrite(m.depthWrite);
+    Cached(m.alphaTest,DAT_083a411d,Gfx::Cap::AlphaTest);Cached(m.texture,DAT_083a4125,Gfx::Cap::Texture2D);
+    Cached(m.depthTest,DAT_083a411e,Gfx::Cap::DepthTest);
     // FogEnable expresa política de escena, no un caché del estado real.
-    // Si vale cero, los helpers históricos NO cambian GL_FOG.
-    if(DAT_083a42ea&&m.fog!=Fog::Keep) {
-        if(m.fog==Fog::Scene)glEnable(GL_FOG);else glDisable(GL_FOG);
-    }
+    // Si vale cero, los helpers históricos NO cambian la niebla.
+    if(DAT_083a42ea&&m.fog!=Fog::Keep)Gfx::SetEnabled(Gfx::Cap::Fog,m.fog==Fog::Scene);
     return true;
 }
 bool ApplySequence(const MaterialSequence& sequence){
@@ -71,30 +67,30 @@ bool ApplySequence(const MaterialSequence& sequence){
 }
 TwoSidedScope::TwoSidedScope(bool twoSided){
     managed=enabled;if(!managed||!twoSided)return;
-    overrideCull=true;previousCull=glIsEnabled(GL_CULL_FACE)!=0;++twoSidedDepth;
+    overrideCull=true;previousCull=Gfx::IsEnabled(Gfx::Cap::CullFace);++twoSidedDepth;
     // Corregir también una entrada con caché incoherente; la propiedad de
     // dos caras es explícita y se mantiene en los materiales interiores.
-    glDisable(GL_CULL_FACE);DAT_083a411c=0;
+    Gfx::Disable(Gfx::Cap::CullFace);DAT_083a411c=0;
 }
 TwoSidedScope::~TwoSidedScope(){
     if(!overrideCull)return;
     --twoSidedDepth;const bool restore=twoSidedDepth?false:previousCull;
-    if(restore)glEnable(GL_CULL_FACE);else glDisable(GL_CULL_FACE);
+    Gfx::SetEnabled(Gfx::Cap::CullFace,restore);
     DAT_083a411c=restore?1:0;
 }
 bool BeginText(){
     if(!enabled)return false;
-    // COLOR_BUFFER conserva factores RGB/alpha y ecuaciones, además del enable.
-    glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_LIST_BIT|GL_COLOR_BUFFER_BIT);
-    glDisable(GL_TEXTURE_2D);glDisable(GL_DEPTH_TEST);glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    // COLOR_BUFFER conserva factores y activación de la mezcla.
+    Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribList|Gfx::AttribColorBuffer);
+    Gfx::Disable(Gfx::Cap::Texture2D);Gfx::Disable(Gfx::Cap::DepthTest);Gfx::Enable(Gfx::Cap::Blend);
+    Gfx::BlendFunc(Gfx::Factor::SrcAlpha,Gfx::Factor::OneMinusSrcAlpha);
     return true;
 }
-void EndText(){glPopAttrib();}
+void EndText(){Gfx::PopAttrib();}
 InheritedBlendScope::InheritedBlendScope(){
     if(!enabled)return;
-    active=true;wasEnabled=glIsEnabled(GL_BLEND)!=0;previousBlend=DAT_083a412c;
-    glEnable(GL_BLEND);
+    active=true;wasEnabled=Gfx::IsEnabled(Gfx::Cap::Blend);previousBlend=DAT_083a412c;
+    Gfx::Enable(Gfx::Cap::Blend);
     // No representa ningún preset: BMD__RenderBodyShadow no selecciona mezcla.
     // Invalidar temporalmente evita anunciar factores que no se establecieron.
     DAT_083a412c=-1;
@@ -103,52 +99,44 @@ InheritedBlendScope::~InheritedBlendScope(){
     if(!active)return;
     // La sombra no cambia factores. La barrera envía sus triángulos antes
     // de recuperar activación; los demás estados quedan como en referencia.
-    if(wasEnabled)glEnable(GL_BLEND);else glDisable(GL_BLEND);
+    Gfx::SetEnabled(Gfx::Cap::Blend,wasEnabled);
     DAT_083a412c=previousBlend;
 }
 bool BeginOverlay(const OverlayState& s){
     if(!enabled)return false;
-    glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();
-    glViewport(0,0,s.width,s.height);
+    Gfx::MatrixMode(Gfx::Matrix::Projection);Gfx::PushMatrix();Gfx::LoadIdentity();
+    Gfx::Viewport(0,0,s.width,s.height);
     // Conservar la secuencia de referencia, incluida la perspectiva temporal.
-    gluPerspective(s.fov,double(s.width)/double(s.height),s.nearClip,s.farClip);
-    glLoadIdentity();gluOrtho2D(-double(s.left),double(s.width)-double(s.left),0,double(s.height));
-    glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();
+    Gfx::Perspective(s.fov,double(s.width)/double(s.height),s.nearClip,s.farClip);
+    Gfx::LoadIdentity();Gfx::Ortho2D(-double(s.left),double(s.width)-double(s.left),0,double(s.height));
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PushMatrix();Gfx::LoadIdentity();
     Material entry;entry.depthTest=Switch::Off;Apply(entry);
     return true;
 }
 bool EndOverlay(){
     if(!enabled)return false;
-    glMatrixMode(GL_PROJECTION);glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);glPopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PopMatrix();
     return true;
 }
 bool BeginView(const ViewState& s){
     if(!enabled)return false;
-    // La entrada de referencia escribe el estado físico incluso cuando el
-    // caché legacy difiere. No usar Cached para omitir esta reparación.
-    if(s.alphaTest)glEnable(GL_ALPHA_TEST);else glDisable(GL_ALPHA_TEST);
-    if(s.texture)glEnable(GL_TEXTURE_2D);else glDisable(GL_TEXTURE_2D);
-    if(s.depthTest)glEnable(GL_DEPTH_TEST);else glDisable(GL_DEPTH_TEST);
-    if(s.cull)glEnable(GL_CULL_FACE);else glDisable(GL_CULL_FACE);
-    glDepthMask(s.depthWrite?1:0);
+    // La entrada de referencia escribe el estado incluso cuando el caché
+    // legacy difiere. No usar Cached para omitir esta reparación.
+    Gfx::SetEnabled(Gfx::Cap::AlphaTest,s.alphaTest);Gfx::SetEnabled(Gfx::Cap::Texture2D,s.texture);
+    Gfx::SetEnabled(Gfx::Cap::DepthTest,s.depthTest);Gfx::SetEnabled(Gfx::Cap::CullFace,s.cull);
+    Gfx::DepthMask(s.depthWrite);
     DAT_083a411d=s.alphaTest?1:0;DAT_083a4125=s.texture?1:0;
     DAT_083a411e=s.depthTest?1:0;DAT_083a411c=s.cull?1:0;DAT_083a42e8=s.depthWrite?1:0;
-    const auto compare=[](Compare c)->unsigned {
-        switch(c){
-        case Compare::Never:return GL_NEVER;case Compare::Less:return GL_LESS;
-        case Compare::Equal:return GL_EQUAL;case Compare::LessEqual:return GL_LEQUAL;
-        case Compare::Greater:return GL_GREATER;case Compare::NotEqual:return GL_NOTEQUAL;
-        case Compare::GreaterEqual:return GL_GEQUAL;case Compare::Always:return GL_ALWAYS;
-        }return GL_ALWAYS;
-    };
-    glDepthFunc(compare(s.depthFunction));glAlphaFunc(compare(s.alphaFunction),s.alphaReference);
-    if(s.fog==ViewFog::Off)glDisable(GL_FOG);
+    // Materials::Compare comparte el orden de Gfx::Compare.
+    Gfx::DepthFunc(static_cast<Gfx::Compare>(s.depthFunction));
+    Gfx::AlphaFunc(static_cast<Gfx::Compare>(s.alphaFunction),s.alphaReference);
+    if(s.fog==ViewFog::Off)Gfx::Disable(Gfx::Cap::Fog);
     else {
-        glEnable(GL_FOG);
-        if(s.fog==ViewFog::Linear){glFogi(GL_FOG_MODE,GL_LINEAR);glFogf(GL_FOG_START,s.fogStart);glFogf(GL_FOG_END,s.fogEnd);}
-        else {glFogi(GL_FOG_MODE,GL_EXP2);glFogf(GL_FOG_DENSITY,s.fogDensity);}
-        glFogfv(GL_FOG_COLOR,s.fogColor);
+        Gfx::Enable(Gfx::Cap::Fog);
+        if(s.fog==ViewFog::Linear){Gfx::SetFogMode(Gfx::FogMode::Linear);Gfx::FogStart(s.fogStart);Gfx::FogEnd(s.fogEnd);}
+        else {Gfx::SetFogMode(Gfx::FogMode::Exp2);Gfx::FogDensity(s.fogDensity);}
+        Gfx::FogColor(s.fogColor);
     }
     return true;
 }
@@ -160,7 +148,7 @@ bool BindTexture(TextureSlot texture){
     if(DAT_00561574!=slot){
         DAT_00561574=slot;ResourceTables::EnsureTextures(std::size_t(slot)+1);
         const unsigned native=(&DAT_083a7ccc)[std::size_t(slot)* TEXTURE_STRIDE_DWORDS];
-        glBindTexture(GL_TEXTURE_2D,native);
+        Gfx::BindTexture(native);
     }
     return true;
 }
@@ -177,15 +165,8 @@ bool ApplyTextured(const TexturedMaterial& m){
 bool Select(Preset preset,bool depthWrite){return Apply(Describe(preset,depthWrite));}
 }
 
-namespace FragmentPipelineGL {
-LegacyState ReadLegacyState(){
-    return {DAT_083a412c,DAT_083a411c!=0,DAT_083a411e!=0,DAT_083a42e8!=0,DAT_083a411d!=0,DAT_083a4125!=0};
-}
-}
-
 namespace BMDDevice {
 namespace {
-bool requested=true;
 void ReferenceSurface(unsigned flags,bool alpha,bool chrome=false){
     if(flags&0x40)GL_SetBlendAdditive();
     else if(flags&0x80)GL_SetBlendSrcAlpha();
@@ -194,9 +175,8 @@ void ReferenceSurface(unsigned flags,bool alpha,bool chrome=false){
     else GL_ResetState();
 }
 }
-bool Enabled(){return requested&&Materials::Enabled();}
-const char* Status(){return Enabled()?"BMD: shader 3.3":"BMD: referencia";}
-void Toggle(){BufferedDraw::Suspend();requested=!requested;RenderProfile::RestartCapture();DbgLogPublic(requested?"BMD: ruta nueva solicitada":"BMD: referencia compatible");}
+bool Enabled(){return Materials::Enabled();}
+const char* Status(){return Enabled()?"BMD: materiales":"BMD: referencia";}
 void Select(const PassState& s){
     using P=Pass;
     switch(s.pass){
@@ -240,43 +220,29 @@ void Select(const PassState& s){
     }
 }
 MeshScope::MeshScope(bool twoSided):cull(twoSided){
-    FragmentPipelineGL::EnterModel();
-    if(!cull&&twoSided&&glIsEnabled(GL_CULL_FACE)){glDisable(GL_CULL_FACE);legacyCull=true;}
+    if(!cull&&twoSided&&Gfx::IsEnabled(Gfx::Cap::CullFace)){Gfx::Disable(Gfx::Cap::CullFace);legacyCull=true;}
 }
-MeshScope::~MeshScope(){FragmentPipelineGL::LeaveModel();if(legacyCull)glEnable(GL_CULL_FACE);}
+MeshScope::~MeshScope(){if(legacyCull)Gfx::Enable(Gfx::Cap::CullFace);}
 namespace {
-struct ModelFrame { int mode=0;std::array<double,16> matrix{};bool reference=false,captured=false; };
+// Ámbito de modelo: la matriz de entrada se repone por valor si un callee la
+// modificó. Equivale al glPushMatrix/glPopMatrix de la referencia.
+struct ModelFrame { Gfx::Matrix mode=Gfx::Matrix::ModelView;float matrix[16]{}; };
 std::vector<ModelFrame> modelFrames;
-unsigned MatrixKey(int mode){return mode==GL_PROJECTION?GL_PROJECTION_MATRIX:mode==GL_TEXTURE?GL_TEXTURE_MATRIX:GL_MODELVIEW_MATRIX;}
-}
-void BeforeMatrixChange(){
-    // Copia al escribir: las pasadas BMD habituales no modifican matrices y
-    // no necesitan consultas ni copias al cerrar cada modelo.
-    for(auto& frame:modelFrames)if(!frame.reference&&!frame.captured){
-        glGetDoublev(MatrixKey(frame.mode),frame.matrix.data());frame.captured=true;
-    }
 }
 void BeginModel(){
-    BufferedDraw::Flush();ModelFrame frame;frame.reference=!Enabled();
-    if(frame.reference)glPushMatrix();
-    else glGetIntegerv(GL_MATRIX_MODE,&frame.mode);
-    modelFrames.push_back(frame);FragmentPipelineGL::EnterModel();
+    BufferedDraw::Flush();ModelFrame frame;frame.mode=RenderState::MatrixMode();
+    std::memcpy(frame.matrix,RenderState::Top(frame.mode),sizeof(frame.matrix));
+    modelFrames.push_back(frame);
 }
 void EndModel(){
     BufferedDraw::Flush();
     if(modelFrames.empty()){DbgLogPublic("PerfilR4 BMD: error_ambito_matriz=sin_entrada");return;}
     const auto frame=modelFrames.back();modelFrames.pop_back();
-    if(frame.reference)glPopMatrix();
-    else if(frame.captured){
-        // Pila propia por valor. La frontera con productores aún compatibles
-        // sólo restaura la matriz si un callee la modificó; no usa glPush/Pop.
-        int current=0;glGetIntegerv(GL_MATRIX_MODE,&current);
-        if(current!=frame.mode)glMatrixMode(frame.mode);
-        double matrix[16];glGetDoublev(MatrixKey(frame.mode),matrix);
-        if(std::memcmp(matrix,frame.matrix.data(),sizeof(matrix)))glLoadMatrixd(frame.matrix.data());
-        if(current!=frame.mode){glMatrixMode(current);DbgLogPublic("PerfilR4 BMD: error_ambito_matriz=modo_no_balanceado");}
+    if(RenderState::MatrixMode()!=frame.mode)DbgLogPublic("PerfilR4 BMD: error_ambito_matriz=modo_no_balanceado");
+    if(std::memcmp(RenderState::Top(frame.mode),frame.matrix,sizeof(frame.matrix))) {
+        const auto current=RenderState::MatrixMode();
+        RenderState::SetMatrixMode(frame.mode);RenderState::LoadMatrix(frame.matrix);RenderState::SetMatrixMode(current);
     }
-    FragmentPipelineGL::LeaveModel();
 }
 
 }

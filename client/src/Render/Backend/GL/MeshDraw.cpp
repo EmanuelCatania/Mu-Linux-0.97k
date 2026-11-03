@@ -17,6 +17,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/Skinning.h"
+#include "Render/RenderState.h"
 #include "Physics/ClothTypes.h"
 #include <algorithm>
 #include <cstdint>
@@ -46,6 +47,10 @@ struct Mesh {
 std::unordered_map<const void*,Mesh> meshes;
 bool residentEnabled=true;
 std::vector<BufferedDraw::Vertex> vertices;
+// Color y UV actuales tras el envío: los de la última esquina, como la ruta CPU.
+void SetCurrent(const float* color,const float* uv) {
+    auto& s=RenderState::Mutable();std::memcpy(s.color,color,sizeof(s.color));std::memcpy(s.uv,uv,sizeof(s.uv));
+}
 short ReadShort(const unsigned char* p) { short value;std::memcpy(&value,p,sizeof(value));return value; }
 void Delete(Mesh& m) {
     if(m.array) glDeleteVertexArrays(1,&m.array);
@@ -132,21 +137,17 @@ bool Topology(Mesh& m,const Input& input) {
         m.minimum.uv=std::min(m.minimum.uv,c.uv);m.maximum.uv=std::max(m.maximum.uv,c.uv);
     }
     BufferedDraw::Suspend();
-    GLint array,buffer,client;glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&array);
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&buffer);glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
+    GLint array,buffer;glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&array);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&buffer);
     glGenVertexArrays(1,&m.array);glGenBuffers(1,&m.buffer);glGenBuffers(1,&m.elements);
     glBindVertexArray(m.array);glBindBuffer(GL_ARRAY_BUFFER,m.buffer);
     using Vertex=BufferedDraw::Vertex;
     glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,position));
     glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,color));
     glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,uv));
-    glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,position));
-    glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,color));
-    glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,uv));
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,m.elements);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,m.indices.size()*sizeof(unsigned),m.indices.data(),GL_STATIC_DRAW);
-    glClientActiveTexture(client);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
     if(!m.array || !m.buffer || !m.elements) { Delete(m);return false; }
     m.faces.assign(input.faces,input.faces+size);m.facesSource=input.faces;m.facesSample=sample;return true;
 }
@@ -173,9 +174,7 @@ bool DrawShadow(const void* model,const char* meshRecord,const float* world,cons
     Skinning::ResidentDraw draw{model,input.key,mesh.residentArray,mesh.indices.size(),mesh.maxBone,
         world,input.positionCount,nullptr,input.normalCount,false,false,noLight,current.color,current.uv,0.f,0.f};
     draw.shadow=true;draw.shadowOrigin=origin;
-    if(!Skinning::DrawResident(draw)) return false;
-    glColor4fv(current.color);glTexCoord4fv(current.uv);
-    return true;
+    return Skinning::DrawResident(draw);
 }
 void ToggleResident() {
     BufferedDraw::Suspend();residentEnabled=!residentEnabled;
@@ -217,7 +216,7 @@ bool Draw(const Input& input) {
                 lastUV[0]=input.uv[c.uv*2]+(offset?input.u:0.f);lastUV[1]=input.uv[c.uv*2+1]+(offset?input.v:0.f);
                 lastUV[2]=0;lastUV[3]=1;
             }
-            glColor4fv(lastColor);glTexCoord4fv(lastUV);return true;
+            SetCurrent(lastColor,lastUV);return true;
         }
     }
     vertices.resize(mesh.corners.size());
@@ -237,14 +236,13 @@ bool Draw(const Input& input) {
     // para datos CPU deformados o una pose que no corresponde al dibujo.
     if(Skinning::Draw(input.model,input.key,mesh.elements,vertices.data(),mesh.positions.data(),mesh.normals.data(),
         vertices.size(),mesh.indices.size(),input.positions,input.positionCount,input.colors,lit,input.bodyLight)) {
-        const auto& last=vertices[mesh.indices.back()];glColor4fv(last.color);glTexCoord4fv(last.uv);return true;
+        const auto& last=vertices[mesh.indices.back()];SetCurrent(last.color,last.uv);return true;
     }
     // Conservar el color y UV de la última esquina, incluso si no completa
     // un triángulo. DrawElements no define esos atributos tras el envío.
     const auto& last=vertices[mesh.indices.back()];
     // DESVIACION: DrawIndexed envía lo pendiente antes de cambiar de VAO.
-    // Mantener el programa activo hasta la siguiente frontera de compatibilidad.
-    glColor4fv(last.color);glTexCoord4fv(last.uv);
+    SetCurrent(last.color,last.uv);
     BufferedDraw::DrawIndexed(mesh.array,mesh.buffer,vertices.data(),vertices.size(),mesh.indices.size(),&last);
     return true;
 }

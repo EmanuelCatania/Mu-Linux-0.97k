@@ -10,7 +10,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ALLOWED = ('src/Render/Backend/', 'src/Platform/')
-ALLOWED_FILES = {'src/Render/GLCallBarrier.h'}
+ALLOWED_FILES = set()
 
 PATTERN = re.compile(
     r'\b(?:w?glu?|wgl)[A-Z][A-Za-z0-9]*\s*\('

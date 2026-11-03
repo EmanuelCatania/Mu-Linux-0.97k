@@ -180,7 +180,6 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
-    <ClInclude Include="src\Render\GLCallBarrier.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
     <ClInclude Include="src\Render\Gfx.h" />
     <ClInclude Include="src\Render\Backend\GL\LegacyGL.h" />
@@ -190,10 +189,10 @@
     <ClInclude Include="src\Render\TerrainDraw.h" />
     <ClInclude Include="src\Render\BMDDevice.h" />
     <ClInclude Include="src\Render\Materials.h" />
-    <ClInclude Include="src\Render\FragmentStage.h" />
     <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
     <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
     <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\RenderState.h" />
     <ClInclude Include="src\Render\ProfileStats.h" />
     <ClInclude Include="src\Render\Backend\GL\ProfileUploads.h" />
     <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
@@ -292,7 +291,7 @@
     <ClCompile Include="src\Render\Backend\GL\GlyphAtlas.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Render\Backend\GL\Gfx.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\ResourceTables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -309,6 +308,7 @@
     <ClCompile Include="src\Render\RenderProfile.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Render\RenderState.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

@@ -1,35 +1,30 @@
 // Sin PCH: las funciones modernas se resuelven con glad, no GL/gl.h.
 #include "Platform/GL/glad.h"
 #include "Render/Backend/GL/ProfileUploads.h"
-#undef glTexImage2D
-#define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
-#undef glTexSubImage2D
-#define glTexSubImage2D(...) ::ProfileUploadGL::Sub2D(glad_glTexSubImage2D,__VA_ARGS__)
-#undef glTexImage3D
-#define glTexImage3D(...) ::ProfileUploadGL::Image3D(glad_glTexImage3D,__VA_ARGS__)
-#undef glTexSubImage3D
-#define glTexSubImage3D(...) ::ProfileUploadGL::Sub3D(glad_glTexSubImage3D,__VA_ARGS__)
 #undef glBufferData
 #define glBufferData(...) ::ProfileUploadGL::BufferData(glad_glBufferData,__VA_ARGS__)
-#undef glBufferSubData
-#define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
-#include "Render/RenderProfile.h"
 #include "Render/Backend/GL/ProfileQueries.h"
-#include <cstddef>
-#include <cstdio>
+#include "Render/Gfx.h"
+#include "Render/RenderProfile.h"
+#include "Render/RenderState.h"
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 
 extern "C" void DbgLogPublic(const char*);
 namespace BufferedDraw {
 Stream stream;
 namespace {
+// Modos de primitiva con la numeración de OpenGL 1.1 (0..9). Los que no
+// existen en 3.3 core (quads, quad strip, polígono) se convierten acá.
+enum Mode : unsigned { Points=0, Lines=1, LineLoop=2, LineStrip=3, Triangles=4, TriangleStrip=5, TriangleFan=6, Quads=7, QuadStrip=8, Polygon=9 };
 GLuint program=0,buffer=0,array=0,quadBuffer=0;
 std::size_t quadCapacity=0;
+bool failed=false;
 // DESVIACION: los envíos generales escriben en un buffer circular con mapeo
 // no sincronizado, en vez de pedir almacenamiento nuevo con glBufferData en
 // cada uno. Al llenarse se huérfana entero, como hacía cada glBufferData.
@@ -52,25 +47,21 @@ GLint RingWrite(const Vertex* data,std::size_t count) {
     ringUsed+=bytes;return first;
 }
 std::vector<Vertex> pending;
-unsigned pendingMode=0;
+unsigned pendingMode=Triangles;
 bool bound=false;
 void (*exitHook)()=nullptr;
 GLuint boundProgram=0,boundArray=0,boundBuffer=0;
-GLint savedProgram=0,savedArray=0,savedBuffer=0;
 // DESVIACION: compartir la propiedad del pipeline entre geometría general
-// y mallas indexadas. Sólo Suspend devuelve los bindings del caller.
+// y mallas indexadas. Suspend olvida los bindings para que otro productor
+// pueda usar el dispositivo; el próximo envío vuelve a ligar los suyos.
 void BindPipeline(GLuint nextProgram,GLuint nextArray,GLuint nextBuffer) {
-    if (!bound) {
-        glGetIntegerv(GL_CURRENT_PROGRAM,&savedProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&savedArray);
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
-        bound=true;boundProgram=boundArray=boundBuffer=0;
-    }
+    if (!bound) { bound=true;boundProgram=boundArray=boundBuffer=0; }
     if (boundProgram!=nextProgram) { RenderProfileGL::ObserveProgram(nextProgram);glUseProgram(nextProgram);boundProgram=nextProgram; }
     if (boundArray!=nextArray) { glBindVertexArray(nextArray);boundArray=nextArray; }
     if (boundBuffer!=nextBuffer) { glBindBuffer(GL_ARRAY_BUFFER,nextBuffer);boundBuffer=nextBuffer; }
 }
-// DESVIACION: cada abanico de cuatro esquinas conserva los triángulos
-// 0-1-2 y 0-2-3 sin duplicar sus vértices en el buffer de envío.
+// DESVIACION: cada quad conserva los triángulos 0-1-2 y 0-2-3 sin duplicar
+// sus vértices en el buffer de envío.
 void EnsureQuadIndices(std::size_t count) {
     if (quadCapacity>=count) return;
     quadCapacity=std::max(count,std::max(std::size_t(256),quadCapacity*2));
@@ -81,57 +72,40 @@ void EnsureQuadIndices(std::size_t count) {
     }
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,indices.size()*sizeof(unsigned),indices.data(),GL_STATIC_DRAW);
 }
-// DESVIACION R4b: la referencia conserva sus fragmentos compatibles. La
-// variante EXPLICIT_FRAGMENT limita color primario en el vértice y compone
-// textura/niebla/alpha en el backend, con respaldo para estados no admitidos.
-const char* vertexSource=R"GLSL(#version 330 compatibility
+const char* vertexBody=R"GLSL(layout(location=0) in vec3 aPosition;
+layout(location=1) in vec4 aColor;
+layout(location=2) in vec4 aUV;
 void main() {
-    gl_Position=ftransform();
-#ifdef EXPLICIT_FRAGMENT
-    gl_FrontColor=clamp(gl_Color,0,1);gl_BackColor=clamp(gl_Color,0,1);
-#else
-    gl_FrontColor=gl_Color;gl_BackColor=gl_Color;
-#endif
-    gl_TexCoord[0]=gl_TextureMatrix[0]*gl_MultiTexCoord0;
-    vec4 eye=gl_ModelViewMatrix*gl_Vertex;
-    gl_FogFragCoord=abs(eye.z);
-    // No hay planos de recorte de usuario. Escribir gl_ClipVertex impide
-    // enlazar este programa sin fragment shader en algunos drivers Intel.
+    vec4 position=vec4(aPosition,1);
+    gl_Position=uModelViewProjection*position;
+    vColor=clamp(aColor,0.0,1.0);
+    vUV=uTextureMatrix*aUV;
+    vFogDistance=abs((uModelView*position).z);
 }
 )GLSL";
-void ShaderLog(GLuint object,bool link) {
-    char text[2048]{};
-    if (link) glGetProgramInfoLog(object,sizeof(text),nullptr,text);
-    else glGetShaderInfoLog(object,sizeof(text),nullptr,text);
-    DbgLogPublic(text);
+void SetCurrent(const float* color,const float* uv) {
+    auto& s=RenderState::Mutable();
+    if(color)std::memcpy(s.color,color,sizeof(s.color));
+    if(uv)std::memcpy(s.uv,uv,sizeof(s.uv));
 }
+bool Independent(unsigned mode) { return mode==Triangles||mode==Quads||mode==Lines||mode==Points; }
 }
 bool Initialize() {
     if (program) return true;
-    if (!Platform::GL33Ready()) return false;
-    const GLuint shader=glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(shader,1,&vertexSource,nullptr);glCompileShader(shader);
-    GLint ok=0;glGetShaderiv(shader,GL_COMPILE_STATUS,&ok);
-    if (!ok) { ShaderLog(shader,false);glDeleteShader(shader);return false; }
-    program=glCreateProgram();glAttachShader(program,shader);glLinkProgram(program);
-    glDeleteShader(shader);glGetProgramiv(program,GL_LINK_STATUS,&ok);
-    if (!ok) { ShaderLog(program,true);Release();return false; }
-    FragmentPipelineGL::Create(program,vertexSource);
-    GLint oldArray=0,oldBuffer=0,oldClient=0;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
-    glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&oldClient);
+    if (failed || !Platform::GL33Ready()) return false;
+    program=FragmentPipelineGL::Create(vertexBody);
+    if (!program) { failed=true;return false; }
     glGenBuffers(1,&buffer);glGenBuffers(1,&quadBuffer);glGenVertexArrays(1,&array);
     glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadBuffer);
-    glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,position));
     glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,position));
     glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,color));
     glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,uv));
-    glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,color));
-    glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,uv));
-    glClientActiveTexture(oldClient);glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);
-    if (!buffer || !quadBuffer || !array || glGetError()!=GL_NO_ERROR) { Release();return false; }
+    glBindVertexArray(0);
+    bound=false;
+    if (!buffer || !quadBuffer || !array || glGetError()!=GL_NO_ERROR) { Release();failed=true;return false; }
+    // Contexto nuevo: el estado en CPU arranca igual que el del dispositivo.
+    Gfx::ResetState();
     return true;
 }
 void Release() {
@@ -140,153 +114,119 @@ void Release() {
     if (array) glDeleteVertexArrays(1,&array);
     if (buffer) glDeleteBuffers(1,&buffer);
     if (quadBuffer) glDeleteBuffers(1,&quadBuffer);
-    FragmentPipelineGL::Release(program);
-    if (program) glDeleteProgram(program);
-    array=buffer=program=quadBuffer=0;quadCapacity=0;ringCapacity=ringUsed=0;
+    if (program) FragmentPipelineGL::Release(program);
+    array=buffer=program=quadBuffer=0;quadCapacity=0;ringCapacity=ringUsed=0;failed=false;
 }
-void NativeColor(float r,float g,float b,float a) { glColor4f(r,g,b,a); }
-void NativeUV(float u,float v) { glTexCoord2f(u,v); }
-void NativeVertex(float x,float y,float z) { glVertex3f(x,y,z); }
+void NativeColor(float r,float g,float b,float a) { const float c[4]{r,g,b,a};SetCurrent(c,nullptr); }
+void NativeUV(float u,float v) { const float t[4]{u,v,0,1};SetCurrent(nullptr,t); }
+// Un vértice fuera de Begin/End no dibuja nada, igual que en OpenGL.
+void NativeVertex(float,float,float) {}
 Vertex CaptureAttributes(bool color,bool uv){
     Vertex attributes{{},{1,1,1,1},{0,0,0,1}};
-    if(color)glGetFloatv(GL_CURRENT_COLOR,attributes.color);
-    if(uv){int active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);if(active!=GL_TEXTURE0)glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,attributes.uv);if(active!=GL_TEXTURE0)glActiveTexture(active);}
+    const auto& s=RenderState::Get();
+    if(color)std::memcpy(attributes.color,s.color,sizeof(attributes.color));
+    if(uv)std::memcpy(attributes.uv,s.uv,sizeof(attributes.uv));
     return attributes;
 }
+// Primitive no sigue la numeración de OpenGL; traducir a los modos 0..9.
 void Begin(Primitive primitive){
-    const unsigned modes[]{GL_POINTS,GL_LINES,GL_TRIANGLES,GL_QUADS,GL_TRIANGLE_FAN,GL_LINE_LOOP,GL_LINE_STRIP,GL_TRIANGLE_STRIP,GL_QUAD_STRIP,GL_POLYGON};
+    static constexpr unsigned modes[]{Points,Lines,Triangles,Quads,TriangleFan,LineLoop,LineStrip,TriangleStrip,QuadStrip,Polygon};
     Begin(modes[static_cast<unsigned>(primitive)]);
 }
 void Begin(unsigned mode) {
-    if (!program) { glBegin(mode);return; }
+    if (!program && !Initialize()) return;
     stream.mode=mode;stream.vertices.clear();
-    // Capturar una vez antes del posible envío: Flush restituye estos mismos
-    // atributos, por lo que no necesita volver a leerlos del driver.
-    glGetFloatv(GL_CURRENT_COLOR,stream.color);
-    GLint active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-    if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
-    glGetFloatv(GL_CURRENT_TEXTURE_COORDS,stream.uv);
-    if (active!=GL_TEXTURE0) glActiveTexture(active);
-    const Vertex current{{},{stream.color[0],stream.color[1],stream.color[2],stream.color[3]},
-        {stream.uv[0],stream.uv[1],stream.uv[2],stream.uv[3]}};
-    const bool direct=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
-    if (direct && !pending.empty() && pendingMode!=mode) Flush(&current);
+    const auto& s=RenderState::Get();
+    std::memcpy(stream.color,s.color,sizeof(stream.color));std::memcpy(stream.uv,s.uv,sizeof(stream.uv));
+    const bool direct=Independent(mode);
+    if (direct && !pending.empty() && pendingMode!=mode) Flush();
     if (direct) pendingMode=mode;
     stream.destination=direct ? &pending : &stream.vertices;
     stream.first=stream.destination->size();
     stream.active=true;
 }
-// DESVIACION: el terreno ya entrega todos los atributos; evitar consultas
-// de color/UV heredados y la captura individual de cada esquina.
-void Quad(const Vertex* corners,bool fan) {
-    const unsigned mode=fan ? GL_TRIANGLE_FAN : GL_QUADS;
-    if (!program) {
-        glBegin(mode);
-        for (int i=0;i<4;++i) {
-            glColor4fv(corners[i].color);glTexCoord4fv(corners[i].uv);glVertex3fv(corners[i].position);
-        }
-        glEnd();return;
-    }
-    if (!pending.empty() && pendingMode!=mode) Flush();
-    pendingMode=mode;pending.insert(pending.end(),corners,corners+4);
-    glColor4fv(corners[3].color);glTexCoord4fv(corners[3].uv);
+// DESVIACION: el terreno ya entrega todos los atributos; evitar la captura
+// individual de cada esquina. Abanico y quad comparten la diagonal 0-2.
+void Quad(const Vertex* corners,bool) {
+    if (!program && !Initialize()) return;
+    if (!pending.empty() && pendingMode!=Quads) Flush();
+    pendingMode=Quads;pending.insert(pending.end(),corners,corners+4);
+    SetCurrent(corners[3].color,corners[3].uv);
 }
-void Flush(const Vertex* current) {
-    if (pending.empty()) return;
-    float color[4],uv[4];
-    if(current) {
-        std::copy(current->color,current->color+4,color);std::copy(current->uv,current->uv+4,uv);
-    } else {
-        GLint active=0;
-        glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-        if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
-        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
-        if (active!=GL_TEXTURE0) glActiveTexture(active);
-    }
-    FragmentPipelineGL::Draw material(program,&pending.front().color[3],pending.size(),sizeof(Vertex));
-    BindPipeline(material.Program(),array,buffer);material.Apply();
+void Flush(const Vertex*) {
+    if (pending.empty() || !program) return;
+    BindPipeline(program,array,buffer);FragmentPipelineGL::Apply(program);
     GLint first=RingWrite(pending.data(),pending.size());
     if(first<0) {
         // Respaldo: el envío completo como antes.
         glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);first=0;
     }
-    RenderProfile::Draw(pendingMode==GL_TRIANGLE_FAN ? pending.size()/4*6 : pending.size());
-    if (pendingMode==GL_TRIANGLE_FAN) {
-        EnsureQuadIndices(pending.size()/4);
-        glDrawElementsBaseVertex(GL_TRIANGLES,static_cast<GLsizei>(pending.size()/4*6),GL_UNSIGNED_INT,nullptr,first);
-    } else glDrawArrays(pendingMode,first,(GLsizei)pending.size());
-    // Los atributos actuales pueden quedar indefinidos tras DrawArrays.
-    glColor4fv(color);glTexCoord4fv(uv);
+    if (pendingMode==Quads) {
+        const std::size_t quads=pending.size()/4;
+        RenderProfile::Draw(quads*6);
+        EnsureQuadIndices(quads);
+        glDrawElementsBaseVertex(GL_TRIANGLES,static_cast<GLsizei>(quads*6),GL_UNSIGNED_INT,nullptr,first);
+    } else {
+        RenderProfile::Draw(pending.size());
+        glDrawArrays(pendingMode,first,(GLsizei)pending.size());
+    }
     pending.clear();
 }
 void SetExitHook(void (*hook)()) { exitHook=hook; }
 void Suspend() {
-    Flush();FragmentPipelineGL::InvalidateBindings();
+    Flush();
     if(exitHook) { auto hook=exitHook;exitHook=nullptr;hook(); }
-    if (!bound) return;
-    glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);RenderProfileGL::ObserveProgram(savedProgram);glUseProgram(savedProgram);
     bound=false;boundProgram=boundArray=boundBuffer=0;
 }
 // DESVIACION: compartir la propiedad también con el shader de skinning.
 void Activate(unsigned shader,unsigned nextArray,unsigned nextBuffer) {
     Flush();BindPipeline(shader,nextArray,nextBuffer);
 }
-void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices,const Vertex* current) {
-    // DESVIACION: MeshDraw ya fijó estos atributos; repetir sus stores conserva
-    // incluso las conversiones nativas sin volver a consultar el driver.
-    Flush(current);
-    float color[4],uv[4];
-    if(current) {
-        std::copy(current->color,current->color+4,color);std::copy(current->uv,current->uv+4,uv);
-    } else {
-        GLint active;
-        glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-        if(active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
-        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
-        if(active!=GL_TEXTURE0) glActiveTexture(active);
-    }
-    FragmentPipelineGL::Draw material(program,&vertices[0].color[3],count,sizeof(Vertex),true);
-    BindPipeline(material.Program(),meshArray,meshBuffer);material.Apply();
+void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices,const Vertex*) {
+    if (!program && !Initialize()) return;
+    Flush();
+    BindPipeline(program,meshArray,meshBuffer);FragmentPipelineGL::Apply(program);
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     RenderProfile::Draw(indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
-    glColor4fv(color);glTexCoord4fv(uv);
 }
 
 void End() {
-    if (!stream.active) { glEnd();return; }
+    if (!stream.active) return;
     stream.active=false;
     const bool direct=stream.destination==&pending;
     const auto count=stream.destination->size()-stream.first;
-    const bool fan=stream.mode==GL_TRIANGLE_FAN;
-    const bool quad=fan && count==4;
-    const unsigned mode=quad ? GL_TRIANGLE_FAN : fan ? GL_TRIANGLES : stream.mode;
-    const unsigned group=mode==GL_TRIANGLES?3:mode==GL_QUADS?4:mode==GL_LINES?2:1;
-    const bool independent=quad || mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
-    if (!direct && !pending.empty() && (pendingMode!=mode || !independent)) Flush();
-    pendingMode=mode;
-    if (quad) {
-        pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.end());
-    } else if (fan) {
+    const unsigned mode=stream.mode;
+    if (direct) {
+        // OpenGL descarta los vértices incompletos al cerrar una primitiva.
+        const unsigned group=mode==Triangles?3:mode==Quads?4:mode==Lines?2:1;
+        pending.resize(pending.size()-count%group);
+    } else if ((mode==TriangleFan||mode==Polygon) && count==4) {
+        if (!pending.empty() && pendingMode!=Quads) Flush();
+        pendingMode=Quads;pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.end());
+    } else if (mode==TriangleFan||mode==Polygon) {
         // Cada abanico conserva sus triángulos y su orden. No se conectan
         // abanicos de tiles distintos al reunirlos en un mismo envío.
-        for (size_t i=1;i+1<count;++i) {
+        if (!pending.empty() && pendingMode!=Triangles) Flush();
+        pendingMode=Triangles;
+        for (std::size_t i=1;i+1<count;++i) {
             pending.push_back(stream.vertices[0]);pending.push_back(stream.vertices[i]);pending.push_back(stream.vertices[i+1]);
         }
-    } else if (direct) {
-        pending.resize(pending.size()-count%group);
+    } else if (mode==QuadStrip) {
+        // Quad i = (2i, 2i+1, 2i+3, 2i+2), con la misma diagonal que Quads.
+        if (!pending.empty() && pendingMode!=Quads) Flush();
+        pendingMode=Quads;
+        for (std::size_t i=0;i+3<count;i+=2) {
+            const auto& v=stream.vertices;
+            pending.push_back(v[i]);pending.push_back(v[i+1]);pending.push_back(v[i+3]);pending.push_back(v[i+2]);
+        }
     } else {
-        // OpenGL descarta los vértices incompletos al cerrar una primitiva.
-        // Su color/UV actual sí se conserva aunque no formen una cara.
-        const auto complete=independent ? count-count%group : count;
-        pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.begin()+complete);
+        // Strips y lazos no se concatenan: conservar sus conexiones originales.
+        Flush();pendingMode=mode;
+        pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.end());
+        Flush();
     }
-    glColor4fv(stream.color);glTexCoord4fv(stream.uv);
-    // Strips/polígonos no se concatenan: conservar sus conexiones originales.
-    if (!independent) {
-        const Vertex current{{},{stream.color[0],stream.color[1],stream.color[2],stream.color[3]},
-            {stream.uv[0],stream.uv[1],stream.uv[2],stream.uv[3]}};
-        Flush(&current);
-    }
+    // El color y la UV actuales quedan en los últimos fijados dentro del bloque.
+    SetCurrent(stream.color,stream.uv);
 }
 }

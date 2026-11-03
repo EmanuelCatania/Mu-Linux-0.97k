@@ -15,6 +15,8 @@
 #define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Render/BufferedDraw.h"
+#include "Render/Gfx.h"
+#include "Render/RenderState.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/GlyphAtlas.h"
 #include <algorithm>
@@ -55,30 +57,8 @@ struct State {
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER,draw);glBindFramebuffer(GL_READ_FRAMEBUFFER,read);
-        glPopClientAttrib();RenderProfileGL::PopAttributes();RenderProfileGL::ObserveProgram(program);glUseProgram(program);glActiveTexture(active);
+        glPopClientAttrib();glPopAttrib();RenderProfileGL::ObserveProgram(program);glUseProgram(program);glActiveTexture(active);
         glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
-    }
-};
-// El dibujo no toca FBO, pixel store ni buffers de transferencia. Evitar el
-// guardado completo de la preparación por cada tramo de texto del HUD.
-struct DrawState {
-    GLint active,mode,texture,environment;
-    DrawState(int width,int height) {
-        BufferedDraw::Suspend();
-        glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
-        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_VIEWPORT_BIT|GL_POLYGON_BIT);
-        glActiveTexture(GL_TEXTURE0);
-        glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
-        glMatrixMode(GL_TEXTURE);glPushMatrix();glLoadIdentity();
-        glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();glOrtho(0,width,0,height,-1,1);
-        glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();glViewport(0,0,width,height);
-    }
-    ~DrawState() {
-        BufferedDraw::Suspend();
-        glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
-        glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
-        RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,texture);glBindTexture(GL_TEXTURE_2D,texture);glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,environment);
-        RenderProfileGL::PopAttributes();glActiveTexture(active);
     }
 };
 }
@@ -109,7 +89,7 @@ bool Build(unsigned base,int height,int maxWidth) {
         glViewport(0,0,side,side);glMatrixMode(GL_PROJECTION);glOrtho(0,side,0,side,-1,1);
         glMatrixMode(GL_MODELVIEW);
         for (GLenum cap : {GL_BLEND,GL_ALPHA_TEST,GL_DEPTH_TEST,GL_STENCIL_TEST,GL_SCISSOR_TEST,
-                          GL_FOG,GL_LIGHTING,GL_TEXTURE_2D,GL_DITHER,GL_COLOR_LOGIC_OP}) RenderProfileGL::SetEnabled(cap,false);
+                          GL_FOG,GL_LIGHTING,GL_TEXTURE_2D,GL_DITHER,GL_COLOR_LOGIC_OP}) glDisable(cap);
         glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);glClearColor(0,0,0,0);glColor4f(1,1,1,1);
         const int origin=side/2;
         std::vector<unsigned char> pixels(size_t(side)*side*4);
@@ -161,23 +141,28 @@ bool Draw(unsigned base,const char* text,int count,int width,int height) {
     const auto it=atlases.find(base);if (it==atlases.end() || width<=0 || height<=0) return false;
     // El HUD usa SRC_ALPHA/ONE_MINUS_SRC_ALPHA y no escribe profundidad.
     // Otros usos de glBitmap conservan su semántica hasta migrarlos también.
-    GLint source=0,destination=0;
-    glGetIntegerv(GL_BLEND_SRC,&source);glGetIntegerv(GL_BLEND_DST,&destination);
-    if (!glIsEnabled(GL_BLEND) || source!=GL_SRC_ALPHA || destination!=GL_ONE_MINUS_SRC_ALPHA ||
-        glIsEnabled(GL_DEPTH_TEST) || glIsEnabled(GL_STENCIL_TEST) || glIsEnabled(GL_FOG) ||
-        glIsEnabled(GL_COLOR_LOGIC_OP)) return false;
-    GLboolean valid=GL_FALSE;glGetBooleanv(GL_CURRENT_RASTER_POSITION_VALID,&valid);
-    if (!valid || count<=0) return true;
-    float raster[4],color[4];glGetFloatv(GL_CURRENT_RASTER_POSITION,raster);glGetFloatv(GL_CURRENT_RASTER_COLOR,color);
+    const auto& s=RenderState::Get();
+    using Cap=Gfx::Cap;
+    if (!RenderState::Enabled(Cap::Blend) || s.blendSource!=Gfx::Factor::SrcAlpha || s.blendDestination!=Gfx::Factor::OneMinusSrcAlpha ||
+        RenderState::Enabled(Cap::DepthTest) || RenderState::Enabled(Cap::StencilTest) || RenderState::Enabled(Cap::Fog) ||
+        RenderState::Enabled(Cap::ColorLogicOp)) return false;
+    if (!s.rasterValid || count<=0) return true;
+    const float raster[2]{s.raster[0],s.raster[1]};
+    float color[4];std::copy(s.rasterColor,s.rasterColor+4,color);
     float advanceX=0,advanceY=0;
     {
-        DrawState state(width,height);
+        BufferedDraw::Flush();
+        const auto mode=RenderState::MatrixMode();
+        Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribViewport|Gfx::AttribTexture);
+        Gfx::MatrixMode(Gfx::Matrix::Texture);Gfx::PushMatrix();Gfx::LoadIdentity();
+        Gfx::MatrixMode(Gfx::Matrix::Projection);Gfx::PushMatrix();Gfx::LoadIdentity();Gfx::Ortho2D(0,width,0,height);
+        Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PushMatrix();Gfx::LoadIdentity();Gfx::Viewport(0,0,width,height);
         const auto& atlas=it->second;
-        RenderProfileGL::SetEnabled(GL_TEXTURE_2D,true);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);glBindTexture(GL_TEXTURE_2D,atlas.texture);
+        Gfx::Enable(Cap::Texture2D);Gfx::BindTexture(atlas.texture);
         // glBitmap no depende del culling ni del modo de relleno de polígonos.
-        RenderProfileGL::SetEnabled(GL_CULL_FACE,false);RenderProfileGL::SetEnabled(GL_POLYGON_SMOOTH,false);glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-        glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-        BufferedDraw::Color4fv(color);BufferedDraw::Begin(GL_QUADS);
+        Gfx::Disable(Cap::CullFace);Gfx::Disable(Cap::PolygonSmooth);
+        Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
+        BufferedDraw::Color4fv(color);BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
         for (int i=0;i<count;++i) {
             const auto& g=atlas.glyphs[static_cast<unsigned char>(text[i])];
             if (g.w && g.h) {
@@ -192,8 +177,12 @@ bool Draw(unsigned base,const char* text,int count,int width,int height) {
             advanceX+=g.advanceX;advanceY+=g.advanceY;
         }
         BufferedDraw::End();
+        Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PopMatrix();
+        Gfx::MatrixMode(Gfx::Matrix::Projection);Gfx::PopMatrix();
+        Gfx::MatrixMode(Gfx::Matrix::Texture);Gfx::PopMatrix();
+        Gfx::MatrixMode(mode);Gfx::PopAttrib();
     }
     // Conservar el avance raster que observaban los callers de glCallLists.
-    glBitmap(0,0,0,0,advanceX,advanceY,nullptr);return true;
+    RenderState::AdvanceRaster(advanceX,advanceY);return true;
 }
 }
