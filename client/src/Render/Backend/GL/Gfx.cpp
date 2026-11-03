@@ -271,20 +271,4 @@ void FogColor(const float rgba[4]) {
     MaterialChange();std::memcpy(s.fogColor, rgba, sizeof(s.fogColor));
 }
 
-// Texto Win32 por listas de glifos. La posición raster se calcula en CPU y
-// se pasa en coordenadas de ventana; el texto con atlas no usa las listas.
-unsigned GenLists(int count) { return glGenLists(count); }
-void DeleteLists(unsigned base, int count) { BufferedDraw::Suspend();glDeleteLists(base, count); }
-void ListBase(unsigned base) { RenderState::Mutable().listBase = base; }
-void RasterPos2f(float x, float y) { RenderState::SetRasterPosition(x, y, 0); }
-void CallLists(int count, const unsigned char* characters) {
-    BufferedDraw::Suspend();RenderProfile::Legacy();
-    const auto& s = RenderState::Get();
-    if (!s.rasterValid) return;
-    glColor4fv(s.rasterColor);glWindowPos2f(s.raster[0], s.raster[1]);
-    glListBase(s.listBase);glCallLists(count, GL_UNSIGNED_BYTE, characters);
-    GLfloat raster[4]{};glGetFloatv(GL_CURRENT_RASTER_POSITION, raster);
-    RenderState::AdvanceRaster(raster[0] - s.raster[0], raster[1] - s.raster[1]);
-}
-
 }

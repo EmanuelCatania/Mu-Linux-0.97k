@@ -1,7 +1,7 @@
 // Font.cpp — CFont. Ver Font.h.
 
 #include "stdafx.h"
-#include "Render/Backend/GL/LegacyGL.h"
+#include "Render/GlyphAtlas.h"
 #include <algorithm>
 #ifndef _WIN32
 #include <strings.h>
@@ -347,33 +347,46 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
     return TextOutA(dc, x, y, legacy.c_str(), (int)legacy.size());
 #endif
 }
-BOOL CFont::BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base)
+BOOL CFont::BuildGlyphs(HDC dc, unsigned first, unsigned count, GlyphAtlas::Bitmap* out)
 {
     RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
-    auto& font = portableFonts[SelectedFont(dc)];
-    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_UNPACK_LSB_FIRST, GL_FALSE);
-    for (unsigned i = 0; i < count; ++i) {
-        const auto& glyph = font.Glyph(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(first + i)));
-        const int stride = (glyph.width + 7) / 8;
-        std::vector<unsigned char> bitmap(size_t(stride) * glyph.height, 0);
-        for (int y = 0; y < glyph.height; ++y)
-            for (int x = 0; x < glyph.width; ++x)
-                if (glyph.coverage[size_t(y) * glyph.width + x])
-                    bitmap[size_t(glyph.height - 1 - y) * stride + x / 8] |= 0x80 >> (x % 8);
-        glNewList(base + i, GL_COMPILE);
-        glBitmap(glyph.width, glyph.height, GLfloat(-glyph.left), GLfloat(glyph.height - glyph.top),
-                 GLfloat(glyph.advance), 0, bitmap.empty() ? nullptr : bitmap.data());
-        glEndList();
-    }
-    glPopClientAttrib();
-    return TRUE;
+    (void)dc; (void)first; (void)count; (void)out;
+    return FALSE;
 #else
-    return wglUseFontBitmapsA(dc, first, count, base);
+    // Mismos datos que wglUseFontBitmaps le pasa a glBitmap: caja negra,
+    // origen del glifo y avance de celda; filas de arriba hacia abajo,
+    // alineadas a 32 bits, que se invierten para la máscara.
+    static const MAT2 identity = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
+    std::vector<unsigned char> bits;
+    for (unsigned i = 0; i < count; ++i) {
+        GlyphAtlas::Bitmap& glyph = out[i];
+        glyph = GlyphAtlas::Bitmap();
+        GLYPHMETRICS gm = {};
+        const DWORD size = GetGlyphOutlineA(dc, first + i, GGO_BITMAP, &gm, 0, nullptr, &identity);
+        if (size == GDI_ERROR) {
+            INT advance = 0;
+            if (GetCharWidth32A(dc, first + i, first + i, &advance)) glyph.advanceX = float(advance);
+            continue;
+        }
+        glyph.advanceX = float(gm.gmCellIncX);
+        glyph.advanceY = float(gm.gmCellIncY);
+        if (!size) continue;
+        bits.assign(size, 0);
+        if (GetGlyphOutlineA(dc, first + i, GGO_BITMAP, &gm, size, bits.data(), &identity) == GDI_ERROR) continue;
+        const int width = int(gm.gmBlackBoxX), height = int(gm.gmBlackBoxY);
+        const int stride = ((width + 31) / 32) * 4;
+        if (width <= 0 || height <= 0 || size_t(stride) * height > bits.size()) continue;
+        glyph.left = gm.gmptGlyphOrigin.x;
+        glyph.bottom = gm.gmptGlyphOrigin.y - height;
+        glyph.width = width;
+        glyph.height = height;
+        glyph.coverage.assign(size_t(width) * height, 0);
+        for (int y = 0; y < height; ++y)
+            for (int x = 0; x < width; ++x)
+                if (bits[size_t(y) * stride + x / 8] & (0x80 >> (x % 8)))
+                    glyph.coverage[size_t(height - 1 - y) * width + x] = 255;
+    }
+    return TRUE;
 #endif
 }

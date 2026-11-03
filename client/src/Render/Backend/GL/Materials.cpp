@@ -81,7 +81,7 @@ TwoSidedScope::~TwoSidedScope(){
 bool BeginText(){
     if(!enabled)return false;
     // COLOR_BUFFER conserva factores y activación de la mezcla.
-    Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribList|Gfx::AttribColorBuffer);
+    Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribColorBuffer);
     Gfx::Disable(Gfx::Cap::Texture2D);Gfx::Disable(Gfx::Cap::DepthTest);Gfx::Enable(Gfx::Cap::Blend);
     Gfx::BlendFunc(Gfx::Factor::SrcAlpha,Gfx::Factor::OneMinusSrcAlpha);
     return true;

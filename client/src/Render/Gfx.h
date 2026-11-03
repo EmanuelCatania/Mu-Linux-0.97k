@@ -7,7 +7,7 @@
 // consumen los shaders; el backend sólo envía al dispositivo el estado que
 // existe en OpenGL 3.3 core. Antes de cada cambio se envía el lote pendiente,
 // así el orden de dibujo no cambia. La geometría va por BufferedDraw; esto
-// cubre estado, matrices, texturas, niebla, consultas y las listas de glifos.
+// cubre estado, matrices, texturas, niebla y consultas.
 namespace Gfx {
 
 enum class Cap { Texture2D, Blend, AlphaTest, DepthTest, CullFace, Fog, ScissorTest, StencilTest, Lighting, Dither, PolygonSmooth, ColorLogicOp };
@@ -22,7 +22,7 @@ enum class FogMode { Linear, Exp, Exp2 };
 enum class DeviceInfo { Vendor, Renderer, Version };
 // Máscaras combinables con |.
 enum ClearMask : unsigned { ClearColorBuffer = 1, ClearDepthBuffer = 2, ClearStencilBuffer = 4 };
-enum AttribMask : unsigned { AttribCurrent = 1, AttribTexture = 2, AttribEnable = 4, AttribList = 8,
+enum AttribMask : unsigned { AttribCurrent = 1, AttribTexture = 2, AttribEnable = 4,
     AttribColorBuffer = 16, AttribViewport = 32, AttribFog = 64, AttribDepth = 128 };
 
 // Al crear un contexto: deja RenderState y el dispositivo con los valores
@@ -97,13 +97,5 @@ void FogStart(float value);
 void FogEnd(float value);
 void FogDensity(float value);
 void FogColor(const float rgba[4]);
-
-// Listas de glifos del texto heredado (wglUseFontBitmaps / glCallLists)
-unsigned GenLists(int count);
-void DeleteLists(unsigned base, int count);
-void ListBase(unsigned base);
-void RasterPos2f(float x, float y);
-// Dibuja una lista por carácter (bytes), desde la base de ListBase.
-void CallLists(int count, const unsigned char* characters);
 
 }

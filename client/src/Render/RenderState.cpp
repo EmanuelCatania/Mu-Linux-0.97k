@@ -125,7 +125,6 @@ bool PopAttrib(Fixed& previous) {
     }
     if(m&Gfx::AttribEnable)std::memcpy(state.caps,s.caps,sizeof(state.caps));
     if(m&Gfx::AttribTexture) { state.texture=s.texture;state.texEnv=s.texEnv; }
-    if(m&Gfx::AttribList)state.listBase=s.listBase;
     if(m&Gfx::AttribColorBuffer) {
         cap(Gfx::Cap::Blend);cap(Gfx::Cap::AlphaTest);cap(Gfx::Cap::Dither);cap(Gfx::Cap::ColorLogicOp);
         state.blendSource=s.blendSource;state.blendDestination=s.blendDestination;

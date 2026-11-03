@@ -3,16 +3,6 @@
 #include "Render/Backend/GL/ProfileUploads.h"
 #undef glTexImage2D
 #define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
-#undef glTexSubImage2D
-#define glTexSubImage2D(...) ::ProfileUploadGL::Sub2D(glad_glTexSubImage2D,__VA_ARGS__)
-#undef glTexImage3D
-#define glTexImage3D(...) ::ProfileUploadGL::Image3D(glad_glTexImage3D,__VA_ARGS__)
-#undef glTexSubImage3D
-#define glTexSubImage3D(...) ::ProfileUploadGL::Sub3D(glad_glTexSubImage3D,__VA_ARGS__)
-#undef glBufferData
-#define glBufferData(...) ::ProfileUploadGL::BufferData(glad_glBufferData,__VA_ARGS__)
-#undef glBufferSubData
-#define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Render/BufferedDraw.h"
 #include "Render/Gfx.h"
@@ -20,7 +10,6 @@
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/GlyphAtlas.h"
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <unordered_map>
 #include <vector>
@@ -28,153 +17,118 @@
 namespace GlyphAtlas {
 namespace {
 struct Glyph { int x=0,y=0,w=0,h=0,left=0,bottom=0; float advanceX=0,advanceY=0; };
-struct Atlas { GLuint texture=0; int width=0,height=0; std::array<Glyph,256> glyphs; };
+struct Atlas { GLuint texture=0; int width=0,height=0; std::vector<Glyph> glyphs; };
 std::unordered_map<unsigned,Atlas> atlases;
 
-// Incluye la posición raster y las matrices, pero los bindings modernos no
-// pertenecen a PushAttrib: se guardan explícitamente para no contaminar la UI.
-struct State {
-    GLint program,draw,read,active,mode,pack,unpack;
-    State() {
-        BufferedDraw::Suspend();
-        glGetIntegerv(GL_CURRENT_PROGRAM,&program);
-        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,&draw);glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING,&read);
-        glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
-        glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING,&pack);glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&unpack);
-        glPushAttrib(GL_ALL_ATTRIB_BITS);glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-        glActiveTexture(GL_TEXTURE0);RenderProfileGL::ObserveProgram(0);glUseProgram(0);
-        glMatrixMode(GL_TEXTURE);glPushMatrix();glLoadIdentity();
-        glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();
-        glBindBuffer(GL_PIXEL_PACK_BUFFER,0);glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0);
-        glPixelStorei(GL_PACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-        glPixelStorei(GL_PACK_ROW_LENGTH,0);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
-        glPixelStorei(GL_PACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_ROWS,0);
-        glPixelStorei(GL_PACK_SKIP_PIXELS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
+// glBitmap pasa sus fragmentos por el alpha test con el alpha del color raster.
+bool AlphaPasses(Gfx::Compare f,float a,float r) {
+    switch(f){
+    case Gfx::Compare::Never:return false;case Gfx::Compare::Less:return a<r;case Gfx::Compare::Equal:return a==r;
+    case Gfx::Compare::LessEqual:return a<=r;case Gfx::Compare::Greater:return a>r;case Gfx::Compare::NotEqual:return a!=r;
+    case Gfx::Compare::GreaterEqual:return a>=r;case Gfx::Compare::Always:return true;
     }
-    ~State() {
-        BufferedDraw::Suspend();
-        glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
-        glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER,draw);glBindFramebuffer(GL_READ_FRAMEBUFFER,read);
-        glPopClientAttrib();glPopAttrib();RenderProfileGL::ObserveProgram(program);glUseProgram(program);glActiveTexture(active);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
-    }
-};
+    return true;
 }
-void Forget(unsigned base) {
-    auto it=atlases.find(base);if (it==atlases.end()) return;
+}
+void Forget(unsigned key) {
+    auto it=atlases.find(key);if (it==atlases.end()) return;
     BufferedDraw::Suspend();glDeleteTextures(1,&it->second.texture);atlases.erase(it);
 }
 void Release() { while (!atlases.empty()) Forget(atlases.begin()->first); }
 
-bool Build(unsigned base,int height,int maxWidth) {
-    Forget(base);
-    if (!glGenFramebuffers || !glBindFramebuffer || !glFramebufferTexture2D ||
-        !glCheckFramebufferStatus || !glDeleteFramebuffers) return false;
-    if (height<=0 || maxWidth<0) return false;
-    State state;
-    GLint limit=0;glGetIntegerv(GL_MAX_TEXTURE_SIZE,&limit);
-    const int side=std::max(height,maxWidth)*4+32;
-    if (side>limit) return false;
-    GLuint target=0,framebuffer=0;
-    glGenTextures(1,&target);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,target);glBindTexture(GL_TEXTURE_2D,target);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,side,side,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
-    glGenFramebuffers(1,&framebuffer);glBindFramebuffer(GL_FRAMEBUFFER,framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,target,0);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);glReadBuffer(GL_COLOR_ATTACHMENT0);
-    bool ok=glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE;
-    Atlas atlas;
-    if (ok) {
-        glViewport(0,0,side,side);glMatrixMode(GL_PROJECTION);glOrtho(0,side,0,side,-1,1);
-        glMatrixMode(GL_MODELVIEW);
-        for (GLenum cap : {GL_BLEND,GL_ALPHA_TEST,GL_DEPTH_TEST,GL_STENCIL_TEST,GL_SCISSOR_TEST,
-                          GL_FOG,GL_LIGHTING,GL_TEXTURE_2D,GL_DITHER,GL_COLOR_LOGIC_OP}) glDisable(cap);
-        glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);glClearColor(0,0,0,0);glColor4f(1,1,1,1);
-        const int origin=side/2;
-        std::vector<unsigned char> pixels(size_t(side)*side*4);
-        std::array<std::vector<unsigned char>,256> masks;
-        int cellW=1,cellH=1;
-        for (unsigned i=0;i<256 && ok;++i) {
-            glClear(GL_COLOR_BUFFER_BIT);glRasterPos2i(origin,origin);glCallList(base+i);
-            float raster[4];glGetFloatv(GL_CURRENT_RASTER_POSITION,raster);
-            auto& g=atlas.glyphs[i];g.advanceX=raster[0]-origin;g.advanceY=raster[1]-origin;
-            glReadPixels(0,0,side,side,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
-            int left=side,right=-1,bottom=side,top=-1;
-            for (int y=0;y<side;++y) for (int x=0;x<side;++x) if (pixels[(size_t(y)*side+x)*4+3]) {
-                left=std::min(left,x);right=std::max(right,x);bottom=std::min(bottom,y);top=std::max(top,y);
-            }
-            if (right<left) continue;
-            // Si el bitmap excede el lienzo, conservar el camino anterior.
-            if (!left || !bottom || right==side-1 || top==side-1) { ok=false;break; }
-            g.w=right-left+1;g.h=top-bottom+1;g.left=left-origin;g.bottom=bottom-origin;
-            masks[i].resize(size_t(g.w)*g.h);
-            for (int y=0;y<g.h;++y) for (int x=0;x<g.w;++x)
-                masks[i][size_t(y)*g.w+x]=pixels[(size_t(y+bottom)*side+x+left)*4+3];
-            cellW=std::max(cellW,g.w+2);cellH=std::max(cellH,g.h+2);
-        }
-        atlas.width=cellW*16;atlas.height=cellH*16;
-        ok=ok && atlas.width<=limit && atlas.height<=limit;
-        if (ok) {
-            std::vector<unsigned char> pixelsAtlas(size_t(atlas.width)*atlas.height*4,255);
-            for (size_t p=3;p<pixelsAtlas.size();p+=4) pixelsAtlas[p]=0;
-            for (unsigned i=0;i<256;++i) {
-                auto& g=atlas.glyphs[i];g.x=(i%16)*cellW+1;g.y=(i/16)*cellH+1;
-                for (int y=0;y<g.h;++y) for (int x=0;x<g.w;++x)
-                    pixelsAtlas[(size_t(g.y+y)*atlas.width+g.x+x)*4+3]=masks[i][size_t(y)*g.w+x];
-            }
-            glGenTextures(1,&atlas.texture);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);glBindTexture(GL_TEXTURE_2D,atlas.texture);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,atlas.width,atlas.height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixelsAtlas.data());
-            ok=atlas.texture && glGetError()==GL_NO_ERROR;
-        }
+bool Build(unsigned key,const Bitmap* glyphs,unsigned count) {
+    Forget(key);
+    if (!glyphs || !count) return false;
+    Atlas atlas;atlas.glyphs.resize(count);
+    int cellW=1,cellH=1;
+    for (unsigned i=0;i<count;++i) {
+        const auto& b=glyphs[i];auto& g=atlas.glyphs[i];
+        g.advanceX=b.advanceX;g.advanceY=b.advanceY;
+        if (b.width<=0 || b.height<=0 || b.coverage.size()<size_t(b.width)*b.height) continue;
+        g.w=b.width;g.h=b.height;g.left=b.left;g.bottom=b.bottom;
+        cellW=std::max(cellW,g.w+2);cellH=std::max(cellH,g.h+2);
     }
-    glDeleteFramebuffers(1,&framebuffer);glDeleteTextures(1,&target);
+    const unsigned columns=16,rows=(count+columns-1)/columns;
+    atlas.width=cellW*int(columns);atlas.height=cellH*int(rows);
+    GLint limit=0;glGetIntegerv(GL_MAX_TEXTURE_SIZE,&limit);
+    if (atlas.width>limit || atlas.height>limit) return false;
+    // Blanco con la máscara en alpha: el color sale del texture env Modulate.
+    std::vector<unsigned char> pixels(size_t(atlas.width)*atlas.height*4,255);
+    for (size_t p=3;p<pixels.size();p+=4) pixels[p]=0;
+    for (unsigned i=0;i<count;++i) {
+        auto& g=atlas.glyphs[i];g.x=int(i%columns)*cellW+1;g.y=int(i/columns)*cellH+1;
+        for (int y=0;y<g.h;++y) for (int x=0;x<g.w;++x)
+            pixels[(size_t(g.y+y)*atlas.width+g.x+x)*4+3]=glyphs[i].coverage[size_t(y)*g.w+x];
+    }
+    BufferedDraw::Suspend();
+    GLint active=0,bound=0,alignment=0,rowLength=0,skipRows=0,skipPixels=0,unpack=0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D,&bound);glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&unpack);
+    glGetIntegerv(GL_UNPACK_ALIGNMENT,&alignment);glGetIntegerv(GL_UNPACK_ROW_LENGTH,&rowLength);
+    glGetIntegerv(GL_UNPACK_SKIP_ROWS,&skipRows);glGetIntegerv(GL_UNPACK_SKIP_PIXELS,&skipPixels);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
+    glGenTextures(1,&atlas.texture);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);
+    glBindTexture(GL_TEXTURE_2D,atlas.texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,atlas.width,atlas.height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+    const bool ok=atlas.texture && glGetError()==GL_NO_ERROR;
+    glPixelStorei(GL_UNPACK_ALIGNMENT,alignment);glPixelStorei(GL_UNPACK_ROW_LENGTH,rowLength);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS,skipRows);glPixelStorei(GL_UNPACK_SKIP_PIXELS,skipPixels);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
+    glBindTexture(GL_TEXTURE_2D,bound);glActiveTexture(active);
     if (!ok) { if (atlas.texture) glDeleteTextures(1,&atlas.texture);return false; }
-    atlases.emplace(base,std::move(atlas));return true;
+    atlases.emplace(key,std::move(atlas));return true;
 }
 
-bool Draw(unsigned base,const char* text,int count,int width,int height) {
-    const auto it=atlases.find(base);if (it==atlases.end() || width<=0 || height<=0) return false;
-    // El HUD usa SRC_ALPHA/ONE_MINUS_SRC_ALPHA y no escribe profundidad.
-    // Otros usos de glBitmap conservan su semántica hasta migrarlos también.
-    const auto& s=RenderState::Get();
-    using Cap=Gfx::Cap;
-    if (!RenderState::Enabled(Cap::Blend) || s.blendSource!=Gfx::Factor::SrcAlpha || s.blendDestination!=Gfx::Factor::OneMinusSrcAlpha ||
-        RenderState::Enabled(Cap::DepthTest) || RenderState::Enabled(Cap::StencilTest) || RenderState::Enabled(Cap::Fog) ||
-        RenderState::Enabled(Cap::ColorLogicOp)) return false;
-    if (!s.rasterValid || count<=0) return true;
-    const float raster[2]{s.raster[0],s.raster[1]};
-    float color[4];std::copy(s.rasterColor,s.rasterColor+4,color);
+bool Draw(unsigned key,float x,float y,const char* text,int count,int width,int height) {
+    const auto it=atlases.find(key);if (it==atlases.end()) return false;
+    RenderState::SetRasterPosition(x,y,0);
+    const auto s=RenderState::Get();
+    const auto& atlas=it->second;
     float advanceX=0,advanceY=0;
-    {
+    for (int i=0;i<count;++i) {
+        const unsigned c=static_cast<unsigned char>(text[i]);
+        if (c<atlas.glyphs.size()) { advanceX+=atlas.glyphs[c].advanceX;advanceY+=atlas.glyphs[c].advanceY; }
+    }
+    using Cap=Gfx::Cap;
+    const bool visible=s.rasterValid && count>0 && width>0 && height>0 &&
+        (!RenderState::Enabled(Cap::AlphaTest) || AlphaPasses(s.alphaFunction,s.rasterColor[3],s.alphaReference));
+    if (visible) {
         BufferedDraw::Flush();
         const auto mode=RenderState::MatrixMode();
-        Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribViewport|Gfx::AttribTexture);
+        Gfx::PushAttrib(Gfx::AttribEnable|Gfx::AttribCurrent|Gfx::AttribViewport|Gfx::AttribTexture|Gfx::AttribColorBuffer);
         Gfx::MatrixMode(Gfx::Matrix::Texture);Gfx::PushMatrix();Gfx::LoadIdentity();
         Gfx::MatrixMode(Gfx::Matrix::Projection);Gfx::PushMatrix();Gfx::LoadIdentity();Gfx::Ortho2D(0,width,0,height);
         Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PushMatrix();Gfx::LoadIdentity();Gfx::Viewport(0,0,width,height);
-        const auto& atlas=it->second;
         Gfx::Enable(Cap::Texture2D);Gfx::BindTexture(atlas.texture);
         // glBitmap no depende del culling ni del modo de relleno de polígonos.
         Gfx::Disable(Cap::CullFace);Gfx::Disable(Cap::PolygonSmooth);
         Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
-        BufferedDraw::Color4fv(color);BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+        // Sólo los bits encendidos generan fragmentos; el resto se descarta.
+        Gfx::Enable(Cap::AlphaTest);Gfx::AlphaFunc(Gfx::Compare::Greater,0.5f);
+        // Ortho2D mapea z del ojo a -z normalizado: se conserva la profundidad raster.
+        const float z=1-2*s.raster[2];
+        BufferedDraw::Color4fv(s.rasterColor);BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+        float penX=0,penY=0;
         for (int i=0;i<count;++i) {
-            const auto& g=atlas.glyphs[static_cast<unsigned char>(text[i])];
+            const unsigned c=static_cast<unsigned char>(text[i]);
+            if (c>=atlas.glyphs.size()) continue;
+            const auto& g=atlas.glyphs[c];
             if (g.w && g.h) {
-                const float x=std::floor(raster[0]+advanceX)+g.left,y=std::floor(raster[1]+advanceY)+g.bottom;
+                const float gx=std::floor(s.raster[0]+penX)+g.left,gy=std::floor(s.raster[1]+penY)+g.bottom;
                 const float u=float(g.x)/atlas.width,v=float(g.y)/atlas.height;
                 const float u1=float(g.x+g.w)/atlas.width,v1=float(g.y+g.h)/atlas.height;
-                BufferedDraw::TexCoord2f(u,v);BufferedDraw::Vertex2f(x,y);
-                BufferedDraw::TexCoord2f(u1,v);BufferedDraw::Vertex2f(x+g.w,y);
-                BufferedDraw::TexCoord2f(u1,v1);BufferedDraw::Vertex2f(x+g.w,y+g.h);
-                BufferedDraw::TexCoord2f(u,v1);BufferedDraw::Vertex2f(x,y+g.h);
+                BufferedDraw::TexCoord2f(u,v);BufferedDraw::Vertex3f(gx,gy,z);
+                BufferedDraw::TexCoord2f(u1,v);BufferedDraw::Vertex3f(gx+g.w,gy,z);
+                BufferedDraw::TexCoord2f(u1,v1);BufferedDraw::Vertex3f(gx+g.w,gy+g.h,z);
+                BufferedDraw::TexCoord2f(u,v1);BufferedDraw::Vertex3f(gx,gy+g.h,z);
             }
-            advanceX+=g.advanceX;advanceY+=g.advanceY;
+            penX+=g.advanceX;penY+=g.advanceY;
         }
         BufferedDraw::End();
         Gfx::MatrixMode(Gfx::Matrix::ModelView);Gfx::PopMatrix();
@@ -182,7 +136,7 @@ bool Draw(unsigned base,const char* text,int count,int width,int height) {
         Gfx::MatrixMode(Gfx::Matrix::Texture);Gfx::PopMatrix();
         Gfx::MatrixMode(mode);Gfx::PopAttrib();
     }
-    // Conservar el avance raster que observaban los callers de glCallLists.
+    // Como glCallLists: la posición raster avanza aunque no se dibuje nada.
     RenderState::AdvanceRaster(advanceX,advanceY);return true;
 }
 }

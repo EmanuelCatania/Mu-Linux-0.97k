@@ -25,7 +25,6 @@ struct Fixed {
     float color[4]{1,1,1,1},uv[4]{0,0,0,1};
     // glRasterPos guarda también el color actual en el momento de fijarla.
     float raster[4]{0,0,0,1},rasterColor[4]{1,1,1,1};bool rasterValid=true;
-    unsigned listBase=0;
     int viewport[4]{};
 };
 
