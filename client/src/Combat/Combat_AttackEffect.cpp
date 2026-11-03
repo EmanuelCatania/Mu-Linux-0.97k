@@ -54,6 +54,11 @@ static inline void  AE_delete(uintptr_t)      {}
 // shim evita el deref de vtable sin cambiar el comportamiento.
 static inline int AE_ht_hash(uintptr_t) { return 0; }
 static inline unsigned int AE_ht_index(const void*, DWORD) { return 0xFFFFFFFFu; }
+// DESVIACION: los sondeos inline buscan `Owner+770` en la tabla compartida.
+// Si otra inserción del port dejó esa clave en el slot, la rama de descifrado
+// leía el nodo con AE_ht_index == -1 (puntero nulo): crash con el anillo de
+// transformación. Acá la tabla se ve vacía; el byte del skill ya está en claro.
+static inline unsigned int AE_ht_capacity() { return 0; }
 static inline void  AE_ht_noop2(const void*, uintptr_t)        {}
 static inline void  AE_ht_noop3(const void*, uintptr_t, uintptr_t) {}
 static inline unsigned char AE_SkillRead(const void* ctx, const void* p)
@@ -82,6 +87,9 @@ static inline void AE_TransformPosition(uintptr_t model, const void* mat,
 #define operator_new(n)               AE_new((size_t)(n))
 #define delete__(p)                   AE_delete((DWORD)(uintptr_t)(p))
 #define FUN_004041e0(ctx, key)        AE_ht_index((const void*)(ctx), (DWORD)(key))
+#pragma push_macro("DAT_055c9bd4")
+#undef  DAT_055c9bd4
+#define DAT_055c9bd4                  AE_ht_capacity()
 #define HashTable_Insert(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
 #define Packet_EncryptByte(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
 #define PACKET_ENCRYPT(ctx, key)      AE_ht_noop2((const void*)(ctx), (DWORD)(uintptr_t)(key))
@@ -2163,6 +2171,7 @@ LABEL_75:
 #undef operator_new
 #undef delete__
 #undef FUN_004041e0
+#pragma pop_macro("DAT_055c9bd4")
 #undef HashTable_Insert
 #undef Packet_EncryptByte
 #undef PACKET_ENCRYPT
