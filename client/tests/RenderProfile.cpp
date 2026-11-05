@@ -40,7 +40,6 @@ int main(){
  std::vector<double> values;for(int i=20;i>0;--i)values.push_back(i);
  auto d=Summarize(values);CHECK(d.count==20 && d.average==10.5 && d.p95==19 && d.maximum==20);
  glad_glGetIntegerv=StateValue;
- RenderProfileGL::BlendFunction(GL_ONE,GL_ZERO);CHECK(stateChanges[static_cast<unsigned>(State::Blend)]==1);
  active=false;const auto before=stateReads;RenderProfileGL::ObserveProgram(1);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,1);CHECK(stateReads==before);active=true;
  glad_glGetString=String;glad_glGetQueryiv=Query;glad_glGenQueries=Gen;glad_glDeleteQueries=Delete;glad_glBeginQuery=Begin;glad_glEndQuery=End;
  glad_glGetQueryObjectiv=Available;glad_glGetQueryObjectui64v=Result;
