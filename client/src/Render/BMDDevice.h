@@ -4,15 +4,12 @@
 namespace BMDDevice {
 enum class Pass { Color, ColorAnimated, Surface, Chrome, Blend, Metal, Glow, Exit, ShadowBlend, Shadow, ShadowExit };
 struct PassState { Pass pass;unsigned flags=0;int textureSlot=0;bool alpha=false; };
-// El switch sólo alterna esta etapa; los materiales anteriores se conservan.
+// Las pasadas BMD siguen la selección de materiales (Materials::Enabled).
 bool Enabled();
-void Toggle();
 const char* Status();
 void Select(const PassState& state);
 void BeginModel();
 void EndModel();
-// Frontera para escrituras de matrices de productores aún compatibles.
-void BeforeMatrixChange();
 class MeshScope {
     Materials::TwoSidedScope cull;
     bool legacyCull=false;

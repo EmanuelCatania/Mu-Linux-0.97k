@@ -1,7 +1,7 @@
 #pragma once
 
 namespace Platform {
-// Contexto OpenGL 3.3 compatibility y presentación; no administra estado de render.
+// Contexto OpenGL 3.3 core y presentación; no administra estado de render.
 class IGLContext {
 public:
     virtual ~IGLContext() = default;

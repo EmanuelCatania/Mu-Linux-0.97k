@@ -560,9 +560,9 @@ void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_
 // (compleja, bitmap font procesada). El subclass tipo-0 usa `Bitmaps[0/1]`
 // (Interface/FontInput.tga) para renderizar cada glyph como un quad.
 //
-// Port: implementación autónoma usando wglUseFontBitmapsA sobre la HFONT
-// GDI ya seleccionada en m_hFontDC. Genera 256 display lists a partir de la
-// fuente GDI y emite el texto con glCallLists. Suficiente para UI (login,
+// Port: implementación autónoma con los glifos de la HFONT GDI ya
+// seleccionada en m_hFontDC: 256 bitmaps en un atlas (GlyphAtlas), dibujados
+// con la semántica de glRasterPos + glBitmap. Suficiente para UI (login,
 // char-select, chat) — el look no matchea la fuente TGA original píxel a
 // píxel pero los textos aparecen en su posición con el color y layout
 // correctos.
@@ -577,7 +577,7 @@ void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_
 // ── Escala "píxeles de framebuffer" → "unidades del ortho 2D" ───────────────
 //   · La GEOMETRÍA 2D (RenderColor / RenderBitmap) se emite en unidades del
 //     ortho y la GPU la estira hasta el viewport.
-//   · Los GLIFOS los pinta wglUseFontBitmaps + glBitmap, un blit 1:1 EN
+//   · Los GLIFOS se pintan como glBitmap, un blit 1:1 EN
 //     PÍXELES DE FRAMEBUFFER desde el raster position, y `GetTextExtentPointA`
 //     mide en esos mismos píxeles.
 // O sea que el ancho del texto y el ancho de su fondo viven en unidades
@@ -637,7 +637,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text)
 //                 tramo activo), con caché de texturas por string.
 //
 // DESVIACIÓN CONSCIENTE: nuestro CUIRenderText_RenderText es una reimplementación propia
-// basada en glifos (wglUseFontBitmapsA), sin la partición type-0/type-1 del
+// basada en glifos GDI (GlyphAtlas), sin la partición type-0/type-1 del
 // original ni su caché de texturas.  Aplicamos siempre el comportamiento del
 // type-1, porque el alternativo es dibujar los bytes de control como glifos
 // basura.  Consecuencia: un cliente vanilla con "TextOut" != 1 muestra esa
@@ -831,14 +831,18 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     }
 #else
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
-    // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { void* rc; HFONT font; unsigned int base; int ascent; unsigned generation; };
-    static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
+    // reconstruir los 256 glifos al alternar fuentes entre llamadas.
+    // DESVIACION (Fase 4): los glifos que armaba wglUseFontBitmapsA (display
+    // lists de glBitmap) van a un atlas con los mismos bitmaps, origen y
+    // avance; se dibujan como quads con la semántica de glRasterPos/glBitmap.
+    struct FontAtlas { void* rc; HFONT font; unsigned key; int ascent; unsigned generation; };
+    static FontAtlas s_cache[4] = { {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0} };
     static int       s_next = 0;
+    static unsigned  s_nextKey = 1;
 
     int slot = -1;
     for (int i = 0; i < 4; ++i) {
-        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
+        if (s_cache[i].key != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
             slot = i;
             break;
         }
@@ -846,62 +850,26 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     if (slot < 0) {
         slot = s_next;
         s_next = (s_next + 1) & 3;
-        if (s_cache[slot].base != 0) {
-            GlyphAtlas::Forget(s_cache[slot].base);
-            Gfx::DeleteLists(s_cache[slot].base, 256);
-            s_cache[slot].base = 0;
+        if (s_cache[slot].key != 0) {
+            GlyphAtlas::Forget(s_cache[slot].key);
+            s_cache[slot].key = 0;
         }
-        unsigned int base = Gfx::GenLists(256);
-        if (base == 0) return;
         // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
-        // hace falta SelectObject — el que había acá encima pisaba la elección
-        // del caller y contaminaba las mediciones posteriores de otro código.
-        // GL_UNPACK_ALIGNMENT = 1 antes de generar las listas.
-        //
-        // `wglUseFontBitmapsA` llama internamente a `glBitmap` con el mapa de
-        // bits de cada glifo, y `glBitmap` lee las filas usando el
-        // GL_UNPACK_ALIGNMENT ACTUAL, que es estado global de GL y por defecto
-        // vale 4. Todo glifo cuyo ancho en bytes no sea multiplo de 4 se lee
-        // entonces con las filas corridas: basura y lineas horizontales que
-        // cruzan la pantalla.
-        //
-        // El binario hace exactamente esto en su propio camino de texto
-        // (bake a textura): `glBindTexture(...); glPixelStorei(0xCF5, 1);
-        // glTexImage2D(...)`. Nuestro port usa wglUseFontBitmapsA en vez de esa
-        // textura — desviacion ya documentada — y se habia quedado sin el
-        // seteo del alignment.
-        //
-        // Por que dependia de la resolucion: el cuerpo de la fuente cambia con
-        // ella (12/13/14/15 segun WindowWidth, WinMain paso 15), y con el
-        // cuerpo cambian los anchos de los glifos; solo algunos caen en un
-        // ancho no alineado. Y por que "aparecia y desaparecia": estas listas
-        // se generan UNA vez por fuente y quedan cacheadas, asi que la
-        // corrupcion persiste hasta que el cache se regenera.
-        //
-        // Se restaura el valor previo para no alterar el estado global que
-        // espera el resto del render.
-        int prevAlign = Gfx::UnpackAlignment();
-        Gfx::SetUnpackAlignment(1);
-        BufferedDraw::Suspend();
-        const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
-        Gfx::SetUnpackAlignment(prevAlign);
-        if (!fontOk) {
-            Gfx::DeleteLists(base, 256);
-            return;
-        }
+        // hace falta SelectObject: uno acá pisaba la elección del caller.
+        static GlyphAtlas::Bitmap s_glyphs[256];
+        if (!gFont.BuildGlyphs(hFontDC, 0, 256, s_glyphs)) return;
+        const unsigned key = s_nextKey++;
+        if (!GlyphAtlas::Build(key, s_glyphs, 256)) return;
         TEXTMETRICA tm;
         int ascent = 11;
-        if (gFont.TextMetrics(hFontDC, &tm)) {
-            ascent = tm.tmAscent;
-            GlyphAtlas::Build(base, tm.tmHeight, tm.tmMaxCharWidth);
-        }
+        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
-        s_cache[slot].base   = base;
+        s_cache[slot].key    = key;
         s_cache[slot].ascent = ascent;
         s_cache[slot].generation = gFont.Generation();
     }
-    const unsigned int s_fontListBase = s_cache[slot].base;
+    const unsigned int s_fontAtlas = s_cache[slot].key;
     const int    s_ascent       = s_cache[slot].ascent;
 #endif
 
@@ -974,7 +942,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // mezcla al siguiente productor. Materiales Off mantiene la referencia.
     const bool scopedText=Materials::BeginText();
     if(!scopedText){
-        Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent | Gfx::AttribList);
+        Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent);
         Gfx::Disable(Gfx::Cap::Texture2D);
         Gfx::Disable(Gfx::Cap::DepthTest);
         Gfx::Enable(Gfx::Cap::Blend);
@@ -1002,10 +970,6 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         // corregir dos veces.
         const int drawLen = (int)strlen(drawText);
         const int nRuns   = nMarkers + 1;
-
-#ifndef MU_SDL_FONTS
-        Gfx::ListBase(s_fontListBase);
-#endif
 
         for (int run = 0; run < nRuns; ++run) {
             int startChar = (run == 0)        ? 0        : markers[run - 1].charIndex;
@@ -1078,16 +1042,14 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             }
 #else
             BufferedDraw::Color4ub(R, G, B, finalA);
-            Gfx::RasterPos2f(runX, (float)rasterY);
             {
                 if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
                 RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
-                // DESVIACION (Fase 4): el texto está en UTF-8 y las listas de
-                // GDI son de 256 glifos 1252.
+                // DESVIACION (Fase 4): el texto está en UTF-8 y los glifos de
+                // GDI son los 256 de 1252.
                 const std::string legacy = TextEngine::ToWindows1252(
                     std::string_view(drawText + startChar, size_t(endChar - startChar)));
-                if (!GlyphAtlas::Draw(s_fontListBase, legacy.c_str(), (int)legacy.size(), vw, vh))
-                    Gfx::CallLists((int)legacy.size(), (const unsigned char*)legacy.c_str());
+                GlyphAtlas::Draw(s_fontAtlas, runX, (float)rasterY, legacy.c_str(), (int)legacy.size(), vw, vh);
             }
 #endif
         }

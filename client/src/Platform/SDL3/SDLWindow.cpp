@@ -134,11 +134,11 @@ public:
         return true;
     }
     static bool SetGLAttributes() {
-        // DESVIACION: perfil compatible para conservar glBegin, listas y matrices
-        // durante la migración por subsistemas; no solicitar core ni forward.
+        // DESVIACION: OpenGL 3.3 core; el pipeline fijo del 0.97k se emula en
+        // RenderState y en los shaders del backend.
         const bool context=SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3) &&
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3) &&
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_COMPATIBILITY) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_CORE) &&
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,0);
         // IDA: OpenGL_Init (0x0041DE30), mínimos de color/profundidad de 16 bits.
         return context && SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5) &&

@@ -6,7 +6,6 @@
 #include "Render/Materials.h"
 #include "Render/BMDDevice.h"
 #include "Render/MeshDraw.h"
-#include "Render/FragmentStage.h"
 #include "Platform/IInput.h"
 #include "Platform/ITimer.h"
 #include "Platform/Text.h"
@@ -19,7 +18,6 @@ void ToggleFpsCounter() {
     // DESVIACION: Shift+F12 alterna R1; F12 solo conserva el contador liviano.
     // Ctrl+Alt+Shift+F12 alterna las mallas BMD residentes frente a la ruta CPU.
     if((Platform::GetInput().KeyState(VK_MENU)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)&&(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)) { MeshDraw::ToggleResident();showFps=true; }
-    else if((Platform::GetInput().KeyState(VK_MENU)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { FragmentStage::Toggle();showFps=true; }
     else if(Platform::GetInput().KeyState(VK_MENU)&0x8000) {
         // DESVIACION R3b: Ctrl+Alt+F12 compara dos pasadas frente a composición.
         if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)TerrainDraw::ToggleComposition();
@@ -27,7 +25,6 @@ void ToggleFpsCounter() {
     }
     else if((Platform::GetInput().KeyState(VK_CONTROL)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { Materials::Toggle();showFps=true; }
     else if(Platform::GetInput().KeyState(VK_SHIFT)&0x8000) { RenderProfile::Toggle();showFps=true; }
-    else if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000) { BMDDevice::Toggle();showFps=true; }
     else showFps=!showFps;
 }
 
@@ -56,10 +53,9 @@ void __cdecl UI_UpdateFpsCounter(void) {
         RenderText(4,52,terrain,(int)(620*gWindow.GetWidth()/640),1,nullptr);
     }
     if(showFps && Materials::Enabled())RenderText(4,64,"Materiales: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
-    if(showFps && FragmentStage::Requested())RenderText(4,76,"Fragmentos: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
     if(showFps && Materials::Enabled()) {
         char bmd[64];Platform::TextFormatSecure(bmd,"%s",BMDDevice::Status());
-        RenderText(4,88,bmd,(int)(620*gWindow.GetWidth()/640),1,nullptr);
+        RenderText(4,76,bmd,(int)(620*gWindow.GetWidth()/640),1,nullptr);
     }
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {

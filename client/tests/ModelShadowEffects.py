@@ -37,7 +37,6 @@ void NativeVertex(float x,float y,float z){const float p[]={x,y,z};Event(9);Vec(
 Vertex attributes;
 Vertex CaptureAttributes(bool color,bool uv){Require(color&&uv);Event(14);return attributes;}
 }
-void glColor4fv(const float* p){Event(16);Vec(p,4);}void glTexCoord4fv(const float* p){Event(17);Vec(p,4);}
 bool topologyAllowed,residentAllowed,drawAllowed;int minimumIndex,maximumIndex;
 namespace MeshDraw{
 struct Mesh{struct Limit{int position;}minimum,maximum;unsigned residentArray=77;std::vector<unsigned> indices{0,1,2,2,1,0};int maxBone=5;};
@@ -82,7 +81,7 @@ std::uint64_t Run(BYTE* modelMem,BYTE* tables,BYTE* data){std::uint64_t digest=1
   GoldEvent(expected,1,{unsigned(antialag)});
   if(!antialag&&subject->NumMeshs!=0){GoldEvent(expected,4,{unsigned(BMDDevice::Pass::Shadow),0,0,0});GoldEvent(expected,5);
    for(int m=0;m<subject->NumMeshs;++m){if(m==hidden||polyCounts[m]<=0||textureFields[m]==exclude)continue;bool accepted=false;
-    if(MeshDraw::residentEnabled&&meshData[m].VertexCount>0){GoldEvent(expected,12,{unsigned(m)});if(topologyAllowed&&minimumIndex>=0&&maximumIndex<meshData[m].VertexCount){GoldEvent(expected,13,{unsigned(m)});if(residentAllowed){GoldEvent(expected,14);GoldEvent(expected,15,{unsigned(m)});GoldVec(expected,origin.data(),3);if(drawAllowed){GoldEvent(expected,16);GoldVec(expected,BufferedDraw::attributes.color,4);GoldEvent(expected,17);GoldVec(expected,BufferedDraw::attributes.uv,4);accepted=true;++activeResidents;}}}}
+    if(MeshDraw::residentEnabled&&meshData[m].VertexCount>0){GoldEvent(expected,12,{unsigned(m)});if(topologyAllowed&&minimumIndex>=0&&maximumIndex<meshData[m].VertexCount){GoldEvent(expected,13,{unsigned(m)});if(residentAllowed){GoldEvent(expected,14);GoldEvent(expected,15,{unsigned(m)});GoldVec(expected,origin.data(),3);if(drawAllowed){accepted=true;++activeResidents;}}}}
     if(accepted)continue;++activeFallbacks;GoldEvent(expected,7);for(const auto& face:faces[m])for(unsigned vertex:face){auto p=Position(unsigned(m),vertex,trial);const float dx=p[0]-origin[0],dy=p[1]-origin[1],dz=p[2]-origin[2];float shadow[]={dx+(dx+2000.f)*dz/(dz-4000.f)+origin[0],dy+origin[1],origin[2]+5.f};GoldEvent(expected,9);GoldVec(expected,shadow,3);}GoldEvent(expected,8);
    }GoldEvent(expected,6);GoldEvent(expected,4,{unsigned(BMDDevice::Pass::ShadowExit),0,0,0});
   }

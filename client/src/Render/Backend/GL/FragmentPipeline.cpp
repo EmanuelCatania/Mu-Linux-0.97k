@@ -1,425 +1,128 @@
 // Sin PCH: GL y traducción del estado permanecen en el backend.
 #include "Platform/GL/glad.h"
-#include "Render/FragmentStage.h"
-#include "Render/Materials.h"
-#include "Render/BMDDevice.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
-#include "Render/BufferedDraw.h"
-#include "Render/RenderProfile.h"
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstring>
-#include <cstdio>
-#include <map>
+#include "Render/RenderState.h"
 #include <string>
+#include <vector>
 extern "C" void DbgLogPublic(const char*);
-namespace {
-bool requested=false,layoutChecked=false,targetChecked=false,targetSupported=false;
-const char* status="Fragmentos: referencia";
-struct Pipeline { unsigned program=0;int texture=-1,textured=-1,fog=-1,values=-1,color=-1,reject=-1,combine=-1;int mvp=-1,view=-1,uv=-1,alphaFunction=-1,alphaReference=-1;unsigned long long matrices=0,audit=0;bool valid=false,lastTextured=false,lastReject=false;int lastFog=0,lastCombine=0,lastAlphaFunction=-1;float lastAlphaReference=-1;float lastValues[3]{},lastColor[4]{}; };
-std::map<unsigned,Pipeline> pipelines,modelPipelines;
-unsigned modelDepth=0;bool matricesDirty=true;
-unsigned long long modelDraws=0,modelReference=0,modelErrors=0,modelChecks=0,modelUploads=0;
-unsigned modelErrorMask=0;unsigned long long auditRevision=1;
-unsigned long long matrixRevision=0;
-float modelMVP[16]{},modelView[16]{},modelTexture[16]{};
-// La frontera compatible puede componer MVP con acumulación float o extendida
-// (por ejemplo Mesa x86 anterior a 24). Detectar una sola vez la aritmética
-// cuando los candidatos difieren; no elegir por fabricante/versiones del driver.
-enum class MatrixPrecision { Unknown=-1, Float=0, Extended=1, Unsupported=2 };
-MatrixPrecision matrixPrecision=MatrixPrecision::Unknown;
-unsigned Compile(unsigned type,const char* source);
-bool NativeProduct(float* product){
-    const char* source="#version 330 compatibility\nout vec4 captured;void main(){captured=gl_ModelViewProjectionMatrix[gl_VertexID];gl_Position=vec4(0,0,0,1);}";
-    unsigned shader=Compile(GL_VERTEX_SHADER,source);if(!shader)return false;
-    unsigned program=glCreateProgram();glAttachShader(program,shader);const char* varying="captured";
-    glTransformFeedbackVaryings(program,1,&varying,GL_INTERLEAVED_ATTRIBS);glLinkProgram(program);
-    int linked=0;glGetProgramiv(program,GL_LINK_STATUS,&linked);glDeleteShader(shader);
-    if(!linked){glDeleteProgram(program);return false;}
-    int oldProgram=0,oldArray=0,oldBuffer=0,oldIndexed=0;
-    GLint64 oldStart=0,oldSize=0;
-    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
-    glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,&oldBuffer);
-    glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,0,&oldIndexed);
-    glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START,0,&oldStart);glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE,0,&oldSize);
-    const bool discard=glIsEnabled(GL_RASTERIZER_DISCARD)!=0;
-    unsigned buffer=0,array=0;glGenBuffers(1,&buffer);glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,buffer);
-    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,16*sizeof(float),nullptr,GL_STREAM_READ);
-    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,buffer);glGenVertexArrays(1,&array);glBindVertexArray(array);
-    glUseProgram(program);glEnable(GL_RASTERIZER_DISCARD);glBeginTransformFeedback(GL_POINTS);
-    glDrawArrays(GL_POINTS,0,4);glEndTransformFeedback();
-    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,0,16*sizeof(float),product);
-    if(!discard)glDisable(GL_RASTERIZER_DISCARD);
-    glUseProgram(oldProgram);glBindVertexArray(oldArray);
-    if(oldIndexed&&oldSize)glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed,static_cast<GLintptr>(oldStart),static_cast<GLsizeiptr>(oldSize));
-    else glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed);
-    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,oldBuffer);
-    glDeleteVertexArrays(1,&array);glDeleteBuffers(1,&buffer);glDeleteProgram(program);
-    return true;
-}
-bool ReadMatrices(){
-    if(matrixPrecision==MatrixPrecision::Unsupported)return false;
-    if(!matricesDirty)return true;
-    float view[16],projection[16],narrow[16],wide[16];glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
-    for(int column=0;column<4;++column)for(int row=0;row<4;++row){
-        float value=0;long double extended=0;
-        for(int k=0;k<4;++k){
-            value+=projection[k*4+row]*view[column*4+k];
-            if(matrixPrecision!=MatrixPrecision::Float)extended+=static_cast<long double>(projection[k*4+row])*view[column*4+k];
-        }
-        narrow[column*4+row]=value;wide[column*4+row]=static_cast<float>(extended);
-    }
-    if(matrixPrecision==MatrixPrecision::Unknown&&std::memcmp(narrow,wide,sizeof(narrow))){
-        float native[16]{};
-        if(!NativeProduct(native))matrixPrecision=MatrixPrecision::Unsupported;
-        else if(!std::memcmp(native,narrow,sizeof(narrow)))matrixPrecision=MatrixPrecision::Float;
-        else if(!std::memcmp(native,wide,sizeof(wide)))matrixPrecision=MatrixPrecision::Extended;
-        else matrixPrecision=MatrixPrecision::Unsupported;
-        if(matrixPrecision!=MatrixPrecision::Unsupported)DbgLogPublic(matrixPrecision==MatrixPrecision::Extended?"PerfilR4 BMD: matrices_precision=extendida":"PerfilR4 BMD: matrices_precision=float");
-        if(matrixPrecision==MatrixPrecision::Unsupported){DbgLogPublic("PerfilR4 BMD: matrices_precision_no_equivalente, conservar referencia");return false;}
-    }
-    const auto* product=matrixPrecision==MatrixPrecision::Extended?wide:narrow;
-    std::copy(product,product+16,modelMVP);std::copy(view,view+16,modelView);glGetFloatv(GL_TEXTURE_MATRIX,modelTexture);
-    matricesDirty=false;++matrixRevision;return true;
-}
 
-struct TextureInfo{bool supported=false,opaque=false;int combine=0;};
-std::map<unsigned,TextureInfo> textureInfo;
-unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
-const char* lastReason="";
-const char* layoutReason="";
-struct MaterialState {
-    unsigned dirty=7;
-    bool textured=false,opaque=true,alpha=false;
-    int combine=0,function=GL_ALWAYS,fog=0,binding=0,sampler=0,environment=GL_MODULATE;
-    float reference=0,values[3]{},color[4]{};
-    const char* reason="",*textureReason="",*fogReason="";
-} material;
-unsigned long long materialReads=0,materialReuses=0;
-unsigned long long componentReads[3]{},componentReuses[3]{};
-unsigned long long layoutReads=0,layoutReuses=0;
-// El estado ajeno al material no cambia entre envíos propios. Toda entrada
-// nativa pasa por Suspend; los cambios de capacidades invalidan esta captura.
-const char* ReadLayout(){
-    if(layoutChecked){if(RenderProfile::active)++layoutReuses;return layoutReason;}
-    if(RenderProfile::active)++layoutReads;
-    layoutChecked=true;layoutReason="";
-    int active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-    if(active!=GL_TEXTURE0)return layoutReason="Fragmentos: referencia (unidad activa)";
-    int shade=0,clampVertex=0;glGetIntegerv(GL_SHADE_MODEL,&shade);glGetIntegerv(GL_CLAMP_VERTEX_COLOR,&clampVertex);
-    if(shade!=GL_SMOOTH||clampVertex==GL_FALSE||glIsEnabled(GL_POINT_SPRITE))return layoutReason="Fragmentos: referencia (interpolacion)";
-    int units=0;glGetIntegerv(GL_MAX_TEXTURE_UNITS,&units);
-    for(int i=0;i<units;++i){
-        glActiveTexture(GL_TEXTURE0+i);
-        const bool other=glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP)||glIsEnabled(GL_TEXTURE_RECTANGLE)||(i&&glIsEnabled(GL_TEXTURE_2D));
-        if(other){glActiveTexture(GL_TEXTURE0);return layoutReason="Fragmentos: referencia (multitextura)";}
-    }
-    glActiveTexture(GL_TEXTURE0);
-    if(glIsEnabled(GL_COLOR_SUM)||glIsEnabled(GL_POLYGON_STIPPLE))layoutReason="Fragmentos: referencia (estado especial)";
-    return layoutReason;
-}
-// Una muestra por entrada y ventana R1; efectos conserva sus dos entradas.
-// Sólo lectura: no normalizar estados antes de conocer las entradas reales.
-enum EntryKey { BlendOn,SrcRGB,DstRGB,SrcAlpha,DstAlpha,EqRGB,EqAlpha,DepthOn,DepthWrite,DepthFunc,CullOn,CullFace,FrontFace,AlphaOn,AlphaFunc,TextureOn,TextureBinding,ActiveUnit,Sampler,FogOn,FogMode,Program,VAO,Scissor,Stencil,EntryCount };
-constexpr unsigned entryProperties[EntryCount]={GL_BLEND,GL_BLEND_SRC_RGB,GL_BLEND_DST_RGB,GL_BLEND_SRC_ALPHA,GL_BLEND_DST_ALPHA,GL_BLEND_EQUATION_RGB,GL_BLEND_EQUATION_ALPHA,GL_DEPTH_TEST,GL_DEPTH_WRITEMASK,GL_DEPTH_FUNC,GL_CULL_FACE,GL_CULL_FACE_MODE,GL_FRONT_FACE,GL_ALPHA_TEST,GL_ALPHA_TEST_FUNC,GL_TEXTURE_2D,GL_TEXTURE_BINDING_2D,GL_ACTIVE_TEXTURE,GL_SAMPLER_BINDING,GL_FOG,GL_FOG_MODE,GL_CURRENT_PROGRAM,GL_VERTEX_ARRAY_BINDING,GL_SCISSOR_TEST,GL_STENCIL_TEST};
-struct EntryState {
-    bool captured=false;int values[EntryCount]{},environment=0;
-    float alphaRef=0,start=0,end=0,density=0,color[4]{};
-    FragmentPipelineGL::LegacyState legacy;
-    unsigned legacyMismatch=0,materialMismatch=0,validParts=0;
-};
-std::array<std::array<EntryState,2>,RenderProfile::PassCount> entries{};
-const char* passNames[RenderProfile::PassCount]={"sim","preparar","restaurar","terreno","objetos","personajes","efectos","ui","otros_dibujo","otros","swap","espera"};
-void AuditEntry(RenderProfile::Pass pass,unsigned occurrence){
-    using P=RenderProfile::Pass;
-    if(!RenderProfile::active||occurrence>=2||(pass!=P::Terrain&&pass!=P::Objects&&pass!=P::Characters&&pass!=P::Effects&&pass!=P::UI))return;
-    auto& e=entries[static_cast<std::size_t>(pass)][occurrence];if(e.captured)return;e.captured=true;
-    for(int i=0;i<EntryCount;++i)glGetIntegerv(entryProperties[i],e.values+i);
-    glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&e.environment);
-    glGetFloatv(GL_ALPHA_TEST_REF,&e.alphaRef);glGetFloatv(GL_FOG_START,&e.start);glGetFloatv(GL_FOG_END,&e.end);glGetFloatv(GL_FOG_DENSITY,&e.density);glGetFloatv(GL_FOG_COLOR,e.color);
-    e.legacy=FragmentPipelineGL::ReadLegacyState();const auto& c=e.legacy;const auto* v=e.values;
-    // Bits legacy: blend1, cull2, depth4, escritura8, alpha16, textura32.
-    if(c.blend<0||c.blend>5)e.legacyMismatch|=1;
-    else if((v[BlendOn]!=0)!=(c.blend!=0))e.legacyMismatch|=1;
-    else if(c.blend){
-        constexpr int factors[6][2]={{0,0},{GL_ZERO,GL_SRC_COLOR},{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA},{GL_ONE,GL_ONE},{GL_ZERO,GL_ONE_MINUS_SRC_COLOR},{GL_ONE_MINUS_DST_COLOR,GL_ONE}};
-        if(v[SrcRGB]!=factors[c.blend][0]||v[DstRGB]!=factors[c.blend][1]||v[SrcAlpha]!=factors[c.blend][0]||v[DstAlpha]!=factors[c.blend][1])e.legacyMismatch|=1;
-    }
-    if((v[CullOn]!=0)!=c.cull)e.legacyMismatch|=2;
-    if((v[DepthOn]!=0)!=c.depth)e.legacyMismatch|=4;
-    if((v[DepthWrite]!=0)!=c.write)e.legacyMismatch|=8;
-    if((v[AlphaOn]!=0)!=c.alpha)e.legacyMismatch|=16;
-    // La caché legacy de textura sólo describe la unidad0.
-    if(v[ActiveUnit]==GL_TEXTURE0&&(v[TextureOn]!=0)!=c.texture)e.legacyMismatch|=32;
-    e.validParts=(~material.dirty)&7u;
-    if(*material.textureReason)e.validParts&=~1u;
-    if((e.validParts&1)&&v[ActiveUnit]==GL_TEXTURE0){
-        if((v[TextureOn]!=0)!=material.textured||(material.textured&&(v[TextureBinding]!=material.binding||v[Sampler]!=material.sampler||e.environment!=material.environment)))e.materialMismatch|=1;
-    }else e.validParts&=~1u;
-    if((e.validParts&2)&&((v[AlphaOn]!=0)!=material.alpha||(material.alpha&&(v[AlphaFunc]!=material.function||e.alphaRef!=material.reference))))e.materialMismatch|=2;
-    if(e.validParts&4){
-        const int mode=v[FogMode]==GL_LINEAR?1:v[FogMode]==GL_EXP?2:3;
-        if((v[FogOn]!=0)!=(material.fog!=0)||(v[FogOn]&&(mode!=material.fog||e.start!=material.values[0]||e.end!=material.values[1]||e.density!=material.values[2]||std::memcmp(e.color,material.color,sizeof(e.color)))))e.materialMismatch|=4;
-    }
-}
-void ReportEntries(bool reset){
-    if(!reset)for(std::size_t p=0;p<entries.size();++p)for(unsigned occurrence=0;occurrence<2;++occurrence){
-        const auto& e=entries[p][occurrence];if(!e.captured)continue;const auto* v=e.values;char line[480];
-        // DbgLog limita cada mensaje a 509 bytes. Mantener las máscaras en la
-        // cabecera y repartir el detalle, sin aumentar el límite global.
-        std::snprintf(line,sizeof(line),"PerfilR4 entrada: pasada=%s entrada=%u cache_blend=%d cache_cull=%d cache_depth=%d cache_escritura=%d cache_alpha=%d cache_textura=%d discrepancia_legacy=%u material_valido=%u discrepancia_material=%u programa=%d vao=%d scissor=%d stencil=%d",
-            passNames[p],occurrence,e.legacy.blend,e.legacy.cull,e.legacy.depth,e.legacy.write,e.legacy.alpha,e.legacy.texture,e.legacyMismatch,e.validParts,e.materialMismatch,v[Program],v[VAO],v[Scissor],v[Stencil]);DbgLogPublic(line);
-        std::snprintf(line,sizeof(line),"PerfilR4 pipeline: pasada=%s entrada=%u blend=%d src_rgb=%d dst_rgb=%d src_alpha=%d dst_alpha=%d ecuacion_rgb=%d ecuacion_alpha=%d depth=%d escritura=%d depth_func=%d cull=%d cara=%d frente=%d alpha=%d alpha_func=%d alpha_ref=%.9g",
-            passNames[p],occurrence,v[BlendOn],v[SrcRGB],v[DstRGB],v[SrcAlpha],v[DstAlpha],v[EqRGB],v[EqAlpha],v[DepthOn],v[DepthWrite],v[DepthFunc],v[CullOn],v[CullFace],v[FrontFace],v[AlphaOn],v[AlphaFunc],e.alphaRef);DbgLogPublic(line);
-        std::snprintf(line,sizeof(line),"PerfilR4 material: pasada=%s entrada=%u textura=%d binding=%d unidad=%d sampler=%d entorno=%d niebla=%d modo_niebla=%d inicio=%.9g fin=%.9g densidad=%.9g color=%.9g,%.9g,%.9g,%.9g",
-            passNames[p],occurrence,v[TextureOn],v[TextureBinding],v[ActiveUnit],v[Sampler],e.environment,v[FogOn],v[FogMode],e.start,e.end,e.density,e.color[0],e.color[1],e.color[2],e.color[3]);DbgLogPublic(line);
-    }
-    entries={};
-}
-const char* fragment=R"GLSL(#version 330 compatibility
-uniform sampler2D materialTexture;
-uniform bool materialTextured,materialReject;
-uniform int materialFog,materialCombine;
-uniform vec3 materialFogValues;
-uniform vec4 materialFogColor;
-out vec4 resultColor;
-void main(){
-    if(materialReject)discard;
-    vec4 primary=gl_Color;
-    vec4 c=materialTextured?textureProj(materialTexture,gl_TexCoord[0])*primary:primary;
-    if(materialTextured&&materialCombine==1)c.a=primary.a;
-    if(materialTextured&&materialCombine==2)c.rgb=primary.rgb;
-    if(materialFog!=0){
-        float d=gl_FogFragCoord,f=1;
-        if(materialFog==1)f=(materialFogValues.y-d)/(materialFogValues.y-materialFogValues.x);
-        if(materialFog==2)f=exp(-materialFogValues.z*d);
-        if(materialFog==3){float v=materialFogValues.z*d;f=exp(-v*v);}
-        c.rgb=mix(materialFogColor.rgb,c.rgb,clamp(f,0,1));
-    }
-    resultColor=c;
-}
+namespace FragmentPipelineGL {
+const char* const VertexPrologue=R"GLSL(#version 330 core
+invariant gl_Position;
+uniform mat4 uModelViewProjection,uModelView,uTextureMatrix;
+out vec4 vColor,vUV;
+out float vFogDistance;
 )GLSL";
-void Report(bool reset){
-    ReportEntries(reset);
-    if(!reset&&requested){char line[768];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu capturas_textura=%llu reusos_textura=%llu capturas_alpha=%llu reusos_alpha=%llu capturas_niebla=%llu reusos_niebla=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,componentReads[0],componentReuses[0],componentReads[1],componentReuses[1],componentReads[2],componentReuses[2],lastReason);DbgLogPublic(line);}
-    if(!reset&&(modelDraws||modelReference||modelErrors)){
-        char line[320];std::snprintf(line,sizeof(line),"PerfilR4 BMD: shader=%llu referencia=%llu verificaciones=%llu errores_estado=%llu mascara_error=%u matrices_subidas=%llu ambitos_abiertos=%u ruta_nueva=%d matrices_precision=%d",modelDraws,modelReference,modelChecks,modelErrors,modelErrorMask,modelUploads,modelDepth,BMDDevice::Enabled()?1:0,static_cast<int>(matrixPrecision));DbgLogPublic(line);
+namespace {
+// DESVIACION: el pipeline fijo se reproduce en el shader. Texture env
+// Blend usa la composición Modulate (el cliente no fija color de entorno).
+const char* fragment=R"GLSL(#version 330 core
+uniform sampler2D uTexture;
+uniform bool uTextured;
+uniform int uTexEnv;
+uniform int uAlphaFunction;
+uniform float uAlphaReference;
+uniform int uFog;
+uniform vec3 uFogValues;
+uniform vec4 uFogColor;
+in vec4 vColor,vUV;
+in float vFogDistance;
+out vec4 fragmentColor;
+void main(){
+    vec4 c=vColor;
+    if(uTextured){
+        vec4 t=textureProj(uTexture,vUV);
+        if(uTexEnv==1)c=t;
+        else if(uTexEnv==2)c=vec4(mix(vColor.rgb,t.rgb,t.a),vColor.a);
+        else if(uTexEnv==4)c=vec4(vColor.rgb+t.rgb,vColor.a*t.a);
+        else c=t*vColor;
     }
-    modelDraws=modelReference=modelErrors=modelChecks=modelUploads=0;modelErrorMask=0;++auditRevision;
-    selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
-    std::fill(componentReads,componentReads+3,0ull);std::fill(componentReuses,componentReuses+3,0ull);
-}
-void ReplaceAll(std::string& text,const std::string& from,const std::string& to){
-    std::size_t pos=0;while((pos=text.find(from,pos))!=std::string::npos){text.replace(pos,from.size(),to);pos+=to.size();}
-}
-std::string ModelVertex(const char* source){
-    std::string text(source);const bool invariant=text.find("ftransform()")!=std::string::npos;ReplaceAll(text,"#version 330 compatibility","#version 330 core");
-    const auto end=text.find('\n');text.insert(end+1,
-        "#define EXPLICIT_FRAGMENT\nlayout(location=0) in vec3 bmdPosition;\nlayout(location=1) in vec4 bmdPrimary;\nlayout(location=2) in vec4 bmdCoord;\nuniform mat4 bmdMVP,bmdView,bmdTexture;\nout vec4 bmdColor,bmdUV;\nout float bmdFog;\n");
-    // Igualar la invariancia del productor: ftransform la exige; el skinning
-    // original no la declara. Añadirla altera la aritmética en algunos drivers.
-    if(invariant)text.insert(end+1,"invariant gl_Position;\n");
-    ReplaceAll(text,"ftransform()","bmdMVP*vec4(bmdPosition,1)");
-    ReplaceAll(text,"gl_ModelViewProjectionMatrix","bmdMVP");ReplaceAll(text,"gl_ModelViewMatrix","bmdView");ReplaceAll(text,"gl_TextureMatrix[0]","bmdTexture");
-    ReplaceAll(text,"gl_Vertex","vec4(bmdPosition,1)");ReplaceAll(text,"gl_Color","bmdPrimary");ReplaceAll(text,"gl_MultiTexCoord0","bmdCoord");
-    ReplaceAll(text,"gl_FrontColor","bmdColor");ReplaceAll(text,"gl_BackColor","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");
-    return text;
-}
-std::string ModelFragment(){
-    std::string text(fragment);ReplaceAll(text,"#version 330 compatibility","#version 330 core");
-    const auto end=text.find('\n');text.insert(end+1,"in vec4 bmdColor,bmdUV;\nin float bmdFog;\nuniform int bmdAlphaFunction;\nuniform float bmdAlphaReference;\n");
-    ReplaceAll(text,"gl_Color","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");
-    // DESVIACION autorizada: textura × color, mismo comparador/umbral; sin
-    // cuantizar porque empeora la equivalencia de GREATER0.25 en la sonda.
-    ReplaceAll(text,"    if(materialFog!=0){",R"GLSL(    if(bmdAlphaFunction!=0){
-        float a=c.a,r=bmdAlphaReference;int f=bmdAlphaFunction;
-        bool pass=f==512?false:f==513?a<r:f==514?a==r:f==515?a<=r:f==516?a>r:f==517?a!=r:f==518?a>=r:true;
+    if(uAlphaFunction!=0){
+        float a=c.a,r=uAlphaReference;int f=uAlphaFunction;
+        bool pass=f==1?false:f==2?a<r:f==3?a==r:f==4?a<=r:f==5?a>r:f==6?a!=r:f==7?a>=r:true;
         if(!pass)discard;
     }
-    if(materialFog!=0){)GLSL");return text;
-}
-void Count(bool modern,const char* reason="",bool alpha=false){
-    status=modern?"Fragmentos: shader activo":reason;
-    if(!RenderProfile::active)return;
-    RenderProfile::FragmentDraw(modern,alpha);
-    if(modern)++selected;else{++fallback;if(alpha)++alphaFallback;lastReason=reason;}
-}
-TextureInfo InspectTexture(unsigned texture){
-    const auto found=textureInfo.find(texture);if(found!=textureInfo.end())return found->second;
-    int format=0,swizzle=0,width=0,height=0,filter=0;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_INTERNAL_FORMAT,&format);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&height);
-    glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_A,&swizzle);glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,&filter);
-    TextureInfo info;info.opaque=swizzle==GL_ONE;
-    switch(format){
-    case 3:case GL_RGB:case GL_RGB8:case GL_RGB4:case GL_RGB5:case GL_R3_G3_B2:case GL_RGB10:case GL_RGB12:case GL_RGB16:
-    case 1:case GL_LUMINANCE:case GL_LUMINANCE8:case GL_LUMINANCE12:case GL_LUMINANCE16:
-        info.supported=true;info.opaque=info.opaque||swizzle==GL_ALPHA;info.combine=1;break;
-    case GL_ALPHA:case GL_ALPHA8:case GL_ALPHA4:case GL_ALPHA12:case GL_ALPHA16:
-        info.supported=true;info.combine=2;break;
-    case 2:case 4:case GL_RGBA:case GL_RGBA8:case GL_RGBA4:case GL_RGB5_A1:case GL_RGB10_A2:case GL_RGBA12:case GL_RGBA16:
-    case GL_LUMINANCE_ALPHA:case GL_LUMINANCE8_ALPHA8:case GL_LUMINANCE4_ALPHA4:case GL_LUMINANCE6_ALPHA2:case GL_LUMINANCE12_ALPHA4:case GL_LUMINANCE12_ALPHA12:case GL_LUMINANCE16_ALPHA16:
-    case GL_INTENSITY:case GL_INTENSITY8:case GL_INTENSITY4:case GL_INTENSITY12:case GL_INTENSITY16:
-        info.supported=true;break;
-    default:break;
+    if(uFog!=0){
+        float d=vFogDistance,f=1;
+        if(uFog==1)f=uFogValues.y==uFogValues.x?(d<=uFogValues.y?1.0:0.0):(uFogValues.y-d)/(uFogValues.y-uFogValues.x);
+        if(uFog==2)f=exp(-uFogValues.z*d);
+        if(uFog==3){float v=uFogValues.z*d;f=exp(-v*v);}
+        c.rgb=mix(uFogColor.rgb,c.rgb,clamp(f,0.0,1.0));
     }
-    info.supported=info.supported&&(swizzle==GL_ALPHA||swizzle==GL_ONE)&&width>0&&height>0&&(filter==GL_NEAREST||filter==GL_LINEAR);
-    textureInfo[texture]=info;return info;
+    fragmentColor=c;
 }
-// Captura coherente del material. Los setters pasan por la barrera; las
-// operaciones nativas invalidan tanto esta captura como el estado de entrada.
-const MaterialState& ReadMaterial(){
-    if(RenderProfile::active){
-        if(material.dirty)++materialReads;else ++materialReuses;
-        for(unsigned i=0;i<3;++i){if(material.dirty&(1u<<i))++componentReads[i];else ++componentReuses[i];}
-    }
-    if(!material.dirty)return material;
-    if(material.dirty&1){
-        material.textured=glIsEnabled(GL_TEXTURE_2D)!=0;
-        material.opaque=true;material.combine=0;material.textureReason="";material.binding=material.sampler=0;material.environment=GL_MODULATE;
-        if(material.textured){
-            int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);material.environment=environment;
-            if(environment!=GL_MODULATE)material.textureReason="Fragmentos: referencia (texture env)";
-            else {
-                int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
-                material.binding=texture;material.sampler=sampler;
-                const auto info=texture?InspectTexture(texture):TextureInfo{};
-                if(!info.supported||sampler)material.textureReason="Fragmentos: referencia (textura o sampler)";
-                else {material.opaque=info.opaque;material.combine=info.combine;}
-            }
-        }
-    }
-    if(material.dirty&2){
-        material.alpha=glIsEnabled(GL_ALPHA_TEST)!=0;
-        material.function=GL_ALWAYS;material.reference=0;
-        if(material.alpha){glGetIntegerv(GL_ALPHA_TEST_FUNC,&material.function);glGetFloatv(GL_ALPHA_TEST_REF,&material.reference);}
-    }
-    if(material.dirty&4){
-        material.fog=0;material.fogReason="";
-        std::fill(material.values,material.values+3,0.f);std::fill(material.color,material.color+4,0.f);
-        if(glIsEnabled(GL_FOG)){
-            int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);material.fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;
-            glGetFloatv(GL_FOG_START,material.values);glGetFloatv(GL_FOG_END,material.values+1);glGetFloatv(GL_FOG_DENSITY,material.values+2);glGetFloatv(GL_FOG_COLOR,material.color);
-            if(material.fog==1&&material.values[0]==material.values[1])material.fogReason="Fragmentos: referencia (niebla degenerada)";
-        }
-    }
-    material.reason=*material.textureReason?material.textureReason:material.fogReason;
-    material.dirty=0;return material;
+)GLSL";
+struct Program {
+    GLuint name=0;
+    GLint mvp=-1,view=-1,texture=-1,sampler=-1,textured=-1,environment=-1,alphaFunction=-1,alphaReference=-1,fog=-1,fogValues=-1,fogColor=-1;
+    unsigned long long matrices=0,material=0;
+    bool sampler0=false;
+};
+std::vector<Program> programs;
+Program* Find(unsigned name) { for(auto& p:programs)if(p.name==name)return &p;return nullptr; }
+GLuint Compile(GLenum type,const std::string& source) {
+    const GLuint shader=glCreateShader(type);const char* text=source.c_str();
+    glShaderSource(shader,1,&text,nullptr);glCompileShader(shader);
+    GLint ok=0;glGetShaderiv(shader,GL_COMPILE_STATUS,&ok);if(ok)return shader;
+    char log[2048]{};glGetShaderInfoLog(shader,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteShader(shader);return 0;
 }
-// No aproximar el comparador nativo cerca del umbral. Una cobertura variable
-// conserva el test nativo; las coberturas constantes se resuelven sin test fijo.
-int Coverage(int function,float reference,const float* alpha,std::size_t count,std::size_t stride,bool opaque){
-    if(function==GL_ALWAYS)return 1;if(function==GL_NEVER)return -1;
-    float lo=1,hi=0;
-    for(std::size_t i=0;i<count;++i){float value=*reinterpret_cast<const float*>(reinterpret_cast<const unsigned char*>(alpha)+i*stride);if(!std::isfinite(value))return 0;value=std::clamp(value,0.f,1.f);lo=std::min(lo,value);hi=std::max(hi,value);}
-    if(!opaque)lo=0;
-    constexpr float margin=2.f/255.f;
-    const bool below=hi<reference-margin,above=lo>reference+margin;
-    switch(function){
-    case GL_LESS:case GL_LEQUAL:return below?1:above?-1:0;
-    case GL_GREATER:case GL_GEQUAL:return above?1:below?-1:0;
-    case GL_EQUAL:return below||above?-1:0;
-    case GL_NOTEQUAL:return below||above?1:0;
-    default:return 0;
+int AlphaCode(Gfx::Compare c) {
+    switch(c){
+    case Gfx::Compare::Never:return 1;case Gfx::Compare::Less:return 2;case Gfx::Compare::Equal:return 3;
+    case Gfx::Compare::LessEqual:return 4;case Gfx::Compare::Greater:return 5;case Gfx::Compare::NotEqual:return 6;
+    case Gfx::Compare::GreaterEqual:return 7;case Gfx::Compare::Always:return 0;
     }
+    return 0;
 }
-unsigned Compile(unsigned type,const char* source){unsigned shader=glCreateShader(type);glShaderSource(shader,1,&source,nullptr);glCompileShader(shader);int ok=0;glGetShaderiv(shader,GL_COMPILE_STATUS,&ok);if(ok)return shader;char log[2048]{};glGetShaderInfoLog(shader,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteShader(shader);return 0;}
+int EnvCode(Gfx::TexEnv e) {
+    switch(e){case Gfx::TexEnv::Replace:return 1;case Gfx::TexEnv::Decal:return 2;case Gfx::TexEnv::Add:return 4;default:return 0;}
 }
-namespace FragmentStage {
-bool Requested(){return requested;}
-const char* Status(){return status;}
-void Toggle(){BufferedDraw::Suspend();requested=!requested;Report(true);RenderProfile::RestartCapture();status=requested?"Fragmentos: esperando dibujo":"Fragmentos: referencia";DbgLogPublic(requested?"Fragmentos R4b: activo":"Fragmentos R4b: referencia");}
 }
-namespace FragmentPipelineGL {
-void MaterialChanged(MaterialPart part){material.dirty|=static_cast<unsigned>(part);}
-void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D)MaterialChanged(MaterialPart::Texture);if(cap==GL_ALPHA_TEST)MaterialChanged(MaterialPart::Alpha);if(cap==GL_FOG)MaterialChanged(MaterialPart::Fog);if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
-void MatricesChanged(){matricesDirty=true;}
-void EnterModel(){BufferedDraw::Flush();++modelDepth;}
-void LeaveModel(){BufferedDraw::Flush();if(modelDepth)--modelDepth;}
-void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;MatricesChanged();}
-void InvalidateTextures(){MaterialChanged(MaterialPart::Texture);textureInfo.clear();layoutChecked=false;}
-void Create(unsigned reference,const char* source){
-    RenderProfile::SetBackendReport(Report);RenderProfile::SetPassAudit(AuditEntry);
-    if(pipelines.count(reference))return;
-    for(int model=0;model<2;++model){
-        Pipeline p;std::string vertex=model?ModelVertex(source):std::string(source);
-        const auto end=vertex.find('\n');if(end==std::string::npos)return;
-        if(!model)vertex.insert(end+1,"#define EXPLICIT_FRAGMENT\n");
-        const std::string fsSource=model?ModelFragment():std::string(fragment);
-        unsigned vs=Compile(GL_VERTEX_SHADER,vertex.c_str()),fs=Compile(GL_FRAGMENT_SHADER,fsSource.c_str());
-        if(vs&&fs){p.program=glCreateProgram();glAttachShader(p.program,vs);glAttachShader(p.program,fs);glLinkProgram(p.program);int ok=0;glGetProgramiv(p.program,GL_LINK_STATUS,&ok);if(!ok){char log[2048]{};glGetProgramInfoLog(p.program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(p.program);p.program=0;}}
-        if(vs)glDeleteShader(vs);if(fs)glDeleteShader(fs);
-        if(p.program){
-            p.texture=glGetUniformLocation(p.program,"materialTexture");p.textured=glGetUniformLocation(p.program,"materialTextured");p.fog=glGetUniformLocation(p.program,"materialFog");p.values=glGetUniformLocation(p.program,"materialFogValues");p.color=glGetUniformLocation(p.program,"materialFogColor");p.reject=glGetUniformLocation(p.program,"materialReject");p.combine=glGetUniformLocation(p.program,"materialCombine");
-            if(model){p.mvp=glGetUniformLocation(p.program,"bmdMVP");p.view=glGetUniformLocation(p.program,"bmdView");p.uv=glGetUniformLocation(p.program,"bmdTexture");p.alphaFunction=glGetUniformLocation(p.program,"bmdAlphaFunction");p.alphaReference=glGetUniformLocation(p.program,"bmdAlphaReference");}
-        }
-        (model?modelPipelines:pipelines)[reference]=p;
+unsigned Create(const char* vertexBody) {
+    const GLuint vs=Compile(GL_VERTEX_SHADER,std::string(VertexPrologue)+vertexBody),fs=Compile(GL_FRAGMENT_SHADER,fragment);
+    GLuint name=0;
+    if(vs&&fs) {
+        name=glCreateProgram();glAttachShader(name,vs);glAttachShader(name,fs);
+        glBindAttribLocation(name,0,"aPosition");glBindAttribLocation(name,1,"aColor");glBindAttribLocation(name,2,"aUV");
+        glLinkProgram(name);GLint ok=0;glGetProgramiv(name,GL_LINK_STATUS,&ok);
+        if(!ok){char log[2048]{};glGetProgramInfoLog(name,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(name);name=0;}
     }
+    if(vs)glDeleteShader(vs);if(fs)glDeleteShader(fs);
+    if(!name)return 0;
+    Program p;p.name=name;
+    p.mvp=glGetUniformLocation(name,"uModelViewProjection");p.view=glGetUniformLocation(name,"uModelView");p.texture=glGetUniformLocation(name,"uTextureMatrix");
+    p.sampler=glGetUniformLocation(name,"uTexture");p.textured=glGetUniformLocation(name,"uTextured");p.environment=glGetUniformLocation(name,"uTexEnv");
+    p.alphaFunction=glGetUniformLocation(name,"uAlphaFunction");p.alphaReference=glGetUniformLocation(name,"uAlphaReference");
+    p.fog=glGetUniformLocation(name,"uFog");p.fogValues=glGetUniformLocation(name,"uFogValues");p.fogColor=glGetUniformLocation(name,"uFogColor");
+    programs.push_back(p);return name;
 }
-void Release(unsigned reference){
-    for(auto* map:{&pipelines,&modelPipelines}){auto p=map->find(reference);if(p!=map->end()){if(p->second.program)glDeleteProgram(p->second.program);map->erase(p);}}
-    if(modelPipelines.empty())matrixPrecision=MatrixPrecision::Unknown;
-    textureInfo.clear();MaterialChanged();MatricesChanged();
+void Release(unsigned name) {
+    for(auto it=programs.begin();it!=programs.end();++it)if(it->name==name){programs.erase(it);break;}
+    if(!name)return;
+    GLint current=0;glGetIntegerv(GL_CURRENT_PROGRAM,&current);
+    if(static_cast<unsigned>(current)==name)glUseProgram(0);
+    glDeleteProgram(name);
 }
-Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride,bool model):program(reference),reference(reference){
-    modelRequest=model||modelDepth!=0;
-    modelVariant=modelRequest&&BMDDevice::Enabled();
-    if(!requested&&!modelVariant)return;
-    auto& candidates=modelVariant?modelPipelines:pipelines;
-    const auto found=candidates.find(reference);if(found==candidates.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}
-    if(!targetChecked){int r=0,g=0,b=0,a=0;glGetIntegerv(GL_RED_BITS,&r);glGetIntegerv(GL_GREEN_BITS,&g);glGetIntegerv(GL_BLUE_BITS,&b);glGetIntegerv(GL_ALPHA_BITS,&a);targetSupported=r==8&&g==8&&b==8&&(a==0||a==8);targetChecked=true;}
-    if(!targetSupported){Count(false,"Fragmentos: referencia (framebuffer)");return;}
-    const char* reason=ReadLayout();if(*reason){Count(false,reason);return;}
-    if(modelVariant&&!ReadMatrices()){Count(false,"BMD: referencia (precision de matrices)");return;}
-    const auto& state=ReadMaterial();if(*state.reason){Count(false,state.reason);return;}
-    textured=state.textured;combine=state.combine;alphaEnabled=state.alpha;fog=state.fog;
-    std::copy(state.values,state.values+3,fogValues);std::copy(state.color,state.color+4,fogColor);
-    int coverage=1;bool keepNativeAlpha=false;
-    alphaFunction=modelVariant&&alphaEnabled?state.function:0;alphaReference=state.reference;
-    if(alphaEnabled&&!modelVariant){
-        coverage=Coverage(state.function,state.reference,alpha,count,stride,state.opaque);
-        // El resultado depende de los vértices: nunca reutilizar la cobertura.
-        if(coverage==0){alphaEnabled=false;coverage=1;keepNativeAlpha=true;}
+int Uniform(unsigned program,const char* name) { return glGetUniformLocation(program,name); }
+void Apply(unsigned name) {
+    Program* p=Find(name);if(!p)return;
+    if(!p->sampler0) { glUniform1i(p->sampler,0);p->sampler0=true; }
+    if(p->matrices!=RenderState::MatrixRevision()) {
+        glUniformMatrix4fv(p->mvp,1,GL_FALSE,RenderState::ModelViewProjection());
+        glUniformMatrix4fv(p->view,1,GL_FALSE,RenderState::Top(Gfx::Matrix::ModelView));
+        glUniformMatrix4fv(p->texture,1,GL_FALSE,RenderState::Top(Gfx::Matrix::Texture));
+        p->matrices=RenderState::MatrixRevision();
     }
-    program=found->second.program;modern=true;Count(true);if(keepNativeAlpha&&RenderProfile::active)++nativeAlpha;reject=coverage<0;
-}
-Draw::~Draw(){
-    if(RenderProfile::active&&modelRequest){
-        if(modern&&modelVariant)++modelDraws;else ++modelReference;
-    }
-    if(modern&&alphaEnabled)glEnable(GL_ALPHA_TEST);
-}
-void Draw::Apply(){
-    if(!modern)return;auto& p=(modelVariant?modelPipelines:pipelines).find(reference)->second;
-    if(modelVariant){
-        ReadMatrices();
-        if(p.matrices!=matrixRevision){glUniformMatrix4fv(p.mvp,1,GL_FALSE,modelMVP);glUniformMatrix4fv(p.view,1,GL_FALSE,modelView);glUniformMatrix4fv(p.uv,1,GL_FALSE,modelTexture);p.matrices=matrixRevision;if(RenderProfile::active)++modelUploads;}
-        if(p.lastAlphaFunction!=alphaFunction){glUniform1i(p.alphaFunction,alphaFunction);p.lastAlphaFunction=alphaFunction;}
-        if(p.lastAlphaReference!=alphaReference){glUniform1f(p.alphaReference,alphaReference);p.lastAlphaReference=alphaReference;}
-    }
-    if(!p.valid)glUniform1i(p.texture,0);
-    if(!p.valid||p.lastTextured!=textured)glUniform1i(p.textured,textured);
-    if(!p.valid||p.lastReject!=reject)glUniform1i(p.reject,reject);
-    if(!p.valid||p.lastFog!=fog)glUniform1i(p.fog,fog);
-    if(!p.valid||p.lastCombine!=combine)glUniform1i(p.combine,combine);
-    if(!p.valid||std::memcmp(p.lastValues,fogValues,sizeof(fogValues)))glUniform3fv(p.values,1,fogValues);
-    if(!p.valid||std::memcmp(p.lastColor,fogColor,sizeof(fogColor)))glUniform4fv(p.color,1,fogColor);
-    p.valid=true;p.lastTextured=textured;p.lastReject=reject;p.lastFog=fog;p.lastCombine=combine;
-    std::copy(fogValues,fogValues+3,p.lastValues);std::copy(fogColor,fogColor+4,p.lastColor);
-    if(alphaEnabled)glDisable(GL_ALPHA_TEST);
-    if(modelVariant&&RenderProfile::active&&p.audit!=auditRevision){
-        p.audit=auditRevision;++modelChecks;unsigned errors=0;int value=0;float scalar=0,matrix[16];
-        glGetIntegerv(GL_CURRENT_PROGRAM,&value);if(static_cast<unsigned>(value)!=p.program)errors|=1;
-        glGetUniformiv(p.program,p.alphaFunction,&value);if(value!=alphaFunction)errors|=2;
-        glGetUniformfv(p.program,p.alphaReference,&scalar);if(scalar!=alphaReference)errors|=2;
-        glGetUniformfv(p.program,p.mvp,matrix);if(std::memcmp(matrix,modelMVP,sizeof(matrix)))errors|=4;
-        if(glIsEnabled(GL_ALPHA_TEST))errors|=8;
-        const auto legacy=ReadLegacyState();
-        if((glIsEnabled(GL_CULL_FACE)!=0)!=legacy.cull)errors|=16;
-        glGetIntegerv(GL_DEPTH_WRITEMASK,&value);if((value!=0)!=legacy.write)errors|=32;
-        for(unsigned attribute=0;attribute<3;++attribute){glGetVertexAttribiv(attribute,GL_VERTEX_ATTRIB_ARRAY_ENABLED,&value);if(!value)errors|=64;}
-        if(errors){++modelErrors;modelErrorMask|=errors;}
+    if(p->material!=RenderState::MaterialRevision()) {
+        const auto& s=RenderState::Get();
+        glUniform1i(p->textured,s.caps[RenderState::CapIndex(Gfx::Cap::Texture2D)]?1:0);
+        glUniform1i(p->environment,EnvCode(s.texEnv));
+        glUniform1i(p->alphaFunction,s.caps[RenderState::CapIndex(Gfx::Cap::AlphaTest)]?AlphaCode(s.alphaFunction):0);
+        glUniform1f(p->alphaReference,s.alphaReference);
+        const int fog=!s.caps[RenderState::CapIndex(Gfx::Cap::Fog)]?0:s.fogMode==Gfx::FogMode::Linear?1:s.fogMode==Gfx::FogMode::Exp?2:3;
+        glUniform1i(p->fog,fog);
+        glUniform3f(p->fogValues,s.fogStart,s.fogEnd,s.fogDensity);glUniform4fv(p->fogColor,1,s.fogColor);
+        p->material=RenderState::MaterialRevision();
     }
 }
 }

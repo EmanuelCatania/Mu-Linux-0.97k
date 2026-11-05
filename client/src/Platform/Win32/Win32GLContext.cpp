@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "Render/Backend/GL/LegacyGL.h"
 #include "Platform/Win32/Win32GLContext.h"
 #include "Platform/Win32/Win32Window.h"
 #include "Platform/GLFunctions.h"
@@ -48,22 +47,22 @@ bool Win32GLContext::Initialize()
         if (!fmt || !SetPixelFormat(m_hDC,fmt,&pfd)) return fail();
     }
     // DESVIACION: WGL necesita un contexto temporal para resolver su extensión
-    // de creación. El contexto de juego siempre solicita 3.3 compatibility.
+    // de creación. El contexto de juego siempre solicita 3.3 core.
     m_hRC=wglCreateContext(m_hDC);
     if (!m_hRC || !wglMakeCurrent(m_hDC,m_hRC)) return fail();
     const auto address=wglGetProcAddress("wglCreateContextAttribsARB");
     if (!ValidWGL(address)) return fail();
     using CreateContext=HGLRC (WINAPI*)(HDC,HGLRC,const int*);
     constexpr int ContextMajor=0x2091,ContextMinor=0x2092,ContextProfile=0x9126;
-    constexpr int CompatibilityProfile=0x00000002;
-    const int attributes[]={ContextMajor,3,ContextMinor,3,ContextProfile,CompatibilityProfile,0};
+    constexpr int CoreProfile=0x00000001;
+    const int attributes[]={ContextMajor,3,ContextMinor,3,ContextProfile,CoreProfile,0};
     const HGLRC modern=reinterpret_cast<CreateContext>(address)(m_hDC,nullptr,attributes);
     if (!modern) return fail();
     if (!wglMakeCurrent(m_hDC,modern)) { wglDeleteContext(modern); return fail(); }
     wglDeleteContext(m_hRC);
     m_hRC=modern;
     if (!LoadGL33(ResolveGL)) { OutputDebugStringA(GL33Error()); return fail(); }
-    OutputDebugStringA("OpenGL 3.3 compatibility inicializado\n");
+    OutputDebugStringA("OpenGL 3.3 core inicializado\n");
     return true;
 }
 

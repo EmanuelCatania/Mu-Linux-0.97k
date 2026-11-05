@@ -8,12 +8,7 @@ void Release();
 std::uint64_t SkippedFrames();
 std::uint64_t SkippedSegments();
 bool Supported();
-// Sólo se usa al perfilar; consulta el estado previo, no mantiene otro caché.
-void BlendFunction(unsigned source,unsigned destination);
-void DepthWrite(bool enabled);
-void DepthFunction(unsigned function);
+// Sólo se usa al perfilar; consulta el binding previo, no mantiene otro caché.
 void ObserveProgram(unsigned program);
 void ObserveTexture(unsigned target,unsigned texture);
-void SetEnabled(unsigned cap,bool enabled);
-void PopAttributes();
 }

@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -180,20 +180,18 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
-    <ClInclude Include="src\Render\GLCallBarrier.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
     <ClInclude Include="src\Render\Gfx.h" />
-    <ClInclude Include="src\Render\Backend\GL\LegacyGL.h" />
     <ClInclude Include="src\Render\ResourceTables.h" />
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />
     <ClInclude Include="src\Render\TerrainDraw.h" />
     <ClInclude Include="src\Render\BMDDevice.h" />
     <ClInclude Include="src\Render\Materials.h" />
-    <ClInclude Include="src\Render\FragmentStage.h" />
     <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
     <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
     <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\RenderState.h" />
     <ClInclude Include="src\Render\ProfileStats.h" />
     <ClInclude Include="src\Render\Backend\GL\ProfileUploads.h" />
     <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
@@ -292,7 +290,7 @@
     <ClCompile Include="src\Render\Backend\GL\GlyphAtlas.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Render\Backend\GL\Gfx.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\ResourceTables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -309,6 +307,7 @@
     <ClCompile Include="src\Render\RenderProfile.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Render\RenderState.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

@@ -2,18 +2,19 @@
 #include <cstdint>
 
 // Capa de render: el estado y los recursos que usa el juego, sin tipos ni
-// constantes de OpenGL. El backend GL (Render/Backend/GL/Gfx.cpp) traduce
-// cada llamada a la misma función GL que usaba el código heredado, con las
-// mismas barreras del lote (GLCallBarrier), así el orden de envío no cambia.
-// La geometría va por BufferedDraw; esto cubre estado, matrices, texturas,
-// niebla, consultas y las listas de glifos del texto.
+// constantes de OpenGL. El estado del pipeline fijo (alpha test, niebla,
+// texture env, matrices, color actual) vive en Render/RenderState y lo
+// consumen los shaders; el backend sólo envía al dispositivo el estado que
+// existe en OpenGL 3.3 core. Antes de cada cambio se envía el lote pendiente,
+// así el orden de dibujo no cambia. La geometría va por BufferedDraw; esto
+// cubre estado, matrices, texturas, niebla y consultas.
 namespace Gfx {
 
 enum class Cap { Texture2D, Blend, AlphaTest, DepthTest, CullFace, Fog, ScissorTest, StencilTest, Lighting, Dither, PolygonSmooth, ColorLogicOp };
 enum class Factor { Zero, One, SrcColor, OneMinusSrcColor, SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha, DstColor, OneMinusDstColor, SrcAlphaSaturate };
 enum class Compare { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
 enum class Matrix { ModelView, Projection, Texture };
-enum class Format { Alpha, RGB, RGBA, Luminance, LuminanceAlpha };
+enum class Format { RGB, RGBA };
 enum class TexParam { MinFilter, MagFilter, WrapS, WrapT };
 enum class TexValue { Nearest, Linear, NearestMipmapNearest, LinearMipmapNearest, NearestMipmapLinear, LinearMipmapLinear, Repeat, Clamp, ClampToEdge };
 enum class TexEnv { Modulate, Replace, Decal, Blend, Add };
@@ -21,12 +22,18 @@ enum class FogMode { Linear, Exp, Exp2 };
 enum class DeviceInfo { Vendor, Renderer, Version };
 // Máscaras combinables con |.
 enum ClearMask : unsigned { ClearColorBuffer = 1, ClearDepthBuffer = 2, ClearStencilBuffer = 4 };
-enum AttribMask : unsigned { AttribCurrent = 1, AttribTexture = 2, AttribEnable = 4, AttribList = 8 };
+enum AttribMask : unsigned { AttribCurrent = 1, AttribTexture = 2, AttribEnable = 4,
+    AttribColorBuffer = 16, AttribViewport = 32, AttribFog = 64, AttribDepth = 128 };
+
+// Al crear un contexto: deja RenderState y el dispositivo con los valores
+// iniciales de OpenGL.
+void ResetState();
 
 // Estado
 void Enable(Cap cap);
 void Disable(Cap cap);
 inline void SetEnabled(Cap cap, bool on) { on ? Enable(cap) : Disable(cap); }
+bool IsEnabled(Cap cap);
 void BlendFunc(Factor source, Factor destination);
 void DepthFunc(Compare function);
 void DepthMask(bool write);
@@ -90,13 +97,5 @@ void FogStart(float value);
 void FogEnd(float value);
 void FogDensity(float value);
 void FogColor(const float rgba[4]);
-
-// Listas de glifos del texto heredado (wglUseFontBitmaps / glCallLists)
-unsigned GenLists(int count);
-void DeleteLists(unsigned base, int count);
-void ListBase(unsigned base);
-void RasterPos2f(float x, float y);
-// Dibuja una lista por carácter (bytes), desde la base de ListBase.
-void CallLists(int count, const unsigned char* characters);
 
 }

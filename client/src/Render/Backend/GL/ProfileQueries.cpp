@@ -73,43 +73,6 @@ void Release() {
 }
 std::uint64_t SkippedFrames() { return skippedFrames; }
 std::uint64_t SkippedSegments() { return skippedSegments; }
-void BlendFunction(unsigned source,unsigned destination) {
-    GLint src=0,dst=0,srcAlpha=0,dstAlpha=0;
-    glGetIntegerv(GL_BLEND_SRC_RGB,&src);glGetIntegerv(GL_BLEND_DST_RGB,&dst);
-    glGetIntegerv(GL_BLEND_SRC_ALPHA,&srcAlpha);glGetIntegerv(GL_BLEND_DST_ALPHA,&dstAlpha);
-    if(static_cast<unsigned>(src)!=source || static_cast<unsigned>(dst)!=destination ||
-       static_cast<unsigned>(srcAlpha)!=source || static_cast<unsigned>(dstAlpha)!=destination)RenderProfile::Change(RenderProfile::State::Blend);
-}
-void SetEnabled(unsigned cap,bool enabled) {
-    if(RenderProfile::active && (glIsEnabled(cap)!=0)!=enabled) {
-        if(cap==GL_BLEND)RenderProfile::Change(RenderProfile::State::Blend);
-        if(cap==GL_DEPTH_TEST)RenderProfile::Change(RenderProfile::State::Depth);
-        if(cap==GL_TEXTURE_2D)RenderProfile::Change(RenderProfile::State::Texture);
-    }
-    if(enabled)glEnable(cap);else glDisable(cap);
-}
-void PopAttributes() {
-    if(!RenderProfile::active) { glPopAttrib();return; }
-    constexpr GLenum keys[]={GL_BLEND,GL_BLEND_SRC_RGB,GL_BLEND_DST_RGB,GL_BLEND_SRC_ALPHA,GL_BLEND_DST_ALPHA,
-        GL_DEPTH_TEST,GL_DEPTH_WRITEMASK,GL_DEPTH_FUNC,GL_TEXTURE_2D,GL_TEXTURE_BINDING_2D};
-    GLint before[10]{},after[10]{};
-    for(int i=0;i<10;++i)glGetIntegerv(keys[i],before+i);
-    glPopAttrib();
-    for(int i=0;i<10;++i)glGetIntegerv(keys[i],after+i);
-    // Una restauración puede cambiar varios grupos; contabilizar cada grupo
-    // una vez, sin inferir comandos individuales dentro de la pila nativa.
-    bool blend=false,depth=false,texture=false;
-    for(int i=0;i<5;++i)blend|=before[i]!=after[i];
-    for(int i=5;i<8;++i)depth|=before[i]!=after[i];
-    for(int i=8;i<10;++i)texture|=before[i]!=after[i];
-    if(blend)RenderProfile::Change(RenderProfile::State::Blend);
-    if(depth)RenderProfile::Change(RenderProfile::State::Depth);
-    if(texture)RenderProfile::Change(RenderProfile::State::Texture);
-}
-void DepthFunction(unsigned function) {
-    GLint current=0;glGetIntegerv(GL_DEPTH_FUNC,&current);
-    if(static_cast<unsigned>(current)!=function)RenderProfile::Change(RenderProfile::State::Depth);
-}
 void ObserveProgram(unsigned program) {
     if(!RenderProfile::active)return;
     GLint current=0;glGetIntegerv(GL_CURRENT_PROGRAM,&current);
@@ -123,9 +86,5 @@ void ObserveTexture(unsigned target,unsigned texture) {
     else if(target==GL_TEXTURE_BUFFER)glGetIntegerv(GL_TEXTURE_BINDING_BUFFER,&current);
     else return;
     if(static_cast<unsigned>(current)!=texture)RenderProfile::Change(RenderProfile::State::Texture);
-}
-void DepthWrite(bool enabled) {
-    GLboolean mask=0;glGetBooleanv(GL_DEPTH_WRITEMASK,&mask);
-    if((mask!=0)!=enabled)RenderProfile::Change(RenderProfile::State::Depth);
 }
 }
