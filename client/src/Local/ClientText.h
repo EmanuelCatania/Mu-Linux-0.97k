@@ -15,6 +15,7 @@ enum class ClientTextId {
     MiniMapGate, MiniMapZoom, MiniMapAlpha,
     ReconnectConnecting, ReconnectLogin, ReconnectCharList, ReconnectCharInfo,
     RenderGLUnavailable,
+    EventStartsIn,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).
