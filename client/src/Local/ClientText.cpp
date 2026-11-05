@@ -51,7 +51,8 @@ const char* const English[] = {
     "Logging in...",
     "Waiting character list...",
     "Waiting character info...",
-    "Could not initialize OpenGL 3.3 core. Check the graphics driver."
+    "Could not initialize OpenGL 3.3 core. Check the graphics driver.",
+    "Starts in %s"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
