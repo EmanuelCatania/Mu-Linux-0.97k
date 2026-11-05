@@ -92,4 +92,6 @@
 43	"Waiting character list..."
 //ReconnectCharInfo
 44	"Waiting character info..."
+//EventStartsIn
+46	"Starts in %s"
 end

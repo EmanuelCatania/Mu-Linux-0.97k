@@ -92,4 +92,6 @@
 43	"Aguardando a lista de personagens..."
 //ReconnectCharInfo
 44	"Aguardando os dados do personagem..."
+//EventStartsIn
+46	"Começa em %s"
 end
