@@ -2,28 +2,6 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "windows-x86-debug",
-      "binaryDir": "${sourceDir}/build/windows-x86-debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "MU_PLATFORM_BACKEND": "Win32"
-      },
-      "generator": "Visual Studio 17 2022",
-      "architecture": "Win32",
-      "toolset": "v143"
-    },
-    {
-      "name": "windows-x86-release",
-      "binaryDir": "${sourceDir}/build/windows-x86-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "MU_PLATFORM_BACKEND": "Win32"
-      },
-      "generator": "Visual Studio 17 2022",
-      "architecture": "Win32",
-      "toolset": "v143"
-    },
-    {
       "name": "linux-x86-debug",
       "binaryDir": "${sourceDir}/build/linux-x86-debug",
       "cacheVariables": {
@@ -79,16 +57,6 @@
     }
   ],
   "buildPresets": [
-    {
-      "name": "windows-x86-debug",
-      "configurePreset": "windows-x86-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-x86-release",
-      "configurePreset": "windows-x86-release",
-      "configuration": "Release"
-    },
     {
       "name": "linux-x86-debug",
       "configurePreset": "linux-x86-debug",
