@@ -108,4 +108,6 @@
 52	"Avançado"
 //OptionsGraphics
 53	"Gráficos"
+//HDTextures
+54	"Texturas HD"
 end
