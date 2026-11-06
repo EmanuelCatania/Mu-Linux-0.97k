@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageChops, ImageStat
 except ImportError:
     sys.exit('Falta Pillow: pip install Pillow')
 
@@ -44,8 +44,29 @@ def decodificar(ruta: Path) -> Image.Image:
     return Image.open(io.BytesIO(bytes(tga))).convert('RGBA')
 
 
-def negra(imagen: Image.Image) -> bool:
-    return imagen.convert('RGB').getextrema() == ((0, 0), (0, 0), (0, 0))
+def redimensionar(imagen: Image.Image, tamano, filtro=Image.LANCZOS) -> Image.Image:
+    """Como Image.resize, pero sin premultiplicar el alfa.
+
+    Pillow redimensiona RGBA premultiplicado y deja en negro el color de los
+    píxeles transparentes; con filtrado bilineal eso oscurece los bordes.
+    """
+    if imagen.mode != 'RGBA':
+        return imagen.resize(tamano, filtro)
+    color = imagen.convert('RGB').resize(tamano, filtro)
+    color.putalpha(imagen.getchannel('A').resize(tamano, filtro))
+    return color
+
+
+def corresponde(ampliada: Image.Image, original: Image.Image) -> bool:
+    """La ampliada, reducida al tamaño original, tiene que parecerse al original.
+
+    Descarta resultados en negro y también imágenes cruzadas con otra textura.
+    Una ampliación buena da ~5-10 de diferencia media por canal; una de otra
+    textura, más de 40.
+    """
+    reducida = redimensionar(ampliada, original.size, Image.BOX).convert('RGB')
+    diferencia = ImageStat.Stat(ImageChops.difference(reducida, original.convert('RGB'))).mean
+    return sum(diferencia) / 3 < 20
 
 
 def texturas(data: Path, carpetas):
@@ -91,9 +112,6 @@ def main():
     with tempfile.TemporaryDirectory(prefix='mu-hd-') as temporal:
         entrada, ampliadas = Path(temporal) / 'in', Path(temporal) / 'out'
         entrada.mkdir(); ampliadas.mkdir()
-        # Nombres planos: el reescalador procesa una carpeta sin subcarpetas.
-        for i, (_, _, imagen) in enumerate(pendientes):
-            imagen.save(entrada / f'{i:05d}.png')
         def reescalar(origen: Path, destino: Path):
             comando = [str(a.exe), '-i', str(origen), '-o', str(destino), '-n', a.modelo, '-s', '4', '-f', 'png']
             if a.modelos:
@@ -102,27 +120,28 @@ def main():
 
         if a.reescalador == 'realesrgan':
             print('reescalando con', a.modelo)
-            reescalar(entrada, ampliadas)
         for i, (ruta, destino, imagen) in enumerate(pendientes):
             tamano = (imagen.width * a.escala, imagen.height * a.escala)
             ampliada = None
             if a.reescalador == 'realesrgan':
-                archivo = ampliadas / f'{i:05d}.png'
-                # Por carpeta, ncnn devuelve algunas imágenes en negro de forma
-                # intermitente; de a una salen bien. Se reintentan así.
-                for intento in range(4):
+                origen, archivo = entrada / f'{i:05d}.png', ampliadas / f'{i:05d}.png'
+                imagen.save(origen)
+                # De a una imagen: procesando una carpeta, el reescalador
+                # cruza resultados entre texturas de distinto tamaño y a
+                # veces devuelve negro. Igual se verifica cada resultado.
+                for intento in range(3):
+                    reescalar(origen, archivo)
                     if archivo.exists():
                         ampliada = Image.open(archivo).convert(imagen.mode)
-                        if negra(ampliada) == negra(imagen):
+                        if corresponde(ampliada, imagen):
                             break
                         ampliada = None
-                    reescalar(entrada / f'{i:05d}.png', archivo)
                 if ampliada is None:
                     print(f'  {ruta}: el reescalador falló, se usa Lanczos')
                 elif ampliada.size != tamano:
-                    ampliada = ampliada.resize(tamano, Image.LANCZOS)
+                    ampliada = redimensionar(ampliada, tamano)
             if ampliada is None:
-                ampliada = imagen.resize(tamano, Image.LANCZOS)
+                ampliada = redimensionar(imagen, tamano)
             destino.parent.mkdir(parents=True, exist_ok=True)
             ampliada.save(destino)
     print(f'pack en {salida}')

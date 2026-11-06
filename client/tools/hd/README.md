@@ -25,5 +25,7 @@ python tools/hd/generar_pack_hd.py --data bin/Client/Data --reescalador realesrg
 - `--reescalador lanczos` amplía sin IA, sólo para probar el pack.
 - Las que ya existen se saltean; `--forzar` las rehace.
 
-ncnn a veces devuelve imágenes en negro al procesar una carpeta entera; la
-herramienta las reintenta de a una y, si siguen fallando, usa Lanczos.
+La herramienta reescala de a una imagen: procesando una carpeta entera, el
+reescalador a veces devuelve negro o cruza resultados entre texturas. Cada
+resultado se reduce y se compara con su original; si no coincide se reintenta
+y, si sigue fallando, se usa Lanczos.
