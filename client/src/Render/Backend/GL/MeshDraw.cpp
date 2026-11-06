@@ -15,6 +15,7 @@
 #define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Render/BufferedDraw.h"
+#include "Render/Backend/GL/ShadowMap.h"
 #include "Render/MeshDraw.h"
 #include "Render/Backend/Api.h"
 #include "Render/Skinning.h"
@@ -144,6 +145,20 @@ bool Draw(const Input& input) {
     float color[4],uv[4];std::copy(captured.color,captured.color+4,color);std::copy(captured.uv,captured.uv+4,uv);
     if(chrome) { std::copy(input.bodyLight,input.bodyLight+3,color);color[3]=input.alpha<1.f?input.alpha:1.f; }
     else if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
+    // DESVIACION: sombras proyectadas (opción). La malla con sus posiciones
+    // del mundo ya calculadas en CPU; lo semitransparente no proyecta.
+    if(!chrome && color[3]>=0.99f && ShadowMapGL::Capturing()) {
+        static std::vector<ShadowMapGL::CasterVertex> triangles;
+        triangles.resize(mesh.indices.size());
+        const bool offset=texture && input.offset;
+        for(std::size_t i=0;i<mesh.indices.size();++i) {
+            const auto& c=mesh.corners[mesh.indices[i]];auto& t=triangles[i];
+            std::memcpy(t.position,input.positions+c.position*3,sizeof(t.position));
+            t.uv[0]=texture?input.uv[c.uv*2]+(offset?input.u:0.f):0.f;
+            t.uv[1]=texture?input.uv[c.uv*2+1]+(offset?input.v:0.f):0.f;
+        }
+        ShadowMapGL::Capture(triangles.data(),triangles.size());
+    }
     if(residentEnabled && !chrome && Resident(gl,*found,input)) {
         const bool offset=texture && input.offset;
         const Skinning::ResidentDraw draw{input.model,input.key,gl.residentArray,mesh.indices.size(),mesh.maxBone,

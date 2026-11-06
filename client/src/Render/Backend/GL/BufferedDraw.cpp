@@ -8,6 +8,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/Backend/Api.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
+#include "Render/Backend/GL/ShadowMap.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
@@ -109,6 +110,8 @@ void Release() {
 }
 void Submit(unsigned mode,const Vertex* vertices,std::size_t count) {
     if (!program) return;
+    // DESVIACION: sombras proyectadas (opción), guardar lo que proyecta.
+    if (ShadowMapGL::Capturing()) ShadowMapGL::CaptureImmediate(mode,vertices,count);
     BindPipeline(program,array,buffer);FragmentPipelineGL::Apply(program);
     GLint first=RingWrite(vertices,count);
     if(first<0) {

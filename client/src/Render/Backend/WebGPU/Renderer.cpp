@@ -13,6 +13,7 @@
 #include "Render/MeshTopology.h"
 #include "Render/RenderState.h"
 #include "Render/Skinning.h"
+#include "Render/ShadowLight.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -261,9 +262,7 @@ struct ShadowUniform {
     float lightViewProj[16], inverseView[16];
     float params[4];   // activa, intensidad, tamaño del texel, sesgo
 };
-constexpr uint32_t ShadowSize = 2048;          // texels del mapa de sombras
-constexpr float ShadowRadius = 1800.0f;        // medio lado del área cubierta (unidades del mundo)
-constexpr float ShadowDepth = 4000.0f;         // profundidad a cada lado del centro
+constexpr uint32_t ShadowSize = ShadowLight::Size;
 constexpr uint64_t UniformStride = 256;
 static_assert(sizeof(Skin) <= UniformStride, "Skin no entra en su tramo");
 static_assert(sizeof(Uniforms) <= UniformStride, "Uniforms no entra en su tramo");
@@ -713,60 +712,6 @@ WGPURenderPipeline CasterPipeline(uint8_t topology) {
     WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(GetDevice(), &d);
     g.casterPipelines.emplace(topology, pipeline);
     return pipeline;
-}
-
-// ── Matrices de la luz ──────────────────────────────────────────────────────
-// Column-major, como OpenGL y WGSL.
-bool Invert(const float m[16], float out[16]) {
-    float inv[16];
-    inv[0] = m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15] + m[9]*m[7]*m[14] + m[13]*m[6]*m[11] - m[13]*m[7]*m[10];
-    inv[4] = -m[4]*m[10]*m[15] + m[4]*m[11]*m[14] + m[8]*m[6]*m[15] - m[8]*m[7]*m[14] - m[12]*m[6]*m[11] + m[12]*m[7]*m[10];
-    inv[8] = m[4]*m[9]*m[15] - m[4]*m[11]*m[13] - m[8]*m[5]*m[15] + m[8]*m[7]*m[13] + m[12]*m[5]*m[11] - m[12]*m[7]*m[9];
-    inv[12] = -m[4]*m[9]*m[14] + m[4]*m[10]*m[13] + m[8]*m[5]*m[14] - m[8]*m[6]*m[13] - m[12]*m[5]*m[10] + m[12]*m[6]*m[9];
-    inv[1] = -m[1]*m[10]*m[15] + m[1]*m[11]*m[14] + m[9]*m[2]*m[15] - m[9]*m[3]*m[14] - m[13]*m[2]*m[11] + m[13]*m[3]*m[10];
-    inv[5] = m[0]*m[10]*m[15] - m[0]*m[11]*m[14] - m[8]*m[2]*m[15] + m[8]*m[3]*m[14] + m[12]*m[2]*m[11] - m[12]*m[3]*m[10];
-    inv[9] = -m[0]*m[9]*m[15] + m[0]*m[11]*m[13] + m[8]*m[1]*m[15] - m[8]*m[3]*m[13] - m[12]*m[1]*m[11] + m[12]*m[3]*m[9];
-    inv[13] = m[0]*m[9]*m[14] - m[0]*m[10]*m[13] - m[8]*m[1]*m[14] + m[8]*m[2]*m[13] + m[12]*m[1]*m[10] - m[12]*m[2]*m[9];
-    inv[2] = m[1]*m[6]*m[15] - m[1]*m[7]*m[14] - m[5]*m[2]*m[15] + m[5]*m[3]*m[14] + m[13]*m[2]*m[7] - m[13]*m[3]*m[6];
-    inv[6] = -m[0]*m[6]*m[15] + m[0]*m[7]*m[14] + m[4]*m[2]*m[15] - m[4]*m[3]*m[14] - m[12]*m[2]*m[7] + m[12]*m[3]*m[6];
-    inv[10] = m[0]*m[5]*m[15] - m[0]*m[7]*m[13] - m[4]*m[1]*m[15] + m[4]*m[3]*m[13] + m[12]*m[1]*m[7] - m[12]*m[3]*m[5];
-    inv[14] = -m[0]*m[5]*m[14] + m[0]*m[6]*m[13] + m[4]*m[1]*m[14] - m[4]*m[2]*m[13] - m[12]*m[1]*m[6] + m[12]*m[2]*m[5];
-    inv[3] = -m[1]*m[6]*m[11] + m[1]*m[7]*m[10] + m[5]*m[2]*m[11] - m[5]*m[3]*m[10] - m[9]*m[2]*m[7] + m[9]*m[3]*m[6];
-    inv[7] = m[0]*m[6]*m[11] - m[0]*m[7]*m[10] - m[4]*m[2]*m[11] + m[4]*m[3]*m[10] + m[8]*m[2]*m[7] - m[8]*m[3]*m[6];
-    inv[11] = -m[0]*m[5]*m[11] + m[0]*m[7]*m[9] + m[4]*m[1]*m[11] - m[4]*m[3]*m[9] - m[8]*m[1]*m[7] + m[8]*m[3]*m[5];
-    inv[15] = m[0]*m[5]*m[10] - m[0]*m[6]*m[9] - m[4]*m[1]*m[10] + m[4]*m[2]*m[9] + m[8]*m[1]*m[6] - m[8]*m[2]*m[5];
-    const float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-    if (det == 0.0f) return false;
-    for (int i = 0; i < 16; ++i) out[i] = inv[i] / det;
-    return true;
-}
-// Vista + proyección ortográfica de la luz, centrada en focus y alineada a
-// texels (al moverse, la sombra no titila). La dirección es la de la sombra
-// plana del original (BMD__RenderBodyShadow): X se corre medio por unidad de
-// altura, o sea la luz viaja hacia (-0.5, 0, -1).
-void LightViewProj(const float focus[3], float out[16]) {
-    float d[3] = {-0.5f, 0.0f, -1.0f};
-    const float len = std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-    for (float& v : d) v /= len;
-    // Base de la luz: forward = d, right = d x (0,1,0), up = right x d.
-    const float up0[3] = {0.0f, 1.0f, 0.0f};
-    float right[3] = {d[1] * up0[2] - d[2] * up0[1], d[2] * up0[0] - d[0] * up0[2], d[0] * up0[1] - d[1] * up0[0]};
-    const float rl = std::sqrt(right[0] * right[0] + right[1] * right[1] + right[2] * right[2]);
-    for (float& v : right) v /= rl;
-    const float up[3] = {right[1] * d[2] - right[2] * d[1], right[2] * d[0] - right[0] * d[2], right[0] * d[1] - right[1] * d[0]};
-    auto dot = [](const float* a, const float* b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; };
-    const float texel = 2.0f * ShadowRadius / float(ShadowSize);
-    const float cx = std::floor(dot(right, focus) / texel) * texel;
-    const float cy = std::floor(dot(up, focus) / texel) * texel;
-    const float cz = dot(d, focus);
-    // x' = (right·p - cx) / R, y' = (up·p - cy) / R, z' = (d·p - cz + D) / 2D (0..1)
-    const float sx = 1.0f / ShadowRadius, sz = 1.0f / (2.0f * ShadowDepth);
-    float m[16] = {};
-    m[0] = right[0] * sx; m[4] = right[1] * sx; m[8] = right[2] * sx;  m[12] = -cx * sx;
-    m[1] = up[0] * sx;    m[5] = up[1] * sx;    m[9] = up[2] * sx;     m[13] = -cy * sx;
-    m[2] = d[0] * sz;     m[6] = d[1] * sz;     m[10] = d[2] * sz;     m[14] = (ShadowDepth - cz) * sz;
-    m[15] = 1.0f;
-    std::memcpy(out, m, sizeof(m));
 }
 
 // Uniforms del lote: se reutiliza el tramo anterior si no cambió nada.
@@ -1576,11 +1521,11 @@ void ShadowScene(bool begin, const float* focus, float strength) {
     g.shadowCasting = true;
     g.matrixRevision = ~0ull;   // los uniforms siguientes cambian el flag de receptor
     if (!g.shadowScene) return;
-    if (!::WebGPU::Invert(RenderState::Top(Gfx::Matrix::ModelView), g.shadow.inverseView)) { g.shadowScene = false; return; }
-    ::WebGPU::LightViewProj(focus, g.shadow.lightViewProj);
+    if (!ShadowLight::Invert(RenderState::Top(Gfx::Matrix::ModelView), g.shadow.inverseView)) { g.shadowScene = false; return; }
+    ShadowLight::ViewProj(focus, g.shadow.lightViewProj);
     g.shadow.params[1] = strength;
     g.shadow.params[2] = 1.0f / float(::WebGPU::ShadowSize);
-    g.shadow.params[3] = 0.0015f;
+    g.shadow.params[3] = ShadowLight::Bias;
     g.shadowFrame = true;
 }
 void ShadowCasting(bool enabled) { g.shadowCasting = enabled; }

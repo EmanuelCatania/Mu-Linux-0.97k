@@ -315,6 +315,8 @@
     <ClCompile Include="src\Render\Backend\GL\MeshDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ShadowMap.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ShadowLight.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Materials.cpp" />
