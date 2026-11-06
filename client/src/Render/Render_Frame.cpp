@@ -648,7 +648,9 @@ void Render_Scene3D(void)
     {
         // Empieza a la mitad del alcance normal y llega al borde del ampliado
         // (distancia de dibujado), donde ya sólo queda el terreno.
-        const float end = CameraViewFar * 0.95f;
+        // El frustum del culling llega al 90 % del alcance (_DAT_005526e8):
+        // la niebla tiene que completarse antes.
+        const float end = CameraViewFar * 0.85f;
         const float start = CameraViewFar / gUserSettings.DrawDistanceScale() * 0.5f;
         if (worldId == 7) {
             const float water[3] = {0.02f, 0.16f, 0.24f};

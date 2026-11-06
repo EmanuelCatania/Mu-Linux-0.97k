@@ -159,6 +159,7 @@ void Terrain_EndBatch();
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
+#include "Render/Camera3D.h"
 #include "Game/MapManager.h"
 #include "structs.h"
 #include "globals.h"
@@ -4669,8 +4670,57 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // tolerancia de bloques y objetos con el producto cruz sin normalizar, así
 // que con un cuadro más grande esa tolerancia se achica y los bloques de
 // 16x16 cerca del borde quedaban afuera (objetos que no aparecían).
+// DESVIACION: con la cámara 3D o la distancia de dibujado ampliada, el corte
+// del frustum con el plano del suelo queda más chico que lo que se ve (cámara
+// alta e inclinada, terreno con relieve) y los costados quedaban sin tiles.
+// Acá el cuadro cubre toda la huella del frustum sobre el mapa: en la base de
+// la dirección de la vista, el abanico entre la esquina de más a la izquierda
+// y la de más a la derecha, hasta la más lejana (y 800 de margen, como abajo).
+static bool CreateFrustrum2D_Footprint()
+{
+    const float ax = FrustrumVertex, ay = DAT_07eab1b4;
+    const float cx[4] = { DAT_07eab1bc, DAT_07eab1c8, DAT_07eab1d4, DAT_07eab1e0 };
+    const float cy[4] = { DAT_07eab1c0, DAT_07eab1cc, DAT_07eab1d8, DAT_07eab1e4 };
+    float mx = 0.0f, my = 0.0f;
+    for (int i = 0; i < 4; ++i) { mx += cx[i] - ax; my += cy[i] - ay; }
+    const float ml = sqrtf(mx * mx + my * my);
+    if (ml < 1.0f) return false;                 // mirando hacia abajo: sin dirección
+    mx /= ml; my /= ml;
+    float sx = -my, sy = mx;                     // costado
+    // Que "izquierda" sea la de la esquina arriba-izquierda (orden del cuadro).
+    if ((cx[0] - ax) * sx + (cy[0] - ay) * sy < (cx[1] - ax) * sx + (cy[1] - ay) * sy) { sx = -sx; sy = -sy; }
+    float minA = 0.0f, maxA = 0.0f, reach = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        const float dx = cx[i] - ax, dy = cy[i] - ay;
+        const float f = dx * mx + dy * my, s = dx * sx + dy * sy;
+        if (f <= 1.0f) return false;
+        const float a = atan2f(s, f);
+        if (i == 0 || a < minA) minA = a;
+        if (i == 0 || a > maxA) maxA = a;
+        const float d = sqrtf(dx * dx + dy * dy);
+        if (d > reach) reach = d;
+    }
+    const float half = (maxA - minA) * 0.5f;
+    if (half > 1.3f) return false;               // abanico demasiado abierto
+    reach = reach / cosf(half) + 800.0f;
+    // (adelante, costado): lejos-izquierda, lejos-derecha, cerca-derecha, cerca-izquierda.
+    const float local[4][2] = {
+        { reach * cosf(maxA), reach * sinf(maxA) },
+        { reach * cosf(minA), reach * sinf(minA) },
+        { -800.0f, -800.0f },
+        { -800.0f,  800.0f },
+    };
+    for (int i = 0; i < 4; ++i) {
+        FrustrumX[i] = (ax + mx * local[i][0] + sx * local[i][1]) * _DAT_005524f8;
+        FrustrumY[i] = (ay + my * local[i][0] + sy * local[i][1]) * _DAT_005524f8;
+    }
+    return true;
+}
+
 static bool CreateFrustrum2D_FromFrustum(const float *ground)
 {
+    if ((gCamera3D.IsEnabled() || gUserSettings.DrawDistanceScale() > 1.0f) && CreateFrustrum2D_Footprint())
+        return true;
     const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
     const float corner[4][3] = {
         { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
