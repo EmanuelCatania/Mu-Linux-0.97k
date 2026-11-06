@@ -97,6 +97,7 @@ void CUserSettings::Load(const char* iniPath)
     for (int i = 0; i < static_cast<int>(RenderBackendPreference::Count); ++i)
         if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
             m_RenderBackend = static_cast<RenderBackendPreference>(i);
+    m_StartupRenderBackend = m_RenderBackend;
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -211,6 +212,17 @@ const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
     case RenderBackendPreference::D3D11: return "d3d11";
     case RenderBackendPreference::Vulkan: return "vulkan";
     default: return "opengl";
+    }
+}
+
+const char* CUserSettings::RenderBackendName(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "WebGPU";
+    case RenderBackendPreference::D3D12: return "DirectX 12";
+    case RenderBackendPreference::D3D11: return "DirectX 11";
+    case RenderBackendPreference::Vulkan: return "Vulkan";
+    default: return "OpenGL";
     }
 }
 

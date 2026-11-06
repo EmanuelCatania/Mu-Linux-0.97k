@@ -539,6 +539,16 @@ void COptionsMenu::RenderScreen()
     if (fps) Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFps),fps);
     else Platform::TextCopySecure(text,gClientText.Get(ClientTextId::RenderUnlimited));
     RenderSelector((float)RowY(row++),text,fps==0 || fps>25,fps!=0);
+#ifdef MU_RENDER_WEBGPU
+    // DESVIACION: backend de render (OpenGL o WebGPU sobre D3D12/D3D11/Vulkan);
+    // se guarda en Config.ini y se aplica al reiniciar.
+    const auto backend = gUserSettings.GetRenderBackend();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::RenderBackend), CUserSettings::RenderBackendName(backend));
+    RenderSelector((float)RowY(row++), text, backend != RenderBackendPreference::OpenGL,
+        static_cast<int>(backend) + 1 < static_cast<int>(RenderBackendPreference::Count));
+    if (backend != gUserSettings.GetStartupRenderBackend())
+        RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
+#endif
     RenderButton((float)RowY(row), GlobalText[925]);
 }
 
@@ -579,6 +589,16 @@ bool COptionsMenu::UpdateScreen()
         if (fpsStep) gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),AdjacentRenderLimit(fps,fpsStep));
         return true;
     }
+#ifdef MU_RENDER_WEBGPU
+    const int backend = static_cast<int>(gUserSettings.GetRenderBackend());
+    const int backendCount = static_cast<int>(RenderBackendPreference::Count);
+    const int backendStep = UpdateSelector(RowY(row++), backend > 0, backend + 1 < backendCount);
+    if (backendStep != INT_MIN) {
+        if (backendStep) gUserSettings.SetRenderBackend(static_cast<RenderBackendPreference>(backend + (backendStep > 0 ? 1 : -1)));
+        return true;
+    }
+    if (gUserSettings.GetRenderBackend() != gUserSettings.GetStartupRenderBackend() && UpdateToggle(RowY(row++), clicked)) return true;
+#endif
     if (!UpdateToggle(RowY(row), clicked)) return false;
     if (clicked) m_Page = PAGE_MAIN;
     return true;

@@ -101,6 +101,10 @@ public:
     bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
     RenderBackendPreference GetRenderBackend() const { return m_RenderBackend; }
+    // La preferencia con la que arrancó el cliente (el backend en uso).
+    RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
+    // Nombre para mostrar ("OpenGL", "DirectX 12"...).
+    static const char* RenderBackendName(RenderBackendPreference preference);
     // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
     static const char* RenderBackendKey(RenderBackendPreference preference);
     // Guarda la preferencia; se usa en el próximo arranque.
@@ -162,6 +166,7 @@ private:
     int  m_FpsLimit = 60;
     bool m_VSync = false;
     RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
+    RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;
