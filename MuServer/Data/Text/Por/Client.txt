@@ -112,4 +112,6 @@
 54	"Texturas HD"
 //Shadows
 55	"Sombras: %s"
+//DepthFog
+56	"Névoa de profundidade"
 end

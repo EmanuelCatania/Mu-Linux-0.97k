@@ -112,4 +112,6 @@
 54	"HD textures"
 //Shadows
 55	"Shadows: %s"
+//DepthFog
+56	"Depth fog"
 end
