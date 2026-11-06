@@ -216,7 +216,8 @@ bool ReadSource(const TerrainDraw::Texture& source,Page& p) {
     // Las texturas anisotrópicas requieren incorporar ese sampler; no degradarlo.
     GLint extensions=0;glGetIntegerv(GL_NUM_EXTENSIONS,&extensions);
     for(int i=0;i<extensions;++i)if(std::strcmp((const char*)glGetStringi(GL_EXTENSIONS,i),"GL_EXT_texture_filter_anisotropic")==0) {
-        GLfloat anisotropy=1;glGetTexParameterfv(GL_TEXTURE_2D,0x84FE,&anisotropy);if(anisotropy!=1)return false;break;
+        // Con la opción de mipmaps la anisotropía es nuestra y la página la replica.
+        GLfloat anisotropy=1;glGetTexParameterfv(GL_TEXTURE_2D,0x84FE,&anisotropy);if(anisotropy!=1&&!Gfx::TextureMipmaps())return false;break;
     }
     p.width=w;p.height=h;p.channels=source.channels;
     glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,&p.filterMin);glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,&p.filterMag);
@@ -224,7 +225,7 @@ bool ReadSource(const TerrainDraw::Texture& source,Page& p) {
     GLint compare=0,swizzle[4]{};glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_COMPARE_MODE,&compare);glGetTexParameteriv(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_RGBA,swizzle);
     const int identity[]{GL_RED,GL_GREEN,GL_BLUE,GL_ALPHA};
     if(compare!=GL_NONE||std::memcmp(identity,swizzle,sizeof(identity)))return false;
-    if(p.filterMin!=GL_NEAREST&&p.filterMin!=GL_LINEAR)return false;
+    if(p.filterMin!=GL_NEAREST&&p.filterMin!=GL_LINEAR&&!(Gfx::TextureMipmaps()&&p.filterMin==GL_LINEAR_MIPMAP_LINEAR))return false;
     glGetTexParameterfv(GL_TEXTURE_2D,GL_TEXTURE_BORDER_COLOR,p.border.data());
     auto wrap=[](int v){return v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
     return wrap(p.wrapS)&&wrap(p.wrapT);
@@ -254,7 +255,15 @@ bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
     std::sort(dirty.begin(),dirty.end());dirty.erase(std::unique(dirty.begin(),dirty.end()),dirty.end());
     glActiveTexture(GL_TEXTURE0);
     for(int i:dirty) { auto& p=pages[i];if(!p.name)glGenTextures(1,&p.name);Bind(GL_TEXTURE_2D_ARRAY,p.name);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,p.filterMin);glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,p.filterMag);
+        // DESVIACION: con la opción de mipmaps el terreno es trilineal con
+        // anisotropía y amplía con filtro lineal, como el resto de lo 3D.
+        const bool mipmaps=Gfx::TextureMipmaps();
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,mipmaps?GL_LINEAR_MIPMAP_LINEAR:p.filterMin);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,mipmaps?GL_LINEAR:p.filterMag);
+        if(mipmaps) {
+            GLfloat anisotropy=0;glGetFloatv(0x84FF,&anisotropy);while(glGetError()!=GL_NO_ERROR){}
+            if(anisotropy>1)glTexParameterf(GL_TEXTURE_2D_ARRAY,0x84FE,anisotropy<16?anisotropy:16);
+        }
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,p.wrapS);glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,p.wrapT);
         glTexParameterfv(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_BORDER_COLOR,p.border.data());
         glTexImage3D(GL_TEXTURE_2D_ARRAY,0,p.channels==4?GL_RGBA8:GL_RGB8,p.width,p.height,(int)p.sources.size(),0,p.channels==4?GL_RGBA:GL_RGB,GL_UNSIGNED_BYTE,nullptr);
@@ -269,6 +278,7 @@ bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
             glGetTexImage(GL_TEXTURE_2D,0,p.channels==4?GL_RGBA:GL_RGB,GL_UNSIGNED_BYTE,image.data());
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY,0,0,0,j,p.width,p.height,1,p.channels==4?GL_RGBA:GL_RGB,GL_UNSIGNED_BYTE,image.data());
         }
+        if(mipmaps)glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
     }
     return true;
 }
