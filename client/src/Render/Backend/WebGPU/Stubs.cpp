@@ -12,8 +12,6 @@ bool Draw(const Input&) { return false; }
 }
 
 namespace Skinning::WGPU {
-void Invalidate() {}
-void Capture(const void*, const float*, int, float, float, const float*, const float*, const float*, const Source*, std::size_t) {}
 bool Draw(const void*, const void*, unsigned, const BufferedDraw::Vertex*, const int*, const int*, std::size_t, std::size_t,
     const float*, int, const float*, bool, const float*) { return false; }
 void ResidentLayout(unsigned) {}

@@ -191,6 +191,7 @@
     <ClInclude Include="src\Render\RenderBackend.h" />
     <ClInclude Include="src\Render\Backend\Api.h" />
     <ClInclude Include="src\Render\Backend\GfxDevice.h" />
+    <ClInclude Include="src\Render\MeshTopology.h" />
     <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
     <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
     <ClInclude Include="src\Render\RenderProfile.h" />
@@ -294,6 +295,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\MeshTopology.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
