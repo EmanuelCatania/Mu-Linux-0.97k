@@ -110,7 +110,7 @@ def harness(revision=None):
     globals_source = read_source("src/globals.cpp", revision)
     for name in ("_DAT_0055256c", "_DAT_00552844"):
         prefix += re.search(rf"^float\s+{name}\s*=[^;]+;", globals_source, re.M).group() + "\n"
-    monster = function(read_source("src/Net/SecondPassword.cpp", revision), "MoveMonsterClient")
+    monster = function(read_source("src/Entity/Character_Motion.cpp", revision), "MoveMonsterClient")
     args = "character, object" if "CHARACTER* character" in monster else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character)), static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix + SERVICES + monster + MAIN.replace("CALL_MONSTER", f"MoveMonsterClient({args})")
 

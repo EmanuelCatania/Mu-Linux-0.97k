@@ -6,7 +6,7 @@
 // items** del cliente: render del grid + hit-test + click handlers para
 // pickup / drop / sell / right-click-use / hotkey-assign / pet-renaming.
 //
-// La llaman los paneles de SecondPassword.cpp (4-7 sitios) en cada tick:
+// La llaman los paneles de UI/UI_PanelInput.cpp (4-7 sitios) en cada tick:
 //   - Main inventory: `FUN_004d23b0(InventoryStartX+15, InventoryStartY+200,
 //     OffsetInventoryItems, 8, 8, 0)`
 //   - Trade slots (own/peer): grids 8x4

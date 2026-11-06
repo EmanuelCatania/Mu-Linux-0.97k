@@ -803,7 +803,7 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     //   if (c+756 == 2) { CreateJoint(1258, ..., subtype 0);
     //                     CreateJoint(1258, ..., subtype 1); }
     // y limpia +756/+758 al final del bloque. Ese consumidor ya
-    // estaba portado (SecondPassword.cpp:3980) — faltaba el writer.
+    // estaba portado (MoveCharacter, Entity/Character_Motion.cpp) — faltaba el writer.
     if (Size < 12) { NetLog("NET:  → 0x9C DieExp size=%d (corto)", Size); return; }
     {
         const int   key   = Msg[4] + (Msg[3] << 8);

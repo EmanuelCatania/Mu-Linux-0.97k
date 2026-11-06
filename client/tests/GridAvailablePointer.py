@@ -39,7 +39,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    code=function(read_source('src/Net/SecondPassword.cpp',revision),'SecondPassword_GridSlotAvail')
+    code=function(read_source('src/UI/UI_PanelInput.cpp',revision),'SecondPassword_GridSlotAvail')
     arg='reinterpret_cast<uintptr_t>(grid)' if 'uintptr_t a1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(grid))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+MAIN.replace('FUNCTION',code).replace('ARG',arg)
 

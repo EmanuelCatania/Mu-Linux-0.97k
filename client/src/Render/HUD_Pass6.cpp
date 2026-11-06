@@ -1639,7 +1639,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 //
 // Incluye la fila inferior: el zen guardado, el impuesto de retiro y los 3
 // botones (guardar zen / sacar zen / candado). El hit-test de esos botones es
-// SecondPassword_Screen9 (Net/SecondPassword.cpp, nombre heredado: es el de
+// SecondPassword_Screen9 (UI/UI_PanelInput.cpp, nombre heredado: es el de
 // sub_4EB5D0).
 //
 // Ruido anti-tamper (hash table sobre CharacterMachine alrededor de CADA lectura

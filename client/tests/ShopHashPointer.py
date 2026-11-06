@@ -66,7 +66,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/Net/SecondPassword.cpp',revision),'FUN_004ec330')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/UI/UI_PanelInput.cpp',revision),'FUN_004ec330')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

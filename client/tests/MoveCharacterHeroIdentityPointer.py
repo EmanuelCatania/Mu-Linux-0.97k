@@ -70,7 +70,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Net/SecondPassword.cpp',revision)
+    source=read_source('src/Entity/Character_Motion.cpp',revision)
     source=source[source.index('void __cdecl MoveCharacter('):]
     start=source.index('    if (',source.index('// ─── IDA L437-477:'))
     end=source.index('    // ─── IDA L478-498:',start)

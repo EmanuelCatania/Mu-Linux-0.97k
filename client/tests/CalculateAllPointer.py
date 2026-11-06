@@ -119,7 +119,7 @@ def harness(revision=None):
         prefix += function(scene, name)
     for name in names:
         prefix = prefix.replace(name + "(", name + "Real(")
-    calculate = function(read_source("src/Net/SecondPassword.cpp", revision), "CalculateAll").replace("rand()", "CalcRandom()")
+    calculate = function(read_source("src/Entity/Character_Motion.cpp", revision), "CalculateAll").replace("rand()", "CalcRandom()")
     arg = "machine" if "BYTE* characterMachine" in calculate else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + WRAPPERS + calculate + MAIN.replace("CALL_CALCULATE", f"CalculateAll({arg}, 123, -456)")
 

@@ -114,7 +114,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/SecondPassword.cpp',revision)
+    source=read_source('src/UI/UI_PanelInput.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'SecondPassword_Screen4')+MAIN
 
 def main():
