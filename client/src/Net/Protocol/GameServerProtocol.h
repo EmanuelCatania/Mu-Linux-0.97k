@@ -678,8 +678,11 @@ struct CATALOG_MAP_FOG
     std::uint8_t DayRGB[3];
     std::uint8_t NightRGB[3];
     std::uint8_t Reserved;
+    // Distancias de la niebla lineal; un server viejo manda 8 bytes y quedan en 0.
+    std::uint16_t Start;
+    std::uint16_t End;
 };
-static_assert(sizeof(CATALOG_MAP_FOG) == 8, "F3:E9 entrada");
+static_assert(sizeof(CATALOG_MAP_FOG) == 12, "F3:E9 entrada");
 
 // F3:EC — efectos de un item (Data/Custom/Items/*.json del server).
 const std::uint8_t CATALOG_EFFECT_ON_EQUIPPED = 0x01;

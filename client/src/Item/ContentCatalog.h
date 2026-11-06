@@ -130,6 +130,8 @@ public:
     // mapa mezcla día y noche según la hora local; los mapas sin fila usan los
     // colores por defecto del DLL.  Se recalcula al cambiar de mapa o cada 10 s.
     bool HasMapFog() const { return m_HasFog; }
+    // Distancias de la niebla del server (2000..2700 si no las manda).
+    void GetFogRange(int map, float& start, float& end) const;
     void GetFogColor(int map, float rgba[4]);
 
 private:

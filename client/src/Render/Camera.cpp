@@ -407,14 +407,17 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   // mismos campos que la referencia, sin normalizar blend ni bindings.
   // El color de la niebla legacy sin catálogo aún no tiene un recurso RGBA
   // propio: conservar esa rama de referencia hasta resolver su almacenamiento.
-  // DESVIACION: la niebla del server (2000..2700, calibrada para el alcance
-  // normal) se estira con el alcance de la cámara (distancia de dibujado y
-  // cámara 3D); si no, con el alcance ampliado tapa todo lo lejano.
+  // DESVIACION: la niebla del server usa sus distancias por mapa (2000..2700
+  // si no las manda), calibradas para el alcance normal; se estiran con el
+  // alcance de la cámara (cámara 3D y distancia de dibujado), si no con el
+  // alcance ampliado tapa todo lo lejano.
   const float fogScale = Ff(DAT_00561550) > 3000.0f ? Ff(DAT_00561550) / 3000.0f : 1.0f;
+  float fogStart, fogEnd;
+  gContentCatalog.GetFogRange((int)gMapManager.GetCurrentMap(), fogStart, fogEnd);
   if(Materials::Enabled() && (DAT_083a42ea=='\0'||gContentCatalog.HasMapFog())){
     Materials::ViewState state;
     if(DAT_083a42ea!='\0'){
-      state.fog=Materials::ViewFog::Linear;state.fogStart=2000.f*fogScale;state.fogEnd=2700.f*fogScale;
+      state.fog=Materials::ViewFog::Linear;state.fogStart=fogStart*fogScale;state.fogEnd=fogEnd*fogScale;
       gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
     }
     Materials::BeginView(state);
@@ -443,8 +446,8 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
     gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(), fog);
     Gfx::Enable(Gfx::Cap::Fog);
     Gfx::SetFogMode(Gfx::FogMode::Linear);
-    Gfx::FogStart(2000.0f * fogScale);
-    Gfx::FogEnd(2700.0f * fogScale);
+    Gfx::FogStart(fogStart * fogScale);
+    Gfx::FogEnd(fogEnd * fogScale);
     Gfx::FogColor(fog);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
