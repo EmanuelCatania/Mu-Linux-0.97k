@@ -460,7 +460,7 @@ void Texture_Draw2D(int id,
 // sube sobre un lienzo k veces el de potencia de 2 del original, así los UV no
 // cambian. Medidas del slot y copia en CPU (Buffer) quedan las originales.
 namespace {
-bool HDPath(const char* fullPath, char* out, size_t size)
+bool HDPath(const char* fullPath, const char* format, char* out, size_t size)
 {
     if (!fullPath || tolower((unsigned char)fullPath[0]) != 'd' || tolower((unsigned char)fullPath[1]) != 'a' ||
         tolower((unsigned char)fullPath[2]) != 't' || tolower((unsigned char)fullPath[3]) != 'a' ||
@@ -471,19 +471,28 @@ bool HDPath(const char* fullPath, char* out, size_t size)
     // texturas con el mismo nombre en los dos formatos.
     char ext[8]{};
     for (int i = 0; i < 7 && dot[1 + i]; ++i) ext[i] = char(tolower((unsigned char)dot[1 + i]));
-    std::snprintf(out, size, "Data\\HD\\%.*s.%s.png", int(dot - (fullPath + 5)), fullPath + 5, ext);
+    std::snprintf(out, size, "Data\\HD\\%.*s.%s.%s", int(dot - (fullPath + 5)), fullPath + 5, ext, format);
     return true;
 }
-// Sube el PNG HD de la textura ligada; false si no hay o no corresponde.
+// Sube la imagen HD de la textura ligada; false si no hay o no corresponde.
+// Sin transparencia se acepta JPEG (casa.ozj.jpg), que ocupa varias veces
+// menos que PNG; si no hay JPEG se busca el PNG.
 bool UploadHD(const char* fullPath, int width, int height, int paddedWidth, int paddedHeight, int channels)
 {
     if (!Gfx::HDTextures()) return false;
     char path[300];
-    if (!HDPath(fullPath, path, sizeof(path))) return false;
-    FILE* f = Platform::GetFileSystem().Open(path, "rb");
-    if (!f) return false;
     ImageCodec::Image hd;
-    const bool decoded = ImageCodec::DecodePng(f, channels, tex_max_size(), hd);
+    bool decoded = false;
+    FILE* f = nullptr;
+    if (channels == 3 && HDPath(fullPath, "jpg", path, sizeof(path)) &&
+        (f = Platform::GetFileSystem().Open(path, "rb"))) {
+        decoded = ImageCodec::Decode(f, 0, ImageCodec::Format::Jpeg, tex_max_size(), hd) && hd.channels == 3;
+    } else {
+        if (!HDPath(fullPath, "png", path, sizeof(path))) return false;
+        f = Platform::GetFileSystem().Open(path, "rb");
+        if (!f) return false;
+        decoded = ImageCodec::DecodePng(f, channels, tex_max_size(), hd);
+    }
     fclose(f);
     if (!decoded || hd.width % width || hd.height % height) return false;
     const int k = hd.width / width;

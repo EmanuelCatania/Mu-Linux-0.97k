@@ -104,5 +104,5 @@ Terrain_Render.obj
 doc-port/
 
 
-# Pack opcional de texturas HD: se genera con tools/hd/generar_pack_hd.py
+# Pack opcional de texturas HD (Data/HD): se distribuye aparte, no va en el repo
 bin/Client/Data/HD/
