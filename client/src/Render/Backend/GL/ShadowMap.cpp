@@ -97,7 +97,8 @@ void main() {
         else { float x = distance * uParams.y; t = vec3(exp(-x * x)); }
         // El borde del mapa (256 tiles de 100) se cierra con niebla.
         float border = min(min(world.x, world.y), min(25600.0 - world.x, 25600.0 - world.y));
-        t *= smoothstep(0.0, 1500.0, border);
+        // Sólo las últimas 3 casillas y lejos del personaje.
+        t *= 1.0 - (1.0 - smoothstep(0.0, 300.0, border)) * smoothstep(0.0, 1000.0, distance);
     }
     color = uPass == 0 ? vec4(t, 1.0) : vec4(uColor * (vec3(1.0) - t), 0.0);
 }

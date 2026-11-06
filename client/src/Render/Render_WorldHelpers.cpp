@@ -1114,7 +1114,8 @@ bool __cdecl MoveMainCamera(void) {
         // DESVIACION: distancia de dibujado elegida por el jugador. Más allá
         // del alcance normal sólo se dibuja el terreno (DrawDistance).
         const float normalRange = gCamera3D.GetViewFar();
-        const float scale = gUserSettings.DrawDistanceScale();
+        // Sólo con la cámara 3D (F10): con la normal, el alcance de siempre.
+        const float scale = gCamera3D.IsEnabled() ? gUserSettings.DrawDistanceScale() : 1.0f;
         CameraViewFar = normalRange * scale;
         DrawDistance::Set(*(float*)(Hero + 16), *(float*)(Hero + 20), scale > 1.0f ? normalRange * 1.25f : 0.0f);
         CameraDistance = 1000.0f;                    // CameraDistance

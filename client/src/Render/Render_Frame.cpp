@@ -213,6 +213,7 @@
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
+#include "Render/Camera3D.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
@@ -651,7 +652,8 @@ void Render_Scene3D(void)
         // El frustum del culling llega al 90 % del alcance (_DAT_005526e8):
         // la niebla tiene que completarse antes.
         const float end = CameraViewFar * 0.85f;
-        const float start = CameraViewFar / gUserSettings.DrawDistanceScale() * 0.5f;
+        const float scale = gCamera3D.IsEnabled() ? gUserSettings.DrawDistanceScale() : 1.0f;
+        const float start = CameraViewFar / scale * 0.5f;
         if (worldId == 7) {
             const float water[3] = {0.02f, 0.16f, 0.24f};
             // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.

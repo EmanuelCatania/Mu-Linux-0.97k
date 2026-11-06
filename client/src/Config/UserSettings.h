@@ -136,8 +136,9 @@ public:
     // DESVIACION: niebla por profundidad ([Window] DepthFog); en caliente.
     bool GetDepthFog() const { return m_DepthFog; }
     void SetDepthFog(bool enabled);
-    // DESVIACION: distancia de dibujado ([Window] DrawDistance): multiplica el
-    // alcance de la cámara (y con él el terreno y los objetos que se dibujan).
+    // DESVIACION: distancia de dibujado ([Window] DrawDistance): con la cámara
+    // 3D (F10) multiplica su alcance (y con él el terreno que se dibuja); con
+    // la cámara normal no se aplica.
     int GetDrawDistance() const { return m_DrawDistance; }
     float DrawDistanceScale() const { static const float scale[4] = { 1.0f, 1.5f, 2.0f, 3.0f }; return scale[m_DrawDistance]; }
     void SetDrawDistance(int level);

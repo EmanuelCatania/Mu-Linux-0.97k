@@ -1302,8 +1302,10 @@ fn transmittance(position: vec4f) -> vec3f {
     let distance = max(length(world - a.camera.xyz) - a.params.z, 0.0);
     // El borde del mapa (256 tiles de 100) se cierra con niebla: el fondo
     // tiene su color, así el final del mapa no se ve.
+    // Sólo las últimas 3 casillas y lejos del personaje: en los mapas que se
+    // juegan pegados al borde no tiene que verse.
     let border = min(min(world.x, world.y), min(25600.0 - world.x, 25600.0 - world.y));
-    let edge = smoothstep(0.0, 1500.0, border);
+    let edge = 1.0 - (1.0 - smoothstep(0.0, 300.0, border)) * smoothstep(0.0, 1000.0, distance);
     if (a.params.x > 1.5) {
         // Bajo el agua: el rojo se absorbe primero.
         return exp(-a.params.y * vec3f(3.0, 1.8, 1.2) * distance) * edge;

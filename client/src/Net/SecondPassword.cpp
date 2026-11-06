@@ -4711,7 +4711,7 @@ static void CreateFrustrum2D_Footprint()
 
 static bool CreateFrustrum2D_FromFrustum(const float *ground)
 {
-    if (gCamera3D.IsEnabled() || gUserSettings.DrawDistanceScale() > 1.0f) {
+    if (gCamera3D.IsEnabled()) {
         CreateFrustrum2D_Footprint();
         return true;
     }
