@@ -110,4 +110,6 @@
 53	"Gráficos"
 //HDTextures
 54	"Texturas HD"
+//Shadows
+55	"Sombras: %s"
 end
