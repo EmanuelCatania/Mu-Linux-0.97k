@@ -114,4 +114,6 @@
 55	"Sombras: %s"
 //DepthFog
 56	"Névoa de profundidade"
+//DrawDistance
+57	"Distância: %s"
 end

@@ -114,4 +114,6 @@
 55	"Shadows: %s"
 //DepthFog
 56	"Depth fog"
+//DrawDistance
+57	"Draw distance: %s"
 end
