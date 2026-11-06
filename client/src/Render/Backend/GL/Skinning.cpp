@@ -15,6 +15,7 @@
 #define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Render/Skinning.h"
+#include "Render/Backend/Api.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderProfile.h"
 #include "Render/Backend/GL/ProfileQueries.h"
@@ -25,7 +26,7 @@
 
 #include <vector>
 extern "C" void DbgLogPublic(const char*);
-namespace Skinning {
+namespace Skinning::GL {
 namespace {
 // Los arrays de vértices y normales son los del BMD: estables mientras el
 // modelo está cargado. Sólo se copian la posición y la luz calculadas por la

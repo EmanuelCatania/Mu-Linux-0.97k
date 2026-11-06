@@ -1,5 +1,6 @@
 // Sin PCH: todo acceso nuevo a GL queda dentro del backend.
 #include "Platform/GL/glad.h"
+#include "Render/RenderBackend.h"
 #include "Render/Backend/GL/ProfileUploads.h"
 #undef glTexImage2D
 #define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
@@ -315,6 +316,7 @@ int Pipeline(int mode) { return mode>=3?3:mode; }
 
 }
 TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<TerrainDraw::Tile>& tiles) {
+    if(RenderBackend::IsWebGPU()){TerrainDraw::Result r;r.reason="WebGPU";return r;}
     TerrainDraw::Result result;result.reason="Terreno: referencia (estado no admitido)";
     if(!Platform::GL33Ready()||!f.heights||!f.light||!f.alpha)return result;
     if(tiles.empty()){result.drawn=true;return result;}
@@ -441,10 +443,12 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
 // El caché vacío no consulta GL: la ruta actual apagada no paga este costo.
 bool SourceTexture(std::uint32_t handle) { return locations.find(handle)!=locations.end(); }
 bool BoundSourceTexture() {
+    if(RenderBackend::IsWebGPU())return false;
     if(locations.empty())return false;
     return SourceTexture(RenderState::Get().texture);
 }
 void Release() {
+    if(RenderBackend::IsWebGPU())return;
     if(!program)return;
     BufferedDraw::Suspend();ClearPages();glDeleteProgram(program);glDeleteVertexArrays(1,&vao);glDeleteBuffers(1,&ebo);
     glDeleteBuffers(1,&geometry);const GLuint textures[]{lighting,metadata};glDeleteTextures(2,textures);program=vao=ebo=geometry=lighting=metadata=0;

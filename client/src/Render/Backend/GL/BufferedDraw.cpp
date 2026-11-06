@@ -6,6 +6,7 @@
 
 #include "Platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Backend/Api.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/Gfx.h"
@@ -16,8 +17,9 @@
 #include <cstring>
 
 extern "C" void DbgLogPublic(const char*);
-namespace BufferedDraw {
-Stream stream;
+// El flujo de vértices lo comparten los backends (lo usan los inline del encabezado).
+namespace BufferedDraw { Stream stream; }
+namespace BufferedDraw::GL {
 namespace {
 // Modos de primitiva con la numeración de OpenGL 1.1 (0..9). Los que no
 // existen en 3.3 core (quads, quad strip, polígono) se convierten acá.

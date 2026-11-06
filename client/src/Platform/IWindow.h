@@ -7,6 +7,8 @@ struct WindowSettings {
     uint32_t height;
     bool windowMode;
     bool borderless;
+    // false: ventana sin contexto OpenGL (el render la toma por su cuenta, p. ej. WebGPU).
+    bool openGL = true;
 };
 
 // Ventana y modo de video. Input, bombeo de eventos y contexto GL se extraen aparte.

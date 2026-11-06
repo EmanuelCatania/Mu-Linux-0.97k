@@ -55,13 +55,15 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Render/Backend/GL/GlyphAtlas.cpp
-    src/Render/Backend/GL/Gfx.cpp
+    src/Render/Gfx.cpp
+    src/Render/Backend/GL/GfxDevice.cpp
+    src/Render/Backend/Dispatch.cpp
     src/Render/ResourceTables.cpp
     src/Render/Backend/GL/Skinning.cpp
     src/Render/Backend/GL/MeshDraw.cpp
     src/Render/TerrainDraw.cpp
     src/Render/Backend/GL/TerrainRenderer.cpp
-    src/Render/Backend/GL/Materials.cpp
+    src/Render/Materials.cpp
     src/Render/Backend/GL/FragmentPipeline.cpp
     src/Render/RenderProfile.cpp
     src/Render/RenderState.cpp
@@ -465,6 +467,9 @@ set(MU_HEADERS
     src/Render/TerrainDraw.h
     src/Render/BMDDevice.h
     src/Render/Materials.h
+    src/Render/RenderBackend.h
+    src/Render/Backend/Api.h
+    src/Render/Backend/GfxDevice.h
     src/Render/Backend/GL/FragmentPipeline.h
     src/Render/Backend/GL/TerrainRenderer.h
     src/Render/RenderProfile.h
@@ -637,11 +642,11 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Backend/GL/Gfx.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
-set_source_files_properties(src/Render/Backend/GL/Materials.cpp PROPERTIES
+set_source_files_properties(src/Render/Materials.cpp PROPERTIES
     COMPILE_OPTIONS "$<$<STREQUAL:$<TARGET_PROPERTY:NAME>,mu97k>:/Yustdafx.h>")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
@@ -702,6 +707,9 @@ set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT
 find_package(Threads REQUIRED)
 target_link_libraries(mu97k PRIVATE Threads::Threads)
 if(MU_RENDER_WEBGPU)
+    target_sources(mu97k PRIVATE
+        src/Render/Backend/WebGPU/Device.cpp src/Render/Backend/WebGPU/Stubs.cpp
+        src/Render/Backend/WebGPU/Device.h)
     target_link_libraries(mu97k PRIVATE dawn::webgpu_dawn)
     target_compile_definitions(mu97k PRIVATE MU_RENDER_WEBGPU)
 endif()
@@ -764,9 +772,10 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
         tests/BMDDevice.cpp
         src/Platform/GLFunctions.cpp src/Render/ResourceTables.cpp
         src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
-        src/Render/Backend/GL/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp
+        src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Backend/GL/GlyphAtlas.cpp
         src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
-        src/Render/Backend/GL/Skinning.cpp src/Render/Backend/GL/Gfx.cpp src/Render/RenderState.cpp)
+        src/Render/Backend/GL/Skinning.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp
+        src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp)
     target_include_directories(mu_bmd_device_test PRIVATE src ${MU_MINIAUDIO_INCLUDE_DIR})
     target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
     target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)

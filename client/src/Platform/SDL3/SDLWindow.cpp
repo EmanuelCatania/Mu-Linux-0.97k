@@ -107,11 +107,11 @@ public:
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
 #endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
-        if (!SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
+        if (settings.openGL && !SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
 #ifndef _WIN32
         // Si Wayland sólo ofrece GL por software y el usuario no forzó el
         // driver, se reintenta con X11 (XWayland), que llega al driver de la GPU.
-        if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0 && !SDL_getenv("SDL_VIDEODRIVER") &&
+        if (settings.openGL && SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0 && !SDL_getenv("SDL_VIDEODRIVER") &&
             ProbeSoftwareGL()) {
             SDL_QuitSubSystem(SDL_INIT_VIDEO);
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11", SDL_HINT_OVERRIDE);
@@ -124,7 +124,7 @@ public:
 #endif
         SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
         window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+            (settings.openGL ? SDL_WINDOW_OPENGL : 0) | SDL_WINDOW_HIDDEN);
         if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         if (SDL_Surface* icon = LoadWindowIcon()) { SDL_SetWindowIcon(window, icon); SDL_DestroySurface(icon); }
         InstallSDLInput();

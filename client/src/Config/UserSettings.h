@@ -84,6 +84,10 @@ struct UserFontSettings {
     int  strikeOut    = 0;
 };
 
+// Backend de render pedido en [Window] RenderBackend. Se aplica al arrancar;
+// si el ejecutable no trae WebGPU, o el dispositivo no se crea, queda OpenGL.
+enum class RenderBackendPreference { OpenGL, Auto, D3D12, D3D11, Vulkan, Count };
+
 class CUserSettings {
 public:
     // Lee `iniPath`. Lo que no está queda en -1 (o vacío) y no se aplica.
@@ -96,6 +100,11 @@ public:
     int GetFpsLimit() const { return m_FpsLimit; }
     bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
+    RenderBackendPreference GetRenderBackend() const { return m_RenderBackend; }
+    // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
+    static const char* RenderBackendKey(RenderBackendPreference preference);
+    // Guarda la preferencia; se usa en el próximo arranque.
+    void SetRenderBackend(RenderBackendPreference preference);
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
@@ -152,6 +161,7 @@ private:
     bool m_RenderDecoupled = true;
     int  m_FpsLimit = 60;
     bool m_VSync = false;
+    RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

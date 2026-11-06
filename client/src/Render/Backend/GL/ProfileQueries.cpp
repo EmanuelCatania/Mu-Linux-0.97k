@@ -1,5 +1,6 @@
 // Sin PCH: glad es el único proveedor de tipos y funciones GL aquí.
 #include "Platform/GL/glad.h"
+#include "Render/RenderBackend.h"
 #include "Platform/GLFunctions.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include <array>
@@ -22,8 +23,10 @@ bool MeasuredOnGPU(RenderProfile::Pass pass) {
     return pass==P::Simulation || pass==P::Terrain || pass==P::Objects || pass==P::Characters || pass==P::Effects || pass==P::UI || pass==P::Scene;
 }
 }
-bool Supported() { return available && Platform::GL33Ready() && glGetQueryiv && glGenQueries && glDeleteQueries && glBeginQuery && glEndQuery && glGetQueryObjectiv && glGetQueryObjectui64v; }
+bool Supported() {
+    if(RenderBackend::IsWebGPU())return false; return available && Platform::GL33Ready() && glGetQueryiv && glGenQueries && glDeleteQueries && glBeginQuery && glEndQuery && glGetQueryObjectiv && glGetQueryObjectui64v; }
 void BeginFrame(int map) {
+    if(RenderBackend::IsWebGPU())return;
     current=-1;running=false;
     if(!Supported())return;
     if(!initialized) {
@@ -56,6 +59,7 @@ void BeginFrame(int map) {
     ++skippedFrames;
 }
 void SetPass(RenderProfile::Pass pass) {
+    if(RenderBackend::IsWebGPU())return;
     Stop();
     if(current<0 || !MeasuredOnGPU(pass))return;
     auto& slot=slots[current];
@@ -64,9 +68,11 @@ void SetPass(RenderProfile::Pass pass) {
     glBeginQuery(GL_TIME_ELAPSED,segment.query);running=true;
 }
 void EndFrame() {
+    if(RenderBackend::IsWebGPU())return;
     Stop();if(current>=0)slots[current].pending=slots[current].used!=0;current=-1;
 }
 void Release() {
+    if(RenderBackend::IsWebGPU())return;
     Stop();
     if(initialized)for(auto& slot:slots)for(auto& segment:slot.segments)if(segment.query)glDeleteQueries(1,&segment.query);
     slots={};initialized=false;available=true;current=-1;skippedFrames=skippedSegments=0;
@@ -74,11 +80,13 @@ void Release() {
 std::uint64_t SkippedFrames() { return skippedFrames; }
 std::uint64_t SkippedSegments() { return skippedSegments; }
 void ObserveProgram(unsigned program) {
+    if(RenderBackend::IsWebGPU())return;
     if(!RenderProfile::active)return;
     GLint current=0;glGetIntegerv(GL_CURRENT_PROGRAM,&current);
     if(static_cast<unsigned>(current)!=program)RenderProfile::Change(RenderProfile::State::Program);
 }
 void ObserveTexture(unsigned target,unsigned texture) {
+    if(RenderBackend::IsWebGPU())return;
     if(!RenderProfile::active)return;
     GLint current=0;
     if(target==GL_TEXTURE_2D)glGetIntegerv(GL_TEXTURE_BINDING_2D,&current);

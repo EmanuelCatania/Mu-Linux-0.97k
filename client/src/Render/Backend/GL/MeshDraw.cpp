@@ -16,6 +16,7 @@
 
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
+#include "Render/Backend/Api.h"
 #include "Render/Skinning.h"
 #include "Render/RenderState.h"
 #include "Physics/ClothTypes.h"
@@ -26,7 +27,7 @@
 #include <vector>
 
 extern "C" void DbgLogPublic(const char*);
-namespace MeshDraw {
+namespace MeshDraw::GL {
 namespace {
 struct Corner { int position,normal,uv; };
 struct Mesh {

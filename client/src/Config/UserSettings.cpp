@@ -92,6 +92,11 @@ void CUserSettings::Load(const char* iniPath)
     m_FpsLimit = ReadRange("Window", "FpsLimit", iniPath, 0, INT_MAX, 60);
     m_RenderDecoupled = ReadRange("Window", "RenderDecoupled", iniPath, 0, 1, 1) != 0;
     m_VSync = ReadRange("Window", "VSync", iniPath, 0, 1, 0) != 0;
+    char backend[16] = {};
+    Platform::GetFileSystem().ReadIniString("Window", "RenderBackend", "opengl", backend, sizeof(backend), iniPath);
+    for (int i = 0; i < static_cast<int>(RenderBackendPreference::Count); ++i)
+        if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
+            m_RenderBackend = static_cast<RenderBackendPreference>(i);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -198,12 +203,30 @@ void CUserSettings::SetAntilag(eAntilag option, bool enabled)
     SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
 }
 
+const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "auto";
+    case RenderBackendPreference::D3D12: return "d3d12";
+    case RenderBackendPreference::D3D11: return "d3d11";
+    case RenderBackendPreference::Vulkan: return "vulkan";
+    default: return "opengl";
+    }
+}
+
+void CUserSettings::SetRenderBackend(RenderBackendPreference preference)
+{
+    if (preference >= RenderBackendPreference::Count) return;
+    m_RenderBackend = preference;
+    Platform::GetFileSystem().WriteIniString("Window", "RenderBackend", RenderBackendKey(preference), m_IniPath);
+}
+
 // DESVIACION: aplicar preferencias de dibujo en caliente sin reiniciar el reloj SIM.
 // Si el driver rechaza VSync se conserva la preferencia anterior y no se guarda.
 bool CUserSettings::SetPresentation(bool decoupled, bool vsync, int fpsLimit)
 {
     if (fpsLimit<0) return false;
-    if (vsync!=m_VSync && !Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0)) return false;
+    if (vsync!=m_VSync && !gWindow.SetSwapInterval(vsync)) return false;
     m_RenderDecoupled=decoupled; m_VSync=vsync; m_FpsLimit=fpsLimit;
     gFrameLimiter.SetRenderDecoupled(decoupled);
     gFrameLimiter.SetFpsLimit(fpsLimit);

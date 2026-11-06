@@ -9,12 +9,13 @@
 #include "Render/RenderState.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/GlyphAtlas.h"
+#include "Render/Backend/Api.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
 #include <vector>
 
-namespace GlyphAtlas {
+namespace GlyphAtlas::GL {
 namespace {
 struct Glyph { int x=0,y=0,w=0,h=0,left=0,bottom=0; float advanceX=0,advanceY=0; };
 struct Atlas { GLuint texture=0; int width=0,height=0; std::vector<Glyph> glyphs; };
