@@ -120,7 +120,9 @@ fija el baseline de `vcpkg-configuration.json`; para pasar a lo más nuevo:
 En el juego, **Opciones → Pantalla → Render** elige entre OpenGL, WebGPU (Dawn
 decide), DirectX 12, DirectX 11 y Vulkan; se guarda en `Config.ini`
 (`[Window] RenderBackend`) y se aplica al reiniciar. Si el dispositivo WebGPU no
-se puede crear, el cliente sigue con OpenGL.
+se puede crear, el cliente sigue con OpenGL. En Windows, "WebGPU" usa Vulkan si
+está disponible: el driver de NVIDIA trae un perfil para el nombre `main.exe`
+que limita DirectX 11/12 a 60 FPS (Vulkan no lo tiene).
 
 ### Linux x86 (backend SDL3)
 

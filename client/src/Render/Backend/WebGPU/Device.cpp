@@ -176,7 +176,16 @@ bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height
     descriptor.requiredFeatureCount = 1;
     descriptor.requiredFeatures = features;
     g.instance = wgpuCreateInstance(&descriptor);
-    const bool ok = g.instance && CreateSurface(surface) && RequestAdapter(api) && RequestDevice();
+    // DESVIACION: en Windows, Auto prefiere Vulkan. El driver de NVIDIA trae un
+    // perfil para el nombre "main.exe" que limita Direct3D a 60 FPS; Vulkan no
+    // lo tiene. Sin adaptador Vulkan, elige Dawn (D3D12).
+    bool ok = g.instance && CreateSurface(surface);
+#ifdef _WIN32
+    ok = ok && (api == Api::Auto ? RequestAdapter(Api::Vulkan) || RequestAdapter(Api::Auto) : RequestAdapter(api));
+#else
+    ok = ok && RequestAdapter(api);
+#endif
+    ok = ok && RequestDevice();
     if (!ok) { Release(); return false; }
     ReadCapabilities();
     Log("WebGPU: %s", g.description);
