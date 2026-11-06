@@ -31,6 +31,7 @@ if(MU_PLATFORM_ONLY)
     return()
 endif()
 include(MuCompilerOptions)
+include(MuWebGPU)
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     include(MuSDLDependencies)
     add_subdirectory(src/Platform/SDL3)
@@ -700,6 +701,10 @@ set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT
 # DESVIACION: prueba de crecimiento real sin contexto GL, en ambos sistemas.
 find_package(Threads REQUIRED)
 target_link_libraries(mu97k PRIVATE Threads::Threads)
+if(MU_RENDER_WEBGPU)
+    target_link_libraries(mu97k PRIVATE dawn::webgpu_dawn)
+    target_compile_definitions(mu97k PRIVATE MU_RENDER_WEBGPU)
+endif()
 enable_testing()
 add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
     tests/ResourceTables.cpp src/Render/ResourceTables.cpp)

@@ -97,6 +97,24 @@ cmake --build build-sdl3 --config Release
 
 La salida también es `bin/Client/main.exe`, así que pisa la del backend Win32.
 
+#### Con el render WebGPU (presets de Windows)
+
+Los presets `windows-sdl3-*` suman el backend de render WebGPU (Dawn), que se
+baja y compila con [vcpkg](https://github.com/microsoft/vcpkg). Hace falta la
+variable de entorno `VCPKG_ROOT` apuntando a una copia de vcpkg (sirve la que
+trae Visual Studio o un `git clone` propio):
+
+```
+cmake --preset windows-sdl3-x64-release
+cmake --build --preset windows-sdl3-x64-release
+```
+
+La primera configuración tarda (vcpkg compila Dawn; después queda en su caché).
+Todo se enlaza estático, con el runtime de C++ estático (`/MT`): el exe no trae
+DLL propias ni necesita el redistributable de Visual C++. La versión de Dawn la
+fija el baseline de `vcpkg-configuration.json`; para pasar a lo más nuevo:
+`vcpkg x-update-baseline`. Los triplets propios están en `cmake/triplets/`.
+
 ### Linux x86 (backend SDL3)
 
 Hace falta Git, CMake 3.25+, Ninja, Python 3, pkg-config y GCC/G++ con soporte

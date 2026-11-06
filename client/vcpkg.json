@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "mu97k",
+  "version-string": "0.97",
+  "description": "Cliente Mu Online 0.97k. Las dependencias base se bajan con FetchContent; vcpkg sólo trae las del render WebGPU.",
+  "dependencies": [],
+  "features": {
+    "webgpu": {
+      "description": "Backend de render WebGPU (Dawn), enlazado estático",
+      "dependencies": [
+        {
+          "name": "dawn",
+          "default-features": false,
+          "features": [
+            { "name": "d3d11", "platform": "windows" },
+            { "name": "d3d12", "platform": "windows" },
+            { "name": "vulkan", "platform": "windows | (linux & x64)" }
+          ]
+        }
+      ]
+    }
+  }
+}

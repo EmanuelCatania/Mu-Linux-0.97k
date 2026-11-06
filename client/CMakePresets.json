@@ -26,34 +26,51 @@
       "description": "Cliente completo para Linux x86 con SDL3. Requiere PKG_CONFIG_LIBDIR apuntando a las bibliotecas de 32 bits (ver README)."
     },
     {
+      "name": "windows-webgpu-base",
+      "hidden": true,
+      "description": "Windows con WebGPU: Dawn estático por vcpkg (requiere la variable de entorno VCPKG_ROOT).",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "MU_RENDER_WEBGPU": "ON",
+        "VCPKG_MANIFEST_FEATURES": "webgpu",
+        "VCPKG_APPLOCAL_DEPS": "OFF"
+      }
+    },
+    {
       "name": "windows-sdl3-x86-debug",
       "binaryDir": "${sourceDir}/build/windows-sdl3-x86-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "MU_PLATFORM_BACKEND": "SDL3"
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "VCPKG_TARGET_TRIPLET": "x86-windows-mu"
       },
       "architecture": "Win32",
-      "toolset": "v143"
+      "toolset": "v143",
+      "inherits": "windows-webgpu-base"
     },
     {
       "name": "windows-sdl3-x86-release",
       "binaryDir": "${sourceDir}/build/windows-sdl3-x86-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "MU_PLATFORM_BACKEND": "SDL3"
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "VCPKG_TARGET_TRIPLET": "x86-windows-mu"
       },
       "architecture": "Win32",
-      "toolset": "v143"
+      "toolset": "v143",
+      "inherits": "windows-webgpu-base"
     },
     {
       "name": "windows-sdl3-x64-release",
       "binaryDir": "${sourceDir}/build/windows-sdl3-x64-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "MU_PLATFORM_BACKEND": "SDL3"
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-mu"
       },
       "architecture": "x64",
-      "toolset": "v143"
+      "toolset": "v143",
+      "inherits": "windows-webgpu-base"
     }
   ],
   "buildPresets": [
