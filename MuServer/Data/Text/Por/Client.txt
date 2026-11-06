@@ -102,4 +102,10 @@
 49	"Texturas: %s"
 //Sharpness
 50	"Nitidez: %s"
+//Antialiasing
+51	"Antialiasing: %s"
+//OptionsAdvanced
+52	"Avançado"
+//OptionsGraphics
+53	"Gráficos"
 end
