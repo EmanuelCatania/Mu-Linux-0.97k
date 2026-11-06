@@ -21,6 +21,7 @@ enum class ClientTextId {
     Sharpness,
     Antialiasing,
     OptionsAdvanced, OptionsGraphics,
+    HDTextures,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).

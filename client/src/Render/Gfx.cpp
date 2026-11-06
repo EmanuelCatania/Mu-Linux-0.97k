@@ -181,6 +181,9 @@ bool TextureBicubic() { return bicubic; }
 namespace { int multisample = 0; }
 void SetMultisample(int samples) { multisample = samples; }
 int Multisample() { return multisample; }
+namespace { bool hdTextures = false; }
+void SetHDTextures(bool enabled) { hdTextures = enabled; }
+bool HDTextures() { return hdTextures; }
 // Valores numéricos de OpenGL que trae el binario (p. ej. OpenJPG(..., 0x2601, 0x2901)).
 TexValue TexValueFromLegacy(int value) {
     switch (value) {

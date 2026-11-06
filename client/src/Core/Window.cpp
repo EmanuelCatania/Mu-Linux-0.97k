@@ -136,6 +136,7 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
     // DESVIACION: calidad de texturas elegida por el jugador, antes de subir ninguna.
     Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
     Gfx::SetMultisample(gUserSettings.Multisample());
+    Gfx::SetHDTextures(gUserSettings.GetHDTextures());
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
     RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL

@@ -102,6 +102,9 @@ bool TextureMipmaps();
 bool TextureBicubic();
 // DESVIACION: muestras de MSAA del framebuffer (0 sin MSAA); se fija al crear la ventana.
 void SetMultisample(int samples);
+// DESVIACION: texturas del pack HD (Data/HD); se fija al arrancar.
+void SetHDTextures(bool enabled);
+bool HDTextures();
 int Multisample();
 
 // Niebla

@@ -595,6 +595,7 @@ void COptionsMenu::RenderGraphics()
     const int texture = gUserSettings.GetTextureQuality();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
     RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::HDTextures), gUserSettings.GetHDTextures());
     // DESVIACION: nitidez de la imagen 3D.
     static const char* const sharpnessNames[4] = { "Off", "1", "2", "3" };
     const int sharpness = gUserSettings.GetSharpness();
@@ -667,6 +668,10 @@ bool COptionsMenu::UpdateGraphics()
     const int textureStep = UpdateSelector(RowY(row++), texture > 0, texture < 2);
     if (textureStep != INT_MIN) {
         if (textureStep) gUserSettings.SetTextureQuality(texture + (textureStep > 0 ? 1 : -1));
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetHDTextures(!gUserSettings.GetHDTextures());
         return true;
     }
     const int sharpness = gUserSettings.GetSharpness();

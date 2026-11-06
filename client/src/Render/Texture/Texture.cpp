@@ -90,6 +90,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <cstdio>
+#include <vector>
 
 extern "C" { void DbgLogPublic(const char* msg); }
 
@@ -451,6 +453,57 @@ void Texture_Draw2D(int id,
 // ============================================================
 // (Implementation not reproduced — same pipeline as Texture_Load above)
 
+// ── Pack HD ──────────────────────────────────────────────────────────────
+// DESVIACION: con la opción de texturas HD, "Data\X\nombre.OZJ" se reemplaza en
+// la GPU por "Data\HD\X\nombre.ozj.png" si existe. El PNG es la misma imagen (en
+// el orden de filas que deja el decodificador) ampliada un factor entero k; se
+// sube sobre un lienzo k veces el de potencia de 2 del original, así los UV no
+// cambian. Medidas del slot y copia en CPU (Buffer) quedan las originales.
+namespace {
+bool HDPath(const char* fullPath, char* out, size_t size)
+{
+    if (!fullPath || tolower((unsigned char)fullPath[0]) != 'd' || tolower((unsigned char)fullPath[1]) != 'a' ||
+        tolower((unsigned char)fullPath[2]) != 't' || tolower((unsigned char)fullPath[3]) != 'a' ||
+        (fullPath[4] != '\\' && fullPath[4] != '/')) return false;
+    const char* dot = strrchr(fullPath, '.');
+    if (!dot || size_t(dot - fullPath) + 16 > size) return false;
+    // Conserva la extensión original (casa.ozj.png / casa.ozt.png): hay
+    // texturas con el mismo nombre en los dos formatos.
+    char ext[8]{};
+    for (int i = 0; i < 7 && dot[1 + i]; ++i) ext[i] = char(tolower((unsigned char)dot[1 + i]));
+    std::snprintf(out, size, "Data\\HD\\%.*s.%s.png", int(dot - (fullPath + 5)), fullPath + 5, ext);
+    return true;
+}
+// Sube el PNG HD de la textura ligada; false si no hay o no corresponde.
+bool UploadHD(const char* fullPath, int width, int height, int paddedWidth, int paddedHeight, int channels)
+{
+    if (!Gfx::HDTextures()) return false;
+    char path[300];
+    if (!HDPath(fullPath, path, sizeof(path))) return false;
+    FILE* f = Platform::GetFileSystem().Open(path, "rb");
+    if (!f) return false;
+    ImageCodec::Image hd;
+    const bool decoded = ImageCodec::DecodePng(f, channels, tex_max_size(), hd);
+    fclose(f);
+    if (!decoded || hd.width % width || hd.height % height) return false;
+    const int k = hd.width / width;
+    if (k < 2 || k > 8 || hd.height / height != k) return false;
+    const long long pw = (long long)paddedWidth * k, ph = (long long)paddedHeight * k;
+    if (pw > tex_max_size() || ph > tex_max_size()) return false;
+    std::vector<unsigned char> canvas(size_t(pw * ph * channels), 0);
+    for (int y = 0; y < hd.height; ++y)
+        memcpy(canvas.data() + size_t(y) * size_t(pw) * channels, hd.pixels + size_t(y) * hd.width * channels, size_t(hd.width) * channels);
+    Gfx::TexImage2D(channels, int(pw), int(ph), channels == 4 ? Gfx::Format::RGBA : Gfx::Format::RGB, canvas.data());
+    static unsigned loaded = 0;
+    if (++loaded == 1 || loaded % 100 == 0) {
+        char line[340];
+        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Texturas HD: %u cargadas (ultima %s, x%d)", loaded, path, k);
+        DbgLogPublic(line);
+    }
+    return true;
+}
+}
+
 // ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with stb_image, uploads to GL.
 // Path mode:
@@ -565,7 +618,8 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     // --- GL upload ---
     slot->TextureNumber = Gfx::CreateTexture();
     Gfx::BindTexture(slot->TextureNumber);
-    Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
+    if (!UploadHD(full_path, img_w, img_h, pow2_w, pow2_h, 3))
+        Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
     Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(filter));
     Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(filter));
     Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
@@ -701,7 +755,8 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         UINT glHandle = Gfx::CreateTexture();
         texGL[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = glHandle;
         Gfx::BindTexture(glHandle);
-        Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
+        if (!UploadHD(local_200, width, height, pw, ph, 4))
+            Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
         // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
         // válido para GL_TEXTURE_ENV_MODE → GL_INVALID_ENUM, que el driver NVIDIA
         // acumula y puede convertir en AV en una llamada GL siguiente.

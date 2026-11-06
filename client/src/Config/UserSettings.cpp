@@ -102,6 +102,7 @@ void CUserSettings::Load(const char* iniPath)
     m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
     m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
     m_Antialiasing = m_StartupAntialiasing = ReadRange("Window", "Antialiasing", iniPath, 0, 3, 0);
+    m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 1, 0) != 0;
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -246,6 +247,12 @@ void CUserSettings::SetSharpness(int level)
     SaveInt("Window", "Sharpness", level);
 }
 
+void CUserSettings::SetHDTextures(bool enabled)
+{
+    m_HDTextures = enabled;
+    SaveInt("Window", "HDTextures", enabled ? 1 : 0);
+}
+
 void CUserSettings::SetAntialiasingLevel(int level)
 {
     if (level < 0 || level > 3) return;
@@ -257,7 +264,8 @@ bool CUserSettings::RestartPending() const
 {
     return m_RenderBackend != m_StartupRenderBackend ||
         (m_TextureQuality >= 1) != (m_StartupTextureQuality >= 1) ||
-        (m_Antialiasing >= 2) != (m_StartupAntialiasing >= 2);
+        (m_Antialiasing >= 2) != (m_StartupAntialiasing >= 2) ||
+        m_HDTextures != m_StartupHDTextures;
 }
 
 void CUserSettings::SetRenderBackend(RenderBackendPreference preference)
