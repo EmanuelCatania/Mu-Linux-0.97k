@@ -11,8 +11,8 @@ namespace WebGPU {
 enum class Api { Auto, D3D12, D3D11, Vulkan };
 
 struct Surface {
-    void* window = nullptr;    // HWND en Windows
-    void* instance = nullptr;  // HINSTANCE en Windows
+    void* window = nullptr;    // HWND en Windows; SDL_Window* en Linux
+    void* instance = nullptr;  // HINSTANCE en Windows; sin uso en Linux
 };
 
 bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height, bool vsync);

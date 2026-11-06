@@ -1,8 +1,12 @@
 // Sin PCH: el backend WebGPU no depende de los encabezados del cliente.
 #include "Render/Backend/WebGPU/Device.h"
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string>
+#ifndef _WIN32
+#include <SDL3/SDL.h>
+#endif
 
 extern "C" void DbgLogPublic(const char*);
 
@@ -102,7 +106,31 @@ bool CreateSurface(const Surface& source) {
     descriptor.nextInChain = &hwnd.chain;
     g.surface = wgpuInstanceCreateSurface(g.instance, &descriptor);
 #else
-    (void)source;   // Linux x64: superficie Xlib/Wayland en una etapa siguiente.
+    // Linux: source.window es la SDL_Window; la superficie sale del display y
+    // la ventana nativa del driver de video que eligió SDL (Wayland o X11).
+    SDL_Window* window = static_cast<SDL_Window*>(source.window);
+    if (!window) return false;
+    const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+    const char* driver = SDL_GetCurrentVideoDriver();
+    WGPUSurfaceDescriptor descriptor = WGPU_SURFACE_DESCRIPTOR_INIT;
+    WGPUSurfaceSourceWaylandSurface wayland = WGPU_SURFACE_SOURCE_WAYLAND_SURFACE_INIT;
+    WGPUSurfaceSourceXlibWindow xlib = WGPU_SURFACE_SOURCE_XLIB_WINDOW_INIT;
+    if (driver && !std::strcmp(driver, "wayland")) {
+        wayland.display = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+        wayland.surface = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+        if (!wayland.display || !wayland.surface) return false;
+        descriptor.nextInChain = &wayland.chain;
+    } else if (driver && !std::strcmp(driver, "x11")) {
+        xlib.display = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+        xlib.window = static_cast<uint64_t>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
+        if (!xlib.display || !xlib.window) return false;
+        descriptor.nextInChain = &xlib.chain;
+    } else {
+        Log("WebGPU: driver de video sin superficie soportada: %s", driver ? driver : "(ninguno)");
+        return false;
+    }
+    Log("WebGPU: superficie %s", driver);
+    g.surface = wgpuInstanceCreateSurface(g.instance, &descriptor);
 #endif
     return g.surface != nullptr;
 }

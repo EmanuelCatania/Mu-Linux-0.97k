@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Empaqueta el ELF32 y únicamente los assets versionados, sin preferencias locales."""
+"""Empaqueta el ejecutable Linux (x64 o x86) y únicamente los assets versionados, sin preferencias locales."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -15,18 +15,25 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--version", default="0.97.30")
+    parser.add_argument("--arch", choices=("x64", "x86"), default="x86")
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9._-]+", args.version):
         parser.error("Versión inválida")
     repo = Path(__file__).resolve().parents[2]
     executable = args.build.resolve() / "bin/main"
     header = executable.read_bytes()[:20]
-    if header[:5] != b"\x7fELF\x01" or header[18:20] != b"\x03\x00":
-        parser.error("Se requiere un ejecutable ELF32 i386")
+    # x64: ELF64 x86-64 (máquina 0x3E) compilado en Ubuntu 24.04 (glibc 2.39);
+    # x86: ELF32 i386 (máquina 0x03) compilado en Ubuntu 22.04 (glibc 2.35).
+    elf_class, machine, glibc, distro, kind = {
+        "x64": (b"\x02", b"\x3e\x00", (2, 39), "Ubuntu 24.04", "ELF64 x86-64"),
+        "x86": (b"\x01", b"\x03\x00", (2, 35), "Ubuntu 22.04", "ELF32 i386"),
+    }[args.arch]
+    if header[:4] != b"\x7fELF" or header[4:5] != elf_class or header[18:20] != machine:
+        parser.error("Se requiere un ejecutable " + kind)
     symbols = subprocess.check_output(["objdump", "-T", str(executable)], text=True)
     versions = {tuple(map(int, v.split('.'))) for v in re.findall(r"GLIBC_([0-9.]+)", symbols)}
-    if not versions or max(versions) > (2, 35):
-        parser.error("El binario requiere una glibc posterior a Ubuntu 22.04 (2.35)")
+    if not versions or max(versions) > glibc:
+        parser.error("El binario requiere una glibc posterior a %s (%s)" % (distro, ".".join(map(str, glibc))))
     dependencies = subprocess.check_output(["ldd", str(executable)], text=True)
     if "not found" in dependencies:
         parser.error("Faltan bibliotecas de sistema: " + dependencies)
@@ -37,7 +44,7 @@ def main():
         override = re.search(rf"^FETCHCONTENT_SOURCE_DIR_{name.upper()}:PATH=(.+)$", cache, re.M)
         return Path(override[1]) if override else args.build / "_deps" / (name + "-src")
     args.output.mkdir(parents=True, exist_ok=True)
-    name = "mu97k-" + args.version + "-linux-x86"
+    name = "mu97k-" + args.version + "-linux-" + args.arch
     with tempfile.TemporaryDirectory() as temporary:
         package = Path(temporary) / name
         package.mkdir()
@@ -67,12 +74,18 @@ def main():
             (repo / "src/Platform/GL/glad.h", "glad.h"),
         ]:
             shutil.copy2(origin, licenses / destination)
+        # Dawn (WebGPU) entra por vcpkg sólo en x64.
+        installed = re.search(r"^VCPKG_INSTALLED_DIR:PATH=(.+)$", cache, re.M)
+        if installed:
+            for copyright in Path(installed[1]).glob("*/share/dawn/copyright"):
+                shutil.copy2(copyright, licenses / "Dawn.txt")
         (package / "runtime-libraries.txt").write_text(dependencies, encoding="utf-8")
         (package / "main.sha256").write_text(hashlib.sha256(executable.read_bytes()).hexdigest() + "  main\n", encoding="ascii")
         for readme in ("README.md", "README.en.md", "README.pt-BR.md"):
             shutil.copy2(repo / readme, package / readme)
         (package / "README.txt").write_text(
-            "Ejecutar ./launch.sh. Requiere bibliotecas del sistema de 32 bits y OpenGL.\n"
+            "Ejecutar ./launch.sh. Requiere bibliotecas del sistema de "
+            + ("64 bits y OpenGL o Vulkan" if args.arch == "x64" else "32 bits y OpenGL") + ".\n"
             "Preferencias, capturas y debug.log: ${XDG_DATA_HOME:-$HOME/.local/share}/mu97k.\n"
             "MU_ASSET_ROOT apunta a la carpeta que contiene Data (puede estar en NTFS).\n"
             "SDL_VIDEODRIVER=wayland o x11 fuerza el backend; ausente: selección por sesión.\n"

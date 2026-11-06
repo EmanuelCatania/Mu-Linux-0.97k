@@ -611,3 +611,58 @@ jobs:
           name: webgpu-windows-x64-Release
           path: bin/Client/main.exe
           if-no-files-found: error
+
+  # Linux x64 (la plataforma principal en Linux): SDL3 con OpenGL y WebGPU.
+  # Dawn sale estático de vcpkg sobre Vulkan; los binarios de vcpkg quedan en
+  # la caché de Actions y sólo la primera vez se compila Dawn. x86 queda como
+  # base histórica sólo con OpenGL (job backend).
+  linux-x64:
+    name: Linux x64 (SDL3 + WebGPU, Release)
+    runs-on: ubuntu-24.04
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias de sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl-dev libasound2-dev libpulse-dev libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols libvulkan-dev ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri
+      - name: Preparar vcpkg
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+      - name: Caché de binarios de vcpkg
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-cache
+          key: vcpkg-x64-linux-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: vcpkg-x64-linux-
+      - name: Configurar
+        run: cmake --preset linux-x64-release
+      - name: Pruebas unitarias
+        run: |
+          cmake --build build/linux-x64-release --target mu_resource_tables_test mu_frame_pointer_set_test mu_text_core_test mu_text_shaper_test mu_transform_workers_test mu_render_profile_test mu_render_profile_flow_test mu_terrain_draw_flow_test mu_bmd_device_test mu_panel_anchor_test --parallel 4
+          ctest --test-dir build/linux-x64-release -E bmd_device --output-on-failure
+      - name: Verificar BMD con Mesa (sin pantalla física)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          MU_REQUIRE_GL_TEST: "1"
+          SDL_VIDEODRIVER: x11
+        run: xvfb-run -a -s "-screen 0 1280x1024x24" ctest --test-dir build/linux-x64-release -R "^bmd_device$" --output-on-failure
+      - name: Compilar
+        run: cmake --build --preset linux-x64-release --parallel 4
+      - name: Verificar ABI y empaquetar
+        run: |
+          objdump -T build/linux-x64-release/bin/main > build/linux-x64-release/symbols.txt
+          ldd build/linux-x64-release/bin/main > build/linux-x64-release/ldd.txt
+          python3 .github/scripts/package_linux.py build/linux-x64-release dist --arch x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu97k-linux-x64-release
+          path: |
+            dist/*
+            build/linux-x64-release/symbols.txt
+            build/linux-x64-release/ldd.txt
+          if-no-files-found: error
