@@ -135,18 +135,18 @@ struct CasterOut {
     let p = skinPosition(p0, i32(bone));
     out.position = shadow.lightViewProj * vec4f(worldOf(vec4f(p, 1.0)), 1.0);
     out.color = clamp(skin.color, vec4f(0.0), vec4f(1.0));
-    if ((skin.flags & 1u) != 0u) { out.color.a = 1.0; }
     var uvs = skin.uv;
     if ((skin.flags & 4u) != 0u) { uvs = vec4f(uv2, 0.0, 1.0); }
     out.uv = u.textureMatrix * (uvs + vec4f(skin.uvOffset.xy, 0.0, 0.0));
     return out;
 }
-// Lo transparente de la textura (hojas, rejas) no proyecta sombra.
+// No proyecta lo que se dibuja semitransparente por su color (un techo que
+// se desvanece al entrar a un edificio, un objeto que aparece) ni lo
+// transparente de la textura (hojas, rejas).
 @fragment fn fs_caster(in: CasterOut) {
     let t = textureSample(tex, smp, in.uv.xy / in.uv.w);
-    var a = in.color.a;
-    if (u.flags.x != 0) { a = a * t.a; }
-    if (a < 0.25) { discard; }
+    if (in.color.a < 0.99) { discard; }
+    if (u.flags.x != 0 && t.a < 0.25) { discard; }
 }
 // Fracción iluminada (PCF 3x3), con borde suave al final del mapa.
 fn shadowFactor(world: vec3f) -> f32 {
