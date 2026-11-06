@@ -612,6 +612,11 @@ void COptionsMenu::RenderGraphics()
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Shadows), shadowNames[shadows]);
     RenderSelector((float)RowY(row++), text, shadows > 0, shadows < 2);
     RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::DepthFog), gUserSettings.GetDepthFog());
+    // DESVIACION: distancia de dibujado.
+    static const char* const distanceNames[4] = { "Normal", "x1.5", "x2", "x3" };
+    const int distance = gUserSettings.GetDrawDistance();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::DrawDistance), distanceNames[distance]);
+    RenderSelector((float)RowY(row++), text, distance > 0, distance < 3);
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     if (gUserSettings.RestartPending())
         RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
@@ -700,6 +705,12 @@ bool COptionsMenu::UpdateGraphics()
     }
     if (UpdateToggle(RowY(row++), clicked)) {
         if (clicked) gUserSettings.SetDepthFog(!gUserSettings.GetDepthFog());
+        return true;
+    }
+    const int distance = gUserSettings.GetDrawDistance();
+    const int distanceStep = UpdateSelector(RowY(row++), distance > 0, distance < 3);
+    if (distanceStep != INT_MIN) {
+        if (distanceStep) gUserSettings.SetDrawDistance(distance + (distanceStep > 0 ? 1 : -1));
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {

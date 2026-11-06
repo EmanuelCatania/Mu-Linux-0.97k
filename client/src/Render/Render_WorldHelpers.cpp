@@ -1110,7 +1110,8 @@ bool __cdecl MoveMainCamera(void) {
         // DESVIACION: el binario usa 2000; con el FOV de 50 las esquinas de
         // arriba quedan más allá del plano lejano y se ven en negro.  El rayo
         // del ratón sigue con 2000 (kScreenVectorDepth).
-        CameraViewFar = gCamera3D.GetViewFar();
+        // DESVIACION: distancia de dibujado elegida por el jugador.
+        CameraViewFar = gCamera3D.GetViewFar() * gUserSettings.DrawDistanceScale();
         CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;

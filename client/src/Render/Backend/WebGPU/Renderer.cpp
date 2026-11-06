@@ -1294,7 +1294,7 @@ struct Atmosphere { inverseViewProj: mat4x4f, camera: vec4f, color: vec4f, param
 // Transmitancia por canal: 1 = sin niebla.
 fn transmittance(position: vec4f) -> vec3f {
     let d = textureLoad(depth, vec2i(position.xy), 0);
-    if (d >= 1.0) { return vec3f(1.0); }
+    if (d >= 1.0) { return vec3f(0.0); }   // fondo: todo niebla
     let ndc = vec2f((position.x - a.viewport.x) / a.viewport.z * 2.0 - 1.0,
                     1.0 - (position.y - a.viewport.y) / a.viewport.w * 2.0);
     var w = a.inverseViewProj * vec4f(ndc, d * 2.0 - 1.0, 1.0);

@@ -105,6 +105,7 @@ void CUserSettings::Load(const char* iniPath)
     m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 1, 0) != 0;
     m_Shadows = ReadRange("Window", "Shadows", iniPath, 0, 2, 0);
     m_DepthFog = ReadRange("Window", "DepthFog", iniPath, 0, 1, 0) != 0;
+    m_DrawDistance = ReadRange("Window", "DrawDistance", iniPath, 0, 3, 0);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -268,6 +269,13 @@ void CUserSettings::SetDepthFog(bool enabled)
     m_DepthFog = enabled;
     SaveInt("Window", "DepthFog", enabled ? 1 : 0);
     Gfx::SetDepthFog(enabled);
+}
+
+void CUserSettings::SetDrawDistance(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_DrawDistance = level;
+    SaveInt("Window", "DrawDistance", level);
 }
 
 void CUserSettings::SetAntialiasingLevel(int level)

@@ -643,12 +643,19 @@ void Render_Scene3D(void)
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
     // DESVIACION: niebla por profundidad (opción). Atlans bajo el agua; el resto,
     // una bruma suave hacia el color de fondo (no si el server ya manda niebla).
-    if (worldId == 7) {
-        const float water[3] = {0.02f, 0.16f, 0.24f};
-        Gfx::Atmosphere(2, water, 1.0f / 2600.0f, 300.0f);
-    } else if (!DAT_083a42ea) {
-        const float background[3] = {cr, cg, cb};
-        Gfx::Atmosphere(1, background, 1.0f / 2200.0f, 1400.0f);
+    // Se ata al alcance de la cámara: empieza a la mitad y llega casi al máximo
+    // en el borde de lo dibujado, que así no se ve.
+    {
+        const float range = CameraViewFar;
+        if (worldId == 7) {
+            const float water[3] = {0.02f, 0.16f, 0.24f};
+            // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.
+            Gfx::Atmosphere(2, water, 1.9f / (range * 0.95f - 300.0f), 300.0f);
+        } else if (!DAT_083a42ea) {
+            const float background[3] = {cr, cg, cb};
+            // exp(-x^2): x = 2 (2 %) a 0.95 del alcance.
+            Gfx::Atmosphere(1, background, 2.0f / (range * 0.45f), range * 0.5f);
+        }
     }
     Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 

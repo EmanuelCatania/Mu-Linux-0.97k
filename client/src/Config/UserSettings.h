@@ -136,6 +136,11 @@ public:
     // DESVIACION: niebla por profundidad ([Window] DepthFog); en caliente.
     bool GetDepthFog() const { return m_DepthFog; }
     void SetDepthFog(bool enabled);
+    // DESVIACION: distancia de dibujado ([Window] DrawDistance): multiplica el
+    // alcance de la cámara (y con él el terreno y los objetos que se dibujan).
+    int GetDrawDistance() const { return m_DrawDistance; }
+    float DrawDistanceScale() const { static const float scale[4] = { 1.0f, 1.5f, 2.0f, 3.0f }; return scale[m_DrawDistance]; }
+    void SetDrawDistance(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -202,6 +207,7 @@ private:
     bool m_HDTextures = false, m_StartupHDTextures = false;
     int m_Shadows = 0;
     bool m_DepthFog = false;
+    int m_DrawDistance = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

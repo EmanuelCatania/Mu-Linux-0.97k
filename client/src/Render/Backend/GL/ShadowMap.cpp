@@ -87,7 +87,7 @@ uniform int uPass;
 out vec4 color;
 void main() {
     float d = texelFetch(uDepth, ivec2(gl_FragCoord.xy), 0).r;
-    vec3 t = vec3(1.0);
+    vec3 t = vec3(0.0);   // fondo: todo niebla
     if (d < 1.0) {
         vec2 ndc = (gl_FragCoord.xy - uViewport.xy) / uViewport.zw * 2.0 - 1.0;
         vec4 w = uInverseViewProj * vec4(ndc, d * 2.0 - 1.0, 1.0);
