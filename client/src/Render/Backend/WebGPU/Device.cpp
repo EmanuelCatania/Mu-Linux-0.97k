@@ -221,7 +221,7 @@ bool IsReady() { return g.device && g.configured; }
 
 bool BeginFrame() {
     if (!IsReady()) return false;
-    DropFrame();
+    if (g.frameView) return true;
     WGPUSurfaceTexture frame = WGPU_SURFACE_TEXTURE_INIT;
     wgpuSurfaceGetCurrentTexture(g.surface, &frame);
     switch (frame.status) {
@@ -254,7 +254,13 @@ unsigned Height() { return g.height; }
 WGPUDevice GetDevice() { return g.device; }
 WGPUQueue GetQueue() { return g.queue; }
 WGPUTextureFormat SurfaceFormat() { return g.format; }
+WGPUTexture FrameTexture() { return g.frameTexture; }
 WGPUTextureView FrameView() { return g.frameView; }
+bool WaitFuture(WGPUFuture future) {
+    WGPUFutureWaitInfo wait = WGPU_FUTURE_WAIT_INFO_INIT;
+    wait.future = future;
+    return wgpuInstanceWaitAny(g.instance, 1, &wait, UINT64_MAX) == WGPUWaitStatus_Success;
+}
 const char* Description() { return g.description.c_str(); }
 
 } // namespace WebGPU

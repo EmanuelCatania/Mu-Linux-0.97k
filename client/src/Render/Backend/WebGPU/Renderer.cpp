@@ -727,9 +727,10 @@ void ReleaseMeshes() {
     g.meshes.clear();
 }
 
-// Envía el cuadro grabado y presenta. Lo llama CWindow::Present.
-void SubmitFrame() {
-    if (!g.ready) return;
+namespace {
+// Codifica y envía lo grabado hasta ahora sobre la textura del cuadro. La
+// grabación sigue después sobre la misma textura (lo usa la captura).
+void EncodePasses() {
     if (g.passes.empty() || !BeginFrame()) { ResetFrame(); ReleaseRetired(); return; }
     const unsigned width = Width(), height = Height();
     EnsureDepth(width, height);
@@ -828,9 +829,73 @@ void SubmitFrame() {
     wgpuQueueSubmit(GetQueue(), 1, &commands);
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);
-    Present();
     ResetFrame();
     ReleaseRetired();
+}
+}
+
+// Envía el cuadro grabado y presenta. Lo llama CWindow::Present.
+void SubmitFrame() {
+    if (!g.ready) return;
+    EncodePasses();
+    if (FrameView()) Present();
+}
+
+// glReadPixels sobre el cuadro en curso: envía lo grabado, copia la región a
+// un buffer y la lee esperando a la GPU. Filas de abajo hacia arriba, en RGB.
+void ReadPixels(int x, int y, int width, int height, void* out) {
+    auto* dst = static_cast<uint8_t*>(out);
+    std::memset(dst, 0, size_t(width) * size_t(height) * 3);
+    if (!g.ready) return;
+    EncodePasses();
+    if (!BeginFrame()) return;
+    const int surfaceW = int(Width()), surfaceH = int(Height());
+    const int x0 = std::max(0, x), x1 = std::min(surfaceW, x + width);
+    const int y0 = std::max(0, y), y1 = std::min(surfaceH, y + height);
+    if (x1 <= x0 || y1 <= y0) return;
+    const uint32_t w = uint32_t(x1 - x0), h = uint32_t(y1 - y0);
+    const uint32_t bytesPerRow = (w * 4 + 255) & ~255u;
+    WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+    bd.size = uint64_t(bytesPerRow) * h;
+    bd.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst;
+    WGPUBuffer readback = wgpuDeviceCreateBuffer(GetDevice(), &bd);
+    WGPUTexelCopyTextureInfo from = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    from.texture = FrameTexture();
+    from.origin = {uint32_t(x0), uint32_t(surfaceH - y1), 0};   // origen de OpenGL abajo
+    WGPUTexelCopyBufferInfo to = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
+    to.buffer = readback;
+    to.layout.bytesPerRow = bytesPerRow;
+    to.layout.rowsPerImage = h;
+    const WGPUExtent3D size{w, h, 1};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(GetDevice(), nullptr);
+    wgpuCommandEncoderCopyTextureToBuffer(encoder, &from, &to, &size);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, nullptr);
+    wgpuQueueSubmit(GetQueue(), 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+    struct Result { bool ok = false; } result;
+    WGPUBufferMapCallbackInfo callback = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+    callback.mode = WGPUCallbackMode_WaitAnyOnly;
+    callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView, void* user, void*) {
+        static_cast<Result*>(user)->ok = status == WGPUMapAsyncStatus_Success;
+    };
+    callback.userdata1 = &result;
+    if (WaitFuture(wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, size_t(bd.size), callback)) && result.ok) {
+        const auto* src = static_cast<const uint8_t*>(wgpuBufferGetConstMappedRange(readback, 0, size_t(bd.size)));
+        const bool bgra = SurfaceFormat() == WGPUTextureFormat_BGRA8Unorm;
+        // Fila r del resultado (desde abajo) = fila h-1-r de la copia (desde arriba).
+        for (uint32_t r = 0; src && r < h; ++r) {
+            const uint8_t* row = src + size_t(h - 1 - r) * bytesPerRow;
+            uint8_t* line = dst + (size_t(y0 - y + int(r)) * size_t(width) + size_t(x0 - x)) * 3;
+            for (uint32_t c = 0; c < w; ++c) {
+                line[c * 3 + 0] = row[c * 4 + (bgra ? 2 : 0)];
+                line[c * 3 + 1] = row[c * 4 + 1];
+                line[c * 3 + 2] = row[c * 4 + (bgra ? 0 : 2)];
+            }
+        }
+        wgpuBufferUnmap(readback);
+    }
+    wgpuBufferRelease(readback);
 }
 
 } // namespace WebGPU
@@ -867,9 +932,8 @@ void Clear(unsigned clearMask) {
 }
 void Flush() {}
 void ClearErrors() {}
-void ReadPixelsRGB(int, int, int width, int height, void* out) {
-    // Captura de pantalla: pendiente para WebGPU.
-    if (out && width > 0 && height > 0) std::memset(out, 0, size_t(width) * size_t(height) * 3);
+void ReadPixelsRGB(int x, int y, int width, int height, void* out) {
+    if (out && width > 0 && height > 0) ::WebGPU::ReadPixels(x, y, width, height, out);
 }
 int MaxTextureSize() { return 8192; }
 void MaxViewportDims(int out[2]) { out[0] = out[1] = 8192; }
