@@ -18,6 +18,7 @@ enum class ClientTextId {
     EventStartsIn,
     RenderBackend, RenderBackendRestart,
     TextureQuality,
+    Sharpness,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).

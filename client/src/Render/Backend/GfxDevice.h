@@ -16,6 +16,7 @@
     X(void, Clear, (unsigned clearMask), (clearMask)) \
     X(void, Flush, (), ()) \
     X(void, ClearErrors, (), ()) \
+    X(void, Sharpen, (float amount), (amount)) \
     X(void, ReadPixelsRGB, (int x, int y, int width, int height, void* out), (x, y, width, height, out)) \
     X(int, MaxTextureSize, (), ()) \
     X(void, MaxViewportDims, (int out[2]), (out)) \

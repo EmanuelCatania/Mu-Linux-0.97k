@@ -55,7 +55,8 @@ const char* const English[] = {
     "Starts in %s",
     "Render: %s",
     "Applies on restart",
-    "Textures: %s"
+    "Textures: %s",
+    "Sharpness: %s"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -77,6 +78,7 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::RenderVSync, "VSync", "VSync" },
         { ClientTextId::RenderBackend, "Render: %s", "Render: %s" },
         { ClientTextId::TextureQuality, "Texturas: %s", "Texturas: %s" },
+        { ClientTextId::Sharpness, "Nitidez: %s", "Nitidez: %s" },
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },

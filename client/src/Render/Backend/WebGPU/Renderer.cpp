@@ -245,6 +245,8 @@ struct GpuMesh {
 };
 struct Pass {
     bool clearColor = false, clearDepth = false;
+    float sharpen = 0.0f;          // > 0: nitidez sobre sharpenViewport antes de la pasada
+    int sharpenViewport[4]{};
     float color[4]{};
     std::vector<Draw> draws;
 };
@@ -287,6 +289,17 @@ struct State {
     std::vector<WGPUBuffer> retiredBuffers;
     float clearColor[4]{};
     int unpackAlignment = 4;
+    // Nitidez (CAS): copia del cuadro y su pipeline.
+    WGPUShaderModule postModule = nullptr;
+    WGPUBindGroupLayout postLayout = nullptr;
+    WGPUPipelineLayout postPipelineLayout = nullptr;
+    WGPURenderPipeline postPipeline = nullptr;
+    WGPUTexture postTexture = nullptr;
+    WGPUTextureView postView = nullptr;
+    WGPUBuffer postUniform = nullptr;
+    WGPUBindGroup postGroup = nullptr;
+    unsigned postWidth = 0, postHeight = 0;
+    WGPUTextureFormat postFormat = WGPUTextureFormat_Undefined;
     unsigned errors = 0;
 } g;
 
@@ -719,6 +732,14 @@ void ReleaseObjects() {
     if (g.uniformBuffer) wgpuBufferRelease(g.uniformBuffer);
     if (g.indexBuffer) wgpuBufferRelease(g.indexBuffer);
     if (g.depthView) wgpuTextureViewRelease(g.depthView);
+    if (g.postGroup) wgpuBindGroupRelease(g.postGroup);
+    if (g.postView) wgpuTextureViewRelease(g.postView);
+    if (g.postTexture) wgpuTextureRelease(g.postTexture);
+    if (g.postUniform) wgpuBufferRelease(g.postUniform);
+    if (g.postPipeline) wgpuRenderPipelineRelease(g.postPipeline);
+    if (g.postPipelineLayout) wgpuPipelineLayoutRelease(g.postPipelineLayout);
+    if (g.postLayout) wgpuBindGroupLayoutRelease(g.postLayout);
+    if (g.postModule) wgpuShaderModuleRelease(g.postModule);
     if (g.depth) wgpuTextureRelease(g.depth);
     if (g.pipelineLayout) wgpuPipelineLayoutRelease(g.pipelineLayout);
     if (g.textureLayout) wgpuBindGroupLayoutRelease(g.textureLayout);
@@ -808,6 +829,133 @@ void ReleaseMeshes() {
 }
 
 namespace {
+const char* const PostShader = R"WGSL(
+struct Post { amount: f32, pad0: f32, pad1: f32, pad2: f32 };
+@group(0) @binding(0) var src: texture_2d<f32>;
+@group(0) @binding(1) var<uniform> post: Post;
+@vertex fn vs_post(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
+    let p = vec2f(select(-1.0, 3.0, i == 1u), select(-1.0, 3.0, i == 2u));
+    return vec4f(p, 0.0, 1.0);
+}
+fn at(p: vec2i) -> vec3f {
+    let size = vec2i(textureDimensions(src, 0));
+    return textureLoad(src, clamp(p, vec2i(0), size - 1), 0).rgb;
+}
+@fragment fn fs_post(@builtin(position) position: vec4f) -> @location(0) vec4f {
+    let p = vec2i(position.xy);
+    let a = at(p + vec2i(-1, -1)); let b = at(p + vec2i(0, -1)); let c = at(p + vec2i(1, -1));
+    let d = at(p + vec2i(-1, 0));  let e = at(p);                let f = at(p + vec2i(1, 0));
+    let g = at(p + vec2i(-1, 1));  let h = at(p + vec2i(0, 1));  let i = at(p + vec2i(1, 1));
+    var mn = min(min(min(d, e), min(f, b)), h); mn = mn + min(mn, min(min(a, c), min(g, i)));
+    var mx = max(max(max(d, e), max(f, b)), h); mx = mx + max(mx, max(max(a, c), max(g, i)));
+    let amp = sqrt(clamp(min(mn, 2.0 - mx) / max(mx, vec3f(1e-5)), vec3f(0.0), vec3f(1.0)));
+    // Realce del laplaciano, atenuado por amp en las zonas de mucho contraste.
+    return vec4f(clamp(e + post.amount * amp * (4.0 * e - b - d - f - h), vec3f(0.0), vec3f(1.0)), 1.0);
+}
+)WGSL";
+
+// Objetos de la nitidez; el pipeline depende del formato de la superficie.
+bool EnsurePost(unsigned width, unsigned height) {
+    const WGPUTextureFormat format = SurfaceFormat();
+    if (!g.postModule) {
+        WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
+        wgsl.code = View(PostShader);
+        WGPUShaderModuleDescriptor md = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
+        md.nextInChain = &wgsl.chain;
+        g.postModule = wgpuDeviceCreateShaderModule(GetDevice(), &md);
+        WGPUBindGroupLayoutEntry entries[2] = {WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT};
+        entries[0].binding = 0;
+        entries[0].visibility = WGPUShaderStage_Fragment;
+        entries[0].texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
+        entries[0].texture.viewDimension = WGPUTextureViewDimension_2D;
+        entries[1].binding = 1;
+        entries[1].visibility = WGPUShaderStage_Fragment;
+        entries[1].buffer.type = WGPUBufferBindingType_Uniform;
+        entries[1].buffer.minBindingSize = 16;
+        WGPUBindGroupLayoutDescriptor ld = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+        ld.entryCount = 2; ld.entries = entries;
+        g.postLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &ld);
+        WGPUPipelineLayoutDescriptor pd = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        pd.bindGroupLayoutCount = 1; pd.bindGroupLayouts = &g.postLayout;
+        g.postPipelineLayout = wgpuDeviceCreatePipelineLayout(GetDevice(), &pd);
+        g.postUniform = CreateBuffer(16, WGPUBufferUsage_Uniform);
+    }
+    if (!g.postModule || !g.postLayout || !g.postPipelineLayout || !g.postUniform) return false;
+    if (!g.postPipeline || g.postFormat != format) {
+        if (g.postPipeline) wgpuRenderPipelineRelease(g.postPipeline);
+        WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+        target.format = format;
+        WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+        fragment.module = g.postModule;
+        fragment.entryPoint = View("fs_post");
+        fragment.targetCount = 1;
+        fragment.targets = &target;
+        WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        d.layout = g.postPipelineLayout;
+        d.vertex.module = g.postModule;
+        d.vertex.entryPoint = View("vs_post");
+        d.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        d.fragment = &fragment;
+        g.postPipeline = wgpuDeviceCreateRenderPipeline(GetDevice(), &d);
+        g.postFormat = format;
+        if (g.postGroup) { wgpuBindGroupRelease(g.postGroup); g.postGroup = nullptr; }
+        if (g.postView) { wgpuTextureViewRelease(g.postView); g.postView = nullptr; }
+        if (g.postTexture) { wgpuTextureRelease(g.postTexture); g.postTexture = nullptr; }
+    }
+    if (!g.postTexture || g.postWidth != width || g.postHeight != height) {
+        if (g.postGroup) { wgpuBindGroupRelease(g.postGroup); g.postGroup = nullptr; }
+        if (g.postView) wgpuTextureViewRelease(g.postView);
+        if (g.postTexture) wgpuTextureRelease(g.postTexture);
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.size = {width, height, 1};
+        td.format = format;
+        td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+        g.postTexture = wgpuDeviceCreateTexture(GetDevice(), &td);
+        g.postView = wgpuTextureCreateView(g.postTexture, nullptr);
+        g.postWidth = width; g.postHeight = height;
+    }
+    if (!g.postGroup) {
+        WGPUBindGroupEntry entries[2] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
+        entries[0].binding = 0; entries[0].textureView = g.postView;
+        entries[1].binding = 1; entries[1].buffer = g.postUniform; entries[1].size = 16;
+        WGPUBindGroupDescriptor d = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+        d.layout = g.postLayout; d.entryCount = 2; d.entries = entries;
+        g.postGroup = wgpuDeviceCreateBindGroup(GetDevice(), &d);
+    }
+    return g.postPipeline && g.postGroup;
+}
+
+// Copia el cuadro y lo redibuja con la nitidez dentro del viewport de la pasada.
+void EncodeSharpen(WGPUCommandEncoder encoder, const Pass& pass, unsigned width, unsigned height) {
+    const int* v = pass.sharpenViewport;
+    const float x = float(std::max(0, v[0]));
+    const float w = std::min(float(v[2]), float(width) - x);
+    const float top = float(int(height) - v[1] - v[3]);
+    const float y = std::max(0.0f, top);
+    const float h = std::min(float(v[3]) - (y - top), float(height) - y);
+    if (w <= 0 || h <= 0 || !EnsurePost(width, height)) return;
+    const float uniform[4] = {pass.sharpen, 0, 0, 0};
+    wgpuQueueWriteBuffer(GetQueue(), g.postUniform, 0, uniform, sizeof(uniform));
+    WGPUTexelCopyTextureInfo from = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT, to = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    from.texture = FrameTexture(); to.texture = g.postTexture;
+    const WGPUExtent3D size{width, height, 1};
+    wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &size);
+    WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    color.view = FrameView();
+    color.loadOp = WGPULoadOp_Load;
+    color.storeOp = WGPUStoreOp_Store;
+    WGPURenderPassDescriptor rp = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    rp.colorAttachmentCount = 1;
+    rp.colorAttachments = &color;
+    WGPURenderPassEncoder p = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
+    wgpuRenderPassEncoderSetViewport(p, x, y, w, h, 0, 1);
+    wgpuRenderPassEncoderSetPipeline(p, g.postPipeline);
+    wgpuRenderPassEncoderSetBindGroup(p, 0, g.postGroup, 0, nullptr);
+    wgpuRenderPassEncoderDraw(p, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEnd(p);
+    wgpuRenderPassEncoderRelease(p);
+}
+
 // Codifica y envía lo grabado hasta ahora sobre la textura del cuadro. La
 // grabación sigue después sobre la misma textura (lo usa la captura).
 void EncodePasses() {
@@ -845,6 +993,7 @@ void EncodePasses() {
 
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(GetDevice(), nullptr);
     for (const auto& pass : g.passes) {
+        if (pass.sharpen > 0.0f) EncodeSharpen(encoder, pass, width, height);
         WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
         color.view = FrameView();
         color.loadOp = pass.clearColor ? WGPULoadOp_Clear : WGPULoadOp_Load;
@@ -1002,7 +1151,7 @@ void ClearColor(float r, float g_, float b, float a) {
 void Clear(unsigned clearMask) {
     if (!g.ready) return;
     // Un Clear antes de dibujar se suma a la pasada; si no, abre otra.
-    if (g.passes.empty() || !g.passes.back().draws.empty()) g.passes.emplace_back();
+    if (g.passes.empty() || !g.passes.back().draws.empty() || g.passes.back().sharpen > 0.0f) g.passes.emplace_back();
     auto& pass = g.passes.back();
     if (clearMask & ClearColorBuffer) {
         pass.clearColor = true;
@@ -1012,6 +1161,14 @@ void Clear(unsigned clearMask) {
 }
 void Flush() {}
 void ClearErrors() {}
+// La nitidez abre una pasada: al codificarla se aplica antes de sus dibujos.
+void Sharpen(float amount) {
+    if (!g.ready) return;
+    g.passes.emplace_back();
+    auto& pass = g.passes.back();
+    pass.sharpen = amount;
+    std::memcpy(pass.sharpenViewport, RenderState::Get().viewport, sizeof(pass.sharpenViewport));
+}
 void ReadPixelsRGB(int x, int y, int width, int height, void* out) {
     if (out && width > 0 && height > 0) ::WebGPU::ReadPixels(x, y, width, height, out);
 }

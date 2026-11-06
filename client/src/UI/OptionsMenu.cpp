@@ -544,6 +544,11 @@ void COptionsMenu::RenderScreen()
     const int texture = gUserSettings.GetTextureQuality();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
     RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
+    // DESVIACION: nitidez de la imagen 3D.
+    static const char* const sharpnessNames[4] = { "Off", "1", "2", "3" };
+    const int sharpness = gUserSettings.GetSharpness();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Sharpness), sharpnessNames[sharpness]);
+    RenderSelector((float)RowY(row++), text, sharpness > 0, sharpness < 3);
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render (OpenGL o WebGPU sobre D3D12/D3D11/Vulkan);
     // se guarda en Config.ini y se aplica al reiniciar.
@@ -598,6 +603,12 @@ bool COptionsMenu::UpdateScreen()
     const int textureStep = UpdateSelector(RowY(row++), texture > 0, texture < 2);
     if (textureStep != INT_MIN) {
         if (textureStep) gUserSettings.SetTextureQuality(texture + (textureStep > 0 ? 1 : -1));
+        return true;
+    }
+    const int sharpness = gUserSettings.GetSharpness();
+    const int sharpnessStep = UpdateSelector(RowY(row++), sharpness > 0, sharpness < 3);
+    if (sharpnessStep != INT_MIN) {
+        if (sharpnessStep) gUserSettings.SetSharpness(sharpness + (sharpnessStep > 0 ? 1 : -1));
         return true;
     }
 #ifdef MU_RENDER_WEBGPU

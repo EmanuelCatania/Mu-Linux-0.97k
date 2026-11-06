@@ -655,6 +655,9 @@ void Render_Scene3D(void)
     }
     // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
+    // DESVIACION: nitidez opcional sobre la imagen 3D, antes del HUD.
+    Gfx::Sharpen(gUserSettings.SharpnessAmount());
+
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     { RenderProfile::Scope measured(RenderProfile::Pass::UI);
     GL_Begin2D();                              // BeginBitmap (Ortho2D)

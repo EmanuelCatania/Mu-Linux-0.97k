@@ -128,6 +128,11 @@ void ClearColor(float r, float g, float b, float a) { BufferedDraw::Flush();GfxD
 void Clear(unsigned clearMask) { BufferedDraw::Flush();GfxDevice::Clear(clearMask); }
 void Flush() { BufferedDraw::Flush();GfxDevice::Flush(); }
 void ClearErrors() { RenderState::TakeStackError();GfxDevice::ClearErrors(); }
+void Sharpen(float amount) {
+    if (amount <= 0.0f) return;
+    BufferedDraw::Flush();
+    GfxDevice::Sharpen(amount);
+}
 void ReadPixelsRGB(int x, int y, int width, int height, void* out) {
     BufferedDraw::Flush();
     GfxDevice::ReadPixelsRGB(x, y, width, height, out);

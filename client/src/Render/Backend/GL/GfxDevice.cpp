@@ -128,6 +128,91 @@ void Clear(unsigned clearMask) {
 }
 void Flush() { glFlush(); }
 void ClearErrors() { while (glGetError() != GL_NO_ERROR) {} }
+// Nitidez adaptativa (CAS): copia el viewport a una textura y lo redibuja con
+// el filtro. Guarda y restaura el estado de GL que toca.
+void Sharpen(float amount) {
+    static GLuint program = 0, vao = 0, texture = 0;
+    static GLint uAmount = -1, uOrigin = -1, uSource = -1;
+    static int textureW = 0, textureH = 0;
+    static bool failed = false;
+    if (failed) return;
+    if (!program) {
+        static const char* const vs = R"GLSL(#version 330 core
+void main(){ vec2 p=vec2(gl_VertexID==1?3.0:-1.0,gl_VertexID==2?3.0:-1.0); gl_Position=vec4(p,0.0,1.0); }
+)GLSL";
+        static const char* const fs = R"GLSL(#version 330 core
+uniform sampler2D uSource; uniform float uAmount; uniform ivec2 uOrigin;
+out vec4 color;
+vec3 at(ivec2 p){ return texelFetch(uSource,clamp(p,ivec2(0),textureSize(uSource,0)-1),0).rgb; }
+void main(){
+    ivec2 p=ivec2(gl_FragCoord.xy)-uOrigin;
+    vec3 a=at(p+ivec2(-1,-1)),b=at(p+ivec2(0,-1)),c=at(p+ivec2(1,-1));
+    vec3 d=at(p+ivec2(-1,0)),e=at(p),f=at(p+ivec2(1,0));
+    vec3 g=at(p+ivec2(-1,1)),h=at(p+ivec2(0,1)),i=at(p+ivec2(1,1));
+    vec3 mn=min(min(min(d,e),min(f,b)),h); mn+=min(mn,min(min(a,c),min(g,i)));
+    vec3 mx=max(max(max(d,e),max(f,b)),h); mx+=max(mx,max(max(a,c),max(g,i)));
+    vec3 amp=sqrt(clamp(min(mn,2.0-mx)/max(mx,vec3(1e-5)),0.0,1.0));
+    // Realce del laplaciano, atenuado por amp en las zonas de mucho contraste.
+    color=vec4(clamp(e+uAmount*amp*(4.0*e-b-d-f-h),0.0,1.0),1.0);
+}
+)GLSL";
+        auto compile = [](GLenum type, const char* source) {
+            const GLuint shader = glCreateShader(type);
+            glShaderSource(shader, 1, &source, nullptr); glCompileShader(shader);
+            GLint ok = 0; glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+            if (!ok) { glDeleteShader(shader); return 0u; }
+            return shader;
+        };
+        const GLuint v = compile(GL_VERTEX_SHADER, vs), f = compile(GL_FRAGMENT_SHADER, fs);
+        if (v && f) {
+            program = glCreateProgram(); glAttachShader(program, v); glAttachShader(program, f); glLinkProgram(program);
+            GLint ok = 0; glGetProgramiv(program, GL_LINK_STATUS, &ok);
+            if (!ok) { glDeleteProgram(program); program = 0; }
+        }
+        if (v) glDeleteShader(v);
+        if (f) glDeleteShader(f);
+        if (!program) { failed = true; return; }
+        uAmount = glGetUniformLocation(program, "uAmount");
+        uOrigin = glGetUniformLocation(program, "uOrigin");
+        uSource = glGetUniformLocation(program, "uSource");
+        glGenVertexArrays(1, &vao);
+        glGenTextures(1, &texture);
+    }
+    const int* viewport = RenderState::Get().viewport;
+    const int x = viewport[0], y = viewport[1], w = viewport[2], h = viewport[3];
+    if (w <= 0 || h <= 0) return;
+
+    GLint previousProgram = 0, previousVao = 0, previousActive = 0, previousTexture = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVao);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &previousActive);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+    const GLboolean blend = glIsEnabled(GL_BLEND), depth = glIsEnabled(GL_DEPTH_TEST), cull = glIsEnabled(GL_CULL_FACE), scissor = glIsEnabled(GL_SCISSOR_TEST);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    if (textureW != w || textureH != h) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        textureW = w; textureH = h;
+    }
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x, y, w, h);
+    glDisable(GL_BLEND); glDisable(GL_DEPTH_TEST); glDisable(GL_CULL_FACE); glDisable(GL_SCISSOR_TEST);
+    glUseProgram(program);
+    glUniform1i(uSource, 0); glUniform1f(uAmount, amount); glUniform2i(uOrigin, x, y);
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glBindVertexArray(GLuint(previousVao));
+    glUseProgram(GLuint(previousProgram));
+    glBindTexture(GL_TEXTURE_2D, GLuint(previousTexture));
+    glActiveTexture(GLenum(previousActive));
+    if (blend) glEnable(GL_BLEND);
+    if (depth) glEnable(GL_DEPTH_TEST);
+    if (cull) glEnable(GL_CULL_FACE);
+    if (scissor) glEnable(GL_SCISSOR_TEST);
+}
 void ReadPixelsRGB(int x, int y, int width, int height, void* out) {
     glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, out);
 }

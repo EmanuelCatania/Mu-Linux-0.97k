@@ -114,6 +114,11 @@ public:
     int GetTextureQuality() const { return m_TextureQuality; }
     int GetStartupTextureQuality() const { return m_StartupTextureQuality; }
     void SetTextureQuality(int level);
+    // DESVIACION: nitidez de la imagen 3D ([Window] Sharpness): 0 apagada, 1-3.
+    int GetSharpness() const { return m_Sharpness; }
+    // Peso del realce por nivel: el máximo de AMD CAS equivale a 1.
+    float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 1.0f, 1.5f }; return amount[m_Sharpness]; }
+    void SetSharpness(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -175,6 +180,7 @@ private:
     RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
     RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
     int m_TextureQuality = 0, m_StartupTextureQuality = 0;
+    int m_Sharpness = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

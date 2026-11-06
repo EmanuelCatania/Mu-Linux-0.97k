@@ -100,6 +100,7 @@ void CUserSettings::Load(const char* iniPath)
             m_RenderBackend = static_cast<RenderBackendPreference>(i);
     m_StartupRenderBackend = m_RenderBackend;
     m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
+    m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -235,6 +236,13 @@ void CUserSettings::SetTextureQuality(int level)
     // Los mipmaps se generan al subir las texturas: valen los del arranque.
     Gfx::SetTextureQuality(m_StartupTextureQuality >= 1, level >= 2);
     SaveInt("Window", "TextureQuality", level);
+}
+
+void CUserSettings::SetSharpness(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_Sharpness = level;
+    SaveInt("Window", "Sharpness", level);
 }
 
 bool CUserSettings::RestartPending() const

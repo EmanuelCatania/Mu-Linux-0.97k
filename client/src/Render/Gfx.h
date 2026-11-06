@@ -69,6 +69,9 @@ void Flush();
 void ClearErrors();
 // Lee el framebuffer en RGB de 8 bits, filas de abajo hacia arriba.
 void ReadPixelsRGB(int x, int y, int width, int height, void* out);
+// DESVIACION: nitidez adaptativa (tipo AMD CAS) sobre el viewport actual,
+// con lo dibujado hasta ahora. amount: 0 apagada, 1 = máximo de AMD CAS.
+void Sharpen(float amount);
 int MaxTextureSize();
 void MaxViewportDims(int out[2]);
 const char* GetDeviceInfo(DeviceInfo info);
