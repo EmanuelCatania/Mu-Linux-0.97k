@@ -4673,57 +4673,33 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // DESVIACION: con la cámara 3D o la distancia de dibujado ampliada, el corte
 // del frustum con el plano del suelo queda más chico que lo que se ve (cámara
 // alta e inclinada, terreno con relieve) y los costados quedaban sin tiles.
-// Acá el cuadro cubre toda la huella del frustum sobre el mapa: en la base de
-// la dirección de la vista, el abanico entre la esquina de más a la izquierda
-// y la de más a la derecha, hasta la más lejana (y 800 de margen, como abajo).
-static bool CreateFrustrum2D_Footprint()
+// Acá el cuadro es el rectángulo que encierra la cámara y las cuatro esquinas
+// del frustum llevadas hasta donde dibuja la proyección (están al 90 % del
+// alcance, _DAT_005526e8, y la proyección llega al 140 %, _DAT_00552d34), más
+// 800 de margen. Cubre todo lo visible con cualquier inclinación.
+static void CreateFrustrum2D_Footprint()
 {
     const float ax = FrustrumVertex, ay = DAT_07eab1b4;
     const float cx[4] = { DAT_07eab1bc, DAT_07eab1c8, DAT_07eab1d4, DAT_07eab1e0 };
     const float cy[4] = { DAT_07eab1c0, DAT_07eab1cc, DAT_07eab1d8, DAT_07eab1e4 };
-    float mx = 0.0f, my = 0.0f;
-    for (int i = 0; i < 4; ++i) { mx += cx[i] - ax; my += cy[i] - ay; }
-    const float ml = sqrtf(mx * mx + my * my);
-    if (ml < 1.0f) return false;                 // mirando hacia abajo: sin dirección
-    mx /= ml; my /= ml;
-    float sx = -my, sy = mx;                     // costado
-    // Que "izquierda" sea la de la esquina arriba-izquierda (orden del cuadro).
-    if ((cx[0] - ax) * sx + (cy[0] - ay) * sy < (cx[1] - ax) * sx + (cy[1] - ay) * sy) { sx = -sx; sy = -sy; }
-    float minA = 0.0f, maxA = 0.0f, reach = 0.0f;
+    const float k = _DAT_00552d34 / _DAT_005526e8;
+    float minX = ax, maxX = ax, minY = ay, maxY = ay;
     for (int i = 0; i < 4; ++i) {
-        const float dx = cx[i] - ax, dy = cy[i] - ay;
-        const float f = dx * mx + dy * my, s = dx * sx + dy * sy;
-        if (f <= 1.0f) return false;
-        const float a = atan2f(s, f);
-        if (i == 0 || a < minA) minA = a;
-        if (i == 0 || a > maxA) maxA = a;
-        const float d = sqrtf(dx * dx + dy * dy);
-        if (d > reach) reach = d;
+        const float x = ax + (cx[i] - ax) * k, y = ay + (cy[i] - ay) * k;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
     }
-    const float half = (maxA - minA) * 0.5f;
-    if (half > 1.3f) return false;               // abanico demasiado abierto
-    // Las esquinas están al 90 % del alcance (_DAT_005526e8) y la proyección
-    // dibuja hasta el 140 % (_DAT_00552d34): cubrir hasta ahí.
-    reach = reach * (_DAT_00552d34 / _DAT_005526e8) / cosf(half) + 800.0f;
-    // (adelante, costado): lejos-izquierda, lejos-derecha, cerca-derecha, cerca-izquierda.
-    const float local[4][2] = {
-        { reach * cosf(maxA), reach * sinf(maxA) },
-        { reach * cosf(minA), reach * sinf(minA) },
-        { -800.0f, -800.0f },
-        { -800.0f,  800.0f },
-    };
-    float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
-    for (int i = 0; i < 4; ++i) {
-        FrustrumX[i] = (ax + mx * local[i][0] + sx * local[i][1]) * _DAT_005524f8;
-        FrustrumY[i] = (ay + my * local[i][0] + sy * local[i][1]) * _DAT_005524f8;
-        if (FrustrumX[i] < minX) minX = FrustrumX[i];
-        if (FrustrumX[i] > maxX) maxX = FrustrumX[i];
-        if (FrustrumY[i] < minY) minY = FrustrumY[i];
-        if (FrustrumY[i] > maxY) maxY = FrustrumY[i];
-    }
-    // El rectángulo de tiles que se recorre (Camera_SetupFrustum lo arma con
-    // las esquinas del frustum) tiene que abarcar el cuadro entero, si no
-    // recorta los costados. Mismo redondeo a bloques de 4 y límites.
+    minX = (minX - 800.0f) * _DAT_005524f8; maxX = (maxX + 800.0f) * _DAT_005524f8;
+    minY = (minY - 800.0f) * _DAT_005524f8; maxY = (maxY + 800.0f) * _DAT_005524f8;
+    // Sentido horario: TestFrustrum2D exige producto cruz positivo en cada lado.
+    FrustrumX[0] = minX; FrustrumY[0] = maxY;
+    FrustrumX[1] = maxX; FrustrumY[1] = maxY;
+    FrustrumX[2] = maxX; FrustrumY[2] = minY;
+    FrustrumX[3] = minX; FrustrumY[3] = minY;
+    // El rectángulo de tiles que se recorre tiene que abarcar el cuadro entero.
+    // Mismo redondeo a bloques de 4 y límites que Camera_SetupFrustum.
     auto bound = [](float tile, int extra) {
         int t = (int)floorf(tile);
         t = ((t + (t >> 31 & 3)) >> 2) * 4 + extra;
@@ -4731,13 +4707,14 @@ static bool CreateFrustrum2D_Footprint()
     };
     FrustrumBoundMinX_1 = bound(minX, -4); FrustrumBoundMaxX_1 = bound(maxX, 4);
     FrustrumBoundMinY_1 = bound(minY, -4); FrustrumBoundMaxY_1 = bound(maxY, 4);
-    return true;
 }
 
 static bool CreateFrustrum2D_FromFrustum(const float *ground)
 {
-    if ((gCamera3D.IsEnabled() || gUserSettings.DrawDistanceScale() > 1.0f) && CreateFrustrum2D_Footprint())
+    if (gCamera3D.IsEnabled() || gUserSettings.DrawDistanceScale() > 1.0f) {
+        CreateFrustrum2D_Footprint();
         return true;
+    }
     const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
     const float corner[4][3] = {
         { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
