@@ -578,18 +578,32 @@ void SubmitFrame() {
         WGPURenderPassEncoder encoderPass = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
         if (!g.vertices.empty()) wgpuRenderPassEncoderSetVertexBuffer(encoderPass, 0, g.vertexBuffer, 0, WGPU_WHOLE_SIZE);
         if (quads) wgpuRenderPassEncoderSetIndexBuffer(encoderPass, g.indexBuffer, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+        // Dawn valida cada comando: sólo se emite el estado que cambia.
+        WGPURenderPipeline lastPipeline = nullptr;
+        WGPUBindGroup lastTexture = nullptr;
+        uint32_t lastUniform = ~0u;
+        int lastViewport[4]{-1, -1, -1, -1};
         for (const auto& draw : pass.draws) {
-            // Viewport de OpenGL (origen abajo) a WebGPU (origen arriba), dentro del cuadro.
-            const float x = float(std::max(0, draw.viewport[0]));
-            const float w = std::min(float(draw.viewport[2]), float(width) - x);
-            const float top = float(int(height) - draw.viewport[1] - draw.viewport[3]);
-            const float y = std::max(0.0f, top);
-            const float h = std::min(float(draw.viewport[3]) - (y - top), float(height) - y);
-            if (w <= 0 || h <= 0) continue;
-            wgpuRenderPassEncoderSetViewport(encoderPass, x, y, w, h, 0, 1);
-            wgpuRenderPassEncoderSetPipeline(encoderPass, draw.pipeline);
-            wgpuRenderPassEncoderSetBindGroup(encoderPass, 0, g.uniformGroup, 1, &draw.uniformOffset);
-            wgpuRenderPassEncoderSetBindGroup(encoderPass, 1, draw.textureGroup, 0, nullptr);
+            if (std::memcmp(lastViewport, draw.viewport, sizeof(lastViewport))) {
+                // Viewport de OpenGL (origen abajo) a WebGPU (origen arriba), dentro del cuadro.
+                const float x = float(std::max(0, draw.viewport[0]));
+                const float w = std::min(float(draw.viewport[2]), float(width) - x);
+                const float top = float(int(height) - draw.viewport[1] - draw.viewport[3]);
+                const float y = std::max(0.0f, top);
+                const float h = std::min(float(draw.viewport[3]) - (y - top), float(height) - y);
+                if (w <= 0 || h <= 0) continue;
+                wgpuRenderPassEncoderSetViewport(encoderPass, x, y, w, h, 0, 1);
+                std::memcpy(lastViewport, draw.viewport, sizeof(lastViewport));
+            }
+            if (draw.pipeline != lastPipeline) { wgpuRenderPassEncoderSetPipeline(encoderPass, draw.pipeline); lastPipeline = draw.pipeline; }
+            if (draw.uniformOffset != lastUniform) {
+                wgpuRenderPassEncoderSetBindGroup(encoderPass, 0, g.uniformGroup, 1, &draw.uniformOffset);
+                lastUniform = draw.uniformOffset;
+            }
+            if (draw.textureGroup != lastTexture) {
+                wgpuRenderPassEncoderSetBindGroup(encoderPass, 1, draw.textureGroup, 0, nullptr);
+                lastTexture = draw.textureGroup;
+            }
             if (draw.quads) wgpuRenderPassEncoderDrawIndexed(encoderPass, draw.vertexCount / 4 * 6, 1, 0, int32_t(draw.firstVertex), 0);
             else wgpuRenderPassEncoderDraw(encoderPass, draw.vertexCount, 1, draw.firstVertex, 0);
         }
@@ -745,7 +759,21 @@ void Submit(unsigned mode, const Vertex* vertices, std::size_t count) {
     g.vertices.insert(g.vertices.end(), vertices, vertices + count);
     if (mode == ::WebGPU::LineLoop) g.vertices.push_back(vertices[0]);   // cerrar el lazo
     draw.vertexCount = uint32_t(g.vertices.size()) - draw.firstVertex;
-    ::WebGPU::CurrentPass().draws.push_back(draw);
+    // Un lote igual al anterior y pegado a él se suma a ese dibujo (no en
+    // strips: unirlos conectaría primitivas que no lo están).
+    auto& draws = ::WebGPU::CurrentPass().draws;
+    const bool list = key.topology != WGPUPrimitiveTopology_LineStrip && key.topology != WGPUPrimitiveTopology_TriangleStrip;
+    if (list && !draws.empty()) {
+        auto& last = draws.back();
+        if (last.pipeline == draw.pipeline && last.textureGroup == draw.textureGroup &&
+            last.uniformOffset == draw.uniformOffset && last.quads == draw.quads &&
+            last.firstVertex + last.vertexCount == draw.firstVertex &&
+            !std::memcmp(last.viewport, draw.viewport, sizeof(draw.viewport))) {
+            last.vertexCount += draw.vertexCount;
+            return;
+        }
+    }
+    draws.push_back(draw);
 }
 void Suspend() {}
 // Mallas residentes y skinning de GL: en WebGPU llegan en una etapa siguiente.

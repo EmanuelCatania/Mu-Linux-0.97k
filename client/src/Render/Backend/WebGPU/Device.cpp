@@ -197,6 +197,11 @@ bool Configure(unsigned width, unsigned height, bool vsync) {
     config.presentMode = vsync ? WGPUPresentMode_Fifo : g.immediateMode;
     wgpuSurfaceConfigure(g.surface, &config);
     g.width = width; g.height = height; g.vsync = vsync; g.configured = true;
+    const char* mode = config.presentMode == WGPUPresentMode_Fifo ? "Fifo (vsync)"
+        : config.presentMode == WGPUPresentMode_Immediate ? "Immediate" : "Mailbox";
+    char line[96];
+    std::snprintf(line, sizeof line, "WebGPU: superficie %ux%u, %s", width, height, mode);
+    DbgLogPublic(line);
     return true;
 }
 
