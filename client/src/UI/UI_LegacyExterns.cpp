@@ -8,7 +8,6 @@
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Render/GlyphAtlas.h"
-#include "Platform/IGLContext.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
@@ -805,7 +804,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         if (*drawText == '\0') return;
     }
 
-    void* hRC = Platform::GetGLContext().CurrentIdentity();
+    void* hRC = gWindow.RenderIdentity();
     if (!hRC) return;
 
     HDC hFontDC = gFont.GetTextDC();

@@ -82,7 +82,10 @@ void OnDevice(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView 
 }
 
 void OnUncapturedError(WGPUDevice const*, WGPUErrorType, WGPUStringView message, void*, void*) {
-    Log("WebGPU: error: %s", Text(message));
+    // Un error que se repite cada cuadro llenaría el log: sólo los primeros.
+    static unsigned count = 0;
+    if (++count <= 100) Log("WebGPU: error: %s", Text(message));
+    else if (count == 101) DbgLogPublic("WebGPU: demasiados errores, no se registran más");
 }
 
 void OnDeviceLost(WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
@@ -199,11 +202,12 @@ bool Configure(unsigned width, unsigned height, bool vsync) {
 
 void Release() {
     DropFrame();
+    // La superficie primero: su swapchain usa el dispositivo al soltarse.
     if (g.surface && g.configured) wgpuSurfaceUnconfigure(g.surface);
+    if (g.surface) wgpuSurfaceRelease(g.surface);
     if (g.queue) wgpuQueueRelease(g.queue);
     if (g.device) { wgpuDeviceDestroy(g.device); wgpuDeviceRelease(g.device); }
     if (g.adapter) wgpuAdapterRelease(g.adapter);
-    if (g.surface) wgpuSurfaceRelease(g.surface);
     if (g.instance) wgpuInstanceRelease(g.instance);
     g = State{};
 }
@@ -233,27 +237,6 @@ bool BeginFrame() {
     return g.frameView != nullptr;
 }
 
-void Clear(float r, float g_, float b, float a) {
-    // El primer Clear del cuadro toma la textura de la superficie.
-    if (!g.frameView && !BeginFrame()) return;
-    WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
-    color.view = g.frameView;
-    color.loadOp = WGPULoadOp_Clear;
-    color.storeOp = WGPUStoreOp_Store;
-    color.clearValue = { r, g_, b, a };
-    WGPURenderPassDescriptor pass = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
-    pass.colorAttachmentCount = 1;
-    pass.colorAttachments = &color;
-    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(g.device, nullptr);
-    WGPURenderPassEncoder encoderPass = wgpuCommandEncoderBeginRenderPass(encoder, &pass);
-    wgpuRenderPassEncoderEnd(encoderPass);
-    wgpuRenderPassEncoderRelease(encoderPass);
-    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, nullptr);
-    wgpuQueueSubmit(g.queue, 1, &commands);
-    wgpuCommandBufferRelease(commands);
-    wgpuCommandEncoderRelease(encoder);
-}
-
 void Present() {
     if (!g.frameView) return;
     wgpuSurfacePresent(g.surface);
@@ -261,6 +244,8 @@ void Present() {
     wgpuInstanceProcessEvents(g.instance);
 }
 
+unsigned Width() { return g.width; }
+unsigned Height() { return g.height; }
 WGPUDevice GetDevice() { return g.device; }
 WGPUQueue GetQueue() { return g.queue; }
 WGPUTextureFormat SurfaceFormat() { return g.format; }

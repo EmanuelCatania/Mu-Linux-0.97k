@@ -22,6 +22,7 @@
 #include "Render/RenderBackend.h"
 #ifdef MU_RENDER_WEBGPU
 #include "Render/Backend/WebGPU/Device.h"
+#include "Render/Backend/WebGPU/Renderer.h"
 #endif
 
 CWindow gWindow;
@@ -217,7 +218,7 @@ void CWindow::Present()
 {
     BufferedDraw::Suspend();
 #ifdef MU_RENDER_WEBGPU
-    if (RenderBackend::IsWebGPU()) { WebGPU::Present(); return; }
+    if (RenderBackend::IsWebGPU()) { WebGPU::SubmitFrame(); return; }
 #endif
     Platform::GetGLContext().Present();
 }
@@ -230,4 +231,12 @@ bool CWindow::SetSwapInterval(bool vsync)
     return Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0);
 }
 HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
+void* CWindow::RenderIdentity() const
+{
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) return WebGPU::GetDevice();
+#endif
+    return Platform::GetGLContext().CurrentIdentity();
+}
+
 HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }

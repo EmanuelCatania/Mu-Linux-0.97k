@@ -23,10 +23,13 @@ bool Configure(unsigned width, unsigned height, bool vsync);
 
 // Toma la textura del cuadro. Devuelve false si la superficie no está
 // disponible (ventana minimizada o recién cambiada): ese cuadro se saltea.
+// Las pasadas de dibujo las graba y envía Renderer.cpp.
 bool BeginFrame();
-// Limpia el cuadro actual con el color dado (y la profundidad a 1).
-void Clear(float r, float g, float b, float a);
+// Presenta la textura del cuadro (la toma BeginFrame).
 void Present();
+// Tamaño configurado de la superficie.
+unsigned Width();
+unsigned Height();
 
 WGPUDevice GetDevice();
 WGPUQueue GetQueue();
