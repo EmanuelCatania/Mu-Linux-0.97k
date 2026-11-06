@@ -191,6 +191,10 @@ void main(){
     glGetIntegerv(GL_ACTIVE_TEXTURE, &previousActive);
     glActiveTexture(GL_TEXTURE0);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
+    // Un sampler trilineal en la unidad 0 dejaría incompleta la copia (sin mipmaps).
+    GLint previousSampler = 0;
+    glGetIntegerv(GL_SAMPLER_BINDING, &previousSampler);
+    glBindSampler(0, 0);
     const GLboolean blend = glIsEnabled(GL_BLEND), depth = glIsEnabled(GL_DEPTH_TEST), cull = glIsEnabled(GL_CULL_FACE), scissor = glIsEnabled(GL_SCISSOR_TEST);
 
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -210,6 +214,7 @@ void main(){
     glBindVertexArray(GLuint(previousVao));
     glUseProgram(GLuint(previousProgram));
     glBindTexture(GL_TEXTURE_2D, GLuint(previousTexture));
+    glBindSampler(0, GLuint(previousSampler));
     glActiveTexture(GLenum(previousActive));
     if (blend) glEnable(GL_BLEND);
     if (depth) glEnable(GL_DEPTH_TEST);
