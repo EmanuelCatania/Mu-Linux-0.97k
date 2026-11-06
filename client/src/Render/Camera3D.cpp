@@ -65,5 +65,7 @@ bool CCamera3D::Wheel(int delta)
 float CCamera3D::GetViewFar() const
 {
     const float lift = m_Height - kDefaultHeight;
-    return 3000.0f + (lift < 0.0f ? -lift : lift) * 3.0f;
+    // DESVIACION: al alejar con la rueda (más FOV) también crece el alcance.
+    const float zoom = m_Fov > kDefaultFov ? m_Fov / kDefaultFov : 1.0f;
+    return (3000.0f + (lift < 0.0f ? -lift : lift) * 3.0f) * zoom;
 }

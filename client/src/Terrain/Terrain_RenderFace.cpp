@@ -27,6 +27,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Materials.h"
+#include "Render/DrawDistance.h"
 #include <optional>
 
 
@@ -193,7 +194,8 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         {
             int slot = (int)(unsigned char)TER_L1[TER_IDX1] + 50;
             BITMAP_t* bmp = &Bitmaps[slot];
-            if (bmp->Buffer) {
+            // DESVIACION: distancia de dibujado; lejos no va el pasto.
+            if (bmp->Buffer && DrawDistance::Detailed((xi + 0.5f) * _DAT_005524f0, (yi + 0.5f) * _DAT_005524f0)) {
                 GL_BindTextureSlot(slot);                      // BindTexture
                 float yfa = bmp->Height + bmp->Height;
                 float u = xf * 0.25f + DAT_0810b2cc[(unsigned char)yi]; // TerrainGrassTexture[(yi&0xFF)+1]

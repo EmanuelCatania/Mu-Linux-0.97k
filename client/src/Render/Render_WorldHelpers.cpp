@@ -21,6 +21,7 @@
 #include "Render/EquipmentVisuals.h"
 #include "Entity/ObjectPose.h"
 #include "Config/UserSettings.h"
+#include "Render/DrawDistance.h"
 #include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
@@ -1110,8 +1111,12 @@ bool __cdecl MoveMainCamera(void) {
         // DESVIACION: el binario usa 2000; con el FOV de 50 las esquinas de
         // arriba quedan más allá del plano lejano y se ven en negro.  El rayo
         // del ratón sigue con 2000 (kScreenVectorDepth).
-        // DESVIACION: distancia de dibujado elegida por el jugador.
-        CameraViewFar = gCamera3D.GetViewFar() * gUserSettings.DrawDistanceScale();
+        // DESVIACION: distancia de dibujado elegida por el jugador. Más allá
+        // del alcance normal sólo se dibuja el terreno (DrawDistance).
+        const float normalRange = gCamera3D.GetViewFar();
+        const float scale = gUserSettings.DrawDistanceScale();
+        CameraViewFar = normalRange * scale;
+        DrawDistance::Set(*(float*)(Hero + 16), *(float*)(Hero + 20), scale > 1.0f ? normalRange * 1.25f : 0.0f);
         CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;
