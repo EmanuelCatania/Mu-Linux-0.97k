@@ -139,8 +139,10 @@ fn catmullRom(uv: vec2f, size: vec2f) -> vec4f {
     var t = textureSample(tex, smp, uv);
     // DESVIACION: bicúbico (opción de calidad), sólo al ampliar la textura.
     let size = vec2f(textureDimensions(tex, 0));
-    let footprint = fwidth(uv * size);
-    if (u.extra.x != 0 && max(footprint.x, footprint.y) < 1.0) { t = catmullRom(uv, size); }
+    // Texels por píxel en el eje mayor (como el LOD del hardware, no fwidth).
+    let st = uv * size;
+    let footprint = max(length(dpdx(st)), length(dpdy(st)));
+    if (u.extra.x != 0 && footprint < 1.0) { t = catmullRom(uv, size); }
     var c = in.color;
     if (u.flags.x != 0) {
         let env = u.flags.y;
@@ -488,12 +490,18 @@ TextureSlot* Writable(bool keep) {
     return &slot;
 }
 
+// Con mipmaps, lo 3D (depth test) amplía con filtro lineal aunque la textura
+// sea nítida: si no, el límite entre ampliación y reducción se ve al moverse.
+// La interfaz conserva el filtro original.
 WGPUBindGroup TextureGroup(TextureSlot& slot) {
-    const uint32_t key = slot.sampling.Key();
+    Sampling sampling = slot.sampling;
+    if (Gfx::TextureMipmaps() && RenderState::Get().caps[RenderState::CapIndex(Cap::DepthTest)])
+        sampling.magFilter = Gfx::TexValue::Linear;
+    const uint32_t key = sampling.Key();
     for (const auto& entry : slot.groups) if (entry.key == key) return entry.group;
     WGPUBindGroupEntry entries[2] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
     entries[0].binding = 0; entries[0].textureView = slot.view;
-    entries[1].binding = 1; entries[1].sampler = Sampler(slot.sampling);
+    entries[1].binding = 1; entries[1].sampler = Sampler(sampling);
     WGPUBindGroupDescriptor d = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
     d.layout = g.textureLayout;
     d.entryCount = 2;
@@ -850,7 +858,10 @@ fn at(p: vec2i) -> vec3f {
     var mx = max(max(max(d, e), max(f, b)), h); mx = mx + max(mx, max(max(a, c), max(g, i)));
     let amp = sqrt(clamp(min(mn, 2.0 - mx) / max(mx, vec3f(1e-5)), vec3f(0.0), vec3f(1.0)));
     // Realce del laplaciano, atenuado por amp en las zonas de mucho contraste.
-    return vec4f(clamp(e + post.amount * amp * (4.0 * e - b - d - f - h), vec3f(0.0), vec3f(1.0)), 1.0);
+    // Las diferencias muy chicas (ruido, transición entre mipmaps) se ignoran.
+    var l = 4.0 * e - b - d - f - h;
+    l = sign(l) * max(abs(l) - vec3f(0.06), vec3f(0.0));
+    return vec4f(clamp(e + post.amount * amp * l, vec3f(0.0), vec3f(1.0)), 1.0);
 }
 )WGSL";
 

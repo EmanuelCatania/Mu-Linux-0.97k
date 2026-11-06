@@ -59,8 +59,9 @@ void main(){
         vec4 t=texture(uTexture,uv);
         if(uBicubic!=0){
             // Sólo al ampliar: al reducir, el muestreo normal (con mipmaps) es mejor.
-            vec2 d=fwidth(uv*vec2(textureSize(uTexture,0)));
-            if(max(d.x,d.y)<1.0)t=catmullRom(uv);
+            // Texels por píxel en el eje mayor (como el LOD del hardware, no fwidth).
+            vec2 st=uv*vec2(textureSize(uTexture,0));
+            if(max(length(dFdx(st)),length(dFdy(st)))<1.0)t=catmullRom(uv);
         }
         if(uTexEnv==1)c=t;
         else if(uTexEnv==2)c=vec4(mix(vColor.rgb,t.rgb,t.a),vColor.a);
@@ -135,6 +136,22 @@ void Release(unsigned name) {
     glDeleteProgram(name);
 }
 int Uniform(unsigned program,const char* name) { return glGetUniformLocation(program,name); }
+// Samplers trilineales con ampliación lineal, por combinación de wrap.
+GLuint SmoothSampler(bool repeatS,bool repeatT) {
+    static GLuint samplers[4]{};
+    GLuint& sampler=samplers[(repeatS?1:0)|(repeatT?2:0)];
+    if(!sampler) {
+        glGenSamplers(1,&sampler);
+        glSamplerParameteri(sampler,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+        glSamplerParameteri(sampler,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glSamplerParameteri(sampler,GL_TEXTURE_WRAP_S,repeatS?GL_REPEAT:GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(sampler,GL_TEXTURE_WRAP_T,repeatT?GL_REPEAT:GL_CLAMP_TO_EDGE);
+        GLfloat anisotropy=0;glGetFloatv(0x84FF,&anisotropy);   // GL_MAX_TEXTURE_MAX_ANISOTROPY
+        while(glGetError()!=GL_NO_ERROR){}
+        if(anisotropy>1)glSamplerParameterf(sampler,0x84FE,anisotropy<16?anisotropy:16);
+    }
+    return sampler;
+}
 void Apply(unsigned name) {
     Program* p=Find(name);if(!p)return;
     if(!p->sampler0) { glUniform1i(p->sampler,0);p->sampler0=true; }
@@ -148,8 +165,12 @@ void Apply(unsigned name) {
         const auto& s=RenderState::Get();
         glUniform1i(p->textured,s.caps[RenderState::CapIndex(Gfx::Cap::Texture2D)]?1:0);
         // Sólo lo 3D (depth test): el texto y la interfaz se dibujan sin él.
-        const bool bicubic=Gfx::TextureBicubic() && s.caps[RenderState::CapIndex(Gfx::Cap::DepthTest)];
+        const bool depth=s.caps[RenderState::CapIndex(Gfx::Cap::DepthTest)];
+        const bool bicubic=Gfx::TextureBicubic() && depth;
         glUniform1i(p->bicubic,bicubic?1|(s.textureRepeat[0]?2:0)|(s.textureRepeat[1]?4:0):0);
+        // Con mipmaps, lo 3D amplía con filtro lineal aunque la textura sea
+        // nítida (sampler propio); la interfaz conserva el filtro original.
+        glBindSampler(0,Gfx::TextureMipmaps() && depth?SmoothSampler(s.textureRepeat[0],s.textureRepeat[1]):0);
         glUniform1i(p->environment,EnvCode(s.texEnv));
         glUniform1i(p->alphaFunction,s.caps[RenderState::CapIndex(Gfx::Cap::AlphaTest)]?AlphaCode(s.alphaFunction):0);
         glUniform1f(p->alphaReference,s.alphaReference);

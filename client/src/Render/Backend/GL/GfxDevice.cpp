@@ -153,7 +153,10 @@ void main(){
     vec3 mx=max(max(max(d,e),max(f,b)),h); mx+=max(mx,max(max(a,c),max(g,i)));
     vec3 amp=sqrt(clamp(min(mn,2.0-mx)/max(mx,vec3(1e-5)),0.0,1.0));
     // Realce del laplaciano, atenuado por amp en las zonas de mucho contraste.
-    color=vec4(clamp(e+uAmount*amp*(4.0*e-b-d-f-h),0.0,1.0),1.0);
+    // Las diferencias muy chicas (ruido, transición entre mipmaps) se ignoran.
+    vec3 l=4.0*e-b-d-f-h;
+    l=sign(l)*max(abs(l)-0.06,0.0);
+    color=vec4(clamp(e+uAmount*amp*l,0.0,1.0),1.0);
 }
 )GLSL";
         auto compile = [](GLenum type, const char* source) {

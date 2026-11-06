@@ -23,7 +23,7 @@ void UpdateWrap() {
     const Wrap w=it==wraps.end() ? Wrap{} : it->second;
     if (s.textureRepeat[0]==w.s && s.textureRepeat[1]==w.t) return;
     s.textureRepeat[0]=w.s;s.textureRepeat[1]=w.t;
-    if (bicubic) RenderState::TouchMaterial();
+    if (mipmaps || bicubic) RenderState::TouchMaterial();
 }
 bool MaterialCap(Cap cap) { return cap == Cap::Texture2D || cap == Cap::AlphaTest || cap == Cap::Fog; }
 void CountCap(Cap cap) {
@@ -39,7 +39,7 @@ void SetCap(Cap cap, bool on) {
     current = on;CountCap(cap);
     GfxDevice::ApplyCap(cap, on);
     // El bicúbico sólo filtra lo 3D (con depth test): ese cap también es material.
-    if (MaterialCap(cap) || (bicubic && cap == Cap::DepthTest)) RenderState::TouchMaterial();
+    if (MaterialCap(cap) || ((mipmaps || bicubic) && cap == Cap::DepthTest)) RenderState::TouchMaterial();
 }
 void MaterialChange() { BufferedDraw::Flush();RenderState::TouchMaterial(); }
 void MatrixChange() { BufferedDraw::Flush(); }
@@ -50,7 +50,7 @@ void ApplyDevice(const RenderState::Fixed& before) {
         if (before.caps[i] == s.caps[i]) continue;
         CountCap(static_cast<Cap>(i));
         GfxDevice::ApplyCap(static_cast<Cap>(i), s.caps[i]);
-        if (bicubic && static_cast<Cap>(i) == Cap::DepthTest) RenderState::TouchMaterial();
+        if ((mipmaps || bicubic) && static_cast<Cap>(i) == Cap::DepthTest) RenderState::TouchMaterial();
     }
     if (before.blendSource != s.blendSource || before.blendDestination != s.blendDestination) {
         RenderProfile::Change(RenderProfile::State::Blend);GfxDevice::ApplyBlend(s.blendSource, s.blendDestination);
@@ -173,9 +173,8 @@ void TexParameter(TexParam parameter, TexValue value) {
     }
 }
 void SetTextureQuality(bool useMipmaps, bool useBicubic) {
-    mipmaps=useMipmaps;
-    if (bicubic==useBicubic) return;
-    BufferedDraw::Flush();bicubic=useBicubic;RenderState::TouchMaterial();
+    if (mipmaps==useMipmaps && bicubic==useBicubic) return;
+    BufferedDraw::Flush();mipmaps=useMipmaps;bicubic=useBicubic;RenderState::TouchMaterial();
 }
 bool TextureMipmaps() { return mipmaps; }
 bool TextureBicubic() { return bicubic; }
