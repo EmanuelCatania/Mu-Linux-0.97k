@@ -120,6 +120,10 @@ struct CATALOG_MAP_FOG
 	BYTE DayRGB[3];
 	BYTE NightRGB[3];
 	BYTE Reserved;
+	// Distancias de la niebla lineal (unidades del mundo). Los clientes que
+	// leen 8 bytes las ignoran; los nuevos usan 2000/2700 si no llegan.
+	WORD Start;
+	WORD End;
 };
 
 struct CATALOG_EFFECT

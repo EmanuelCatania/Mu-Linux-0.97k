@@ -21,7 +21,7 @@ CContentCatalog gContentCatalog;
 static_assert(sizeof(PMSG_CATALOG_HEAD) == 14, "catalog head");
 static_assert(sizeof(CATALOG_ITEM) == 264, "catalog item");
 static_assert(sizeof(CATALOG_MONSTER) == 96, "catalog monster");
-static_assert(sizeof(CATALOG_MAP_FOG) == 8, "catalog map fog");
+static_assert(sizeof(CATALOG_MAP_FOG) == 12, "catalog map fog");
 static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "catalog end");
 static_assert(sizeof(CATALOG_EFFECT) == 132, "catalog effect");
 static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
@@ -335,7 +335,38 @@ void CContentCatalog::LoadLegacyItems(const char* folder)
 					fog.NightRGB[n] = ClampByte(lpReadScript->GetAsNumber());
 				}
 
+				fog.Start = 2000;
+
+				fog.End = 2700;
+
 				this->m_MapFog.push_back(fog);
+			}
+
+			// Segundo bloque opcional: Mapa Inicio Fin (distancias de la niebla).
+			while (true)
+			{
+				eTokenResult token = lpReadScript->GetToken();
+
+				if (token == TOKEN_END || token == TOKEN_END_SECTION)
+				{
+					break;
+				}
+
+				int map = lpReadScript->GetNumber();
+
+				int start = lpReadScript->GetAsNumber();
+
+				int end = lpReadScript->GetAsNumber();
+
+				for (CATALOG_MAP_FOG& fog : this->m_MapFog)
+				{
+					if (fog.Map == map && start > 0 && end > start && end <= 0xFFFF)
+					{
+						fog.Start = (WORD)start;
+
+						fog.End = (WORD)end;
+					}
+				}
 			}
 		}
 		catch (...)
