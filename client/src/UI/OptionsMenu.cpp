@@ -601,8 +601,10 @@ void COptionsMenu::RenderGraphics()
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Sharpness), sharpnessNames[sharpness]);
     RenderSelector((float)RowY(row++), text, sharpness > 0, sharpness < 3);
     // DESVIACION: antialiasing FXAA de la imagen 3D.
-    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Antialiasing), gUserSettings.GetAntialiasing() ? "FXAA" : "Off");
-    RenderButton((float)RowY(row++), text);
+    static const char* const antialiasingNames[4] = { "Off", "FXAA", "MSAA 4x", "MSAA 4x + FXAA" };
+    const int antialiasing = gUserSettings.GetAntialiasingLevel();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Antialiasing), antialiasingNames[antialiasing]);
+    RenderSelector((float)RowY(row++), text, antialiasing > 0, antialiasing < 3);
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     if (gUserSettings.RestartPending())
         RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
@@ -673,8 +675,10 @@ bool COptionsMenu::UpdateGraphics()
         if (sharpnessStep) gUserSettings.SetSharpness(sharpness + (sharpnessStep > 0 ? 1 : -1));
         return true;
     }
-    if (UpdateToggle(RowY(row++), clicked)) {
-        if (clicked) gUserSettings.SetAntialiasing(!gUserSettings.GetAntialiasing());
+    const int antialiasing = gUserSettings.GetAntialiasingLevel();
+    const int antialiasingStep = UpdateSelector(RowY(row++), antialiasing > 0, antialiasing < 3);
+    if (antialiasingStep != INT_MIN) {
+        if (antialiasingStep) gUserSettings.SetAntialiasingLevel(antialiasing + (antialiasingStep > 0 ? 1 : -1));
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {

@@ -107,7 +107,7 @@ public:
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
 #endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
-        if (settings.openGL && !SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
+        if (settings.openGL && !SetGLAttributes(settings.samples)) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
 #ifndef _WIN32
         // Si Wayland sólo ofrece GL por software y el usuario no forzó el
         // driver, se reintenta con X11 (XWayland), que llega al driver de la GPU.
@@ -119,12 +119,18 @@ public:
                 SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
                 if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
             }
-            if (!SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
+            if (!SetGLAttributes(settings.samples)) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         }
 #endif
         SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
         window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
             (settings.openGL ? SDL_WINDOW_OPENGL : 0) | SDL_WINDOW_HIDDEN);
+        if (!window && settings.openGL && settings.samples > 0) {
+            // El driver no ofrece un formato con MSAA: se sigue sin él.
+            SDL_Log("MSAA %dx no disponible: %s", settings.samples, SDL_GetError());
+            SetGLAttributes(0);
+            window = SDL_CreateWindow("Mu Online", settings.width, settings.height, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        }
         if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         if (SDL_Surface* icon = LoadWindowIcon()) { SDL_SetWindowIcon(window, icon); SDL_DestroySurface(icon); }
         InstallSDLInput();
@@ -133,7 +139,7 @@ public:
         SDL_StartTextInput(window);
         return true;
     }
-    static bool SetGLAttributes() {
+    static bool SetGLAttributes(int samples) {
         // DESVIACION: OpenGL 3.3 core; el pipeline fijo del 0.97k se emula en
         // RenderState y en los shaders del backend.
         const bool context=SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3) &&
@@ -147,7 +153,10 @@ public:
             SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0) &&
             SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16) &&
             SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) &&
-            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16) &&
+            // DESVIACION: MSAA opcional (opción de antialiasing).
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, samples > 0 ? 1 : 0) &&
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples > 0 ? samples : 0);
     }
     void ServiceLoadingEvents(unsigned) override { ServiceEvents(); }
     void ServiceEvents() override {

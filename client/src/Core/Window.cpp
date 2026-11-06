@@ -135,12 +135,13 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
     Platform::BindNativeDispatch(hInst, wndProc);
     // DESVIACION: calidad de texturas elegida por el jugador, antes de subir ninguna.
     Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
+    Gfx::SetMultisample(gUserSettings.Multisample());
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
     RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL
         ? RenderBackend::Kind::OpenGL : RenderBackend::Kind::WebGPU;
 #endif
-    return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless, !RenderBackend::IsWebGPU()});
+    return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless, !RenderBackend::IsWebGPU(), Gfx::Multisample()});
 }
 
 #ifdef MU_RENDER_WEBGPU
@@ -165,7 +166,7 @@ bool InitWebGPU(DWORD width, DWORD height, bool windowMode, bool borderless)
     CErrorReport_Write(&DAT_055c9bf0, "> WebGPU no disponible: se usa OpenGL");
     RenderBackend::active = RenderBackend::Kind::OpenGL;
     Platform::GetWindow().Shutdown();
-    return Platform::GetWindow().Create({width, height, windowMode, borderless, true});
+    return Platform::GetWindow().Create({width, height, windowMode, borderless, true, Gfx::Multisample()});
 }
 }
 #endif

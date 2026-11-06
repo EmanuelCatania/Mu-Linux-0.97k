@@ -271,6 +271,11 @@ struct State {
     WGPUTexture depth = nullptr;
     WGPUTextureView depthView = nullptr;
     unsigned depthWidth = 0, depthHeight = 0;
+    // MSAA: color multisample que cada pasada resuelve sobre la textura del cuadro.
+    WGPUTexture msaa = nullptr;
+    WGPUTextureView msaaView = nullptr;
+    unsigned msaaWidth = 0, msaaHeight = 0;
+    WGPUTextureFormat msaaFormat = WGPUTextureFormat_Undefined;
     std::unordered_map<uint64_t, WGPURenderPipeline> pipelines;
     std::unordered_map<uint32_t, WGPUSampler> samplers;
     std::unordered_map<Gfx::Texture, TextureSlot> textures;
@@ -308,6 +313,8 @@ struct State {
     WGPUTextureFormat postFormat = WGPUTextureFormat_Undefined;
     unsigned errors = 0;
 } g;
+
+uint32_t Samples() { return Gfx::Multisample() > 1 ? 4u : 1u; }   // WebGPU garantiza 1 y 4
 
 WGPUStringView View(const char* text) { return WGPUStringView{text, WGPU_STRLEN}; }
 
@@ -558,6 +565,7 @@ WGPURenderPipeline Pipeline(const PipelineKey& key) {
 
     WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     d.layout = g.pipelineLayout;
+    d.multisample.count = Samples();
     d.vertex.module = g.module;
     d.vertex.entryPoint = View(resident ? "vs_skin" : "vs");
     d.vertex.bufferCount = 1;
@@ -619,6 +627,29 @@ TextureSlot& BoundSlot() {
     return g.white;
 }
 
+
+// Color multisample del tamaño de la superficie (sólo con MSAA).
+void EnsureMsaa(unsigned width, unsigned height) {
+    if (Samples() == 1) return;
+    const WGPUTextureFormat format = SurfaceFormat();
+    if (g.msaa && g.msaaWidth == width && g.msaaHeight == height && g.msaaFormat == format) return;
+    if (g.msaaView) wgpuTextureViewRelease(g.msaaView);
+    if (g.msaa) wgpuTextureRelease(g.msaa);
+    WGPUTextureDescriptor d = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    d.size = {width, height, 1};
+    d.format = format;
+    d.usage = WGPUTextureUsage_RenderAttachment;
+    d.sampleCount = Samples();
+    g.msaa = wgpuDeviceCreateTexture(GetDevice(), &d);
+    g.msaaView = wgpuTextureCreateView(g.msaa, nullptr);
+    g.msaaWidth = width; g.msaaHeight = height; g.msaaFormat = format;
+}
+// Destino de color de una pasada: el multisample (resuelto en el cuadro) o el cuadro.
+void ColorTarget(WGPURenderPassColorAttachment& color) {
+    if (g.msaaView) { color.view = g.msaaView; color.resolveTarget = FrameView(); }
+    else color.view = FrameView();
+}
+
 Pass& CurrentPass() {
     if (g.passes.empty()) g.passes.emplace_back();
     return g.passes.back();
@@ -632,6 +663,7 @@ void EnsureDepth(unsigned width, unsigned height) {
     d.size = {width, height, 1};
     d.format = WGPUTextureFormat_Depth24Plus;
     d.usage = WGPUTextureUsage_RenderAttachment;
+    d.sampleCount = Samples();
     g.depth = wgpuDeviceCreateTexture(GetDevice(), &d);
     g.depthView = wgpuTextureCreateView(g.depth, nullptr);
     g.depthWidth = width; g.depthHeight = height;
@@ -744,6 +776,8 @@ void ReleaseObjects() {
     if (g.uniformBuffer) wgpuBufferRelease(g.uniformBuffer);
     if (g.indexBuffer) wgpuBufferRelease(g.indexBuffer);
     if (g.depthView) wgpuTextureViewRelease(g.depthView);
+    if (g.msaaView) wgpuTextureViewRelease(g.msaaView);
+    if (g.msaa) wgpuTextureRelease(g.msaa);
     if (g.postGroup) wgpuBindGroupRelease(g.postGroup);
     if (g.postView) wgpuTextureViewRelease(g.postView);
     if (g.postTexture) wgpuTextureRelease(g.postTexture);
@@ -904,6 +938,7 @@ WGPURenderPipeline PostPipeline(const char* entry, WGPUTextureFormat format) {
     fragment.targets = &target;
     WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     d.layout = g.postPipelineLayout;
+    d.multisample.count = Samples();
     d.vertex.module = g.postModule;
     d.vertex.entryPoint = View("vs_post");
     d.primitive.topology = WGPUPrimitiveTopology_TriangleList;
@@ -996,7 +1031,7 @@ void EncodePost(WGPUCommandEncoder encoder, const Pass& pass, unsigned width, un
         const WGPUExtent3D size{width, height, 1};
         wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &size);
         WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
-        color.view = FrameView();
+        ColorTarget(color);
         color.loadOp = WGPULoadOp_Load;
         color.storeOp = WGPUStoreOp_Store;
         WGPURenderPassDescriptor rp = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
@@ -1020,6 +1055,7 @@ void EncodePasses() {
     if (g.passes.empty() || !BeginFrame()) { ResetFrame(); ReleaseRetired(); return; }
     const unsigned width = Width(), height = Height();
     EnsureDepth(width, height);
+    EnsureMsaa(width, height);
     if (!g.vertices.empty()) {
         Reserve(g.vertexBuffer, g.vertexCapacity, g.vertices.size() * sizeof(Vertex), WGPUBufferUsage_Vertex);
         wgpuQueueWriteBuffer(GetQueue(), g.vertexBuffer, 0, g.vertices.data(), g.vertices.size() * sizeof(Vertex));
@@ -1053,7 +1089,7 @@ void EncodePasses() {
     for (const auto& pass : g.passes) {
         if (pass.Post()) EncodePost(encoder, pass, width, height);
         WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
-        color.view = FrameView();
+        ColorTarget(color);
         color.loadOp = pass.clearColor ? WGPULoadOp_Clear : WGPULoadOp_Load;
         color.storeOp = WGPUStoreOp_Store;
         color.clearValue = {pass.color[0], pass.color[1], pass.color[2], pass.color[3]};

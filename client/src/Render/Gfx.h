@@ -100,6 +100,9 @@ int UnpackAlignment();
 void SetTextureQuality(bool mipmaps, bool bicubic);
 bool TextureMipmaps();
 bool TextureBicubic();
+// DESVIACION: muestras de MSAA del framebuffer (0 sin MSAA); se fija al crear la ventana.
+void SetMultisample(int samples);
+int Multisample();
 
 // Niebla
 void SetFogMode(FogMode mode);

@@ -119,9 +119,12 @@ public:
     // Peso del realce por nivel: el máximo de AMD CAS equivale a 1.
     float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 0.75f, 1.0f }; return amount[m_Sharpness]; }
     void SetSharpness(int level);
-    // DESVIACION: antialiasing FXAA de la imagen 3D ([Window] Antialiasing).
-    bool GetAntialiasing() const { return m_Antialiasing; }
-    void SetAntialiasing(bool enabled);
+    // DESVIACION: antialiasing de la imagen 3D ([Window] Antialiasing):
+    // 0 apagado, 1 FXAA, 2 MSAA 4x, 3 MSAA 4x + FXAA. MSAA se aplica al reiniciar.
+    int GetAntialiasingLevel() const { return m_Antialiasing; }
+    bool GetAntialiasing() const { return m_Antialiasing == 1 || m_Antialiasing == 3; }   // FXAA
+    int Multisample() const { return m_StartupAntialiasing >= 2 ? 4 : 0; }
+    void SetAntialiasingLevel(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -184,7 +187,7 @@ private:
     RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
     int m_TextureQuality = 0, m_StartupTextureQuality = 0;
     int m_Sharpness = 0;
-    bool m_Antialiasing = false;
+    int m_Antialiasing = 0, m_StartupAntialiasing = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

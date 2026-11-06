@@ -178,6 +178,9 @@ void SetTextureQuality(bool useMipmaps, bool useBicubic) {
 }
 bool TextureMipmaps() { return mipmaps; }
 bool TextureBicubic() { return bicubic; }
+namespace { int multisample = 0; }
+void SetMultisample(int samples) { multisample = samples; }
+int Multisample() { return multisample; }
 // Valores numéricos de OpenGL que trae el binario (p. ej. OpenJPG(..., 0x2601, 0x2901)).
 TexValue TexValueFromLegacy(int value) {
     switch (value) {
