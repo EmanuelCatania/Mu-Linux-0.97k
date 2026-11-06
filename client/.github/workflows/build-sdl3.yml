@@ -572,3 +572,42 @@ jobs:
             build/bin/main
             build/Testing/Temporary/LastTest.log
           if-no-files-found: error
+
+  # Windows x64 con el render WebGPU: Dawn estático por vcpkg (manifiesto del
+  # repo, triplet cmake/triplets/x64-windows-mu). Los binarios de vcpkg se
+  # guardan en la caché de Actions; sólo la primera vez se compila Dawn.
+  webgpu:
+    name: WebGPU (windows-x64, Release)
+    runs-on: windows-2022
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar vcpkg
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          "$VCPKG_ROOT/bootstrap-vcpkg.bat" -disableMetrics
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+      - name: Caché de binarios de vcpkg
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-cache
+          key: vcpkg-x64-windows-mu-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'cmake/triplets/x64-windows-mu.cmake') }}
+          restore-keys: vcpkg-x64-windows-mu-
+      - name: Configurar
+        run: cmake --preset windows-sdl3-x64-release
+      - name: Compilar
+        run: cmake --build --preset windows-sdl3-x64-release --parallel 4
+      - name: Verificar que no haya DLL propias
+        shell: bash
+        run: |
+          shopt -s nullglob
+          dlls=(bin/Client/*.dll)
+          if [ ${#dlls[@]} -ne 0 ]; then echo "DLL junto al ejecutable: ${dlls[*]}"; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webgpu-windows-x64-Release
+          path: bin/Client/main.exe
+          if-no-files-found: error
