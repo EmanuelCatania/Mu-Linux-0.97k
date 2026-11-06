@@ -35,7 +35,7 @@ UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
 // GetIndex (aca arriba) devuelve -1 siempre, asi que la rama de allocacion corre
 // en CADA pasada (la capacidad es 1 con un slot centinela, no 0: el Insert corre
 // su sondeo pero no guarda el nodo).  Alocar por nodo seria un leak de ~17 KB por
-// frame (SecondPassword_Screen4 aloca 12 nodos por frame), asi que se devuelve
+// frame (Inventory_HitTest aloca 12 nodos por frame), asi que se devuelve
 // siempre el mismo buffer: nadie LEE los nodos.
 //
 // Los sitios escriben su flag en offsets distintos segun el tipo de nodo (+1, +4,

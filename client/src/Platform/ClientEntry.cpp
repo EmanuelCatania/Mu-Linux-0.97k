@@ -666,7 +666,7 @@ int main(int, char**)
     // esquina superior derecha). El WinMain de IDA llama operator_new(0xBC) +
     // sub_40E990 (hermana de sub_40C7D0, con nodo de lista más chico, 0x18, y 24
     // filas visibles). Sin construirlo la vtable queda nula y el dispatch
-    // vtable[+0x14] desde SecondPassword_Screen1 crashea.
+    // vtable[+0x14] desde GuildCreator_HitTest crashea.
     DAT_055c9ff4 = static_cast<BYTE*>(ChatListBox_ConstructWhisper());
 
     // Los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0: los

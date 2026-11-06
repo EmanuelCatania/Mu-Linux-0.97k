@@ -2295,19 +2295,19 @@ extern "C" DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
 extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
-// Entradas de la tabla de strings que usa el switch de SecondPassword_Screen8:
+// Entradas de la tabla de strings que usa el switch de ChaosMix_HitTest:
 // extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa1a0;   // UI message label A (UIChatLogWindow_AddText arg1)
 // extern char    DAT_07d54600;   // error string for auth-fail case   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa198;   // UI message label B
 // extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa19c;   // UI message label C
-// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for SecondPassword_GridSlotAvail non-1/7/0xb/8 cases
+// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for Inventory_HasFreeSpace non-1/7/0xb/8 cases
 extern int     DAT_0055a3f8;   // auth mode param A
 extern int     DAT_0055a3fc;   // auth mode param B
 
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
-extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip-select)
+extern DWORD   DAT_07eaa120;   // EventEntrance_HitTest mode (0=normal, 1=equip-select)
 extern "C" char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
 // Buffers del editor de creacion de GUILD (no "PIN entry"): el render los recorre
 // como arrays (64 bytes de mark). Ver la nota en globals.cpp.
@@ -2318,14 +2318,14 @@ extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
 // extern char    DAT_07d6b724;   // Error message: "no item in slot"   // -> alias a GlobalText, ver el final del archivo
-// extern char    DAT_07d685ec;   // Error message: "invalid slot" (SecondPassword_Screen5)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d685ec;   // Error message: "invalid slot" (EventEntrance_HitTest)   // -> alias a GlobalText, ver el final del archivo
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
 // DAT_00559f60 / DAT_00559f64 SON m_iDevilSquareLimitLevel.
 // Verificado con ida_get_function: m_iDevilSquareLimitLevel = 0x00559F60 y
 // m_iBloodCastleLimitLevel = 0x00559F80 (32 bytes despues = 4 niveles x 2 int).
-// El handler del 0x8E llena el array y `SecondPassword_Screen5` lee
+// El handler del 0x8E llena el array y `EventEntrance_HitTest` lee
 // `(&DAT_00559f60)[i*2]`: tienen que ser la misma memoria.
 #define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
 #define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])

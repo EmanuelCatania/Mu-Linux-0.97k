@@ -318,7 +318,7 @@ void Render_QuickButtons_(void)
         g_GuildCreatorScratchX = panelStartX;
         g_GuildCreatorScratchY = 0;
         // El origen de los botones OK/CANCEL es `g_GuildCreatorScratchX/Y`, el mismo
-        // que usa el hit-test SecondPassword_Screen1 (no `DAT_07ea5b1c/20` =
+        // que usa el hit-test GuildCreator_HitTest (no `DAT_07ea5b1c/20` =
         // Inventory[32].Level/Part, que es el slot 0 del pool de la tienda).
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;

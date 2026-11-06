@@ -55,13 +55,13 @@ static bool GetGuildCreatorOrigin(int& originX, int& originY)
     return (originX != 0 || originY != 0);
 }
 
-// SecondPassword_Screen1 @ 0x004E4760 — SecondPassword_Screen1 (727 lines)
+// IDA: sub_4E4760 (0x004E4760) — hit-test del creador de guild.
 //   - Chequea DAT_07eaa124 (hover habilitado). Si DAT_07eaa144==1: grilla de click para 8 botones
 //     (8×0x0F tiles con origen en DAT_07ea5b1c/20+100), escribe el array DAT_07ea51f5 con DAT_07eaa0dc.
 //   - Segunda pasada: itera los pasos de DAT_07ea5b18 (+0x32 cada uno), los compara con la posición del mouse para encontrar
 //     hovered button index, sets DAT_07ea51ed.
 //   - SEH + llamadas a UI_SetScene(0x19/0x1c).
-void __cdecl SecondPassword_Screen1(void) {
+void __cdecl GuildCreator_HitTest(void) {
     // El sub_4E4760 de IDA es el hit-test del diálogo GuildCreator (gatea con
     // GuildCreatorOpened, usa Inventory[32].Level/Part como origen del panel).
     // Acá el gate es DAT_07eaa124 (= GuildCreatorOpened) y el origen sale de
@@ -81,7 +81,7 @@ void __cdecl SecondPassword_Screen1(void) {
     }
 
     if (DAT_07eaa144 == 1) {
-        // IDA: SecondPassword_Screen1. La grilla de edición tiene 8 filas de 8 celdas;
+        // IDA: GuildCreator_HitTest. La grilla de edición tiene 8 filas de 8 celdas;
         // cada celda conserva un índice de color completo en DAT_07ea51f5.
         // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
         *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000;
@@ -100,7 +100,7 @@ void __cdecl SecondPassword_Screen1(void) {
             }
         }
 
-        // IDA: SecondPassword_Screen1 — paleta 2×8, índice lineal fila*8+col.
+        // IDA: GuildCreator_HitTest — paleta 2×8, índice lineal fila*8+col.
         for (int row = 0; row < 2; ++row) {
             const int colorY = originY + 260 + row * 20;
             for (int col = 0; col < 8; ++col) {
@@ -185,7 +185,7 @@ void __cdecl SecondPassword_Screen1(void) {
                         memcpy(pkt + 3 + NAME, mark, 32);
                         gNetwork.SendC1(pkt, (int)sizeof(pkt));
 
-                        // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
+                        // IDA: GuildCreator_HitTest cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
                         // editor y reinicia el intervalo de mouse 0/6.
                         GuildCreator_CloseFromResult();
@@ -319,7 +319,7 @@ void __cdecl Party_MemberClickHandler(void) {
         DAT_00559bec = 6;
     }
 }
-// SecondPassword_Screen3 @ 0x004E5DE0 — SecondPassword_Screen3 (443 lines)
+// IDA: sub_4E5DE0 (0x004E5DE0) — hit-test del panel de personaje.
 // Envío del paquete de selección de personaje: por cada uno de los hasta 0x10 botones de personaje de la columna,
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
 // Guard de entrada: DAT_07eaa116 tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
@@ -331,7 +331,7 @@ void __cdecl Party_MemberClickHandler(void) {
 // HashTable ref-count noise around DAT_07cf1ffc is anti-tamper, skipped.
 // Back button [DAT_07ea982c+0x19,+0x31) x [DAT_07ea9830+0x18b,+0x1a3):
 //   → clear DAT_07eaa116, PlayBuffer(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
-void __cdecl SecondPassword_Screen3(void) {
+void __cdecl CharacterInfo_HitTest(void) {
     // IDA sub_4E5DE0 = hit-test del panel Character, con CharacterInfoStartX/Y
     // (DAT_07ea982c/30) como base. Mientras el origen no esté escrito (== 0) se
     // sale, para no disparar hit-tests fantasma del lado izquierdo.
@@ -399,18 +399,18 @@ void __cdecl SecondPassword_Screen3(void) {
         DAT_00559bec = 6;
     }
 }
-// SecondPassword_Screen4 @ 0x004E6550 — SecondPassword_Screen4 (257 lines)
-//   - Wrong-password error handler: displays SetErrorMessage error dialog for various
-//     server error codes. Resets PIN buffer (DAT_07ea9814/18/1c = 0).
+// IDA: sub_4E6550 (0x004E6550) — hit-test de la ventana de inventario y de
+// las ventanas que se abren junto a ella (tienda, baúl, trade, Chaos Mix):
+// grilla de items, casilleros de equipo y botones del pie.
 //   - Contiene una llamada a __ftol() (FPU ST0 → long) para el límite Y del botón, con origen float desconocido.
 //     Casi toda la lógica (ruido de ref-count de HashTable + zonas de hover) está limpia, pero el origen del FPU
 //     unresolvable without call-site context. STUB: __ftol() button region.
-void __cdecl SecondPassword_Screen4(void) {
+void __cdecl Inventory_HitTest(void) {
     // DESVIACION: publicar el origen antes del hit-test, sin esperar al draw.
     InventoryStartX = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
     InventoryStartY = 0;
 
-    // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
+    // Hit-test de la ventana de inventario.
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
     // __ftol() Y-boundary → approximated as (int)DAT_07ea5284 (screen origin Y).
@@ -589,10 +589,10 @@ void __cdecl SecondPassword_Screen4(void) {
                      (short*)OffsetMixItems, 8, 4, '\0');
     }
 }
-// SecondPassword_Screen5 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
+// IDA: sub_4E6C40 (0x004E6C40) — hit-test de la entrada a eventos.
 //   - Click del selector de nivel de la ventana de evento (Devil Square /
 //     Blood Castle); ver el detalle abajo.
-void __cdecl SecondPassword_Screen5(void) {
+void __cdecl EventEntrance_HitTest(void) {
     // Click del selector de nivel del evento.  El binario NO tiene aca ningun
     // teclado de PIN: son 4 filas (Devil Square) o 6 (Blood Castle) alineadas
     // con las que dibuja `RenderEventWindow` (0x4F3C50).
@@ -754,22 +754,22 @@ void __cdecl ServerTransfer_HitTest(void) {
         DAT_00559bec = 6;
     }
 }
-// SecondPassword_Screen8 @ 0x004E9050 — SecondPassword_Screen8 (81 lines)
-// Handler del click en el botón OK del diálogo de segunda contraseña.
+// IDA: sub_4E9050 (0x004E9050) — botón de combinar del Chaos Mix: valida el
+// tipo de mezcla (MixType) y el espacio libre en el inventario y pide confirmar.
 // Guard: DAT_07eaa11a must be non-zero (button active flag).
 // Hit-test: mouse within [DAT_07eaa0c8+0x4b, DAT_07eaa0c8+0x77) x [DAT_07eaa0cc+300, DAT_07eaa0cc+0x14c).
 // DAT_07eaa140 must be 0 (no timeout in progress), DAT_083a4124 must be non-zero (click pending).
 // Switch on MixType:
 //   0         → UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
-//   1,2,3,4,5,6,7,8,0xb → SecondPassword_GridSlotAvail(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
+//   1,2,3,4,5,6,7,8,0xb → Inventory_HasFreeSpace(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
 //     sub-switch: cases 1,7,0xb → iVar1=5 iVar3=4; case 8 → iVar1=2 iVar3=2; else → iVar1=DAT_0055a3f8 iVar3=DAT_0055a3fc
 //     si tiene éxito (retorno distinto de cero) y DAT_07e91388 < 1: setea DAT_07eaa13c=2, DAT_00559f5e=0xff,
 //     call ShowCheckBox(1, 0x21b, 0x97)
 //   0xfffffff8, 0xfffffffe → UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
 // After switch: PlayBuffer(0x19,0,0).
 // "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
-//   → SecondPassword_CancelReturn(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
-void __cdecl SecondPassword_Screen8(void) {
+//   → ChaosMix_Close(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
+void __cdecl ChaosMix_HitTest(void) {
     if (DAT_07eaa11a == '\0') return;
 
     // OK button hit-test
@@ -801,7 +801,7 @@ void __cdecl SecondPassword_Screen8(void) {
             // 004E3DB0 comprueba que exista espacio en el inventario normal
             // para el resultado; en el binario el primer argumento era la
             // dirección absoluta de ese pool, no un literal portable.
-            uint uVar2 = SecondPassword_GridSlotAvail(reinterpret_cast<uintptr_t>(OffsetInventoryItems), 8, 8, iVar1, iVar3);
+            uint uVar2 = Inventory_HasFreeSpace(reinterpret_cast<uintptr_t>(OffsetInventoryItems), 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
                 UIChatLogWindow_AddText(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
@@ -829,13 +829,13 @@ void __cdecl SecondPassword_Screen8(void) {
         IsClickPushed()) {
 
         DAT_083a4124 = '\0';
-        SecondPassword_CancelReturn();
+        ChaosMix_Close();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         PlayBuffer(0x19, 0, 0);
     }
 }
-// SecondPassword_Screen9 @ 0x004EB5D0 — SecondPassword_Screen9 (102 lines)
+// IDA: sub_4EB5D0 (0x004EB5D0) — botones del baúl (zen, candado, salir).
 // Detección de fila del teclado numérico del diálogo de segunda contraseña.
 // Chequea 4 filas de botones en los offsets x {0x1a, 0x4c, 0x7e, 0xd7} (0x18 de ancho cada uno)
 // y los offsets y {0x186, 0x186, 0x186, 0x18b} relativos a DAT_07eaa0c8/0cc.
@@ -846,7 +846,7 @@ void __cdecl SecondPassword_Screen8(void) {
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
 //        DAT_07ea981c=0, DAT_07ea981e=0
 //   3 → exit: Net_Disconnect_Clean(); DAT_07e11d28=0; DAT_00559bec=6
-void __cdecl SecondPassword_Screen9(void) {
+void __cdecl Warehouse_HitTest(void) {
     if (DAT_07eaa119 == '\0') return;
 
     static const int xOff[4] = { 0x1a, 0x4c, 0x7e, 0xd7 };
@@ -1079,11 +1079,10 @@ void __cdecl FUN_004ec330(void) {
 // ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp (port
 // fiel, con GlobalText[166..169] en la rama del mensaje 153); no duplicarla acá.
 
-// SecondPassword_GridSlotAvail @ 0x004E3DB0 — SecondPassword_GridSlotAvail
+// IDA: sub_4E3DB0 (0x004E3DB0)
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
-// SecondPassword_GridSlotAvail (IDA-activated)
-uint __cdecl SecondPassword_GridSlotAvail(uintptr_t a1, int a2, int a3, int a4, int a5)
+uint __cdecl Inventory_HasFreeSpace(uintptr_t a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
   int v6; // eax
@@ -1167,10 +1166,9 @@ LABEL_16:
 }
 
 
-// SecondPassword_CancelReturn @ 0x004F6850 — SecondPassword_CancelReturn
-// Chequea si hay slots de entidad de segunda contraseña ocupados; si los hay, muestra el diálogo.
-// Otherwise sends a cancel packet (C1 03 87) over the socket.
-undefined4 __cdecl SecondPassword_CancelReturn(void)
+// IDA: sub_4F6850 (0x004F6850) — cierra el Chaos Mix: si quedaron items en la
+// mesa avisa; si no, manda C1 03 87.
+undefined4 __cdecl ChaosMix_Close(void)
 {
     if (!ChaosMixOpened) return 0;
     return ChaosBoxRequestClose() ? 1 : 0;

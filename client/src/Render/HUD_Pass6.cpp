@@ -59,9 +59,9 @@ extern "C" void Net_SendNpcTalkClose(void);
 //
 // Son los globals reales (CharacterInfoStartX/Y = DAT_07ea982c/30,
 // GuildListStartX/Y = DAT_07e91788/84), no copias locales: los hit-tests de
-// cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
+// cierre (GuildCreator_HitTest / CharacterInfo_HitTest en Net/SecondPassword,
 // port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) los leen, y
-// SecondPassword_Screen3/Party_MemberClickHandler hacen early-return cuando el
+// CharacterInfo_HitTest/Party_MemberClickHandler hacen early-return cuando el
 // origen es 0.
 #define CharacterInfoStartX  (*(int*)&DAT_07ea982c)
 #define CharacterInfoStartY  (*(int*)&DAT_07ea9830)
@@ -387,7 +387,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
     // sub_4E6550, en el tick; no aca en el render.
 
-    // Input y comandos de la grilla: SecondPassword_Screen4, dentro de SIM.
+    // Input y comandos de la grilla: Inventory_HitTest, dentro de SIM.
 
     float fPosX = (float)((double)InventoryStartX + 15.0);
     float fPosY = (float)((double)InventoryStartY + 200.0);
@@ -655,7 +655,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
 // Es el global real 0x7EAA144 (= DAT_07eaa144), no una copia del archivo: lo
 // setea el handler del 0x55 y lo lee el hit-test de la creacion de guild en
-// `SecondPassword_Screen1`.
+// `GuildCreator_HitTest`.
 #define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
@@ -688,7 +688,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
 //
 // IDA: ProtocolCore 0x54. Cierra las ventanas de NPC y abre el creador con el
 // keypad APAGADO; así ambos botones responden con 0x54 en vez de 0x55/0x57
-// (ver el hit-test en SecondPassword_Screen1).
+// (ver el hit-test en GuildCreator_HitTest).
 extern "C" void GuildCreator_OpenQuestionFromServer(void)
 {
     GuildOpened     = 0;
@@ -914,7 +914,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     //     y ∈ [CharacterInfoStartY+115+60*row, +24)
     // Gate: LevelUpPoint = *(WORD*)(CharacterAttribute+0x54) != 0.
     //   Sprite 0x120 (288): normal   0x121 (289): hover/pressed
-    // El click y el envío del F3/06 los hace SecondPassword_Screen3 — acá sólo se dibuja.
+    // El click y el envío del F3/06 los hace CharacterInfo_HitTest — acá sólo se dibuja.
     int availPts = (int)*(unsigned short*)(CA + 84);
     auto draw_plus_button = [&](int row, int statSlot) {
         if (availPts <= 0) return;
@@ -927,7 +927,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // DAT_083a413c instead (set on UP, sticks until consumed). Hover-without-click
         // still highlights via 4124 for held clicks.
         // SOLO render + highlight: el CLICK (y el envío del F3/06) lo maneja
-        // `SecondPassword_Screen3` (port de sub_4E5DE0 L85-244), que es donde el
+        // `CharacterInfo_HitTest` (port de sub_4E5DE0 L85-244), que es donde el
         // binario original tiene el hit-test de estos botones. Mandarlo también acá
         // duplicaría el paquete.
         bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
@@ -1639,7 +1639,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 //
 // Incluye la fila inferior: el zen guardado, el impuesto de retiro y los 3
 // botones (guardar zen / sacar zen / candado). El hit-test de esos botones es
-// SecondPassword_Screen9 (UI/UI_PanelInput.cpp, nombre heredado: es el de
+// Warehouse_HitTest (UI/UI_PanelInput.cpp, nombre heredado: es el de
 // sub_4EB5D0).
 //
 // Ruido anti-tamper (hash table sobre CharacterMachine alrededor de CADA lectura
