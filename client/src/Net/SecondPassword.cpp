@@ -4702,7 +4702,9 @@ static bool CreateFrustrum2D_Footprint()
     }
     const float half = (maxA - minA) * 0.5f;
     if (half > 1.3f) return false;               // abanico demasiado abierto
-    reach = reach / cosf(half) + 800.0f;
+    // Las esquinas están al 90 % del alcance (_DAT_005526e8) y la proyección
+    // dibuja hasta el 140 % (_DAT_00552d34): cubrir hasta ahí.
+    reach = reach * (_DAT_00552d34 / _DAT_005526e8) / cosf(half) + 800.0f;
     // (adelante, costado): lejos-izquierda, lejos-derecha, cerca-derecha, cerca-izquierda.
     const float local[4][2] = {
         { reach * cosf(maxA), reach * sinf(maxA) },
@@ -4710,10 +4712,25 @@ static bool CreateFrustrum2D_Footprint()
         { -800.0f, -800.0f },
         { -800.0f,  800.0f },
     };
+    float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
     for (int i = 0; i < 4; ++i) {
         FrustrumX[i] = (ax + mx * local[i][0] + sx * local[i][1]) * _DAT_005524f8;
         FrustrumY[i] = (ay + my * local[i][0] + sy * local[i][1]) * _DAT_005524f8;
+        if (FrustrumX[i] < minX) minX = FrustrumX[i];
+        if (FrustrumX[i] > maxX) maxX = FrustrumX[i];
+        if (FrustrumY[i] < minY) minY = FrustrumY[i];
+        if (FrustrumY[i] > maxY) maxY = FrustrumY[i];
     }
+    // El rectángulo de tiles que se recorre (Camera_SetupFrustum lo arma con
+    // las esquinas del frustum) tiene que abarcar el cuadro entero, si no
+    // recorta los costados. Mismo redondeo a bloques de 4 y límites.
+    auto bound = [](float tile, int extra) {
+        int t = (int)floorf(tile);
+        t = ((t + (t >> 31 & 3)) >> 2) * 4 + extra;
+        return (DWORD)(t < 0 ? 0 : t > 0xfb ? 0xfb : t);
+    };
+    FrustrumBoundMinX_1 = bound(minX, -4); FrustrumBoundMaxX_1 = bound(maxX, 4);
+    FrustrumBoundMinY_1 = bound(minY, -4); FrustrumBoundMaxY_1 = bound(maxY, 4);
     return true;
 }
 
