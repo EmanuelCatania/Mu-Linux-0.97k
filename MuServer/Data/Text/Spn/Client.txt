@@ -98,4 +98,8 @@
 47	"Render: %s"
 //RenderBackendRestart
 48	"Se aplica al reiniciar"
+//TextureQuality
+49	"Texturas: %s"
+//Sharpness
+50	"Nitidez: %s"
 end
