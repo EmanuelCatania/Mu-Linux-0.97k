@@ -103,3 +103,6 @@ Terrain_Render.obj
 # Notas de trabajo del port (Codex): utiles en local, no van al repo.
 doc-port/
 
+
+# Pack opcional de texturas HD (Data/HD): se distribuye aparte, no va en el repo
+bin/Client/Data/HD/

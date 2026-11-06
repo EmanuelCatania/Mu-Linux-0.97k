@@ -38,12 +38,16 @@ Vertex attributes;
 Vertex CaptureAttributes(bool color,bool uv){Require(color&&uv);Event(14);return attributes;}
 }
 bool topologyAllowed,residentAllowed,drawAllowed;int minimumIndex,maximumIndex;
+namespace MeshTopology{
+struct Mesh{struct Limit{int position;}minimum,maximum;std::vector<unsigned> indices{0,1,2,2,1,0};int maxBone=5;};
+}
 namespace MeshDraw{
-struct Mesh{struct Limit{int position;}minimum,maximum;unsigned residentArray=77;std::vector<unsigned> indices{0,1,2,2,1,0};int maxBone=5;};
+struct Mesh{unsigned residentArray=77;};
+std::unordered_map<const void*,MeshTopology::Mesh> topologies;
 std::unordered_map<const void*,Mesh> meshes;bool residentEnabled;
 unsigned Index(const void* p){auto diff=static_cast<const BYTE*>(p)-reinterpret_cast<BYTE*>(meshData);Require(diff>=0&&diff%sizeof(ClothModelMesh)==0&&diff/sizeof(ClothModelMesh)<3);return unsigned(diff/sizeof(ClothModelMesh));}
-bool Topology(Mesh& mesh,const Input& in){const unsigned i=Index(in.key);const auto& src=meshData[i];Require(in.faces==src.Triangles&&in.faceCount==src.TriangleCount&&in.positionCount==src.VertexCount&&in.normalCount==src.NormalCount&&in.uvCount==src.TexCoordCount&&in.uv==src.TexCoords&&in.rawVertices==src.Vertices&&in.rawNormals==src.Normals&&in.model==subject&&in.positions==reinterpret_cast<float*>(worldData)+i*45000);Require(!in.colors&&!in.chromeUV&&!in.bodyLight&&!in.attributes&&!in.mode&&!in.light&&!in.offset&&!in.alpha&&!in.u&&!in.v);mesh.minimum.position=minimumIndex;mesh.maximum.position=maximumIndex;Event(12,{i});return topologyAllowed;}
-bool Resident(Mesh&,const Input& in){Event(13,{Index(in.key)});return residentAllowed;}
+MeshTopology::Mesh* Topology(Mesh&,const Input& in){auto& mesh=topologies[in.key];const unsigned i=Index(in.key);const auto& src=meshData[i];Require(in.faces==src.Triangles&&in.faceCount==src.TriangleCount&&in.positionCount==src.VertexCount&&in.normalCount==src.NormalCount&&in.uvCount==src.TexCoordCount&&in.uv==src.TexCoords&&in.rawVertices==src.Vertices&&in.rawNormals==src.Normals&&in.model==subject&&in.positions==reinterpret_cast<float*>(worldData)+i*45000);Require(!in.colors&&!in.chromeUV&&!in.bodyLight&&!in.attributes&&!in.mode&&!in.light&&!in.offset&&!in.alpha&&!in.u&&!in.v);mesh.minimum.position=minimumIndex;mesh.maximum.position=maximumIndex;Event(12,{i});return topologyAllowed?&mesh:nullptr;}
+bool Resident(Mesh&,MeshTopology::Mesh&,const Input& in){Event(13,{Index(in.key)});return residentAllowed;}
 }
 namespace Skinning{
 bool DrawResident(const ResidentDraw& d){const auto i=MeshDraw::Index(d.key);Require(d.model==subject&&d.array==77&&d.indices==6&&d.maxBone==5&&d.world==reinterpret_cast<float*>(worldData)+i*45000&&d.positionCount==meshData[i].VertexCount&&d.normalCount==meshData[i].NormalCount&&!d.colors&&!d.lit&&!d.textured&&d.bodyLight&&d.bodyLight[0]==0&&d.bodyLight[1]==0&&d.bodyLight[2]==0&&!d.uOffset&&!d.vOffset&&d.shadow&&d.shadowOrigin==subject->BodyOrigin);Require(std::memcmp(d.color,BufferedDraw::attributes.color,16)==0&&std::memcmp(d.uv,BufferedDraw::attributes.uv,16)==0);Event(15,{i});Vec(d.shadowOrigin,3);return drawAllowed;}

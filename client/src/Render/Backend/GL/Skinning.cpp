@@ -15,6 +15,7 @@
 #define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
 #include "Render/Skinning.h"
+#include "Render/Backend/Api.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderProfile.h"
 #include "Render/Backend/GL/ProfileQueries.h"
@@ -25,22 +26,11 @@
 
 #include <vector>
 extern "C" void DbgLogPublic(const char*);
-namespace Skinning {
+namespace Skinning::GL {
 namespace {
-// Los arrays de vértices y normales son los del BMD: estables mientras el
-// modelo está cargado. Sólo se copian la posición y la luz calculadas por la
-// CPU, para detectar si alguien las modificó después de la pose.
-struct PoseMesh { const void* key=nullptr;const unsigned char* vertices=nullptr;const unsigned char* normals=nullptr;
-    int vertexCount=0,normalCount=0;std::vector<float> world,lighting; };
-constexpr int VertexStride=16,NormalStride=20;
-int BoneOf(const unsigned char* base,int stride,int index) { short bone;std::memcpy(&bone,base+index*stride,2);return bone; }
-const float* XyzOf(const unsigned char* base,int stride,int index) { return reinterpret_cast<const float*>(base+index*stride+4); }
-const void* poseModel=nullptr;
-std::vector<float> palette;
-std::vector<PoseMesh> poseMeshes;
-std::size_t poseMeshCount=0;
-float rotationScale=1,bodyScale=1,origin[3]{},direction[3]{},coefficients[3]{};
-unsigned long long revision=0,uploaded=0;
+// La pose (paleta, escalas, luz) es común a los backends: Skinning::Pose.
+using Pose::BoneOf;using Pose::XyzOf;using Pose::VertexStride;using Pose::NormalStride;
+unsigned long long uploaded=0;
 std::size_t paletteCapacity=0,paletteUsed=0;
 GLint paletteBase=0,paletteBaseLocation=0;
 GLuint program=0,array=0,buffer=0,boneBuffer=0,boneTexture=0;
@@ -127,17 +117,6 @@ bool Initialize() {
     SelectUniforms(program);
     return true;
 }
-const PoseMesh* FindPose(const void* model,const void* key,const float* world,int positionCount) {
-    if(!model || model!=poseModel) return nullptr;
-    for(std::size_t i=0;i<poseMeshCount;++i) if(poseMeshes[i].key==key) {
-        const auto& m=poseMeshes[i];
-        // Las pasadas deformadas modifican BoneVertex después de la pose. Deben
-        // usar esos datos CPU, nunca una pose previa aunque coincida el modelo.
-        if(positionCount!=m.vertexCount || std::memcmp(world,m.world.data(),m.world.size()*sizeof(float))) return nullptr;
-        return &m;
-    }
-    return nullptr;
-}
 // Enlaza la paleta y sube la pose actual si todavía no está en la GPU.
 bool UploadPalette() {
     if(!paletteBound) {
@@ -148,7 +127,8 @@ bool UploadPalette() {
         if(!layoutReady) glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,boneBuffer);
         glActiveTexture(active);paletteBound=true;BufferedDraw::SetExitHook(RestorePalette);
     }
-    if(uploaded!=revision) {
+    if(uploaded!=Pose::Revision()) {
+        const auto& palette=Pose::Palette();
         const auto bytes=palette.size()*sizeof(float);
         // DESVIACION: regiones nuevas sin sobrescribir matrices que la GPU
         // aún usa; huérfanar el almacenamiento al agotar el bloque.
@@ -163,7 +143,7 @@ bool UploadPalette() {
         RenderProfile::BufferUpload(bytes); // También contar el tramo escrito por mapeo.
         if(!glUnmapBuffer(GL_TEXTURE_BUFFER)) return false;
         paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
-        paletteUsed+=bytes;uploaded=revision;
+        paletteUsed+=bytes;uploaded=Pose::Revision();
     }
     return true;
 }
@@ -175,12 +155,12 @@ void SetUniforms(bool gpuLight,const float* bodyLight,const float* offset,const 
     }
     if(!uniformsReady) glUniform1i(paletteLocation,1);
     glUniform1i(paletteBaseLocation,paletteBase);
-    const float scales[2]{rotationScale,bodyScale};
+    const float scales[2]{Pose::RotationScale(),Pose::BodyScale()};
     if(!uniformsReady || std::memcmp(lastScales,scales,sizeof(scales))) {
-        glUniform2f(scalesLocation,rotationScale,bodyScale);std::copy(scales,scales+2,lastScales);
+        glUniform2f(scalesLocation,scales[0],scales[1]);std::copy(scales,scales+2,lastScales);
     }
-    SetVector(originLocation,origin,lastOrigin);SetVector(directionLocation,direction,lastDirection);
-    SetVector(coefficientsLocation,coefficients,lastCoefficients);SetVector(bodyLightLocation,bodyLight,lastBodyLight);
+    SetVector(originLocation,Pose::Origin(),lastOrigin);SetVector(directionLocation,Pose::Direction(),lastDirection);
+    SetVector(coefficientsLocation,Pose::Coefficients(),lastCoefficients);SetVector(bodyLightLocation,bodyLight,lastBodyLight);
     if(lastLight!=int(gpuLight)) { glUniform1i(lightLocation,gpuLight?1:0);lastLight=int(gpuLight); }
     if(!uniformsReady || std::memcmp(lastOffset,offset,sizeof(lastOffset))) {
         glUniform2f(offsetLocation,offset[0],offset[1]);std::copy(offset,offset+2,lastOffset);
@@ -188,33 +168,13 @@ void SetUniforms(bool gpuLight,const float* bodyLight,const float* offset,const 
     uniformsReady=true;
 }
 }
-void Invalidate() { poseModel=nullptr; }
-void Capture(const void* model,const float* bones,int boneCount,float rotation,float scale,
-    const float* translation,const float* lightDirection,const float* lightCoefficients,
-    const Source* sources,std::size_t count) {
-    Invalidate();if(!model || !bones || boneCount<=0) return;
-    palette.assign(bones,bones+std::size_t(boneCount)*12);rotationScale=rotation;bodyScale=scale;
-    std::copy(translation,translation+3,origin);std::copy(lightDirection,lightDirection+3,direction);
-    std::copy(lightCoefficients,lightCoefficients+3,coefficients);
-    // DESVIACION: conservar capacidad por orden de malla entre objetos.
-    // No liberar y recrear todos los vectores al cambiar de modelo.
-    if(poseMeshes.size()<count) poseMeshes.resize(count);
-    poseMeshCount=0;
-    for(std::size_t i=0;i<count;++i) { const auto& s=sources[i];
-        if(s.vertexCount<=0 || !s.vertices || !s.world || s.normalCount<0 || (s.normalCount && (!s.normals || !s.lighting))) continue;
-        auto& m=poseMeshes[poseMeshCount++];m.key=s.key;
-        m.vertices=s.vertices;m.normals=s.normals;m.vertexCount=s.vertexCount;m.normalCount=s.normalCount;
-        m.world.assign(s.world,s.world+s.vertexCount*3);
-        m.lighting.assign(s.lighting,s.lighting+s.normalCount);
-    }
-    poseModel=model;++revision;
-}
 bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw::Vertex* attributes,
     const int* positions,const int* normals,std::size_t count,std::size_t indices,
     const float* world,int positionCount,const float* colors,bool lit,const float* bodyLight) {
-    const PoseMesh* found=FindPose(model,key,world,positionCount);
+    const Pose::Mesh* found=Pose::Find(model,key,world,positionCount);
     if(!found) return false;
     const auto& m=*found;
+    const auto& palette=Pose::Palette();
     bool gpuLight=lit;
     vertices.resize(count);
     for(std::size_t i=0;i<count;++i) {
@@ -266,17 +226,10 @@ void ResidentLayout(unsigned residentBuffer) {
     glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,bone));
 }
 bool DrawResident(const ResidentDraw& d) {
-    const PoseMesh* found=FindPose(d.model,d.key,d.world,d.positionCount);
+    const Pose::Mesh* found=Pose::Find(d.model,d.key,d.world,d.positionCount);
     if(!found) return false;
-    const auto& m=*found;
-    if(d.maxBone<0 || std::size_t(d.maxBone)*12>=palette.size()) return false;
-    if(d.lit) {
-        // El shader calcula la luz por normal; si la CPU dejó otro color (un
-        // efecto que lo modificó), dibujar con los colores CPU.
-        if(d.normalCount!=m.normalCount || !d.colors) return false;
-        for(int n=0;n<m.normalCount;++n)
-            for(int k=0;k<3;++k) if(d.colors[n*3+k]!=m.lighting[n]*d.bodyLight[k]) return false;
-    }
+    if(d.maxBone<0 || std::size_t(d.maxBone)*12>=Pose::Palette().size()) return false;
+    if(d.lit && !Pose::LightMatches(*found,d.colors,d.normalCount,d.bodyLight)) return false;
     BufferedDraw::Flush();if(!Initialize()) return false;
     if(!UploadPalette()) return false;
     BufferedDraw::Activate(program,d.array,0);FragmentPipelineGL::Apply(program);
@@ -297,7 +250,7 @@ void Release() {
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     if(program) FragmentPipelineGL::Release(program);
-    uniformLocations.clear();uniformProgram=0;lastShadow=-1;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
-    poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
+    uniformLocations.clear();uniformProgram=0;lastShadow=-1;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;paletteCapacity=paletteUsed=0;
+    vertices.clear();
 }
 }

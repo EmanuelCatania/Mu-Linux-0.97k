@@ -19,6 +19,12 @@
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/GlyphAtlas.h"
+#include "Render/Gfx.h"
+#include "Render/RenderBackend.h"
+#ifdef MU_RENDER_WEBGPU
+#include "Render/Backend/WebGPU/Device.h"
+#include "Render/Backend/WebGPU/Renderer.h"
+#endif
 
 CWindow gWindow;
 
@@ -111,7 +117,10 @@ void CWindow::ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD he
     if (!Platform::GetWindow().IsCreated()) return;
     SetResolution(width, height);
     SetWindowMode(windowMode, borderless);
-    Platform::GetWindow().ChangeMode({width, height, windowMode, borderless});
+    Platform::GetWindow().ChangeMode({width, height, windowMode, borderless, !RenderBackend::IsWebGPU()});
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) WebGPU::Configure(width, height, gUserSettings.GetVSync());
+#endif
     gFont.Reload(m_Width);
 }
 
@@ -124,12 +133,58 @@ HINSTANCE CWindow::GetInstance() const { return Platform::NativeInstance(); }
 bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 {
     Platform::BindNativeDispatch(hInst, wndProc);
-    return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless});
+    // DESVIACION: calidad de texturas elegida por el jugador, antes de subir ninguna.
+    Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
+    Gfx::SetMultisample(gUserSettings.Multisample());
+    Gfx::SetHDTextures(gUserSettings.GetHDTextures());
+#ifdef MU_RENDER_WEBGPU
+    // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
+    RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL
+        ? RenderBackend::Kind::OpenGL : RenderBackend::Kind::WebGPU;
+#endif
+    return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless, !RenderBackend::IsWebGPU(), Gfx::Multisample()});
 }
+
+#ifdef MU_RENDER_WEBGPU
+namespace {
+WebGPU::Api WebGPUApi(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::D3D12: return WebGPU::Api::D3D12;
+    case RenderBackendPreference::D3D11: return WebGPU::Api::D3D11;
+    case RenderBackendPreference::Vulkan: return WebGPU::Api::Vulkan;
+    default: return WebGPU::Api::Auto;
+    }
+}
+
+// Dispositivo WebGPU sobre la ventana. Si no se puede crear, la ventana se
+// recrea con contexto OpenGL y el cliente sigue con ese backend.
+bool InitWebGPU(DWORD width, DWORD height, bool windowMode, bool borderless)
+{
+    const WebGPU::Surface surface{Platform::NativeWindow(), Platform::NativeInstance()};
+    if (WebGPU::Initialize(WebGPUApi(gUserSettings.GetRenderBackend()), surface, width, height, gUserSettings.GetVSync()))
+        return true;
+    CErrorReport_Write(&DAT_055c9bf0, "> WebGPU no disponible: se usa OpenGL");
+    RenderBackend::active = RenderBackend::Kind::OpenGL;
+    Platform::GetWindow().Shutdown();
+    return Platform::GetWindow().Create({width, height, windowMode, borderless, true, Gfx::Multisample()});
+}
+}
+#endif
 
 // IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU() && !InitWebGPU(m_Width, m_Height, m_WindowMode, m_Borderless)) return false;
+    if (RenderBackend::IsWebGPU()) {
+        BufferedDraw::Initialize();
+        gFrameLimiter.SetFpsLimit(gUserSettings.GetFpsLimit());
+        gFrameLimiter.SetRenderDecoupled(gUserSettings.GetRenderDecoupled());
+        Platform::GetWindow().ShowAndFocus();
+        return true;
+    }
+#endif
     if (!Platform::GetGLContext().Initialize() || !BufferedDraw::Initialize()) {
         TerrainDraw::Release();
         MeshDraw::Release();
@@ -156,10 +211,37 @@ void CWindow::ReleaseOpenGL()
     MeshDraw::Release();
     GlyphAtlas::Release();
     BufferedDraw::Release();
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) WebGPU::Release();
+    else
+#endif
     Platform::GetGLContext().Release();
     RestoreDisplay();
 }
 
-void CWindow::Present() { BufferedDraw::Suspend(); Platform::GetGLContext().Present(); }
+void CWindow::Present()
+{
+    BufferedDraw::Suspend();
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) { WebGPU::SubmitFrame(); return; }
+#endif
+    Platform::GetGLContext().Present();
+}
+
+bool CWindow::SetSwapInterval(bool vsync)
+{
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) return WebGPU::Configure(m_Width, m_Height, vsync);
+#endif
+    return Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0);
+}
 HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
+void* CWindow::RenderIdentity() const
+{
+#ifdef MU_RENDER_WEBGPU
+    if (RenderBackend::IsWebGPU()) return WebGPU::GetDevice();
+#endif
+    return Platform::GetGLContext().CurrentIdentity();
+}
+
 HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }

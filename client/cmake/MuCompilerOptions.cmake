@@ -46,8 +46,11 @@ set(MU_COMMON_COMPILE_OPTIONS
     $<$<CONFIG:Release>:/GL>
 )
 
-# UseDebugLibraries=true en Debug -> /MDd; Release -> /MD.
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+# Runtime de C++ estático (/MT, /MTd en Debug): el exe no depende del
+# redistributable de Visual C++. Las dependencias que se compilan acá (SDL3,
+# FreeType, HarfBuzz...) y las de vcpkg (triplets cmake/triplets/*-mu) usan el
+# mismo runtime; mezclarlo con /MD no enlaza.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 # Debug -> /ZI (EditAndContinue, default de v143 en Debug); Release -> /Zi.
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
     "$<IF:$<CONFIG:Debug>,EditAndContinue,ProgramDatabase>")

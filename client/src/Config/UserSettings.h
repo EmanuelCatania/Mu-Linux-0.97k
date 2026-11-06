@@ -84,6 +84,10 @@ struct UserFontSettings {
     int  strikeOut    = 0;
 };
 
+// Backend de render pedido en [Window] RenderBackend. Se aplica al arrancar;
+// si el ejecutable no trae WebGPU, o el dispositivo no se crea, queda OpenGL.
+enum class RenderBackendPreference { OpenGL, Auto, D3D12, D3D11, Vulkan, Count };
+
 class CUserSettings {
 public:
     // Lee `iniPath`. Lo que no está queda en -1 (o vacío) y no se aplica.
@@ -96,6 +100,36 @@ public:
     int GetFpsLimit() const { return m_FpsLimit; }
     bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
+    RenderBackendPreference GetRenderBackend() const { return m_RenderBackend; }
+    // La preferencia con la que arrancó el cliente (el backend en uso).
+    RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
+    // Nombre para mostrar ("OpenGL", "DirectX 12"...).
+    static const char* RenderBackendName(RenderBackendPreference preference);
+    // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
+    static const char* RenderBackendKey(RenderBackendPreference preference);
+    // Guarda la preferencia; se usa en el próximo arranque.
+    void SetRenderBackend(RenderBackendPreference preference);
+    // DESVIACION: calidad de texturas ([Window] TextureQuality): 0 original,
+    // 1 mipmaps (se aplica al reiniciar), 2 mipmaps + bicúbico (en caliente).
+    int GetTextureQuality() const { return m_TextureQuality; }
+    int GetStartupTextureQuality() const { return m_StartupTextureQuality; }
+    void SetTextureQuality(int level);
+    // DESVIACION: nitidez de la imagen 3D ([Window] Sharpness): 0 apagada, 1-3.
+    int GetSharpness() const { return m_Sharpness; }
+    // Peso del realce por nivel: el máximo de AMD CAS equivale a 1.
+    float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 0.75f, 1.0f }; return amount[m_Sharpness]; }
+    void SetSharpness(int level);
+    // DESVIACION: antialiasing de la imagen 3D ([Window] Antialiasing):
+    // 0 apagado, 1 FXAA, 2 MSAA 4x, 3 MSAA 4x + FXAA. MSAA se aplica al reiniciar.
+    int GetAntialiasingLevel() const { return m_Antialiasing; }
+    bool GetAntialiasing() const { return m_Antialiasing == 1 || m_Antialiasing == 3; }   // FXAA
+    int Multisample() const { return m_StartupAntialiasing >= 2 ? 4 : 0; }
+    void SetAntialiasingLevel(int level);
+    // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
+    bool GetHDTextures() const { return m_HDTextures; }
+    void SetHDTextures(bool enabled);
+    // true si alguna opción guardada se aplica recién al reiniciar.
+    bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
@@ -152,6 +186,12 @@ private:
     bool m_RenderDecoupled = true;
     int  m_FpsLimit = 60;
     bool m_VSync = false;
+    RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
+    RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
+    int m_TextureQuality = 0, m_StartupTextureQuality = 0;
+    int m_Sharpness = 0;
+    int m_Antialiasing = 0, m_StartupAntialiasing = 0;
+    bool m_HDTextures = false, m_StartupHDTextures = false;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

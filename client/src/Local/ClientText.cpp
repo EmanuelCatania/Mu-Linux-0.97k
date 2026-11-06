@@ -52,7 +52,15 @@ const char* const English[] = {
     "Waiting character list...",
     "Waiting character info...",
     "Could not initialize OpenGL 3.3 core. Check the graphics driver.",
-    "Starts in %s"
+    "Starts in %s",
+    "Render: %s",
+    "Applies on restart",
+    "Textures: %s",
+    "Sharpness: %s",
+    "Antialiasing: %s",
+    "Advanced",
+    "Graphics",
+    "HD textures"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -72,6 +80,14 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::ScreenBorderless, "Sin bordes", "Sem bordas" },
         { ClientTextId::RenderDecoupled, "Render libre", "Render livre" },
         { ClientTextId::RenderVSync, "VSync", "VSync" },
+        { ClientTextId::RenderBackend, "Render: %s", "Render: %s" },
+        { ClientTextId::TextureQuality, "Texturas: %s", "Texturas: %s" },
+        { ClientTextId::Sharpness, "Nitidez: %s", "Nitidez: %s" },
+        { ClientTextId::Antialiasing, "Antialiasing: %s", "Antialiasing: %s" },
+        { ClientTextId::OptionsAdvanced, "Avanzado", "Avançado" },
+        { ClientTextId::OptionsGraphics, "Gráficos", "Gráficos" },
+        { ClientTextId::HDTextures, "Texturas HD", "Texturas HD" },
+        { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },
         { ClientTextId::RenderVSyncUnavailable, "VSync no disponible", "VSync indispon\xC3\xAD" "vel" },

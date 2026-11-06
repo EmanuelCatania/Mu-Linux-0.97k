@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <vector>
 #include "Render/BufferedDraw.h"
 // DESVIACION: pose de presentación capturada al terminar Skeleton_Transform.
 // La copia CPU permanece disponible para picking, bounds, tela y efectos.
@@ -29,6 +30,26 @@ void Invalidate();
 void Capture(const void* model,const float* bones,int boneCount,float rotationScale,float bodyScale,
     const float* origin,const float* lightDirection,const float* lightCoefficients,
     const Source* sources,std::size_t count);
+// Pose capturada, común a los backends (Render/Skinning.cpp).
+namespace Pose {
+struct Mesh { const void* key=nullptr;const unsigned char* vertices=nullptr;const unsigned char* normals=nullptr;
+    int vertexCount=0,normalCount=0;std::vector<float> world,lighting; };
+constexpr int VertexStride=16,NormalStride=20;
+int BoneOf(const unsigned char* base,int stride,int index);
+const float* XyzOf(const unsigned char* base,int stride,int index);
+// La malla de la pose actual que corresponde a este dibujo, o nula si el
+// modelo no es el capturado o la CPU deformó los vértices después de la pose.
+const Mesh* Find(const void* model,const void* key,const float* world,int positionCount);
+// true si los colores CPU son los de la luz de la pose (normal × bodyLight).
+bool LightMatches(const Mesh& mesh,const float* colors,int normalCount,const float* bodyLight);
+const std::vector<float>& Palette();       // 12 floats por hueso
+unsigned long long Revision();             // cambia en cada Capture
+float RotationScale();
+float BodyScale();
+const float* Origin();
+const float* Direction();
+const float* Coefficients();
+}
 bool Draw(const void* model,const void* mesh,unsigned elements,const BufferedDraw::Vertex* attributes,
     const int* positions,const int* normals,std::size_t count,std::size_t indices,
     const float* world,int positionCount,const float* colors,bool lit,const float* bodyLight);

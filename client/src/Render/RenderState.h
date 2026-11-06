@@ -22,6 +22,9 @@ struct Fixed {
     float fogStart=0,fogEnd=1,fogDensity=1,fogColor[4]{};
     Gfx::TexEnv texEnv=Gfx::TexEnv::Modulate;
     unsigned texture=0;
+    // Wrap de la textura ligada (true = repetir), para el filtrado bicúbico,
+    // que lee los texels directamente sin pasar por el sampler.
+    bool textureRepeat[2]{true,true};
     float color[4]{1,1,1,1},uv[4]{0,0,0,1};
     // glRasterPos guarda también el color actual en el momento de fijarla.
     float raster[4]{0,0,0,1},rasterColor[4]{1,1,1,1};bool rasterValid=true;

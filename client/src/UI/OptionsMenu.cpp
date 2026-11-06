@@ -252,6 +252,8 @@ void COptionsMenu::Render()
     case PAGE_ANTILAG: RenderAntilag(); break;
     case PAGE_SCREEN: RenderScreen(); break;
     case PAGE_FONT: RenderFont(); break;
+    case PAGE_ADVANCED: RenderAdvanced(); break;
+    case PAGE_GRAPHICS: RenderGraphics(); break;
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: RenderAntilagGroup(); break;
@@ -268,6 +270,8 @@ bool COptionsMenu::UpdateMouse()
     case PAGE_ANTILAG: return UpdateAntilag();
     case PAGE_SCREEN: return UpdateScreen();
     case PAGE_FONT: return UpdateFont();
+    case PAGE_ADVANCED: return UpdateAdvanced();
+    case PAGE_GRAPHICS: return UpdateGraphics();
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: return UpdateAntilagGroup();
@@ -276,8 +280,9 @@ bool COptionsMenu::UpdateMouse()
 }
 
 // ── Lista principal ─────────────────────────────────────────────────────────
-// Título, una caja por página y Cerrar (GlobalText 385, 919/926/920/921, 388).
-namespace { const int MainPageText[] = { 919, 926, 920, 921 }; }
+// Título, una caja por página y Cerrar (GlobalText 385, 919/920/921, 388).
+// DESVIACION: Antilag pasa a Pantalla > Avanzado, junto con las opciones gráficas.
+namespace { const int MainPageText[] = { 919, 920, 921 }; }
 
 void COptionsMenu::RenderMain()
 {
@@ -455,7 +460,7 @@ bool COptionsMenu::UpdateAntilag()
         return true;
     }
     if (!UpdateToggle(RowY(row), clicked)) return false;
-    if (clicked) m_Page = PAGE_MAIN;
+    if (clicked) m_Page = PAGE_ADVANCED;
     return true;
 }
 
@@ -532,13 +537,78 @@ void COptionsMenu::RenderScreen()
     const int resolution = CurrentResolution();
     RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     // DESVIACION: controles de presentación dentro del panel Pantalla existente.
-    RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSync),gUserSettings.GetVSync());
     if (m_VSyncUnavailable) RenderButton((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSyncUnavailable),true);
     const int fps=gUserSettings.GetFpsLimit();
     if (fps) Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFps),fps);
     else Platform::TextCopySecure(text,gClientText.Get(ClientTextId::RenderUnlimited));
     RenderSelector((float)RowY(row++),text,fps==0 || fps>25,fps!=0);
+    // DESVIACION: submenú con las opciones gráficas y el Antilag.
+    char advanced[96];
+    Platform::TextFormatSecure(advanced, "%s >", gClientText.Get(ClientTextId::OptionsAdvanced));
+    RenderButton((float)RowY(row++), advanced);
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+// ── Avanzado ────────────────────────────────────────────────────────────────
+// DESVIACION: agrupa las opciones gráficas y el Antilag, que van de la mano.
+void COptionsMenu::RenderAdvanced()
+{
+    int row = 0;
+    RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::OptionsAdvanced), true);
+    char text[96];
+    Platform::TextFormatSecure(text, "%s >", gClientText.Get(ClientTextId::OptionsGraphics));
+    RenderButton((float)RowY(row++), text);
+    Platform::TextFormatSecure(text, "%s >", GlobalText[926]);
+    RenderButton((float)RowY(row++), text);
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+bool COptionsMenu::UpdateAdvanced()
+{
+    int row = 1;
+    bool clicked;
+    if (UpdateToggle(RowY(row++), clicked)) { if (clicked) m_Page = PAGE_GRAPHICS; return true; }
+    if (UpdateToggle(RowY(row++), clicked)) { if (clicked) m_Page = PAGE_ANTILAG; return true; }
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_SCREEN;
+    return true;
+}
+
+// ── Gráficos ────────────────────────────────────────────────────────────────
+// DESVIACION: backend de render, calidad de texturas, nitidez, antialiasing y
+// desacople del render. Lo que se aplica al reiniciar lo avisa la última fila.
+void COptionsMenu::RenderGraphics()
+{
+    int row = 0;
+    char text[96];
+    RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::OptionsGraphics), true);
+#ifdef MU_RENDER_WEBGPU
+    // Backend de render (OpenGL o WebGPU sobre D3D12/D3D11/Vulkan).
+    const auto backend = gUserSettings.GetRenderBackend();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::RenderBackend), CUserSettings::RenderBackendName(backend));
+    RenderSelector((float)RowY(row++), text, backend != RenderBackendPreference::OpenGL,
+        static_cast<int>(backend) + 1 < static_cast<int>(RenderBackendPreference::Count));
+#endif
+    // Calidad de texturas (mipmaps y filtrado bicúbico).
+    static const char* const textureNames[3] = { "Original", "Mipmaps", "Mipmaps + bicubic" };
+    const int texture = gUserSettings.GetTextureQuality();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
+    RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::HDTextures), gUserSettings.GetHDTextures());
+    // DESVIACION: nitidez de la imagen 3D.
+    static const char* const sharpnessNames[4] = { "Off", "1", "2", "3" };
+    const int sharpness = gUserSettings.GetSharpness();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Sharpness), sharpnessNames[sharpness]);
+    RenderSelector((float)RowY(row++), text, sharpness > 0, sharpness < 3);
+    // DESVIACION: antialiasing FXAA de la imagen 3D.
+    static const char* const antialiasingNames[4] = { "Off", "FXAA", "MSAA 4x", "MSAA 4x + FXAA" };
+    const int antialiasing = gUserSettings.GetAntialiasingLevel();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Antialiasing), antialiasingNames[antialiasing]);
+    RenderSelector((float)RowY(row++), text, antialiasing > 0, antialiasing < 3);
+    RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
+    if (gUserSettings.RestartPending())
+        RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
     RenderButton((float)RowY(row), GlobalText[925]);
 }
 
@@ -565,10 +635,6 @@ bool COptionsMenu::UpdateScreen()
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {
-        if (clicked) gUserSettings.SetPresentation(!gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
-        return true;
-    }
-    if (UpdateToggle(RowY(row++),clicked)) {
         if (clicked) m_VSyncUnavailable=!gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),!gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
         return true;
     }
@@ -579,8 +645,54 @@ bool COptionsMenu::UpdateScreen()
         if (fpsStep) gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),AdjacentRenderLimit(fps,fpsStep));
         return true;
     }
+    if (UpdateToggle(RowY(row++), clicked)) { if (clicked) m_Page = PAGE_ADVANCED; return true; }
     if (!UpdateToggle(RowY(row), clicked)) return false;
     if (clicked) m_Page = PAGE_MAIN;
+    return true;
+}
+
+bool COptionsMenu::UpdateGraphics()
+{
+    int row = 1;
+    bool clicked;
+#ifdef MU_RENDER_WEBGPU
+    const int backend = static_cast<int>(gUserSettings.GetRenderBackend());
+    const int backendCount = static_cast<int>(RenderBackendPreference::Count);
+    const int backendStep = UpdateSelector(RowY(row++), backend > 0, backend + 1 < backendCount);
+    if (backendStep != INT_MIN) {
+        if (backendStep) gUserSettings.SetRenderBackend(static_cast<RenderBackendPreference>(backend + (backendStep > 0 ? 1 : -1)));
+        return true;
+    }
+#endif
+    const int texture = gUserSettings.GetTextureQuality();
+    const int textureStep = UpdateSelector(RowY(row++), texture > 0, texture < 2);
+    if (textureStep != INT_MIN) {
+        if (textureStep) gUserSettings.SetTextureQuality(texture + (textureStep > 0 ? 1 : -1));
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetHDTextures(!gUserSettings.GetHDTextures());
+        return true;
+    }
+    const int sharpness = gUserSettings.GetSharpness();
+    const int sharpnessStep = UpdateSelector(RowY(row++), sharpness > 0, sharpness < 3);
+    if (sharpnessStep != INT_MIN) {
+        if (sharpnessStep) gUserSettings.SetSharpness(sharpness + (sharpnessStep > 0 ? 1 : -1));
+        return true;
+    }
+    const int antialiasing = gUserSettings.GetAntialiasingLevel();
+    const int antialiasingStep = UpdateSelector(RowY(row++), antialiasing > 0, antialiasing < 3);
+    if (antialiasingStep != INT_MIN) {
+        if (antialiasingStep) gUserSettings.SetAntialiasingLevel(antialiasing + (antialiasingStep > 0 ? 1 : -1));
+        return true;
+    }
+    if (UpdateToggle(RowY(row++),clicked)) {
+        if (clicked) gUserSettings.SetPresentation(!gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
+        return true;
+    }
+    if (gUserSettings.RestartPending() && UpdateToggle(RowY(row++), clicked)) return true;
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_ADVANCED;
     return true;
 }
 

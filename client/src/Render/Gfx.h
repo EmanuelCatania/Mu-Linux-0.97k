@@ -69,6 +69,10 @@ void Flush();
 void ClearErrors();
 // Lee el framebuffer en RGB de 8 bits, filas de abajo hacia arriba.
 void ReadPixelsRGB(int x, int y, int width, int height, void* out);
+// DESVIACION: posproceso opcional sobre el viewport actual, con lo dibujado
+// hasta ahora: antialiasing FXAA y después nitidez adaptativa (tipo AMD CAS).
+// sharpen: 0 apagada, 1 = máximo de AMD CAS.
+void PostProcess(bool antialias, float sharpen);
 int MaxTextureSize();
 void MaxViewportDims(int out[2]);
 const char* GetDeviceInfo(DeviceInfo info);
@@ -90,6 +94,18 @@ void TexBorderColor(const float rgba[4]);
 void TexEnvMode(TexEnv mode);
 void SetUnpackAlignment(int alignment);
 int UnpackAlignment();
+
+// DESVIACION: calidad de texturas, opción del jugador. Los mipmaps se generan
+// al subir cada textura (se fija al arrancar); el bicúbico cambia en caliente.
+void SetTextureQuality(bool mipmaps, bool bicubic);
+bool TextureMipmaps();
+bool TextureBicubic();
+// DESVIACION: muestras de MSAA del framebuffer (0 sin MSAA); se fija al crear la ventana.
+void SetMultisample(int samples);
+// DESVIACION: texturas del pack HD (Data/HD); se fija al arrancar.
+void SetHDTextures(bool enabled);
+bool HDTextures();
+int Multisample();
 
 // Niebla
 void SetFogMode(FogMode mode);

@@ -6,6 +6,7 @@
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
 #include "Platform/IGLContext.h"
+#include "Render/Gfx.h"
 #include <cerrno>
 #include <climits>
 #include <cctype>
@@ -92,6 +93,16 @@ void CUserSettings::Load(const char* iniPath)
     m_FpsLimit = ReadRange("Window", "FpsLimit", iniPath, 0, INT_MAX, 60);
     m_RenderDecoupled = ReadRange("Window", "RenderDecoupled", iniPath, 0, 1, 1) != 0;
     m_VSync = ReadRange("Window", "VSync", iniPath, 0, 1, 0) != 0;
+    char backend[16] = {};
+    Platform::GetFileSystem().ReadIniString("Window", "RenderBackend", "opengl", backend, sizeof(backend), iniPath);
+    for (int i = 0; i < static_cast<int>(RenderBackendPreference::Count); ++i)
+        if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
+            m_RenderBackend = static_cast<RenderBackendPreference>(i);
+    m_StartupRenderBackend = m_RenderBackend;
+    m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
+    m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
+    m_Antialiasing = m_StartupAntialiasing = ReadRange("Window", "Antialiasing", iniPath, 0, 3, 0);
+    m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 1, 0) != 0;
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -198,12 +209,78 @@ void CUserSettings::SetAntilag(eAntilag option, bool enabled)
     SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
 }
 
+const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "auto";
+    case RenderBackendPreference::D3D12: return "d3d12";
+    case RenderBackendPreference::D3D11: return "d3d11";
+    case RenderBackendPreference::Vulkan: return "vulkan";
+    default: return "opengl";
+    }
+}
+
+const char* CUserSettings::RenderBackendName(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "WebGPU";
+    case RenderBackendPreference::D3D12: return "DirectX 12";
+    case RenderBackendPreference::D3D11: return "DirectX 11";
+    case RenderBackendPreference::Vulkan: return "Vulkan";
+    default: return "OpenGL";
+    }
+}
+
+void CUserSettings::SetTextureQuality(int level)
+{
+    if (level < 0 || level > 2) return;
+    m_TextureQuality = level;
+    // Los mipmaps se generan al subir las texturas: valen los del arranque.
+    Gfx::SetTextureQuality(m_StartupTextureQuality >= 1, level >= 2);
+    SaveInt("Window", "TextureQuality", level);
+}
+
+void CUserSettings::SetSharpness(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_Sharpness = level;
+    SaveInt("Window", "Sharpness", level);
+}
+
+void CUserSettings::SetHDTextures(bool enabled)
+{
+    m_HDTextures = enabled;
+    SaveInt("Window", "HDTextures", enabled ? 1 : 0);
+}
+
+void CUserSettings::SetAntialiasingLevel(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_Antialiasing = level;
+    SaveInt("Window", "Antialiasing", level);
+}
+
+bool CUserSettings::RestartPending() const
+{
+    return m_RenderBackend != m_StartupRenderBackend ||
+        (m_TextureQuality >= 1) != (m_StartupTextureQuality >= 1) ||
+        (m_Antialiasing >= 2) != (m_StartupAntialiasing >= 2) ||
+        m_HDTextures != m_StartupHDTextures;
+}
+
+void CUserSettings::SetRenderBackend(RenderBackendPreference preference)
+{
+    if (preference >= RenderBackendPreference::Count) return;
+    m_RenderBackend = preference;
+    Platform::GetFileSystem().WriteIniString("Window", "RenderBackend", RenderBackendKey(preference), m_IniPath);
+}
+
 // DESVIACION: aplicar preferencias de dibujo en caliente sin reiniciar el reloj SIM.
 // Si el driver rechaza VSync se conserva la preferencia anterior y no se guarda.
 bool CUserSettings::SetPresentation(bool decoupled, bool vsync, int fpsLimit)
 {
     if (fpsLimit<0) return false;
-    if (vsync!=m_VSync && !Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0)) return false;
+    if (vsync!=m_VSync && !gWindow.SetSwapInterval(vsync)) return false;
     m_RenderDecoupled=decoupled; m_VSync=vsync; m_FpsLimit=fpsLimit;
     gFrameLimiter.SetRenderDecoupled(decoupled);
     gFrameLimiter.SetFpsLimit(fpsLimit);

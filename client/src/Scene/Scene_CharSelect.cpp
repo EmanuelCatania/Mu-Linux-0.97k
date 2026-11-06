@@ -180,6 +180,7 @@
 #include "stdafx.h"
 #include "Entity/EntityName.h"
 #include "Render/Gfx.h"
+#include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_CharSelect.h"
@@ -311,6 +312,8 @@ int Scene_CharSelect(void)
         Render_DrawSpritePool();                    // Portal_Render
         RenderParticles();                    // ItemDrop_Render_2
         Gfx::PopMatrix();
+        // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D.
+        Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
         GL_Begin2D();                    // GL_SetupOrtho2D
         Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_SetBlendSrcOver('\x01');

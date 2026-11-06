@@ -32,6 +32,12 @@ public:
     // Presenta el frame en el mismo punto que el SwapBuffers original.
     void Present();
 
+    // DESVIACION: vsync del backend activo (OpenGL o WebGPU).
+    bool SetSwapInterval(bool vsync);
+    // Identidad del dispositivo de render actual (contexto GL o dispositivo
+    // WebGPU) para las caches de recursos; nula si no hay dispositivo.
+    void* RenderIdentity() const;
+
     // Devuelve el escritorio a su modo original si lo cambiamos nosotros.
     // Idempotente y llamable desde un filtro de excepciones.
     void RestoreDisplay();
