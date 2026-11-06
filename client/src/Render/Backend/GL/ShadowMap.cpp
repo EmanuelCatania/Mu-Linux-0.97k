@@ -91,9 +91,13 @@ void main() {
     if (d < 1.0) {
         vec2 ndc = (gl_FragCoord.xy - uViewport.xy) / uViewport.zw * 2.0 - 1.0;
         vec4 w = uInverseViewProj * vec4(ndc, d * 2.0 - 1.0, 1.0);
-        float distance = max(length(w.xyz / w.w - uCamera) - uParams.z, 0.0);
+        vec3 world = w.xyz / w.w;
+        float distance = max(length(world - uCamera) - uParams.z, 0.0);
         if (uParams.x > 1.5) t = exp(-uParams.y * vec3(3.0, 1.8, 1.2) * distance);   // agua: el rojo primero
         else { float x = distance * uParams.y; t = vec3(exp(-x * x)); }
+        // El borde del mapa (256 tiles de 100) se cierra con niebla.
+        float border = min(min(world.x, world.y), min(25600.0 - world.x, 25600.0 - world.y));
+        t *= smoothstep(0.0, 1500.0, border);
     }
     color = uPass == 0 ? vec4(t, 1.0) : vec4(uColor * (vec3(1.0) - t), 0.0);
 }

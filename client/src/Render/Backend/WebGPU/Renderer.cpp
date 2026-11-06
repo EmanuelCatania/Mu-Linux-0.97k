@@ -1298,13 +1298,18 @@ fn transmittance(position: vec4f) -> vec3f {
     let ndc = vec2f((position.x - a.viewport.x) / a.viewport.z * 2.0 - 1.0,
                     1.0 - (position.y - a.viewport.y) / a.viewport.w * 2.0);
     var w = a.inverseViewProj * vec4f(ndc, d * 2.0 - 1.0, 1.0);
-    let distance = max(length(w.xyz / w.w - a.camera.xyz) - a.params.z, 0.0);
+    let world = w.xyz / w.w;
+    let distance = max(length(world - a.camera.xyz) - a.params.z, 0.0);
+    // El borde del mapa (256 tiles de 100) se cierra con niebla: el fondo
+    // tiene su color, así el final del mapa no se ve.
+    let border = min(min(world.x, world.y), min(25600.0 - world.x, 25600.0 - world.y));
+    let edge = smoothstep(0.0, 1500.0, border);
     if (a.params.x > 1.5) {
         // Bajo el agua: el rojo se absorbe primero.
-        return exp(-a.params.y * vec3f(3.0, 1.8, 1.2) * distance);
+        return exp(-a.params.y * vec3f(3.0, 1.8, 1.2) * distance) * edge;
     }
     let x = distance * a.params.y;
-    return vec3f(exp(-x * x));
+    return vec3f(exp(-x * x)) * edge;
 }
 @fragment fn fs_multiply(@builtin(position) position: vec4f) -> @location(0) vec4f {
     return vec4f(transmittance(position), 1.0);
