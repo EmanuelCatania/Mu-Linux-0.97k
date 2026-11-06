@@ -611,6 +611,7 @@ void COptionsMenu::RenderGraphics()
     const int shadows = gUserSettings.GetShadows();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Shadows), shadowNames[shadows]);
     RenderSelector((float)RowY(row++), text, shadows > 0, shadows < 2);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::DepthFog), gUserSettings.GetDepthFog());
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     if (gUserSettings.RestartPending())
         RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
@@ -695,6 +696,10 @@ bool COptionsMenu::UpdateGraphics()
     const int shadowStep = UpdateSelector(RowY(row++), shadows > 0, shadows < 2);
     if (shadowStep != INT_MIN) {
         if (shadowStep) gUserSettings.SetShadows(shadows + (shadowStep > 0 ? 1 : -1));
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetDepthFog(!gUserSettings.GetDepthFog());
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {

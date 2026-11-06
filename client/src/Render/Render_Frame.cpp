@@ -641,6 +641,15 @@ void Render_Scene3D(void)
     Player_Render();                             // Player_Render
     Trail_RenderAll();
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
+    // DESVIACION: niebla por profundidad (opción). Atlans bajo el agua; el resto,
+    // una bruma suave hacia el color de fondo (no si el server ya manda niebla).
+    if (worldId == 7) {
+        const float water[3] = {0.02f, 0.16f, 0.24f};
+        Gfx::Atmosphere(2, water, 1.0f / 2600.0f, 300.0f);
+    } else if (!DAT_083a42ea) {
+        const float background[3] = {cr, cg, cb};
+        Gfx::Atmosphere(1, background, 1.0f / 2200.0f, 1400.0f);
+    }
     Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 
     GL_BeginSprite();                              // BeginSprite (push + identity)

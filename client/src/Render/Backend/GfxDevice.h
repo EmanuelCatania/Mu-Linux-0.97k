@@ -18,6 +18,7 @@
     X(void, ClearErrors, (), ()) \
     X(void, PostProcess, (bool antialias, float sharpen), (antialias, sharpen))     X(bool, SupportsShadowMaps, (), ())     X(void, ShadowScene, (bool begin, const float* focus, float strength), (begin, focus, strength)) \
     X(void, ShadowCasting, (bool enabled), (enabled)) \
+    X(void, Atmosphere, (int mode, const float* color, float density, float start), (mode, color, density, start)) \
     X(void, ReadPixelsRGB, (int x, int y, int width, int height, void* out), (x, y, width, height, out)) \
     X(int, MaxTextureSize, (), ()) \
     X(void, MaxViewportDims, (int out[2]), (out)) \

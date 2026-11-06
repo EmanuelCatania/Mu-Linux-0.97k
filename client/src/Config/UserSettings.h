@@ -133,6 +133,9 @@ public:
     int GetShadows() const { return m_Shadows; }
     float ShadowStrength() const { static const float strength[3] = { 0.0f, 0.35f, 0.55f }; return strength[m_Shadows]; }
     void SetShadows(int level);
+    // DESVIACION: niebla por profundidad ([Window] DepthFog); en caliente.
+    bool GetDepthFog() const { return m_DepthFog; }
+    void SetDepthFog(bool enabled);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -198,6 +201,7 @@ private:
     int m_Antialiasing = 0, m_StartupAntialiasing = 0;
     bool m_HDTextures = false, m_StartupHDTextures = false;
     int m_Shadows = 0;
+    bool m_DepthFog = false;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

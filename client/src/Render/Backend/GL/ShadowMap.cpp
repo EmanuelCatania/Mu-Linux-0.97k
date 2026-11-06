@@ -17,6 +17,9 @@ namespace {
 struct Batch { GLuint texture; bool textured; std::size_t first, count; };
 bool scene = false, casting = true, failed = false;
 float strength = 0.5f;
+// Niebla por profundidad: modo (0 nada, 1 bruma, 2 agua), color, densidad, inicio.
+int fogMode = 0;
+float fogColor[3]{}, fogDensity = 0.0f, fogStart = 0.0f;
 float inverseView[16], inverseViewProj[16], light[16];
 int viewport[4];
 std::vector<CasterVertex> casters;
@@ -73,10 +76,34 @@ void main() {
 }
 )GLSL";
 
+// Niebla: misma reconstrucción; uPass 0 multiplica por la transmitancia y 1
+// suma el color (mix sin copiar la imagen).
+const char* const FogFragmentSource = R"GLSL(#version 330 core
+uniform sampler2D uDepth;
+uniform mat4 uInverseViewProj;
+uniform vec4 uViewport;
+uniform vec3 uCamera, uColor, uParams;   // params = modo, densidad, inicio
+uniform int uPass;
+out vec4 color;
+void main() {
+    float d = texelFetch(uDepth, ivec2(gl_FragCoord.xy), 0).r;
+    vec3 t = vec3(1.0);
+    if (d < 1.0) {
+        vec2 ndc = (gl_FragCoord.xy - uViewport.xy) / uViewport.zw * 2.0 - 1.0;
+        vec4 w = uInverseViewProj * vec4(ndc, d * 2.0 - 1.0, 1.0);
+        float distance = max(length(w.xyz / w.w - uCamera) - uParams.z, 0.0);
+        if (uParams.x > 1.5) t = exp(-uParams.y * vec3(3.0, 1.8, 1.2) * distance);   // agua: el rojo primero
+        else { float x = distance * uParams.y; t = vec3(exp(-x * x)); }
+    }
+    color = uPass == 0 ? vec4(t, 1.0) : vec4(uColor * (vec3(1.0) - t), 0.0);
+}
+)GLSL";
+
 struct Programs {
-    GLuint caster = 0, apply = 0;
+    GLuint caster = 0, apply = 0, fog = 0;
     GLint casterLight = -1, casterTexture = -1, casterTextured = -1;
     GLint depth = -1, shadow = -1, inverseViewProj = -1, light = -1, viewport = -1, params = -1;
+    GLint fogDepth = -1, fogInverseViewProj = -1, fogViewport = -1, fogCamera = -1, fogColor = -1, fogParams = -1, fogPass = -1;
 } programs;
 GLuint casterArray = 0, casterBuffer = 0, applyArray = 0;
 GLuint shadowTexture = 0, shadowFramebuffer = 0;
@@ -111,7 +138,8 @@ bool Ensure() {
     if (failed || !Platform::GL33Ready()) return false;
     programs.caster = Link(CasterVertexSource, CasterFragmentSource);
     programs.apply = Link(ApplyVertexSource, ApplyFragmentSource);
-    if (!programs.caster || !programs.apply) { failed = true; DbgLogPublic("Sombras (OpenGL): no se pudieron compilar los shaders"); return false; }
+    programs.fog = Link(ApplyVertexSource, FogFragmentSource);
+    if (!programs.caster || !programs.apply || !programs.fog) { failed = true; DbgLogPublic("Sombras (OpenGL): no se pudieron compilar los shaders"); return false; }
     programs.casterLight = glGetUniformLocation(programs.caster, "uLight");
     programs.casterTexture = glGetUniformLocation(programs.caster, "uTexture");
     programs.casterTextured = glGetUniformLocation(programs.caster, "uTextured");
@@ -121,6 +149,13 @@ bool Ensure() {
     programs.light = glGetUniformLocation(programs.apply, "uLight");
     programs.viewport = glGetUniformLocation(programs.apply, "uViewport");
     programs.params = glGetUniformLocation(programs.apply, "uParams");
+    programs.fogDepth = glGetUniformLocation(programs.fog, "uDepth");
+    programs.fogInverseViewProj = glGetUniformLocation(programs.fog, "uInverseViewProj");
+    programs.fogViewport = glGetUniformLocation(programs.fog, "uViewport");
+    programs.fogCamera = glGetUniformLocation(programs.fog, "uCamera");
+    programs.fogColor = glGetUniformLocation(programs.fog, "uColor");
+    programs.fogParams = glGetUniformLocation(programs.fog, "uParams");
+    programs.fogPass = glGetUniformLocation(programs.fog, "uPass");
 
     glGenVertexArrays(1, &casterArray); glGenBuffers(1, &casterBuffer); glGenVertexArrays(1, &applyArray);
     glBindVertexArray(casterArray); glBindBuffer(GL_ARRAY_BUFFER, casterBuffer);
@@ -175,7 +210,8 @@ bool EnsureDepth(int width, int height) {
 }
 
 void Render() {
-    if (casters.empty() || !Ensure()) return;
+    const bool shadows = strength > 0.0f && !casters.empty();
+    if ((!shadows && !fogMode) || !Ensure()) return;
     const int vx = viewport[0], vy = viewport[1], vw = viewport[2], vh = viewport[3];
     if (vw <= 0 || vh <= 0) return;
     BufferedDraw::Suspend();
@@ -187,6 +223,8 @@ void Render() {
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &arrayBuffer); glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &framebuffer);
     glGetIntegerv(GL_VIEWPORT, view); glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
     glGetIntegerv(GL_BLEND_SRC_RGB, &blendSource); glGetIntegerv(GL_BLEND_DST_RGB, &blendDestination);
+    GLint blendSourceAlpha = 0, blendDestinationAlpha = 0;
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blendSourceAlpha); glGetIntegerv(GL_BLEND_DST_ALPHA, &blendDestinationAlpha);
     glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask); glGetBooleanv(GL_COLOR_WRITEMASK, colorMask);
     glGetIntegerv(GL_DEPTH_FUNC, &depthFunction);
     glActiveTexture(GL_TEXTURE0); glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture0); glGetIntegerv(GL_SAMPLER_BINDING, &sampler);
@@ -198,6 +236,7 @@ void Render() {
     glGetFloatv(GL_POLYGON_OFFSET_FACTOR, &offsetFactor); glGetFloatv(GL_POLYGON_OFFSET_UNITS, &offsetUnits);
 
     // 1. Mapa de sombras: la geometría guardada, vista desde la luz.
+    if (shadows) {
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
     glViewport(0, 0, ShadowLight::Size, ShadowLight::Size);
     glDisable(GL_BLEND); glDisable(GL_CULL_FACE); glDisable(GL_SCISSOR_TEST);
@@ -219,6 +258,7 @@ void Render() {
     }
     glDisable(GL_POLYGON_OFFSET_FILL);
     glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
+    }
 
     // 2. Profundidad de la escena: copia del framebuffer de la ventana.
     bool applied = false;
@@ -228,21 +268,38 @@ void Render() {
         while (glGetError() != GL_NO_ERROR) {}
         glBlitFramebuffer(vx, vy, vx + vw, vy + vh, vx, vy, vx + vw, vy + vh, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         if (glGetError() == GL_NO_ERROR) {
-            // 3. Pase de pantalla completa: multiplica la imagen por la luz.
             glBindFramebuffer(GL_FRAMEBUFFER, GLuint(framebuffer));
             glViewport(vx, vy, vw, vh);
             glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE);
-            glEnable(GL_BLEND); glBlendFunc(GL_ZERO, GL_SRC_COLOR);
-            glUseProgram(programs.apply);
+            glEnable(GL_BLEND);
             glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, depthTexture);
             glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, shadowTexture);
-            glUniform1i(programs.depth, 2); glUniform1i(programs.shadow, 3);
-            glUniformMatrix4fv(programs.inverseViewProj, 1, GL_FALSE, inverseViewProj);
-            glUniformMatrix4fv(programs.light, 1, GL_FALSE, light);
-            glUniform4f(programs.viewport, float(vx), float(vy), float(vw), float(vh));
-            glUniform3f(programs.params, strength, 1.0f / float(ShadowLight::Size), ShadowLight::Bias);
             glBindVertexArray(applyArray);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            if (shadows) {
+                // 3. Pase de pantalla completa: multiplica la imagen por la luz.
+                glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+                glUseProgram(programs.apply);
+                glUniform1i(programs.depth, 2); glUniform1i(programs.shadow, 3);
+                glUniformMatrix4fv(programs.inverseViewProj, 1, GL_FALSE, inverseViewProj);
+                glUniformMatrix4fv(programs.light, 1, GL_FALSE, light);
+                glUniform4f(programs.viewport, float(vx), float(vy), float(vw), float(vh));
+                glUniform3f(programs.params, strength, 1.0f / float(ShadowLight::Size), ShadowLight::Bias);
+                glDrawArrays(GL_TRIANGLES, 0, 3);
+            }
+            if (fogMode) {
+                // 4. Niebla: multiplicar por la transmitancia y sumar el color.
+                glUseProgram(programs.fog);
+                glUniform1i(programs.fogDepth, 2);
+                glUniformMatrix4fv(programs.fogInverseViewProj, 1, GL_FALSE, inverseViewProj);
+                glUniform4f(programs.fogViewport, float(vx), float(vy), float(vw), float(vh));
+                glUniform3f(programs.fogCamera, inverseView[12], inverseView[13], inverseView[14]);
+                glUniform3fv(programs.fogColor, 1, fogColor);
+                glUniform3f(programs.fogParams, float(fogMode), fogDensity, fogStart);
+                glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
+                glUniform1i(programs.fogPass, 0); glDrawArrays(GL_TRIANGLES, 0, 3);
+                glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE);
+                glUniform1i(programs.fogPass, 1); glDrawArrays(GL_TRIANGLES, 0, 3);
+            }
             applied = true;
         } else {
             static bool logged = false;
@@ -259,7 +316,7 @@ void Render() {
     glActiveTexture(GLenum(active));
     glBindVertexArray(GLuint(array)); glBindBuffer(GL_ARRAY_BUFFER, GLuint(arrayBuffer));
     glUseProgram(GLuint(program));
-    glBlendFunc(GLenum(blendSource), GLenum(blendDestination));
+    glBlendFuncSeparate(GLenum(blendSource), GLenum(blendDestination), GLenum(blendSourceAlpha), GLenum(blendDestinationAlpha));
     glDepthMask(depthMask);
     glDepthFunc(GLenum(depthFunction));
     blend ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
@@ -273,7 +330,7 @@ void Render() {
 }
 
 bool Capturing() {
-    if (!scene || !casting) return false;
+    if (!scene || !casting || strength <= 0.0f) return false;
     const auto& s = RenderState::Get();
     const bool additive = s.caps[RenderState::CapIndex(Gfx::Cap::Blend)] && s.blendDestination == Gfx::Factor::One;
     return s.caps[RenderState::CapIndex(Gfx::Cap::DepthTest)] && s.depthWrite && !additive;
@@ -336,6 +393,7 @@ void ShadowScene(bool begin, const float* focus, float shadowStrength) {
         ShadowLight::ViewProj(focus, light);
         std::memcpy(viewport, RenderState::Get().viewport, sizeof(viewport));
         strength = shadowStrength;
+        fogMode = 0;
         casters.clear(); batches.clear();
         matrixRevision = ~0ull;
         scene = true; casting = true;
@@ -346,4 +404,10 @@ void ShadowScene(bool begin, const float* focus, float shadowStrength) {
     Render();
 }
 void ShadowCasting(bool enabled) { ShadowMapGL::casting = enabled; }
+void Atmosphere(int mode, const float* color, float density, float start) {
+    using namespace ShadowMapGL;
+    if (!scene) return;
+    fogMode = mode; fogDensity = density; fogStart = start;
+    if (color) std::memcpy(fogColor, color, sizeof(fogColor));
+}
 }
