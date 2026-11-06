@@ -54,7 +54,8 @@ set(MU_SOURCES
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
-    src/Render/Backend/GL/GlyphAtlas.cpp
+    src/Render/GlyphAtlas.cpp
+    src/Render/BufferedDraw.cpp
     src/Render/Gfx.cpp
     src/Render/Backend/GL/GfxDevice.cpp
     src/Render/Backend/Dispatch.cpp
@@ -642,7 +643,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -772,7 +773,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
         tests/BMDDevice.cpp
         src/Platform/GLFunctions.cpp src/Render/ResourceTables.cpp
         src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
-        src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Backend/GL/GlyphAtlas.cpp
+        src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp
         src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
         src/Render/Backend/GL/Skinning.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp
         src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp)

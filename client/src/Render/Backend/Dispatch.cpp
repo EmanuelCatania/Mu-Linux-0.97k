@@ -15,7 +15,6 @@ namespace RenderBackend { Kind active = Kind::OpenGL; }
 #endif
 
 namespace GfxDevice { MU_GFX_DEVICE_API(MU_BACKEND_DISPATCH) }
-namespace BufferedDraw { MU_BUFFERED_DRAW_API(MU_BACKEND_DISPATCH) }
+namespace BufferedDraw::Backend { using namespace BufferedDraw; MU_BUFFERED_DRAW_API(MU_BACKEND_DISPATCH) }
 namespace MeshDraw { MU_MESH_DRAW_API(MU_BACKEND_DISPATCH) }
-namespace GlyphAtlas { MU_GLYPH_ATLAS_API(MU_BACKEND_DISPATCH) }
 namespace Skinning { MU_SKINNING_API(MU_BACKEND_DISPATCH) }

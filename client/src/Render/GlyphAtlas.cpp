@@ -1,24 +1,18 @@
-// Sin PCH: las funciones modernas se resuelven con glad.
-#include "Platform/GL/glad.h"
-#include "Render/Backend/GL/ProfileUploads.h"
-#undef glTexImage2D
-#define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
-
+// Atlas de glifos del texto (equivalente a wglUseFontBitmaps + glCallLists).
+// Común a los backends: la textura se crea y se sube por Gfx.
 #include "Render/BufferedDraw.h"
 #include "Render/Gfx.h"
 #include "Render/RenderState.h"
-#include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/GlyphAtlas.h"
-#include "Render/Backend/Api.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
 #include <vector>
 
-namespace GlyphAtlas::GL {
+namespace GlyphAtlas {
 namespace {
 struct Glyph { int x=0,y=0,w=0,h=0,left=0,bottom=0; float advanceX=0,advanceY=0; };
-struct Atlas { GLuint texture=0; int width=0,height=0; std::vector<Glyph> glyphs; };
+struct Atlas { Gfx::Texture texture=0; int width=0,height=0; std::vector<Glyph> glyphs; };
 std::unordered_map<unsigned,Atlas> atlases;
 
 // glBitmap pasa sus fragmentos por el alpha test con el alpha del color raster.
@@ -33,7 +27,7 @@ bool AlphaPasses(Gfx::Compare f,float a,float r) {
 }
 void Forget(unsigned key) {
     auto it=atlases.find(key);if (it==atlases.end()) return;
-    BufferedDraw::Suspend();glDeleteTextures(1,&it->second.texture);atlases.erase(it);
+    BufferedDraw::Suspend();Gfx::DeleteTexture(it->second.texture);atlases.erase(it);
 }
 void Release() { while (!atlases.empty()) Forget(atlases.begin()->first); }
 
@@ -51,7 +45,7 @@ bool Build(unsigned key,const Bitmap* glyphs,unsigned count) {
     }
     const unsigned columns=16,rows=(count+columns-1)/columns;
     atlas.width=cellW*int(columns);atlas.height=cellH*int(rows);
-    GLint limit=0;glGetIntegerv(GL_MAX_TEXTURE_SIZE,&limit);
+    const int limit=Gfx::MaxTextureSize();
     if (atlas.width>limit || atlas.height>limit) return false;
     // Blanco con la máscara en alpha: el color sale del texture env Modulate.
     std::vector<unsigned char> pixels(size_t(atlas.width)*atlas.height*4,255);
@@ -62,27 +56,20 @@ bool Build(unsigned key,const Bitmap* glyphs,unsigned count) {
             pixels[(size_t(g.y+y)*atlas.width+g.x+x)*4+3]=glyphs[i].coverage[size_t(y)*g.w+x];
     }
     BufferedDraw::Suspend();
-    GLint active=0,bound=0,alignment=0,rowLength=0,skipRows=0,skipPixels=0,unpack=0;
-    glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glActiveTexture(GL_TEXTURE0);
-    glGetIntegerv(GL_TEXTURE_BINDING_2D,&bound);glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&unpack);
-    glGetIntegerv(GL_UNPACK_ALIGNMENT,&alignment);glGetIntegerv(GL_UNPACK_ROW_LENGTH,&rowLength);
-    glGetIntegerv(GL_UNPACK_SKIP_ROWS,&skipRows);glGetIntegerv(GL_UNPACK_SKIP_PIXELS,&skipPixels);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0);
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
-    glGenTextures(1,&atlas.texture);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);
-    glBindTexture(GL_TEXTURE_2D,atlas.texture);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,atlas.width,atlas.height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
-    const bool ok=atlas.texture && glGetError()==GL_NO_ERROR;
-    glPixelStorei(GL_UNPACK_ALIGNMENT,alignment);glPixelStorei(GL_UNPACK_ROW_LENGTH,rowLength);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS,skipRows);glPixelStorei(GL_UNPACK_SKIP_PIXELS,skipPixels);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
-    glBindTexture(GL_TEXTURE_2D,bound);glActiveTexture(active);
-    if (!ok) { if (atlas.texture) glDeleteTextures(1,&atlas.texture);return false; }
+    // Conservar la textura ligada y el alineamiento de quien llamó.
+    const Gfx::Texture bound=RenderState::Get().texture;
+    const int alignment=Gfx::UnpackAlignment();
+    Gfx::SetUnpackAlignment(1);
+    atlas.texture=Gfx::CreateTexture();
+    Gfx::BindTexture(atlas.texture);
+    Gfx::TexParameter(Gfx::TexParam::MinFilter,Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter,Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::WrapS,Gfx::TexValue::ClampToEdge);
+    Gfx::TexParameter(Gfx::TexParam::WrapT,Gfx::TexValue::ClampToEdge);
+    Gfx::TexImage2D(4,atlas.width,atlas.height,Gfx::Format::RGBA,pixels.data());
+    Gfx::SetUnpackAlignment(alignment);
+    Gfx::BindTexture(bound);
+    if (!atlas.texture) return false;
     atlases.emplace(key,std::move(atlas));return true;
 }
 

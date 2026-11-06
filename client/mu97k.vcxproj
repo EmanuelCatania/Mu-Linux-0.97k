@@ -290,7 +290,10 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
-    <ClCompile Include="src\Render\Backend\GL\GlyphAtlas.cpp">
+    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\BufferedDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>

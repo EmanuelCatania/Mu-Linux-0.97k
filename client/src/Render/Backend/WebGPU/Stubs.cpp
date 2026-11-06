@@ -51,33 +51,12 @@ int UnpackAlignment() { return unpackAlignment; }
 }
 
 namespace BufferedDraw::WGPU {
-Vertex CaptureAttributes(bool color, bool uv) {
-    Vertex attributes{{}, {1, 1, 1, 1}, {0, 0, 0, 1}};
-    const auto& s = RenderState::Get();
-    if (color) std::memcpy(attributes.color, s.color, sizeof(attributes.color));
-    if (uv) std::memcpy(attributes.uv, s.uv, sizeof(attributes.uv));
-    return attributes;
-}
 bool Initialize() { return true; }
 void Release() {}
-void Begin(unsigned) {}
-void Begin(Primitive) {}
-void End() {}
-void Quad(const Vertex*, bool) {}
-void Flush(const Vertex*) {}
+void Submit(unsigned, const Vertex*, std::size_t) {}
 void Suspend() {}
 void Activate(unsigned, unsigned, unsigned) {}
-void SetExitHook(void (*)()) {}
-void DrawIndexed(unsigned, unsigned, const Vertex*, std::size_t, std::size_t, const Vertex*) {}
-void NativeColor(float r, float g, float b, float a) {
-    auto& c = RenderState::Mutable().color;
-    c[0] = r; c[1] = g; c[2] = b; c[3] = a;
-}
-void NativeUV(float u, float v) {
-    auto& t = RenderState::Mutable().uv;
-    t[0] = u; t[1] = v; t[2] = 0; t[3] = 1;
-}
-void NativeVertex(float, float, float) {}
+void DrawIndexed(unsigned, unsigned, const Vertex*, std::size_t, std::size_t) {}
 }
 
 namespace MeshDraw::WGPU {
@@ -85,13 +64,6 @@ bool DrawShadow(const void*, const char*, const float*, const float*) { return t
 void Release() {}
 void ToggleResident() {}
 bool Draw(const Input&) { return true; }
-}
-
-namespace GlyphAtlas::WGPU {
-bool Build(unsigned, const Bitmap*, unsigned) { return true; }
-bool Draw(unsigned, float, float, const char*, int, int, int) { return true; }
-void Forget(unsigned) {}
-void Release() {}
 }
 
 namespace Skinning::WGPU {
