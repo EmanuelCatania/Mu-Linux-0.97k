@@ -549,7 +549,9 @@ void Render_Scene3D(void)
     DAT_083a42ea = 0;   // FogEnable = false
     // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
     // el server se prende (el DLL parcheaba este 0 por un 1).
-    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
+    // Con la cámara 3D y la niebla por profundidad, ésta reemplaza a la del
+    // server: bruma hacia el color de fondo propio del mapa, sin teñir el fondo.
+    if (gContentCatalog.HasMapFog() && !(gCamera3D.IsEnabled() && Gfx::DepthFog())) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     // Cámara autoritativa preparada al finalizar el paso de simulación.
@@ -660,8 +662,7 @@ void Render_Scene3D(void)
             // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.
             Gfx::Atmosphere(2, water, 1.9f / (end - 300.0f), 300.0f);
         } else {
-            // Con niebla del server, cr/cg/cb ya son su color: el fondo toma
-            // ese color y el borde del terreno se pierde.
+            // El color de fondo del mapa (la niebla del server no está activa acá).
             const float background[3] = {cr, cg, cb};
             // exp(-x^2): x = 2 (2 %) en el borde.
             Gfx::Atmosphere(1, background, 2.0f / (end - start), start);
