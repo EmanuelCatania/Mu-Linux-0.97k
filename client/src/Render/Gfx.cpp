@@ -190,6 +190,11 @@ void BeginShadowScene(const float focus[3]) {
     shadowScene = true;
     GfxDevice::ShadowScene(true, focus, shadowStrength);
 }
+void SetShadowCasting(bool enabled) {
+    if (!shadowScene) return;
+    BufferedDraw::Flush();
+    GfxDevice::ShadowCasting(enabled);
+}
 void EndShadowScene() {
     if (!shadowScene) return;
     BufferedDraw::Flush();

@@ -388,7 +388,7 @@ struct State {
     WGPUTextureFormat postFormat = WGPUTextureFormat_Undefined;
     unsigned errors = 0;
     // Sombras proyectadas: escena en grabación y recursos.
-    bool shadowScene = false, shadowFrame = false;
+    bool shadowScene = false, shadowFrame = false, shadowCasting = true;
     float shadowStrength = 0.5f;
     ShadowUniform shadow{};
     WGPUTexture shadowMap = nullptr;
@@ -815,7 +815,7 @@ PipelineKey StateKey(uint8_t topology) {
 // profundidad) y no aditivo; sólo triángulos.
 bool Caster(const PipelineKey& key) {
     const uint8_t topology = key.topology & 0xF;
-    return g.shadowScene && key.depthTest && key.depthWrite &&
+    return g.shadowScene && g.shadowCasting && key.depthTest && key.depthWrite &&
            !(key.blend && Gfx::Factor(key.dst) == Gfx::Factor::One) &&
            (topology == WGPUPrimitiveTopology_TriangleList || topology == WGPUPrimitiveTopology_TriangleStrip);
 }
@@ -1573,6 +1573,7 @@ bool SupportsShadowMaps() { return g.ready; }
 void ShadowScene(bool begin, const float* focus, float strength) {
     if (!g.ready) return;
     g.shadowScene = begin && focus;
+    g.shadowCasting = true;
     g.matrixRevision = ~0ull;   // los uniforms siguientes cambian el flag de receptor
     if (!g.shadowScene) return;
     if (!::WebGPU::Invert(RenderState::Top(Gfx::Matrix::ModelView), g.shadow.inverseView)) { g.shadowScene = false; return; }
@@ -1582,6 +1583,7 @@ void ShadowScene(bool begin, const float* focus, float strength) {
     g.shadow.params[3] = 0.0015f;
     g.shadowFrame = true;
 }
+void ShadowCasting(bool enabled) { g.shadowCasting = enabled; }
 // El posproceso abre una pasada: al codificarla se aplica antes de sus dibujos.
 void PostProcess(bool antialias, float sharpen) {
     if (!g.ready) return;

@@ -114,6 +114,9 @@ void SetShadowMaps(bool enabled, float strength);
 bool ShadowMaps();
 void BeginShadowScene(const float focus[3]);
 void EndShadowScene();
+// Dentro de la escena, lo dibujado con casting en false recibe sombra pero no
+// la proyecta (p. ej. el pasto). Cada escena empieza con casting en true.
+void SetShadowCasting(bool enabled);
 
 // Niebla
 void SetFogMode(FogMode mode);

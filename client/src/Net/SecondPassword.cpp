@@ -144,6 +144,7 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Gfx.h"
 void Terrain_BeginBufferedPass();
 #include "Render/BufferedDraw.h"
 #include "Game/RenderFxSnapshots.h"
@@ -2622,7 +2623,10 @@ void __cdecl RenderTerrain(char EditFlag) {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && gMapManager.GetCurrentMap() != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
+            // DESVIACION: el pasto (billboards) recibe sombra pero no la proyecta.
+            Gfx::SetShadowCasting(false);
             RenderTerrainFrustrum(false);
+            Gfx::SetShadowCasting(true);
         }
         Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest
