@@ -646,7 +646,8 @@ void Render_Scene3D(void)
     // una bruma suave hacia el color de fondo (el de la niebla del server, si hay).
     // Se ata al alcance de la cámara: empieza a la mitad y llega casi al máximo
     // en el borde de lo dibujado, que así no se ve.
-    {
+    // Sólo con la cámara 3D (F10): con la normal no hay borde lejano que tapar.
+    if (gCamera3D.IsEnabled()) {
         // Empieza a la mitad del alcance normal y llega al borde del ampliado
         // (distancia de dibujado), donde ya sólo queda el terreno.
         // El frustum del culling llega al 90 % del alcance (_DAT_005526e8):
