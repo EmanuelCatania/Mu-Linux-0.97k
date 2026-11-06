@@ -54,7 +54,8 @@ const char* const English[] = {
     "Could not initialize OpenGL 3.3 core. Check the graphics driver.",
     "Starts in %s",
     "Render: %s",
-    "Applies on restart"
+    "Applies on restart",
+    "Textures: %s"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -75,6 +76,7 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::RenderDecoupled, "Render libre", "Render livre" },
         { ClientTextId::RenderVSync, "VSync", "VSync" },
         { ClientTextId::RenderBackend, "Render: %s", "Render: %s" },
+        { ClientTextId::TextureQuality, "Texturas: %s", "Texturas: %s" },
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },

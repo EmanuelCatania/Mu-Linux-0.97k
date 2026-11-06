@@ -19,6 +19,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/GlyphAtlas.h"
+#include "Render/Gfx.h"
 #include "Render/RenderBackend.h"
 #ifdef MU_RENDER_WEBGPU
 #include "Render/Backend/WebGPU/Device.h"
@@ -132,6 +133,8 @@ HINSTANCE CWindow::GetInstance() const { return Platform::NativeInstance(); }
 bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 {
     Platform::BindNativeDispatch(hInst, wndProc);
+    // DESVIACION: calidad de texturas elegida por el jugador, antes de subir ninguna.
+    Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
     RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL

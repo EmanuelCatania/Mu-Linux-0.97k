@@ -109,6 +109,13 @@ public:
     static const char* RenderBackendKey(RenderBackendPreference preference);
     // Guarda la preferencia; se usa en el próximo arranque.
     void SetRenderBackend(RenderBackendPreference preference);
+    // DESVIACION: calidad de texturas ([Window] TextureQuality): 0 original,
+    // 1 mipmaps (se aplica al reiniciar), 2 mipmaps + bicúbico (en caliente).
+    int GetTextureQuality() const { return m_TextureQuality; }
+    int GetStartupTextureQuality() const { return m_StartupTextureQuality; }
+    void SetTextureQuality(int level);
+    // true si alguna opción guardada se aplica recién al reiniciar.
+    bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
@@ -167,6 +174,7 @@ private:
     bool m_VSync = false;
     RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
     RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
+    int m_TextureQuality = 0, m_StartupTextureQuality = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

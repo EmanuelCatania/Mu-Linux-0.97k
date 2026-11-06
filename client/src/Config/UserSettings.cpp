@@ -6,6 +6,7 @@
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
 #include "Platform/IGLContext.h"
+#include "Render/Gfx.h"
 #include <cerrno>
 #include <climits>
 #include <cctype>
@@ -98,6 +99,7 @@ void CUserSettings::Load(const char* iniPath)
         if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
             m_RenderBackend = static_cast<RenderBackendPreference>(i);
     m_StartupRenderBackend = m_RenderBackend;
+    m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -224,6 +226,21 @@ const char* CUserSettings::RenderBackendName(RenderBackendPreference preference)
     case RenderBackendPreference::Vulkan: return "Vulkan";
     default: return "OpenGL";
     }
+}
+
+void CUserSettings::SetTextureQuality(int level)
+{
+    if (level < 0 || level > 2) return;
+    m_TextureQuality = level;
+    // Los mipmaps se generan al subir las texturas: valen los del arranque.
+    Gfx::SetTextureQuality(m_StartupTextureQuality >= 1, level >= 2);
+    SaveInt("Window", "TextureQuality", level);
+}
+
+bool CUserSettings::RestartPending() const
+{
+    return m_RenderBackend != m_StartupRenderBackend ||
+        (m_TextureQuality >= 1) != (m_StartupTextureQuality >= 1);
 }
 
 void CUserSettings::SetRenderBackend(RenderBackendPreference preference)

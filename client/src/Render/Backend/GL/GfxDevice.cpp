@@ -4,6 +4,7 @@
 #include "Render/Backend/GL/ProfileUploads.h"
 #include "Render/Backend/GfxDevice.h"
 #include "Render/RenderState.h"
+#include <algorithm>
 #include <cstring>
 
 namespace GfxDevice::GL {
@@ -84,8 +85,24 @@ GLenum DeviceCap(Cap cap) {
     default: return 0;
     }
 }
-}
 
+// Anisotropía máxima del driver (GL_EXT/ARB_texture_filter_anisotropic); 0 sin ella.
+float MaxAnisotropy() {
+    static float value=-1.f;
+    if (value>=0) return value;
+    value=0;
+    GLint count=0;glGetIntegerv(GL_NUM_EXTENSIONS,&count);
+    for (GLint i=0;i<count;++i) {
+        const char* name=reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS,GLuint(i)));
+        if (name && (!std::strcmp(name,"GL_EXT_texture_filter_anisotropic") || !std::strcmp(name,"GL_ARB_texture_filter_anisotropic"))) {
+            glGetFloatv(0x84FF,&value); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+            value=std::min(value,16.f);
+            break;
+        }
+    }
+    return value;
+}
+}
 void Reset() {
     for (int i = 0; i < RenderState::CapCount; ++i)
         if (const GLenum device = DeviceCap(static_cast<Cap>(i))) { if (RenderState::Get().caps[i]) glEnable(device); else glDisable(device); }
@@ -126,11 +143,23 @@ void TexImage2D(int components, int width, int height, Format format, const void
     // Core no acepta la cantidad de componentes como formato interno.
     const GLint internal = components == 3 ? GL_RGB8 : GL_RGBA8;
     ProfileUploadGL::Image2D(glad_glTexImage2D, GL_TEXTURE_2D, 0, internal, width, height, 0, ToGL(format), GL_UNSIGNED_BYTE, pixels);
+    // DESVIACION: mipmaps para el filtro de reducción (opción de calidad).
+    if (Gfx::TextureMipmaps()) glGenerateMipmap(GL_TEXTURE_2D);
 }
 void TexSubImage2D(int x, int y, int width, int height, Format format, const void* pixels) {
     ProfileUploadGL::Sub2D(glad_glTexSubImage2D, GL_TEXTURE_2D, 0, x, y, width, height, ToGL(format), GL_UNSIGNED_BYTE, pixels);
+    if (Gfx::TextureMipmaps()) glGenerateMipmap(GL_TEXTURE_2D);
 }
-void TexParameter(TexParam parameter, TexValue value) { glTexParameteri(GL_TEXTURE_2D, ToGL(parameter), ToGL(value)); }
+void TexParameter(TexParam parameter, TexValue value) {
+    // Con mipmaps, la reducción pasa a trilineal con anisotropía (también la
+    // nítida: la UI y el texto se dibujan a su tamaño o ampliados).
+    if (parameter == TexParam::MinFilter && Gfx::TextureMipmaps() && (value == TexValue::Linear || value == TexValue::Nearest)) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        if (const float anisotropy = MaxAnisotropy()) glTexParameterf(GL_TEXTURE_2D, 0x84FE, anisotropy); // GL_TEXTURE_MAX_ANISOTROPY
+        return;
+    }
+    glTexParameteri(GL_TEXTURE_2D, ToGL(parameter), ToGL(value));
+}
 void TexBorderColor(const float rgba[4]) { glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, rgba); }
 void SetUnpackAlignment(int alignment) { glPixelStorei(GL_UNPACK_ALIGNMENT, alignment); }
 int UnpackAlignment() { GLint value = 0; glGetIntegerv(GL_UNPACK_ALIGNMENT, &value); return value; }

@@ -9,9 +9,22 @@
 #include "Render/RenderState.h"
 #include "Render/TerrainDraw.h"
 #include <cstring>
+#include <unordered_map>
 
 namespace Gfx {
 namespace {
+bool mipmaps=false,bicubic=false;
+// Wrap pedido por textura (S, T); sin entrada, el default de GL (repetir).
+struct Wrap { bool s=true,t=true; };
+std::unordered_map<Texture,Wrap> wraps;
+void UpdateWrap() {
+    auto& s=RenderState::Mutable();
+    const auto it=wraps.find(s.texture);
+    const Wrap w=it==wraps.end() ? Wrap{} : it->second;
+    if (s.textureRepeat[0]==w.s && s.textureRepeat[1]==w.t) return;
+    s.textureRepeat[0]=w.s;s.textureRepeat[1]=w.t;
+    if (bicubic) RenderState::TouchMaterial();
+}
 bool MaterialCap(Cap cap) { return cap == Cap::Texture2D || cap == Cap::AlphaTest || cap == Cap::Fog; }
 void CountCap(Cap cap) {
     if (cap == Cap::Blend) RenderProfile::Change(RenderProfile::State::Blend);
@@ -25,7 +38,8 @@ void SetCap(Cap cap, bool on) {
     BufferedDraw::Flush();
     current = on;CountCap(cap);
     GfxDevice::ApplyCap(cap, on);
-    if (MaterialCap(cap)) RenderState::TouchMaterial();
+    // El bicúbico sólo filtra lo 3D (con depth test): ese cap también es material.
+    if (MaterialCap(cap) || (bicubic && cap == Cap::DepthTest)) RenderState::TouchMaterial();
 }
 void MaterialChange() { BufferedDraw::Flush();RenderState::TouchMaterial(); }
 void MatrixChange() { BufferedDraw::Flush(); }
@@ -36,6 +50,7 @@ void ApplyDevice(const RenderState::Fixed& before) {
         if (before.caps[i] == s.caps[i]) continue;
         CountCap(static_cast<Cap>(i));
         GfxDevice::ApplyCap(static_cast<Cap>(i), s.caps[i]);
+        if (bicubic && static_cast<Cap>(i) == Cap::DepthTest) RenderState::TouchMaterial();
     }
     if (before.blendSource != s.blendSource || before.blendDestination != s.blendDestination) {
         RenderProfile::Change(RenderProfile::State::Blend);GfxDevice::ApplyBlend(s.blendSource, s.blendDestination);
@@ -123,6 +138,7 @@ const char* GetDeviceInfo(DeviceInfo info) { return GfxDevice::GetDeviceInfo(inf
 
 Texture CreateTexture() { return GfxDevice::CreateTexture(); }
 void DeleteTexture(Texture texture) {
+    wraps.erase(texture);
     BufferedDraw::Flush();TerrainDraw::InvalidateTexture(texture);RenderProfile::ForgetTexture(texture);
     auto& s = RenderState::Mutable();if (s.texture == texture) s.texture = 0;
     GfxDevice::DeleteTexture(texture);
@@ -132,6 +148,7 @@ void BindTexture(Texture texture) {
     if (s.texture == texture) return;
     BufferedDraw::Flush();RenderProfile::Change(RenderProfile::State::Texture);
     s.texture = texture;GfxDevice::ApplyTexture(texture);
+    UpdateWrap();
 }
 void TexImage2D(int components, int width, int height, Format format, const void* pixels) {
     BufferedDraw::Flush();TerrainDraw::InvalidateBoundTexture();
@@ -144,7 +161,19 @@ void TexSubImage2D(int x, int y, int width, int height, Format format, const voi
 void TexParameter(TexParam parameter, TexValue value) {
     BufferedDraw::Flush();TerrainDraw::InvalidateBoundTexture();
     GfxDevice::TexParameter(parameter, value);
+    if (parameter == TexParam::WrapS || parameter == TexParam::WrapT) {
+        auto& w=wraps[RenderState::Get().texture];
+        (parameter == TexParam::WrapS ? w.s : w.t) = value == TexValue::Repeat;
+        UpdateWrap();
+    }
 }
+void SetTextureQuality(bool useMipmaps, bool useBicubic) {
+    mipmaps=useMipmaps;
+    if (bicubic==useBicubic) return;
+    BufferedDraw::Flush();bicubic=useBicubic;RenderState::TouchMaterial();
+}
+bool TextureMipmaps() { return mipmaps; }
+bool TextureBicubic() { return bicubic; }
 // Valores numéricos de OpenGL que trae el binario (p. ej. OpenJPG(..., 0x2601, 0x2901)).
 TexValue TexValueFromLegacy(int value) {
     switch (value) {

@@ -539,6 +539,11 @@ void COptionsMenu::RenderScreen()
     if (fps) Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFps),fps);
     else Platform::TextCopySecure(text,gClientText.Get(ClientTextId::RenderUnlimited));
     RenderSelector((float)RowY(row++),text,fps==0 || fps>25,fps!=0);
+    // DESVIACION: calidad de texturas (mipmaps y filtrado bicúbico).
+    static const char* const textureNames[3] = { "Original", "Mipmaps", "Mipmaps + bicubic" };
+    const int texture = gUserSettings.GetTextureQuality();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
+    RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render (OpenGL o WebGPU sobre D3D12/D3D11/Vulkan);
     // se guarda en Config.ini y se aplica al reiniciar.
@@ -546,9 +551,9 @@ void COptionsMenu::RenderScreen()
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::RenderBackend), CUserSettings::RenderBackendName(backend));
     RenderSelector((float)RowY(row++), text, backend != RenderBackendPreference::OpenGL,
         static_cast<int>(backend) + 1 < static_cast<int>(RenderBackendPreference::Count));
-    if (backend != gUserSettings.GetStartupRenderBackend())
-        RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
 #endif
+    if (gUserSettings.RestartPending())
+        RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
     RenderButton((float)RowY(row), GlobalText[925]);
 }
 
@@ -589,6 +594,12 @@ bool COptionsMenu::UpdateScreen()
         if (fpsStep) gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),AdjacentRenderLimit(fps,fpsStep));
         return true;
     }
+    const int texture = gUserSettings.GetTextureQuality();
+    const int textureStep = UpdateSelector(RowY(row++), texture > 0, texture < 2);
+    if (textureStep != INT_MIN) {
+        if (textureStep) gUserSettings.SetTextureQuality(texture + (textureStep > 0 ? 1 : -1));
+        return true;
+    }
 #ifdef MU_RENDER_WEBGPU
     const int backend = static_cast<int>(gUserSettings.GetRenderBackend());
     const int backendCount = static_cast<int>(RenderBackendPreference::Count);
@@ -597,8 +608,8 @@ bool COptionsMenu::UpdateScreen()
         if (backendStep) gUserSettings.SetRenderBackend(static_cast<RenderBackendPreference>(backend + (backendStep > 0 ? 1 : -1)));
         return true;
     }
-    if (gUserSettings.GetRenderBackend() != gUserSettings.GetStartupRenderBackend() && UpdateToggle(RowY(row++), clicked)) return true;
 #endif
+    if (gUserSettings.RestartPending() && UpdateToggle(RowY(row++), clicked)) return true;
     if (!UpdateToggle(RowY(row), clicked)) return false;
     if (clicked) m_Page = PAGE_MAIN;
     return true;

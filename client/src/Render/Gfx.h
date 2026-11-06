@@ -91,6 +91,12 @@ void TexEnvMode(TexEnv mode);
 void SetUnpackAlignment(int alignment);
 int UnpackAlignment();
 
+// DESVIACION: calidad de texturas, opción del jugador. Los mipmaps se generan
+// al subir cada textura (se fija al arrancar); el bicúbico cambia en caliente.
+void SetTextureQuality(bool mipmaps, bool bicubic);
+bool TextureMipmaps();
+bool TextureBicubic();
+
 // Niebla
 void SetFogMode(FogMode mode);
 void FogStart(float value);

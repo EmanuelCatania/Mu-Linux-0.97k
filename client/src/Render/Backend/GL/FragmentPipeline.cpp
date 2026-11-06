@@ -25,13 +25,43 @@ uniform float uAlphaReference;
 uniform int uFog;
 uniform vec3 uFogValues;
 uniform vec4 uFogColor;
+uniform int uBicubic;
 in vec4 vColor,vUV;
 in float vFogDistance;
 out vec4 fragmentColor;
+// DESVIACION: filtrado bicúbico Catmull-Rom (opción de calidad de texturas).
+// Lee los 16 texels con texelFetch: el 0.97k carga casi todo con filtro
+// nearest y el sampler no sirve para interpolar. uBicubic: bit 1 = repetir en
+// S, bit 2 = repetir en T (si no, se limita al borde).
+vec4 catmullRom(vec2 uv){
+    ivec2 size=textureSize(uTexture,0);
+    vec2 p=uv*vec2(size)-0.5,i=floor(p),f=p-i;
+    vec4 wx=vec4(f.x*(-0.5+f.x*(1.0-0.5*f.x)),1.0+f.x*f.x*(-2.5+1.5*f.x),f.x*(0.5+f.x*(2.0-1.5*f.x)),f.x*f.x*(-0.5+0.5*f.x));
+    vec4 wy=vec4(f.y*(-0.5+f.y*(1.0-0.5*f.y)),1.0+f.y*f.y*(-2.5+1.5*f.y),f.y*(0.5+f.y*(2.0-1.5*f.y)),f.y*f.y*(-0.5+0.5*f.y));
+    vec4 r=vec4(0.0);
+    for(int y=0;y<4;++y){
+        int ty=int(i.y)+y-1;
+        ty=(uBicubic&4)!=0?((ty%size.y)+size.y)%size.y:clamp(ty,0,size.y-1);
+        vec4 row=vec4(0.0);
+        for(int x=0;x<4;++x){
+            int tx=int(i.x)+x-1;
+            tx=(uBicubic&2)!=0?((tx%size.x)+size.x)%size.x:clamp(tx,0,size.x-1);
+            row+=texelFetch(uTexture,ivec2(tx,ty),0)*wx[x];
+        }
+        r+=row*wy[y];
+    }
+    return clamp(r,0.0,1.0);
+}
 void main(){
     vec4 c=vColor;
     if(uTextured){
-        vec4 t=textureProj(uTexture,vUV);
+        vec2 uv=vUV.xy/vUV.w;
+        vec4 t=texture(uTexture,uv);
+        if(uBicubic!=0){
+            // Sólo al ampliar: al reducir, el muestreo normal (con mipmaps) es mejor.
+            vec2 d=fwidth(uv*vec2(textureSize(uTexture,0)));
+            if(max(d.x,d.y)<1.0)t=catmullRom(uv);
+        }
         if(uTexEnv==1)c=t;
         else if(uTexEnv==2)c=vec4(mix(vColor.rgb,t.rgb,t.a),vColor.a);
         else if(uTexEnv==4)c=vec4(vColor.rgb+t.rgb,vColor.a*t.a);
@@ -54,7 +84,7 @@ void main(){
 )GLSL";
 struct Program {
     GLuint name=0;
-    GLint mvp=-1,view=-1,texture=-1,sampler=-1,textured=-1,environment=-1,alphaFunction=-1,alphaReference=-1,fog=-1,fogValues=-1,fogColor=-1;
+    GLint mvp=-1,view=-1,texture=-1,sampler=-1,textured=-1,environment=-1,alphaFunction=-1,alphaReference=-1,fog=-1,fogValues=-1,fogColor=-1,bicubic=-1;
     unsigned long long matrices=0,material=0;
     bool sampler0=false;
 };
@@ -94,6 +124,7 @@ unsigned Create(const char* vertexBody) {
     p.sampler=glGetUniformLocation(name,"uTexture");p.textured=glGetUniformLocation(name,"uTextured");p.environment=glGetUniformLocation(name,"uTexEnv");
     p.alphaFunction=glGetUniformLocation(name,"uAlphaFunction");p.alphaReference=glGetUniformLocation(name,"uAlphaReference");
     p.fog=glGetUniformLocation(name,"uFog");p.fogValues=glGetUniformLocation(name,"uFogValues");p.fogColor=glGetUniformLocation(name,"uFogColor");
+    p.bicubic=glGetUniformLocation(name,"uBicubic");
     programs.push_back(p);return name;
 }
 void Release(unsigned name) {
@@ -116,6 +147,9 @@ void Apply(unsigned name) {
     if(p->material!=RenderState::MaterialRevision()) {
         const auto& s=RenderState::Get();
         glUniform1i(p->textured,s.caps[RenderState::CapIndex(Gfx::Cap::Texture2D)]?1:0);
+        // Sólo lo 3D (depth test): el texto y la interfaz se dibujan sin él.
+        const bool bicubic=Gfx::TextureBicubic() && s.caps[RenderState::CapIndex(Gfx::Cap::DepthTest)];
+        glUniform1i(p->bicubic,bicubic?1|(s.textureRepeat[0]?2:0)|(s.textureRepeat[1]?4:0):0);
         glUniform1i(p->environment,EnvCode(s.texEnv));
         glUniform1i(p->alphaFunction,s.caps[RenderState::CapIndex(Gfx::Cap::AlphaTest)]?AlphaCode(s.alphaFunction):0);
         glUniform1f(p->alphaReference,s.alphaReference);

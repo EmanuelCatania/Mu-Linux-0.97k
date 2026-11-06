@@ -37,6 +37,7 @@ struct Uniforms {
     flags: vec4i,     // textured, texEnv, alphaFunction, fog
     params: vec4f,    // alphaReference, fogStart, fogEnd, fogDensity
     fogColor: vec4f,
+    extra: vec4i,     // bicúbico
 };
 @group(0) @binding(0) var<uniform> u: Uniforms;
 @group(1) @binding(0) var tex: texture_2d<f32>;
@@ -101,9 +102,45 @@ fn rotateBone(p: vec3f, b: i32) -> vec3f {
     out.fogDistance = abs((u.modelView * position).z);
     return out;
 }
+// Catmull-Rom con los 16 texels del nivel 0 (textureLoad: el 0.97k usa casi
+// siempre filtro nearest, así que el sampler no sirve para interpolar).
+fn wrapTexel(c: i32, size: i32, repeat: bool) -> i32 {
+    if (repeat) { return ((c % size) + size) % size; }
+    return clamp(c, 0, size - 1);
+}
+fn cubicWeights(f: f32) -> vec4f {
+    return vec4f(f * (-0.5 + f * (1.0 - 0.5 * f)), 1.0 + f * f * (-2.5 + 1.5 * f),
+                 f * (0.5 + f * (2.0 - 1.5 * f)), f * f * (-0.5 + 0.5 * f));
+}
+fn catmullRom(uv: vec2f, size: vec2f) -> vec4f {
+    let isize = vec2i(size);
+    let p = uv * size - 0.5;
+    let i = floor(p);
+    let f = p - i;
+    let wx = cubicWeights(f.x);
+    let wy = cubicWeights(f.y);
+    let repeatS = (u.extra.x & 2) != 0;
+    let repeatT = (u.extra.x & 4) != 0;
+    var r = vec4f(0.0);
+    for (var y = 0; y < 4; y++) {
+        let ty = wrapTexel(i32(i.y) + y - 1, isize.y, repeatT);
+        var row = vec4f(0.0);
+        for (var x = 0; x < 4; x++) {
+            let tx = wrapTexel(i32(i.x) + x - 1, isize.x, repeatS);
+            row += textureLoad(tex, vec2i(tx, ty), 0) * wx[x];
+        }
+        r += row * wy[y];
+    }
+    return clamp(r, vec4f(0.0), vec4f(1.0));
+}
 @fragment fn fs(in: VertexOut) -> @location(0) vec4f {
     // textureProj: divide por q. Se muestrea siempre (control uniforme).
-    let t = textureSample(tex, smp, in.uv.xy / in.uv.w);
+    let uv = in.uv.xy / in.uv.w;
+    var t = textureSample(tex, smp, uv);
+    // DESVIACION: bicúbico (opción de calidad), sólo al ampliar la textura.
+    let size = vec2f(textureDimensions(tex, 0));
+    let footprint = fwidth(uv * size);
+    if (u.extra.x != 0 && max(footprint.x, footprint.y) < 1.0) { t = catmullRom(uv, size); }
     var c = in.color;
     if (u.flags.x != 0) {
         let env = u.flags.y;
@@ -147,6 +184,7 @@ struct Uniforms {
     int32_t flags[4];
     float params[4];
     float fogColor[4];
+    int32_t extra[4];
 };
 struct Skin {
     int32_t paletteBase; uint32_t flags; int32_t pad[2];
@@ -311,12 +349,21 @@ WGPUBuffer CreateBuffer(uint64_t size, WGPUBufferUsage usage) {
 WGPUSampler Sampler(const Sampling& s) {
     auto it = g.samplers.find(s.Key());
     if (it != g.samplers.end()) return it->second;
-    // Sólo se sube el nivel 0: un filtro con mipmaps muestrea ese nivel.
     WGPUSamplerDescriptor d = WGPU_SAMPLER_DESCRIPTOR_INIT;
     d.addressModeU = Address(s.wrapS);
     d.addressModeV = Address(s.wrapT);
     d.magFilter = Linear(s.magFilter) ? WGPUFilterMode_Linear : WGPUFilterMode_Nearest;
     d.minFilter = Linear(s.minFilter) ? WGPUFilterMode_Linear : WGPUFilterMode_Nearest;
+    if (Gfx::TextureMipmaps()) {
+        // DESVIACION: con la opción de calidad, reducción trilineal con
+        // anisotropía, también para la nítida (la UI se dibuja a su tamaño).
+        d.minFilter = WGPUFilterMode_Linear;
+        d.mipmapFilter = WGPUMipmapFilterMode_Linear;
+        if (Linear(s.magFilter)) d.maxAnisotropy = 16;
+    } else {
+        // El cliente sube sólo el nivel 0: un filtro nítido no usa mipmaps.
+        d.lodMaxClamp = 0.0f;
+    }
     WGPUSampler sampler = wgpuDeviceCreateSampler(GetDevice(), &d);
     g.samplers.emplace(s.Key(), sampler);
     return sampler;
@@ -337,9 +384,16 @@ void Destroy(TextureSlot& slot) {
     slot.view = nullptr; slot.texture = nullptr;
 }
 
+uint32_t MipLevels(int width, int height) {
+    if (!Gfx::TextureMipmaps()) return 1;
+    uint32_t levels = 1;
+    for (int size = std::max(width, height); size > 1; size /= 2) ++levels;
+    return levels;
+}
 WGPUTexture NewTexture(int width, int height) {
     WGPUTextureDescriptor d = WGPU_TEXTURE_DESCRIPTOR_INIT;
     d.size = {uint32_t(width), uint32_t(height), 1};
+    d.mipLevelCount = MipLevels(width, height);
     d.format = WGPUTextureFormat_RGBA8Unorm;
     d.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc;
     return wgpuDeviceCreateTexture(GetDevice(), &d);
@@ -362,15 +416,37 @@ std::vector<uint8_t> ToRGBA(int width, int height, Gfx::Format format, const voi
     return out;
 }
 
-void Write(WGPUTexture texture, int x, int y, int width, int height, const std::vector<uint8_t>& rgba) {
+void Write(WGPUTexture texture, int x, int y, int width, int height, const std::vector<uint8_t>& rgba, uint32_t level = 0) {
     WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
     dst.texture = texture;
+    dst.mipLevel = level;
     dst.origin = {uint32_t(x), uint32_t(y), 0};
     WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
     layout.bytesPerRow = uint32_t(width) * 4;
     layout.rowsPerImage = uint32_t(height);
     const WGPUExtent3D size{uint32_t(width), uint32_t(height), 1};
     wgpuQueueWriteTexture(GetQueue(), &dst, rgba.data(), rgba.size(), &layout, &size);
+}
+
+// Niveles de mipmap de una imagen RGBA completa (promedio de 2x2), como
+// glGenerateMipmap. WebGPU no los genera solo.
+void WriteMipmaps(WGPUTexture texture, int width, int height, std::vector<uint8_t> rgba) {
+    const uint32_t levels = MipLevels(width, height);
+    for (uint32_t level = 1; level < levels; ++level) {
+        const int w = std::max(1, width / 2), h = std::max(1, height / 2);
+        std::vector<uint8_t> next(size_t(w) * h * 4);
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
+                for (int c = 0; c < 4; ++c) {
+                    const int x0 = std::min(x * 2, width - 1), x1 = std::min(x * 2 + 1, width - 1);
+                    const int y0 = std::min(y * 2, height - 1), y1 = std::min(y * 2 + 1, height - 1);
+                    const int sum = rgba[(size_t(y0) * width + x0) * 4 + c] + rgba[(size_t(y0) * width + x1) * 4 + c] +
+                                    rgba[(size_t(y1) * width + x0) * 4 + c] + rgba[(size_t(y1) * width + x1) * 4 + c];
+                    next[(size_t(y) * w + x) * 4 + c] = uint8_t((sum + 2) / 4);
+                }
+        Write(texture, 0, 0, w, h, next, level);
+        rgba.swap(next); width = w; height = h;
+    }
 }
 
 // La textura ligada (RenderState) para escribirla. Si ya la usa el cuadro en
@@ -486,6 +562,9 @@ uint32_t UniformOffset() {
     u.flags[3] = !s.caps[RenderState::CapIndex(Cap::Fog)] ? 0 : s.fogMode == Gfx::FogMode::Linear ? 1 : s.fogMode == Gfx::FogMode::Exp ? 2 : 3;
     u.params[0] = s.alphaReference; u.params[1] = s.fogStart; u.params[2] = s.fogEnd; u.params[3] = s.fogDensity;
     std::memcpy(u.fogColor, s.fogColor, sizeof(u.fogColor));
+    // Bicúbico sólo en lo 3D (depth test); bits 1 y 2: repetir en S y en T.
+    const bool bicubic = Gfx::TextureBicubic() && s.caps[RenderState::CapIndex(Cap::DepthTest)];
+    u.extra[0] = bicubic ? 1 | (s.textureRepeat[0] ? 2 : 0) | (s.textureRepeat[1] ? 4 : 0) : 0;
     const uint32_t offset = uint32_t(g.uniforms.size());
     g.uniforms.resize(g.uniforms.size() + UniformStride);
     std::memcpy(&g.uniforms[offset], &u, sizeof(u));
@@ -967,12 +1046,16 @@ void TexImage2D(int, int width, int height, Format format, const void* pixels) {
         slot->view = wgpuTextureCreateView(slot->texture, nullptr);
         slot->width = width; slot->height = height;
     }
-    ::WebGPU::Write(slot->texture, 0, 0, width, height, ::WebGPU::ToRGBA(width, height, format, pixels));
+    auto rgba = ::WebGPU::ToRGBA(width, height, format, pixels);
+    ::WebGPU::Write(slot->texture, 0, 0, width, height, rgba);
+    if (Gfx::TextureMipmaps()) ::WebGPU::WriteMipmaps(slot->texture, width, height, std::move(rgba));
 }
 void TexSubImage2D(int x, int y, int width, int height, Format format, const void* pixels) {
     if (!g.ready || width <= 0 || height <= 0) return;
     ::WebGPU::TextureSlot* slot = ::WebGPU::Writable(true);
     if (!slot || !slot->texture || x < 0 || y < 0 || x + width > slot->width || y + height > slot->height) return;
+    // Sólo el nivel 0: las texturas que se actualizan por partes (texto,
+    // marcas) usan filtro nítido, que no muestrea los mipmaps.
     ::WebGPU::Write(slot->texture, x, y, width, height, ::WebGPU::ToRGBA(width, height, format, pixels));
 }
 void TexParameter(TexParam parameter, TexValue value) {
