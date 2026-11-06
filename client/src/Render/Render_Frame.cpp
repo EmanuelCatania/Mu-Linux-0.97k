@@ -655,8 +655,8 @@ void Render_Scene3D(void)
     }
     // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
-    // DESVIACION: nitidez opcional sobre la imagen 3D, antes del HUD.
-    Gfx::Sharpen(gUserSettings.SharpnessAmount());
+    // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D, antes del HUD.
+    Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     { RenderProfile::Scope measured(RenderProfile::Pass::UI);

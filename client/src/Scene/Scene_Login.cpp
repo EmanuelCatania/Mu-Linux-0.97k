@@ -57,6 +57,7 @@
 
 #include "stdafx.h"
 #include "Render/Gfx.h"
+#include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_Login.h"
@@ -94,6 +95,8 @@ uint Scene_Login(void)
     Render_DrawSpritePool();    // RenderSprites
     RenderParticles();    // RenderParticles
     Gfx::PopMatrix();     // balancea BeginSprite
+    // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D.
+    Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
     GL_Begin2D();    // BeginBitmap — setup 2D ortho
 
     // ── Font / color setup ────────────────────────────────────────────────────

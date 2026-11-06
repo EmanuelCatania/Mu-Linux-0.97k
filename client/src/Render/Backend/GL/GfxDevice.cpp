@@ -128,19 +128,13 @@ void Clear(unsigned clearMask) {
 }
 void Flush() { glFlush(); }
 void ClearErrors() { while (glGetError() != GL_NO_ERROR) {} }
-// Nitidez adaptativa (CAS): copia el viewport a una textura y lo redibuja con
-// el filtro. Guarda y restaura el estado de GL que toca.
-void Sharpen(float amount) {
-    static GLuint program = 0, vao = 0, texture = 0;
-    static GLint uAmount = -1, uOrigin = -1, uSource = -1;
-    static int textureW = 0, textureH = 0;
-    static bool failed = false;
-    if (failed) return;
-    if (!program) {
-        static const char* const vs = R"GLSL(#version 330 core
+// Posproceso (FXAA y nitidez): copia el viewport a una textura y lo redibuja
+// con el filtro. Guarda y restaura el estado de GL que toca.
+namespace Post {
+const char* const Vertex = R"GLSL(#version 330 core
 void main(){ vec2 p=vec2(gl_VertexID==1?3.0:-1.0,gl_VertexID==2?3.0:-1.0); gl_Position=vec4(p,0.0,1.0); }
 )GLSL";
-        static const char* const fs = R"GLSL(#version 330 core
+const char* const Sharpen = R"GLSL(#version 330 core
 uniform sampler2D uSource; uniform float uAmount; uniform ivec2 uOrigin;
 out vec4 color;
 vec3 at(ivec2 p){ return texelFetch(uSource,clamp(p,ivec2(0),textureSize(uSource,0)-1),0).rgb; }
@@ -159,57 +153,100 @@ void main(){
     color=vec4(clamp(e+uAmount*amp*l,0.0,1.0),1.0);
 }
 )GLSL";
-        auto compile = [](GLenum type, const char* source) {
-            const GLuint shader = glCreateShader(type);
-            glShaderSource(shader, 1, &source, nullptr); glCompileShader(shader);
-            GLint ok = 0; glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
-            if (!ok) { glDeleteShader(shader); return 0u; }
-            return shader;
-        };
-        const GLuint v = compile(GL_VERTEX_SHADER, vs), f = compile(GL_FRAGMENT_SHADER, fs);
-        if (v && f) {
-            program = glCreateProgram(); glAttachShader(program, v); glAttachShader(program, f); glLinkProgram(program);
-            GLint ok = 0; glGetProgramiv(program, GL_LINK_STATUS, &ok);
-            if (!ok) { glDeleteProgram(program); program = 0; }
-        }
-        if (v) glDeleteShader(v);
-        if (f) glDeleteShader(f);
-        if (!program) { failed = true; return; }
-        uAmount = glGetUniformLocation(program, "uAmount");
-        uOrigin = glGetUniformLocation(program, "uOrigin");
-        uSource = glGetUniformLocation(program, "uSource");
-        glGenVertexArrays(1, &vao);
-        glGenTextures(1, &texture);
+const char* const Fxaa = R"GLSL(#version 330 core
+uniform sampler2D uSource; uniform ivec2 uOrigin;
+out vec4 color;
+float lum(vec3 c){ return dot(c,vec3(0.299,0.587,0.114)); }
+vec3 at(vec2 uv){ return textureLod(uSource,uv,0.0).rgb; }
+void main(){
+    vec2 texel=1.0/vec2(textureSize(uSource,0));
+    vec2 uv=(gl_FragCoord.xy-vec2(uOrigin))*texel;
+    vec3 rgbM=at(uv);
+    float nw=lum(at(uv+vec2(-1.0,-1.0)*texel)),ne=lum(at(uv+vec2(1.0,-1.0)*texel));
+    float sw=lum(at(uv+vec2(-1.0,1.0)*texel)),se=lum(at(uv+vec2(1.0,1.0)*texel)),m=lum(rgbM);
+    float lmin=min(m,min(min(nw,ne),min(sw,se))),lmax=max(m,max(max(nw,ne),max(sw,se)));
+    // Sólo bordes con contraste real: las texturas quedan intactas.
+    if(lmax-lmin<max(0.0625,lmax*0.125)){ color=vec4(rgbM,1.0); return; }
+    vec2 dir=vec2(-((nw+ne)-(sw+se)),(nw+sw)-(ne+se));
+    float reduce=max((nw+ne+sw+se)*0.03125,1.0/128.0);
+    dir=clamp(dir/(min(abs(dir.x),abs(dir.y))+reduce),vec2(-8.0),vec2(8.0))*texel;
+    vec3 a=0.5*(at(uv+dir*(1.0/3.0-0.5))+at(uv+dir*(2.0/3.0-0.5)));
+    vec3 b=a*0.5+0.25*(at(uv-dir*0.5)+at(uv+dir*0.5));
+    float lb=lum(b);
+    color=vec4((lb<lmin||lb>lmax)?a:b,1.0);
+}
+)GLSL";
+struct Program { GLuint name=0; GLint amount=-1,origin=-1,source=-1; bool failed=false; };
+GLuint Compile(GLenum type, const char* source) {
+    const GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr); glCompileShader(shader);
+    GLint ok = 0; glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    if (!ok) { glDeleteShader(shader); return 0u; }
+    return shader;
+}
+bool Ensure(Program& p, const char* fragment) {
+    if (p.name) return true;
+    if (p.failed) return false;
+    const GLuint v = Compile(GL_VERTEX_SHADER, Vertex), f = Compile(GL_FRAGMENT_SHADER, fragment);
+    if (v && f) {
+        p.name = glCreateProgram(); glAttachShader(p.name, v); glAttachShader(p.name, f); glLinkProgram(p.name);
+        GLint ok = 0; glGetProgramiv(p.name, GL_LINK_STATUS, &ok);
+        if (!ok) { glDeleteProgram(p.name); p.name = 0; }
     }
+    if (v) glDeleteShader(v);
+    if (f) glDeleteShader(f);
+    if (!p.name) { p.failed = true; return false; }
+    p.amount = glGetUniformLocation(p.name, "uAmount");
+    p.origin = glGetUniformLocation(p.name, "uOrigin");
+    p.source = glGetUniformLocation(p.name, "uSource");
+    return true;
+}
+Program sharpen, fxaa;
+GLuint vao = 0, texture = 0;
+int textureW = 0, textureH = 0;
+// Copia el viewport y lo redibuja con el programa (estado ya preparado).
+void Run(const Program& p, float amount, int x, int y, int w, int h) {
+    if (textureW != w || textureH != h) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        textureW = w; textureH = h;
+    }
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x, y, w, h);
+    glUseProgram(p.name);
+    glUniform1i(p.source, 0); glUniform2i(p.origin, x, y);
+    if (p.amount >= 0) glUniform1f(p.amount, amount);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+}
+void PostProcess(bool antialias, float sharpen) {
+    const bool doFxaa = antialias && Post::Ensure(Post::fxaa, Post::Fxaa);
+    const bool doSharpen = sharpen > 0.0f && Post::Ensure(Post::sharpen, Post::Sharpen);
+    if (!doFxaa && !doSharpen) return;
     const int* viewport = RenderState::Get().viewport;
     const int x = viewport[0], y = viewport[1], w = viewport[2], h = viewport[3];
     if (w <= 0 || h <= 0) return;
+    if (!Post::vao) glGenVertexArrays(1, &Post::vao);
+    if (!Post::texture) glGenTextures(1, &Post::texture);
 
-    GLint previousProgram = 0, previousVao = 0, previousActive = 0, previousTexture = 0;
+    GLint previousProgram = 0, previousVao = 0, previousActive = 0, previousTexture = 0, previousSampler = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVao);
     glGetIntegerv(GL_ACTIVE_TEXTURE, &previousActive);
     glActiveTexture(GL_TEXTURE0);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &previousTexture);
     // Un sampler trilineal en la unidad 0 dejaría incompleta la copia (sin mipmaps).
-    GLint previousSampler = 0;
     glGetIntegerv(GL_SAMPLER_BINDING, &previousSampler);
     glBindSampler(0, 0);
     const GLboolean blend = glIsEnabled(GL_BLEND), depth = glIsEnabled(GL_DEPTH_TEST), cull = glIsEnabled(GL_CULL_FACE), scissor = glIsEnabled(GL_SCISSOR_TEST);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-    if (textureW != w || textureH != h) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        textureW = w; textureH = h;
-    }
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, x, y, w, h);
     glDisable(GL_BLEND); glDisable(GL_DEPTH_TEST); glDisable(GL_CULL_FACE); glDisable(GL_SCISSOR_TEST);
-    glUseProgram(program);
-    glUniform1i(uSource, 0); glUniform1f(uAmount, amount); glUniform2i(uOrigin, x, y);
-    glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindTexture(GL_TEXTURE_2D, Post::texture);
+    glBindVertexArray(Post::vao);
+
+    if (doFxaa) Post::Run(Post::fxaa, 0.0f, x, y, w, h);
+    if (doSharpen) Post::Run(Post::sharpen, sharpen, x, y, w, h);
 
     glBindVertexArray(GLuint(previousVao));
     glUseProgram(GLuint(previousProgram));
