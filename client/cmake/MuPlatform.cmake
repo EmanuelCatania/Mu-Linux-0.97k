@@ -9,6 +9,11 @@ if(MU_PLATFORM_BACKEND STREQUAL "Win32" AND NOT WIN32)
 endif()
 # El backend Win32 (ventana, entrada y texto GDI del 0.97k) queda como base
 # histórica: no tiene presets ni CI, y su texto sólo cubre Windows-1252.
+# Los builds de 32 bits quedan como base histórica: compilan con OpenGL pero no
+# se prueban ni reciben WebGPU. Los publicados son x64.
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(WARNING "Build x86 (32 bits): base histórica sin mantenimiento; los builds publicados son x64")
+endif()
 if(MU_PLATFORM_BACKEND STREQUAL "Win32")
     message(WARNING "Backend Win32: base histórica sin mantenimiento; los builds publicados usan SDL3")
 endif()

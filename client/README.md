@@ -99,8 +99,10 @@ La salida también es `bin/Client/main.exe`, así que pisa la del backend Win32.
 
 #### Con el render WebGPU (presets de Windows)
 
-Los presets `windows-sdl3-*` suman el backend de render WebGPU (Dawn), que se
-baja y compila con [vcpkg](https://github.com/microsoft/vcpkg). Hace falta la
+El preset `windows-sdl3-x64-release` suma el backend de render WebGPU (Dawn), que
+se baja y compila con [vcpkg](https://github.com/microsoft/vcpkg). WebGPU es
+sólo de 64 bits: los builds x86 quedan como base histórica con OpenGL, compilan
+pero no se prueban. Hace falta la
 variable de entorno `VCPKG_ROOT` apuntando a una copia de vcpkg (sirve la que
 trae Visual Studio o un `git clone` propio):
 
@@ -113,7 +115,12 @@ La primera configuración tarda (vcpkg compila Dawn; después queda en su caché
 Todo se enlaza estático, con el runtime de C++ estático (`/MT`): el exe no trae
 DLL propias ni necesita el redistributable de Visual C++. La versión de Dawn la
 fija el baseline de `vcpkg-configuration.json`; para pasar a lo más nuevo:
-`vcpkg x-update-baseline`. Los triplets propios están en `cmake/triplets/`.
+`vcpkg x-update-baseline`. El triplet propio está en `cmake/triplets/`.
+
+En el juego, **Opciones → Pantalla → Render** elige entre OpenGL, WebGPU (Dawn
+decide), DirectX 12, DirectX 11 y Vulkan; se guarda en `Config.ini`
+(`[Window] RenderBackend`) y se aplica al reiniciar. Si el dispositivo WebGPU no
+se puede crear, el cliente sigue con OpenGL.
 
 ### Linux x86 (backend SDL3)
 
