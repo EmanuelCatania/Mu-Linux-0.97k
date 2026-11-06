@@ -116,4 +116,16 @@
 56	"Névoa de profundidade"
 //DrawDistance
 57	"Distância: %s"
-end
+//BuffTimeLeft
+58	"Tempo restante: %s"
+//BuffCaster
+59	"Lançado por: %s"
+//BuffDamage
+60	"Dano +%d"
+//BuffDefense
+61	"Defesa +%d"
+//BuffDamageReduction
+62	"Dano recebido -%d%%"
+//BuffMaxLife
+63	"Vida máxima +%d%%"
+end

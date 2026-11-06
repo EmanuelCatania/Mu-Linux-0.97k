@@ -195,6 +195,20 @@ int CSkillManager::GetSkillEffect(int index)
 	}
 }
 
+// Primer skill que produce el efecto (para el ícono de la barra de buffs).
+int CSkillManager::GetEffectSkill(int effect)
+{
+	for (std::map<int, SKILL_INFO>::iterator it = this->m_SkillInfo.begin(); it != this->m_SkillInfo.end(); it++)
+	{
+		if (it->second.Effect == effect)
+		{
+			return it->first;
+		}
+	}
+
+	return 0;
+}
+
 int CSkillManager::GetSkillAngle(int x, int y, int tx, int ty)
 {
 	float dx = (float)(x - tx);
@@ -1155,7 +1169,7 @@ bool CSkillManager::SkillManaShield(int aIndex, int bIndex, CSkill* lpSkill)
 
 	int count = gServerInfo.m_ManaShieldTime;
 
-	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, 0, 0);
+	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, 0, 0, aIndex);
 
 	this->GCSkillAttackSend(lpObj, lpSkill->m_index, bIndex, 1);
 
@@ -1300,7 +1314,7 @@ bool CSkillManager::SkillGreaterDefense(int aIndex, int bIndex, CSkill* lpSkill)
 
 	int count = gServerInfo.m_GreaterDefenseTime;
 
-	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, (value * 2), 0, 0, 0);
+	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, (value * 2), 0, 0, 0, aIndex);
 
 	this->GCSkillAttackSend(lpObj, lpSkill->m_index, bIndex, 1);
 
@@ -1329,7 +1343,7 @@ bool CSkillManager::SkillGreaterDamage(int aIndex, int bIndex, CSkill* lpSkill)
 
 	int count = gServerInfo.m_GreaterDamageTime;
 
-	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, value, 0, 0, 0);
+	gEffectManager.AddEffect(lpTarget, 0, this->GetSkillEffect(lpSkill->m_index), count, value, 0, 0, 0, aIndex);
 
 	this->GCSkillAttackSend(lpObj, lpSkill->m_index, bIndex, 1);
 
@@ -1622,7 +1636,7 @@ bool CSkillManager::SkillGreaterLife(int aIndex, int bIndex, CSkill* lpSkill)
 	{
 		value1 = (value1 * ((lpObj->Type == OBJECT_USER) ? gServerInfo.m_GreaterLifeRate[lpObj->Class] : 100)) / 100;
 
-		gEffectManager.AddEffect(lpObj, 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, value3, 0);
+		gEffectManager.AddEffect(lpObj, 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, value3, 0, aIndex);
 
 		this->GCSkillAttackSend(lpObj, lpSkill->m_index, aIndex, 1);
 	}
@@ -1646,7 +1660,7 @@ bool CSkillManager::SkillGreaterLife(int aIndex, int bIndex, CSkill* lpSkill)
 
 			value1 = (value1 * ((gObj[index].Type == OBJECT_USER) ? gServerInfo.m_GreaterLifeRate[gObj[index].Class] : 100)) / 100;
 
-			gEffectManager.AddEffect(&gObj[index], 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, value3, 0);
+			gEffectManager.AddEffect(&gObj[index], 0, this->GetSkillEffect(lpSkill->m_index), count, value1, value2, value3, 0, aIndex);
 
 			this->GCSkillAttackSend(lpObj, lpSkill->m_index, index, 1);
 		}

@@ -116,4 +116,16 @@
 56	"Depth fog"
 //DrawDistance
 57	"Draw distance: %s"
-end
+//BuffTimeLeft
+58	"Time left: %s"
+//BuffCaster
+59	"Cast by: %s"
+//BuffDamage
+60	"Damage +%d"
+//BuffDefense
+61	"Defense +%d"
+//BuffDamageReduction
+62	"Damage taken -%d%%"
+//BuffMaxLife
+63	"Max HP +%d%%"
+end

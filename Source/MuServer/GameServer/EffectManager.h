@@ -51,6 +51,21 @@ struct PMSG_EFFECT_STATE_SEND
 	BYTE index[2];
 };
 
+// Detalle de un efecto del propio personaje, para la barra de buffs del
+// cliente: tiempo que le queda, valores, quién lo lanzó y el skill del ícono.
+struct PMSG_EFFECT_INFO_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:F1
+	BYTE state; // 1 = activo, 0 = terminó
+	BYTE effect;
+	WORD skill; // skill cuyo ícono lo representa (0 = ninguno)
+	DWORD time; // segundos que le quedan (0 = sin límite)
+	WORD value[4];
+	char caster[10];
+	char name[32];
+};
+static_assert(sizeof(PMSG_EFFECT_INFO_SEND) == 64, "F3:F1");
+
 struct PMSG_PERIODIC_EFFECT_SEND
 {
 	PBMSG_HEAD header; // C1:2D
@@ -105,7 +120,7 @@ public:
 
 	void MainProc();
 
-	bool AddEffect(LPOBJ lpObj, bool type, int index, int count, WORD value1, WORD value2, WORD value3, WORD value4);
+	bool AddEffect(LPOBJ lpObj, bool type, int index, int count, WORD value1, WORD value2, WORD value3, WORD value4, int caster = -1);
 
 	bool DelEffect(LPOBJ lpObj, int index);
 
@@ -140,6 +155,8 @@ public:
 	void PeriodicEffect(LPOBJ lpObj, CEffect* lpEffect);
 
 	void GCEffectStateSend(LPOBJ lpObj, BYTE state, BYTE effect);
+
+	void GCEffectInfoSend(LPOBJ lpObj, BYTE state, BYTE effect);
 
 private:
 
