@@ -169,8 +169,11 @@ struct TextureSlot {
     WGPUTextureView view = nullptr;
     int width = 0, height = 0;
     Sampling sampling;
-    WGPUBindGroup group = nullptr;   // vista + sampler actuales
-    uint32_t groupKey = 0;
+    // Bind groups (vista + sampler) por combinación de filtro y wrap: el
+    // cliente vuelve a fijar el filtro al ligar la textura, y alternar entre
+    // dos no debe crear un bind group por dibujo.
+    struct Group { uint32_t key; WGPUBindGroup group; };
+    std::vector<Group> groups;
     uint64_t usedFrame = 0;          // último cuadro grabado que la usa
 };
 
@@ -320,16 +323,18 @@ WGPUSampler Sampler(const Sampling& s) {
 }
 
 void Retire(TextureSlot& slot) {
-    if (slot.group) g.retiredGroups.push_back(slot.group);
+    for (auto& entry : slot.groups) g.retiredGroups.push_back(entry.group);
+    slot.groups.clear();
     if (slot.view) g.retiredViews.push_back(slot.view);
     if (slot.texture) g.retiredTextures.push_back(slot.texture);
-    slot.group = nullptr; slot.view = nullptr; slot.texture = nullptr;
+    slot.view = nullptr; slot.texture = nullptr;
 }
 void Destroy(TextureSlot& slot) {
-    if (slot.group) wgpuBindGroupRelease(slot.group);
+    for (auto& entry : slot.groups) wgpuBindGroupRelease(entry.group);
+    slot.groups.clear();
     if (slot.view) wgpuTextureViewRelease(slot.view);
     if (slot.texture) wgpuTextureRelease(slot.texture);
-    slot.group = nullptr; slot.view = nullptr; slot.texture = nullptr;
+    slot.view = nullptr; slot.texture = nullptr;
 }
 
 WGPUTexture NewTexture(int width, int height) {
@@ -396,11 +401,7 @@ TextureSlot* Writable(bool keep) {
 
 WGPUBindGroup TextureGroup(TextureSlot& slot) {
     const uint32_t key = slot.sampling.Key();
-    if (slot.group && slot.groupKey == key) return slot.group;
-    if (slot.group) {
-        if (slot.usedFrame == g.frame) g.retiredGroups.push_back(slot.group);
-        else wgpuBindGroupRelease(slot.group);
-    }
+    for (const auto& entry : slot.groups) if (entry.key == key) return entry.group;
     WGPUBindGroupEntry entries[2] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
     entries[0].binding = 0; entries[0].textureView = slot.view;
     entries[1].binding = 1; entries[1].sampler = Sampler(slot.sampling);
@@ -408,9 +409,9 @@ WGPUBindGroup TextureGroup(TextureSlot& slot) {
     d.layout = g.textureLayout;
     d.entryCount = 2;
     d.entries = entries;
-    slot.group = wgpuDeviceCreateBindGroup(GetDevice(), &d);
-    slot.groupKey = key;
-    return slot.group;
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(GetDevice(), &d);
+    slot.groups.push_back({key, group});
+    return group;
 }
 
 WGPURenderPipeline Pipeline(const PipelineKey& key) {
