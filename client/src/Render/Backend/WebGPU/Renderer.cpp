@@ -10,7 +10,9 @@
 #include "Render/Backend/GfxDevice.h"
 #include "Render/Backend/WebGPU/Device.h"
 #include "Render/Backend/WebGPU/Renderer.h"
+#include "Render/MeshTopology.h"
 #include "Render/RenderState.h"
+#include "Render/Skinning.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
@@ -54,6 +56,48 @@ struct VertexOut {
     out.position = clip;
     out.color = clamp(color, vec4f(0.0), vec4f(1.0));
     out.uv = u.textureMatrix * uv;
+    out.fogDistance = abs((u.modelView * position).z);
+    return out;
+}
+// Mallas residentes: posición y normal en el espacio del hueso; la paleta
+// tiene tres filas por hueso (rotación en xyz, traslación en w).
+struct Skin {
+    paletteBase: i32, flags: u32, pad0: i32, pad1: i32,   // flags: luz, sombra, textura
+    scales: vec4f, origin: vec4f, direction: vec4f, coefficients: vec4f,
+    bodyLight: vec4f, uvOffset: vec4f, shadowOrigin: vec4f, color: vec4f, uv: vec4f,
+};
+@group(0) @binding(1) var<uniform> skin: Skin;
+@group(0) @binding(2) var<storage, read> palette: array<vec4f>;
+fn rotateBone(p: vec3f, b: i32) -> vec3f {
+    let r = skin.paletteBase + b * 3;
+    return vec3f(dot(palette[r].xyz, p), dot(palette[r + 1].xyz, p), dot(palette[r + 2].xyz, p));
+}
+@vertex fn vs_skin(@location(0) p0: vec3f, @location(1) bone: f32, @location(2) normal: vec4f, @location(3) uv2: vec2f) -> VertexOut {
+    var out: VertexOut;
+    let b = i32(bone);
+    let r = skin.paletteBase + b * 3;
+    var p = rotateBone(p0, b) * skin.scales.x;
+    p = p + vec3f(palette[r].w, palette[r + 1].w, palette[r + 2].w);
+    p = p * skin.scales.y + skin.origin.xyz;
+    if ((skin.flags & 2u) != 0u) {
+        // Sombra proyectada de BMD__RenderBodyShadow.
+        let l = p - skin.shadowOrigin.xyz;
+        p = vec3f(l.x + (l.x + 2000.0) * l.z / (l.z - 4000.0) + skin.shadowOrigin.x, l.y + skin.shadowOrigin.y, skin.shadowOrigin.z + 5.0);
+    }
+    let position = vec4f(p, 1.0);
+    var clip = u.mvp * position;
+    clip.z = (clip.z + clip.w) * 0.5;
+    out.position = clip;
+    var color = skin.color;
+    if ((skin.flags & 1u) != 0u) {
+        let n = rotateBone(normal.xyz, i32(normal.w));
+        let light = max((skin.direction.y * n.y + skin.direction.x * n.x + skin.direction.z * n.z) * skin.coefficients.x + skin.coefficients.y, skin.coefficients.z);
+        color = vec4f(light * skin.bodyLight.xyz, color.a);
+    }
+    var uv = skin.uv;
+    if ((skin.flags & 4u) != 0u) { uv = vec4f(uv2, 0.0, 1.0); }
+    out.color = clamp(color, vec4f(0.0), vec4f(1.0));
+    out.uv = u.textureMatrix * (uv + vec4f(skin.uvOffset.xy, 0.0, 0.0));
     out.fogDistance = abs((u.modelView * position).z);
     return out;
 }
@@ -104,7 +148,12 @@ struct Uniforms {
     float params[4];
     float fogColor[4];
 };
+struct Skin {
+    int32_t paletteBase; uint32_t flags; int32_t pad[2];
+    float scales[4], origin[4], direction[4], coefficients[4], bodyLight[4], uvOffset[4], shadowOrigin[4], color[4], uv[4];
+};
 constexpr uint64_t UniformStride = 256;
+static_assert(sizeof(Skin) <= UniformStride, "Skin no entra en su tramo");
 static_assert(sizeof(Uniforms) <= UniformStride, "Uniforms no entra en su tramo");
 
 // ── Texturas ────────────────────────────────────────────────────────────────
@@ -126,6 +175,8 @@ struct TextureSlot {
 };
 
 // ── Grabación del cuadro ────────────────────────────────────────────────────
+// Clase de vértice del pipeline, en los bits altos de PipelineKey::topology.
+enum Kind : uint8_t { Immediate = 0, Resident = 1 };
 struct PipelineKey {
     uint8_t topology = 0, blend = 0, src = 0, dst = 0, depthTest = 0, depthFunc = 0, depthWrite = 0, cull = 0;
     uint64_t Value() const {
@@ -138,10 +189,18 @@ static_assert(sizeof(PipelineKey) == 8, "PipelineKey ocupa 8 bytes");
 struct Draw {
     WGPURenderPipeline pipeline;
     WGPUBindGroup textureGroup;
-    uint32_t uniformOffset;
+    uint32_t uniformOffset, skinOffset;
     uint32_t firstVertex, vertexCount;
     bool quads;
     int viewport[4];
+    // Malla residente: sus propios buffers (nulos en el dibujo inmediato).
+    WGPUBuffer vertexBuffer, indexBuffer;
+    uint32_t indexCount;
+};
+// Buffers de una malla BMD residente; se rehacen al cambiar su topología.
+struct GpuMesh {
+    WGPUBuffer indices = nullptr, vertices = nullptr;
+    uint64_t revision = 0, residentRevision = 0, usedFrame = 0;
 };
 struct Pass {
     bool clearColor = false, clearDepth = false;
@@ -157,6 +216,10 @@ struct State {
     WGPUBuffer vertexBuffer = nullptr, uniformBuffer = nullptr, indexBuffer = nullptr;
     uint64_t vertexCapacity = 0, uniformCapacity = 0, indexQuads = 0;
     WGPUBindGroup uniformGroup = nullptr;
+    WGPUBuffer skinBuffer = nullptr, paletteBuffer = nullptr;
+    uint64_t skinCapacity = 0, paletteCapacity = 0;
+    std::unordered_map<const void*, GpuMesh> meshes;
+    bool residentEnabled = true;
     WGPUTexture depth = nullptr;
     WGPUTextureView depthView = nullptr;
     unsigned depthWidth = 0, depthHeight = 0;
@@ -169,6 +232,10 @@ struct State {
     std::vector<Vertex> vertices;
     std::vector<uint8_t> uniforms;
     std::vector<Pass> passes;
+    std::vector<uint8_t> skins;
+    std::vector<float> palette;
+    uint64_t paletteRevision = ~0ull;
+    int32_t paletteBase = 0;
     uint64_t matrixRevision = ~0ull, materialRevision = ~0ull;
     uint32_t lastUniform = 0;
     uint64_t frame = 1;
@@ -176,6 +243,7 @@ struct State {
     std::vector<WGPUTexture> retiredTextures;
     std::vector<WGPUTextureView> retiredViews;
     std::vector<WGPUBindGroup> retiredGroups;
+    std::vector<WGPUBuffer> retiredBuffers;
     float clearColor[4]{};
     int unpackAlignment = 4;
     unsigned errors = 0;
@@ -348,16 +416,24 @@ WGPUBindGroup TextureGroup(TextureSlot& slot) {
 WGPURenderPipeline Pipeline(const PipelineKey& key) {
     auto it = g.pipelines.find(key.Value());
     if (it != g.pipelines.end()) return it->second;
+    const bool resident = (key.topology >> 4) == Resident;
     static const WGPUVertexAttribute attributes[3] = {
         {nullptr, WGPUVertexFormat_Float32x3, offsetof(Vertex, position), 0},
         {nullptr, WGPUVertexFormat_Float32x4, offsetof(Vertex, color), 1},
         {nullptr, WGPUVertexFormat_Float32x4, offsetof(Vertex, uv), 2},
     };
+    using Static = Skinning::StaticVertex;
+    static const WGPUVertexAttribute residentAttributes[4] = {
+        {nullptr, WGPUVertexFormat_Float32x3, offsetof(Static, position), 0},
+        {nullptr, WGPUVertexFormat_Float32, offsetof(Static, bone), 1},
+        {nullptr, WGPUVertexFormat_Float32x4, offsetof(Static, normal), 2},
+        {nullptr, WGPUVertexFormat_Float32x2, offsetof(Static, uv), 3},
+    };
     WGPUVertexBufferLayout buffer = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
     buffer.stepMode = WGPUVertexStepMode_Vertex;
-    buffer.arrayStride = sizeof(Vertex);
-    buffer.attributeCount = 3;
-    buffer.attributes = attributes;
+    buffer.arrayStride = resident ? sizeof(Static) : sizeof(Vertex);
+    buffer.attributeCount = resident ? 4 : 3;
+    buffer.attributes = resident ? residentAttributes : attributes;
 
     WGPUBlendState blend{};
     blend.color = {WGPUBlendOperation_Add, Blend(Gfx::Factor(key.src)), Blend(Gfx::Factor(key.dst))};
@@ -381,10 +457,10 @@ WGPURenderPipeline Pipeline(const PipelineKey& key) {
     WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     d.layout = g.pipelineLayout;
     d.vertex.module = g.module;
-    d.vertex.entryPoint = View("vs");
+    d.vertex.entryPoint = View(resident ? "vs_skin" : "vs");
     d.vertex.bufferCount = 1;
     d.vertex.buffers = &buffer;
-    d.primitive.topology = WGPUPrimitiveTopology(key.topology);
+    d.primitive.topology = WGPUPrimitiveTopology(key.topology & 0xF);
     d.primitive.frontFace = WGPUFrontFace_CCW;
     d.primitive.cullMode = key.cull ? WGPUCullMode_Back : WGPUCullMode_None;
     d.depthStencil = &depth;
@@ -416,6 +492,28 @@ uint32_t UniformOffset() {
     return offset;
 }
 
+PipelineKey StateKey(uint8_t topology) {
+    const auto& s = RenderState::Get();
+    PipelineKey key;
+    key.topology = topology;
+    key.blend = s.caps[RenderState::CapIndex(Cap::Blend)];
+    key.src = uint8_t(s.blendSource); key.dst = uint8_t(s.blendDestination);
+    key.depthTest = s.caps[RenderState::CapIndex(Cap::DepthTest)];
+    key.depthFunc = uint8_t(s.depthFunction);
+    key.depthWrite = s.depthWrite;
+    key.cull = s.caps[RenderState::CapIndex(Cap::CullFace)];
+    return key;
+}
+// La textura ligada si el texturizado está activo; la blanca si no.
+TextureSlot& BoundSlot() {
+    const auto& s = RenderState::Get();
+    if (s.caps[RenderState::CapIndex(Cap::Texture2D)]) {
+        auto it = g.textures.find(s.texture);
+        if (it != g.textures.end() && it->second.view) return it->second;
+    }
+    return g.white;
+}
+
 Pass& CurrentPass() {
     if (g.passes.empty()) g.passes.emplace_back();
     return g.passes.back();
@@ -440,7 +538,8 @@ void Reserve(WGPUBuffer& buffer, uint64_t& capacity, uint64_t size, WGPUBufferUs
     if (buffer) wgpuBufferRelease(buffer);
     capacity = std::max<uint64_t>(size, std::max<uint64_t>(capacity * 2, 1u << 20));
     buffer = CreateBuffer(capacity, usage);
-    if (&buffer == &g.uniformBuffer && g.uniformGroup) { wgpuBindGroupRelease(g.uniformGroup); g.uniformGroup = nullptr; }
+    const bool grouped = &buffer == &g.uniformBuffer || &buffer == &g.skinBuffer || &buffer == &g.paletteBuffer;
+    if (grouped && g.uniformGroup) { wgpuBindGroupRelease(g.uniformGroup); g.uniformGroup = nullptr; }
 }
 
 void ReserveQuadIndices(uint64_t quads) {
@@ -461,11 +560,13 @@ void ReleaseRetired() {
     for (auto group : g.retiredGroups) wgpuBindGroupRelease(group);
     for (auto view : g.retiredViews) wgpuTextureViewRelease(view);
     for (auto texture : g.retiredTextures) wgpuTextureRelease(texture);
-    g.retiredGroups.clear(); g.retiredViews.clear(); g.retiredTextures.clear();
+    for (auto buffer : g.retiredBuffers) wgpuBufferRelease(buffer);
+    g.retiredGroups.clear(); g.retiredViews.clear(); g.retiredTextures.clear(); g.retiredBuffers.clear();
 }
 
 void ResetFrame() {
     g.vertices.clear(); g.uniforms.clear(); g.passes.clear();
+    g.skins.clear(); g.palette.clear(); g.paletteRevision = ~0ull;
     g.matrixRevision = g.materialRevision = ~0ull;
     ++g.frame;
 }
@@ -477,14 +578,22 @@ bool CreateObjects() {
     md.nextInChain = &wgsl.chain;
     g.module = wgpuDeviceCreateShaderModule(GetDevice(), &md);
 
-    WGPUBindGroupLayoutEntry uniform = WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
-    uniform.binding = 0;
-    uniform.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-    uniform.buffer.type = WGPUBufferBindingType_Uniform;
-    uniform.buffer.hasDynamicOffset = 1;
-    uniform.buffer.minBindingSize = sizeof(Uniforms);
+    WGPUBindGroupLayoutEntry uniform[3] = {WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT};
+    uniform[0].binding = 0;
+    uniform[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    uniform[0].buffer.type = WGPUBufferBindingType_Uniform;
+    uniform[0].buffer.hasDynamicOffset = 1;
+    uniform[0].buffer.minBindingSize = sizeof(Uniforms);
+    uniform[1].binding = 1;
+    uniform[1].visibility = WGPUShaderStage_Vertex;
+    uniform[1].buffer.type = WGPUBufferBindingType_Uniform;
+    uniform[1].buffer.hasDynamicOffset = 1;
+    uniform[1].buffer.minBindingSize = sizeof(Skin);
+    uniform[2].binding = 2;
+    uniform[2].visibility = WGPUShaderStage_Vertex;
+    uniform[2].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
     WGPUBindGroupLayoutDescriptor ud = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
-    ud.entryCount = 1; ud.entries = &uniform;
+    ud.entryCount = 3; ud.entries = uniform;
     g.uniformLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &ud);
 
     WGPUBindGroupLayoutEntry textureEntries[2] = {WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT};
@@ -519,6 +628,12 @@ void ReleaseObjects() {
     Destroy(g.white);
     for (auto& [key, pipeline] : g.pipelines) wgpuRenderPipelineRelease(pipeline);
     for (auto& [key, sampler] : g.samplers) wgpuSamplerRelease(sampler);
+    for (auto& [key, mesh] : g.meshes) {
+        if (mesh.indices) wgpuBufferRelease(mesh.indices);
+        if (mesh.vertices) wgpuBufferRelease(mesh.vertices);
+    }
+    if (g.skinBuffer) wgpuBufferRelease(g.skinBuffer);
+    if (g.paletteBuffer) wgpuBufferRelease(g.paletteBuffer);
     if (g.uniformGroup) wgpuBindGroupRelease(g.uniformGroup);
     if (g.vertexBuffer) wgpuBufferRelease(g.vertexBuffer);
     if (g.uniformBuffer) wgpuBufferRelease(g.uniformBuffer);
@@ -531,7 +646,86 @@ void ReleaseObjects() {
     if (g.module) wgpuShaderModuleRelease(g.module);
     g = State{};
 }
+WGPUBuffer UploadBuffer(const void* data, uint64_t size, WGPUBufferUsage usage) {
+    WGPUBuffer buffer = CreateBuffer((size + 3) & ~uint64_t(3), usage);
+    wgpuQueueWriteBuffer(GetQueue(), buffer, 0, data, size);
+    return buffer;
+}
+void RetireMesh(GpuMesh& mesh, bool vertices) {
+    WGPUBuffer& buffer = vertices ? mesh.vertices : mesh.indices;
+    if (!buffer) return;
+    if (mesh.usedFrame == g.frame) g.retiredBuffers.push_back(buffer); else wgpuBufferRelease(buffer);
+    buffer = nullptr;
+}
 } // namespace
+
+// Graba una malla residente con la pose capturada. false si la pose no
+// corresponde al dibujo: el caller dibuja por el camino de referencia.
+bool DrawResidentMesh(const void* key, MeshTopology::Mesh& topology, const Skinning::ResidentDraw& d) {
+    if (!g.ready) return false;
+    const Skinning::Pose::Mesh* pose = Skinning::Pose::Find(d.model, d.key, d.world, d.positionCount);
+    if (!pose) return false;
+    const auto& bones = Skinning::Pose::Palette();
+    if (d.maxBone < 0 || std::size_t(d.maxBone) * 12 >= bones.size()) return false;
+    if (d.lit && !Skinning::Pose::LightMatches(*pose, d.colors, d.normalCount, d.bodyLight)) return false;
+    BufferedDraw::Flush();
+
+    GpuMesh& mesh = g.meshes[key];
+    if (!mesh.indices || mesh.revision != topology.revision) {
+        RetireMesh(mesh, false); RetireMesh(mesh, true);
+        mesh.indices = UploadBuffer(topology.indices.data(), topology.indices.size() * sizeof(unsigned), WGPUBufferUsage_Index);
+        mesh.revision = topology.revision; mesh.residentRevision = 0;
+    }
+    if (!mesh.vertices || mesh.residentRevision != topology.residentRevision) {
+        RetireMesh(mesh, true);
+        mesh.vertices = UploadBuffer(topology.resident.data(), topology.resident.size() * sizeof(Skinning::StaticVertex), WGPUBufferUsage_Vertex);
+        mesh.residentRevision = topology.residentRevision;
+    }
+    mesh.usedFrame = g.frame;
+
+    // La paleta de la pose se agrega una vez por cuadro y por pose.
+    if (g.paletteRevision != Skinning::Pose::Revision()) {
+        g.paletteBase = int32_t(g.palette.size() / 4);
+        g.palette.insert(g.palette.end(), bones.begin(), bones.end());
+        g.paletteRevision = Skinning::Pose::Revision();
+    }
+    Skin skin{};
+    skin.paletteBase = g.paletteBase;
+    skin.flags = (d.lit ? 1u : 0u) | (d.shadow ? 2u : 0u) | (d.textured ? 4u : 0u);
+    skin.scales[0] = Skinning::Pose::RotationScale(); skin.scales[1] = Skinning::Pose::BodyScale();
+    std::memcpy(skin.origin, Skinning::Pose::Origin(), 3 * sizeof(float));
+    std::memcpy(skin.direction, Skinning::Pose::Direction(), 3 * sizeof(float));
+    std::memcpy(skin.coefficients, Skinning::Pose::Coefficients(), 3 * sizeof(float));
+    if (d.bodyLight) std::memcpy(skin.bodyLight, d.bodyLight, 3 * sizeof(float));
+    skin.uvOffset[0] = d.uOffset; skin.uvOffset[1] = d.vOffset;
+    if (d.shadow && d.shadowOrigin) std::memcpy(skin.shadowOrigin, d.shadowOrigin, 3 * sizeof(float));
+    if (d.color) std::memcpy(skin.color, d.color, 4 * sizeof(float));
+    if (d.uv) std::memcpy(skin.uv, d.uv, 4 * sizeof(float));
+    const uint32_t skinOffset = uint32_t(g.skins.size());
+    g.skins.resize(g.skins.size() + UniformStride);
+    std::memcpy(&g.skins[skinOffset], &skin, sizeof(skin));
+
+    TextureSlot& slot = BoundSlot();
+    Draw draw{};
+    draw.pipeline = Pipeline(StateKey(uint8_t(WGPUPrimitiveTopology_TriangleList | (Resident << 4))));
+    draw.textureGroup = TextureGroup(slot);
+    slot.usedFrame = g.frame;
+    draw.uniformOffset = UniformOffset();
+    draw.skinOffset = skinOffset;
+    std::memcpy(draw.viewport, RenderState::Get().viewport, sizeof(draw.viewport));
+    draw.vertexBuffer = mesh.vertices;
+    draw.indexBuffer = mesh.indices;
+    draw.indexCount = uint32_t(d.indices);
+    CurrentPass().draws.push_back(draw);
+    return true;
+}
+
+void SetResident(bool enabled) { g.residentEnabled = enabled; }
+bool ResidentEnabled() { return g.residentEnabled; }
+void ReleaseMeshes() {
+    for (auto& [key, mesh] : g.meshes) { RetireMesh(mesh, false); RetireMesh(mesh, true); }
+    g.meshes.clear();
+}
 
 // Envía el cuadro grabado y presenta. Lo llama CWindow::Present.
 void SubmitFrame() {
@@ -544,13 +738,22 @@ void SubmitFrame() {
         wgpuQueueWriteBuffer(GetQueue(), g.vertexBuffer, 0, g.vertices.data(), g.vertices.size() * sizeof(Vertex));
     }
     if (!g.uniforms.empty()) {
+        // El grupo 0 siempre lleva skin y paleta, aunque el cuadro no tenga mallas.
+        if (g.skins.empty()) g.skins.resize(UniformStride);
+        if (g.palette.empty()) g.palette.resize(4);
         Reserve(g.uniformBuffer, g.uniformCapacity, g.uniforms.size(), WGPUBufferUsage_Uniform);
+        Reserve(g.skinBuffer, g.skinCapacity, g.skins.size(), WGPUBufferUsage_Uniform);
+        Reserve(g.paletteBuffer, g.paletteCapacity, g.palette.size() * sizeof(float), WGPUBufferUsage_Storage);
         wgpuQueueWriteBuffer(GetQueue(), g.uniformBuffer, 0, g.uniforms.data(), g.uniforms.size());
+        wgpuQueueWriteBuffer(GetQueue(), g.skinBuffer, 0, g.skins.data(), g.skins.size());
+        wgpuQueueWriteBuffer(GetQueue(), g.paletteBuffer, 0, g.palette.data(), g.palette.size() * sizeof(float));
         if (!g.uniformGroup) {
-            WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
-            entry.binding = 0; entry.buffer = g.uniformBuffer; entry.size = sizeof(Uniforms);
+            WGPUBindGroupEntry entries[3] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
+            entries[0].binding = 0; entries[0].buffer = g.uniformBuffer; entries[0].size = sizeof(Uniforms);
+            entries[1].binding = 1; entries[1].buffer = g.skinBuffer; entries[1].size = sizeof(Skin);
+            entries[2].binding = 2; entries[2].buffer = g.paletteBuffer; entries[2].size = g.paletteCapacity;
             WGPUBindGroupDescriptor d = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            d.layout = g.uniformLayout; d.entryCount = 1; d.entries = &entry;
+            d.layout = g.uniformLayout; d.entryCount = 3; d.entries = entries;
             g.uniformGroup = wgpuDeviceCreateBindGroup(GetDevice(), &d);
         }
     }
@@ -576,12 +779,11 @@ void SubmitFrame() {
         rp.colorAttachments = &color;
         rp.depthStencilAttachment = &depth;
         WGPURenderPassEncoder encoderPass = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
-        if (!g.vertices.empty()) wgpuRenderPassEncoderSetVertexBuffer(encoderPass, 0, g.vertexBuffer, 0, WGPU_WHOLE_SIZE);
-        if (quads) wgpuRenderPassEncoderSetIndexBuffer(encoderPass, g.indexBuffer, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
         // Dawn valida cada comando: sólo se emite el estado que cambia.
         WGPURenderPipeline lastPipeline = nullptr;
         WGPUBindGroup lastTexture = nullptr;
-        uint32_t lastUniform = ~0u;
+        WGPUBuffer lastVertices = nullptr, lastIndices = nullptr;
+        uint32_t lastUniform = ~0u, lastSkin = ~0u;
         int lastViewport[4]{-1, -1, -1, -1};
         for (const auto& draw : pass.draws) {
             if (std::memcmp(lastViewport, draw.viewport, sizeof(lastViewport))) {
@@ -596,15 +798,27 @@ void SubmitFrame() {
                 std::memcpy(lastViewport, draw.viewport, sizeof(lastViewport));
             }
             if (draw.pipeline != lastPipeline) { wgpuRenderPassEncoderSetPipeline(encoderPass, draw.pipeline); lastPipeline = draw.pipeline; }
-            if (draw.uniformOffset != lastUniform) {
-                wgpuRenderPassEncoderSetBindGroup(encoderPass, 0, g.uniformGroup, 1, &draw.uniformOffset);
-                lastUniform = draw.uniformOffset;
+            if (draw.uniformOffset != lastUniform || draw.skinOffset != lastSkin) {
+                const uint32_t offsets[2] = {draw.uniformOffset, draw.skinOffset};
+                wgpuRenderPassEncoderSetBindGroup(encoderPass, 0, g.uniformGroup, 2, offsets);
+                lastUniform = draw.uniformOffset; lastSkin = draw.skinOffset;
+            }
+            const WGPUBuffer vertices = draw.vertexBuffer ? draw.vertexBuffer : g.vertexBuffer;
+            if (vertices != lastVertices) {
+                wgpuRenderPassEncoderSetVertexBuffer(encoderPass, 0, vertices, 0, WGPU_WHOLE_SIZE);
+                lastVertices = vertices;
+            }
+            const WGPUBuffer indices = draw.vertexBuffer ? draw.indexBuffer : draw.quads ? g.indexBuffer : nullptr;
+            if (indices && indices != lastIndices) {
+                wgpuRenderPassEncoderSetIndexBuffer(encoderPass, indices, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+                lastIndices = indices;
             }
             if (draw.textureGroup != lastTexture) {
                 wgpuRenderPassEncoderSetBindGroup(encoderPass, 1, draw.textureGroup, 0, nullptr);
                 lastTexture = draw.textureGroup;
             }
-            if (draw.quads) wgpuRenderPassEncoderDrawIndexed(encoderPass, draw.vertexCount / 4 * 6, 1, 0, int32_t(draw.firstVertex), 0);
+            if (draw.vertexBuffer) wgpuRenderPassEncoderDrawIndexed(encoderPass, draw.indexCount, 1, 0, 0, 0);
+            else if (draw.quads) wgpuRenderPassEncoderDrawIndexed(encoderPass, draw.vertexCount / 4 * 6, 1, 0, int32_t(draw.firstVertex), 0);
             else wgpuRenderPassEncoderDraw(encoderPass, draw.vertexCount, 1, draw.firstVertex, 0);
         }
         wgpuRenderPassEncoderEnd(encoderPass);
@@ -726,28 +940,18 @@ void Release() { if (g.ready) ::WebGPU::ReleaseObjects(); }
 void Submit(unsigned mode, const Vertex* vertices, std::size_t count) {
     if (!g.ready || !count) return;
     const auto& s = RenderState::Get();
-    ::WebGPU::PipelineKey key;
     const bool quads = mode == ::WebGPU::Quads;
+    WGPUPrimitiveTopology topology;
     switch (mode) {
-    case ::WebGPU::Points: key.topology = WGPUPrimitiveTopology_PointList; break;
-    case ::WebGPU::Lines: key.topology = WGPUPrimitiveTopology_LineList; break;
+    case ::WebGPU::Points: topology = WGPUPrimitiveTopology_PointList; break;
+    case ::WebGPU::Lines: topology = WGPUPrimitiveTopology_LineList; break;
     case ::WebGPU::LineLoop:
-    case ::WebGPU::LineStrip: key.topology = WGPUPrimitiveTopology_LineStrip; break;
-    case ::WebGPU::TriangleStrip: key.topology = WGPUPrimitiveTopology_TriangleStrip; break;
-    default: key.topology = WGPUPrimitiveTopology_TriangleList; break;
+    case ::WebGPU::LineStrip: topology = WGPUPrimitiveTopology_LineStrip; break;
+    case ::WebGPU::TriangleStrip: topology = WGPUPrimitiveTopology_TriangleStrip; break;
+    default: topology = WGPUPrimitiveTopology_TriangleList; break;
     }
-    key.blend = s.caps[RenderState::CapIndex(Gfx::Cap::Blend)];
-    key.src = uint8_t(s.blendSource); key.dst = uint8_t(s.blendDestination);
-    key.depthTest = s.caps[RenderState::CapIndex(Gfx::Cap::DepthTest)];
-    key.depthFunc = uint8_t(s.depthFunction);
-    key.depthWrite = s.depthWrite;
-    key.cull = s.caps[RenderState::CapIndex(Gfx::Cap::CullFace)];
-
-    ::WebGPU::TextureSlot* slot = &g.white;
-    if (s.caps[RenderState::CapIndex(Gfx::Cap::Texture2D)]) {
-        auto it = g.textures.find(s.texture);
-        if (it != g.textures.end() && it->second.view) slot = &it->second;
-    }
+    const ::WebGPU::PipelineKey key = ::WebGPU::StateKey(uint8_t(topology));
+    ::WebGPU::TextureSlot* slot = &::WebGPU::BoundSlot();
     ::WebGPU::Draw draw{};
     draw.pipeline = ::WebGPU::Pipeline(key);
     draw.textureGroup = ::WebGPU::TextureGroup(*slot);
@@ -765,7 +969,7 @@ void Submit(unsigned mode, const Vertex* vertices, std::size_t count) {
     const bool list = key.topology != WGPUPrimitiveTopology_LineStrip && key.topology != WGPUPrimitiveTopology_TriangleStrip;
     if (list && !draws.empty()) {
         auto& last = draws.back();
-        if (last.pipeline == draw.pipeline && last.textureGroup == draw.textureGroup &&
+        if (!last.vertexBuffer && last.pipeline == draw.pipeline && last.textureGroup == draw.textureGroup &&
             last.uniformOffset == draw.uniformOffset && last.quads == draw.quads &&
             last.firstVertex + last.vertexCount == draw.firstVertex &&
             !std::memcmp(last.viewport, draw.viewport, sizeof(draw.viewport))) {

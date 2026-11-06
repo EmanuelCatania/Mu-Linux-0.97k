@@ -713,6 +713,7 @@ target_link_libraries(mu97k PRIVATE Threads::Threads)
 if(MU_RENDER_WEBGPU)
     target_sources(mu97k PRIVATE
         src/Render/Backend/WebGPU/Device.cpp src/Render/Backend/WebGPU/Renderer.cpp
+        src/Render/Backend/WebGPU/MeshDraw.cpp
         src/Render/Backend/WebGPU/Stubs.cpp src/Render/Backend/WebGPU/Device.h
         src/Render/Backend/WebGPU/Renderer.h)
     target_link_libraries(mu97k PRIVATE dawn::webgpu_dawn)
