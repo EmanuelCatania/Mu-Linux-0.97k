@@ -117,7 +117,7 @@ public:
     // DESVIACION: nitidez de la imagen 3D ([Window] Sharpness): 0 apagada, 1-3.
     int GetSharpness() const { return m_Sharpness; }
     // Peso del realce por nivel: el máximo de AMD CAS equivale a 1.
-    float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 1.0f, 1.5f }; return amount[m_Sharpness]; }
+    float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 0.75f, 1.0f }; return amount[m_Sharpness]; }
     void SetSharpness(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
