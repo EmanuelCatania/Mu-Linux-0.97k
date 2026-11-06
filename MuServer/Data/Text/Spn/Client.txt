@@ -94,4 +94,8 @@
 44	"Esperando los datos del personaje..."
 //EventStartsIn
 46	"Comienza en %s"
+//RenderBackend
+47	"Render: %s"
+//RenderBackendRestart
+48	"Se aplica al reiniciar"
 end

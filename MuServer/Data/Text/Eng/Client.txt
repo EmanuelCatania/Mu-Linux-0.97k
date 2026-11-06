@@ -94,4 +94,8 @@
 44	"Waiting character info..."
 //EventStartsIn
 46	"Starts in %s"
+//RenderBackend
+47	"Render: %s"
+//RenderBackendRestart
+48	"Applies on restart"
 end
