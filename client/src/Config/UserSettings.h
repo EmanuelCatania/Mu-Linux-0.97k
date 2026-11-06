@@ -128,6 +128,11 @@ public:
     // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
     bool GetHDTextures() const { return m_HDTextures; }
     void SetHDTextures(bool enabled);
+    // DESVIACION: sombras proyectadas ([Window] Shadows): 0 apagadas (sombra
+    // plana del original), 1 suaves, 2 fuertes. Se aplica en caliente.
+    int GetShadows() const { return m_Shadows; }
+    float ShadowStrength() const { static const float strength[3] = { 0.0f, 0.35f, 0.55f }; return strength[m_Shadows]; }
+    void SetShadows(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -192,6 +197,7 @@ private:
     int m_Sharpness = 0;
     int m_Antialiasing = 0, m_StartupAntialiasing = 0;
     bool m_HDTextures = false, m_StartupHDTextures = false;
+    int m_Shadows = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

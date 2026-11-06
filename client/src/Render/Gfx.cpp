@@ -181,6 +181,21 @@ bool TextureBicubic() { return bicubic; }
 namespace { int multisample = 0; }
 void SetMultisample(int samples) { multisample = samples; }
 int Multisample() { return multisample; }
+namespace { bool shadowMaps = false; float shadowStrength = 0.5f; bool shadowScene = false; }
+void SetShadowMaps(bool enabled, float strength) { shadowMaps = enabled; shadowStrength = strength; }
+bool ShadowMaps() { return shadowMaps && GfxDevice::SupportsShadowMaps(); }
+void BeginShadowScene(const float focus[3]) {
+    if (!ShadowMaps() || shadowScene) return;
+    BufferedDraw::Flush();
+    shadowScene = true;
+    GfxDevice::ShadowScene(true, focus, shadowStrength);
+}
+void EndShadowScene() {
+    if (!shadowScene) return;
+    BufferedDraw::Flush();
+    shadowScene = false;
+    GfxDevice::ShadowScene(false, nullptr, 0.0f);
+}
 namespace { bool hdTextures = false; }
 void SetHDTextures(bool enabled) { hdTextures = enabled; }
 bool HDTextures() { return hdTextures; }

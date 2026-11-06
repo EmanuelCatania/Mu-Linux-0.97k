@@ -603,6 +603,9 @@ void Render_Scene3D(void)
     int vpHeight = (topView || noInterface || gWindow.IsWide()) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
+    // DESVIACION: sombras proyectadas (opción). Lo que se dibuja hasta
+    // EndShadowScene proyecta y recibe sombra; centradas en el héroe.
+    Gfx::BeginShadowScene(camPos);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
     // RenderTerrain dibuja la malla de tiles del terreno.
@@ -638,6 +641,7 @@ void Render_Scene3D(void)
     Player_Render();                             // Player_Render
     Trail_RenderAll();
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
+    Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {

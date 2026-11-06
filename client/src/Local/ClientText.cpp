@@ -60,7 +60,8 @@ const char* const English[] = {
     "Antialiasing: %s",
     "Advanced",
     "Graphics",
-    "HD textures"
+    "HD textures",
+    "Shadows: %s"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -87,6 +88,7 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::OptionsAdvanced, "Avanzado", "Avançado" },
         { ClientTextId::OptionsGraphics, "Gráficos", "Gráficos" },
         { ClientTextId::HDTextures, "Texturas HD", "Texturas HD" },
+        { ClientTextId::Shadows, "Sombras: %s", "Sombras: %s" },
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },

@@ -137,6 +137,7 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
     Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
     Gfx::SetMultisample(gUserSettings.Multisample());
     Gfx::SetHDTextures(gUserSettings.GetHDTextures());
+    Gfx::SetShadowMaps(gUserSettings.GetShadows() > 0, gUserSettings.ShadowStrength());
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
     RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL

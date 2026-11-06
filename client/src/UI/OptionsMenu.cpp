@@ -606,6 +606,11 @@ void COptionsMenu::RenderGraphics()
     const int antialiasing = gUserSettings.GetAntialiasingLevel();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Antialiasing), antialiasingNames[antialiasing]);
     RenderSelector((float)RowY(row++), text, antialiasing > 0, antialiasing < 3);
+    // DESVIACION: sombras proyectadas (sólo WebGPU por ahora).
+    static const char* const shadowNames[3] = { "Off", "1", "2" };
+    const int shadows = gUserSettings.GetShadows();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Shadows), shadowNames[shadows]);
+    RenderSelector((float)RowY(row++), text, shadows > 0, shadows < 2);
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     if (gUserSettings.RestartPending())
         RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
@@ -684,6 +689,12 @@ bool COptionsMenu::UpdateGraphics()
     const int antialiasingStep = UpdateSelector(RowY(row++), antialiasing > 0, antialiasing < 3);
     if (antialiasingStep != INT_MIN) {
         if (antialiasingStep) gUserSettings.SetAntialiasingLevel(antialiasing + (antialiasingStep > 0 ? 1 : -1));
+        return true;
+    }
+    const int shadows = gUserSettings.GetShadows();
+    const int shadowStep = UpdateSelector(RowY(row++), shadows > 0, shadows < 2);
+    if (shadowStep != INT_MIN) {
+        if (shadowStep) gUserSettings.SetShadows(shadows + (shadowStep > 0 ? 1 : -1));
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {
