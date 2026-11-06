@@ -146,6 +146,8 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "Render/TerrainDraw.h"
 #include "Render/Gfx.h"
 void Terrain_BeginBufferedPass();
+void Terrain_BeginBatch();
+void Terrain_EndBatch();
 #include "Render/BufferedDraw.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Entity/ObjectBounds.h"
@@ -2609,7 +2611,9 @@ void __cdecl RenderTerrain(char EditFlag) {
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
     const bool modern=!EditFlag && TerrainDraw::Requested() && !DAT_0839bc86;
     if(modern)Terrain_BeginBufferedPass();
+    else if(!EditFlag)Terrain_BeginBatch();
     RenderTerrainFrustrum(EditFlag != 0);
+    Terrain_EndBatch();
     if(modern && !TerrainDraw::End())RenderTerrainFrustrum(false);
 
     if (EditFlag) {
@@ -2625,7 +2629,9 @@ void __cdecl RenderTerrain(char EditFlag) {
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             // DESVIACION: el pasto (billboards) recibe sombra pero no la proyecta.
             Gfx::SetShadowCasting(false);
+            Terrain_BeginBatch();
             RenderTerrainFrustrum(false);
+            Terrain_EndBatch();
             Gfx::SetShadowCasting(true);
         }
         Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
