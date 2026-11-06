@@ -642,7 +642,7 @@ void Render_Scene3D(void)
     Trail_RenderAll();
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
     // DESVIACION: niebla por profundidad (opción). Atlans bajo el agua; el resto,
-    // una bruma suave hacia el color de fondo (no si el server ya manda niebla).
+    // una bruma suave hacia el color de fondo (el de la niebla del server, si hay).
     // Se ata al alcance de la cámara: empieza a la mitad y llega casi al máximo
     // en el borde de lo dibujado, que así no se ve.
     {
@@ -656,7 +656,9 @@ void Render_Scene3D(void)
             const float water[3] = {0.02f, 0.16f, 0.24f};
             // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.
             Gfx::Atmosphere(2, water, 1.9f / (end - 300.0f), 300.0f);
-        } else if (!DAT_083a42ea) {
+        } else {
+            // Con niebla del server, cr/cg/cb ya son su color: el fondo toma
+            // ese color y el borde del terreno se pierde.
             const float background[3] = {cr, cg, cb};
             // exp(-x^2): x = 2 (2 %) en el borde.
             Gfx::Atmosphere(1, background, 2.0f / (end - start), start);
