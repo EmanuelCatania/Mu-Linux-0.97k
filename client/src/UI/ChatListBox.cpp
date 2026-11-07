@@ -2096,7 +2096,7 @@ static void GuildLB_teardown(DWORD* self)
 static void* __fastcall GuildLB_dtor(DWORD* self, int /*edx*/, char flag)
 {
     GuildLB_teardown(self);
-    if (flag & 1) free(self);
+    if (flag & 1) ChatWidget_Free(self);
     return self;
 }
 
@@ -2104,7 +2104,7 @@ static void* __fastcall GuildLB_dtor(DWORD* self, int /*edx*/, char flag)
 static void* __fastcall GuildLB_scalarDelete(DWORD* self, int /*edx*/, char flag)
 {
     GuildLB_teardown(self);
-    if (flag & 1) free(self);
+    if (flag & 1) ChatWidget_Free(self);
     return self;
 }
 
