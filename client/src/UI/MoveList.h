@@ -7,6 +7,7 @@ public:
     bool Receive(const BYTE* packet, int size);
     void Clear();
     void Toggle();
+    bool IsOpen() const { return m_Open; }
     void Close() { m_Open = false; }
     void UpdateMouse();
     void Render();

@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "UI/BuffBar.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -37,6 +38,7 @@ void CNetwork::ResetCharacterData()
     gMoveList.Clear();
     ItemServerValue_ResetSession();
     gEventTimer.Close(); // El calendario pertenece a la misma conexión.
+    gBuffBar.Clear();
 }
 
 void CNetwork::ResetSessionData()

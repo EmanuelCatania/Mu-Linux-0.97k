@@ -25,6 +25,7 @@ enum class ClientTextId {
     Shadows,
     DepthFog,
     DrawDistance,
+    BuffTimeLeft, BuffCaster, BuffDamage, BuffDefense, BuffDamageReduction, BuffMaxLife,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).

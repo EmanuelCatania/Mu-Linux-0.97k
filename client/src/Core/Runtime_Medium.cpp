@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "UI/BuffBar.h"
 #include "Model/SmdImport.h"
 #include "Physics/ClothTypes.h"
 #include "Text/TextCore.h"
@@ -61,6 +62,9 @@ void __cdecl RenderInformation(void) {
     UI_RenderChatLogOverlay(); // SystemText / chat list
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
+    // DESVIACION (Fase 4): barra de buffs. Va antes del mapa y del menú M
+    // para que esas ventanas la tapen.
+    gBuffBar.Render();
     // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): mapa (Tab) y menú M.
     gMiniMap.Render();
     gMoveList.Render();

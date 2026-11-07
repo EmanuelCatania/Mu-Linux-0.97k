@@ -209,6 +209,7 @@
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\PanelAnchor.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
+    <ClInclude Include="src\UI\BuffBar.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\Render\Camera3D.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
@@ -639,6 +640,7 @@
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
+    <ClCompile Include="src\UI\BuffBar.cpp" />
     <ClCompile Include="src\UI\MiniMap.cpp" />
     <ClCompile Include="src\Render\Camera3D.cpp" />
     <ClCompile Include="src\UI\OptionsMenu.cpp" />
