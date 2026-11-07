@@ -116,4 +116,16 @@
 56	"Niebla de profundidad"
 //DrawDistance
 57	"Distancia: %s"
-end
+//BuffTimeLeft
+58	"Tiempo restante: %s"
+//BuffCaster
+59	"Lanzado por: %s"
+//BuffDamage
+60	"Daño +%d"
+//BuffDefense
+61	"Defensa +%d"
+//BuffDamageReduction
+62	"Daño recibido -%d%%"
+//BuffMaxLife
+63	"Vida máxima +%d%%"
+end

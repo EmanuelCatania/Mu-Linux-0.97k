@@ -3,6 +3,7 @@
 #include "ReadScript.h"
 #include "ObjectManager.h"
 #include "Util.h"
+#include "SkillManager.h"
 
 CEffectManager gEffectManager;
 
@@ -178,8 +179,10 @@ void CEffectManager::MainProc()
 	}
 }
 
-bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WORD value1, WORD value2, WORD value3, WORD value4)
+bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WORD value1, WORD value2, WORD value3, WORD value4, int caster)
 {
+	const char* casterName = (OBJECT_RANGE(caster) != 0) ? gObj[caster].Name : "";
+
 	EFFECT_INFO* lpInfo = this->GetInfo(index);
 
 	if (lpInfo == 0)
@@ -222,6 +225,8 @@ bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WOR
 
 			if (lpEffect->Set(index, lpInfo->Group, lpInfo->Save, lpInfo->Type, lpInfo->Flag, 0, count, value1, value2, value3, value4) != false)
 			{
+				strncpy(lpEffect->m_caster, casterName, sizeof(lpEffect->m_caster) - 1);
+
 				this->InsertEffect(lpObj, lpEffect);
 
 				this->GCEffectStateSend(lpObj, 1, lpEffect->m_index);
@@ -242,6 +247,8 @@ bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WOR
 
 			if (lpEffect->Set(index, lpInfo->Group, lpInfo->Save, lpInfo->Type, lpInfo->Flag, 0, count, value1, value2, value3, value4) != false)
 			{
+				strncpy(lpEffect->m_caster, casterName, sizeof(lpEffect->m_caster) - 1);
+
 				this->InsertEffect(lpObj, lpEffect);
 
 				this->GCEffectStateSend(lpObj, 1, lpEffect->m_index);
@@ -829,8 +836,48 @@ void CEffectManager::GCEffectStateSend(LPOBJ lpObj, BYTE state, BYTE effect)
 	if (lpObj->Type == OBJECT_USER)
 	{
 		DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
+
+		this->GCEffectInfoSend(lpObj, state, effect);
 	}
 
 	MsgSendV2(lpObj, (BYTE*)&pMsg, pMsg.header.size);
+}
+
+void CEffectManager::GCEffectInfoSend(LPOBJ lpObj, BYTE state, BYTE effect)
+{
+	PMSG_EFFECT_INFO_SEND pMsg;
+
+	memset(&pMsg, 0, sizeof(pMsg));
+
+	pMsg.header.set(0xF3, 0xF1, sizeof(pMsg));
+
+	pMsg.state = state;
+
+	pMsg.effect = effect;
+
+	pMsg.skill = (WORD)gSkillManager.GetEffectSkill(effect);
+
+	EFFECT_INFO* lpInfo = this->GetInfo(effect);
+
+	if (lpInfo != 0)
+	{
+		strncpy(pMsg.name, lpInfo->Name, sizeof(pMsg.name) - 1);
+	}
+
+	CEffect* lpEffect = (state != 0) ? this->GetEffect(lpObj, effect) : 0;
+
+	if (lpEffect != 0)
+	{
+		// Tipo 2: el contador es una fecha absoluta.
+		int left = (lpEffect->m_type == 2) ? ((int)lpEffect->m_count - (int)time(0)) : (int)lpEffect->m_count;
+
+		pMsg.time = (left > 0) ? left : 0;
+
+		memcpy(pMsg.value, lpEffect->m_value, sizeof(pMsg.value));
+
+		memcpy(pMsg.caster, lpEffect->m_caster, sizeof(pMsg.caster));
+	}
+
+	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
 }
 
