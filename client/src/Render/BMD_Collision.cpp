@@ -7,7 +7,7 @@
 
 // BMD::CollisionDetectLineToMesh @ 0x00440BE0 (~101 lines) — line-mesh collision test
 // Iterates all meshes and triangles. Per tri: FaceNormalize, CollisionDetectLineToFace.
-bool __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle) {
+bool __cdecl BMD__CollisionDetectLineToMesh(BMD* pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle) {
     // 0x00440BE0 — Line-mesh collision test (__thiscall in original, pThis = this pointer)
     // Iterates all meshes in the BMD model. For each mesh, iterates all triangles.
     // Per triangle: compute face normal via FaceNormalize, then test line-to-face intersection
@@ -20,80 +20,35 @@ bool __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], floa
     //   +0x0A: short NumTriangles
     //   +0x1C: int*  TriangleArray (pointer to triangle data)
     // Each triangle (stride 0x24 = 36 bytes):
-    //   +0x00: char  textureIndex
+    //   +0x00: char  Polygon (cantidad de vértices)
     //   +0x02: short vertIndex0
     //   +0x04: short vertIndex1
     //   +0x06: short vertIndex2
-    //   +0x08: short normalIndex
+    //   +0x08: short vertIndex3
     // Vertex buffer: DAT_0584621c (float[3] per entry, stride 12 bytes)
     // Each mesh adds 15000 to the vertex base index offset.
 
-    (void)Collision; (void)Mesh; (void)Triangle;  // phantom params from Ghidra
 
-    int meshIdx = 0;
-    int vertBaseOffset = 0;  // accumulates +15000 per mesh
-    float meshCounter = 0.0f;
-
-    short numMeshes = *(short*)((int)pThis + 0x24);
-    if (numMeshes <= 0) return false;
-
-    int meshArrayOffset = 0;  // offset into mesh array (stride 0x28)
-    do {
-        int meshPtr = *(int*)((int)pThis + 0x28) + meshArrayOffset;
-        short numTris = *(short*)(meshPtr + 0x0A);
-        float triCounter = 0.0f;
-
-        if (numTris > 0) {
-            float triByteOffset = 0.0f;
-            float prevMeshCounter = meshCounter;
-
-            do {
-                // Skip degenerate check: if both mesh and tri counters match Target, skip
-                if (meshCounter != Target[0] || triCounter != Target[1]) {
-                    int triPtr = *(int*)(meshPtr + 0x1C) + (int)triByteOffset;
-
-                    short vi0 = *(short*)(triPtr + 2);
-                    short vi1 = *(short*)(triPtr + 4);
-                    short vi2 = *(short*)(triPtr + 6);
-                    short ni  = *(short*)(triPtr + 8);
-
-                    float* v0 = (float*)(&DAT_0584621c + (vi0 + vertBaseOffset) * 3);
-                    float* v1 = (float*)(&DAT_0584621c + (vi1 + vertBaseOffset) * 3);
-                    float* v2 = (float*)(&DAT_0584621c + (vi2 + vertBaseOffset) * 3);
-                    float* nv = (float*)(&DAT_0584621c + (ni  + vertBaseOffset) * 3);
-
-                    // Compute face normal
-                    float normal[3];
-                    float verts[3] = { *(float*)v0, *(float*)v1, *(float*)v2 };  // placeholder
-                    FaceNormalize(v0, v1, v2, normal);
-
-                    // Test line-to-face collision
-                    float localC[3];
-                    bool hit = CollisionDetectLineToFace(
-                        Position,                       // line start
-                        v0,                             // face verts packed
-                        (int)nv,                        // normal vertex index
-                        localC,                         // output collision point
-                        &Position[2],                   // Z component
-                        v0, v1,                         // additional vert ptrs
-                        normal,                         // face normal
-                        (char)*(char*)triPtr             // texture index as flag
-                    );
-
-                    meshCounter = prevMeshCounter;
-                    if (hit) {
-                        return true;
-                    }
-                }
-                triCounter = (float)((int)triCounter + 1);
-                triByteOffset = (float)((int)triByteOffset + 0x24);
-            } while ((int)triCounter < (int)numTris);
+    auto* meshes = reinterpret_cast<const ClothModelMesh*>(pThis->Meshs);
+    for (int mesh = 0; mesh < pThis->NumMeshs; ++mesh) {
+        const auto& entry = meshes[mesh];
+        for (int triangle = 0; triangle < entry.TriangleCount; ++triangle) {
+            // IDA: omitir sólo la pareja completa, no una malla o cara por separado.
+            if (mesh == Mesh && triangle == Triangle) continue;
+            const auto* indices = reinterpret_cast<const short*>(entry.Triangles +
+                triangle * sizeof(ModelRuntimeTriangle) + 2);
+            auto* worldVertices = reinterpret_cast<float*>(&DAT_0584621c);
+            float* corners[4];
+            for (int corner = 0; corner < 4; ++corner)
+                corners[corner] = worldVertices + (mesh * 15000 + indices[corner]) * 3;
+            float normal[3];
+            FaceNormalize(corners[0], corners[1], corners[2], normal);
+            const char polygon = *reinterpret_cast<const char*>(entry.Triangles +
+                triangle * sizeof(ModelRuntimeTriangle));
+            if (CollisionDetectLineToFace(Position, Target, polygon,
+                    corners[0], corners[1], corners[2], corners[3], normal, (char)Collision))
+                return true;
         }
-
-        meshCounter = (float)((int)meshCounter + 1);
-        meshArrayOffset += 0x28;
-        vertBaseOffset += 15000;
-    } while ((int)meshCounter < (int)*(short*)((int)pThis + 0x24));
-
+    }
     return false;
 }

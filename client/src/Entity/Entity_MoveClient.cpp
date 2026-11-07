@@ -44,15 +44,15 @@ void __stdcall MoveCharactersClient(void) {
             int terrainIdx = Terrain_GetTileIndex((unsigned int)val_388, (unsigned int)val_38c);
             terrainWall[terrainIdx] = terrainWall[terrainIdx] | 2;
         }
-        offset += 0x394;
-    } while (offset < 0x59740);
+        offset += CHARACTER_STRIDE;
+    } while (offset < 400 * CHARACTER_STRIDE);
 
     // Phase 3: Tick movement for each entity, then blur trails
     offset = 0;
     do {
         MoveCharacterClient((float*)(entBase + offset));
-        offset += 0x394;
-    } while (offset < 0x59740);
+        offset += CHARACTER_STRIDE;
+    } while (offset < 400 * CHARACTER_STRIDE);
 
     MoveBlurs();
 }

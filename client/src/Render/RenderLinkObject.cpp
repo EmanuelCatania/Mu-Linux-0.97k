@@ -56,7 +56,7 @@ extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
 
 // IDA: RenderLinkObject (0x00455430)
 void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
-                          int param_4, int param_5, int param_6,
+                          intptr_t param_4, intptr_t param_5, int param_6,
                           char param_7, unsigned int param_8, char param_9,
                           char param_10, unsigned int param_11)
 {
@@ -91,7 +91,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // Dimensionado al stride del effect-entity pool (0x1bc = 444 bytes) y
     // `local_1ea` redirigido al offset +2 dentro del buffer (campo Type según IDA
     // `o[1]`).
-    unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
+    unsigned char local_1ec[OBJECT_STRIDE];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
     // DESVIACION: inicializar el scratch evita que SIM dependa de residuos
     // de la pila de la pasada de dibujo anterior.
@@ -99,14 +99,14 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     float local_1c8;         // boss-head BoneHead flag
 
-    int   local_22c;         // cached model pointer = DAT_05828d58 + param_6*0xbc
-    int   iVar7;             // model pointer (same as local_22c for most of fn)
+    intptr_t local_22c;         // cached model pointer = DAT_05828d58 + param_6* BMD_STRIDE
+    intptr_t   iVar7;             // model pointer (same as local_22c for most of fn)
 
     // ── 1. look up model, copy entity fields ──────────────────────────────────
     // 0.97.20: la pieza guarda el modelo lógico (param_6, que decide la pose y
     // los efectos por tipo); se dibuja con el modelo propio del catálogo.
     const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
-    iVar7 = DAT_05828d58 + drawModel * 0xbc;
+    iVar7 = DAT_05828d58 + drawModel * BMD_STRIDE;
     EquipmentModelContext modelContext((void *)iVar7);
     AsModel(iVar7)->ContrastEnable = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
     *(unsigned int *)&AsModel(iVar7)->BodyScale = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
@@ -122,7 +122,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
     // It sets LightEnable, reads item attributes.
-    ItemObjectAttribute((int)local_1ec);
+    ItemObjectAttribute(AsObject(local_1ec));
 
     AsModel(iVar7)->LightEnable = 0;  // LightEnable = false
 
@@ -135,13 +135,13 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         local_248      = param_2;
         local_244      = param_3;
 
-        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + *(int *)&AsCharacter(param_4)->Object.BoneMatrices
+        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices
         // = BoneTransform base + LinkBone * stride
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
 
         void* ownerModel = (void*)(DAT_05828d58
-                                   + (int)AsCharacter(param_4)->Object.Type * 0xbc);
+                                   + (int)AsCharacter(param_4)->Object.Type * BMD_STRIDE);
 
         // BMD__RotationPosition = RotationPosition: transforms pos_in through bone → pos_out
         BMD__RotationPosition(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
@@ -300,7 +300,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
         // BoneTransform for LinkBone
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
 
         // R_ConcatTransforms: combine bone matrix with local angle matrix → ParentMatrix
         R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
@@ -327,8 +327,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // count stored at param_4+0x302 via a hash table keyed on the pointer.
     // The block is transcribed faithfully; net game effect = zero.
     {
-        unsigned char* pbVar1 = (unsigned char*)(param_4 + 0x302);
-        unsigned int uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+        unsigned char* pbVar1 = (unsigned char*)&AsCharacter(param_4)->Skill;
+        unsigned int uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
         unsigned int uVar16 = 0;
         unsigned char* pbStack_26c = nullptr;
         unsigned char* pbStack_270 = pbVar1;
@@ -363,7 +363,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                 if (cmp2 == 0)
                 {
                     if (uVar3 == 0xffffffff) { found = true; break; }
-                    uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+                    uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
                     pbStack_26c = nullptr;
                     uVar16 = 0;
                     if (DAT_055c9bd4 != 0) goto hash_getindex_loop2;
@@ -380,7 +380,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // -- Insert ref slot --
         pbStack_26c = (unsigned char*)operator new(2);
         pbStack_26c[1] = 1;
-        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
         local_23c_f = 0.0f; // local_23c = null
         uVar16 = 0;
 
@@ -432,7 +432,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
             // Simplified: increment ref-count slot [1] and conditionally obfuscate *pbVar1
             pbVar12 = nullptr;
-            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
             uVar16 = 0;
 
             // GetIndex for the newly inserted slot
@@ -466,7 +466,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                     {
                         if (uVar3 == 0xffffffff) goto hash_getindex2_found;
                         *(void**)&local_240 = pbVar1;
-                        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+                        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
                         uVar16 = 0;
                         if (DAT_055c9bd4 != 0) goto hash_getindex2_loop;
                         goto hash_getindex2_exhaust;
@@ -502,7 +502,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // -- Decrement ref-count (matching release) --
         {
             unsigned char* pbVar12 = nullptr;
-            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
             uVar16 = 0;
             if (DAT_055c9bd4 != 0)
             {
@@ -574,8 +574,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         if (cond)
         {
             // Override PART animation frames: PriorAnimFrame = 2.0, AnimFrame = 3.2
-            *(float*)((int)param_5 + 0x0c) = 2.0f;   // PriorAnimationFrame
-            *(float*)((int)param_5 + 0x08) = 3.2f;   // AnimationFrame
+            *(float*)((intptr_t)param_5 + 0x0c) = 2.0f;   // PriorAnimationFrame
+            *(float*)((intptr_t)param_5 + 0x08) = 3.2f;   // AnimationFrame
         }
     }
 
@@ -585,7 +585,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     if (param_6 == 790 && (AsCharacter(param_4)->Wing.Type > 0x315) && (AsCharacter(param_4)->Wing.Type < 0x317)
         && (*(char *)&AsCharacter(param_4)->SafeZone != '\0'))
     {
-        *(unsigned char*)((int)iVar7 + 0xa0) = 1;
+        *(unsigned char*)((intptr_t)iVar7 + 0xa0 + BMD_FIELD_SHIFT) = 1;
     }
 
     // ── 7. Animation tick (BMD_AnimTick) ─────────────────────────────────────
@@ -595,20 +595,20 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // BMD__PlayAnimation = BMD_AnimTick: advance animation frame
         // Args: (model, AnimFrame*, PriorAnimFrame*, PriorAction*, PlaySpeed, Position, Angle)
         BMD__PlayAnimation((void*)iVar7,
-                     (float*)((int)param_5 + 0x08),  // AnimationFrame
-                     (float*)((int)param_5 + 0x0c),  // PriorAnimationFrame
-                     (unsigned char*)((int)param_5 + 0x06),  // PriorAction
-                     *(float*)((int)param_5 + 0x10)); // PlaySpeed
+                     (float*)((intptr_t)param_5 + 0x08),  // AnimationFrame
+                     (float*)((intptr_t)param_5 + 0x0c),  // PriorAnimationFrame
+                     (unsigned char*)((intptr_t)param_5 + 0x06),  // PriorAction
+                     *(float*)((intptr_t)param_5 + 0x10)); // PlaySpeed
     }
 
     // ── 8. BMD_Animation (bone interpolation) ────────────────────────────────
     // BMD_Animation: __thiscall (model, BoneTransformArray, AnimFrame, PriorAnimFrame,
     //               PriorAction, Angle, HeadAngle, Parent=1, Translate=1)
     void* pModel = (void*)iVar7;
-    BMD_Animation(pModel, (int)&DAT_06970a9c,
-                 *(float*)((int)param_5 + 0x08),        // AnimationFrame
-                 *(unsigned int*)((int)param_5 + 0x0c), // PriorAnimationFrame (as uint)
-                 *(unsigned char*)((int)param_5 + 0x06), // PriorAction
+    BMD_Animation(pModel, reinterpret_cast<float*>(&DAT_06970a9c),
+                 *(float*)((intptr_t)param_5 + 0x08),        // AnimationFrame
+                 *(unsigned int*)((intptr_t)param_5 + 0x0c), // PriorAnimationFrame (as uint)
+                 *(unsigned char*)((intptr_t)param_5 + 0x06), // PriorAction
                  (unsigned int*)afStack_1dc,             // Angle (reinterpreted)
                  afStack_1dc, '\x01', '\x01');
 
@@ -616,13 +616,13 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // el BMD, el scratch de huesos y a veces el PART del ala.
     const unsigned int flags = AsCharacter(param_4)->MonsterIndex == 67 ? 0x102u : 0x2u;
     const float attachmentOffset[3]={param_1,param_2,param_3};
-    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + 800),
+    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + EntityOffset(800)),
         AsCharacter(param_4)->Object.Alpha, 8u * (unsigned char)param_7,
         (unsigned char)param_8, flags | param_11, param_10, param_5, param_9, attachmentOffset);
     if (drawModel == 790) {
         // El objeto mínimo aporta el ángulo original; el dueño persistente es
         // el personaje, nunca la dirección de ese temporal de la pila.
-        Equipment_EmitWing790(pModel, (int)local_1ec, param_4);
+        Equipment_EmitWing790(pModel, (intptr_t)local_1ec, param_4);
     }
 
     // ── 11. Per-weapon-type particle effects ─────────────────────────────────

@@ -19,13 +19,14 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "UI/ChatTypes.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <GL/gl.h>
-#include <GL/glu.h>
 
 extern "C" BYTE OffsetInventoryItems[];     // src/Render/HUD_Pass3.cpp
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
@@ -77,22 +78,21 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // y guarda el tamaño en Width/Height, con una, dos o tres líneas según cuántos
 // textos estén vivos (LifeTime).
 // IDA devuelve int, pero el único llamador (RenderBooleans) descarta el valor.
-void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
+void __cdecl FloatingLabel_MeasureText(CHAT* c, int p2, int p3)
 {
-    CHAT* c = AsChat((uintptr_t)p1);
     (void)p2; (void)p3;
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
 
     int n;
-    n = Platform::TextLength(c->ID);
-    gFont.MeasureText32(gFont.GetTextDC(), c->ID, n, &psizl);
+    n = Platform::TextLength(ChatDisplayName(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayName(c), n, &psizl);
     n = Platform::TextLength(c->Text[0]);
     gFont.MeasureText32(gFont.GetTextDC(), c->Text[0], n, &v12);
     n = Platform::TextLength(c->Text[1]);
     gFont.MeasureText32(gFont.GetTextDC(), c->Text[1], n, &v13);
-    n = Platform::TextLength(c->Guild);
-    gFont.MeasureText32(gFont.GetTextDC(), c->Guild, n, &v14);
+    n = Platform::TextLength(ChatDisplayGuild(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayGuild(c), n, &v14);
 
     int result = psizl.cx + 3;
     if (c->LifeTime[1] <= 0) {
@@ -160,14 +160,17 @@ void RenderPartyHP_(void)
     int v19 = 0;
 
     do {
-        DWORD v2 = v1[1];                          // character index
-        if (v2 != (DWORD)-1) {
-            int v3 = 229 * (int)v2;
+        // DESVIACION: IDA sólo descarta -1, pero el héroe sin resolver queda en
+        // -3 (y -2 entre la pasada del hover y la del picker). En x86 eso leía
+        // basura antes del pool; en x64 el índice sin signo sale del espacio.
+        const int v2 = (int)v1[1];                 // índice del personaje
+        if (v2 >= 0 && v2 < 400) {
+            const BYTE* character = (const BYTE*)CharactersClient + (size_t)v2 * CHARACTER_STRIDE;
             float Position[3];
-            Position[0] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 16);
-            Position[1] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 20);
-            Position[2] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 300)  // [75]
-                        + *(float*)((BYTE*)CharactersClient + 4 * v3 + 24)   // [6]
+            Position[0] = *(const float*)(character + 16);
+            Position[1] = *(const float*)(character + 20);
+            Position[2] = *(const float*)(character + EntityOffset(300))  // [75]
+                        + *(const float*)(character + 24)   // [6]
                         + 100.0f;
 
             int sx, sy;
@@ -187,20 +190,20 @@ void RenderPartyHP_(void)
             }
 
             EnableAlphaTest(true);
-            glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+            Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.5f);
             GL_DrawRect((float)(sx + 1), (float)(sy + 1), 42.0f, 5.0f);  // shadow
 
             EnableAlphaBlend();
-            glColor3f(0.2f, 0.0f, 0.0f);
+            Gfx::Color3f(0.2f, 0.0f, 0.0f);
             GL_DrawRect((float)sx, (float)sy, 42.0f, 5.0f);              // dark frame
 
-            glColor3f(0.19607843f, 0.039215688f, 0.0f);
+            Gfx::Color3f(0.19607843f, 0.039215688f, 0.0f);
             GL_DrawRect((float)(sx + 2), (float)(sy + 2), 38.0f, 1.0f);  // mid row
 
             int v7 = (int)*(unsigned char*)v1;
             if (v7 > 10) v7 = 10;
 
-            glColor3f(0.98039216f, 0.039215688f, 0.0f);
+            Gfx::Color3f(0.98039216f, 0.039215688f, 0.0f);
             for (int i = 0; i < v7; ++i) {
                 GL_DrawRect((float)(sx + 4 * i + 2), (float)(sy + 2), 3.0f, 2.0f);
             }
@@ -211,7 +214,7 @@ void RenderPartyHP_(void)
     } while (v19 < PartyNumber);
 
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // Entrada pública (la llama Render_Frame.cpp).
@@ -253,7 +256,7 @@ void RenderBooleans_(void)
             } else {
                 Projection(c->Position, &sx, &sy);
             }
-            FloatingLabel_MeasureText((int)(uintptr_t)c, 0, 0);
+            FloatingLabel_MeasureText(c, 0, 0);
             c->x = sx - 640 * c->Width / (int)gWindow.GetWidth() / 2;
             c->y = sy - 36;
         }
@@ -292,7 +295,18 @@ void RenderBooleans_(void)
     for (int i = 0; i < kChats; ++i) {
         CHAT* c = &chats[i];
         if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
-            RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
+            // Desviación del binario: sub_47F4C0 ajusta cada renglón por separado al
+            // borde y una burbuja saliente quedaba pegada, con renglones encimados.
+            // Ajustarla entera no alcanza: varias colapsarían en la misma fila, así
+            // que se oculta apenas deja de entrar en pantalla.
+            if (c->Owner && !c->Owner->Object.Visible) continue;
+            const int boxW = 640 * c->Width / (int)gWindow.GetWidth();
+            const int boxH = 480 * c->Height / (int)gWindow.GetHeight();
+            const int marginX = 640 * gWindow.GetUiOffsetX() / (int)gWindow.GetWidth();
+            const int maxY = 480 - 47 * 480 / 640;
+            if (c->y < 0 || c->y + boxH > maxY) continue;
+            if (c->x < -marginX || c->x + boxW > 640 + marginX) continue;
+            RenderBoolean(c->x, c->y, (intptr_t)c);
         }
     }
 }
@@ -316,7 +330,7 @@ void Render_FloatingText(void) { RenderBooleans_(); }
 extern "C" void __cdecl RenderMainFrameWindow_(void);
 void RenderMainFrameWindow_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     DAT_07e11d6e = 0;
     m_dwTextColor = 0xFFFFFFFF;
@@ -325,9 +339,12 @@ void RenderMainFrameWindow_(void)
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
     // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
     // abierto, los botones de zoom y transparencia ocupan ese lugar.
-    if (!gMiniMap.HidesLeftDragon())
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen): sin los dragones de
+    // Menu04; abajo, al final, se dibujan las cabezas de WDecorOld en las esquinas.
+    const bool wide = gWindow.IsWide();
+    if (!wide && !gMiniMap.HidesLeftDragon())
         GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    if (!gMiniMap.HidesRightDragon())
+    if (!wide && !gMiniMap.HidesRightDragon())
         GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
     GL_ResetState();   // DisableAlphaBlend
 
@@ -335,11 +352,11 @@ void RenderMainFrameWindow_(void)
     GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
 
     // ── Anti-tamper #1: andamiaje de la hash-table intercalado de IDA ──
-    // HashTable_GetIndex (IDA: FUN_004041e0, Core/System_Legacy.cpp) devuelve
+    // La sobrecarga de dos argumentos de HashTable_GetIndex (functions.h) devuelve
     // siempre -1 en este build: sólo corre la rama "no encontrado".
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, v0);
         if (!(v6 != 0xFFFFFFFFu && DAT_055c9bd4)) {
             // No encontrado / tabla vacía — inserta una entrada nueva marcada con
             // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR
@@ -363,11 +380,20 @@ void RenderMainFrameWindow_(void)
     }
 
     // Bottom tile #2 (mid) and #3 (right half).
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(231, 256.0f, 432.0f, 128.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    if (wide) {
+        // DLL CWideScreen: WDecorOld, izquierda -61 y derecha 556 espejada.
+        // El DLL las ubica respecto de la barra central, no de la ventana.
+        const float barX = (float)gWindow.PanelOrigin({Ui::Anchor::Centro, 640});
+        EnableAlphaTest(true);
+        GL_DrawTexture(0x5F0, barX - 61.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, barX + 556.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_ResetState();
+    }
 }
 
 void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
@@ -424,19 +450,21 @@ void Render_HotbarItems3D_(void)
 
     GL_End2D();   // EndBitmap
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
-    float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
+    // El pase de ítems también cubre los márgenes: el viewport central
+    // recortaba los modelos de paneles anclados fuera del 4:3.
+    GL_SetViewport(0, 0, (int)gWindow.GetRealWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetRealWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;
     GL_SetPerspective(fovBits, aspectF, nearBits, CameraViewFar);
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
     GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
     GL_EnableDepthTest();
     GL_EnableDepthWrites();
@@ -479,17 +507,17 @@ void Render_HotbarItems3D_(void)
         // sub_4F54B0 — event-chip dialog renderer.  Not yet ported.
     }
 
-    glLoadIdentity();
-    glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+    Gfx::LoadIdentity();
+    Gfx::Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
     GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
 
     float Target[3] = {0, 0, 0};
     Camera_BuildMouseRay(100, 100, Target);
 
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
 
     GL_Begin2D();   // BeginBitmap
 }

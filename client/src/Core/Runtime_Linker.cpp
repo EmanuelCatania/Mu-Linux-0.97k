@@ -37,11 +37,11 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// SetPlayerStop @ 0x004430C0: el port real está en Net/SecondPassword.cpp.
+// SetPlayerStop @ 0x004430C0: el port real está en Entity/Character_Motion.cpp.
 // No agregar un stub acá: entity+0x1BC es el byte de CLASE/skin, no move flags.
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Conserva el formato heredado; el destino de este logger sigue sin conectar.
-void __cdecl CErrorReport__Write(DWORD ctx, char *fmt, ...) {
+void __cdecl CErrorReport__Write(intptr_t ctx, char *fmt, ...) {
     char buf[1025];
     va_list args;
     va_start(args, fmt);
@@ -73,7 +73,7 @@ void __cdecl FUN_00543c98(void *ptr) {
 // StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/Sound/Music.cpp).
 // No reimplementarlo acá: es el mismo símbolo del binario.
 void __cdecl StopMp3(char *cmd, int param) {
-    Music_StopTrack((DWORD)(uintptr_t)cmd, param);
+    Music_StopTrack(cmd, param);
 }
 
 

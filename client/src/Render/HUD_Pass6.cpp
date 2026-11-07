@@ -30,6 +30,12 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
+#include "UI/MoveList.h"
+#include "Net/NetText.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
+#include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
 #include "Platform/Text.h"
@@ -42,9 +48,8 @@ void HUD_BeginGridPass(int pass);
 #include "structs.h"
 #include "functions.h"
 #include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
-#include <GL/gl.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
-void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
+void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage);
 
 
 extern "C" void Net_SendNpcTalkClose(void);
@@ -54,9 +59,9 @@ extern "C" void Net_SendNpcTalkClose(void);
 //
 // Son los globals reales (CharacterInfoStartX/Y = DAT_07ea982c/30,
 // GuildListStartX/Y = DAT_07e91788/84), no copias locales: los hit-tests de
-// cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
+// cierre (GuildCreator_HitTest / CharacterInfo_HitTest en Net/SecondPassword,
 // port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) los leen, y
-// SecondPassword_Screen3/Party_MemberClickHandler hacen early-return cuando el
+// CharacterInfo_HitTest/Party_MemberClickHandler hacen early-return cuando el
 // origen es 0.
 #define CharacterInfoStartX  (*(int*)&DAT_07ea982c)
 #define CharacterInfoStartY  (*(int*)&DAT_07ea9830)
@@ -71,20 +76,14 @@ extern "C" void Net_SendNpcTalkClose(void);
 extern "C" SIZE*  __cdecl RenderCenteredText(int x, int y, const char* text);
 extern "C" int    __cdecl GetScreenWidth(void);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
-extern "C" int    __cdecl sub_4E38B0(float a1, float a2, float x, int a4, float sx, int a6);
+extern "C" int    __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4, float sx, int a6);
 
-static float PointerBitsAsFloat_HudPass6(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
 extern "C" void GuildMark_InitializePalette(bool blend);
 extern "C" int    InputTextWidth;
+extern "C" BYTE   InputTextHide[10];
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
 extern "C" char   DAT_07ea51f5[64];
@@ -203,14 +202,14 @@ extern "C" void __cdecl sub_5126E0(int tex, float a2, float a3,
 
     float yBase = (float)gWindow.GetHeight() - v27;
 
-    glBegin(GL_TRIANGLE_STRIP);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleStrip);
     for (int i = 0; i < 4; ++i) {
-        glTexCoord2f(uv[i][0], uv[i][1]);
+        BufferedDraw::TexCoord2f(uv[i][0], uv[i][1]);
         float out[3];
         VectorRotate(&in1[i * 3], (float*)in2, out);
-        glVertex2f(v26 + out[0], yBase + out[1]);
+        BufferedDraw::Vertex2f(v26 + out[0], yBase + out[1]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // =============================================================================
@@ -234,13 +233,13 @@ extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Fla
 // bitmap at each position, with InventoryColor() picking the tint.
 // =============================================================================
 extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
-                                         DWORD InventoryPtr,
+                                         intptr_t InventoryPtr,
                                          int iMaxWidth, int iMaxHeight)
 {
     if (iMaxHeight <= 0) return;
 
     int row = 0;
-    DWORD ptr = InventoryPtr;
+    intptr_t ptr = InventoryPtr;
     for (int r = 0; r < iMaxHeight; ++r) {
         if (iMaxWidth > 0) {
             ITEM* v7 = (ITEM*)ptr;
@@ -281,35 +280,35 @@ char __cdecl sub_4F5CE0_(void)
         RenderEquipment3D();
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat_HudPass6(OffsetInventoryItems), 8, 8.0f, 0);
+                   OffsetInventoryItems, 8, 8.0f, 0);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(ShopItems), 8, 15.0f, 0);
+                   ShopItems, 8, 15.0f, 0);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat_HudPass6(Inventory), 8, 4.0f, 0);
+                   Inventory, 8, 4.0f, 0);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat_HudPass6(OffsetTradeItems), 8, 4.0f, 0);
+                   OffsetTradeItems, 8, 4.0f, 0);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetWarehouseItems), 8, 15.0f, 0);
+                   OffsetWarehouseItems, 8, 15.0f, 0);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     return (char)ChaosMixOpened;
 }
@@ -326,11 +325,11 @@ extern "C" void __cdecl RenderServerDivision(void)
 {
     if (ServerDivisionOpened == '\0') return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    InventoryStartX = 450;
+    InventoryStartX = gWindow.PanelOrigin(Ui::RightPanel);
     InventoryStartY = 0;
-    RenderInventoryInterface(450, 0, 1);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::RightPanel), 0, 1);
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
@@ -362,12 +361,12 @@ extern "C" void __cdecl RenderServerDivision(void)
     RenderCenteredText((int)(xc + 60.0f), 355, GlobalText[229]);
 
     float xb = (float)((double)InventoryStartX + 35.0);
-    if (DAT_07eaa131 != 0) glColor3f(1.0f, 1.0f, 1.0f);
-    else                          glColor3f(0.5f, 0.5f, 0.5f);
+    if (DAT_07eaa131 != 0) BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+    else                          BufferedDraw::Color3f(0.5f, 0.5f, 0.5f);
     GL_DrawTexture(240, xb, 320.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
     RenderCenteredText((int)(xb + 60.0f), 325, GlobalText[228]);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // =============================================================================
@@ -377,19 +376,24 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 {
     if (!InventoryOpened) return;
 
-    int sx = (CharacterOpened || PartyOpened) ? 260 : 450;
+    int sx = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
+    // El origen del contenido se publica acá también: con el menú de opciones
+    // abierto el tick no corre y, al cambiar de resolución, quedaba el viejo
+    // (marco en un lugar y casilleros en otro).
+    InventoryStartX = sx;
+    InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox();
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
     // sub_4E6550, en el tick; no aca en el render.
 
-    // Input y comandos de la grilla: SecondPassword_Screen4, dentro de SIM.
+    // Input y comandos de la grilla: Inventory_HitTest, dentro de SIM.
 
     float fPosX = (float)((double)InventoryStartX + 15.0);
     float fPosY = (float)((double)InventoryStartY + 200.0);
-    RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
+    RenderItemsBoxes(fPosX, fPosY, (intptr_t)OffsetInventoryItems, 8, 8);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;       // -15461356
     m_dwTextColor = 0xFFFFFFFFu;
@@ -488,19 +492,19 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
                 float y = v64 - 3.0f;
                 bool hover = ((double)MouseX >= y && (double)MouseX <= v64 + 50.0 &&
                               (double)MouseY >= v60 && (double)MouseY <= v60 + 19.0);
-                if (hover) glColor4f(0.5f, 0.5f, 0.5f, 0.8f);
-                else       glColor4f(0.1f, 0.1f, 0.1f, 0.7f);
+                if (hover) BufferedDraw::Color4f(0.5f, 0.5f, 0.5f, 0.8f);
+                else       BufferedDraw::Color4f(0.1f, 0.1f, 0.1f, 0.7f);
                 GL_DrawRect(y, v60, 50.0f, 19.0f);
             } else {
                 // RenderParty LABEL_120: an unmatched Party member stays in
                 // the compact list with the red offline/out-of-viewport row.
-                glColor4f(0.3f, 0.0f, 0.0f, 0.5f);
+                BufferedDraw::Color4f(0.3f, 0.0f, 0.0f, 0.5f);
                 GL_DrawRect(v64 - 3.0f, v60, 50.0f, 19.0f);
             }
-            glColor3f(0.196f, 0.039f, 0.0f);
+            BufferedDraw::Color3f(0.196f, 0.039f, 0.0f);
             GL_DrawRect(v64 - 2.0f, v60 + 12.0f, 43.0f, 4.0f);
             int hp10 = *v38 > 10 ? 10 : *v38;
-            glColor3f(0.98f, 0.039f, 0.0f);
+            BufferedDraw::Color3f(0.98f, 0.039f, 0.0f);
             for (int seg = 0; seg < hp10; ++seg) {
                 GL_DrawRect((float)(seg * 4) + v64, v60 + 13.0f, 3.0f, 2.0f);
             }
@@ -508,7 +512,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // out-of-viewport member (-1) gets the red fallback background
             // but retains its Party name. Only the entity-bound background
             // branch above is conditional on a live CharactersClient index.
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             EnableAlphaTest(true);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
@@ -518,11 +522,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         // Top + bottom cap pieces of the party list.
         GL_DrawTexture(252, v64 - 5.0f, 2.0f,    54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
         GL_DrawTexture(252, v64 - 5.0f, v60,     54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
-        glColor4f(0.722f, 0.592f, 0.380f, 0.5f);
+        BufferedDraw::Color4f(0.722f, 0.592f, 0.380f, 0.5f);
         GL_DrawRect(v64 - 4.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
         GL_DrawRect(v64 + 47.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
         EnableAlphaTest(true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         return;
     }
 
@@ -532,7 +536,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     // usar como scratch.
     g_PartyPanelScratchX = a1;
     g_PartyPanelScratchY = a2;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     GL_DrawTexture(260, (float)a1, (float)a2,        190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
     GL_DrawTexture(261, (float)a1, (float)(a2 + 256), 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
@@ -586,7 +590,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // Member name renders from v4-24 in IDA — that's the 24-byte
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
-            Platform::TextFormat(Buffer, "%s", (char*)v4);   // name[10] en +0
+            Platform::TextFormat(Buffer, "%s", Party_NameOf((const void*)(uintptr_t)v4));
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
@@ -598,16 +602,16 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             RenderText(a1 + 90, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
 
             // HP bar (red on darker red).
-            glColor3f(0.2f, 0.0f, 0.0f);
+            BufferedDraw::Color3f(0.2f, 0.0f, 0.0f);
             GL_DrawRect((float)(a1 + 39), (float)(a2 + 69 + 35 * row), 92.0f, 5.0f);
-            glColor3f(0.882f, 0.059f, 0.0f);
+            BufferedDraw::Color3f(0.882f, 0.059f, 0.0f);
             GL_DrawRect((float)(a1 + 40), (float)(a2 + 69 + 35 * row), (float)barW, 3.0f);
             EnableAlphaTest(true);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             Platform::TextFormat(Buffer, "( %d / %d )", level, maxLevel);
             RenderText(a1 + 65, a2 + 77 + 35 * row, Buffer, 0, 0, 0);
-            if (!strcmp((const char*)Party, (const char*)((BYTE*)Hero + 449)) ||
-                !strcmp((const char*)v4, (const char*)((BYTE*)Hero + 449)))
+            if (!strcmp(Party_GetName(0), EntityName::Get(Hero)) ||
+                !strcmp(Party_NameOf((const void*)(uintptr_t)v4), EntityName::Get(Hero)))
             {
                 float kickX = (float)((double)a1 + 140.0);
                 float kickY = (float)((double)(35 * row) + (double)a2 + 55.0);
@@ -627,7 +631,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 
     // Close button.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     float v59 = (float)((double)a1 + 25.0);
     float v63 = (float)((double)a2 + 395.0);
     GL_DrawTexture(280, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -651,7 +655,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
 // Es el global real 0x7EAA144 (= DAT_07eaa144), no una copia del archivo: lo
 // setea el handler del 0x55 y lo lee el hit-test de la creacion de guild en
-// `SecondPassword_Screen1`.
+// `GuildCreator_HitTest`.
 #define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
@@ -667,11 +671,13 @@ extern "C" void GuildCreator_OpenFromServer(void)
     GuildInputEnable = 1;
     DAT_00559c84 = 0;
     ClearInput(0);
-    _InputTextMaxArr[0] = 8;
+    // El Personal Code deja este slot enmascarado; el nombre del guild es visible.
+    InputTextHide[0] = 0;
+    Input_SetLimit(0, (int)NetText::GuildNameSize, (int)NetText::GuildNameClusters);
     InputNumber = 0;
     GuildMark_InitializePalette(true);
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = 999;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = 999;
 }
 
 // El dialogo previo "¿crear guild?" — modo 0 del mismo panel.
@@ -682,7 +688,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
 //
 // IDA: ProtocolCore 0x54. Cierra las ventanas de NPC y abre el creador con el
 // keypad APAGADO; así ambos botones responden con 0x54 en vez de 0x55/0x57
-// (ver el hit-test en SecondPassword_Screen1).
+// (ver el hit-test en GuildCreator_HitTest).
 extern "C" void GuildCreator_OpenQuestionFromServer(void)
 {
     GuildOpened     = 0;
@@ -705,7 +711,7 @@ extern "C" void GuildCreator_CloseFromResult(void)
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = -1;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
 }
 
 extern "C" void SetGuildNoticeText(const char* text)
@@ -760,7 +766,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     CharacterInfoStartX = iPosX;
     CharacterInfoStartY = iPosY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();   // DisableAlphaBlend
     float x = (float)iPosX;
     float y = (float)iPosY;
@@ -781,7 +787,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     m_dwBackColor = 0xFF141414u;
-    SetPlayerColor(*(BYTE*)((char*)Hero + 0x2EA));
+    SetPlayerColor(*(BYTE*)((char*)Hero + EntityOffset(0x2EA)));
     RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
@@ -814,11 +820,11 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // visibles simultáneo → "(Sou Maetee)" garbled).
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;
     float alpha = 2.0f - pulse;
-    glColor4f(1.0f, 1.0f, 1.0f, alpha);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, alpha);
     RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    glColor4f(1.0f, 1.0f, 1.0f, pulse);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, pulse);
     RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // 5 stat-row backdrops (sprite 245) at y = (60-4)+i*60, x = (19-6)
     {
@@ -844,6 +850,21 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     m_dwTextColor = 0xFFE6E6E6u;
     RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
+    // ── Resets ──────────────────────────────────────────────────────────────
+    // DESVIACION (DLL PrintPlayer.cpp RenderCharInfo_Level): caja espejada a la
+    // derecha del nivel con los resets que manda el server (F3/E0 ViewReset).
+    {
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+        GL_DrawTexture(245, (float)iPosX + 190.0f - 13.0f - 75.0f, (float)iPosY + 56.0f,
+                       75.0f, 21.0f, 0.5859375f, 0.0f, -0.5859375f, 0.65625f, 1, 1);
+        EnableAlphaTest(true);
+        char resetsBuf[32];
+        Platform::TextFormat(resetsBuf, "Resets: %u", (unsigned)gMoveList.Resets());
+        m_dwBackColor = 0;
+        m_dwTextColor = 0xFFE6E6E6u;
+        RenderText(iPosX + 102, iPosY + 60, resetsBuf, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
+    }
+
     // ── Experience (cur / max) ──────────────────────────────────────────────
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[201], *(int*)(CA + 16), *(int*)(CA + 52));
@@ -859,8 +880,10 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     unsigned short levelUpPoint = *(unsigned short*)(CA + 84);
     if (levelUpPoint > 0) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        m_dwBackColor = 0xFF1E6EC8u;     // (30, 110, 200) blue band
-        m_dwTextColor = 0xFF000000u;     // black text
+        m_dwBackColor = 0xFFC86E1Eu;     // Color4b(30, 110, 200, 255): ABGR, no ARGB
+        // DESVIACION: el DLL usa texto negro (Color4b(0, 0, 0)), que sobre el azul
+        // a este tamaño casi no se lee; va en blanco.
+        m_dwTextColor = 0xFFFFFFFFu;
         char ptsBuf[64];
         // Use GlobalText[217] if available; defensive fallback to a literal.
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";
@@ -891,7 +914,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     //     y ∈ [CharacterInfoStartY+115+60*row, +24)
     // Gate: LevelUpPoint = *(WORD*)(CharacterAttribute+0x54) != 0.
     //   Sprite 0x120 (288): normal   0x121 (289): hover/pressed
-    // El click y el envío del F3/06 los hace SecondPassword_Screen3 — acá sólo se dibuja.
+    // El click y el envío del F3/06 los hace CharacterInfo_HitTest — acá sólo se dibuja.
     int availPts = (int)*(unsigned short*)(CA + 84);
     auto draw_plus_button = [&](int row, int statSlot) {
         if (availPts <= 0) return;
@@ -904,12 +927,12 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // DAT_083a413c instead (set on UP, sticks until consumed). Hover-without-click
         // still highlights via 4124 for held clicks.
         // SOLO render + highlight: el CLICK (y el envío del F3/06) lo maneja
-        // `SecondPassword_Screen3` (port de sub_4E5DE0 L85-244), que es donde el
+        // `CharacterInfo_HitTest` (port de sub_4E5DE0 L85-244), que es donde el
         // binario original tiene el hit-test de estos botones. Mandarlo también acá
         // duplicaría el paquete.
         bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
         (void)statSlot;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(pressed ? 0x121 : 0x120,
                      btnX, btnY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -953,7 +976,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     // Magic class bonus (class 1=DW, 3=MG): if both slots in [0,192)
-    int classL3 = *(BYTE*)((char*)Hero + 0x1BC) & 7;
+    int classL3 = *(BYTE*)&((CHARACTER*)Hero)->Class & 7;
     bool dualBonus = false;
     if (classL3 == 1 || classL3 == 3) {
         if (typeR >= 0 && typeR < 192 && typeL >= 0 && typeL < 192) {
@@ -1063,14 +1086,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── DW (class 0) / MG (class 3): magic skill damage line ────────────────
-    int classFlag = *(BYTE*)((char*)Hero + 444) & 7;
+    int classFlag = *(BYTE*)((char*)Hero + EntityOffset(444)) & 7;
     int yMagic = iPosY + 335;
     if (classFlag == 0 || classFlag == 3) {
         // IDA RenderCharacterInfoWindow (0x4ECC60) L1038-1091.  El pWeaponRight
         // de IDA es CharacterMachine+536, o sea el pWeaponLeft de este archivo.
         int piMin = 0, piMax = 0;
-        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + 913));
-        GetMagicSkillDamage((DWORD)(uintptr_t)CharacterMachine, skillType, &piMin, &piMax);
+        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + EntityOffset(913)));
+        GetMagicSkillDamage(static_cast<const BYTE*>(CharacterMachine), skillType, &piMin, &piMax);
         int staffMul = (pWeaponLeft->Level >> 3) & 0xF;
 
         // PVP +10 bonus
@@ -1117,7 +1140,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 
     GuildListStartX = StartX;
     GuildListStartY = StartY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     float x = (float)StartX;
     float y = (float)StartY;
@@ -1130,7 +1153,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Hero+474 holds the player's guild-mark index (-1 if no guild).
-    short guildIdx = *(short*)((char*)Hero + 474);
+    short guildIdx = *(short*)((char*)Hero + EntityOffset(474));
     if (guildIdx == -1) {
         sprintf(Text, "%s", GlobalText[180]);
     } else {
@@ -1170,7 +1193,10 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     // `UI/ChatListBox.cpp` (bloque "WIDGET DE LISTA DE GUILD").
     if (g_nGuildMemberCount > 0 && DAT_055c9ff4) {
         DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
-        void** vt  = (void**)*obj;
+        // La lista y sus botones siguen el mismo origen que el marco.
+        obj[11] = (DWORD)(StartX + 10);
+        obj[12] = (DWORD)(StartY + 387);
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
             typedef int  (__fastcall *FnInput)(DWORD*);
@@ -1194,7 +1220,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     // pool de la tienda.
     g_GuildCreatorScratchX = iPosX;
     g_GuildCreatorScratchY = iPosY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
 
     float x = (float)iPosX;
@@ -1285,9 +1311,9 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 extern "C" void __cdecl RenderTrade(void)
 {
     if (!TradeOpened) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    TradeInventoryStartX = 260;
+    TradeInventoryStartX = gWindow.PanelOrigin(Ui::Trade);
     TradeInventoryStartY = 0;
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 
@@ -1302,20 +1328,20 @@ extern "C" void __cdecl RenderTrade(void)
     // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 70.0),
-                     (DWORD)(uintptr_t)Inventory, 8, 4);
+                     (intptr_t)Inventory, 8, 4);
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 270.0),
-                     (DWORD)(uintptr_t)OffsetTradeItems, 8, 4);
+                     (intptr_t)OffsetTradeItems, 8, 4);
 
     // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
     // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
-    glColor3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
+    BufferedDraw::Color3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
               TradeYourWait > 0 ? 0.0f : 1.0f);
     GL_DrawTexture(m_bYourConfirm ? 291 : 290,
                    (float)TradeInventoryStartX + 140.0f,
                    (float)TradeInventoryStartY + 185.0f,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1, 1, 1);
+    BufferedDraw::Color3f(1, 1, 1);
 
     // IDA: FUN_004F1270 — controles de Zen, confirmación y cancelación.
     const float zenX = (float)TradeInventoryStartX + 26.0f;
@@ -1326,11 +1352,11 @@ extern "C" void __cdecl RenderTrade(void)
                          MouseY >= buttonsY && MouseY < buttonsY + 24.0f;
     GL_DrawTexture(overZen && MouseLButton ? 273 : 272, zenX, buttonsY,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
+    BufferedDraw::Color3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
               TradeMyWait > 0 ? 0.0f : 1.0f);
     GL_DrawTexture(m_bMyConfirm ? 291 : 290, confirmX, buttonsY,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1, 1, 1);
+    BufferedDraw::Color3f(1, 1, 1);
     GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
 
     if (overZen) { gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
@@ -1370,7 +1396,7 @@ extern "C" void __cdecl RenderTrade(void)
     m_dwTextColor = 0xFFFFFFD2u;
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
-               const_cast<char*>(Hero ? (const char*)((BYTE*)Hero + 449) : ""), 0, 0, 0);
+               const_cast<char*>(Hero ? EntityName::Get(Hero) : ""), 0, 0, 0);
     const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
                           TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
     char levelText[64];
@@ -1390,9 +1416,9 @@ extern "C" void __cdecl RenderTrade(void)
 extern "C" void __cdecl RenderShopInterface(void)
 {
     if (!ShopOpened) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Shop);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
@@ -1405,8 +1431,8 @@ extern "C" void __cdecl RenderShopInterface(void)
     // Shop items start at `&Inventory[32].WalkSpeed` in the original client.
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)ShopItems, 8, 15);
-    glColor3f(1.0f, 1.0f, 1.0f);
+                     (intptr_t)ShopItems, 8, 15);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
     // El hit-test lo hace FUN_004ec330 (sub_4EC330).
@@ -1439,14 +1465,14 @@ extern "C" void __cdecl RenderShopInterface(void)
             // (IDA ademas pone MouseLButtonPush = 0 aca; no se replica porque
             // el click lo consume FUN_004ec330.)
             bx = (float)((double)dword_7EAA0C8 + 115.0);
-            glColor3f(0.5f, 0.69999999f, 1.0f);
+            BufferedDraw::Color3f(0.5f, 0.69999999f, 1.0f);
             GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             if (over(bx, by)) {
                 if (DAT_083a4124)
                     GL_DrawTexture(287, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
                 tip(bx, by, 237);
             }
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
             // Caja con el costo de reparar todo (dword_7EAA0F8, lo calcula sub_4C4080).
             bx -= 60.0f;
@@ -1510,17 +1536,17 @@ extern "C" void __cdecl RenderChaosMix(void)
 {
     if (!ChaosMixOpened) return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Chaos);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
-                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+                     (intptr_t)OffsetMixItems, 8, 4);
     // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
     // (InventoryColor), y sin este reset los textos y el botón salían teñidos
     // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
@@ -1613,7 +1639,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 //
 // Incluye la fila inferior: el zen guardado, el impuesto de retiro y los 3
 // botones (guardar zen / sacar zen / candado). El hit-test de esos botones es
-// SecondPassword_Screen9 (Net/SecondPassword.cpp, nombre heredado: es el de
+// Warehouse_HitTest (UI/UI_PanelInput.cpp, nombre heredado: es el de
 // sub_4EB5D0).
 //
 // Ruido anti-tamper (hash table sobre CharacterMachine alrededor de CADA lectura
@@ -1623,30 +1649,30 @@ extern "C" void __cdecl RenderWarehouse(void)
 {
     if (!WarehouseOpened) return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;      // 0x104
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Warehouse);      // 0x104
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)OffsetWarehouseItems, 8, 15);
+                     (intptr_t)OffsetWarehouseItems, 8, 15);
 
     // ── Título: "Baúl (Abierto|Cerrado)" ─────────────────────────────────────
     // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
     // con glColor amarillo cuando el baúl está bloqueado por password.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     const int lock = (DAT_00559f5f != 0) ? 1 : 0;
-    if (lock) glColor3f(1.0f, 1.0f, 0.0f);
+    if (lock) BufferedDraw::Color3f(1.0f, 1.0f, 0.0f);
     CHAR Title[128];
     Platform::TextFormat(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
                Title, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // ── Barra del zen guardado (bitmap 271 = 0x10F) ──────────────────────────
     float x = (float)((double)dword_7EAA0C8 + 50.0);
@@ -1748,7 +1774,7 @@ extern "C" void __cdecl RenderWarehouse(void)
                          0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // ── RenderEventWindow (0x004F3C50) ───────────────────────────────────────────
@@ -1771,17 +1797,13 @@ extern "C" void __cdecl RenderEventWindow(void)
 
     const bool bloodCastle = (EventType == 1);
 
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Event);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
     m_dwTextColor = bloodCastle ? 0xDCFFDCBEu : 0xC41432FFu;
     m_dwBackColor = 0x00101000u;
 
-    const float x = (float)dword_7EAA0C8 + 25.0f;
-    float y = (float)dword_7EAA0CC + (bloodCastle ? 170.0f : 210.0f);
-    const float stride = bloodCastle ? 40.0f : 45.0f;
-    const float height = bloodCastle ? 33.0f : 35.0f;
     const int   count  = bloodCastle ? 6 : 4;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1789,29 +1811,29 @@ extern "C" void __cdecl RenderEventWindow(void)
     const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
     // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
     // segundo banco de 6 filas de m_iBloodCastleLimitLevel.
-    const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
+    const int mgOffset = (Hero && ((((const BYTE*)Hero)[EntityOffset(444)] & 7) == 3)) ? 6 : 0;
 
     for (int row = 0; row < count; ++row) {
+        const auto button = Ui::EventButton(bloodCastle, row, gWindow.GetRightShift());
+        const float x = (float)button.x, y = (float)button.y;
         const int limitRow = bloodCastle ? row + mgOffset : row;
         const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
                                          : m_iDevilSquareLimitLevel[row][0];
         const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
                                          : m_iDevilSquareLimitLevel[row][1];
 
-        const bool inRect = ((float)MouseX >= x && (float)MouseX < x + 140.0f &&
-                             (float)MouseY >= y && (float)MouseY < y + height &&
-                             DAT_07e91388 == 0);
+        const bool inRect = button.Contains((int)MouseX, (int)MouseY) && DAT_07e91388 == 0;
 
         if (bloodCastle) {
             const bool permitted = (charLevel <= (unsigned)maxLevel && charLevel >= (unsigned)minLevel);
-            if (!permitted)     glColor3f(0.4f, 0.4f, 0.5f);
-            else if (inRect)    glColor3f(1.0f, 1.0f, 1.0f);
-            else                glColor3f(0.7f, 0.7f, 0.9f);
+            if (!permitted)     BufferedDraw::Color3f(0.4f, 0.4f, 0.5f);
+            else if (inRect)    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+            else                BufferedDraw::Color3f(0.7f, 0.7f, 0.9f);
         } else {
-            if (inRect)         glColor3f(1.0f, 1.0f, 1.0f);
-            else                glColor3f(0.9f, 0.8f, 0.7f);
+            if (inRect)         BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+            else                BufferedDraw::Color3f(0.9f, 0.8f, 0.7f);
         }
-        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        GL_DrawTexture(240, x, y, (float)button.width, (float)button.height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
 
         char label[96];
         const bool withMax = (maxLevel <= 10000);
@@ -1822,10 +1844,9 @@ extern "C" void __cdecl RenderEventWindow(void)
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
                    (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-        y += stride;
     }
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,

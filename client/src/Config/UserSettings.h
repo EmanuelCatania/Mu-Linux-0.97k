@@ -36,6 +36,7 @@ enum eUserResolution {
     RES_1366x768,
     RES_1600x900,
     RES_1920x1080,
+    RES_3440x1440,              // Pantalla ultrawide; conserva los índices anteriores.
     MAX_USER_RESOLUTION
 };
 
@@ -83,6 +84,10 @@ struct UserFontSettings {
     int  strikeOut    = 0;
 };
 
+// Backend de render pedido en [Window] RenderBackend. Se aplica al arrancar;
+// si el ejecutable no trae WebGPU, o el dispositivo no se crea, queda OpenGL.
+enum class RenderBackendPreference { OpenGL, Auto, D3D12, D3D11, Vulkan, Count };
+
 class CUserSettings {
 public:
     // Lee `iniPath`. Lo que no está queda en -1 (o vacío) y no se aplica.
@@ -95,6 +100,52 @@ public:
     int GetFpsLimit() const { return m_FpsLimit; }
     bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
+    RenderBackendPreference GetRenderBackend() const { return m_RenderBackend; }
+    // La preferencia con la que arrancó el cliente (el backend en uso).
+    RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
+    // Nombre para mostrar ("OpenGL", "DirectX 12"...).
+    static const char* RenderBackendName(RenderBackendPreference preference);
+    // DirectX sólo existe en Windows; en Linux WebGPU va sobre Vulkan.
+    static bool IsRenderBackendAvailable(RenderBackendPreference preference);
+    // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
+    static const char* RenderBackendKey(RenderBackendPreference preference);
+    // Guarda la preferencia; se usa en el próximo arranque.
+    void SetRenderBackend(RenderBackendPreference preference);
+    // DESVIACION: calidad de texturas ([Window] TextureQuality): 0 original,
+    // 1 mipmaps (se aplica al reiniciar), 2 mipmaps + bicúbico (en caliente).
+    int GetTextureQuality() const { return m_TextureQuality; }
+    int GetStartupTextureQuality() const { return m_StartupTextureQuality; }
+    void SetTextureQuality(int level);
+    // DESVIACION: nitidez de la imagen 3D ([Window] Sharpness): 0 apagada, 1-3.
+    int GetSharpness() const { return m_Sharpness; }
+    // Peso del realce por nivel: el máximo de AMD CAS equivale a 1.
+    float SharpnessAmount() const { static const float amount[4] = { 0.0f, 0.5f, 0.75f, 1.0f }; return amount[m_Sharpness]; }
+    void SetSharpness(int level);
+    // DESVIACION: antialiasing de la imagen 3D ([Window] Antialiasing):
+    // 0 apagado, 1 FXAA, 2 MSAA 4x, 3 MSAA 4x + FXAA. MSAA se aplica al reiniciar.
+    int GetAntialiasingLevel() const { return m_Antialiasing; }
+    bool GetAntialiasing() const { return m_Antialiasing == 1 || m_Antialiasing == 3; }   // FXAA
+    int Multisample() const { return m_StartupAntialiasing >= 2 ? 4 : 0; }
+    void SetAntialiasingLevel(int level);
+    // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
+    bool GetHDTextures() const { return m_HDTextures; }
+    void SetHDTextures(bool enabled);
+    // DESVIACION: sombras proyectadas ([Window] Shadows): 0 apagadas (sombra
+    // plana del original), 1 suaves, 2 fuertes. Se aplica en caliente.
+    int GetShadows() const { return m_Shadows; }
+    float ShadowStrength() const { static const float strength[3] = { 0.0f, 0.35f, 0.55f }; return strength[m_Shadows]; }
+    void SetShadows(int level);
+    // DESVIACION: niebla por profundidad ([Window] DepthFog); en caliente.
+    bool GetDepthFog() const { return m_DepthFog; }
+    void SetDepthFog(bool enabled);
+    // DESVIACION: distancia de dibujado ([Window] DrawDistance): con la cámara
+    // 3D (F10) multiplica su alcance (y con él el terreno que se dibuja); con
+    // la cámara normal no se aplica.
+    int GetDrawDistance() const { return m_DrawDistance; }
+    float DrawDistanceScale() const { static const float scale[4] = { 1.0f, 1.5f, 2.0f, 3.0f }; return scale[m_DrawDistance]; }
+    void SetDrawDistance(int level);
+    // true si alguna opción guardada se aplica recién al reiniciar.
+    bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
@@ -108,6 +159,16 @@ public:
     void SetPvPWithoutControl(bool enabled) { m_PvPWithoutControl = enabled; }
     const char* GetUsername() const { return m_Username; }
     int GetLanguage() const { return m_Language; }
+    // DESVIACION (Fase 4, Config.ini [Font] TextShadow / TextOutline): sombra
+    // de 1 px abajo y a la derecha, o contorno de 1 px, en negro.  Sólo en los
+    // renderers de texto propios (SDL); la GDI no los tiene.
+    bool GetTextShadow() const { return m_TextShadow; }
+    bool GetTextOutline() const { return m_TextOutline; }
+    // DESVIACION (Fase 4, Config.ini [Font] ColorEmoji, por defecto 1): los
+    // emoji se dibujan en color con la fuente de emoji del sistema.
+    bool GetColorEmoji() const { return m_ColorEmoji; }
+    // Desde el menú de opciones: se guardan en [Font] junto con el resto.
+    void SetTextEffects(bool shadow, bool outline, bool colorEmoji);
     // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
@@ -141,6 +202,15 @@ private:
     bool m_RenderDecoupled = true;
     int  m_FpsLimit = 60;
     bool m_VSync = false;
+    RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
+    RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
+    int m_TextureQuality = 0, m_StartupTextureQuality = 0;
+    int m_Sharpness = 0;
+    int m_Antialiasing = 0, m_StartupAntialiasing = 0;
+    bool m_HDTextures = false, m_StartupHDTextures = false;
+    int m_Shadows = 0;
+    bool m_DepthFog = false;
+    int m_DrawDistance = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;
@@ -148,6 +218,9 @@ private:
     bool m_Antilag[MAX_ANTILAG] = {};
     bool m_PvPWithoutControl = false;
     int  m_Language = USER_LANG_DEFAULT;
+    bool m_TextShadow = false;
+    bool m_TextOutline = false;
+    bool m_ColorEmoji = true;
     int  m_MiniMapAlpha = 10;   // defaults del DLL
     int  m_MiniMapZoom  = 0;
     char m_IniPath[MAX_PATH] = {};

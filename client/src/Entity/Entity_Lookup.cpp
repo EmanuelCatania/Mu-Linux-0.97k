@@ -16,8 +16,8 @@ int __cdecl Entity_FindById(int entity_id) {
     BYTE* base = (BYTE*)DAT_07abf5d0;
     if (!base) return 400;
     for (int i = 0; i < 400; i++) {
-        BYTE* ent = base + i * 0x394;
-        if (*(BYTE*)ent != 0 && *(short*)(ent + 476) == (short)entity_id)
+        BYTE* ent = base + i * CHARACTER_STRIDE;
+        if (*(BYTE*)ent != 0 && *(short*)&((CHARACTER*)(uintptr_t)(ent))->Key == (short)entity_id)
             return i;
     }
     return 400;

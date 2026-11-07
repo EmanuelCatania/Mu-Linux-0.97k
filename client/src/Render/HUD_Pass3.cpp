@@ -14,6 +14,9 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "UI/ChatTypes.h"
+#include "Render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
@@ -22,24 +25,16 @@ void HUD_BeginGridPass(int pass);
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <GL/gl.h>
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.
-extern "C" int __cdecl sub_4E38B0(float a1, float a2, float x, int a4,
+extern "C" int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
                                    float sx, int a6);
 
-static float PointerBitsAsFloat(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" int __cdecl sub_4E9300_(void);
 #define sub_4E9300 sub_4E9300_
 // Alias a los globales reales (IDA): el teclado del PIN los comparte con
-// SecondPassword_Screen9 (boton del candado), el drop del baul y el manejador 0x4E93A0.
+// Warehouse_HitTest (boton del candado), el drop del baul y el manejador 0x4E93A0.
 #define dword_7EAA14C  DAT_07eaa14c
 #define byte_7EAA1A4   DAT_07eaa1a4
 #define byte_7EAA179   DAT_07eaa179
@@ -154,7 +149,7 @@ extern "C" void   __cdecl RenderTipText(int, int, const char*);
 
 // Aliases.  ItemAttribute already defined in HUD_Pass2 via a #define on
 // DAT_07d78068 — but #defines don't propagate across TUs.  Re-establish here.
-extern "C" int DAT_07d78068;
+extern "C" std::uintptr_t DAT_07d78068;
 #define ItemAttribute            ((ITEM_ATTRIBUTE*)DAT_07d78068)
 
 #define byte_7E11D6E             DAT_07e11d6e
@@ -248,20 +243,24 @@ int __cdecl FUN_00482850_(void)
 //   Line 2: arrow count for slot 604  (uses GlobalText[352])
 // Y offset is resolution-dependent (m_Resolution case).
 // =============================================================================
+// IDA 0x4BF540 dibuja en (GetScreenWidth() - margenParty - k, 4), con k fijo
+// por resolución (90/75/65/58/10) ajustado al ancho de la fuente del 0.97k.
+// DESVIACION: con la fuente configurable ese k no alcanza y el texto queda
+// debajo de la lista de party; se alinea a la derecha de ese mismo borde.
+static int RenderNumArrow_TextX(float partyMargin, const SIZE& sz)
+{
+    const float rate = gWindow.GetScreenRateX() > 0.0f ? gWindow.GetScreenRateX() : 1.0f;
+    const float width = (float)sz.cx / rate;
+    return (int)((float)GetScreenWidth() - partyMargin - 5.0f - width);
+}
+
 extern "C" bool __cdecl RenderNumArrow_(void);
 bool __cdecl RenderNumArrow_(void)
 {
     bool drewSomething = false;
-    float v27 = (PartyNumber > 0 && !PartyOpened) ? 50.0f : 0.0f;
-
-    int baseY = 10;
-    switch (m_Resolution) {
-        case 0: baseY = 90; break;
-        case 1: baseY = 75; break;
-        case 2: baseY = 65; break;
-        case 3: baseY = 58; break;
-        case 4: baseY = 10; break;
-    }
+    // IDA 0x4BF540: 50 px de margen si hay party (la lista compacta), sin
+    // mirar PartyOpened; el ancla es GetScreenWidth(), no el borde de la ventana.
+    float v27 = (PartyNumber > 0) ? 50.0f : 0.0f;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
@@ -270,9 +269,7 @@ bool __cdecl RenderNumArrow_(void)
     // Anti-tamper inner block (CharacterMachine decrypt) — skipped.
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536)) == 143) {
-        int screenW = 640;
         int v10 = *(unsigned char*)((BYTE*)CharacterMachine + 562);
-        float v25 = (float)((double)screenW - (double)v27 - 10.0);
         int v11 = FUN_00482850_();
         if (v10 > 0 || v11 > 0) {
             CHAR String[100];
@@ -281,15 +278,13 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604)) == 135) {
-        int screenW = 640;
         int v13 = *(unsigned char*)((BYTE*)CharacterMachine + 630);
-        float v26 = (float)((double)screenW - (double)v27 - 10.0);
         int v14 = FUN_00482850_();
         if (v13 > 0 || v14 > 0) {
             CHAR String[100];
@@ -298,7 +293,7 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
@@ -405,37 +400,37 @@ void Render_HudPass_4F6050_(void)
     if (InventoryOpened) {
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat(OffsetInventoryItems), 8, 8.0f, 1);
+                   OffsetInventoryItems, 8, 8.0f, 1);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
                    // IDA pushes `Inventory.WalkSpeed + 0x880`, which in our
                    // ITEM layout is exactly `&Inventory[32].WalkSpeed`.
-                   PointerBitsAsFloat(ShopItems), 8, 15.0f, 1);
+                   ShopItems, 8, 15.0f, 1);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat(Inventory), 8, 4.0f, 1);
+                   Inventory, 8, 4.0f, 1);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat(OffsetTradeItems), 8, 4.0f, 1);
+                   OffsetTradeItems, 8, 4.0f, 1);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetWarehouseItems), 8, 15.0f, 1);
+                   OffsetWarehouseItems, 8, 15.0f, 1);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
 }
 
@@ -459,7 +454,7 @@ void Render_HudPass_4EB070_(void)
     if (!dword_7EAA14C) return;
 
     int v20 = sub_4E9300();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(252, 213.0f, 100.0f, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
     int Width = 105;
@@ -502,7 +497,7 @@ void Render_HudPass_4EB070_(void)
         RenderCenteredText(320, 122, sub);
     }
 
-    glColor3f(0.30000001f, 0.30000001f, 0.30000001f);
+    Gfx::Color3f(0.30000001f, 0.30000001f, 0.30000001f);
     // Largo del campo: 4 para el PIN, 7 para el codigo personal.
     // DESVIACION: el binario lee LODWORD(flt_83A7ACC[0]), que es el arreglo de
     // la CAMARA (lo escribe MoveCamera como floats) — o sea toma los bits de un
@@ -516,7 +511,7 @@ void Render_HudPass_4EB070_(void)
     float v21 = Widtha * 0.5f;
     float x = 320.0f - v21;
     GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
 
@@ -542,10 +537,10 @@ void Render_HudPass_4EB070_(void)
         if (v20 == v7) {
             if (byte_7EAA179) v8 = 1;
             m_dwTextColor = 0xFFFF0084u;   // -16726844
-            glColor3f(1.0f, 1.0f, 0.80000001f);
+            Gfx::Color3f(1.0f, 1.0f, 0.80000001f);
         } else {
             m_dwTextColor = 0xFFC44400u;
-            glColor3f(0.85000002f, 0.85000002f, 0.64999998f);
+            Gfx::Color3f(0.85000002f, 0.85000002f, 0.64999998f);
         }
         int v22 = 38 * (v7 / 5) + 154;
         float v24 = (float)v22;
@@ -564,7 +559,7 @@ void Render_HudPass_4EB070_(void)
             RenderText(40 * (v7 % 5) + 235, v22 - (v8 != 0) + 6, pszText, 0, 0, 0);
         }
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Two action buttons at y=239: 70×21 px, textures 241/243 with hover
     // highlight when v20 in {11, 12}.
@@ -587,12 +582,12 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
 
-void __cdecl RenderBoolean(int x, int y, DWORD c)
+void __cdecl RenderBoolean(int x, int y, intptr_t c)
 {
     if (!c) return;
 
     EnableAlphaTest(true);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int texW = 1;
     int texH = 1;
@@ -658,14 +653,14 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     if ((int)MouseX >= rectX && (int)MouseX < rectX + rectW &&
         (int)MouseY >= rectY && (int)MouseY < rectY + rectH &&
         InputEnable && Hero && AsCharacter(Hero)->SafeZone &&
-        strcmp(AsChat(c)->ID, AsCharacter(Hero)->ID) &&
+        strcmp(ChatDisplayName(AsChat(c)), EntityName::Get(Hero)) &&
         (int)(dword_7E11DA8 % 6) < 3)
     {
         m_dwBackColor = m_dwTextColor;
         m_dwTextColor = bg;
     }
 
-    Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->ID, texW, 0, 0, 0, 0, AsChat(c)->Guild);
+    Font_RenderTextToBitmap(TextSize.cx, fontHeight, (char*)ChatDisplayName(AsChat(c)), texW, 0, 0, 0, 0, (char*)ChatDisplayGuild(AsChat(c)));
     Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
     // IDA L214-224: -1778372066=0x9600321E · -1778384846=0x96000032 ·
@@ -712,13 +707,13 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
             constexpr float MarkSize = 16.0f;
             constexpr float MarkOffset = 21.0f;
             const int previousTextureSlot = DAT_00561574;
-            glPushAttrib(GL_CURRENT_BIT | GL_TEXTURE_BIT);
+            Gfx::PushAttrib(Gfx::AttribCurrent | Gfx::AttribTexture);
             // Alpha/blend ya están preparados al entrar; estos helpers sólo cambian la textura.
-            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             CreateGuildMark(markIndex, true);
             RenderBitmap(0x22, (float)x - MarkOffset, (float)y, MarkSize, MarkSize,
                          0.0f, 0.0f, 1.0f, 1.0f, true, true);
-            glPopAttrib();
+            Gfx::PopAttrib();
             DAT_00561574 = previousTextureSlot;
         }
     }

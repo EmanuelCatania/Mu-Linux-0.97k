@@ -60,23 +60,17 @@ void Composition(bool active) {
 }
 void Text(const char* utf8) {
     Composition(false);
-    // DESVIACION SDL3: UTF-8 a los bytes Windows-1252 del cliente; nunca truncar
-    // un carácter no representable a un byte que pueda activar otra acción.
+    // El texto del cliente es UTF-8 (Fase 4): se entrega cada code point tal
+    // cual y el campo de texto lo guarda en UTF-8. Lo inválido se descarta.
     const auto* p = reinterpret_cast<const unsigned char*>(utf8);
-    const uint32_t extra[32] = {0x20ac,0,0x201a,0x192,0x201e,0x2026,0x2020,0x2021,0x2c6,0x2030,0x160,0x2039,0x152,0,0x17d,0,0,0x2018,0x2019,0x201c,0x201d,0x2022,0x2013,0x2014,0x2dc,0x2122,0x161,0x203a,0x153,0,0x17e,0x178};
     while (*p) {
         uint32_t code = *p++;
         int rest = 0;
         if (code >= 0xf0) { code &= 7; rest = 3; }
         else if (code >= 0xe0) { code &= 15; rest = 2; }
         else if (code >= 0xc0) { code &= 31; rest = 1; }
+        else if (code >= 0x80) continue;
         while (rest-- > 0) { if ((*p & 0xc0) != 0x80) return; code = (code << 6) | (*p++ & 63); }
-        if (code > 255) {
-            uint32_t byte = 0;
-            for (int i = 0; i < 32; ++i) if (extra[i] == code) byte = 128 + i;
-            if (!byte) continue;
-            code = byte;
-        }
         InputEvent event{InputEventType::Text}; event.character = code; DeliverSDLInput(event);
     }
 }
@@ -92,6 +86,11 @@ bool SDLCALL Watch(void*, SDL_Event* event) {
         SetKey(18, held[0xa4] || held[0xa5]);
         if (event->key.down && (key == 8 || key == 9 || key == 13 || key == 27)) {
             input.type = InputEventType::Text; input.character = key; DeliverSDLInput(input);
+        }
+        // Ctrl+V: SDL no genera texto para la combinación; se entrega el mismo
+        // carácter de control que arma TranslateMessage en Win32.
+        if (event->key.down && key == 'V' && held[17] && !held[18]) {
+            input.type = InputEventType::Text; input.character = 0x16; DeliverSDLInput(input);
         }
         return true;
     }
@@ -153,6 +152,11 @@ public:
     void PositionIme(int x, int y, int width, int height) override {
         SDL_Rect area{x, y, width > x ? width - x : 1, 1};
         SDL_SetTextInputArea(SDLWindow(), &area, 0);
+    }
+    std::string ClipboardText() override {
+        std::string result;
+        if (char* text = SDL_GetClipboardText()) { result = text; SDL_free(text); }
+        return result;
     }
 };
 }

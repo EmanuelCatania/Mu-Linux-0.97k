@@ -5,6 +5,9 @@
 // for every class/tier), item slots, and shadow model.  Ends by calling
 // SetAttackSpeed (Entity_LockAnim) and setting scale tables in the model block.
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
+#include "Render/Skinning.h"
+#include "Game/RenderDerivedState.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -14,19 +17,14 @@
 // IDA: OpenPlayers
 void __cdecl Model_LoadPlayerAndItemMeshes(void)
 {
-    // Allocate raw model pool and align the base pointer with a random offset
-    // to frustrate memory-address fingerprinting.
-    // DESVIACION (0.97.20): el binario reserva 0x5b334 (963 modelos + el
-    // offset).  Se suman MODEL_MAX_DYNAMIC slots para los modelos del catálogo.
-    DAT_06f42a58 = operator new((size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc);
-    unsigned int rnd = (unsigned int)rand() & 0x800003ff;
-    if ((int)rnd < 0) rnd = (rnd - 1 | 0xfffffc00) + 1;
-    DAT_05828d58 = (DWORD)((char*)DAT_06f42a58 + rnd * 0xbc);
-
-    // Zero-fill the model table region (0xb0cd DWORDs en el binario = 963
-    // modelos; acá también los dinámicos).
-    DWORD* p = (DWORD*)DAT_05828d58;
-    for (int i = MODEL_MAX_TOTAL * 0xbc / 4; i != 0; i--) *p++ = 0;
+    // DESVIACION: base estable y páginas bajo demanda. Conservar la muestra
+    // RNG del offset original para no alterar la secuencia de simulación.
+    (void)rand();
+    // La base ya no cambia: invalidar explícitamente snapshots de la carga anterior.
+    RenderDerivedState_Cancel();Skinning::Invalidate();
+    ResourceTables::ResetModels();
+    DAT_06f42a58=ResourceTables::ModelBase();
+    DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
 
     // ── Korean-locale SMD animations (skipped in compressed-asset mode) ──────
     if (DAT_0055a7c4 == '\0') {
@@ -322,63 +320,63 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     {
         BYTE* playerModelBase = (BYTE*)(uintptr_t)DAT_05828d58;
         // Aux fields del struct player (no son acciones; offsets internos del modelo)
-        *(DWORD*)(playerModelBase + 73404) = 20;
-        *(DWORD*)(playerModelBase + 73408) = 6;
-        *(DWORD*)(playerModelBase + 73412) = 13;
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x54 + BMD_FIELD_SHIFT) = 20;
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x58 + BMD_FIELD_SHIFT) = 6;
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x5c + BMD_FIELD_SHIFT) = 13;
 
-        DWORD actions = *(DWORD*)(playerModelBase + 73368);
+        BYTE* actions = AsModel(playerModelBase + BMD_STRIDE * 390)->Actions;
         if (actions) {
-            BYTE* A = (BYTE*)(uintptr_t)actions;
+            BYTE* A = actions;
 
             // action[1..12].speed = 0.28f  (idle/stop / walk variants)
             for (int action = 1; action <= 12; ++action) {
-                *(DWORD*)(A + 16 * action + 4) = 0x3E8F5C29;  // 0.28f
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3E8F5C29;  // 0.28f
             }
             // Spot speeds for stop/walk hands variants
-            *(DWORD*)(A +  52) = 0x3E851EB8;  // 0.26f  action[3]
-            *(DWORD*)(A +  68) = 0x3E75C28F;  // 0.24f  action[4]
-            *(DWORD*)(A +  84) = 0x3E75C28F;  // 0.24f  action[5]
-            *(DWORD*)(A + 116) = 0x3E6147AE;  // 0.22f  action[7]
-            *(DWORD*)(A + 132) = 0x3E6147AE;  // 0.22f  action[8]
+            *(DWORD*)(A + ModelActionByte(52)) = 0x3E851EB8;  // 0.26f  action[3]
+            *(DWORD*)(A + ModelActionByte(68)) = 0x3E75C28F;  // 0.24f  action[4]
+            *(DWORD*)(A + ModelActionByte(84)) = 0x3E75C28F;  // 0.24f  action[5]
+            *(DWORD*)(A + ModelActionByte(116)) = 0x3E6147AE;  // 0.22f  action[7]
+            *(DWORD*)(A + ModelActionByte(132)) = 0x3E6147AE;  // 0.22f  action[8]
 
             // action[13..33].speed = 0.30f
             for (int action = 13; action <= 33; ++action) {
-                *(DWORD*)(A + 16 * action + 4) = 0x3E99999A;
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3E99999A;
             }
-            *(DWORD*)(A + 340) = 0x3EB33333;  // 0.35f action[21]
-            *(DWORD*)(A + 468) = 0x3EB33333;  // 0.35f action[29]
+            *(DWORD*)(A + ModelActionByte(340)) = 0x3EB33333;  // 0.35f action[21]
+            *(DWORD*)(A + ModelActionByte(468)) = 0x3EB33333;  // 0.35f action[29]
 
             // action[92..130].speed = 0.32f
             for (int action = 92; action <= 130; ++action) {
-                *(DWORD*)(A + 16 * action + 4) = 0x3EA3D70A;
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EA3D70A;
             }
             // action[131..132].speed = 0.45f
             for (int action = 131; action <= 132; ++action) {
-                *(DWORD*)(A + 16 * action + 4) = 0x3EE66666;
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EE66666;
             }
             // action[133..140].speed = 0.40f, incluidas las dos poses de apoyo.
             for (int action = 133; action <= 140; ++action) {
-                *(DWORD*)(A + 16 * action + 4) = 0x3ECCCCCD;
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3ECCCCCD;
             }
 
             // Per-action overrides
-            *(DWORD*)(A + 2084) = 0x3ECCCCCD;  // 0.40f
-            *(DWORD*)(A + 1780) = 0x3E8F5C29;  // 0.28f
-            *(DWORD*)(A + 1796) = 0x3E8F5C29;  // 0.28f
-            *(DWORD*)(A + 2196) = 0x3E4CCCCD;  // 0.20f
-            *(DWORD*)(A + 2212) = 0x3E4CCCCD;  // 0.20f
-            *(DWORD*)(A + 1028) = 0x3E4CCCCD;  // 0.20f
-            *(DWORD*)(A + 1044) = 0x3E4CCCCD;  // 0.20f
-            *(DWORD*)(A + 1252) = 0x3E75C28F;  // 0.24f  PLAYER_STOP_TWO_HAND_SWORD_TWO
-            *(DWORD*)(A + 1268) = 0x3E99999A;  // 0.30f  PLAYER_WALK_TWO_HAND_SWORD_TWO
-            *(DWORD*)(A + 1284) = 0x3E99999A;  // 0.30f  PLAYER_RUN_TWO_HAND_SWORD_TWO
-            *(DWORD*)(A + 1300) = 0x3E75C28F;  // 0.24f  PLAYER_ATTACK_TWO_HAND_SWORD_TWO
-            *(DWORD*)(A + 1076) = 0x3EE66666;  // 0.45f
+            *(DWORD*)(A + ModelActionByte(2084)) = 0x3ECCCCCD;  // 0.40f
+            *(DWORD*)(A + ModelActionByte(1780)) = 0x3E8F5C29;  // 0.28f
+            *(DWORD*)(A + ModelActionByte(1796)) = 0x3E8F5C29;  // 0.28f
+            *(DWORD*)(A + ModelActionByte(2196)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(2212)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1028)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1044)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1252)) = 0x3E75C28F;  // 0.24f  PLAYER_STOP_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1268)) = 0x3E99999A;  // 0.30f  PLAYER_WALK_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1284)) = 0x3E99999A;  // 0.30f  PLAYER_RUN_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1300)) = 0x3E75C28F;  // 0.24f  PLAYER_ATTACK_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1076)) = 0x3EE66666;  // 0.45f
 
             // Flag de no-loop (action+0): 1 = se detiene en el último frame.
-            *(BYTE*)(A + 2096) = 1;
-            *(BYTE*)(A + 2112) = 1;
-            *(BYTE*)(A + 2064) = 1;
+            *(BYTE*)(A + ModelActionByte(2096)) = 1;
+            *(BYTE*)(A + ModelActionByte(2112)) = 1;
+            *(BYTE*)(A + ModelActionByte(2064)) = 1;
         }
     }
 

@@ -40,7 +40,8 @@ struct Sample {
     std::uint64_t generation = 0;
     std::uintptr_t owner = 0;
     int key = 0, type = 0, detail = 0;
-    bool live = false, teleport = false;
+    bool live = false;
+    int teleport = 0;
 };
 struct Track {
     Sample previous, current;
@@ -48,6 +49,7 @@ struct Track {
 };
 Track characters[401], parts[401][11], items[1000], points[100];
 std::unordered_map<const void*,Track> objects;
+std::vector<const void*> movingObjects;
 std::uint64_t characterGeneration[401] = {}, itemGeneration[1000] = {}, pointGeneration[100] = {};
 int scene = -1, world = -1;
 RenderCameraPair camera;
@@ -74,12 +76,22 @@ void CaptureCamera(bool begin, bool sameScene) {
     cameraLive=live; cameraOwner=owner;
 }
 
+bool SamePose(const RenderPose& a, const RenderPose& b) {
+    return !memcmp(a.position,b.position,sizeof(a.position)) && !memcmp(a.angle,b.angle,sizeof(a.angle)) &&
+           !memcmp(a.headAngle,b.headAngle,sizeof(a.headAngle)) && a.animationFrame==b.animationFrame &&
+           a.priorAnimationFrame==b.priorAnimationFrame && a.action==b.action && a.priorAction==b.priorAction &&
+           a.scale==b.scale && a.alpha==b.alpha;
+}
 bool SameIdentity(const Sample& a, const Sample& b) {
     return a.live && b.live && a.generation == b.generation && a.owner == b.owner &&
            a.key == b.key && a.type == b.type && a.detail == b.detail;
 }
+// OBJECT::Teleport: 1 desvaneciendo, 2 oculto, 3 terminado. El 3 queda puesto
+// tras CreateTeleportEnd y los skills de guerrero (igual que en el original), así
+// que sólo el cambio de estado o el fundido cortan la interpolación.
+bool TeleportStable(int state) { return state != 1 && state != 2; }
 bool Same(const Sample& a, const Sample& b) {
-    return SameIdentity(a, b) && !a.teleport && !b.teleport;
+    return SameIdentity(a, b) && a.teleport == b.teleport && TeleportStable(b.teleport);
 }
 void Begin(Track& track, const Sample& sample, bool sameScene) {
     track.continuous = sameScene && track.published && Same(track.current, sample);
@@ -106,7 +118,7 @@ Sample ObjectSample(const OBJECT& object) {
     sample.live = object.Live != 0;
     if (!sample.live) return sample; // El payload de un slot libre puede no estar inicializado.
     sample.type = object.Type;
-    sample.teleport = object.Teleport != 0;
+    sample.teleport = object.Teleport;
     memcpy(sample.pose.position, object.Position, sizeof(sample.pose.position));
     memcpy(sample.pose.angle, object.Angle, sizeof(sample.pose.angle));
     memcpy(sample.pose.headAngle, object.HeadAngle, sizeof(sample.pose.headAngle));
@@ -152,21 +164,21 @@ Sample PartSample(int slot, int index) {
     return sample;
 }
 Sample ItemSample(int slot) {
-    Sample sample = ObjectSample(*(OBJECT*)(DAT_07e12840 + slot * 0x204 + 72));
+    Sample sample = ObjectSample(*(OBJECT*)(DAT_07e12840 + slot * GROUND_ITEM_STRIDE + 72));
     sample.owner = (std::uintptr_t)DAT_07e12840;
     sample.generation = itemGeneration[slot];
     return sample;
 }
 Sample PointSample(int slot) {
-    const char* point = DAT_07c80110 + slot * 0x70;
+    const DamagePoint& point = DAT_07c80110[slot];
     Sample sample;
-    sample.live = point[0] != 0;
+    sample.live = point.Active != 0;
     if (!sample.live) return sample;
     sample.generation = pointGeneration[slot];
-    sample.key = *(const int*)(point + 4);
-    memcpy(sample.pose.position, point + 0x10, sizeof(sample.pose.position));
-    sample.pose.scale = *(const float*)(point + 0x0c);
-    sample.pose.alpha = *(const float*)(point + 0x48) * 0.40000001f;
+    sample.key = point.Value;
+    memcpy(sample.pose.position, point.Position, sizeof(sample.pose.position));
+    sample.pose.scale = point.Scale;
+    sample.pose.alpha = point.LifeTime * 0.40000001f;
     return sample;
 }
 void Capture(bool begin) {
@@ -177,11 +189,14 @@ void Capture(bool begin) {
         if (!SceneObjects::Contains(it->first)) it=objects.erase(it);
         else ++it;
     }
+    if (!begin) movingObjects.clear();
     for (const void *node:SceneObjects::LiveNodes()) {
         Sample sample=ObjectSample(*(const OBJECT *)node);
         sample.owner=(std::uintptr_t)node; sample.generation=SceneObjects::Generation(node);
-        if (begin) Begin(objects[node],sample,sameScene);
-        else End(objects[node],sample,sameScene);
+        Track& track=objects[node];
+        if (begin) { Begin(track,sample,sameScene); continue; }
+        End(track,sample,sameScene);
+        if (!track.continuous || !SamePose(track.previous.pose,track.current.pose)) movingObjects.push_back(node);
     }
     for (int slot = 0; slot < 401; ++slot) {
         if (begin) Begin(characters[slot], CharacterSample(slot), sameScene);
@@ -210,7 +225,7 @@ bool Read(const Track& track, const Sample& live, RenderPosePair& out) {
         !SameIdentity(track.current, live)) return true;
     out.previous = track.previous.pose;
     out.current = track.current.pose;
-    out.continuous = track.continuous && !live.teleport;
+    out.continuous = track.continuous && TeleportStable(live.teleport);
     return true;
 }
 void LimitDisplacement(RenderPosePair& pair, float maximum) {
@@ -263,7 +278,7 @@ void RenderSnapshots_NewCharacter(const void* entity) {
 }
 void RenderSnapshots_NewItem(int slot) {
     if (slot<0 || slot>=1000) return;
-    RenderDerivedState_Forget((BYTE *)DAT_07e12840+slot*0x204+72);
+    RenderDerivedState_Forget((BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72);
     ++itemGeneration[slot];
 }
 void RenderSnapshots_NewDamagePoint(int slot) { if (slot >= 0 && slot < 100) ++pointGeneration[slot]; }
@@ -314,6 +329,7 @@ bool RenderSnapshots_Camera(float maximum, RenderCameraPair& out) {
     return true;
 }
 
+const std::vector<const void*>& RenderSnapshots_MovingObjects() { return movingObjects; }
 // Los nodos de CreateObject pueden liberarse entre pasos: validar antes de leer.
 bool RenderSnapshots_Object(const void* node, float maximum, RenderPosePair& out) {
     if (!SceneObjects::Contains(node)) return false;

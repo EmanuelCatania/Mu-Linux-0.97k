@@ -345,11 +345,11 @@ void __cdecl Model_LoadItemMeshes(void)
     //   0x15950 = 470*0xBC+0x28 → Mace+6                       mesh[1]
     //   0x2be38 = 956*0xBC+0x28 → Event+9                      mesh[1]
     {
-        unsigned int m;
-        m = *(unsigned int*)((unsigned char*)(uintptr_t)DAT_05828d58 + 0x16c68); if (m) *(unsigned char*)(uintptr_t)(m + 0x28) = 1;
-        m = *(unsigned int*)((unsigned char*)(uintptr_t)DAT_05828d58 + 0x12d40); if (m) *(unsigned char*)(uintptr_t)(m + 0x28) = 1;
-        m = *(unsigned int*)((unsigned char*)(uintptr_t)DAT_05828d58 + 0x19fd0); if (m) *(unsigned char*)(uintptr_t)(m + 0x50) = 1;
-        m = *(unsigned int*)((unsigned char*)(uintptr_t)DAT_05828d58 + 0x15950); if (m) *(unsigned char*)(uintptr_t)(m + 0x28) = 1;
-        m = *(unsigned int*)((unsigned char*)(uintptr_t)DAT_05828d58 + 0x2be38); if (m) *(unsigned char*)(uintptr_t)(m + 0x28) = 1;
+        BYTE* m;
+        m = AsModel(DAT_05828d58 + BMD_STRIDE * 496)->Meshs; if (m) m[sizeof(ClothModelMesh) * 1] = 1;
+        m = AsModel(DAT_05828d58 + BMD_STRIDE * 410)->Meshs; if (m) m[sizeof(ClothModelMesh) * 1] = 1;
+        m = AsModel(DAT_05828d58 + BMD_STRIDE * 566)->Meshs; if (m) m[sizeof(ClothModelMesh) * 2] = 1;
+        m = AsModel(DAT_05828d58 + BMD_STRIDE * 470)->Meshs; if (m) m[sizeof(ClothModelMesh) * 1] = 1;
+        m = AsModel(DAT_05828d58 + BMD_STRIDE * 956)->Meshs; if (m) m[sizeof(ClothModelMesh) * 1] = 1;
     }
 }

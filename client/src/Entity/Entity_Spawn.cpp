@@ -10,6 +10,7 @@
 #include "Entity/EntityTypes.h"
 #include "Scene/ObjectRegistry.h"
 #include "Item/ContentCatalog.h"
+#include "Entity/EntityName.h"
 #include "globals.h"
 #include "functions.h"
 #include "Platform/PlatformHeaders.h"
@@ -24,6 +25,8 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
 
     // 0.97.20: la entidad nueva no hereda los modelos propios del slot.
     gContentCatalog.ClearEntityParts(param_1);
+    // 0.97.40: el nombre completo del slot anterior no se hereda.
+    EntityName::Clear(param_1);
 
     unsigned int grid_x      = (unsigned int)PositionX;
     unsigned int grid_y      = (unsigned int)PositionY;
@@ -71,7 +74,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     o->AlphaTarget             = 1.0f;
     *(int *)&o->Velocity       = 0;
     *(int *)&o->ShadowScale    = 0;
-    param_1[0x194]             = 0;
+    param_1[EntityOffset(0x194)] = 0;
 
     // Class: se limpia salvo para los tipos 0xaa..0xad
     if ((int)entity_type < 0xaa || 0xad < (int)entity_type) {
@@ -194,7 +197,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     }
     {
         short etype     = o->Type;
-        short boneCount = *(short *)(DAT_05828d58 + etype * 0xbc + 0x22);
+        short boneCount = *(short *)(DAT_05828d58 + etype * BMD_STRIDE + 0x22);
         if (boneCount < 0) boneCount = 0;   // defense: short garbage → signed neg
         void *boneBuf = operator_new((unsigned int)boneCount * 0x30);
         // DESVIACION: IDA 0045ADC0 L710 hace `operator_new` sin inicializar y el buffer
@@ -217,7 +220,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
             slot[1] = 0;
-            slot += 0x18;
+            slot += sizeof(PART_t);
         }
     }
     // BodyPart[0..5]
@@ -227,7 +230,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
             slot[1] = 0;
-            slot += 0x18;
+            slot += sizeof(PART_t);
         }
     }
 

@@ -89,12 +89,13 @@
 //   DAT_06970a9c  → root bone data (pose matrix, usado como fallback)
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/Entity_DrawAt.h"
 
 // Entity_DrawAt @ 0x00505A10 (73 lines)
 // Sets up model state (pos, scale, flags) and draws entity sprite + shadow.
 // param_11: LOD level (0=normal, 1=shadow, 2=mid, 3=far)
-void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *param_4,
+void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, float *param_4,
                            float param_5, uint param_6, byte param_7, char param_8,
                            undefined1 param_9, char param_10, int param_11, uint param_12)
 {
@@ -112,16 +113,16 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
         else if (uVar1 == 2) param_2 = 0x3b4;
     }
 
-    pModel = (void *)(DAT_05828d58 + param_2 * 0xbc);
+    pModel = (void *)(DAT_05828d58 + param_2 * BMD_STRIDE);
 
     // Copy entity fields into model block
-    *(undefined1 *)((int)pModel + 0x99) = param_9;
-    *(undefined4 *)((int)pModel + 0x68) = *(undefined4 *)(param_1 + 0xc);    // scale
-    *(undefined1 *)((int)pModel + 0x45) = *(undefined1 *)(param_1 + 0xe4);   // flag A
-    *(undefined1 *)((int)pModel + 0x44) = *(undefined1 *)(param_1 + 0xdc);   // flag B
-    *(undefined4 *)((int)pModel + 0x6c) = *(undefined4 *)(param_1 + 0x10);   // world X
-    *(undefined4 *)((int)pModel + 0x70) = *(undefined4 *)(param_1 + 0x14);   // world Y
-    *(undefined4 *)((int)pModel + 0x74) = *(undefined4 *)(param_1 + 0x18);   // world Z
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->HideSkin = param_9;
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyScale = *(undefined4 *)(param_1 + 0xc);    // scale
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->ContrastEnable = *(undefined1 *)(param_1 + 0xe4);   // flag A
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->LightEnable = *(undefined1 *)(param_1 + 0xdc);   // flag B
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[0] = *(undefined4 *)(param_1 + 0x10);   // world X
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[1] = *(undefined4 *)(param_1 + 0x14);   // world Y
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[2] = *(undefined4 *)(param_1 + 0x18);   // world Z
 
     // LOD transparency scale
     // NOTE: _DAT_005597c8 is typed `float` in globals.cpp. Writing the raw
@@ -134,38 +135,38 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
     else if (param_11 == 1) {
         // Shadow draw: two-pass with different alpha
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3ca3d70a;  // 0.02
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3dcccccd;  // 0.1
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3ca3d70a;  // 0.02
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3dcccccd;  // 0.1
         } else {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3dcccccd;  // 0.1
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3cf5c28f;  // 0.03
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3dcccccd;  // 0.1
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3cf5c28f;  // 0.03
         }
-        *(undefined4 *)((int)pModel + 0x50) = 0;
+        *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
 
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3e23d70a;  // 0.16
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3f333333;  // 0.7
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3e23d70a;  // 0.16
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3f333333;  // 0.7
         } else {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3f333333;  // 0.7
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3e4ccccd;  // 0.2
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3f333333;  // 0.7
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3e4ccccd;  // 0.2
         }
-        *(undefined4 *)((int)pModel + 0x50) = 0;
+        *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
     }
 
-    Entity_GetLightScale(param_1, (int)pModel);   // Sprite_SetupAnim
+    Entity_GetLightScale(param_1, reinterpret_cast<uintptr_t>(pModel));   // Sprite_SetupAnim
 
     // Bone selection: param_8 = use entity's bone ptr or fallback to root
     if (param_8 == '\0')
-        puVar2 = *(undefined **)(param_1 + 0x114);
+        puVar2 = *(undefined **)&((OBJECT*)(uintptr_t)(param_1))->BoneMatrices;
     else
         puVar2 = (undefined*)&DAT_06970a9c;
 
-    Skeleton_Transform(pModel, (int)puVar2,
-                 (float *)(param_1 + 0x118),
-                 (float *)(param_1 + 0x124),
-                 (float *)(param_1 + 0x130),
+    Skeleton_Transform(pModel, reinterpret_cast<float*>(puVar2),
+                 (float *)(param_1 + EntityOffset(0x118)),
+                 (float *)(param_1 + EntityOffset(0x124)),
+                 (float *)(param_1 + EntityOffset(0x130)),
                  param_10);   // Sprite_DrawBone(model, bone, anim[3], blend)
 
     RenderPartObjectEffect(param_1, param_2, param_4, param_5, param_6,

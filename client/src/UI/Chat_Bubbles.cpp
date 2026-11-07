@@ -2,6 +2,12 @@
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
+#include "Text/TextCore.h"
+#include "Entity/EntityName.h"
+#include "Net/NetText.h"
+#include "UI/ChatTypes.h"
+#include <string>
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -38,29 +44,26 @@ int __cdecl FUN_0047fed0(int lvl, const char* name) {
 // IDA: RegistWhisperID (0x004801C0) — lo llama ProtocolCore case 2 (susurro
 // recibido) con lvl 10: con el heroe de nivel < 10 anota al remitente en la
 // siguiente fila del anillo, salvo que ya este.
-// Fiel al binario: strcpy de hasta 11 bytes sobre filas de 10, o sea un nombre
-// de 10 caracteres pisa el primer byte de la fila siguiente (el anillo tiene
-// una fila de sobra para que la ultima no se salga).
+// DESVIACION (0.97.40): IDA hace strcpy sobre filas de 10 bytes; con nombres
+// de hasta 40 bytes cada fila mide 41 y se copia con tope.
 void __cdecl RegistWhisperID(int lvl, const char* text) {
     if (!text || Whisper_HeroLevel() >= lvl) return;
     for (int row = 0; row < 10; row++) {
         if (!strcmp(text, WhisperRegistID[row]))
             return;
     }
-    strcpy(WhisperRegistID[WhisperID_Num], text);
+    TextEngine::CopyTruncated(WhisperRegistID[WhisperID_Num], sizeof(WhisperRegistID[0]), text);
     if (++WhisperID_Num >= 10)
         WhisperID_Num = 0;
 }
 
-// FUN_00481a40 @ 0x00481A40 (~64 lines) — assign chat text to chat entry struct
+// Asigna texto a una entrada; lógica inline de CreateChat (IDA 0x00481BA0).
 // Texto largo (>19 caracteres): CutText lo parte en Text[0] y Text[1].
 // Texto corto: va entero a Text[0].
 // param_3==1: system message via vtable call on DAT_055c9ff0.
-void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
-    // 0x00481A40 — Assign chat text to chat entry struct
-    // param_1 = chat entry base pointer
-    // param_2 = text string
-    // param_3 = 0: normal chat, 1: system message via vtable
+void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
+    // param_1: entrada de chat; param_2: texto.
+    // param_3: 0 para texto normal, 1 para mensaje mediante vtable.
 
     int Length = (int)strlen(param_2);
 
@@ -71,9 +74,9 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
         // System message: dispatch slot 28 (vtable +0x70) = ChatLB_AddText
         // (__fastcall this + 4 args).  Previous cdecl form left ECX = junk
         // and corrupted the chat list.
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef void (__fastcall *FnAddText)(DWORD*, int /*edx*/,
                                                  const char*, const char*,
                                                  int, int);
@@ -87,28 +90,57 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
-        CutText(param_2, (int)(uintptr_t)AsChat(param_1)->Text[0], AsChat(param_1)->Text[1], Length);
-        AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
-        AsChat(param_1)->LifeTime[1] = (int)(uintptr_t)displayEnd;
+        CutText(param_2, param_1->Text[0], param_1->Text[1], Length);
+        param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
+        param_1->LifeTime[1] = (int)(uintptr_t)displayEnd;
         return;
     }
 
     // Short text: direct memcpy to offset 0x2c
-    memcpy(AsChat(param_1)->Text[0], param_2, Length + 1);
-    AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
+    memcpy(param_1->Text[0], param_2, Length + 1);
+    param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
 }
 
 // CreateChat @ 0x00481BA0 (~396 lines) — creates chat bubble above entity
 // Pool de burbujas: 100 CHAT (UI/ChatTypes.h) en DAT_07e016f8.
 // Two paths: (1) find existing slot for same owner and update, (2) find empty slot and create.
 // IDA: CreateChat (0x00481BA0)
-void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor) {
+// IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ". El prefijo
+// completo determina el corte de color en sub_47F360.
+static void ChatFormatGuild(char* out, std::size_t capacity, const char* guild)
+{
+    std::string text = "[";
+    text += guild ? guild : "";
+    if (capacity < 4) { if (capacity) out[0] = 0; return; }
+    const std::size_t room = capacity - 1 - 3;   // NUL + "[" + "] "
+    text.resize(1 + TextEngine::FitBytes(std::string_view(text).substr(1), room));
+    text += "] ";
+    TextEngine::CopyTruncated(out, capacity, text);
+}
+
+const char* ChatDisplayName(const CHAT* c)
+{
+    if (!c) return "";
+    if (!c->Owner || !c->ID[0]) return c->ID;
+    const char* full = EntityName::Get(c->Owner);
+    return strncmp(full, c->ID, strlen(c->ID)) == 0 ? full : c->ID;
+}
+
+const char* ChatDisplayGuild(const CHAT* c)
+{
+    static char buffer[NetText::GuildNameSize + 4];
+    if (!c || !c->Guild[0] || !c->Owner || c->Owner->GuildMarkIndex < 0) return c ? c->Guild : "";
+    ChatFormatGuild(buffer, sizeof(buffer), Guild_GetMarkName(c->Owner->GuildMarkIndex));
+    return buffer;
+}
+
+void __cdecl CreateChat(char* ID, char* Text, CHARACTER* entity, int Flag, int SetColor) {
     // Guard: entity must be alive and visible
     // IDA CreateChat @0x481BA0:
     //     if ( *(_BYTE *)Owner && *(_BYTE *)(Owner + 352) )
     //     v5 = *(std::uint8_t *)(Owner + 746);          // PK
     //     if ( *(_BYTE *)(Owner + 132) == 4 ) v5 = 0;      // Kind
-    if (*(BYTE *)entity == 0) return;              // Object.Live   → +0
+    if (entity->Object.Live == 0) return;              // Object.Live   → +0
     if (AsCharacter(entity)->Object.Visible == 0) return;      // Object.Visible → +352 (0x160)
 
     // Resolve SetColor: -1 means use PK color, but Kind==4 forces 0
@@ -126,7 +158,7 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     // ── Path 1: Find existing slot owned by this entity ──
     char *slot = pool_base;
     for (int si = 0; si < POOL_SLOTS; ++si, slot += STRIDE) {
-        if (*(DWORD *)&AsChat(slot)->Owner == entity)
+        if (AsChat(slot)->Owner == entity)
             goto found_existing;
     }
 
@@ -139,9 +171,11 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     return;  // no free slot
 
 found_new:
-    *(DWORD *)&AsChat(slot)->Owner = entity;
+    AsChat(slot)->Owner = entity;
     // Copy ID
-    strcpy(slot, ID);
+    // 0.97.40: CHAT::ID mide 24 bytes; el nombre completo se toma del Owner
+    // al mostrar la burbuja (ChatDisplayName).
+    TextEngine::CopyTruncated(slot, sizeof(AsChat(slot)->ID), ID);
     // Set color and guild info
     AsChat(slot)->Color = (char)SetColor;
     AsChat(slot)->GuildColor = '\0';
@@ -154,7 +188,7 @@ found_new:
             AsChat(slot)->GuildColor = AsCharacter(entity)->GuildTeam;  // GuildTeam
             // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
             // El prefijo completo determina el corte de color en sub_47F360.
-            Platform::TextFormatSecure(AsChat(slot)->Guild, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
+            ChatFormatGuild(AsChat(slot)->Guild, sizeof(AsChat(slot)->Guild), Guild_GetMarkName(guildIdx));
         }
     }
 
@@ -165,7 +199,7 @@ found_new:
     }
 
     // Assign text using FUN_00481a40 logic
-    FUN_00481a40((int)slot, Text, Flag);
+    FUN_00481a40(AsChat(slot), Text, Flag);
     return;
 
 found_existing:
@@ -175,7 +209,9 @@ found_existing:
     // cada frame con Text="" durante el hover sobre un NPC.
 
     // Copy ID (name) — siempre
-    strcpy(slot, ID);
+    // 0.97.40: CHAT::ID mide 24 bytes; el nombre completo se toma del Owner
+    // al mostrar la burbuja (ChatDisplayName).
+    TextEngine::CopyTruncated(slot, sizeof(AsChat(slot)->ID), ID);
     // Set color and guild info — siempre
     AsChat(slot)->Color = (char)SetColor;
     AsChat(slot)->GuildColor = '\0';
@@ -187,7 +223,7 @@ found_existing:
         } else {
             AsChat(slot)->GuildColor = AsCharacter(entity)->GuildTeam;
             // IDA: mismo prefijo al actualizar una etiqueta existente.
-            Platform::TextFormatSecure(AsChat(slot)->Guild, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
+            ChatFormatGuild(AsChat(slot)->Guild, sizeof(AsChat(slot)->Guild), Guild_GetMarkName(guildIdx2));
         }
     }
 
@@ -197,8 +233,8 @@ found_existing:
             strcpy(AsChat(slot)->Text[1], AsChat(slot)->Text[0]);                // text1 → text2
             AsChat(slot)->LifeTime[1] = AsChat(slot)->LifeTime[0];  // disp1 → disp2
         }
-        *(DWORD *)&AsChat(slot)->Owner = entity;
-        FUN_00481a40((int)slot, Text, Flag);
+        AsChat(slot)->Owner = entity;
+        FUN_00481a40(AsChat(slot), Text, Flag);
     } else {
         // Texto vacío (hover de nombre NPC/target): SOLO refrescar el timer.
         AsChat(slot)->IDLifeTime = 10;
@@ -217,14 +253,14 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // (+0x02 es `entity_type`, 390 para jugadores: no es el kind.)
     // Entity stride 0x394 (=916, coincide con IDA). ID string en +0x1C1 (=449).
 
-    DWORD base = DAT_07abf5d0;  // CharactersClient
+    intptr_t base = DAT_07abf5d0;  // CharactersClient
 
     // Pass 1: search players (Kind == 1) — por nombre
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * 0x394;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 1) {
-            if (strcmp((char*)(c + 0x1C1), ID) == 0) {
-                CreateChat(ID, Text, c, Flag, -1);
+            if (strcmp(EntityName::Get(c), ID) == 0) {
+                CreateChat(ID, Text, AsCharacter(c), Flag, -1);
                 return;
             }
         }
@@ -234,9 +270,9 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // Fiel a IDA: hace `strcmp(...)` pero DESCARTA el resultado y llama igual
     // (rareza del original — el strcmp quedó sin usar).
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * 0x394;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 2) {
-            CreateChat(ID, Text, c, Flag, -1);
+            CreateChat(ID, Text, AsCharacter(c), Flag, -1);
             return;
         }
     }

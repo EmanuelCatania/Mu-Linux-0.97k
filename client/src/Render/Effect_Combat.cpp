@@ -60,11 +60,11 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 // Type por el modelo del ARMA del dueno (owner[136] + 400), lo posa con la
 // animacion del efecto y lo restaura.  Hermana de RenderWheelWeapon (0x46B7C0),
 // pero sin el save/restore de posicion: este no mueve el slot.
-void __cdecl ItemDrop_RenderGroundWeapon(int o) {
+void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     // IDA: if ((double)AsObject(o)->LifeTime > 10.0)  -- o+96 es la vida del efecto.
     if (_DAT_00552488 >= (float)AsObject(o)->LifeTime) return;
 
-    const DWORD owner = *(DWORD*)(o + 252);
+    const intptr_t owner = (intptr_t)((OBJECT*)(uintptr_t)(o))->Owner;
     if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
 
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
@@ -73,20 +73,20 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     const auto *sample=MaterialVisuals_ObjectSample((void *)o,model_id);
     MaterialVisualScope material(sample);
     const float alpha = sample ? sample->alpha : AsObject(o)->Alpha;
-    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
+    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * model_id;
 
     // Volcar posicion / accion / clase al slot del modelo compartido.
-    *(int*) (mdl + 108) = *(int *)&AsObject(o)->Position[0];
-    *(int*) (mdl + 112) = *(int *)&AsObject(o)->Position[1];
-    *(int*) (mdl + 116) = *(int *)&AsObject(o)->Position[2];
-    *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7);
-    *(BYTE*)(mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;
+    *(int*) (mdl + 108 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[0];
+    *(int*) (mdl + 112 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[1];
+    *(int*) (mdl + 116 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[2];
+    *(BYTE*)(mdl + 152 + BMD_FIELD_SHIFT) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7);
+    *(BYTE*)(mdl + 160 + BMD_FIELD_SHIFT) = sample ? sample->action : AsObject(o)->CurrentAction;
 
     const short savedType = AsObject(o)->Type;
     AsObject(o)->Type = (short)model_id;
 
     const DWORD saved216 = *(DWORD *)&AsObject(o)->Gravity;
-    ItemObjectAttributeForRender(o);
+    ItemObjectAttributeForRender(AsObject(o));
     *(DWORD *)&AsObject(o)->Gravity = saved216;   // ItemObjectAttribute lo pisa
 
     float Light[3];
@@ -96,7 +96,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     Light[2] += AsObject(o)->Light[2];
 
     float Angle[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
-    BMD_Animation(mdl, (int)&DAT_06970a9c,
+    BMD_Animation(mdl, reinterpret_cast<float*>(&DAT_06970a9c),
                   AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
                   AsObject(o)->PriorAction,
                   (unsigned int*)Angle, (float*)(o + 40), 0, 0);
@@ -115,7 +115,7 @@ void __cdecl FUN_00466300(float* position)
     Effect_SpawnBombRing(position);
 }
 
-void __cdecl FUN_0046b980(int entity)
+void __cdecl FUN_0046b980(intptr_t entity)
 {
     ItemDrop_RenderGroundWeapon(entity);
 }
@@ -126,7 +126,7 @@ void __cdecl FUN_0046b980(int entity)
 // then 20 trail particles (0x497) at the rotated offset position.
 // param_1 = unused (Ghidra phantom), param_2 = entity base (angles at +0x1C)
 // param_3 = float[3] position, param_4 = float[3] direction angles
-void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param_4) {
+void __cdecl FUN_0046c5a0(int param_1, intptr_t param_2, float* param_3, float* param_4) {
     (void)param_1;
 
     float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -165,10 +165,10 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 // Others: BMD bone transform to position blood at hit location.
 // Models base = DAT_05828d58, stride 0xbc. OBJECT struct (Ghidra): Type@+0x02, Live@+0x00,
 // Position@+0x10, Angle@+0x1C, Light@+0xE8, BoneTransform2@+0x114.
-void __cdecl CreateBlood(DWORD o) {
+void __cdecl CreateBlood(intptr_t o) {
     WORD wType = *(WORD*)(o + 0x02);  // o->Type
     // Models[type].Data + 0x54 = bone index for blood attachment point
-    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * 0xbc + 0x54);
+    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * BMD_STRIDE + 0x54 + BMD_FIELD_SHIFT);
     if (boneIdx == -1) return;
 
     if (wType == 0x11d) {
@@ -208,7 +208,7 @@ void __cdecl CreateBlood(DWORD o) {
 
     // BMD::TransformPosition(Models + type, o->BoneTransform2[boneIdx], localPos, worldPos, Translate)
     // BoneTransform2 is a pointer at o+0x114; each bone matrix is float[3][4] = 48 bytes
-    float* boneMatrix = (float*)(*(DWORD*)(o + 0x114) + boneIdx * 48);
-    void* model = (void*)(DAT_05828d58 + (short)wType * 0xbc);
+    float* boneMatrix = (float*)((intptr_t)((OBJECT*)(uintptr_t)(o))->BoneMatrices + boneIdx * 48);
+    void* model = (void*)(DAT_05828d58 + (short)wType * BMD_STRIDE);
     BMD__TransformPosition(model, (float(*)[4])boneMatrix, localPos, worldPos, true);
 }

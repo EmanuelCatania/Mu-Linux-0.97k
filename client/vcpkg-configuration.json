@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/microsoft/vcpkg",
+    "baseline": "661e42cd1600603016ced1d76a15359e7dade9f5"
+  },
+  "overlay-triplets": [ "cmake/triplets" ]
+}

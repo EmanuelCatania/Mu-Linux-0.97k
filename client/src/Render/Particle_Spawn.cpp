@@ -68,7 +68,7 @@ void ApplyParticlePreset(char* particle, int type, int subtype)
     if (preset.ImpactSound) PlayBuffer(0x2c, 0, 0);
     if (preset.RenderSetup == ParticleRenderSetup::Always ||
         (preset.RenderSetup == ParticleRenderSetup::ExceptSubtype99 && subtype != 99))
-        ItemDrop_SetupRenderRef((int)particle);
+        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(particle));
 }
 // IDA: Particle_Spawn (0x00475220), tipos 1241..1244.
 // rand() es no negativo: los restos conservan el orden y número de llamadas.
@@ -278,7 +278,7 @@ void InitializeFireParticle(char* particle, const ParticleFirePreset& preset)
 
 // IDA: Particle_Spawn (0x00475220)
 int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *param_4,
-                         int param_5, float param_6, int param_7)
+                         int param_5, float param_6, intptr_t param_7)
 {
     float *pfVar1;
     float *pfVar2;
@@ -344,7 +344,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     *(float*)(pcVar11 + ParticleRotationOffset) = 0.0f;
     // lifetime default = 2
     *(int*)(pcVar11 + ParticleLifetimeOffset) = 2;
-    *(int *)(pcVar11 + 0x3c) = param_7;            // entity_ptr
+    *(int *)(pcVar11 + 0x3c) = (int)param_7;       // entity_ptr
+    g_ParticleOwner[iVar6] = (uintptr_t)param_7;
     // dir
     *pfVar2                    = *param_3;
     *(float *)(pcVar11 + 0x20) = param_3[1];
@@ -675,15 +676,14 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             *(int*)(pcVar11 + ParticleLifetimeOffset) = 5;
             uVar8 = _rand() % 32;
             *(float*)(pcVar11 + 0x48) = 10.0f;
-            iVar7 = *(int *)(pcVar11 + 0x3c);
             *(float *)(pcVar11 + 0x0c) =
                 (float)(int)(uVar8 + 0x20) * _DAT_005524f8 + *(float *)(pcVar11 + 0x0c);
             fVar12 = (long double)WorldTime;
             fVar13 = (long double)_DAT_005528e0;
-            *(unsigned int *)(pcVar11 + 100) = *(unsigned int *)(iVar7 + 0x10);
+            *(unsigned int *)(pcVar11 + 100) = *(unsigned int *)(param_7 + 0x10);
             fVar13 = (long double)fsin(fVar12 * fVar13);
-            *(unsigned int *)(pcVar11 + 0x68) = *(unsigned int *)(iVar7 + 0x14);
-            *(unsigned int *)(pcVar11 + 0x6c) = *(unsigned int *)(iVar7 + 0x18);
+            *(unsigned int *)(pcVar11 + 0x68) = *(unsigned int *)(param_7 + 0x14);
+            *(unsigned int *)(pcVar11 + 0x6c) = *(unsigned int *)(param_7 + 0x18);
             fVar13 = fVar13 * (long double)_DAT_005528b8 + (long double)_DAT_00552928;
             *(float *)(pcVar11 + 0x28) = (float)fVar13;
             fVar13 = fVar13 * (long double)_DAT_00552504;

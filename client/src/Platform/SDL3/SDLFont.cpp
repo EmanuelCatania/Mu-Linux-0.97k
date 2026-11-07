@@ -3,10 +3,15 @@
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MODULE_H
+#include <freetype/ftcolor.h>
+#include <hb-ft.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <unordered_map>
 #include "Platform/IFileSystem.h"
+#include "Render/Texture/ImageCodec.h"
+#include FT_TRUETYPE_TAGS_H
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <cstdlib>
@@ -61,7 +66,95 @@ bool SelectVDMX(FT_Face face, int height, int& ppem, FontMetrics& metrics)
 }
 }
 
+namespace { bool g_antialias = false; }
+
+namespace {
+uint16_t Be16(const std::vector<uint8_t>& t, size_t o) { return o + 2 <= t.size() ? uint16_t(t[o] << 8 | t[o + 1]) : 0; }
+uint32_t Be32(const std::vector<uint8_t>& t, size_t o)
+{
+    return o + 4 <= t.size() ? uint32_t(t[o]) << 24 | uint32_t(t[o + 1]) << 16 | uint32_t(t[o + 2]) << 8 | t[o + 3] : 0;
+}
+bool LoadSfnt(FT_Face face, FT_ULong tag, std::vector<uint8_t>& out)
+{
+    FT_ULong length = 0;
+    if (FT_Load_Sfnt_Table(face, tag, 0, nullptr, &length) || !length) return false;
+    out.resize(length);
+    return !FT_Load_Sfnt_Table(face, tag, 0, out.data(), &length);
+}
+// Ubica un glifo en CBDT a partir del strike de CBLC.  Devuelve el offset de
+// la imagen, su formato y, para los formatos 2/5 (métricas en el índice), el
+// offset de esas bigGlyphMetrics dentro de CBLC.
+bool FindCbdtGlyph(const std::vector<uint8_t>& cblc, size_t strike, uint32_t glyph,
+                   uint32_t& offset, uint32_t& length, uint16_t& imageFormat, size_t& indexMetrics)
+{
+    const size_t size = 8 + strike * 48;
+    const uint32_t arrayOffset = Be32(cblc, size), subtables = Be32(cblc, size + 8);
+    for (uint32_t i = 0; i < subtables; ++i) {
+        const size_t entry = arrayOffset + i * 8;
+        const uint16_t first = Be16(cblc, entry), last = Be16(cblc, entry + 2);
+        if (glyph < first || glyph > last) continue;
+        const size_t header = arrayOffset + Be32(cblc, entry + 4);
+        const uint16_t indexFormat = Be16(cblc, header);
+        imageFormat = Be16(cblc, header + 2);
+        const uint32_t base = Be32(cblc, header + 4);
+        const size_t body = header + 8;
+        const uint32_t n = glyph - first;
+        indexMetrics = 0;
+        switch (indexFormat) {
+        case 1: offset = base + Be32(cblc, body + n * 4); length = Be32(cblc, body + n * 4 + 4) - Be32(cblc, body + n * 4); return length > 0;
+        case 3: offset = base + Be16(cblc, body + n * 2); length = Be16(cblc, body + n * 2 + 2) - Be16(cblc, body + n * 2); return length > 0;
+        case 2: length = Be32(cblc, body); offset = base + n * length; indexMetrics = body + 4; return length > 0;
+        case 4: case 5: {
+            const bool five = indexFormat == 5;
+            const uint32_t count = Be32(cblc, five ? body + 12 : body);
+            const size_t ids = five ? body + 16 : body + 4;
+            for (uint32_t k = 0; k < count; ++k) {
+                if (five) {
+                    if (Be16(cblc, ids + k * 2) != glyph) continue;
+                    length = Be32(cblc, body); offset = base + k * length; indexMetrics = body + 4;
+                    return length > 0;
+                }
+                if (Be16(cblc, ids + k * 4) != glyph) continue;
+                offset = base + Be16(cblc, ids + k * 4 + 2);
+                length = Be16(cblc, ids + k * 4 + 6) - Be16(cblc, ids + k * 4 + 2);
+                return length > 0;
+            }
+            return false;
+        }
+        default: return false;
+        }
+    }
+    return false;
+}
+// Promedio por área: reduce el PNG del strike (109 px en Noto) al alto pedido.
+void ScaleRgba(const unsigned char* src, int sw, int sh, int dw, int dh, std::vector<uint8_t>& dst)
+{
+    dst.assign(size_t(dw) * dh * 4, 0);
+    const float fx = float(sw) / dw, fy = float(sh) / dh;
+    for (int y = 0; y < dh; ++y)
+        for (int x = 0; x < dw; ++x) {
+            const int x0 = int(x * fx), x1 = std::max(x0 + 1, std::min(sw, int((x + 1) * fx + 0.999f)));
+            const int y0 = int(y * fy), y1 = std::max(y0 + 1, std::min(sh, int((y + 1) * fy + 0.999f)));
+            float acc[4] = {};
+            for (int yy = y0; yy < y1; ++yy)
+                for (int xx = x0; xx < x1; ++xx) {
+                    const unsigned char* p = src + (size_t(yy) * sw + xx) * 4;
+                    const float a = p[3] / 255.0f;   // premultiplicado: sin halo oscuro
+                    acc[0] += p[0] * a; acc[1] += p[1] * a; acc[2] += p[2] * a; acc[3] += a;
+                }
+            const float count = float((x1 - x0) * (y1 - y0));
+            uint8_t* out = &dst[(size_t(y) * dw + x) * 4];
+            const float alpha = acc[3] / count;
+            out[3] = uint8_t(alpha * 255.0f + 0.5f);
+            if (acc[3] > 0.0f)
+                for (int c = 0; c < 3; ++c) out[c] = uint8_t(std::min(255.0f, acc[c] / acc[3] + 0.5f));
+        }
+}
+}
+void SDLFont::SetAntialias(bool enabled) { g_antialias = enabled; }
+
 struct SDLFont::Impl {
+    bool antialias = g_antialias;
     FT_Library library = nullptr;
     FT_Face face = nullptr;
     std::vector<uint8_t> bytes;
@@ -69,7 +162,16 @@ struct SDLFont::Impl {
     bool underline = false;
     bool strikeOut = false;
     std::unordered_map<uint32_t, FontGlyph> glyphs;
+    std::unordered_map<uint32_t, FontGlyph> glyphIds;
+    hb_font_t* shaping = nullptr;
+    // Emoji en mapa de bits (CBDT/CBLC, Noto Color Emoji): la FreeType
+    // embebida va sin PNG, así que las tablas se leen a mano.  cbdtScale > 0
+    // marca este modo; es la relación entre el alto pedido y el del strike.
+    std::vector<uint8_t> cblc, cbdt;
+    size_t cbdtStrike = 0;
+    float cbdtScale = 0.0f;
     ~Impl() {
+        if (shaping) hb_font_destroy(shaping);
         if (face) FT_Done_Face(face);
         if (library) FT_Done_FreeType(library);
     }
@@ -86,16 +188,36 @@ bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
     }
     std::unique_ptr<Impl> next(new Impl);
     next->bytes = std::move(bytes);
+    return Open(std::move(next), nullptr, height, error);
+}
+
+bool SDLFont::LoadFile(const std::string& path, int height, std::string& error)
+{
+    error.clear();
+    if (height <= 0 || height > 4096 || path.empty()) {
+        error = "Tamaño o archivo de fuente inválido";
+        return false;
+    }
+    return Open(std::unique_ptr<Impl>(new Impl), path.c_str(), height, error);
+}
+
+bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error)
+{
     if (FT_Init_FreeType(&next->library)) { error = "No se pudo iniciar FreeType"; return false; }
     unsigned interpreter = 35;
     if (FT_Property_Set(next->library, "truetype", "interpreter-version", &interpreter)) {
         error = "No se pudo seleccionar el intérprete TrueType"; return false;
     }
-    if (FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face) ||
-        !FT_IS_SCALABLE(next->face) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
+    const FT_Error opened = path
+        ? FT_New_Face(next->library, path, 0, &next->face)
+        : FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face);
+    const bool bitmapColor = !opened && !FT_IS_SCALABLE(next->face) && FT_HAS_FIXED_SIZES(next->face) &&
+                             LoadSfnt(next->face, TTAG_CBLC, next->cblc) && LoadSfnt(next->face, TTAG_CBDT, next->cbdt);
+    if (opened || (!FT_IS_SCALABLE(next->face) && !bitmapColor) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
         error = "La fuente no es escalable o no tiene mapa Unicode"; return false;
     }
     auto face = next->face;
+    if (bitmapColor) return OpenBitmapColor(std::move(next), height, error);
     const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
     const int span = os2 ? os2->usWinAscent + os2->usWinDescent : face->ascender - face->descender;
     if (span <= 0 || face->units_per_EM == 0) { error = "Métricas de fuente inválidas"; return false; }
@@ -110,13 +232,84 @@ bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
     return true;
 }
 
-const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
+namespace {
+// Emoji COLR (v0): el glifo es una pila de capas, cada una un glifo con su
+// color de la paleta 0.  Devuelve false si el glifo no tiene capas (entonces
+// se rasteriza como siempre).  Los emoji sólo de COLR v1 (degradados) no
+// traen capas v0 y salen con la silueta común.
+bool RasterizeColor(FT_Face face, FT_UInt glyphIndex, FontGlyph& out)
 {
-    const auto existing = impl->glyphs.find(codepoint);
-    if (existing != impl->glyphs.end()) return existing->second;
+    if (!face || !FT_HAS_COLOR(face)) return false;
+    FT_Color* palette = nullptr;
+    if (FT_Palette_Select(face, 0, &palette) || !palette) return false;
+    struct Layer { int left, top, width, height; std::vector<uint8_t> alpha; FT_Color color; };
+    std::vector<Layer> layers;
+    FT_LayerIterator iterator = {};
+    FT_UInt layerGlyph = 0, colorIndex = 0;
+    while (FT_Get_Color_Glyph_Layer(face, glyphIndex, &layerGlyph, &colorIndex, &iterator)) {
+        if (FT_Load_Glyph(face, layerGlyph, FT_LOAD_RENDER | FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_TARGET_NORMAL)) continue;
+        const auto& bitmap = face->glyph->bitmap;
+        if (bitmap.pixel_mode != FT_PIXEL_MODE_GRAY || !bitmap.width || !bitmap.rows) continue;
+        Layer layer{ face->glyph->bitmap_left, face->glyph->bitmap_top, int(bitmap.width), int(bitmap.rows), {}, {} };
+        layer.alpha.resize(size_t(layer.width) * layer.height);
+        for (int y = 0; y < layer.height; ++y) {
+            const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : layer.height - 1 - y) * std::abs(bitmap.pitch);
+            std::copy(row, row + layer.width, layer.alpha.begin() + size_t(y) * layer.width);
+        }
+        // 0xFFFF pide el color del texto; sin él a mano, blanco.
+        layer.color = colorIndex == 0xFFFF ? FT_Color{ 255, 255, 255, 255 } : palette[colorIndex];
+        layers.push_back(std::move(layer));
+    }
+    if (layers.empty()) return false;
+
+    int left = layers[0].left, right = layers[0].left + layers[0].width;
+    int top = layers[0].top, bottom = layers[0].top - layers[0].height;
+    for (const Layer& l : layers) {
+        left = std::min(left, l.left); right = std::max(right, l.left + l.width);
+        top = std::max(top, l.top); bottom = std::min(bottom, l.top - l.height);
+    }
+    out.left = left; out.top = top; out.width = right - left; out.height = top - bottom;
+    // El avance es el del glifo base.
+    out.advance = 0;
+    if (!FT_Load_Glyph(face, glyphIndex, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_TARGET_NORMAL))
+        out.advance = int((face->glyph->advance.x + 32) / 64);
+    // Composición en alfa premultiplicado, de la capa de abajo hacia arriba.
+    std::vector<float> accum(size_t(out.width) * out.height * 4, 0.0f);
+    for (const Layer& l : layers) {
+        const float cr = l.color.red / 255.0f, cg = l.color.green / 255.0f, cb = l.color.blue / 255.0f, ca = l.color.alpha / 255.0f;
+        for (int y = 0; y < l.height; ++y)
+            for (int x = 0; x < l.width; ++x) {
+                const float a = l.alpha[size_t(y) * l.width + x] / 255.0f * ca;
+                if (a <= 0.0f) continue;
+                float* px = &accum[(size_t(top - l.top + y) * out.width + (l.left - left + x)) * 4];
+                px[0] = cr * a + px[0] * (1 - a);
+                px[1] = cg * a + px[1] * (1 - a);
+                px[2] = cb * a + px[2] * (1 - a);
+                px[3] = a + px[3] * (1 - a);
+            }
+    }
+    out.rgba.assign(accum.size(), 0);
+    out.coverage.assign(size_t(out.width) * out.height, 0);
+    for (size_t i = 0; i < size_t(out.width) * out.height; ++i) {
+        const float a = accum[i * 4 + 3];
+        out.coverage[i] = uint8_t(a * 255.0f + 0.5f);
+        if (a <= 0.0f) continue;
+        for (int c = 0; c < 3; ++c)
+            out.rgba[i * 4 + c] = uint8_t(std::min(1.0f, accum[i * 4 + c] / a) * 255.0f + 0.5f);
+        out.rgba[i * 4 + 3] = out.coverage[i];
+    }
+    return true;
+}
+
+// Rasterizado de 1 bit con el intérprete v35: el mismo aspecto que GDI.
+// Lo comparten la búsqueda por carácter (texto 1252) y por id de glifo
+// (texto ya pasado por HarfBuzz), así un mismo glifo sale idéntico.
+FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut, bool antialias)
+{
     FontGlyph glyph;
-    if (impl->face && !FT_Load_Char(impl->face, codepoint, FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
-        const auto slot = impl->face->glyph;
+    if (RasterizeColor(face, glyphIndex, glyph)) return glyph;
+    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | (antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO))) {
+        const auto slot = face->glyph;
         const auto& bitmap = slot->bitmap;
         glyph.advance = int((slot->advance.x + 32) / 64);
         glyph.left = slot->bitmap_left;
@@ -124,31 +317,123 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
         glyph.width = int(bitmap.width);
         glyph.height = int(bitmap.rows);
         glyph.coverage.resize(size_t(glyph.width) * glyph.height);
+        const bool gray = bitmap.pixel_mode == FT_PIXEL_MODE_GRAY;
         for (int y = 0; y < glyph.height; ++y) {
             const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : glyph.height - 1 - y) * std::abs(bitmap.pitch);
             for (int x = 0; x < glyph.width; ++x)
-                glyph.coverage[size_t(y) * glyph.width + x] = (row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0;
+                glyph.coverage[size_t(y) * glyph.width + x] = gray ? row[x] : ((row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0);
         }
     }
-    if (impl->face && (impl->underline || impl->strikeOut) && glyph.advance > 0) {
+    if (face && (underline || strikeOut) && glyph.advance > 0) {
         const int underlineY = 1;
-        const int strikeY = -impl->metrics.ascent / 3;
+        const int strikeY = -metrics.ascent / 3;
         const int left = std::min(0, glyph.left);
         const int right = std::max(glyph.advance, glyph.left + glyph.width);
-        const int top = std::min(-glyph.top, impl->strikeOut ? strikeY : underlineY);
-        const int bottom = std::max(glyph.height - glyph.top, impl->underline ? underlineY + 1 : strikeY + 1);
+        const int top = std::min(-glyph.top, strikeOut ? strikeY : underlineY);
+        const int bottom = std::max(glyph.height - glyph.top, underline ? underlineY + 1 : strikeY + 1);
         std::vector<uint8_t> decorated(size_t(right - left) * (bottom - top), 0);
         for (int y = 0; y < glyph.height; ++y)
             for (int x = 0; x < glyph.width; ++x)
                 decorated[size_t(y - glyph.top - top) * (right - left) + x + glyph.left - left] = glyph.coverage[size_t(y) * glyph.width + x];
         for (int x = 0; x < glyph.advance; ++x) {
-            if (impl->underline) decorated[size_t(underlineY - top) * (right - left) + x - left] = 255;
-            if (impl->strikeOut) decorated[size_t(strikeY - top) * (right - left) + x - left] = 255;
+            if (underline) decorated[size_t(underlineY - top) * (right - left) + x - left] = 255;
+            if (strikeOut) decorated[size_t(strikeY - top) * (right - left) + x - left] = 255;
         }
         glyph.left = left; glyph.top = -top; glyph.width = right - left; glyph.height = bottom - top;
         glyph.coverage.swap(decorated);
     }
-    return impl->glyphs.emplace(codepoint, std::move(glyph)).first->second;
+    return glyph;
+}
+}
+
+bool SDLFont::OpenBitmapColor(std::unique_ptr<Impl> next, int height, std::string& error)
+{
+    auto face = next->face;
+    const uint32_t strikes = Be32(next->cblc, 4);
+    int best = -1, bestPpem = 0;
+    for (uint32_t i = 0; i < strikes; ++i) {
+        const int ppem = next->cblc.size() > 8 + i * 48 + 45 ? next->cblc[8 + i * 48 + 45] : 0;
+        if (ppem > bestPpem) { best = int(i); bestPpem = ppem; }
+    }
+    const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
+    const int span = os2 ? os2->usWinAscent + os2->usWinDescent : face->ascender - face->descender;
+    // En una fuente sólo de mapas de bits FreeType deja units_per_EM en 0.
+    const auto head = static_cast<TT_Header*>(FT_Get_Sfnt_Table(face, ft_sfnt_head));
+    const int unitsPerEm = head ? head->Units_Per_EM : face->units_per_EM;
+    if (best < 0 || span <= 0 || unitsPerEm <= 0) { error = "Fuente de emoji sin strikes"; return false; }
+    if (best < face->num_fixed_sizes) FT_Select_Size(face, best);
+    const int ppem = std::max(1, (height * unitsPerEm + span / 2) / span);
+    const int ascent = os2 ? os2->usWinAscent : face->ascender;
+    next->metrics = { (ascent * height + span / 2) / span, height };
+    next->cbdtStrike = size_t(best);
+    next->cbdtScale = float(ppem) / float(bestPpem);
+    impl.swap(next);
+    return true;
+}
+
+FontGlyph SDLFont::RasterizeBitmapColor(uint32_t glyph) const
+{
+    FontGlyph out;
+    uint32_t offset = 0, length = 0;
+    uint16_t format = 0;
+    size_t indexMetrics = 0;
+    const auto& data = impl->cbdt;
+    if (!FindCbdtGlyph(impl->cblc, impl->cbdtStrike, glyph, offset, length, format, indexMetrics) ||
+        size_t(offset) + length > data.size()) return out;
+    // smallGlyphMetrics (17) o bigGlyphMetrics (18, y 19 desde el índice):
+    // alto, ancho, bearingX, bearingY, avance.
+    const uint8_t* metrics = nullptr;
+    size_t png = offset;
+    if (format == 17) { metrics = &data[offset]; png = offset + 5; }
+    else if (format == 18) { metrics = &data[offset]; png = offset + 8; }
+    else if (format == 19 && indexMetrics + 5 <= impl->cblc.size()) metrics = &impl->cblc[indexMetrics];
+    else return out;
+    const uint32_t pngLength = Be32(data, png);
+    png += 4;
+    if (png + pngLength > data.size()) return out;
+    ImageCodec::Image image;
+    if (!ImageCodec::DecodePngBuffer(&data[png], pngLength, 4, 1024, image)) return out;
+    const float s = impl->cbdtScale;
+    out.width = std::max(1, int(image.width * s + 0.5f));
+    out.height = std::max(1, int(image.height * s + 0.5f));
+    out.left = int(std::lround(int8_t(metrics[2]) * s));
+    out.top = int(std::lround(int8_t(metrics[3]) * s));
+    out.advance = int(std::lround(metrics[4] * s));
+    ScaleRgba(image.pixels, image.width, image.height, out.width, out.height, out.rgba);
+    out.coverage.resize(size_t(out.width) * out.height);
+    for (size_t i = 0; i < out.coverage.size(); ++i) out.coverage[i] = out.rgba[i * 4 + 3];
+    return out;
+}
+
+const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
+{
+    const auto existing = impl->glyphs.find(codepoint);
+    if (existing != impl->glyphs.end()) return existing->second;
+    const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
+    if (impl->cbdtScale > 0.0f) return impl->glyphs.emplace(codepoint, RasterizeBitmapColor(index)).first->second;
+    return impl->glyphs.emplace(codepoint,
+        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
+}
+const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
+{
+    const auto existing = impl->glyphIds.find(glyph);
+    if (existing != impl->glyphIds.end()) return existing->second;
+    if (impl->cbdtScale > 0.0f) return impl->glyphIds.emplace(glyph, RasterizeBitmapColor(glyph)).first->second;
+    return impl->glyphIds.emplace(glyph,
+        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
+}
+bool SDLFont::HasCodepoint(uint32_t codepoint) const
+{
+    return impl->face && FT_Get_Char_Index(impl->face, codepoint) != 0;
+}
+void* SDLFont::ShapingFont()
+{
+    if (!impl->shaping && impl->face) {
+        impl->shaping = hb_ft_font_create(impl->face, nullptr);
+        // Avances con el mismo hinting que el rasterizado.
+        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | (impl->antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO));
+    }
+    return impl->shaping;
 }
 FontMetrics SDLFont::Metrics() const { return impl->metrics; }
 int SDLFont::Measure(const uint32_t* text, size_t count)

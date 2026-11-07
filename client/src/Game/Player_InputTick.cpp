@@ -1,5 +1,7 @@
 #include <cstdint>
 #include "stdafx.h"
+#include "UI/EmojiPicker.h"
+#include "Entity/EntityName.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
@@ -97,6 +99,9 @@ static void MouseOnWindow_Update(void)
         return;
     }
 
+    // Selector de emojis del chat (su grilla se abre sobre el mundo).
+    if (EmojiPicker::Contains(mx, my)) { g_MouseOnWindow = 1; return; }
+
     // Bottom HUD (y >= 432) — per IDA Game_CharSelectTick:298.
     if (my >= 432) { g_MouseOnWindow = 1; return; }
 
@@ -164,8 +169,9 @@ static void MouseOnWindow_Update(void)
     // en vez de mantener acá una lista paralela de rectángulos.
     if (HUD_IsAnyRightPanelOpen()) {
         int panelStartX = GetScreenWidth();
-        if (panelStartX < 640) {
-            if (mx >= panelStartX && mx < 640 && my >= 0 && my < 433) {
+        const int rightEdge = gWindow.PanelOrigin(Ui::WindowRight);
+        if (panelStartX < rightEdge) {
+            if (mx >= panelStartX && mx < rightEdge && my >= 0 && my < 433) {
                 g_MouseOnWindow = 1; return;
             }
         }
@@ -421,19 +427,19 @@ static void HUD_PickUpNearestItem(void)
     const float heroX = *(const float*)(Hero + 16);
     const float heroY = *(const float*)(Hero + 20);
     for (int i = 0; i < 1000; ++i) {
-        const BYTE* item = &DAT_07e12840[0] + (size_t)i * 0x204;
-        if (!item[72] || !item[424]) continue;                   // vivo y visible
+        const BYTE* item = &DAT_07e12840[0] + (size_t)i * GROUND_ITEM_STRIDE;
+        if (!item[72] || !item[72 + EntityOffset(0x160)]) continue;                   // vivo y visible
         const float dx = *(const float*)(item + 88) - heroX;
         const float dy = *(const float*)(item + 92) - heroY;
         if (dx * dx + dy * dy >= 300.0f * 300.0f) continue;
-        *(unsigned char*)(Hero + 0x2ed) = 1;                     // MOVEMENT_GET
+        *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->MovementType = 1;                     // MOVEMENT_GET
         ItemKey = (DWORD)i;
         TargetX = (DWORD)(int)(*(const float*)(item + 88) / 100.0f);
         TargetY = (DWORD)(int)(*(const float*)(item + 92) / 100.0f);
         g_bAutoGetItem = true;
-        Action((DWORD)Hero, (DWORD)Hero);
+        Action((intptr_t)Hero, (intptr_t)Hero);
         g_bAutoGetItem = false;
-        *(unsigned char*)(Hero + 0x2ed) = 0;
+        *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->MovementType = 0;
         return;
     }
 }
@@ -614,7 +620,7 @@ void __cdecl Player_ProcessInput(void)
     // (0x4B14F0), que es donde los tiene el binario.
 
     // ── Guard: entity visibility / renderable flag ─────────────────────────────
-    if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')
+    if (*(static_cast<const char*>(DAT_07abf5d8) + EntityOffset(0x2fd)) != '\0')
         return;
 
     // ── LoadingWorld cooldown ────────────────────────────────────────────────
@@ -635,12 +641,12 @@ void __cdecl Player_ProcessInput(void)
     //   copy entity name (entity+0x1c1) to password buffer DAT_07db8810,
     //   después poner en cero y volver a copiar vía el buffer intermedio DAT_07e113e4.
     if (DAT_00559c84 != '\0'
-        && *(char*)((int)DAT_07abf5d8 + 0x34e) != '\0'
+        && *(static_cast<const char*>(DAT_07abf5d8) + EntityOffset(0x34e)) != '\0'
         && SelectedCharacter != -1
         && MouseRButtonPush != '\0')
     {
-        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * 0x394);
-        unsigned char *nameSrc     = hoverEntity + 0x1c1;
+        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
+        const unsigned char *nameSrc = (const unsigned char*)EntityName::Get(hoverEntity);
 
         // Copy name into password buffer
         memcpy(DAT_07db8810, nameSrc, 0x40);
@@ -671,7 +677,8 @@ void __cdecl Player_ProcessInput(void)
     {
         unsigned char* ent = (unsigned char*)DAT_07abf5d8;
         if (ent) {
-            fHalfScreenW = (float)(GetScreenWidth() / 2);      // GetScreenWidth() / 2
+            // En pantalla ancha el mundo ocupa toda la ventana: su centro es 320.
+            fHalfScreenW = gWindow.IsWide() ? 320.0f : (float)(GetScreenWidth() / 2);
             const float mouseX = (float)(int)DAT_083a427c;
             const float mouseY = (float)(int)DAT_083a4278;
 
@@ -712,7 +719,7 @@ void __cdecl Player_ProcessInput(void)
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
         if (*(unsigned char*)(ent + 0x78) & 0x20) {
-            SetPlayerStop((int)ent);
+            SetPlayerStop(AsCharacter(ent));
         } else {
             // El chequeo isIdle va ANTES de SetPlayerWalk: si está idle (sin path activo)
             // no hay que setear la acción de caminar cada frame (resetearía el frame
@@ -722,12 +729,12 @@ void __cdecl Player_ProcessInput(void)
             // de mundo mientras el runner de camino está inactivo.
             bool isIdle = (AsCharacter(ent)->Movement == 0);
             if (!isIdle) {
-                SetPlayerWalk((int)ent);
+                SetPlayerWalk(AsCharacter(ent));
             }
             if (!isIdle) {
                 unsigned int moveOk = Entity_AdvancePath(ent, '\x01');
                 if ((char)moveOk == '\0') {
-                    MoveCharacterPosition((int)ent);
+                    MoveCharacterPosition(AsCharacter(ent));
                 } else {
                     // Al llegar al destino se resetean wp_count + cur_wp para que isIdle sea true
                     // en el frame siguiente.
@@ -742,7 +749,7 @@ void __cdecl Player_ProcessInput(void)
                     // Es la UNICA escritura a +748 que tiene esa funcion en el
                     // binario: sin ella el walker nunca se apaga.
                     AsCharacter(ent)->Movement = 0;
-                    SetPlayerStop((int)ent);
+                    SetPlayerStop(AsCharacter(ent));
                     // IDA L401: `dword_7E11DBC = (std::int64_t)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp.
                     DAT_07e11dbc = (int)AsCharacter(ent)->Object.Angle[2];
@@ -751,7 +758,7 @@ void __cdecl Player_ProcessInput(void)
                     // la cola que haya (0 = nada).  El port despachaba por
                     // tipo de cola con atajos propios (talk directo, pickup,
                     // solo ataque) y dejaba la cola 4 a un tick secundario.
-                    Action((DWORD)ent, (DWORD)ent);
+                    Action((intptr_t)ent, (intptr_t)ent);
                 }
             }
             else
@@ -788,15 +795,11 @@ void __cdecl Player_ProcessInput(void)
 
                         if (curOct != newOct) {
                             AsCharacter(ent)->Object.Angle[2] = newFacing;
-                            // TODO(paquete): el binario avisa acá al server con
-                            // PMSG_ACTION_RECV (`C1:18`, Protocol.h:55 —
-                            // {BYTE dir; BYTE action; BYTE index[2]}) llevando el
-                            // octante como `dir`. El layout exacto del buffer en
-                            // el decompile está entrelazado con el ruido de
-                            // hash-table (la key de 32 bytes v233..v256), así que
-                            // queda sin enviar hasta confirmarlo por disassembly:
-                            // sólo afecta a que OTROS jugadores vean la rotación,
-                            // y un paquete mal formado desconecta.
+                            // IDA L440-470: avisa el giro con PMSG_ACTION_RECV
+                            // [C1][05][18][dir][102]; sin esto los demás
+                            // jugadores no ven hacia dónde mira el héroe parado.
+                            BYTE pkt[5] = { 0xC1, 0x05, 0x18, (BYTE)newOct, 102 };
+                            gNetwork.SendC1(pkt, sizeof(pkt));
                         }
                     }
                 }
@@ -811,7 +814,7 @@ void __cdecl Player_ProcessInput(void)
         if (ent && AsCharacter(ent)->MovementType == 3 && AsCharacter(ent)->PathNum == 0) {
             int targetIdx = (int)DAT_00559ce8;
             if (targetIdx >= 0 && targetIdx < 400) {
-                unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * 0x394);
+                unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * CHARACTER_STRIDE);
                 if (AsCharacter(tgt)->Object.Live != 0 && AsCharacter(tgt)->SafeZone == 0) {
                     int hxg = (int)AsCharacter(ent)->PositionX;
                     int hyg = (int)AsCharacter(ent)->PositionY;
@@ -845,7 +848,7 @@ void __cdecl Player_ProcessInput(void)
                         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }
-                        SetPlayerAttack((int)ent, 0, 0, 0);
+                        SetPlayerAttack(AsCharacter(ent), 0, 0, 0);
                     }
                 }
             }
@@ -865,7 +868,7 @@ void __cdecl Player_ProcessInput(void)
     // inmediato; mientras se mueve se mantiene el gate por tiempo para no spamear
     // el server con paths intermedios.
     { // El salto de salida no entra en el ámbito de estas variables.
-    bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
+    bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[EntityOffset(0x356)] == 0);
     // DAT_07e11dc0 ("movement lock flag B"): según IDA solo lo escriben Attack
     // (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío en nuestro build
     // y el port de Chat_InputTick no tiene ese write, así que su valor fiel es 0;
@@ -1226,11 +1229,11 @@ void __cdecl Player_ProcessInput(void)
                         goto end_tick_inc;
                     }
                     BYTE* hoverEnt = (BYTE*)(uintptr_t)DAT_07abf5d0
-                                   + (uintptr_t)SelectedCharacter * 0x394;
+                                   + (uintptr_t)SelectedCharacter * CHARACTER_STRIDE;
                     // Muerto = +0x2FD (IDA ReceiveDie:18). No usar +0x2EC (state flag que el
                     // server también pone en 0 en ReceiveAction) ni +0x34E (es SafeZone: dejaría
                     // sin targetear a todo NPC del pueblo).
-                    if (hoverEnt[0x2FD] != 0) {
+                    if (hoverEnt[EntityOffset(0x2FD)] != 0) {
                         // Muerto — limpia el estado de hover para que el click siguiente no quede
                         // pegado al cadáver, y sale.
                         SelectedCharacter = -1;
@@ -1239,7 +1242,7 @@ void __cdecl Player_ProcessInput(void)
                         DAT_00559c70 = -1;
                         goto end_tick_inc;
                     }
-                    int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * 0x394);
+                    intptr_t tgtEntityBase = (intptr_t)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
                     int dstX = AsCharacter(tgtEntityBase)->PositionX;
                     int dstY = AsCharacter(tgtEntityBase)->PositionY;
 
@@ -1302,13 +1305,13 @@ void __cdecl Player_ProcessInput(void)
                     // elfa se acercara al cuerpo a cuerpo para poder pegar.
                     unsigned int ok2 = Path_FindRoute(srcX, srcY,
                                                      dstX, dstY,
-                                                     ent + 0x354, 0.0f);
+                                                     ent + EntityOffset(0x354), 0.0f);
                     if ((char)ok2 == 0) {
                         // Sin ruta (ya esta al lado, o inalcanzable) -> atacar.
                         if (Combat_CheckArrowRequirement() == 0)
                             goto end_tick;              // IDA: return (sin ++MouseUpdateTime)
-                        Action((DWORD)(uintptr_t)ent,
-                                                   (DWORD)(uintptr_t)ent);
+                        Action((intptr_t)ent,
+                                                   (intptr_t)ent);
                         goto end_tick_inc;
                     }
                     {
@@ -1320,14 +1323,14 @@ void __cdecl Player_ProcessInput(void)
                                           || (rh >= 128 && rh < 135)
                                           || (rh == 145);
                         if (!bRanged && AsCharacter(ent)->MonsterIndex != 9) {
-                            Combat_SendMovePathPacket((int)ent, (int)ent);   // IDA: SendMove
+                            Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));   // IDA: SendMove
                             goto end_tick_inc;
                         }
                     }
                     if (Combat_CheckArrowRequirement() == 0)
                         goto end_tick;                  // IDA: return
-                    Action((DWORD)(uintptr_t)ent,
-                                               (DWORD)(uintptr_t)ent);
+                    Action((intptr_t)ent,
+                                               (intptr_t)ent);
                     goto end_tick_inc;
                 }
 
@@ -1378,8 +1381,8 @@ void __cdecl Player_ProcessInput(void)
             // Bound check (no esta en IDA): SelectedOperate viene del
             // picker del frame anterior.
             const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
-            const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
-                                   ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
+            const intptr_t tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
+                                   ? g_OperateObjects[iSrc] : 0;
 
             if (mountOk && tgtEntityPtr != 0) {
                 // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el
@@ -1401,16 +1404,16 @@ void __cdecl Player_ProcessInput(void)
                     const int srcY = AsCharacter(ent)->PositionY;
                     unsigned int ok = Path_FindRoute(srcX, srcY,
                                                      TargetX, TargetY,
-                                                     ent + 0x354, 0.0f);
+                                                     ent + EntityOffset(0x354), 0.0f);
                     if ((char)ok == 0) {
                         // LABEL_312: sin camino (ya estamos al lado) ->
                         // ejecutar la accion ahora.  El port mandaba otro
                         // paquete de movimiento y NUNCA llamaba a Action,
                         // asi que sentarse no se disparaba nunca.
-                        Action((DWORD)ent, (DWORD)ent);
+                        Action((intptr_t)ent, (intptr_t)ent);
                     } else {
                         // LABEL_340: hay camino -> caminar hasta el objeto.
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
+                        Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                     }
                     goto end_tick_inc;
                 }
@@ -1427,7 +1430,7 @@ void __cdecl Player_ProcessInput(void)
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
                     AsCharacter(ent)->MovementType = 2;
                     DAT_00559ce8 = SelectedNpc;
-                    int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * 0x394);
+                    intptr_t tgtBase = (intptr_t)(DAT_07abf5d0 + SelectedNpc * CHARACTER_STRIDE);
                     DAT_07db8708  = (int)AsCharacter(tgtBase)->Object.Type;
                     _DAT_07e118e4 = *(DWORD *)&AsCharacter(tgtBase)->Object.Angle[2];
                     DAT_00559c70  = SelectedNpc;
@@ -1442,12 +1445,12 @@ void __cdecl Player_ProcessInput(void)
 
                     unsigned int ok = Path_FindRoute(srcX, srcY,
                                                     dstX, dstY,
-                                                    ent + 0x354, 0.0f);
+                                                    ent + EntityOffset(0x354), 0.0f);
                     if ((char)ok == '\0') {
                         // IDA L1210: sin camino -> LABEL_312 (Action manda el 0x30).
-                        Action((DWORD)ent, (DWORD)ent);
+                        Action((intptr_t)ent, (intptr_t)ent);
                     } else {
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
+                        Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                     }
                     goto end_tick_inc;
                 }
@@ -1463,7 +1466,7 @@ void __cdecl Player_ProcessInput(void)
                 // item = worldXY/100.
                 int itemSlotIdx = (int)SelectedItem;
                 BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
-                              + (uintptr_t)itemSlotIdx * 0x204;
+                              + (uintptr_t)itemSlotIdx * GROUND_ITEM_STRIDE;
                 // La posición world del item la escribe CreateItem en ip+88/92 (el render la
                 // lee en v1+16 = ip+72+16 = ip+88); itemEnt = ip.
                 int dstX = (int)(*(float*)(itemEnt + 88) / 100.0f);
@@ -1475,13 +1478,13 @@ void __cdecl Player_ProcessInput(void)
 
                 unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
-                                                ent + 0x354, 0.0f);
+                                                ent + EntityOffset(0x354), 0.0f);
                 if ((char)ok == '\0') {
                     // IDA L1318: sin camino -> Action y cola en 0.
-                    Action((DWORD)ent, (DWORD)ent);
+                    Action((intptr_t)ent, (intptr_t)ent);
                     AsCharacter(ent)->MovementType = 0;
                 } else {
-                    Combat_SendMovePathPacket((int)ent, (int)ent);
+                    Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                 }
                 goto end_tick_inc;
             }
@@ -1611,10 +1614,10 @@ void __cdecl Player_ProcessInput(void)
 
                             unsigned int ok = Path_FindRoute(srcX, srcY,
                                                             TargetX, TargetY,
-                                                            ent + 0x354, 0.0f);
+                                                            ent + EntityOffset(0x354), 0.0f);
                             if ((char)ok != '\0') {
                                 AsCharacter(ent)->MovementType = 0;
-                                Combat_SendMovePathPacket((int)ent, (int)ent);
+                                Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                                 goto end_tick_inc;
                             }
                         }

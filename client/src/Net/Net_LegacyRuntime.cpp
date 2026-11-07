@@ -5,13 +5,14 @@
 // conserva su símbolo/dirección de IDA en el comentario que la precede.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"
 
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 extern void __cdecl operator_delete(void* ptr);
 extern void ClearActionObject(void);
-extern void __cdecl Effect_PhysicsTick(DWORD Object);
+extern void __cdecl Effect_PhysicsTick(std::uintptr_t Object);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
 
 // En el binario original `OffsetInventoryItems` y `DAT_07ea8410` son el mismo
@@ -160,20 +161,20 @@ void __stdcall InitGame(void)
 // ─────────────────────────────────────────────────────────────────────────────
 // ReceiveChat @ 0x00427630 (692 bytes, ~156 lines)
 // Packet handler for opcode 0x00 (chat message from server).
-// Packet layout: [C1][len][00][sender:10][prefijo:1][msg...]
+// Packet layout: [C1][len][00][sender:40][prefijo:1][msg...] (0.97.40)
 //
 // Si SceneFlag == 2 (escena de login):
 //   Sends a 4-byte ACK packet {0xC1, 0x04, 0x0E, ...} back to server
 //   (keep-alive/chat ACK). Handles WSAEWOULDBLOCK by queuing to send buffer.
 //
 // En el resto de las escenas:
-//   Extracts sender name (10 bytes @ offset 3) y rutea por el byte de prefijo
-//   en 0x0D (el mensaje empieza en 0x0E):
+//   Extracts sender name (40 bytes @ offset 3) y rutea por el byte de prefijo
+//   en +43 (el mensaje empieza en +44):
 //     '~' (0x7E) → AddText(sender, msg, 4)        — party
 //     '@' (0x40) → AddText(sender, msg, 5)        — guild
 //     '#' (0x23) → AssignChat(sender, msg, 1)     — sólo burbuja
 //     default    → AssignChat(sender, msg, 0) + AddText(sender, msg, 3) — chat
-//                  normal (el mensaje se toma desde 0x0D)
+//                  normal (el mensaje se toma desde +43)
 // ─────────────────────────────────────────────────────────────────────────────
 void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 {
@@ -190,42 +191,40 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
     }
 
     // --- Chat message processing (escenas que no son el login) ---
-    char sender[11];
-    char msg[61];
+    // 0.97.40: name[40]@+3 y message[200]@+43 (PMSG_CHAT_SEND), en UTF-8.
+    const int MSG = 3 + (int)NetText::CharacterNameSize;
+    char sender[NetText::CharacterNameSize + 1];
+    char msg[NetText::ChatMessageSize + 1];
     memset(sender, 0, sizeof(sender));
     memset(msg, 0, sizeof(msg));
 
-    // Copy sender name (10 bytes at offset 3)
-    memcpy(sender, ReceiveBuffer + 3, 10);
-
-    // Copy message text (up to 59 bytes)
-    memset(msg, 0, 61);
+    NetText::FromServer(sender, sizeof(sender), ReceiveBuffer + 3, NetText::CharacterNameSize);
 
     // IDA ReceiveChat (0x427630) usa UIChatLogWindow_AddText(strID, strText, <canal>)
     // con el canal correcto por prefijo.
     extern void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode);
 
-    BYTE chatType = ReceiveBuffer[0x0D];
+    BYTE chatType = ReceiveBuffer[MSG];
 
     if (chatType == '~') {
         // Party (canal 4)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         UIChatLogWindow_AddText(sender, msg, 4);
     }
     else if (chatType == '@') {
         // Guild (canal 5)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         UIChatLogWindow_AddText(sender, msg, 5);
     }
     else if (chatType == '#') {
         // Solo burbuja sobre el personaje (sin entrada en el log)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         AssignChat(sender, msg, 1);
     }
     else {
         // Chat normal: burbuja + log en canal 3 (color casi-blanco 0xFFEFDCCD;
         // renderLine lo saltea si byte_559BF1==0, que es el toggle de F2).
-        memcpy(msg, ReceiveBuffer + 0x0D, 60);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG, NetText::ChatMessageSize);
         AssignChat(sender, msg, 0);
         UIChatLogWindow_AddText(sender, msg, 3);
     }
@@ -243,7 +242,7 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 //   - Handles the "find rightmost in left subtree" replacement for BST delete
 // Finally zeroes +0x41C (root) and +0x418 (count).
 // ─────────────────────────────────────────────────────────────────────────────
-void __fastcall FUN_00422c50(int param_1)
+void __fastcall FUN_00422c50(intptr_t param_1)
 {
     // Free heap allocations
     if (*(void **)(param_1 + 0x3FC) != NULL) {
@@ -285,27 +284,27 @@ void __fastcall FUN_00422c50(int param_1)
 //   Object.Type==0x186 → action 0x81, alpha 1.0 (special NPC)
 //   default         → alpha 0.0 (invisible, fade-in handled elsewhere)
 // ─────────────────────────────────────────────────────────────────────────────
-void __cdecl AppearMonster(DWORD c)
+void __cdecl AppearMonster(intptr_t c)
 {
     BYTE monIdx = *(BYTE *)(c + 0x02);  // MonsterIndex
     switch (monIdx) {
     case 0x15:
-        *(int *)(c + 0x105) = 1;   // SetAction(obj, 1)
-        *(int *)(c + 0x106) = 1;   // PriorAction = 1
+        *(int *)(c + EntityOffset(0x105)) = 1;   // SetAction(obj, 1)
+        *(int *)(c + EntityOffset(0x106)) = 1;   // PriorAction = 1
         *(float *)(c + 0x04) = 1.0f; // Alpha = 1.0
         PlayBuffer(0x13, 0, 0);
         return;
     case 0x2C:
-        *(int *)(c + 0x105) = 1;
-        *(int *)(c + 0x106) = 1;
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
         *(float *)(c + 0x04) = 1.0f;
         PlayBuffer(0x126, 0, 0);
         return;
     case 0x35:
     case 0x36:
-        *(int *)(c + 0x100) = 60;  // Appear = 60 frames
-        *(int *)(c + 0x105) = 1;
-        *(int *)(c + 0x106) = 1;
+        *(int *)(c + EntityOffset(0x100)) = 60;  // Appear = 60 frames
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
         *(float *)(c + 0x04) = 1.0f;
         return;
     case 0x55: case 0x5B: case 0x61:
@@ -314,8 +313,8 @@ void __cdecl AppearMonster(DWORD c)
         return;
     }
     if (*(int *)(c + 0x00) == 0x186) {  // Object.Type == special NPC
-        *(int *)(c + 0x105) = 0x81;
-        *(int *)(c + 0x106) = 0x81;
+        *(int *)(c + EntityOffset(0x105)) = 0x81;
+        *(int *)(c + EntityOffset(0x106)) = 0x81;
         *(float *)(c + 0x04) = 1.0f;
         return;
     }

@@ -3,7 +3,6 @@
 #include "Platform/SDL3/SDLPlatform.h"
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
-#include <GL/gl.h>
 void Input_OnEvent(const Platform::InputEvent& event);
 namespace Platform {
 namespace {

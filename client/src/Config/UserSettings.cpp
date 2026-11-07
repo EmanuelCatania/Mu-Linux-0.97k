@@ -6,6 +6,7 @@
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
 #include "Platform/IGLContext.h"
+#include "Render/Gfx.h"
 #include <cerrno>
 #include <climits>
 #include <cctype>
@@ -22,6 +23,7 @@ struct ResolutionSize { DWORD width; DWORD height; };
 constexpr ResolutionSize kResolutions[MAX_USER_RESOLUTION] = {
     {  640,  480 }, {  800,  600 }, { 1024,  768 }, { 1280, 1024 },
     { 1280,  720 }, { 1366,  768 }, { 1600,  900 }, { 1920, 1080 },
+    { 3440, 1440 },
 };
 
 // Ausente, truncado o inválido: no reemplazar el valor del registro/default.
@@ -91,6 +93,22 @@ void CUserSettings::Load(const char* iniPath)
     m_FpsLimit = ReadRange("Window", "FpsLimit", iniPath, 0, INT_MAX, 60);
     m_RenderDecoupled = ReadRange("Window", "RenderDecoupled", iniPath, 0, 1, 1) != 0;
     m_VSync = ReadRange("Window", "VSync", iniPath, 0, 1, 0) != 0;
+    char backend[16] = {};
+    Platform::GetFileSystem().ReadIniString("Window", "RenderBackend", "opengl", backend, sizeof(backend), iniPath);
+    for (int i = 0; i < static_cast<int>(RenderBackendPreference::Count); ++i)
+        if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
+            m_RenderBackend = static_cast<RenderBackendPreference>(i);
+    // Config.ini se comparte con Windows: un d3d12/d3d11 guardado allá se lee
+    // acá como WebGPU automático, sin reescribir el archivo.
+    if (!IsRenderBackendAvailable(m_RenderBackend)) m_RenderBackend = RenderBackendPreference::Auto;
+    m_StartupRenderBackend = m_RenderBackend;
+    m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
+    m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
+    m_Antialiasing = m_StartupAntialiasing = ReadRange("Window", "Antialiasing", iniPath, 0, 3, 0);
+    m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 1, 0) != 0;
+    m_Shadows = ReadRange("Window", "Shadows", iniPath, 0, 2, 0);
+    m_DepthFog = ReadRange("Window", "DepthFog", iniPath, 0, 1, 0) != 0;
+    m_DrawDistance = ReadRange("Window", "DrawDistance", iniPath, 0, 3, 0);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
@@ -135,6 +153,11 @@ void CUserSettings::Load(const char* iniPath)
         f.quality   = ReadRange("Font", "FontQuality", iniPath, 0, CLEARTYPE_NATURAL_QUALITY, NONANTIALIASED_QUALITY);
         f.strikeOut = ReadFlag("Font", "FontStrikeOut", iniPath) > 0;
     }
+
+    // Independientes de que exista la fuente propia: valen con cualquiera.
+    m_TextShadow = ReadFlag("Font", "TextShadow", iniPath) > 0;
+    m_TextOutline = ReadFlag("Font", "TextOutline", iniPath) > 0;
+    m_ColorEmoji = ReadFlag("Font", "ColorEmoji", iniPath) != 0;
 
     char line[160];
     Platform::TextFormat(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
@@ -192,12 +215,110 @@ void CUserSettings::SetAntilag(eAntilag option, bool enabled)
     SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
 }
 
+const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "auto";
+    case RenderBackendPreference::D3D12: return "d3d12";
+    case RenderBackendPreference::D3D11: return "d3d11";
+    case RenderBackendPreference::Vulkan: return "vulkan";
+    default: return "opengl";
+    }
+}
+
+bool CUserSettings::IsRenderBackendAvailable(RenderBackendPreference preference)
+{
+#ifdef _WIN32
+    return preference < RenderBackendPreference::Count;
+#else
+    return preference < RenderBackendPreference::Count &&
+           preference != RenderBackendPreference::D3D12 && preference != RenderBackendPreference::D3D11;
+#endif
+}
+
+const char* CUserSettings::RenderBackendName(RenderBackendPreference preference)
+{
+    switch (preference) {
+    case RenderBackendPreference::Auto: return "WebGPU";
+    case RenderBackendPreference::D3D12: return "DirectX 12";
+    case RenderBackendPreference::D3D11: return "DirectX 11";
+    case RenderBackendPreference::Vulkan: return "Vulkan";
+    default: return "OpenGL";
+    }
+}
+
+void CUserSettings::SetTextureQuality(int level)
+{
+    if (level < 0 || level > 2) return;
+    m_TextureQuality = level;
+    // Los mipmaps se generan al subir las texturas: valen los del arranque.
+    Gfx::SetTextureQuality(m_StartupTextureQuality >= 1, level >= 2);
+    SaveInt("Window", "TextureQuality", level);
+}
+
+void CUserSettings::SetSharpness(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_Sharpness = level;
+    SaveInt("Window", "Sharpness", level);
+}
+
+void CUserSettings::SetHDTextures(bool enabled)
+{
+    m_HDTextures = enabled;
+    SaveInt("Window", "HDTextures", enabled ? 1 : 0);
+}
+
+void CUserSettings::SetShadows(int level)
+{
+    if (level < 0 || level > 2) return;
+    m_Shadows = level;
+    SaveInt("Window", "Shadows", level);
+    Gfx::SetShadowMaps(level > 0, ShadowStrength());
+}
+
+void CUserSettings::SetDepthFog(bool enabled)
+{
+    m_DepthFog = enabled;
+    SaveInt("Window", "DepthFog", enabled ? 1 : 0);
+    Gfx::SetDepthFog(enabled);
+}
+
+void CUserSettings::SetDrawDistance(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_DrawDistance = level;
+    SaveInt("Window", "DrawDistance", level);
+}
+
+void CUserSettings::SetAntialiasingLevel(int level)
+{
+    if (level < 0 || level > 3) return;
+    m_Antialiasing = level;
+    SaveInt("Window", "Antialiasing", level);
+}
+
+bool CUserSettings::RestartPending() const
+{
+    return m_RenderBackend != m_StartupRenderBackend ||
+        (m_TextureQuality >= 1) != (m_StartupTextureQuality >= 1) ||
+        (m_Antialiasing >= 2) != (m_StartupAntialiasing >= 2) ||
+        m_HDTextures != m_StartupHDTextures;
+}
+
+void CUserSettings::SetRenderBackend(RenderBackendPreference preference)
+{
+    if (preference >= RenderBackendPreference::Count) return;
+    m_RenderBackend = preference;
+    Platform::GetFileSystem().WriteIniString("Window", "RenderBackend", RenderBackendKey(preference), m_IniPath);
+}
+
 // DESVIACION: aplicar preferencias de dibujo en caliente sin reiniciar el reloj SIM.
 // Si el driver rechaza VSync se conserva la preferencia anterior y no se guarda.
 bool CUserSettings::SetPresentation(bool decoupled, bool vsync, int fpsLimit)
 {
     if (fpsLimit<0) return false;
-    if (vsync!=m_VSync && !Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0)) return false;
+    if (vsync!=m_VSync && !gWindow.SetSwapInterval(vsync)) return false;
     m_RenderDecoupled=decoupled; m_VSync=vsync; m_FpsLimit=fpsLimit;
     gFrameLimiter.SetRenderDecoupled(decoupled);
     gFrameLimiter.SetFpsLimit(fpsLimit);
@@ -240,9 +361,21 @@ void CUserSettings::SetFont(const UserFontSettings& font)
     SaveInt("Font", "FontStrikeOut", m_Font.strikeOut);
 }
 
+void CUserSettings::SetTextEffects(bool shadow, bool outline, bool colorEmoji)
+{
+    m_TextShadow = shadow;
+    m_TextOutline = outline;
+    m_ColorEmoji = colorEmoji;
+    SaveInt("Font", "TextShadow", shadow);
+    SaveInt("Font", "TextOutline", outline);
+    SaveInt("Font", "ColorEmoji", colorEmoji);
+}
+
 void CUserSettings::ResetFont()
 {
     m_Font = UserFontSettings{};
+    m_TextShadow = m_TextOutline = false;
+    m_ColorEmoji = true;
     if (m_IniPath[0]) Platform::GetFileSystem().WriteIniString("Font", NULL, NULL, m_IniPath);
 }
 

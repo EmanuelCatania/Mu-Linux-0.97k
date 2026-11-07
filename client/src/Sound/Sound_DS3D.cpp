@@ -8,6 +8,7 @@
 // State lives in globals.cpp. See src/Sound/Sound.cpp for the loader side.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/ITimer.h"
 #include "Platform/IAudio.h"
 
@@ -34,7 +35,7 @@
 // IDA 00404BC0_PlayBuffer.c semantics (including the channel-wrap reset).
 // ============================================================================
 // IDA: PlayBuffer (0x00404BC0)
-HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
+HRESULT __cdecl PlayBuffer(int Buffer, const OBJECT* Object, BOOL bLooped)
 {
     if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return S_OK;
     if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) BufferChannel[Buffer] = 0;
@@ -82,14 +83,14 @@ void Sound_Update3DPositions(void)
         if (MaxBufferChannel[slot] <= 0)   continue;
 
         for (int ch = 0; ch < MaxBufferChannel[slot]; ++ch) {
-            DWORD entityPtr = Object3DSound[slot][ch];
+            const OBJECT* entityPtr = Object3DSound[slot][ch];
             if (entityPtr == 0) continue;
 
             // Player world pos (DAT_07abf5d8) minus entity world pos.
             float offset[3];
-            offset[0] = *(float*)(DAT_07abf5d8 + 0x10) - *(float*)(entityPtr + 0x10);
-            offset[1] = *(float*)(DAT_07abf5d8 + 0x14) - *(float*)(entityPtr + 0x14);
-            offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - *(float*)(entityPtr + 0x18);
+            offset[0] = *(float*)(DAT_07abf5d8 + 0x10) - entityPtr->Position[0];
+            offset[1] = *(float*)(DAT_07abf5d8 + 0x14) - entityPtr->Position[1];
+            offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - entityPtr->Position[2];
 
             // Rotate into listener space.
             Vector_Rotate(offset, rotMatrix, offset);
@@ -152,8 +153,8 @@ void CErrorReport_WriteCurrentTime(int param_1) {
 // Logs OS name, CPU name, RAM (MB), DirectX version to error report.
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
 void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
-    DWORD si   = (DWORD)(uintptr_t)si_v;
+    intptr_t This = (intptr_t)This_v;
+    intptr_t si   = (intptr_t)si_v;
     CErrorReport__Write(This, (char*)"<System information>\r\n");
     CErrorReport__Write(This, (char*)"OS \t\t\t: %s\r\n", (const char*)(si + 128));
     CErrorReport__Write(This, (char*)"CPU \t\t\t: %s\r\n", (const char*)si);
@@ -165,20 +166,20 @@ void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* 
 // CErrorReport::WriteOpenGLInfo @ 0x004056B0 (IDA: FUN_004056B0).
 // Logs GL vendor/renderer/version + max texture size + max viewport.
 void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
-    GLint maxTex = 0;
-    GLint maxView[2] = {0, 0};
+    intptr_t This = (intptr_t)This_v;
+    int maxTex = 0;
+    int maxView[2] = {0, 0};
     CErrorReport__Write(This, (char*)"<OpenGL information>\r\n");
     const char* s;
-    s = (const char*)glGetString(0x1F00);  // GL_VENDOR
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Vendor);
     CErrorReport__Write(This, (char*)"Vendor \t\t\t: %s\r\n", s ? s : "(null)");
-    s = (const char*)glGetString(0x1F01);  // GL_RENDERER
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Renderer);
     CErrorReport__Write(This, (char*)"Render \t\t\t: %s\r\n", s ? s : "(null)");
-    s = (const char*)glGetString(0x1F02);  // GL_VERSION
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Version);
     CErrorReport__Write(This, (char*)"Version \t\t: %s\r\n", s ? s : "(null)");
-    glGetIntegerv(0x0D33, &maxTex);          // GL_MAX_TEXTURE_SIZE
+    maxTex = Gfx::MaxTextureSize();
     CErrorReport__Write(This, (char*)"Max texture size \t: %d\r\n", maxTex);
-    glGetIntegerv(0x0D3A, maxView);          // GL_MAX_VIEWPORT_DIMS
+    Gfx::MaxViewportDims(maxView);
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 

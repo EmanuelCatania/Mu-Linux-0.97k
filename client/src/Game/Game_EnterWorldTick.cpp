@@ -38,6 +38,9 @@
 //   DAT_055ca038   — "select" button confirm flag
 
 #include "stdafx.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
+#include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Net/Net.h"
@@ -86,58 +89,54 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 // recorriendo hacia atrás). Mismo patrón que gNetwork.Send.
 static void Send_CharSelectPacket(void)
 {
-    BYTE pkt[32];
+    // C1 LL F3 03 + name[40] + slot (0.97.40).
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xC1;
-    pkt[1] = 15;        // total length (C1 LL F3 03 + name 10 + slot = 15)
+    pkt[1] = (BYTE)LEN;
     pkt[2] = 0xF3;
     pkt[3] = 0x03;
 
-    // Username (from DAT_07db8710, max 10 bytes) — payload at pkt[4..13]
-    char* uname   = (char*)DAT_07db8710;
-    int   unamLen = (int)strlen(uname);
-    if (unamLen > 10) unamLen = 10;
-    memcpy(pkt + 4, uname, unamLen);
-    // Padding bytes 14 - 4 - unamLen remain 0 (memset above).
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);
 
     // Char slot byte: DAT_07abf20c low nibble * 0x10 + high nibble
-    pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
 
     // Forward chain XOR using PREVIOUS byte (matches server's reverse XorData).
-    // Iterate i = 3..14 (entire body after pkt[2]). Server reverses n=14..3.
-    for (int i = 3; i < 15; i++) {
+    for (int i = 3; i < LEN; i++) {
         pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
 
     // Pkt_Send aplica MuEmu byte-XOR + send (C1 path, no SerialModulus).
-    Pkt_Send(pkt, 15);
+    Pkt_Send(pkt, LEN);
 }
 
 // Send the character-CREATE packet:
-//   [0xC1][15][0xF3][0x01][name(10)][Class] — server PMSG_CHARACTER_CREATE_RECV.
+//   [0xC1][45][0xF3][0x01][name(40)][Class] — server PMSG_CHARACTER_CREATE_RECV.
 // Class = page*16 (DB_CLASS_DW=0, DK=16, FE=32, MG=48) — la fórmula
 // `page*0x10 + byte1` del IDA da ese valor.
 static void Send_CharCreatePacket(void)
 {
-    BYTE pkt[32];
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xC1;
-    pkt[1] = 15;        // total length (C1 LL F3 01 + name 10 + class = 15)
+    pkt[1] = (BYTE)LEN;
     pkt[2] = 0xF3;
     pkt[3] = 0x01;      // sub 0x01 = CREATE
 
-    char* name   = (char*)DAT_07db8710;   // typed char name (InputText[0])
-    int   namLen = (int)strlen(name);
-    if (namLen > 10) namLen = 10;
-    memcpy(pkt + 4, name, namLen);
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);   // typed char name (InputText[0])
 
     // Class byte: page*0x10 + byte1 → 0/16/32/48 = DW/DK/FE/MG.
-    pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
 
-    for (int i = 3; i < 15; i++) {
+    for (int i = 3; i < LEN; i++) {
         pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
-    Pkt_Send(pkt, 15);
+    Pkt_Send(pkt, LEN);
 }
 
 void Game_EnterWorldTick(void)
@@ -149,7 +148,7 @@ void Game_EnterWorldTick(void)
     bool hasFreeSlot = false;
     {
         char* e = (char*)DAT_07abf5d0;
-        for (int i = 0; i < 5; i++, e += 0x394) {
+        for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
             if (*e == '\0') { hasFreeSlot = true; break; }
         }
     }
@@ -262,6 +261,8 @@ void Game_EnterWorldTick(void)
     }
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
+    // Recargar sólo el fondo cuando cambia el aspecto, antes de simularlo.
+    Scene_RefreshCharSelectBackdrop();
     CLK_WATCH("frame-start");
     // Este es el tick de char-select (Game_MainLoop state 4 → esta fn, pese al
     // nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá, primero:
@@ -298,7 +299,7 @@ void Game_EnterWorldTick(void)
     // chars correrían la misma anim.
     {
         for (int s = 0; s < 8; ++s) {
-            int e = (int)(uintptr_t)DAT_07abf5d0 + s * 0x394;
+            intptr_t e = (intptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // MoveCharacterVisual: model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108] (anim frame)
@@ -315,7 +316,7 @@ void Game_EnterWorldTick(void)
 
     // Delete entity if server confirmed (0x39 = delete ack)
     if (DAT_05826cb0 == 0x39) {
-        ((char*)DAT_07abf5d0)[DAT_005615e0 * 0x394] = '\0';
+        ((char*)DAT_07abf5d0)[DAT_005615e0 * CHARACTER_STRIDE] = '\0';
     }
 
     int mouseX = DAT_083a427c;
@@ -341,7 +342,7 @@ void Game_EnterWorldTick(void)
             // Find first free entity slot
             int slotFound = DAT_005616b0;
             char* e = (char*)DAT_07abf5d0;
-            for (int i = 0; i < 5; i++, e += 0x394) {
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
                 if (*e == '\0') { slotFound = i; break; }
                 slotFound = DAT_005616b0;
             }
@@ -353,7 +354,7 @@ void Game_EnterWorldTick(void)
             ClearInput(1);
             DAT_00559c84 = 1;
             InputNumber = 1;
-            InputTextMax = 10;
+            Input_SetLimit(0, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
         }
 
         // Update free slot flag after possible change
@@ -361,13 +362,14 @@ void Game_EnterWorldTick(void)
 
         // Click equip/select button (DAT_005616a8+0x80..0xc6, Y 0x93-0xa7)
         if (hasFreeSlot &&
-            mouseX >= DAT_005616a8 + 0x80 && mouseX < DAT_005616a8 + 0xc6 &&
+            mouseX >= (int)DAT_005616a8 + 0x80 - gWindow.GetRightShift() &&
+            mouseX < (int)DAT_005616a8 + 0xc6 - gWindow.GetRightShift() &&
             DAT_083a4278 > 0x93 && DAT_083a4278 < 0xa7 &&
             IsClickPushed())
         {
             DAT_083a4124 = '\0';
-            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1c0];
+            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
 
             if (lvl < 40) {
                 // Level too low error
@@ -451,8 +453,8 @@ void Game_EnterWorldTick(void)
                 // Boton OK / entrar al juego (IDA 0x521D80 L556):
                 //   MouseX >= 441 - dword_5616A8 && MouseX < 441 - dword_5616A8 + 70
                 //   && MouseY >= 148 && MouseY < 167
-                if (mouseX >= 441 - (int)DAT_005616a8 &&
-                    mouseX < 441 - (int)DAT_005616a8 + 70 &&
+                if (mouseX >= 441 - (int)DAT_005616a8 + gWindow.GetRightShift() &&
+                    mouseX < 441 - (int)DAT_005616a8 + gWindow.GetRightShift() + 70 &&
                     DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
                     IsClickPushed())
                 {
@@ -468,7 +470,7 @@ void Game_EnterWorldTick(void)
             // corresponde a IDA `if (!v40) goto LABEL_124` y precondición
             // SelectedHero != -1.  Sin esto, cada frame disparaba state=0x19.
             if (DAT_005616ac != -1 && (selectClicked || confirmed)) {
-                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1c0];
+                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
                 // Precedence-fix: IDA `(flags & 1) == 0`, no `!flags & 1`.
                 if ((flags & 1) == 0) {
                     DAT_083a7c14 = 0x19;
@@ -507,8 +509,8 @@ void Game_EnterWorldTick(void)
         unsigned maxPage = 2;   // rotate limit: 3 si algún char >= lvl 220
         {
             char* e = (char*)DAT_07abf5d0;
-            for (int i = 0; i < 5; i++, e += 0x394)
-                if (*e != '\0' && *(ushort*)(e + 0x1be) > 0xdb) { maxPage = 3; break; }
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
+                if (*e != '\0' && *(ushort*)&((CHARACTER*)(uintptr_t)(e))->Level > 0xdb) { maxPage = 3; break; }
         }
         if (mouseX > 0x17f && mouseX < 0x194 &&
             DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
@@ -641,13 +643,14 @@ void Game_EnterWorldTick(void)
                 // Build and send world-enter packet with username + anti-tamper data
                 {
                     // Copy char name from selected slot
-                    char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-                    int   clen = (int)strlen(charName);
-                    // Copy to char data buffer
-                    memcpy((char*)DAT_07cf1ff4, charName, clen + 1);
-                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
-                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
+                    // 0.97.40: CharacterMachine guarda 10 bytes; el nombre completo
+                    // queda en EntityName::Selected().
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
+                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
                 // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
                 // datos del personaje y pasa a Loading. Lo manda el init de
@@ -664,13 +667,13 @@ void Game_EnterWorldTick(void)
                 // Va DENTRO de case 25, tras el Pkt_Send y el check de validCode (IDA
                 // 0x00521D80:1150); fuera del switch correría cada frame.
                 {
-                    char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     char* charData = (char*)DAT_07cf1ff4;
-                    int   len      = (int)strlen(charName);
-                    memcpy(charData, charName, len + 1);
-                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
-                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated(charData, 11, charName);
+                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
 
                 SceneFlag  = 3;  // SceneFlag = Loading
@@ -693,7 +696,7 @@ void Game_EnterWorldTick(void)
                 // Check if any slot is free
                 bool anyFree = false;
                 char* e = (char*)DAT_07abf5d0;
-                for (int i = 0; i < 5; i++, e += 0x394)
+                for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
                     if (*e == '\0') { anyFree = true; break; }
 
                 if (anyFree) {

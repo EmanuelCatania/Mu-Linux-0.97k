@@ -16,6 +16,8 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
+#include "Render/BufferedDraw.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"
 #include "Platform/Text.h"
@@ -24,9 +26,9 @@
 
 void __fastcall FUN_00401af0(void*);
 void  __fastcall SpringNode_Ctor(void *node);
-int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);
-void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);
-char  __fastcall VerletSystem_Flush(int a1);
+int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);
+void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);
+char  __fastcall VerletSystem_Flush(uintptr_t a1);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 extern void __cdecl operator_delete(void* ptr);
@@ -34,13 +36,13 @@ extern void __cdecl operator_delete(void* ptr);
 #define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
-void __fastcall CSQuest_clearQuest(int param_1);
+void __fastcall CSQuest_clearQuest(void* param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void __fastcall SpringNode_GetPos(void *node, float *out);
-float __fastcall SpringNode_Delta(void *a, int b, float *c);
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
-static void __cdecl FUN_0053cc00_impl(int param_1);
+static void __cdecl FUN_0053cc00_impl(void* param_1);
 
 
 
@@ -126,7 +128,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
       *pbVar5 = pbVar2[uVar6 + 1] ^ bVar1;
     }
     iVar3 = _rand();
-    pbVar5[(int)param_2 - (int)pbVar2] = (byte)iVar3;
+    reinterpret_cast<byte*>(param_2)[uVar6] = (byte)iVar3;
     uVar6 = uVar6 + 1;
     pbVar5 = pbVar5 + 1;
   } while (uVar6 < 4);
@@ -140,7 +142,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 // Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
 void __cdecl Buffer_XorKey3(int param_1,int param_2)
 {
-  int iVar1;
+  intptr_t iVar1;
 
   iVar1 = 0;
   if (0 < param_2) {
@@ -193,7 +195,7 @@ void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
       *pbVar6 = pbVar2[uVar7 + 1] ^ bVar1;
     }
     iVar4 = _rand();
-    pbVar6[(int)param_2 - (int)pbVar2] = (byte)iVar4;
+    reinterpret_cast<byte*>(param_2)[uVar7] = (byte)iVar4;
     uVar7 = uVar7 + 1;
     pbVar6 = pbVar6 + 1;
   } while (uVar7 < 0x584);
@@ -228,16 +230,16 @@ void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
   uVar3 = 3;
   do {
     if (uVar3 < 3) {
-      *(byte *)(uVar3 + (int)puVar2) =
-           *(byte *)(uVar3 + (int)puVar2) ^ *(byte *)(uVar3 + 1 + (int)puVar2);
+      reinterpret_cast<byte*>(puVar2)[uVar3] =
+           reinterpret_cast<byte*>(puVar2)[uVar3] ^ reinterpret_cast<byte*>(puVar2)[uVar3 + 1];
     }
-    bVar1 = *(char *)(uVar3 + (int)puVar2) - 0x23;
+    bVar1 = reinterpret_cast<char*>(puVar2)[uVar3] - 0x23;
     uVar4 = uVar3 & 0x8000000f;
-    *(byte *)(uVar3 + (int)puVar2) = bVar1;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = bVar1;
     if ((int)uVar4 < 0) {
       uVar4 = (uVar4 - 1 | 0xfffffff0) + 1;
     }
-    *(byte *)(uVar3 + (int)puVar2) = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
     uVar3 = uVar3 - 1;
     iVar5 = iVar5 + -1;
   } while (iVar5 != 0);
@@ -269,20 +271,22 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
 
   // Ofuscación por HashTable: si la tabla no fue construida (vtable==NULL
   // o capacity==0) no hace nada (anti-tamper, no es lógica de juego).
-  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((int)this_ + 0xc) == 0) return;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_2);
+  // La tabla anti-tamper queda inerte: el slot 0 debe conservar la clave 0.
+  return;
+  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return;
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_2);
   abStack_8[0] = 0;
   abStack_8[1] = 0;
   abStack_8[2] = 0;
   abStack_8[3] = 0;
   uVar9 = 0;
-  if (*(int *)((int)this_ + 0xc) != 0) {
+  if (*(int *)((intptr_t)this_ + 0xc) != 0) {
     do {
       iVar2 = 4;
       bVar7 = false;
       iVar3 = 0;
       bVar8 = true;
-      pbVar6 = (byte *)(*(int *)((int)this_ + 8) + uVar1 * 4);
+      pbVar6 = (byte *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4);
       pbVar4 = (byte *)&param_1;
       pbVar5 = pbVar6;
       do {
@@ -297,8 +301,8 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
         iVar3 = (1 - (uint)bVar7) - (uint)(bVar7 != 0);
       }
       if (iVar3 == 0) {
-        *(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4) = unaff_retaddr;
-        *(undefined4 *)(*(int *)((int)this_ + 8) + uVar1 * 4) = param_1;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4) = unaff_retaddr;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4) = param_1;
         return;
       }
       iVar2 = 4;
@@ -318,13 +322,13 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
         iVar3 = (1 - (uint)bVar7) - (uint)(bVar7 != 0);
       }
       if (iVar3 == 0) {
-        *(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4) = unaff_retaddr;
-        *(undefined4 *)(*(int *)((int)this_ + 8) + uVar1 * 4) = param_1;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4) = unaff_retaddr;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4) = param_1;
         return;
       }
-      uVar1 = (uVar1 + 1) % *(uint *)((int)this_ + 0xc);
+      uVar1 = (uVar1 + 1) % *(uint *)((intptr_t)this_ + 0xc);
       uVar9 = uVar9 + 1;
-    } while (uVar9 < *(uint *)((int)this_ + 0xc));
+    } while (uVar9 < *(uint *)((intptr_t)this_ + 0xc));
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
   return;
@@ -350,17 +354,18 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
   undefined4 local_4;
 
   local_4 = param_1;
-  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((int)this_ + 0xc) == 0) return (void*)0;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_1);
+  if (sizeof(void*) != 4) return (void*)0;
+  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return (void*)0;
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_1);
   uVar9 = 0;
   undefined4 stack0xfffffff4 = local_4;
-  if (*(int *)((int)this_ + 0xc) != 0) {
+  if (*(int *)((intptr_t)this_ + 0xc) != 0) {
     do {
       iVar2 = 4;
       bVar7 = false;
       iVar3 = 0;
       bVar8 = true;
-      pbVar6 = (byte *)(*(int *)((int)this_ + 8) + uVar1 * 4);
+      pbVar6 = (byte *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4);
       pbVar4 = (byte*)&stack0xfffffff4;
       pbVar5 = pbVar6;
       do {
@@ -397,11 +402,11 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
         if (uVar1 == 0xffffffff) {
           return (void*)0;
         }
-        return (void*)(uintptr_t)*(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4);
+        return (void*)(uintptr_t)*(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4);
       }
-      uVar1 = (uVar1 + 1) % *(uint *)((int)this_ + 0xc);
+      uVar1 = (uVar1 + 1) % *(uint *)((intptr_t)this_ + 0xc);
       uVar9 = uVar9 + 1;
-    } while (uVar9 < *(uint *)((int)this_ + 0xc));
+    } while (uVar9 < *(uint *)((intptr_t)this_ + 0xc));
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   return (void*)0;
@@ -409,7 +414,7 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
 
 
 // IDA: CWsctlc::GetSocket (0x0043DCC0)
-int __fastcall CWsctlc_GetSocket(int param_1)
+int __fastcall CWsctlc_GetSocket(uintptr_t param_1)
 {
   return *(int *)(param_1 + 8);
 }
@@ -450,12 +455,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // a2 = src plaintext buffer
 // a3 = src length in bytes
 // returns 11 * ceil(len / 8) (expanded encrypted size)
-int __cdecl CSimpleModulus_Encode(int a1, unsigned char *a2, int a3)
+int __cdecl CSimpleModulus_Encode(BYTE* a1, unsigned char *a2, int a3)
 {
     int result = 11 * ((a3 + 7) / 8);
     if (!a1 || a3 <= 0) return result;
 
-    BYTE *dst = (BYTE *)a1;
+    BYTE *dst = a1;
     BYTE *src = a2;
     int   remaining = a3;
     while (remaining > 0) {
@@ -524,8 +529,8 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     //   bitOff avanza de a 18 por palabra (CF90 devuelve a2+a5).
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 0,  16);
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 22, 2);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 0,  16);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 22, 2);
     }
 
     // ── Pass 4: checksum byte ────────────────────────────────────────────────
@@ -537,7 +542,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     WORD  tail;
     ((BYTE *)&tail)[0] = (BYTE)(chk ^ xorSeed ^ 0x3D);
     ((BYTE *)&tail)[1] = chk;
-    CSimpleModulus_AddBits((int)dst, bitOff, (int)&tail, 0, 16);
+    CSimpleModulus_AddBits(dst, bitOff, &tail, 0, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -551,12 +556,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);
 
-int __cdecl CSimpleModulus_Decode(int a1, int a2, int a3, int a4)
+int __cdecl CSimpleModulus_Decode(BYTE* a1, BYTE* a2, int a3, int a4)
 {
-    BYTE *dst = (BYTE *)a1;
-    BYTE *src = (BYTE *)a2;
+    BYTE *dst = a1;
+    BYTE *src = a2;
     int   srcLen = a3;
-    // (a4 unused — IDA shows 4-arg signature; functions.h still declares 4 ints)
+    // El port conserva el cuarto argumento ignorado; IDA53CCA0 recibe tres.
     (void)a4;
 
     if (!dst) return 8 * ((srcLen + 10) / 11);
@@ -621,9 +626,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     // ── Pass 1: bit-unpack 4×{16+2}-bit packed[i] from src ────────────────
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        CSimpleModulus_AddBits((int)&packed[i], 0,  (int)src, bitOff,      16);
+        CSimpleModulus_AddBits(&packed[i], 0,  src, bitOff,      16);
         bitOff += 16;
-        CSimpleModulus_AddBits((int)&packed[i], 22, (int)src, bitOff,      2);
+        CSimpleModulus_AddBits(&packed[i], 22, src, bitOff,      2);
         bitOff += 2;
     }
     int tailBitOff = bitOff;  // 4*18 = 72
@@ -677,7 +682,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
     // ── Pass 4: read+verify checksum tail ────────────────────────────────
     DWORD tail = 0;
-    CSimpleModulus_AddBits((int)&tail, 0, (int)src, tailBitOff, 16);
+    CSimpleModulus_AddBits(&tail, 0, src, tailBitOff, 16);
     BYTE  byteSeed = (BYTE)(tail & 0xFF);
     BYTE  byteChk  = (BYTE)((tail >> 8) & 0xFF);
     // Recupera el byteSeed original = (chk_lo ^ chk_hi ^ 0x3D) → deshacer para obtener xorSeed
@@ -698,16 +703,17 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
 // Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
 void __fastcall Quest_FullInit(void *param_1_raw) {
-    int *param_1 = (int *)param_1_raw;
-    *param_1 = (int)&PTR_LAB_005524b8;
-    if (g_csQuest == 0) g_csQuest = (DWORD)param_1;
-    *(BYTE *)(param_1 + 1) = 0xff;
-    *(BYTE *)((int)param_1 + 0x1c87a) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87b) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87d) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87e) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87f) = 0;
-    *(short *)(param_1 + 0x7220) = 0;
+    BYTE* param_1 = static_cast<BYTE*>(param_1_raw);
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
+    if (g_csQuest == 0) g_csQuest = reinterpret_cast<uintptr_t>(param_1);
+    *(param_1 + 4) = 0xff;
+    *(param_1 + 0x1c87a) = 0;
+    *(param_1 + 0x1c87b) = 0;
+    *(param_1 + 0x1c87d) = 0;
+    *(param_1 + 0x1c87e) = 0;
+    *(param_1 + 0x1c87f) = 0;
+    *reinterpret_cast<short*>(param_1 + 0x1c880) = 0;
     // IDA cierra con `unk_567500 = off_5524B4`, el segundo tramo del swap de
     // vtable del ctor (0x5524B4 = {0x403F10 ~dtor, 0x403F50, ...}; el primer
     // store usa &0x5524B8, o sea la entrada siguiente).  Queda SIN portar a
@@ -719,15 +725,16 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
 }
 
 // FUN_00403ef0 @ 0x00403EF0 (17 bytes) — quest vtable init
-void __fastcall FUN_00403ef0(int *param_1) {
-    *param_1 = (int)&PTR_LAB_005524b8;
+void __fastcall FUN_00403ef0(void* param_1) {
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
     g_csQuest = 0;
 }
 
 // FUN_00403f10 @ 0x00403F10 — Quest ~dtor
-void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00403ef0((int *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00403f10(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00403ef0(ecx);
+    if (param_1 & 1) operator_delete(ecx);
 }
 
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
@@ -777,19 +784,18 @@ int  __cdecl    Cloth_Solve(DWORD *a1);
 //   }
 //   result = MouseLButtonPop;  if (MouseLButtonPop) MouseLButtonPop = 0;
 int __cdecl CSQuest_ProceedButton(void *param_1) {
-    if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
-        (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
+    BYTE* quest = static_cast<BYTE*>(param_1);
+    if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;                       // MouseOnWindow
 
     FUN_00401af0(param_1);
 
     // Botón de aceptar / continuar la quest.
-    if ((484 < DAT_083a427c) && (DAT_083a427c < 605) &&
-        (354 < DAT_083a4278) && (DAT_083a4278 < 379) &&
+    if (Ui::QuestProceed(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (DAT_083a4124 != 0)) {
         // IDA: sub_402850 (0x00402850).
         // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
-        if (*(BYTE*)((BYTE*)param_1 + 0x1c882) == 3) {
+        if (*(quest + 0x1c882) == 3) {
             DAT_083a4124 = 0;
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
@@ -802,7 +808,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[0] = 0xC1;
         pkt[1] = 0x05;
         pkt[2] = 0xA2;
-        pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
+        pkt[3] = *(quest + 0x1c87a);   // índice de quest actual
         pkt[4] = 0x01;
         gNetwork.Send(pkt, 5);
 
@@ -813,13 +819,12 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
 
 closeButton:
     // Botón de cerrar.
-    if ((0x1da < DAT_083a427c) && (DAT_083a427c < 499) &&
-        (0x18a < DAT_083a4278) && (DAT_083a4278 < 0x1a3) &&
+    if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     }
     if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;
@@ -838,10 +843,10 @@ void __fastcall FUN_00408ff0(void* param_1) {
     // cada nodo y dibuja las dos caras.
     int *thiz = (int *)param_1;
     if (!thiz) return;
-    int cols  = thiz[10];   // +0x28
-    int rows  = thiz[11];   // +0x2c
-    int count = thiz[12];   // +0x30
-    int nodes = thiz[13];   // +0x34
+    int cols  = ClothSystem(thiz).Columns;   // +0x28
+    int rows  = ClothSystem(thiz).Rows;   // +0x2c
+    int count = ClothSystem(thiz).NodeCount;   // +0x30
+    ClothNode* nodes = ClothSystem(thiz).Nodes;   // +0x34
     if (cols < 2 || rows < 2 || count <= 0 || !nodes) return;
 
     float *verts = (float *)operator_new(12 * count);
@@ -850,20 +855,20 @@ void __fastcall FUN_00408ff0(void* param_1) {
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c) {
             const int index=c+r*cols;
-            SpringNode_GetPos((void *)(nodes+60*index),&verts[3*index]);
+            SpringNode_GetPos(nodes + index,&verts[3*index]);
             ClothPresentation_Vertex(param_1,index,&verts[3*index]);
         }
 
-    unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
+    unsigned flags = (unsigned)ClothSystem(thiz).Flags & 0x3000u;                 // +0x14
     if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
     else if (flags == 0x1000) GL_SetBlendSrcOver('');               // EnableAlphaTest
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     float texFront, texBack;
-    memcpy(&texFront, &thiz[3], 4);   // +0x0C
-    memcpy(&texBack,  &thiz[4], 4);   // +0x10
-    FUN_004090b0(param_1, 0, 1, texFront, (int)verts);
-    FUN_004090b0(param_1, 0, 0, texBack,  (int)verts);
+    memcpy(&texFront, &ClothSystem(thiz).FrontTexture, 4);   // +0x0C
+    memcpy(&texBack,  &ClothSystem(thiz).BackTexture, 4);   // +0x10
+    FUN_004090b0(param_1, 0, 1, texFront, verts);
+    FUN_004090b0(param_1, 0, 0, texBack,  verts);
 
     operator_delete((unsigned char *)verts);
 }
@@ -872,18 +877,18 @@ void __fastcall FUN_00408ff0(void* param_1) {
 // __thiscall(this=meshObj, param_1=windingOrder, param_2=textureId, param_3=vertexBuf).
 // Binds texture, glBegin(GL_QUADS=7), nested loop over rows/cols emitting 4 vertices per quad
 // vía FUN_004091d0. El orden de winding se invierte según param_1 (0=atrás, 1=adelante).
-void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, int param_3) {
+void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, const float* param_3) {
     // Port FIEL de IDA `sub_4090B0`. `param_2` es un GLfloat que en realidad
     // lleva el ID de textura en sus BITS (IDA: `BindTexture(SLODWORD(t))`),
     // igual que el `t` de sub_4091D0 lleva el índice de fila.
     int *thiz = (int *)ecx;
     if (!thiz || !param_3) return;
-    int cols = thiz[10];   // +0x28
-    int rows = thiz[11];   // +0x2c
+    int cols = ClothSystem(thiz).Columns;   // +0x28
+    int rows = ClothSystem(thiz).Rows;   // +0x2c
     int texId; memcpy(&texId, &param_2, 4);
 
     GL_BindTextureSlot(texId);
-    glBegin(GL_QUADS);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
     if (param_1) {
         // cara delantera: (c,r) (c+1,r) (c+1,r+1) (c,r+1)
         for (int r = 0; r < rows - 1; ++r)
@@ -903,19 +908,19 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
                 FUN_004091d0(ecx, 0, param_3, c + 1, (float)r);
             }
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
 // __thiscall. Calcula la UV desde la posición en la grilla: u = col/(cols-1), v = row/(rows-1), clampeado a 0.99.
 // Emite glTexCoord2f + glVertex3f desde el buffer de vértices en param_1 + (row*cols+col)*0xC.
-void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2, float param_3) {
+void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int param_2, float param_3) {
     // Port FIEL de IDA `sub_4091D0`. param_1 = buffer de vértices (stride 12),
     // param_2 = columna, param_3 = fila (llega como float con valor entero).
     int *thiz = (int *)ecx;
     if (!thiz || !param_1) return;
-    int cols = thiz[10];   // +0x28
-    int rows = thiz[11];   // +0x2c
+    int cols = ClothSystem(thiz).Columns;   // +0x28
+    int rows = ClothSystem(thiz).Rows;   // +0x2c
     int row  = (int)param_3;
     if (cols < 2 || rows < 2) return;
 
@@ -923,9 +928,9 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     if (v > 0.99f) v = 0.99f;               // IDA clampea a 0.99
     float u = (float)param_2 / (float)(cols - 1);
 
-    const float *vert = (const float *)(param_1 + 12 * (param_2 + row * cols));
-    glTexCoord2f(u, v);
-    glVertex3f(vert[0], vert[1], vert[2]);
+    const float *vert = param_1 + 3 * (param_2 + row * cols);
+    BufferedDraw::TexCoord2f(u, v);
+    BufferedDraw::Vertex3f(vert[0], vert[1], vert[2]);
 }
 
 // VerletNode_AddToSystem @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
@@ -933,37 +938,20 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
 // La entrada nueva se inserta al final, justo antes del centinela de cola.
 void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
 {
-    char *thiz = (char*)widget;
-    // allocate and construct VerletNode (0x24 bytes)
-    void *node_raw = operator_new(0x24);
-    void *node = (node_raw == NULL) ? NULL : (void *)ClothAnchor_Ctor((DWORD *)node_raw);
-    ClothAnchor_SetParams(node, p1, p2, p3, radius, boneIdx);
-
-    // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=prev, [+8]=next)
-    int *entry = (int *)operator_new(0xc);
-    if (entry != NULL) {
-        entry[0] = 0;
-        entry[1] = 0;
-        entry[2] = 0;
-        entry[0] = (int)node;
-
-        // IDA `sub_409250` L27-32:
-        //     result[1] = *(_DWORD *)(this[20] + 4);
-        //     *(_DWORD *)(*(_DWORD *)(this[20] + 4) + 8) = result;
-        //     result[2] = this[20];
-        //     *(_DWORD *)(this[20] + 4) = result;
-        //     this[18] = this[18] + 1;
-        // `this[20]` es el VALOR del puntero al centinela de cola que guardó
-        // `sub_407FE0` en +0x50 (el centinela NO está embebido ahí), y el layout es
-        // **+4 = prev, +8 = next** (coherente con el ctor: `head[8] = tail`,
-        // `tail[4] = head`). Se inserta al FINAL, antes de la cola.
-        int tail = *(int *)(thiz + 0x50);      // this[20]
-        int prev = *(int *)(tail + 4);         // tail->prev
-        entry[1] = prev;                       // entry->prev = tail->prev
-        *(int *)(prev + 8) = (int)entry;       // prev->next  = entry
-        entry[2] = tail;                       // entry->next = tail
-        *(int *)(tail + 4) = (int)entry;       // tail->prev  = entry
-        *(int *)(thiz + 0x48) += 1;            // this[18]++
+    ClothWidget& w = ClothSystem(widget);
+    void* raw = operator_new(sizeof(ClothAnchor));
+    auto* node = raw ? reinterpret_cast<ClothAnchor*>(ClothAnchor_Ctor(static_cast<DWORD*>(raw))) : nullptr;
+    ClothAnchor_SetParams(node,p1,p2,p3,radius,boneIdx);
+    auto* entry = static_cast<ClothLink*>(operator_new(sizeof(ClothLink)));
+    if (entry) {
+        entry->Value = node;
+        entry->Previous = nullptr;
+        entry->Next = nullptr;
+        entry->Previous = w.Tail->Previous;
+        w.Tail->Previous->Next = entry;
+        entry->Next = w.Tail;
+        w.Tail->Previous = entry;
+        ++w.AnchorCount;
     }
 }
 
@@ -990,57 +978,51 @@ int __cdecl Cloth_Solve(DWORD *a1)
   // El original no chequea BoneTransform: la tela sólo se crea para entidades
   // con el modelo ya cargado. Guard defensivo — sin él, `Matrix` sería
   // `48*boneIdx` (una dirección de dos dígitos) y el frame moriría en un AV.
-  if (!a1 || !a1[1] || !*(DWORD *)(a1[1] + 276))
+  if (!a1 || !ClothSystem(a1).Owner || !ClothSystem(a1).Owner->BoneMatrices)
     return 1;
 
   // ── 1. anclas → posición de mundo desde el hueso ──────────────────────
-  for (int i = *(int *)(a1[19] + 8); (int)a1[20] != i && i; i = *(int *)(i + 8))
-  {
-    DWORD *v5 = *(DWORD **)i;
-    VerletNode_GetPos(v5, Position);
-    // IDA: rota el vector local (x,y,z) → (z,-y,x) antes de transformar.
-    float v6 = Position[0];
-    Position[1] = -Position[1];
-    Position[0] = Position[2];
-    Position[2] = v6;
-    BMD_TransformPosition(
-        (void *)(DAT_05828d58 + 0xbc * (int)*(short *)(a1[1] + 2)),
-        (float *)(*(DWORD *)(a1[1] + 276) + 48 * v5[4]),
-        Position,
-        WorldPosition,
-        1);
-    VerletNode_SetTarget(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
+  for (ClothLink* entry=ClothSystem(a1).Head->Next;entry!=ClothSystem(a1).Tail && entry;entry=entry->Next) {
+    ClothAnchor* anchor=entry->Value;
+    VerletNode_GetPos(anchor,Position);
+    float v6=Position[0];Position[1]=-Position[1];Position[0]=Position[2];Position[2]=v6;
+    OBJECT* owner=ClothSystem(a1).Owner;
+    BMD_TransformPosition(static_cast<void*>(AsModel(DAT_05828d58)+owner->Type),
+      reinterpret_cast<float*>(owner->BoneMatrices+anchor->Bone),Position,WorldPosition,1);
+    VerletNode_SetTarget(anchor,WorldPosition[0],*(int*)&WorldPosition[1],*(int*)&WorldPosition[2]);
   }
 
   Cloth_CollideAnchors(a1);
 
   // ── 2. springs de igualdad ────────────────────────────────────────────
-  for (int v7 = 0, v8 = 0; v7 < (int)a1[14]; ++v7, v8 += 16)
+  for (int v7 = 0; v7 < ClothSystem(a1).SpringCount; ++v7)
   {
-    float *v9 = (float *)(a1[15] + v8);
-    if ((*(BYTE *)&v9[3] & 1) != 0)
-      Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+    const ClothSpring& spring = ClothSystem(a1).Springs[v7];
+    if ((spring.Flags & 1) != 0)
+      Cloth_SpringEqual(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.A), reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.B), spring.Rest);
   }
 
   // ── 3. flush de correcciones ──────────────────────────────────────────
-  for (int j = 0; j < (int)a1[11]; ++j)
+  for (int j = 0; j < (int)ClothSystem(a1).Rows; ++j)
   {
-    int v11 = a1[10];
+    int v11 = ClothSystem(a1).Columns;
     for (int k = 0; k < v11; ++k)
     {
-      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
-      v11 = a1[10];
+      VerletSystem_Flush(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + (k + j * v11)));
+      v11 = ClothSystem(a1).Columns;
     }
   }
 
   // ── 4. springs de rango ───────────────────────────────────────────────
-  for (int v16 = 0, v3 = 0; v16 < (int)a1[14]; ++v16, v3 += 16)
+  for (int v16 = 0; v16 < ClothSystem(a1).SpringCount; ++v16)
   {
-    float *v13 = (float *)(a1[15] + v3);
-    int v14 = *((short *)v13 + 1);
-    if (v14 >= (int)a1[10]
-        && (*(BYTE *)&v13[3] & 4) != 0
-        && !Cloth_SpringRange(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
+    const ClothSpring& spring = ClothSystem(a1).Springs[v16];
+    float range[2];
+    memcpy(range, &spring.Minimum, sizeof(range));
+    int v14 = spring.B;
+    if (v14 >= (int)ClothSystem(a1).Columns
+        && (spring.Flags & 4) != 0
+        && !Cloth_SpringRange(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + v14), reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.A), range))
     {
       return 0;
     }
@@ -1059,7 +1041,7 @@ void* __fastcall Widget_Ctor(void *param_1)
 
 // FUN_004093c0 @ 0x004093C0 (11 bytes)
 void __fastcall FUN_004093c0(void *This) {
-    *(int *)This = (int)&PTR_LAB_005524e8;
+    ClothSystem(This).VTable = reinterpret_cast<void**>(&PTR_LAB_005524e8);
     FUN_00408070(This);
 }
 
@@ -1069,52 +1051,52 @@ void __fastcall FUN_004093c0(void *This) {
 // y agrega el resorte vía Spring_StoreEdge a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
 // Layout: this+4=entity, +8=type, +0x14=flags, +0x30=node_count, +0x34=node_array*, +0x38=spring_count,
 //         +0x3c=spring_array*, +0x54=slot_index, +0x5c=model_type.
-void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags)
+void __cdecl SpringMesh_Create(void *widget, OBJECT* entity, int slot, int type, int radius, int flags)
 {
     ClothPresentation_Forget(widget);
     char *thiz = (char*)widget;
-    *(int *)(thiz + 8)  = type;
-    *(int *)(thiz + 4)  = entity;
-    *(short**)(thiz + 0x54) = slot;
-    *(unsigned int *)(thiz + 0x14) |= (unsigned int)radius;   // radius repurposed as flag mask
+    ClothSystem(thiz).Bone  = type;
+    ClothSystem(thiz).Owner  = entity;
+    static_cast<ClothMeshWidget*>(widget)->MeshIndex = slot;
+    ClothSystem(thiz).Flags |= (unsigned int)radius;   // radius repurposed as flag mask
 
-    int model_type = (flags == -1) ? (int)*(short *)(entity + 2) : flags;
-    *(int *)(thiz + 0x5c) = model_type;
+    int model_type = (flags == -1) ? (int)entity->Type : flags;
+    static_cast<ClothMeshWidget*>(widget)->ModelType = model_type;
 
     // model data: DAT_05828d58 + model_type * 0xbc; face list at +0x28
-    int model_base = *(int *)(&DAT_05828d58) + model_type * 0xbc;
-    int face_list  = *(int *)(model_base + 0x28);
-    int face_entry = face_list + (int)slot * 0x28;
+    const BMD* model_base = AsModel(DAT_05828d58) + model_type;
+    auto* face_list = reinterpret_cast<ClothModelMesh*>(model_base->Meshs);
+    ClothModelMesh* face_entry = face_list + slot;
 
     // node count from face vertex list header (+4)
-    int node_count = (int)*(short *)(face_entry + 4);
-    *(int *)(thiz + 0x30) = node_count;
+    int node_count = (int)face_entry->VertexCount;
+    ClothSystem(thiz).NodeCount = node_count;
 
     // allocate node array: [count_header][node0..nodeN], each node 0x3c bytes
-    int *raw = (int*)operator_new(node_count * 0x3c + 4);
-    int *nodes;
+    int *raw = (int*)operator_new(node_count * sizeof(ClothNode) + 4);
+    ClothNode* nodes;
     if (raw == NULL) {
         nodes = NULL;
     } else {
-        nodes = raw + 1;
+        nodes = reinterpret_cast<ClothNode*>(raw + 1);
         *raw  = node_count;
-        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)SpringNode_Ctor);
+        ClothConstruct(nodes, node_count, SpringNode_Ctor);
     }
-    *(int **)(thiz + 0x34) = nodes;
+    ClothSystem(thiz).Nodes = nodes;
 
     // spring count from face header (+0xa = short)
-    int spring_count = (int)*(short *)(face_entry + 0xa);
-    *(int *)(thiz + 0x38) = spring_count * 3;
+    int spring_count = (int)face_entry->TriangleCount;
+    ClothSystem(thiz).SpringCount = spring_count * 3;
 
     // allocate spring array: spring_count * 0x30 bytes
     void *springs = operator_new(spring_count * 0x30);
-    *(void **)(thiz + 0x3c) = springs;
+    ClothSystem(thiz).Springs = static_cast<ClothSpring*>(springs);
 
     // init node positions from bone vertex buffer
     // buffer de vértices: (float*)&DAT_0584621c, stride de 3 floats por entrada * 15000 por slot
     float *verts = (float*)&DAT_0584621c;
     int vert_base = (int)slot * 15000;
-    int *vert_indices = (int *)*(int *)(face_entry + 0x10);  // vertex index list
+    int *vert_indices = reinterpret_cast<int*>(face_entry->Vertices);  // vertex index list
 
     for (int i = 0; i < node_count; i++) {
         int vi = vert_base + i;
@@ -1122,19 +1104,19 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
         float y = verts[vi * 3 + 1];
         float z = verts[vi * 3 + 2];
         int pinned = ((int)*(short *)(vert_indices + i * 4) == type) ? 1 : 0;
-        SpringNode_SetPos((char*)nodes + i * 0x3c, x, y, z, pinned);
+        SpringNode_SetPos(nodes + i, x, y, z, pinned);
     }
 
     // build springs from face triangle edges
-    int *face_ptr  = (int *)*(int *)(face_entry + 0x1c);
+    int *face_ptr  = reinterpret_cast<int*>(face_entry->Triangles);
     unsigned int sp = 0;
     for (int fi = 0; fi < spring_count; fi++, face_ptr = (int*)((char*)face_ptr + 0x24)) {
         short *tri = (short*)face_ptr;
         for (int ei = 0; ei < 3; ei++) {
             short na = tri[ei + 1];
             short nb = tri[(ei + 1) % 3 + 1];
-            int pA = (int)nodes + na * 0x3c;
-            int pB = (int)nodes + nb * 0x3c;
+            uintptr_t pA = reinterpret_cast<uintptr_t>(nodes) + na * sizeof(ClothNode);
+            uintptr_t pB = reinterpret_cast<uintptr_t>(nodes) + nb * sizeof(ClothNode);
             float delta[3];
             float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];
@@ -1145,7 +1127,7 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
             sp++;
         }
     }
-    *(unsigned int *)(thiz + 0x38) = sp;
+    ClothSystem(thiz).SpringCount = sp;
 }
 
 // IDA: sub_409AD0 (0x00409AD0) -- constructor de CPhysicsManager.
@@ -1169,7 +1151,7 @@ void* __fastcall FUN_00409ad0(void* param_1) {
 }
 
 // scalar_deleting_destructor_locale @ 0x00409B60 — ~dtor de CPhysicsManager (llama a Locimp_dtor)
-void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall scalar_deleting_destructor_locale(intptr_t ecx, int /*edx*/, BYTE param_1) {
     Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -1191,7 +1173,7 @@ void __fastcall Locimp_dtor(void* param_1) {
 // __fastcall(ecx=this). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 // Sin portar: el cuerpo de abajo está vacío.
-void __fastcall FUN_00409d20(int param_1) {
+void __fastcall FUN_00409d20(intptr_t param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
     //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
@@ -1204,7 +1186,7 @@ void __fastcall LinkedList_DestroyAll(int *param_1) {
     *(int *)(*(int *)(param_1[2] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[1] + 8);
     while (pvVar1 != NULL) {
-        void *next = *(void **)((int)pvVar1 + 8);
+        void *next = *(void **)(static_cast<BYTE*>(pvVar1) + 8);
         operator_delete(pvVar1);
         pvVar1 = next;
     }
@@ -1224,15 +1206,15 @@ void FUN_00409eb0(void) {}
 // WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
 void* __fastcall WidgetB_Ctor(void *param_1)
 {
-    WidgetB_ZeroFields((int)param_1);
+    WidgetB_ZeroFields(param_1);
     // vtable set skipped
     return param_1;
 }
 
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
-void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
-    WidgetB_SetVtable((void *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00409ef0(void* widget, int /*edx*/, BYTE param_1) {
+    WidgetB_SetVtable(widget);
+    if (param_1 & 1) operator_delete(widget);
 }
 
 // WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
@@ -1245,8 +1227,9 @@ void __fastcall WidgetB_SetVtable(void *param_1)
 // ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
 // WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
-void __fastcall WidgetB_ZeroFields(int param_1)
+void __fastcall WidgetB_ZeroFields(void* widget)
 {
+    BYTE* param_1 = static_cast<BYTE*>(widget);
     *(short *)(param_1 + 4) = 0;
     *(int *)(param_1 + 8)   = 0;
     *(int *)(param_1 + 0x18) = 0;
@@ -1270,16 +1253,17 @@ int __fastcall FUN_00409f30(void* ecx, void* /*edx*/, int param_1, int param_2, 
     return 0;
 }
 
-// FUN_0040a0a0 @ 0x0040A0A0 (100 bytes) — sound object init + open file
+// FUN_0040a0a0 @ 0x0040A0A0 — prepara la dirección del volumen de sombra.
 void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
-    *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
-    *(DWORD *)((int)This + 0x14) = 0xbf800000;
-    *(float *)((int)This + 0xc) = -1.0f;
-    Vec3_Normalize((float *)((int)This + 0xc));
+    BYTE* context = static_cast<BYTE*>(This);
+    *(DWORD *)(context + 0x10) = 0x3cf5c28f;
+    *(DWORD *)(context + 0x14) = 0xbf800000;
+    *(float *)(context + 0xc) = -1.0f;
+    Vec3_Normalize((float *)(context + 0xc));
     int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
         FUN_0040a300(This, NULL, param_1);
-        operator_delete(*(void **)((int)This + 0x1c));
+        operator_delete(*(void **)(context + 0x1c));
     }
 }
 
@@ -1320,7 +1304,7 @@ void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_
 // __thiscall(this=shadowCtx, param_1=vertBuf). Allocates output vertex buffer (count * 0x48).
 // Por cada arista de silueta: extruye los vértices de la arista en la dirección -luz (VectorMA),
 // y arma 6 vértices (2 triángulos) por arista = un quad extruido. La altura se clampea a un mínimo.
-void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
+void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, intptr_t param_1) {
     (void)ecx; (void)param_1;
     // this->quadCount = 0
     // this->quadBuf = new byte[this->edgeCount * 0x48]
@@ -1335,15 +1319,16 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
 
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
-    int iVar1 = *(int *)(*param_1 + 0x10);
+    BYTE* context = static_cast<BYTE*>(This);
+    intptr_t iVar1 = *(int *)(*param_1 + 0x10);
     if (iVar1 == 0) {
-        *(int *)((int)This + 8) = 0;
+        *(int *)(context + 8) = 0;
     } else if (*(int *)(iVar1 + 8) == *param_1) {
         *(int *)(iVar1 + 8) = 0;
     } else {
         *(int *)(iVar1 + 0xc) = 0;
     }
-    *(int *)((int)This + 4) = *(int *)((int)This + 4) - 1;
+    *(int *)(context + 4) = *(int *)(context + 4) - 1;
     if ((void *)*param_1 != NULL) {
         operator_delete((void *)*param_1);
     }
@@ -1351,7 +1336,7 @@ void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
 }
 
 // FUN_00423c30 @ 0x00423C30 (10 bytes) — disconnect socket context
-void FUN_00423c30(void) { CWsctlc_Close(((int)(uintptr_t)SocketClient)); }
+void FUN_00423c30(void) { CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient)); }
 
 // InitGuildWar @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
 // IDA: FUN_00423DB0 (0x00423DB0)
@@ -1360,17 +1345,17 @@ void __cdecl InitGuildWar(void) {
     DAT_00559684 = 0xffffffff;
     lpString_05826bfc[0] = '\0';
     // Re-enable party target markers for all live entities
-    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + 0x2e9);
+    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + EntityOffset(0x2e9));
     char *pPlayer = DAT_07abf5d8;
     int iVar4 = 400;
     do {
-        if (puVar3[-0x2e9] != '\0') {
-            short sVar1 = *(short*)(pPlayer + 0x1da);
+        if (*(puVar3 - EntityOffset(0x2e9)) != '\0') {
+            short sVar1 = *(short*)(pPlayer + EntityOffset(0x1da));
             *puVar3 = 0;
-            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - 0x10f) == sVar1))
+            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - EntityOffset(0x2e9) + EntityOffset(0x1da)) == sVar1))
                 *puVar3 = 1;
         }
-        puVar3 += 0x394;
+        puVar3 += CHARACTER_STRIDE;
         iVar4--;
     } while (iVar4 != 0);
 }
@@ -1378,7 +1363,7 @@ void __cdecl InitGuildWar(void) {
 // CWsctlc_Close @ 0x0043DC90 (11 lines) — NetContext_Disconnect
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
-void __cdecl CWsctlc_Close(int ctx) {
+void __cdecl CWsctlc_Close(uintptr_t ctx) {
     gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
     Platform::GetSocket().Close(*(SOCKET *)(ctx + 8));
@@ -1387,18 +1372,18 @@ void __cdecl CWsctlc_Close(int ctx) {
 
 // FUN_0053cbb0 @ 0x0053CBB0 (18 bytes) — GameGuard class init
 void __fastcall FUN_0053cbb0(int *param_1) {
-    *param_1 = (int)&PTR_FUN_0055389c;
-    FUN_0053cc00_impl((int)param_1);
+    *param_1 = (intptr_t)&PTR_FUN_0055389c;
+    FUN_0053cc00_impl(param_1);
 }
 
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
-void __fastcall FUN_0053cbd0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0053cbd0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0053cbf0((int *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0053cbf0 @ 0x0053CBF0 (7 bytes)
-void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (int)&PTR_FUN_0055389c; }
+void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (intptr_t)&PTR_FUN_0055389c; }
 
 // FUN_0053ce30 @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
 // 4-round Feistel cipher: extracts 16-bit + 2-bit fields via CSimpleModulus_AddBits,
@@ -1415,7 +1400,7 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
 // Copia el rango de bits [a4..a4+a5) del buffer de origen (a3) al destino (a1)
 // en el offset de bit a2. Usa un buffer temporal + CSimpleModulus_Shift para el corrimiento entre bytes.
 // Ported from IDA sub_53CF90.
-int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(void* a1, unsigned int a2, const void* a3, unsigned int a4, int a5)
 {
     int  lastByteIdx = CSimpleModulus_GetByteOfBit((int)a4 + a5 - 1);
     int  firstByteIdx= CSimpleModulus_GetByteOfBit((int)a4);
@@ -1425,7 +1410,7 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     // desborde cuando se corren v6 + 1 bytes.
     char *lpMem = (char *)operator_new(v6 + 1);
     memset(lpMem, 0, v6 + 1);
-    memcpy(lpMem, (const void *)(a3 + firstByteIdx), v6);
+    memcpy(lpMem, static_cast<const BYTE*>(a3) + firstByteIdx, v6);
 
     int tail = (a4 + a5) % 8;
     if (tail) {
@@ -1438,11 +1423,11 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     CSimpleModulus_Shift((BYTE *)lpMem, v6 + 1,  (a2 % 8));
 
     int    nBytes = (int)v6 + ((a2 % 8) > (a4 % 8) ? 1 : 0);
-    BYTE  *v9     = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
+    BYTE  *v9     = static_cast<BYTE*>(a1) + CSimpleModulus_GetByteOfBit(a2);
     if (nBytes > 0) {
-        int off = (int)((BYTE *)lpMem - v9);
+        const BYTE* source = reinterpret_cast<const BYTE*>(lpMem);
         do {
-            *v9 = (BYTE)(*v9 | v9[off]);
+            *v9 = (BYTE)(*v9 | *source++);
             ++v9;
             --nBytes;
         } while (nBytes);
@@ -1550,11 +1535,12 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
 }
 
 // -- FUN_0053cc00_impl: helper local --
-static void __cdecl FUN_0053cc00_impl(int param_1) {
-    *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
-    *(int *)(param_1 + 0x1c) = 0; *(int *)(param_1 + 0x20) = 0;
-    *(int *)(param_1 + 4) = 0;    *(int *)(param_1 + 8) = 0;
-    *(int *)(param_1 + 0xc) = 0;  *(int *)(param_1 + 0x10) = 0;
-    *(int *)(param_1 + 0x24) = 0; *(int *)(param_1 + 0x28) = 0;
-    *(int *)(param_1 + 0x2c) = 0; *(int *)(param_1 + 0x30) = 0;
+static void __cdecl FUN_0053cc00_impl(void* param_1) {
+    BYTE* fields = static_cast<BYTE*>(param_1);
+    *(int *)(fields + 0x14) = 0; *(int *)(fields + 0x18) = 0;
+    *(int *)(fields + 0x1c) = 0; *(int *)(fields + 0x20) = 0;
+    *(int *)(fields + 4) = 0;    *(int *)(fields + 8) = 0;
+    *(int *)(fields + 0xc) = 0;  *(int *)(fields + 0x10) = 0;
+    *(int *)(fields + 0x24) = 0; *(int *)(fields + 0x28) = 0;
+    *(int *)(fields + 0x2c) = 0; *(int *)(fields + 0x30) = 0;
 }

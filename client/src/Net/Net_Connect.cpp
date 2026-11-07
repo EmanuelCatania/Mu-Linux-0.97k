@@ -42,7 +42,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   int iVar2;
   if (First == '\0') {
     First = '\x01';
-    CWsctlc_Startup(((int)(uintptr_t)SocketClient));
+    CWsctlc_Startup(reinterpret_cast<uintptr_t>(SocketClient));
   }
   CWsctlc_Create(&SocketClient,(int)(uintptr_t)gWindow.GetHwnd());
   iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
@@ -98,7 +98,7 @@ void CNetwork::InitializePacketSerials()
   byte *pbVar5;
   uint uVar6;
   int iVar7;
-  char **ppcVar8;
+  const byte *ppcVar8;
   byte *pbVar9;
   byte *pbVar10;
   bool bVar11;
@@ -113,7 +113,7 @@ void CNetwork::InitializePacketSerials()
   // (ref-count de session-key bytes). Neutralizado vía fake vtable en
   // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
   param_1 = &m_SendSerial;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
   uVar6 = 0;
   param_1 = (char *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -123,14 +123,14 @@ void CNetwork::InitializePacketSerials()
       bVar12 = true;
       pbVar5 = (byte *)(DAT_055c9bd0 + uVar3 * 4);
       iVar2 = 4;
-      ppcVar8 = (char**)&param_1;
+      ppcVar8 = reinterpret_cast<const byte*>(&param_1);
       pbVar9 = pbVar5;
       do {
         if (iVar2 == 0) break;
         iVar2 = iVar2 + -1;
-        bVar11 = *(byte *)ppcVar8 < *pbVar9;
-        bVar12 = *(byte *)ppcVar8 == *pbVar9;
-        ppcVar8 = (char **)((int)ppcVar8 + 1);
+        bVar11 = *ppcVar8 < *pbVar9;
+        bVar12 = *ppcVar8 == *pbVar9;
+        ++ppcVar8;
         pbVar9 = pbVar9 + 1;
       } while (bVar12);
       if (!bVar12) {
@@ -170,11 +170,11 @@ void CNetwork::InitializePacketSerials()
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00423a34:
   pvVar4 = AntiTamper_HashNode();
-  *(undefined1 *)((int)pvVar4 + 1) = 1;
+  static_cast<BYTE*>(pvVar4)[1] = 1;
   HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_SendSerial);
 LAB_00423a52:
   m_SendSerial = 0;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
   uVar6 = 0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -233,7 +233,7 @@ LAB_00423b59:
   uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&m_ReceiveSerial);
   if (uVar3 == 0xffffffff) {
     pvVar4 = AntiTamper_HashNode();
-    *(undefined1 *)((int)pvVar4 + 1) = 1;
+    static_cast<BYTE*>(pvVar4)[1] = 1;
     HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_ReceiveSerial);
   }
   m_ReceiveSerial = 0;
@@ -267,7 +267,7 @@ LAB_00423b59:
 // símbolo queda exportado.
 // =============================================================================
 // IDA: CWsctlc::Connect (0x0043DCD0)
-extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
+extern "C" int __cdecl CWsctlc_Connect(intptr_t This, const char* ip_addr,
                                        unsigned short port, DWORD WinMsgNum)
 {
     if (!This || !*(DWORD*)This) {

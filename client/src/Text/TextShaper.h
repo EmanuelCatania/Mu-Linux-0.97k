@@ -1,0 +1,69 @@
+#pragma once
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace Platform { class SDLFont; }
+
+// Layout de una línea de texto UTF-8 (C3 del plan Unicode): orden
+// bidireccional, escritura, fuente de respaldo y shaping con HarfBuzz.
+// El resultado es una lista de glifos en orden VISUAL con su posición en
+// píxeles relativa al origen (x a la derecha, y hacia arriba desde la base).
+namespace TextEngine {
+
+struct ShapedGlyph {
+    Platform::SDLFont* font = nullptr; // cara que tiene el glifo
+    uint32_t glyph = 0;                // id de glifo dentro de esa cara
+    int x = 0;                         // izquierda del origen del glifo
+    int y = 0;                         // desplazamiento vertical (marcas)
+    uint32_t cluster = 0;              // byte del texto donde empieza su cluster
+};
+
+struct ShapedText {
+    std::vector<ShapedGlyph> glyphs;
+    int width = 0;                     // avance total
+};
+
+// Cadena de fuentes de una fuente lógica: la principal (la de [Font]), las de
+// respaldo de Data/Font y, para lo que ninguna cubre, fuentes del sistema
+// (CJK, coreano, índico, tailandés...). Todas al mismo alto, en el orden en
+// que se prueban; las del sistema se abren recién cuando hacen falta.
+class FontStack {
+public:
+    explicit FontStack(Platform::SDLFont* primary = nullptr) : m_Primary(primary) {}
+    void Reset(Platform::SDLFont* primary, int height, bool bold);
+    Platform::SDLFont* Primary() const { return m_Primary; }
+    // Primera cara de la cadena que tiene el carácter; la principal si ninguna.
+    Platform::SDLFont* FontFor(char32_t codepoint);
+    const ShapedText& Shape(std::string_view utf8);
+    // Para tests y diagnóstico: cuántas fuentes de respaldo se encontraron.
+    std::size_t FallbackCount();
+private:
+    void LoadFallbacks();
+    Platform::SDLFont* ColorEmojiFont();
+    Platform::SDLFont* m_ColorEmoji = nullptr;
+    bool m_ColorEmojiTried = false;
+    Platform::SDLFont* m_Primary = nullptr;
+    int m_Height = 0;
+    bool m_Bold = false;
+    bool m_FallbacksLoaded = false;
+    std::size_t m_SystemTried = 0;
+    std::vector<Platform::SDLFont*> m_Fallbacks;
+    struct Cache;
+    Cache* m_Cache = nullptr;
+public:
+    ~FontStack();
+    FontStack(const FontStack&) = delete;
+    FontStack& operator=(const FontStack&) = delete;
+};
+
+// Carpeta de las fuentes de respaldo (por defecto Data/Font, relativa al
+// cliente o a MU_ASSET_ROOT). Se puede fijar para los tests; con una carpeta
+// fijada no se usan las fuentes del sistema, así el resultado no depende de
+// la máquina.
+void SetFallbackFontDirectory(const std::string& directory);
+// Apaga o prende la preferencia por la fuente de emoji en color.
+void SetColorEmoji(bool enabled);
+
+} // namespace TextEngine

@@ -4,6 +4,7 @@
 // GlobalText[120..159]; 3 es la tabla de valores del item DAT_07e11d24.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -93,7 +94,7 @@ void RenderHelpWindow(void)
     // IDA: v30 = v12 / v10 (sin guarda; con otra resolucion divide por 0).
     int scale = (maxVal && colW) ? maxVal / colW : 0;
     int blankRows = isKind5 ? 0 : 11;
-    int attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
+    std::uintptr_t attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
 
     CharMenu_BuildStatRequirements(id);
     TextNum = 0;
@@ -122,7 +123,7 @@ void RenderHelpWindow(void)
     }
     TextNum = row;
 
-    ItemHelp_RequireClass(attr);
+    ItemHelp_RequireClass(reinterpret_cast<const BYTE*>(attr));
     crt_sprintf(TextList + TextNum * 100, "\n");
     ++TextNum;
     CharMenu_RenderTextList(1, 1, TextNum, colW2, 2, 1);
@@ -277,8 +278,9 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         iWidth = local_8.cx + (int)fVar4;
     }
     const float fTexScaleX = Text_GetOrthoScaleX();
-    if ((float)iMaxWidth < (float)iPos_x + (float)iWidth / fTexScaleX) {
-        iPos_x = (int)((float)iMaxWidth - (float)iWidth / fTexScaleX);
+    const int rightEdge = iMaxWidth + gWindow.GetRightShift();
+    if ((float)rightEdge < (float)iPos_x + (float)iWidth / fTexScaleX) {
+        iPos_x = (int)((float)rightEdge - (float)iWidth / fTexScaleX);
     }
     // Fondo de la linea (m_dwBackColor).  En el binario este nivel NO lo pinta:
     // CUIRenderText_BakeTextTexture (0x0040FCD0) rasteriza la linea a una
@@ -292,8 +294,8 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     // correcto y le sacamos el fondo al render de glifos para no pintarlo dos
     // veces.
     if (((m_dwBackColor >> 24) != 0) && (0 < iBoxWidth)) {
-        GLfloat prevColor[4];
-        glGetFloatv(GL_CURRENT_COLOR, prevColor);
+        float prevColor[4];
+        Gfx::CurrentColor(prevColor);
 
         // OJO — el glEnable(0xde1) CRUDO que DrawItemInfoBox hace despues del
         // recuadro (fiel al binario, 0x004C2698) deja DESINCRONIZADO el cache
@@ -307,14 +309,14 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         // coherentes.
         DAT_083a4125 = '\x01';
 
-        glColor4ub((GLubyte)( m_dwBackColor        & 0xff),   // R (formato ABGR)
-                   (GLubyte)((m_dwBackColor >>  8) & 0xff),   // G
-                   (GLubyte)((m_dwBackColor >> 16) & 0xff),   // B
-                   (GLubyte)((m_dwBackColor >> 24) & 0xff));  // A
+        Gfx::Color4ub((unsigned char)( m_dwBackColor        & 0xff), // R (formato ABGR)
+                   (unsigned char)((m_dwBackColor >>  8) & 0xff), // G
+                   (unsigned char)((m_dwBackColor >> 16) & 0xff), // B
+                   (unsigned char)((m_dwBackColor >> 24) & 0xff));  // A
         GL_DrawRect((float)iPos_x, (float)iPos_y,
                      (float)iBoxWidth / fTexScaleX,
                      (float)local_8.cy / gWindow.GetScreenRateY());
-        glColor4fv(prevColor);
+        Gfx::Color4fv(prevColor);
         // No volvemos a encender la textura: CUIRenderText_RenderText la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
         // acuerdo.  El proximo tooltip la reenciende via GL_SetBlendSrcOver.
@@ -362,9 +364,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         do {
             iVar1 = iVar4;
             if (*pCVar3 == '\0') break;          // corta el conteo en la 1ª vacía
-            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+            pHVar9 = gFont.GetFont(FONT_NORMAL);
             if (*piVar2 != 0) {
-                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
+                pHVar9 = gFont.GetFont(FONT_BOLD);
             }
             gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
@@ -394,23 +396,25 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
     }
     local_18 = local_18 + 4.0f;
     param_4 = (int)((float)param_1 - local_18 * 0.5f);   // el recuadro se CENTRA en param_1
-    if (param_4 < 0) {
-        param_4 = 0;
+    // Pantalla ancha: los bordes son los de la ventana (edge = 0 en 4:3).
+    const float edge = (float)gWindow.GetRightShift();
+    if ((float)param_4 < -edge) {
+        param_4 = (int)-edge;
     }
-    if ((float)gWindow.GetWidth() / fTexScaleX < (float)param_4 + local_18) {
-        param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX - local_18 - 1.0f);
+    if ((float)gWindow.GetWidth() / fTexScaleX + edge < (float)param_4 + local_18) {
+        param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX + edge - local_18 - 1.0f);
     }
     if (param_6 == 1) {
-        glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
         y = (float)param_2 - 1.0f;
         x = (float)param_4 - 1.0f;
         GL_DrawRect(x, y, local_18 + 1.0f, 1.0f);                  // borde superior
         GL_DrawRect(x, y, 1.0f, Height + 1.0f);                    // borde izquierdo
         GL_DrawRect(x + local_18 + 1.0f, y, 1.0f, Height + 1.0f);  // borde derecho
         GL_DrawRect(x, y + Height + 1.0f, local_18 + 2.0f, 1.0f);  // borde inferior
-        glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+        Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
         GL_DrawRect((float)param_4, (float)param_2, local_18, Height);
-        glEnable(0xde1);
+        Gfx::Enable(Gfx::Cap::Texture2D);
     }
     param_4 = param_4 + 1;
     x = (float)param_4;
@@ -420,9 +424,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         pCVar3 = lpString_07e90798;
         do {
             float fAdvance;
-            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+            pHVar9 = gFont.GetFont(FONT_NORMAL);
             if (DAT_07ea7b10[iVar1] != 0) {
-                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
+                pHVar9 = gFont.GetFont(FONT_BOLD);
             }
             gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
@@ -437,9 +441,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             else {
                 iVar4 = DAT_07e91708[iVar1];
                 if ((unsigned int)iVar4 <= 6) {
-                    glColor3f(DrawItemInfoBox_glColor[iVar4][0],
-                              DrawItemInfoBox_glColor[iVar4][1],
-                              DrawItemInfoBox_glColor[iVar4][2]);
+                    Gfx::Color3f(DrawItemInfoBox_glColor[iVar4][0], DrawItemInfoBox_glColor[iVar4][1], DrawItemInfoBox_glColor[iVar4][2]);
                     m_dwTextColor = DrawItemInfoBox_TextColor[iVar4];
                 }
                 m_dwBackColor = (DAT_07e91708[iVar1] != 5) ? 0 : 0xff0000a0;
@@ -452,7 +454,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             pCVar3 = pCVar3 + 100;
         } while (iVar1 < param_3);
     }
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();                              // DisableAlphaBlend
     return;
 }
@@ -471,14 +473,13 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
 // pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
 // (0 = no la usa, 1 = clase base, 2 = segunda clase).  El nombre de clase es
 // GlobalText[4*r + 16 + c]: 20..23 = clases base, 24..26 = segundas clases.
-void __cdecl ItemHelp_RequireClass(int param_1)
+void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
 {
-    const BYTE* pItem = (const BYTE*)(uintptr_t)param_1;
     const BYTE* hero  = (const BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!pItem || !hero) return;
     if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas
 
-    const BYTE heroSkin  = hero[0x1BC];
+    const BYTE heroSkin  = hero[EntityOffset(0x1BC)];
     const int  heroClass = heroSkin & 7;
     const int  heroStep  = heroSkin >> 3;
     auto className = [](int cls, int req) { return GlobalText[4 * req + 16 + cls]; };

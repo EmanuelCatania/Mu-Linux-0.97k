@@ -7,12 +7,14 @@ public:
     bool Receive(const BYTE* packet, int size);
     void Clear();
     void Toggle();
+    bool IsOpen() const { return m_Open; }
     void Close() { m_Open = false; }
     void UpdateMouse();
     void Render();
     int Count() const { return m_Count; }
     const Proto::MOVE_LIST_INFO* Get(int index) const;
     void SetResets(DWORD resets) { m_Resets = resets; }
+    DWORD Resets() const { return m_Resets; }
 
 private:
     bool Blocked() const;

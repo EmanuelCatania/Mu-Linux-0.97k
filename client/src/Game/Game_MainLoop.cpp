@@ -34,6 +34,12 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Render/Gfx.h"
+#include "Render/RenderProfile.h"
+#include "Render/TerrainDraw.h"
+#include "Render/Materials.h"
+#include "Config/UserSettings.h"
 #include "Render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
@@ -89,6 +95,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     // comenzar sólo al dibujar sumaba ese trabajo a la espera y ralentizaba SIM.
     const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
     TimeRemain += gFrameLimiter.Advance(renderStart);
+    RenderProfile::Frame profile(SceneFlag==5,gMapManager.GetCurrentMap());
+    if(RenderProfile::active)RenderProfile::Configuration(gWindow.GetRealWidth(),gWindow.GetHeight(),gUserSettings.GetFpsLimit(),gUserSettings.GetVSync(),gUserSettings.GetRenderDecoupled(),TerrainDraw::Requested(),TerrainDraw::Composition(),Materials::Enabled(),true);
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -113,6 +121,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
     // DESVIACION: hasta cinco pasos por draw sin descartar deuda lógica;
     // incluso bajo recuperación se dibuja y se vuelve al despacho de eventos.
+    { RenderProfile::Scope measured(RenderProfile::Pass::Simulation);
     int simulationSteps=0;
     while (TimeRemain > 0x27 && simulationSteps<5) {
         ++simulationSteps;
@@ -125,20 +134,20 @@ void __cdecl Game_MainLoop(HDC param_1)
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
-            DAT_055c9be0 = (DWORD)(BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
+            DAT_055c9be0 = (BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
 
             BYTE* old_bcc = (BYTE*)DAT_055c9bcc;
             BYTE* old_bd0 = (BYTE*)DAT_055c9bd0;
             BYTE* old_be8 = (BYTE*)DAT_055c9be8;
             BYTE* old_bec = (BYTE*)DAT_055c9bec;
 
-            DAT_055c9be8 = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
-            DAT_055c9bec = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9be8 = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9bec = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
 
             unsigned rnd1 = (unsigned)(_rand() & 0x3f);
             unsigned rnd2 = (unsigned)(_rand() & 0x3f);
-            DAT_055c9bcc = (DWORD)((BYTE*)DAT_055c9be8 + rnd1 * 4);
-            DAT_055c9bd0 = (DWORD)((BYTE*)DAT_055c9bec + rnd2 * 4);
+            DAT_055c9bcc = (uintptr_t)((BYTE*)DAT_055c9be8 + rnd1 * 4);
+            DAT_055c9bd0 = (uintptr_t)((BYTE*)DAT_055c9bec + rnd2 * 4);
 
             memset((void*)DAT_055c9bcc, 0, DAT_055c9bd4 * 4);
             memset((void*)DAT_055c9bd0, 0, DAT_055c9bd4 * 4);
@@ -151,7 +160,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                     DWORD key = ((DWORD*)old_bd0)[i];
                     DWORD val = ((DWORD*)old_bcc)[i];
                     // HashTable_Insert equivalent
-                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 0xc))(key);
+                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(key);
                     while (((DWORD*)DAT_055c9bd0)[h] != 0 && ((DWORD*)DAT_055c9bd0)[h] != key)
                         h = (h + 1) % DAT_055c9bd4;
                     ((DWORD*)DAT_055c9bcc)[h] = val;
@@ -228,6 +237,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
 
+    }
     // ── ABORT IF SOCKET ERROR ─────────────────────────────────────────────────
     if (DAT_055ca018 != '\0') return;
 
@@ -282,7 +292,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         int si  = (idx < 0x1e) ? idx : 0x1e;
         if (si < 0) si = 0;
         const char* serverName = (const char*)&DAT_083a45d8 + si * 0x21e;
-        const char* charName   = DAT_07abf5d8 ? (DAT_07abf5d8 + 0x1c1) : "";
+        const char* charName   = DAT_07abf5d8 ? EntityName::Get(DAT_07abf5d8) : "";
         // Copia defensiva con tope: %s puede ser largo si DAT_07abf5d8+0x1c1
         // apunta a bytes no-inicializados; wsprintfA no trunca.
         char srvTrim[32];  Platform::TextCopySecure(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
@@ -305,17 +315,17 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
     if (gMapManager.GetCurrentMap() == 10) {
         // Sub-state 10: teal clear color
-        glClearColor(*(float*)"\x00\x00\x40\x3c",  // 0.047f
-                     *(float*)"\x00\x00\xc8\x3d",  // 0.098f
-                     *(float*)"\x00\x00\x30\x3e",  // 0.172f
+        Gfx::ClearColor(*(float*)"\x00\x00\x40\x3c", // 0.047f
+                     *(float*)"\x00\x00\xc8\x3d", // 0.098f
+                     *(float*)"\x00\x00\x30\x3e", // 0.172f
                      1.0f);
     } else {
         // Original: clear color negro (la captura del binario real lo confirma).
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     }
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // BeginOpengl(0,0,640,480) → push PROJECTION+MODELVIEW
     CHK("ML/post_viewport");
-    glClear(0x4100);  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+    { RenderProfile::Scope measured(RenderProfile::Pass::Scene);Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer); }  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
     // IDA Game_MainLoop (0x525D40): BeginOpengl(0,0,640,480); glClear; EndOpengl();
     // EndOpengl balancea el BeginOpengl (pop MODELVIEW + PROJECTION).
     GL_EndOpenGL();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
@@ -330,14 +340,14 @@ void __cdecl Game_MainLoop(HDC param_1)
     //
     // Defaults elegidos para coincidir con lo que GL_BeginViewport deja tras su
     // primer push (Scene_Login llama GL_BeginViewport como primera acción).
-    glDisable(GL_BLEND);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
-    glEnable(GL_CULL_FACE);    DAT_083a411c = 1;
-    glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
-    glDisable(GL_ALPHA_TEST);  DAT_083a411d = 0;
-    glEnable(GL_DEPTH_TEST);   DAT_083a411e = 1;
-    glDepthMask(GL_TRUE);      DAT_083a42e8 = 1;
-    glDisable(GL_FOG);         /* DAT_083a42ea es "fog-is-on" flag global del scene */
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Disable(Gfx::Cap::Blend);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
+    Gfx::Enable(Gfx::Cap::CullFace);    DAT_083a411c = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
+    Gfx::Disable(Gfx::Cap::AlphaTest);  DAT_083a411d = 0;
+    Gfx::Enable(Gfx::Cap::DepthTest);   DAT_083a411e = 1;
+    Gfx::DepthMask(true);      DAT_083a42e8 = 1;
+    Gfx::Disable(Gfx::Cap::Fog);         /* DAT_083a42ea es "fog-is-on" flag global del scene */
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     // Invalidar cache de última textura ligada para forzar rebind
     DAT_00561574 = 0xFFFFFFFFu;
 
@@ -350,9 +360,10 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    Simulation_BeginRender();
+    { RenderProfile::Scope measured(RenderProfile::Pass::Prepare);Simulation_BeginRender(); }
     renderFlag  = 0;
 
+    { RenderProfile::Scope sceneMeasured(RenderProfile::Pass::Scene);
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
     if (SceneFlag == 2) { renderFlag = (char)Scene_Login();      CHK("ML/post_Scene_Login"); }
     if (SceneFlag == 4) { renderFlag = (char)Scene_CharSelect(); CHK("ML/post_Scene_CharSelect"); }
@@ -363,7 +374,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
     CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
-    Simulation_EndRender();
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Restore);Simulation_EndRender(); }
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
@@ -379,13 +391,14 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/pre_swap");
     // ── SWAP BUFFERS ──────────────────────────────────────────────────────────
     if (renderFlag & 0xff) {
-        glFlush();
+        RenderProfile::Scope measured(RenderProfile::Pass::Swap);
+        Gfx::Flush();
         gWindow.Present();
     }
     CHK("ML/post_swap");
 
     // ── LÍMITE DE PRESENTACIÓN DESPUÉS DEL RENDER ──────────────────────────────────────
-    gFrameLimiter.Wait(renderStart);
+    { RenderProfile::Scope measured(RenderProfile::Pass::Wait);gFrameLimiter.Wait(renderStart); }
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
@@ -394,7 +407,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DAT_055ca018 y ya bloquea Game_MainLoop al inicio.
     #if 0
     if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
-        if (CWsctlc_GetSocket(((int)(uintptr_t)SocketClient)) == -1) {
+        if (CWsctlc_GetSocket(reinterpret_cast<uintptr_t>(SocketClient)) == -1) {
             if (DAT_083a7c58 == 0) {
                 DAT_083a7c58 = 1;
                 CErrorReport_Write(&DAT_055c9bf0, "> Connection closed...");
@@ -452,7 +465,7 @@ static void Game_TickAmbientAudio()
     // default (apagada). Para tener música en el login alcanza con dejar un mp3
     // con ese nombre. MuTheme es el Lorencia.mp3 del pack (mismo MD5).
     if (SceneFlag == 2)
-        Music_PlayTrack((DWORD)(uintptr_t)"Data\\Music\\MuTheme.mp3", 0);
+        Music_PlayTrack("Data\\Music\\MuTheme.mp3", 0);
 
     if (SceneFlag != 5) return;
 

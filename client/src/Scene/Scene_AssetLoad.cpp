@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Local/ClientText.h"
+#include "Text/TextCore.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -25,6 +26,9 @@ void __cdecl Scene_LoadGameAssets(void) {
     OpenJPG("Interface/Menu02.jpg",      0xe7, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu03_new.jpg",  0xe8, 0x2600, 0x2900, 0, '\x01');
     OpenTGA("Interface/Menu04.tga",      0xe9, 0x2600, 0x2900, 0, '\x01');
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen WDecorOld): cabezas de
+    // dragon que reemplazan a las de Menu04 en las esquinas de la barra.
+    OpenTGA("Interface/WDecorOld.tga",   0x5f0, 0x2600, 0x2900, 0, '');
     OpenJPG("Interface/Menu_Red.jpg",    0xea, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu_Blue.jpg",   0xeb, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu_Party.jpg",  0xec, 0x2600, 0x2900, 0, '\x01');
@@ -149,10 +153,16 @@ void __cdecl Scene_LoadGameAssets(void) {
         // DESVIACION (DLL Language.cpp): Dialog_<idioma>.bmd si hay selección.
         char dialogPath[MAX_PATH];
         Dialog_LoadBMD(LocalizedDataPath("Data/Local/Dialog", ".bmd", dialogPath, sizeof(dialogPath)));
-        CSQuest_OpenQuestScript((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
+        CSQuest_OpenQuestScript(reinterpret_cast<BYTE*>(DAT_00583d8c), "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
     NPCName_LoadTextData(local_64);
+    // DESVIACION (Fase 4, texto Unicode): las palabras de los filtros de chat y
+    // de nombres (Filter.bmd / FilterName.bmd, 1000 x 20 bytes) de 1252 a UTF-8.
+    for (int i = 0; i < 1000; ++i) {
+        TextEngine::ConvertWindows1252InPlace(DAT_07d73104 + i * 0x14, 0x14);
+        TextEngine::ConvertWindows1252InPlace(DAT_07d27610 + i * 0x14, 0x14);
+    }
     // Sound preloads (tail of OpenBasicData @ 0x00510F65-0x00510FC5).
     // IDs y filenames verificados contra IDA Hex-Rays 00510320_OpenBasicData.c
     // y los binary patches del companion project (Mu-linux-97K/Source/Client/

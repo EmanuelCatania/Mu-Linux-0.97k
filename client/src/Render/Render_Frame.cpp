@@ -206,9 +206,14 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
+#include "Render/Gfx.h"
+#include "Render/RenderProfile.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
+#include "Render/Camera3D.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
@@ -250,7 +255,7 @@ unsigned int Game_RenderTick(void)
 
     // Drena errores GL residuales antes del frame (pops sin push del frame previo
     // durante la transición login→in-game).
-    while (glGetError() != GL_NO_ERROR) {}
+    Gfx::ClearErrors();
 
     // Render_Scene3D ES la RenderMainScene de IDA (@ 0x00525A00) y hace todo el
     // flujo: BeginOpengl, 3D passes, BeginBitmap, HUD via Render_GameFrame,
@@ -285,7 +290,7 @@ unsigned int Game_RenderTick(void)
 //   sub_4F6050                               HUD pass (973 b, HUD_Pass3.cpp)
 //   sub_4EB070                               HUD pass (1342 b, HUD_Pass3.cpp)
 
-static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetRealWidth() / 640.0); }
 static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 
 // ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
@@ -310,7 +315,8 @@ static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.Ge
 static void RenderBitmapUV(int Texture, float x, float y, float Width, float Height,
                            float u, float v, float uWidth, float vHeight)
 {
-    const float x0 = ConvertX_RF(x);
+    // Las capas de pantalla cubren también los laterales del ortho desplazado.
+    const float x0 = ConvertX_RF(x) - (float)gWindow.GetUiOffsetX();
     const float y0 = (float)gWindow.GetHeight() - ConvertY_RF(y);
     const float w  = ConvertX_RF(Width);
     const float h  = ConvertY_RF(Height);
@@ -318,12 +324,12 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 
     GL_BindTextureSlot(Texture);          // BindTexture
 
-    glBegin(GL_TRIANGLE_FAN);
-      glTexCoord2f(u,          v + q);            glVertex2f(x0,     y0);
-      glTexCoord2f(u,          v + vHeight - q);  glVertex2f(x0,     y0 - h);
-      glTexCoord2f(u + uWidth, v + vHeight);      glVertex2f(x0 + w, y0 - h);
-      glTexCoord2f(u + uWidth, v);                glVertex2f(x0 + w, y0);
-    glEnd();
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
+      BufferedDraw::TexCoord2f(u,          v + q);            BufferedDraw::Vertex2f(x0,     y0);
+      BufferedDraw::TexCoord2f(u,          v + vHeight - q);  BufferedDraw::Vertex2f(x0,     y0 - h);
+      BufferedDraw::TexCoord2f(u + uWidth, v + vHeight);      BufferedDraw::Vertex2f(x0 + w, y0 - h);
+      BufferedDraw::TexCoord2f(u + uWidth, v);                BufferedDraw::Vertex2f(x0 + w, y0);
+    BufferedDraw::End();
 }
 
 void Render_GameFrame(void)
@@ -333,20 +339,22 @@ void Render_GameFrame(void)
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
         GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)
-        glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+        BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 0.5f);
         GL_SetBlendAdditive();                        // EnableAlphaBlend (aditivo)
-        glColor3f(0.3f, 0.3f, 0.25f);
+        BufferedDraw::Color3f(0.3f, 0.3f, 0.25f);
 
         const float scrollA = (float)((long long)WorldTime % 100000) * _DAT_00552b88; // 0.0002
         const float scrollB = (float)((long long)WorldTime % 100000) * _DAT_00552500; // 0.001
 
         // El original usa `RenderBitmapUV` (0x5128C0), que mapea un cuadrilatero
         // SESGADO en V (el arrastre de la arena), no `RenderBitmap` (0x5125A0).
-        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, 435.0f, scrollA, 0.0f, 0.30000001f, 0.30000001f);
-        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
+        // En pantalla ancha el HUD no tapa los extremos inferiores: incluirlos.
+        const float overlayHeight = gWindow.IsWide() ? 480.0f : 435.0f;
+        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, overlayHeight, scrollA, 0.0f, 0.30000001f, 0.30000001f);
+        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, overlayHeight, scrollB, 0.0f, 3.0f, 2.0f);
     }
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
@@ -369,7 +377,7 @@ void Render_GameFrame(void)
     // the chat history scroll UI never paints.
     if (DAT_055c9ff0) {
         DWORD* obj = (DWORD*)DAT_055c9ff0;
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnVoid)(DWORD*);
             ((FnVoid)vt[4])(obj);
@@ -405,7 +413,7 @@ void Render_HPBars_OLD(void)
     if (DAT_07abf5d0 == 0) return;
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int s = 0; s < 400; ++s) {
-        BYTE* slot = basePtr + s * 0x394;
+        BYTE* slot = basePtr + s * CHARACTER_STRIDE;
         if (slot[0] == 0) continue;                 // inactive
         if (slot == (BYTE*)DAT_07abf5d8) continue;  // skip hero
         if (slot[0x84] == 0) continue;              // not visible
@@ -423,24 +431,24 @@ void Render_HPBars_OLD(void)
         // Draw black shadow + red bar (HP placeholder = 50%)
         // For now: fixed 30×4 bar
         GL_SetBlendSrcOver('\0');     // disable alpha blend (solid)
-        glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+        BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.7f);
         // Black BG quad
-        glBegin(GL_QUADS);
-        glVertex2f((float)(sx - 16), (float)(sy - 8));
-        glVertex2f((float)(sx + 16), (float)(sy - 8));
-        glVertex2f((float)(sx + 16), (float)(sy - 4));
-        glVertex2f((float)(sx - 16), (float)(sy - 4));
-        glEnd();
+        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 8));
+        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 8));
+        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 4));
+        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 4));
+        BufferedDraw::End();
         // Red foreground (50% wide as placeholder)
-        glColor3f(0.9f, 0.1f, 0.1f);
-        glBegin(GL_QUADS);
-        glVertex2f((float)(sx - 15), (float)(sy - 7));
-        glVertex2f((float)(sx),      (float)(sy - 7));
-        glVertex2f((float)(sx),      (float)(sy - 5));
-        glVertex2f((float)(sx - 15), (float)(sy - 5));
-        glEnd();
+        BufferedDraw::Color3f(0.9f, 0.1f, 0.1f);
+        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 7));
+        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 7));
+        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 5));
+        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 5));
+        BufferedDraw::End();
     }
-    glColor3f(1.0f, 1.0f, 1.0f);  // restore color
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);  // restore color
 }
 #endif
 
@@ -541,7 +549,9 @@ void Render_Scene3D(void)
     DAT_083a42ea = 0;   // FogEnable = false
     // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
     // el server se prende (el DLL parcheaba este 0 por un 1).
-    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
+    // Con la cámara 3D y la niebla por profundidad, ésta reemplaza a la del
+    // server: bruma hacia el color de fondo propio del mapa, sin teñir el fondo.
+    if (gContentCatalog.HasMapFog() && !(gCamera3D.IsEnabled() && Gfx::DepthFog())) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     // Cámara autoritativa preparada al finalizar el paso de simulación.
@@ -561,9 +571,11 @@ void Render_Scene3D(void)
     }
 
     // ── 3. Top strip viewport for frustum ─────────────────────────────────────
-    int w = GetScreenWidth();
+    // DESVIACION (Fase 4, pantalla ancha): el mundo ocupa toda la ventana (los
+    // paneles se dibujan encima, dentro del área de interfaz) y a toda su altura.
+    int w = gWindow.IsWide() ? 640 : GetScreenWidth();
     GL_BeginViewport(0, 0, w, 0x30);
-    Camera_SetupFrustum((float)w * _DAT_0055283c, camPos);
+    Camera_SetupFrustum(gWindow.ViewportFraction((int)w), camPos);
     GL_EndOpenGL();
 
     // ── 4. Clear color por World ──────────────────────────────────────────────
@@ -582,7 +594,7 @@ void Render_Scene3D(void)
         gContentCatalog.GetFogColor(worldId, fog);
         cr = fog[0]; cg = fog[1]; cb = fog[2];
     }
-    glClearColor(cr, cg, cb, 1.0f);
+    Gfx::ClearColor(cr, cg, cb, 1.0f);
 
     // ── 5. Main 3D viewport ──────────────────────────────────────────────────
     bool topView = (CameraTopViewEnabled != 0);
@@ -591,21 +603,33 @@ void Render_Scene3D(void)
     const bool noInterface = gUserSettings.GetAntilag(ANTILAG_INTERFACE);
     // IDA Game_RenderTick: v10 = CameraTopViewEnable ? 480 : 432  (0x1e0 : 0x1b0).
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
-    int vpHeight = (topView || noInterface) ? 0x1e0 : 0x1b0;
+    int vpHeight = (topView || noInterface || gWindow.IsWide()) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
+    // DESVIACION: sombras proyectadas (opción). Lo que se dibuja hasta
+    // EndShadowScene proyecta y recibe sombra; centradas en el héroe.
+    Gfx::BeginShadowScene(camPos);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
     // RenderTerrain dibuja la malla de tiles del terreno.
+    { RenderProfile::Scope measured(RenderProfile::Pass::Terrain);
     if (worldId != 10) {
         RenderTerrain('\0');                      // RenderTerrain(EditFlag=0) — tile mesh
     }
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Objects);
     Terrain_Render();                              // Terrain_Render — UNCONDICIONAL en IDA (object walker)
     // Particle_Render (FUN_0046BE40) — IDA Game_RenderTick:113. Itera el effect
     // pool y renderiza partículas (gate sparks, magic glow, etc).
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Effects);
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Characters);
     Entity_RenderAll_3D();
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Effects);
     // Picking de editor y avances del agua preparados en SIM.
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
@@ -620,6 +644,31 @@ void Render_Scene3D(void)
     Player_Render();                             // Player_Render
     Trail_RenderAll();
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
+    // DESVIACION: niebla por profundidad (opción). Atlans bajo el agua; el resto,
+    // una bruma suave hacia el color de fondo (el de la niebla del server, si hay).
+    // Se ata al alcance de la cámara: empieza a la mitad y llega casi al máximo
+    // en el borde de lo dibujado, que así no se ve.
+    // Sólo con la cámara 3D (F10): con la normal no hay borde lejano que tapar.
+    if (gCamera3D.IsEnabled()) {
+        // Empieza a la mitad del alcance normal y llega al borde del ampliado
+        // (distancia de dibujado), donde ya sólo queda el terreno.
+        // El frustum del culling llega al 90 % del alcance (_DAT_005526e8):
+        // la niebla tiene que completarse antes.
+        const float end = CameraViewFar * 0.85f;
+        const float scale = gCamera3D.IsEnabled() ? gUserSettings.DrawDistanceScale() : 1.0f;
+        const float start = CameraViewFar / scale * 0.5f;
+        if (worldId == 7) {
+            const float water[3] = {0.02f, 0.16f, 0.24f};
+            // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.
+            Gfx::Atmosphere(2, water, 1.9f / (end - 300.0f), 300.0f);
+        } else {
+            // El color de fondo del mapa (la niebla del server no está activa acá).
+            const float background[3] = {cr, cg, cb};
+            // exp(-x^2): x = 2 (2 %) en el borde.
+            Gfx::Atmosphere(1, background, 2.0f / (end - start), start);
+        }
+    }
+    Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {
@@ -632,11 +681,16 @@ void Render_Scene3D(void)
     // CreatePoint (0x004792C0, Entity/Entity_LegacyTeleport.cpp) los crea desde
     // Net_Process case 0x15 (ReceiveAttackDamage).
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
-    glPopMatrix();
+    Gfx::PopMatrix();
 
+    }
     // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
+    // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D, antes del HUD.
+    Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
+
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
+    { RenderProfile::Scope measured(RenderProfile::Pass::UI);
     GL_Begin2D();                              // BeginBitmap (Ortho2D)
 
     // sub_4CB6F0 (Target_Render) — IDA Game_RenderTick:143. Renderiza el nombre
@@ -660,4 +714,5 @@ void Render_Scene3D(void)
 
     GL_End2D();                              // EndBitmap
     GL_EndOpenGL();                              // EndOpengl
+    }
 }

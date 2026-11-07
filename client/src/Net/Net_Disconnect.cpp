@@ -10,7 +10,7 @@
 
 // ── Net_Disconnect @ 0x0043dc90 ──────────────────────────────────────────────
 // Closes the game socket and resets connection state.
-int __cdecl Net_Disconnect(int ctx) {
+int __cdecl Net_Disconnect(void* ctx) {
     (void)ctx;
     if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         Platform::GetSocket().Close((SOCKET)SocketClientSocket);

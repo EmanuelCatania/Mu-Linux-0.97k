@@ -3,6 +3,10 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
+#include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
+#include "Render/BMDDevice.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
@@ -53,25 +57,26 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     (void)b;
     if (!model) return;
 
+    auto* bmd = AsModel(model);
     const int meshIdx  = (int)frame;
-    const int meshEntry = *(int *)((int)model + 0x28) + meshIdx * 0x28;
-    if (*(short *)(meshEntry + 10) == 0) return;             // sin triangulos
+    const auto* mesh = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs) + meshIdx;
+    if (mesh->TriangleCount == 0) return;             // sin triangulos
 
-    int tex = *(short *)(*(int *)((int)model + 0x38) + *(short *)(meshEntry + 2) * 2);
+    int tex = bmd->IndexTexture[mesh->TextureIndex];
     if (tex == 300) return;                                   // BITMAP_HIDE
     if (rgba != 0xffffffff) tex = (int)rgba;
 
     const int blendMesh = f4;
-    const float *bodyLight = (const float *)((int)model + 0x48);
+    const float *bodyLight = bmd->BodyLight;
 
     // UV animadas (LOBYTE(a11) de IDA): la malla es la de BlendMesh o la de
     // StreamMesh (model+0x88, o la propia si el script de la malla lo pide),
     // y hay algun desplazamiento de UV.
-    const int streamMesh = *(signed char *)((int)model + 0x88);
+    const int streamMesh = static_cast<signed char>(bmd->StreamMesh);
     int waveMesh = streamMesh;
     {
-        const int script = *(int *)(meshEntry + 0x24);
-        if (script && *(char *)(script + 2)) waveMesh = meshIdx;
+        const auto* script = static_cast<const char*>(mesh->TextureFlags);
+        if (script && script[2]) waveMesh = meshIdx;
     }
     const bool uvAnim = (meshIdx == blendMesh || meshIdx == waveMesh) &&
                         (f5 != 0.0f || f6 != 0.0f);
@@ -79,12 +84,12 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // v58: LightEnable del modelo.  Con StreamMesh el color es plano; si no,
     // se arma la luz por vertice = IntensityTransform * BodyLight (IDA
     // escribe el mismo buffer que sub_440D50 antes de delegar).
-    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    int lightEnable = bmd->LightEnable;
     if (meshIdx == streamMesh) {
-        glColor3fv(bodyLight);
+        BufferedDraw::Color3fv(bodyLight);
         lightEnable = 0;
     } else if (lightEnable) {
-        const int nNormals = *(short *)(meshEntry + 6);
+        const int nNormals = mesh->NormalCount;
         const float *src = (const float *)(&DAT_077e298c + meshIdx * 15000);
         float *dst = (float *)(&DAT_060db65c + meshIdx * 180000);
         for (int i = 0; i < nNormals; ++i) {
@@ -100,33 +105,20 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     int mode;
     if ((fl & 1) == 1) {
         mode = 1;
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else                          GL_ResetState();
-        GL_SetAlphaTest('\0');                                // DisableTexture(0)
-        glColor3fv(bodyLight);
-    } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
+        BMDDevice::Select({BMDDevice::Pass::ColorAnimated,static_cast<unsigned>(fl)});
+        BufferedDraw::Color3fv(bodyLight);
+    } else if (blendMesh <= -2 || mesh->TextureIndex == blendMesh) {
         mode = 2;
-        GL_BindTextureSlot(tex);
-        if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();       // EnableAlphaBlendMinus
-        else                     GL_SetBlendAdditive();       // EnableAlphaBlend
-        glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
+        BMDDevice::Select({BMDDevice::Pass::Blend,static_cast<unsigned>(fl),tex});
+        BufferedDraw::Color3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
         lightEnable = 0;
     } else if ((fl & 2) == 2) {
         mode = 2;
-        GL_BindTextureSlot(tex);
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else if (f3 < _DAT_00552544 || (&DAT_083a7cc8)[tex * 0x38] == '\x04')
-            GL_SetBlendSrcOver('\x01');                       // EnableAlphaTest(1)
-        else
-            GL_ResetState();                                  // DisableAlphaBlend
+        BMDDevice::Select({BMDDevice::Pass::Surface,static_cast<unsigned>(fl),tex,f3 < _DAT_00552544});
     } else if ((fl & 0x40) == 0x40) {
-        if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
+        if ((&DAT_083a7cc8)[tex * TEXTURE_STRIDE] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
-        GL_SetBlendAdditive();
-        GL_SetAlphaTest('\0');
-        GL_DisableDepthWrites();
+        BMDDevice::Select({BMDDevice::Pass::Metal});
     } else {
         mode = 2;
     }
@@ -138,22 +130,22 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // asi que la onda nunca se aplicaba.
     const bool deform = (a & 1) != 0;
 
-    glBegin(GL_TRIANGLES);
-    const int polyCount = *(short *)(meshEntry + 10);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
+    const int polyCount = mesh->TriangleCount;
     for (int poly = 0; poly < polyCount; ++poly) {
-        const char *tri = (const char *)(*(int *)(meshEntry + 0x1c) + poly * 0x24);
+        const char *tri = reinterpret_cast<const char*>(mesh->Triangles + poly * sizeof(ModelRuntimeTriangle));
         const int nv = *tri;
         const short *idx = (const short *)(tri + 10);
         for (int vi = 0; vi < nv; ++vi, ++idx) {
             const int vtx = idx[-4];                          // indice de vertice
             if (mode == 2) {
-                const float *uv = (const float *)(*(int *)(meshEntry + 0x18) + idx[4] * 8);
-                if (uvAnim) glTexCoord2f(f5 + uv[0], f6 + uv[1]);
-                else        glTexCoord2f(uv[0], uv[1]);
+                const float *uv = static_cast<const float*>(mesh->TexCoords) + idx[4] * 2;
+                if (uvAnim) BufferedDraw::TexCoord2f(f5 + uv[0], f6 + uv[1]);
+                else        BufferedDraw::TexCoord2f(uv[0], uv[1]);
                 if (lightEnable) {
                     const float *c = (const float *)(&DAT_060db65c + ((int)idx[0] + meshIdx * 15000) * 12);
-                    if (f3 < _DAT_00552544) glColor4f(c[0], c[1], c[2], f3);
-                    else                    glColor3fv(c);
+                    if (f3 < _DAT_00552544) BufferedDraw::Color4f(c[0], c[1], c[2], f3);
+                    else                    BufferedDraw::Color3fv(c);
                 }
             }
 
@@ -169,10 +161,10 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
                     moved[k] = sn * nrm[k] * _DAT_00552644 + pos[k];
                 pos = moved;
             }
-            glVertex3fv(pos);
+            BufferedDraw::Vertex3fv(pos);
         }
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // RenderObjectScreen @ 0x004E13A0 — RenderObjectScreen
@@ -1343,13 +1335,13 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     }
 
     // Set model height offset based on type range
-    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * 0xbc);
+    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
 
-    // FIX 2026-05-02: faltaba `*(BYTE*)(modelThis + 0xa0) = 0`. IDA hace esto
+    // FIX 2026-05-02: faltaba `*(BYTE*)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0`. IDA hace esto
     // al inicio para resetear el action index. Sin esto, el player pose usa el
     // action index del último frame del mundo (e.g. running) → body parts
     // posan con bones en pose de correr en lugar de idle.
-    *(unsigned char *)((char *)modelThis + 0xa0) = 0;
+    *(unsigned char *)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0;
 
     // BodyHeight (model + 0x84) — desplazamiento vertical por rango de modelo.
     // Valores exactos de IDA `RenderObjectScreen` (0x4E13A0), decodificados de
@@ -1369,15 +1361,15 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // dos síntomas opuestos reportados. El comentario original ya listaba los
     // rangos de IDA bien y el código los contradecía.
     if (param_1 >= MODEL_HELM && param_1 < MODEL_HELM + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC31C0000;   // -156.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC31C0000;   // -156.0
     else if (param_1 >= MODEL_ARMOR && param_1 < MODEL_ARMOR + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2C00000;   //  -96.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2C00000;   //  -96.0
     else if (param_1 >= MODEL_PANTS && param_1 < MODEL_PANTS + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2400000;   //  -48.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2400000;   //  -48.0
     else if (param_1 >= MODEL_GLOVES && param_1 < MODEL_GLOVES + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2900000;   //  -72.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2900000;   //  -72.0
     else
-        *(unsigned int *)((char *)modelThis + 0x84) = 0;
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0;
 
     if (param_1 == MODEL_HELM + 65 || param_1 == MODEL_HELM + 70)
         outPos[0] += 0.04f;
@@ -1670,17 +1662,17 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // Pose model with BMD_Animation
     float angleArr[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(modelThis, (int)&DAT_06970a9c, 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
+    BMD_Animation(modelThis, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
-    char ent[0x200];
+    char ent[EntityOffset(0x200)];
     memset(ent, 0, sizeof(ent));
     *(short *)(ent + 2) = (short)param_1;
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c
     *(unsigned char *)(ent + 0x3d) = param_4; // preserve raw ExtOption for later render passes
 
-    ItemObjectAttribute((int)ent);
+    ItemObjectAttribute(AsObject(ent));
 
     // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute sobreescribe
     // ent[+0xC] con un valor default (0x3F4CCCCD = 0.8f para items en mundo).
@@ -1719,7 +1711,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     *(float *)(ent + 0x18) = outPos[2];
 #endif
     *(int   *)(ent + 0xdc) = 0;
-    *(unsigned char *)(ent + 0x1bc) = 2;
+    *(unsigned char *)(ent + EntityOffset(0x1bc)) = 2;
 
 
     float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -1733,7 +1725,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // ItemObjectAttribute sobreescribiendo ent[+0xc] con 0.8f.
     // La reasignación post-ItemObjectAttribute arreglo el problema.
 
-    RenderPartObject((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
+    RenderPartObject((intptr_t)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
     (void)param_6;
 }
 #endif
@@ -1892,9 +1884,9 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     }
     ObjectSelect_Type = modelType;
 
-    void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
-    *(BYTE*)((BYTE*)model + 0xA0) = 0;
-    *(float*)((BYTE*)model + 0x84) = inventoryPose.BodyHeight;
+    void* model = (void*)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
+    *(BYTE*)&((BMD*)(uintptr_t)(model))->CurrentAction = 0;
+    *(float*)&((BMD*)(uintptr_t)(model))->BodyHeight = inventoryPose.BodyHeight;
     float scale = (int)ItemLevel < 0 ? inventoryPose.NegativeLevelScale : inventoryPose.Scale;
     if (pose && pose->Scale > 0.0f) scale = pose->Scale;
 
@@ -1903,19 +1895,19 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     ObjectSelect_PriorAction = 0;
     float renderAngle[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
+    BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0,
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};
     *(short*)(object + 2) = (short)drawType;
-    ItemObjectAttributeForRender((int)object);
+    ItemObjectAttributeForRender(AsObject(object));
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
     *(float*)(object + 0x14) = position[1];
     *(float*)(object + 0x18) = position[2];
     *(BYTE*)(object + 0x3D) = ExtOption;
     *(int*)(object + 0xDC) = 0;
-    *(BYTE*)(object + 0x1BC) = 2;
+    *(BYTE*)(object + EntityOffset(0x1BC)) = 2;
 
     if (drawType==790) LooseWingVisuals_SubmitPreview(*(OBJECT *)object,renderAngle,headAngle,
         inventoryPose.BodyHeight,ItemLevel,Select==1);
@@ -1923,6 +1915,6 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
     // by this client; all OpenGL state setup/teardown stays inside that renderer.
-    RenderPartObject((int)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
+    RenderPartObject((intptr_t)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
                  '\x01', 1, '\x01', 0, 2);
 }

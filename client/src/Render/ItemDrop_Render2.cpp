@@ -56,7 +56,7 @@ void RenderParticles(void)
             uint entityType = puVar8[-0x10];
             if (entityType >= 0x600) goto next_entry;
 
-            int   iVar2  = (int)entityType * 0x38;
+            int   iVar2  = (int)entityType * TEXTURE_STRIDE;
             // El campo scale (slot+0x0c) es un FLOAT: reinterpretar los bits, no convertir
             // int→float. IDA: Width = Bitmaps[type].Width * *((float*)v1 - 14).
             float fVar13 = *(float *)((char *)&DAT_083a7cc0 + iVar2) * *(float *)(puVar8 - 0xe);

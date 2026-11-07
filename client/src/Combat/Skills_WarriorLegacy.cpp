@@ -1,5 +1,6 @@
 #include <cstdint>
 #include "stdafx.h"
+#include <cstring>
 #include "Game/RenderSnapshots.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
@@ -37,9 +38,9 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
     if (skillType < 0 || skillType >= 64)
         return nullptr;
     if (DAT_07cf1ff8 != 0)
-        return (BYTE*)(uintptr_t)DAT_07cf1ff8 + skillType * 0x28;
+        return DAT_07cf1ff8 + skillType * 0x28;
     if (DAT_07d29d20 != 0)
-        return (BYTE*)(uintptr_t)DAT_07d29d20 + skillType * 0x28;
+        return DAT_07d29d20 + skillType * 0x28;
     return nullptr;
 }
 
@@ -85,7 +86,7 @@ static void Warrior_CollectMultiTargets(const float* centre, float radius,
     const float radiusSquared = radius * radius;
     BYTE* characters = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int index = 0; index < 400 && *count < maximum; ++index) {
-        BYTE* candidate = characters + index * 0x394;
+        BYTE* candidate = characters + index * CHARACTER_STRIDE;
         if (!AsCharacter(candidate)->Object.Live || !AsCharacter(candidate)->Object.Visible || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || AsCharacter(candidate)->Dead)
             continue;
 
@@ -149,7 +150,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
+void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: o */)
 {
     if (!c || !o) return;
     BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer
@@ -161,7 +162,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 
     // 0x485815: this is a compact facing packet, not Send_MovePacket.
     BYTE movePacket[6] = { 0xC1, 6, 0x10,
-        *(BYTE*)(character + 904), *(BYTE*)(character + 908),
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionX, *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionY,
         (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
     gNetwork.SendC1(movePacket, sizeof(movePacket));
     AsCharacter(c)->Movement = 0;
@@ -169,21 +170,21 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     if (*(short*)(o + 2) == 390) {
         SetAttackSpeed(); // SetAttackSpeed
         if (skillType == 43) {
-            SetAction(o, 67);
+            SetAction(AsObject(o), 67);
         } else if (skillType == 47) {
-            SetAction(o, 66);
+            SetAction(AsObject(o), 66);
         } else if (skillType == 49) {
             if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
-                SetAction(o, 65);
+                SetAction(AsObject(o), 65);
             } else {
-                SetAction(o, 64);
+                SetAction(AsObject(o), 64);
             }
         } else {
             // IDA intentionally uses the selected slot here, not v317.
-            SetAction(o, selectedSlot + 37);
+            SetAction(AsObject(o), selectedSlot + 37);
         }
     } else {
-        SetPlayerAttack(c, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(c), 0, 0, 0);
     }
 
     // IDA L597-601:
@@ -202,7 +203,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).
-    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394; // IDA: v285 source
+    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * CHARACTER_STRIDE; // IDA: v285 source
     AsCharacter(c)->TargetPosition[0] = *(float*)(targetEntity + 0x10); // TargetPosition.x
     AsCharacter(c)->TargetPosition[1] = *(float*)(targetEntity + 0x14); // TargetPosition.y
     AsCharacter(c)->TargetPosition[2] = *(float*)(targetEntity + 0x18); // TargetPosition.z
@@ -210,7 +211,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     *(float*)(o + 36) = CreateAngle(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
         AsCharacter(c)->TargetPosition[0], AsCharacter(c)->TargetPosition[1]);
-    const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
+    const WORD targetKey = *(WORD*)&((CHARACTER*)(uintptr_t)(targetEntity))->Key; // IDA: v285
     // There is deliberately no key-validity early return here.  The native
     // CFG at 0x485A2B continues through every family and serializes v285 as
     // read, including the sentinel value when the selected slot is stale.
@@ -255,10 +256,13 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             centre[1] += step[1];
             centre[2] += step[2];
             Warrior_CollectMultiTargets(centre, 100.0f, *(WORD*)(o + 134), keys, &count, 6);
-            const BYTE serial = *(BYTE*)(character + 1408);
-            *(BYTE*)(character + 1408) = serial + 1;
+            // IDA 0x485780 L1097-1100: el serial vive en CharacterMachine+1408,
+            // no en la entidad (CHARACTER mide 0x394: 1408 caía en el slot siguiente).
+            BYTE* machine = static_cast<BYTE*>(DAT_07cf1ffc);
+            const BYTE serial = machine ? machine[1408] : 0;
+            if (machine) machine[1408] = serial + 1;
             *(BYTE*)(o + 136) = serial;
-            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)(character + 913) + 87] : skillType,
+            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->CurrentSkill + 87] : skillType,
                                    centre, *(BYTE*)(o + 136), keys, count);
     } else if (skillType == 56) {
             float angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) - 40.0f };
@@ -300,10 +304,10 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 // label was incorrect: IDA FUN_004742B0 is documented as CreateTeleportBegin in Entity_LegacyTeleport.cpp.
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
 // spawn effect 0x498 at entity pos, play sound 0x58.
-void __cdecl Entity_WeaponHit(int param_1) {
+void __cdecl Entity_WeaponHit(intptr_t param_1) {
     SetAttackSpeed();
-    SetAction(param_1, 0x57);
-    *(DWORD *)(param_1 + 0x164) = 0;
+    SetAction(AsObject(param_1), 0x57);
+    *(DWORD *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
     CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
@@ -323,11 +327,11 @@ void __cdecl Entity_ResetToWalk(int param_1) {
     if (((sVar1 < 0x210) || (0x216 < sVar1)) && (sVar1 != 0x221)) {
         sVar1 = AsCharacter(param_1)->Weapon[0].Type;
         if (((0x217 < sVar1) && (sVar1 < 0x21f)) || (sVar1 == 0x220)) {
-            SetAction(param_1, (swimming && has_water) ? 0x31 : 0x2f);
+            SetAction(AsObject(param_1), (swimming && has_water) ? 0x31 : 0x2f);
         }
         return;
     }
-    SetAction(param_1, (swimming && has_water) ? 0x30 : 0x2e);
+    SetAction(AsObject(param_1), (swimming && has_water) ? 0x30 : 0x2e);
 }
 
 // IDA: SetPlayerMagic @ 0x00444A80 (el nombre real del binario; el alias
@@ -337,27 +341,27 @@ void __cdecl Entity_ResetToWalk(int param_1) {
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
     if (AsCharacter(param_1)->Object.Type != 0x186) {
         UINT uVar1 = (AsCharacter(param_1)->SwordCount % 3 == 0) ? 3 : 4;
-        SetAction(param_1, uVar1);
+        SetAction(AsObject(param_1), uVar1);
         *(char *)&AsCharacter(param_1)->SwordCount = *(char *)&AsCharacter(param_1)->SwordCount + 1;
         return;
     }
     SetAttackSpeed();
     if (((AsCharacter(param_1)->Helper.Type == 0x332) || (AsCharacter(param_1)->Helper.Type == 0x333)) &&
          (*(char *)&AsCharacter(param_1)->SafeZone == '\0')) {
-        SetAction(param_1, 0x5b); // death anim for special class
+        SetAction(AsObject(param_1), 0x5b); // death anim for special class
         return;
     }
     if ((AsCharacter(param_1)->Class & 7) == 2) {
-        SetAction(param_1, 0x56); // swim idle
+        SetAction(AsObject(param_1), 0x56); // swim idle
         return;
     }
     UINT uVar1 = rand() & 0x80000001;
     if ((int)uVar1 < 0) uVar1 = (uVar1 - 1 | 0xfffffffe) + 1; // parity correction
-    SetAction(param_1, uVar1 + 0x52); // 0x52 or 0x53 random idle
+    SetAction(AsObject(param_1), uVar1 + 0x52); // 0x52 or 0x53 random idle
 }
 
 // Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
-// documented as SetPlayerDie in Net/SecondPassword.cpp, so the old address label was misleading.
+// documented as SetPlayerDie in Entity/Character_Motion.cpp, so the old address label was misleading.
 // Handles landing after a teleport:
 //   If local player (param_1 == DAT_07abf5d8): clears teleport-state flag at DAT_07cf1ff4+0x1c.
 //   Spawns landing visual effects per class:
@@ -366,7 +370,7 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
 //     300 (0x12C): same as 0x186.
 //     other: set anim 6 (land-idle), return.
 //   Post-effects: if +0x108 == _DAT_00552580 (0.0f): play footstep sound from class table.
-void __cdecl Entity_TeleportEnd(int entity_idx) {
+void __cdecl Entity_TeleportEnd(intptr_t entity_idx) {
     BYTE* puVar3 = (BYTE*)(uintptr_t)(int)entity_idx;
 
     // Local player: clear teleport in-flight state (hash-table ops are obfuscation noise)
@@ -378,7 +382,7 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
     if (sVar2 == 0x186) {
         int sub_id = *(int*)(puVar3 + 4);
         if (sub_id < 0xce || sub_id > 0xd0) {
-            SetAction(entity_idx, 0x83);
+            SetAction(AsObject(entity_idx), 0x83);
             goto LAB_00445110;
         }
         *puVar3 = 0;
@@ -403,26 +407,26 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
             CreateEffect(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else {
-        SetAction(entity_idx, 6);
+        SetAction(AsObject(entity_idx), 6);
         goto LAB_00445110;
     }
-    PlayBuffer(0x5e, (int)entity_idx, 0);
+    PlayBuffer(0x5e, AsObject(entity_idx), 0);
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
-    if (*(float*)(puVar3 + 0x108) == *(float*)&DAT_00552580) {
+    if (*(float*)&((OBJECT*)(uintptr_t)(puVar3))->AnimationFrame == *(float*)&DAT_00552580) {
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
-            if ((puVar3[0x1bc] & 7) == 2)
-                PlayBuffer(0x50, (int)entity_idx, 0);
+            if ((((CHARACTER*)puVar3)->Class & 7) == 2)
+                PlayBuffer(0x50, AsObject(entity_idx), 0);
             else
-                PlayBuffer(0x4e, (int)entity_idx, 0);
+                PlayBuffer(0x4e, AsObject(entity_idx), 0);
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
-        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
+        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + BMD_FIELD_SHIFT + sVar2 * BMD_STRIDE);
         if (sfx != -1)
-            PlayBuffer(sfx + 0xaa, (int)entity_idx, 0);
+            PlayBuffer(sfx + 0xaa, AsObject(entity_idx), 0);
     }
 }
 
@@ -433,27 +437,21 @@ LAB_00445110:
 // Slots: [0x00]=active, [0x04]=entity_id, [0x10..0x18]=src_pos, [0x1C..0x24]=dst_pos,
 //        [0x0C]=param_4, [0x38..0x3B]=phase_flags, [0x48..0x4B]=state_chars.
 void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_pos, float param_4) {
-    // El bound es la cantidad de iteraciones (pool de 100 slots en globals.cpp),
-    // no la dirección absoluta del binario (`pcVar1 < 0x7c82cd0`).
-    char *pcVar1 = (char*)&DAT_07c80110[0];
-    for (int i = 0; i < 100; ++i) {
-        if (*pcVar1 == '\0') {
-            RenderSnapshots_NewDamagePoint(i);
-            *pcVar1 = '\x01';
-            *(float*)(pcVar1 + 0x04) = entity_id;
-            *(float*)(pcVar1 + 0x10) = world_pos[0];
-            *(float*)(pcVar1 + 0x14) = world_pos[1];
-            *(float*)(pcVar1 + 0x18) = world_pos[2] + _DAT_00552958;
-            *(float*)(pcVar1 + 0x1c) = dst_pos[0];
-            *(float*)(pcVar1 + 0x20) = dst_pos[1];
-            *(float*)(pcVar1 + 0x24) = dst_pos[2];
-            *(float*)(pcVar1 + 0x0c) = param_4;
-            pcVar1[0x38] = pcVar1[0x39] = pcVar1[0x3a] = pcVar1[0x3b] = '\0';
-            pcVar1[0x48] = '\0'; pcVar1[0x49] = '\0';
-            pcVar1[0x4a] = ' ';  pcVar1[0x4b] = 'A';
-            return;
-        }
-        pcVar1 += 0x70;
+    for (int i = 0; i < static_cast<int>(kDamagePointCount); ++i) {
+        DamagePoint& point = DAT_07c80110[i];
+        if (point.Active) continue;
+        RenderSnapshots_NewDamagePoint(i);
+        point.Active = 1;
+        // El wrapper conserva Value como bits, no como conversión numérica.
+        std::memcpy(&point.Value, &entity_id, sizeof(point.Value));
+        point.Position[0] = world_pos[0];
+        point.Position[1] = world_pos[1];
+        point.Position[2] = world_pos[2] + _DAT_00552958;
+        std::memcpy(point.Color, dst_pos, sizeof(point.Color));
+        point.Scale = param_4;
+        point.Delay = 0;
+        point.LifeTime = 10.0f;
+        return;
     }
 }
 
@@ -461,9 +459,9 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 // documented as CreateTeleportEnd in Entity_LegacyTeleport.cpp, so the old address label was misleading.
 // Melee attack initiation: anim 0x57, set speed=5.0f (+0x108), mode=3 (+0x7C),
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
-void __cdecl Entity_MeleeAttackStart(int param_1) {
+void __cdecl Entity_MeleeAttackStart(intptr_t param_1) {
     SetAttackSpeed();
-    SetAction(param_1, 0x57);
+    SetAction(AsObject(param_1), 0x57);
     AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000
     AsObject(param_1)->Teleport  = 3;      // melee attack mode
     AsObject(param_1)->AlphaTarget = 1.0f;   // 0x3F800000

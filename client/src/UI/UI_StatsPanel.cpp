@@ -2,6 +2,8 @@
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/OptionsMenu.h"
 
@@ -43,8 +45,8 @@ int RenderErrorMessage(void)
   DAT_00559c8c = 0x100;
   gOptionsMenu.OnErrorMessageFrame();   // DESVIACION (DLL OptionsMenu, hook 0x0051AF65)
   GL_ResetState();
-  glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
   SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
@@ -61,13 +63,13 @@ int RenderErrorMessage(void)
         do {
           fVar1 = (float)(int)local_dc;
           local_e4.cx = (LONG)fVar1;
-          GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-          if ((((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) && ((int)local_dc <= DAT_083a4278)
+          GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+          if ((((gWindow.PanelOrigin(Ui::Menu) - 1 < DAT_083a427c) && (DAT_083a427c < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width)) && ((int)local_dc <= DAT_083a4278)
               ) && (DAT_083a4278 < (int)local_dc + 0x16)) {
-            glColor3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
+            Gfx::Color3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
             GL_SetBlendAdditive();
-            GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+            GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
             GL_ResetState();
           }
           local_dc = (int)local_dc + 0x1e;
@@ -184,14 +186,15 @@ switchD_0051bea9_caseD_8b:
         piVar7 = piVar7 + 5;
       }
       if (DAT_083a7c24 == 0x8d) {
+        // El render consulta el clic; sólo la lógica del diálogo debe consumirlo.
         GL_SetBlendSrcOver('\x01');
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
         if (DAT_083a7c08 == '\0') {
           uVar16 = 0x3e4ccccd;
           uVar15 = 0x3e4ccccd;
           uVar10 = 0x3e4ccccd;
 LAB_0051c08c:
-          glColor3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
+          Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
         else if (((0xf8 < DAT_083a427c) && (0xc9 < DAT_083a4278)) &&
                 ((DAT_083a427c < 0x109 && (DAT_083a4278 < 0xdf)))) {
@@ -201,17 +204,16 @@ LAB_0051c08c:
             uVar10 = 0x3f333333;
             goto LAB_0051c08c;
           }
-          glColor3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
-          DAT_083a4124 = '\0';
+          Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
         }
         GL_DrawRotatedRect(9,253.0,210.0,25.0,16.0,0x43870000);
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
         if (DAT_083a7c08 == DAT_083a7c09) {
           uVar16 = 0x3e4ccccd;
           uVar15 = 0x3e4ccccd;
           uVar10 = 0x3e4ccccd;
 LAB_0051c13d:
-          glColor3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
+          Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
         else if ((((0x178 < DAT_083a427c) && (0xc9 < DAT_083a4278)) && (DAT_083a427c < 0x189)) &&
                 (DAT_083a4278 < 0xdf)) {
@@ -221,15 +223,14 @@ LAB_0051c13d:
             uVar10 = 0x3f333333;
             goto LAB_0051c13d;
           }
-          glColor3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
-          DAT_083a4124 = '\0';
+          Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
         }
         GL_DrawRotatedRect(9,383.0,210.0,25.0,16.0,0x42b40000);
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       }
     }
     else if (DAT_083a7c24 == 0x8f) {
-      glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+      Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       local_d8 = 0x78;
       GL_DrawTexture(0xfc,213.0,120.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x7d;
@@ -259,9 +260,9 @@ LAB_0051c13d:
         }
 			// IDA stores the hover tint as float bit patterns (0.7f/1.0f).
 			// Preserve that representation when forwarding it to OpenGL.
-			glColor3f(*(float*)&uVar10,*(float*)&uVar15,*(float*)&uVar16);
+			Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
         DAT_00559c78 = 0xfffff0c8;
         ptVar17 = &local_e4;
         // IDA RenderErrorMessage (0x51AF50) indexes the text table directly:
@@ -278,7 +279,7 @@ LAB_0051c13d:
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }
-        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         DAT_00559c78 = 0xffffffff;
         if (iVar3 == 0) {
           // General: the two explanatory lines immediately above button 0.
@@ -295,7 +296,7 @@ LAB_0051c13d:
         UI_RenderText(0xf8,uVar10,pCVar6,(LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 1;
       } while (iVar3 < 2);
-      glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+      Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
     }
     else if ((DAT_083a7c24 == 0x97) || (DAT_083a7c24 == 0x99)) {
       local_d8 = 0x64;
@@ -561,7 +562,7 @@ LAB_0051c13d:
     // personaje seleccionado.  Sin ese argumento printf tomaba un slot cualquiera
     // de la pila como char* -> AV de lectura dentro de ucrtbase.
     crt_sprintf(local_c8,&DAT_07d46e60,
-                (const char *)(CharactersClient + 916 * SelectedHero + 0x1C1));
+                EntityName::Get(CharactersClient + CHARACTER_STRIDE * SelectedHero));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
@@ -625,7 +626,7 @@ LAB_0051c13d:
     {
     int nameIdx = FindCharacterIndex(DAT_07eaa0d8);
     crt_sprintf(local_c8,(const char *)DAT_07d486fc,
-                (const char *)(CharactersClient + 916 * nameIdx + 0x1C1));
+                EntityName::Get(CharactersClient + CHARACTER_STRIDE * nameIdx));
     }
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
@@ -646,7 +647,7 @@ LAB_0051c13d:
     // that return value, so the party prompt had no inviter name.
     const int characterIndex = FindCharacterIndex((int)DAT_07eaa0e4);
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
-        ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
+        ? EntityName::Get(DAT_07abf5d0 + characterIndex * CHARACTER_STRIDE)
         : "";
     Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d486fc, inviterName);
@@ -670,13 +671,13 @@ LAB_0051c13d:
     // GlobalText[418] aporta el formato localizado y GlobalText[419] la línea
     // de confirmación. ErrorMessage 128 es guerra de guild, no Trade.
     crt_sprintf(local_c8, (const char*)DAT_07d486fc, DAT_07ea9834);
-    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BIG)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BIG));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
     crt_sprintf(local_c8, GlobalText[419]);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
@@ -805,7 +806,7 @@ LAB_0051c13d:
       local_d4 = -NAN;
     }
     if ((DAT_083a7c24 == 0x8e) && (local_dc = 0, 0 < DAT_083a7c0c)) {
-      local_d8 = (unsigned int)(uintptr_t)DAT_083a4348;
+      const char* answer = (const char*)DAT_083a4348;
       do {
         if (((int)local_d4 == (int)local_dc) &&
            (uVar5 = (int)(0x13fU - DAT_083a427c) >> 0x1f,
@@ -815,9 +816,9 @@ LAB_0051c13d:
         else {
           uVar10 = 0x3f800000;
         }
-        glColor3f(1.0f, *(float*)&uVar10, 0.0f);
+        Gfx::Color3f(1.0f, *(float*)&uVar10, 0.0f);
         local_e4.cx = 0;
-        pCVar6 = (LPCSTR)(uintptr_t)local_d8;
+        pCVar6 = answer;
         do {
           if (*pCVar6 == '\0') break;
           ptVar17 = &local_d0;
@@ -830,17 +831,17 @@ LAB_0051c13d:
           pCVar6 = pCVar6 + 0x26;
         } while (local_e4.cx < 1);
         local_dc = local_dc + 1;
-        local_d8 = local_d8 + 0x26;
+        answer += 0x26;
       } while ((int)local_dc < DAT_083a7c0c);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
     return 0;
   case 0x8c:
     iVar3 = RenderMatchScore();
     return iVar3;
   case 0x8f:
     DAT_00559c78 = 0xff0080ff;
-    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)lpString_07d5f94c);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d5f94c,iVar3,ptVar17);
@@ -873,8 +874,8 @@ LAB_0051c13d:
       goto LAB_0051d371;
     }
     local_d8 = 0x140;
-    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
-    glColor3f(1.0f, 1.0f, 0.0f);
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
+    Gfx::Color3f(1.0f, 1.0f, 0.0f);
     uVar5 = ((int)MixType < 0) - 1 & MixType;
     if (MixType == 0xb) {
       uVar5 = 7;
@@ -892,20 +893,20 @@ LAB_0051d2dd:
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
-    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
 LAB_0051d371:
     iVar3 = 0;
     if (DAT_083a4324 < 1) {
       return DAT_083a4324;
     }
     do {
-      glColor3f(1.0f, 0.7f, 0.0f);
-      gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+      Gfx::Color3f(1.0f, 0.7f, 0.0f);
+      gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
       if (iVar3 == 0) {
         if (DAT_07eaa13c == 1) {
           uVar10 = 0;
 LAB_0051d3cf:
-          glColor3f(1.0f, *(float*)&uVar10, *(float*)&uVar10);
+          Gfx::Color3f(1.0f, *(float*)&uVar10, *(float*)&uVar10);
         }
       }
       else if ((iVar3 == 3) && (DAT_07eaa13c == 3)) {
@@ -913,10 +914,10 @@ LAB_0051d3cf:
         goto LAB_0051d3cf;
       }
       if (DAT_07eaa13c == 2) {
-        glColor3f(0.9f, 0.9f, 1.0f);
+        Gfx::Color3f(0.9f, 0.9f, 1.0f);
       }
       ptVar17 = &local_d0;
-      pCVar6 = (LPCSTR)((int)&DAT_083a44c4 + iVar3 * 0x26);
+      pCVar6 = DAT_083a44c4 + iVar3 * 0x26;
       iVar4 = Platform::TextLength(pCVar6);
       gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
       pCVar2 = (LPCSTR)(uintptr_t)local_dc;

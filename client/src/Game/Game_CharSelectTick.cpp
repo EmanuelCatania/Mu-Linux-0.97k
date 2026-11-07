@@ -22,6 +22,9 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Config/UserSettings.h"
 #include "Game/Game_CharSelectTick.h"
 #include "Net/Net.h"
@@ -41,16 +44,13 @@ void Game_CharSelectTick(void)
         // ACA, antes del flush del chat y del clear del listbox. Asi la
         // respuesta (JoinMapServer + avisos de bienvenida) llega DESPUES del
         // clear y queda visible in-game.
-        // Desviacion: IDA copia strlen(nombre) bytes sin padding; mandamos los
-        // 10 bytes de name[] completos con relleno en cero (el server hace
-        // memcpy de 10 bytes y sin padding leeria basura del buffer).
+        // Desviacion: IDA copia strlen(nombre) bytes sin padding; mandamos el
+        // name[40] completo con relleno en cero (el server copia el campo
+        // entero y sin padding leeria basura del buffer).
         if (DAT_083a410c == 0) {
             DAT_05826cb0 = 0x3c;   // CurrentProtocolState = 60
-            BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
-            const char* charName = (const char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-            int nameLen = (int)strlen(charName);
-            if (nameLen > 10) nameLen = 10;
-            memcpy(pkt + 4, charName, nameLen);
+            BYTE pkt[4 + NetText::CharacterNameSize] = { 0xC1, (BYTE)(4 + NetText::CharacterNameSize), 0xF3, 0x03 };
+            NetText::ToServer(pkt + 4, NetText::CharacterNameSize, EntityName::Selected());
             gNetwork.SendC1(pkt, sizeof(pkt));
         }
 
@@ -62,8 +62,10 @@ void Game_CharSelectTick(void)
         DAT_00559c84 = 0;
         DAT_07e11d71 = 0;
         DAT_00559c8c = 0x100;
-        InputTextMax = 0x2a;
-        _DAT_00559c98 = 10;
+        // IDA: InputTextMax[0] = 42, [1] = 10. Desde 0.97.40 son caracteres:
+        // el mensaje entra en 199 bytes y el nombre del susurro en 40.
+        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 0x2a);
+        Input_SetLimit(1, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
         InputNumber = 2;
 
         // 120× widget draw
@@ -79,12 +81,12 @@ void Game_CharSelectTick(void)
         // the called clearList walked random "list" data → AV reading
         // 0x81EC8B55 (instruction bytes — i.e. node[1] pointed into
         // .text).  Use the proper fastcall dispatch.
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef void (__fastcall *FnClear)(DWORD*);
             ((FnClear)vt[10])(obj);
-            Object_ClearMembers((int)DAT_055c9ff0);
+            Object_ClearMembers(DAT_055c9ff0);
         }
         CErrorReport_Write(&DAT_055c9bf0, "> Main Scene init success");
         CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
@@ -118,10 +120,10 @@ void Game_CharSelectTick(void)
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             // vtable[+0x14] = slot 5 = ChatLB_tick (__fastcall, takes this+arg).
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef int (__fastcall *FnTick)(DWORD*, int /*edx*/, int);
             ((FnTick)vt[5])(obj, 0, 0);
         }
@@ -217,14 +219,14 @@ void Game_CharSelectTick(void)
     //   CharacterAnimation — avanza entity[+0x108] (frame counter). Para todos.
     // El loop manual de abajo está desactivado (`false &&`).
     {
-        int heroEnt = (int)(uintptr_t)DAT_07abf5d8;
-        int base = (int)(uintptr_t)DAT_07abf5d0;
+        intptr_t heroEnt = (intptr_t)DAT_07abf5d8;
+        intptr_t base = (intptr_t)DAT_07abf5d0;
         MoveCharactersClient();
         for (int s = 0; false && s < 400; ++s) {
-            int e = base + s * 0x394;
+            intptr_t e = base + s * CHARACTER_STRIDE;
             if (*(char*)e == '\0') continue;   // inactive
             if (e != heroEnt) {
-                MoveMonsterClient(e, e);            // path tick (skip hero)
+                MoveMonsterClient(AsCharacter(e), AsObject(e));            // path tick (skip hero)
             }
             MoveCharacterVisual(e);                   // action → model (incl hero)
             CharacterAnimation(e, e);          // advance anim frame (incl hero)

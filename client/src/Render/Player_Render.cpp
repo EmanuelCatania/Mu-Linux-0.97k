@@ -60,6 +60,7 @@
 //   glColor3f     → OpenGL color sin alpha (afecta al sprite del jugador)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/Player_Render.h"
 
 // Player_Render @ 0x00475110 (18 lines)
@@ -88,13 +89,13 @@ void Player_Render(void)
             float r = *(float*)(puVar1 - 1);
             float g = *(float*)puVar1;
             float b = *(float*)(puVar1 + 1);
-            glColor3f(r, g, b);
-            short classCode = *(short*)((int)puVar1 - 0xEA);
+            Gfx::Color3f(r, g, b);
+            short classCode = *reinterpret_cast<short*>(reinterpret_cast<BYTE*>(puVar1) - 0xEA);
             float* posXYZ   = (float*)(puVar1 - 0x37);
             float* rotation = (float*)(puVar1 - 0x38);
             float  scale    = *(float*)(puVar1 - 0x32);
             RenderPlane((int)classCode, posXYZ, rotation, Ff(scale));
         }
-        puVar1 += 0x6F;
+        puVar1 += OBJECT_STRIDE / 4;
     }
 }

@@ -2,6 +2,7 @@
 // Cursor_Render.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -31,7 +32,7 @@
 // IDA: RenderCursor
 void __cdecl Cursor_Render(void) {
     GL_SetBlendSrcOver('\x01');  // EnableAlphaTest(1)
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int u_bits = 0, v_bits = 0;
     // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con std::int64_t cast explícito.
@@ -72,8 +73,8 @@ void __cdecl Cursor_Render(void) {
         // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
         // anterior; si el objeto se libero en el medio el puntero queda colgado.
         const int nOperates = (int)(sizeof(DAT_083a2370) / 0xc);
-        const int operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
-                            ? ((int*)&DAT_083a2378)[SelectedOperate * 3] : 0;
+        const intptr_t operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
+                            ? g_OperateObjects[SelectedOperate] : 0;
         if (operObj == 0) {
             // LABEL_43 de IDA: flecha por defecto.
             GL_DrawTexture(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '', '');
@@ -94,7 +95,7 @@ void __cdecl Cursor_Render(void) {
     // NULL-guard: en login Hero=NULL y SelectedCharacter=-1, así que el branch
     // se saltea; el guard sólo protege contra misconfig.
     if (DAT_07abf5d8 != NULL &&
-        *(char*)((char*)DAT_07abf5d8 + 0x34e) == '\0' &&
+        *(char*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone == '\0' &&
         SelectedCharacter != -1)
     {
         if ((char)CheckAttack() != '\0' && DAT_07d78094 == '\0') {

@@ -19,6 +19,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -28,7 +30,6 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <GL/gl.h>
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);
@@ -190,7 +191,7 @@ int Render_MacroTimer_(void)
         float Bar = (float)v8;
         RenderBar(x, 404.0f, 50.0f, 2.0f, Bar, false, true);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int v1 = m_iMatchCountDownType;
     if (v1 > 0) {
@@ -213,7 +214,7 @@ int Render_MacroTimer_(void)
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
             Platform::TextFormat(String, fmt, 30 - (int)secs);
-            UI_DrawText(10, 372, String, 0, 1, 0, sizeof(String));
+            UI_DrawText(gWindow.PanelOrigin(Ui::WindowLeft) + 10, 372, String, 0, 1, 0, sizeof(String));
         } else {
             m_iMatchCountDownType = 0;
         }
@@ -240,7 +241,7 @@ void Render_MapLoadText_(void)
 
     GL_ResetState();
     EnableAlphaTest(false);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     float v1 = 345.0f;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFF7700u;   // -16738561
@@ -294,7 +295,7 @@ void Render_MapLoadText(void) { Render_MapLoadText_(); }
 extern "C" void __cdecl Render_QuickButtons_(void);
 void Render_QuickButtons_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     m_dwTextColor = 0xFFFF8080u;
     // Los 3 paneles del lado derecho van en x CONSTANTE 0x1C2 (=450), no en
@@ -303,7 +304,7 @@ void Render_QuickButtons_(void)
     //   sub_4F5820+0x253 push 0 / push 1C2h / call RenderGuildList
     //   sub_4F5820+0x379 push 0 / push 1C2h / call RenderCharacterInfoWindow
     // (GetScreenWidth solo recorta el viewport 3D, no posiciona paneles.)
-    const int panelStartX = 450;
+    const int panelStartX = gWindow.PanelOrigin(Ui::RightPanel);
 
     // IDA: FUN_004F5820 compone el panel antes de sus botones compartidos. La
     // textura inferior del panel alcanza y=433 y, si se dibuja después, cubre
@@ -317,12 +318,12 @@ void Render_QuickButtons_(void)
         g_GuildCreatorScratchX = panelStartX;
         g_GuildCreatorScratchY = 0;
         // El origen de los botones OK/CANCEL es `g_GuildCreatorScratchX/Y`, el mismo
-        // que usa el hit-test SecondPassword_Screen1 (no `DAT_07ea5b1c/20` =
+        // que usa el hit-test GuildCreator_HitTest (no `DAT_07ea5b1c/20` =
         // Inventory[32].Level/Part, que es el slot 0 del pool de la tienda).
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;
         float btnY = (float)g_GuildCreatorScratchY + _DAT_00552ca4;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         int tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
                    (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF2 : 0xF1;
@@ -343,7 +344,7 @@ void Render_QuickButtons_(void)
     if (HUD_IsGuildListRuntime()) {
         float iconX = (float)DAT_07e91788 + _DAT_00552464;
         float iconY = (float)DAT_07e91784 + _DAT_0055246c;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         GL_DrawTexture(RepairEnable_0 ? 287 : 286,
                      iconX, iconY, 24.0f, 24.0f,
@@ -360,7 +361,7 @@ void Render_QuickButtons_(void)
     if (HUD_IsCharacterInfoRuntime()) {
         float iconX = (float)DAT_07ea982c + 25.0f;
         float iconY = (float)DAT_07ea9830 + 395.0f;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         GL_DrawTexture(280, iconX, iconY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -382,11 +383,11 @@ void Render_QuickButtons_(void)
     //     else if (GuildOpened)   RenderGuildList(450, 0);
     //     RenderParty(450, 0);
     //     if (CharacterOpened)    RenderCharacterInfoWindow(450, 0);
-    if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
+    if (HUD_IsGuildListRuntime())      RenderGuildList(gWindow.PanelOrigin(Ui::Guild), 0);
 
-    RenderParty(450, 0);
+    RenderParty(gWindow.PanelOrigin(Ui::Party), 0);
 
-    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
+    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(gWindow.PanelOrigin(Ui::Character), 0);
     // DESVIACION: panel H de horarios en la misma columna (se alterna con los anteriores).
     gEventTimer.RenderPanel();
     RenderInventoryWindow();
@@ -461,16 +462,16 @@ void HUD_TickGridPresentation() {
 // icon overlay (bitmap 9) bobbing with WorldTime, plus GlobalText[370]
 // label rendered in white.
 // =============================================================================
-extern "C" int __cdecl sub_4E38B0(float a1, float a2, float x, int a4,
+extern "C" int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
                                   float sx, int a6);
-int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
+int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
                        float sx, int a6)
 {
     // IDA receives the inventory-base pointer in the x87 float argument slot.
     // It is a bit-pattern carrier, not a numeric float: a C cast turns most
     // heap pointers into 0 (or undefined), while the original uses the bits.
-    DWORD x_addr;
-    memcpy(&x_addr, &x_param, sizeof(x_addr));
+    intptr_t x_addr;
+    x_addr = (decltype(x_addr))(intptr_t)items;
     int v23 = 0;
     const int pass = (BYTE)a6 ? 1 : 0;
     const int grid = gridCursor[pass]++;
@@ -479,15 +480,15 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
     if ((int)sx <= 0) goto check_quest_overlay;
 
     {
-        DWORD v6_addr = x_addr;
+        intptr_t v6_addr = x_addr;
         int v22 = 0;
         int v27 = (int)sx;
-        DWORD v26 = x_addr;
+        intptr_t v26 = x_addr;
 
         do {
             if (a4 > 0) {
                 int v21 = 0;
-                DWORD v24 = v6_addr;
+                intptr_t v24 = v6_addr;
                 int v25 = a4;
                 float sy = (float)((double)v22 + a2);
 
@@ -503,7 +504,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 const bool stack = (kind >= 448 && kind <= 456) ||
                                     ItemStack_GetMaxStack(v7, (AsItem(v6_addr)->Level >> 3) & 0xF) != 0;
                                 if (stack && AsItem(v6_addr)->Durability > 1) {
-                                    glColor3f(1.0f, 0.9f, 0.7f);
+                                    Gfx::Color3f(1.0f, 0.9f, 0.7f);
                                     float h = sxa + 13.0f;
                                     RenderNumber2D(h, sy,
                                                    AsItem(v6_addr)->Durability,
@@ -528,7 +529,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             const MixCellSample c = sample && cell < 32 ? sample->cells[cell] : MixCellSample{};
                             float green = c.green;
                             float red = c.red;
-                            glColor3f(red, green, 0.2f);
+                            Gfx::Color3f(red, green, 0.2f);
                             int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
                             float v20 = c.size;
                             float v28 = c.x + sxa;
@@ -560,7 +561,7 @@ check_quest_overlay:
         ITEM* end = (ITEM*)(Inventory + 32 * sizeof(ITEM));
         while (v11 < end) {
             if (v11->Type != (WORD)-1 && v11->Key && v11->Color == 99) {
-                glColor3f(0.0f, 1.0f, 1.0f);
+                Gfx::Color3f(0.0f, 1.0f, 1.0f);
                 float sxe = (float)((double)ItemAttribute[v11->Type].Width * 20.0);
                 float xa  = (float)((double)(20 * v11->x) + (double)TradeInventoryStartX + 15.0);
                 float v36 = (float)(sin((double)WorldTime * 0.015) +
@@ -568,7 +569,7 @@ check_quest_overlay:
                                     (double)TradeInventoryStartY + 70.0);
                 float y_pos = v36 + 5.0f;
                 GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
-                glColor3f(1.0f, 1.0f, 1.0f);
+                Gfx::Color3f(1.0f, 1.0f, 1.0f);
                 gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
@@ -609,18 +610,16 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     // de Scene_Login: MSVC reporta eso con __fastfail, que mata el proceso sin
     // pasar por el filtro de excepciones -- de ahi los cierres sin cartel ni log.
     const size_t kMaxText = sizeof(Text) - 1;
-    if (hide == 1) {
-        size_t len = strlen(InputText[Index]);
-        if (len > kMaxText) len = kMaxText;
-        for (size_t i = 0; i < len; ++i) Text[i] = '*';
-        Text[len] = 0;
-    } else if (hide == 2) {
-        const char* src = InputText[Index];
-        size_t len = strlen(src);
-        if (len > kMaxText) len = kMaxText;
-        size_t i = 0;
-        for (; i < 7 && i < len; ++i) Text[i] = src[i];
-        for (; i < len; ++i) Text[i] = '*';
+    if (hide == 1 || hide == 2) {
+        // DESVIACION (Fase 4, texto Unicode): un '*' por letra visible, no por
+        // byte; el prefijo visible del modo 2 (7 bytes) no parte una letra.
+        size_t len = strnlen(InputText[Index], kMaxText);
+        const std::string_view value(InputText[Index], len);
+        const size_t shown = hide == 2 ? TextEngine::FitBytes(value, 7) : 0;
+        memcpy(Text, value.data(), shown);
+        size_t i = shown;
+        const size_t stars = TextEngine::ClusterCount(value.substr(shown));
+        for (size_t n = 0; n < stars && i < kMaxText; ++n) Text[i++] = '*';
         Text[i] = 0;
     } else {
         strncpy(Text, InputText[Index], sizeof(Text) - 1);
@@ -679,7 +678,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     int prevBlend = AlphaBlendType;
 
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
 
     float fy   = (float)sy;
     float fx   = (float)sx;
@@ -694,16 +693,16 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     GL_DrawRect(boxX + W - 1.0f, boxY, 1.0f, H);
     GL_DrawRect(boxX, boxY + H - 1.0f, W, 1.0f);
 
-    glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
     // Filled black panel inside the border.
     GL_DrawRect(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
 
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     // CACHE (2026-10-03): este glEnable no tocaba DAT_083a4125, asi que el GL
     // quedaba texturado con el cache diciendo lo contrario y el proximo
     // DisableTexture salteaba su glDisable.  Mismo patron que la fuga de blend
     // que volvia traslucidos a los monstruos de Atlans.
-    glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     UI_DrawText(sx, sy, (char*)Text, 0, 1, 0, (size_t)n + 1);
@@ -751,136 +750,8 @@ extern "C" void __cdecl CreateGuildMark(int nMarkIndex, bool blend)
         }
     }
 
-    glBindTexture(GL_TEXTURE_2D, Bitmaps[34].TextureNumber);
-    glTexImage2D(GL_TEXTURE_2D, 0, Bitmaps[34].Components,
-                 Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 Bitmaps[34].Buffer);
+    Gfx::BindTexture(Bitmaps[34].TextureNumber);
+    Gfx::TexImage2D(Bitmaps[34].Components, Width, Height, Gfx::Format::RGBA, Bitmaps[34].Buffer);
 }
 
 
-// =============================================================================
-// sub_47F360 — text glyph composition.  Takes target Bitmaps[0].Buffer
-// (a row-major 4-bytes-per-pixel offscreen surface, stride 1024 bytes) and
-// composes a coloured glyph block from the GDI greyscale render of `a3`
-// (and optional prefix `lpString`) into it.  Used by RenderBoolean's
-// CUIRenderText-mode-1 path.
-//
-// Pixels in the surface that come from the prefix are tinted with
-// SetTextColor_0; the rest get m_dwTextColor; black background gets
-// m_dwBackColor (or 0 past column a8).
-//
-// In our build Bitmaps[0] / ppvBits are not initialised by the engine
-// (font surface), so this path effectively no-ops; preserved structure for
-// fidelity.
-// =============================================================================
-extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
-                                  int x, int a7, int a8, LPCSTR lpString)
-{
-    (void)a4; (void)a5; (void)a7;
-    int v9  = a2;
-    int v10 = a1;
-    SIZE sz = {a1, a2};
-    if (!a3 || *a3 == 10) return (int)Bitmaps[0].Height;
-
-    gFont.BeginTextMask();
-    if (lpString) {
-        int n = Platform::TextLength(lpString);
-        gFont.MeasureText(gFont.GetTextDC(), lpString, n, &sz);
-        gFont.DrawTextMask(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
-    } else {
-        sz.cx = 0;
-    }
-    gFont.SetMaskColor(0xffffff);
-    gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
-
-    if (!a8) a8 = v10;
-    int Height = (int)Bitmaps[0].Height;
-    if (v9 > Height) v9 = Height;
-
-    // DESBORDE (2026-10-02, issue #75): IDA sub_47F360 clampea el ALTO contra
-    // Bitmaps[0].Height pero NO el ancho -- su loop corre `v16 < v10` con v10 = a1
-    // crudo.  El destino es Bitmaps[0].Buffer, 256x32 DWORDs (stride 1024 B), asi
-    // que el original se apoya en un invariante: que el texto nunca sea mas ancho
-    // que el bitmap de fuente.  Nuestro port rompe ese invariante por dos motivos
-    // propios -- el Text.bmd en espanol tiene filas de hasta 266 bytes, y
-    // GetTextExtentPointA devuelve pixeles de VENTANA, asi que por encima de
-    // 640x480 los anchos escalan.  Con eso cada linea larga escribia DWORDs fuera
-    // del buffer y corrompia el heap; la victima cambiaba con el layout (de ahi
-    // los crash en direcciones distintas, incluso dentro de gdi32 con handles
-    // validos).  Desviacion deliberada: acotamos igual que el alto.
-    const int MaxW = (int)Bitmaps[0].Width;
-    if (MaxW > 0 && v10 > MaxW) v10 = MaxW;
-
-    if (v9 > 0 && Bitmaps[0].Buffer && gFont.GetTextBits()) {
-        BYTE* dst = Bitmaps[0].Buffer;
-        const BYTE* src = (const BYTE*)gFont.GetTextBits();
-        int rows = v9;
-        do {
-            BYTE* dRow = dst;
-            const BYTE* sRow = src;
-            for (int col = 0; col < v10; ++col) {
-                DWORD value;
-                if (*sRow) {
-                    value = (col >= sz.cx) ? m_dwTextColor : SetTextColor_0;
-                } else {
-                    value = (col >= a8) ? 0u : m_dwBackColor;
-                }
-                *(DWORD*)dRow = value;
-                sRow += 3;     // RGB triplet input
-                dRow += 4;     // BGRA output
-            }
-            src += 1536;       // 512×3 = 1536 bytes per source row
-            dst += 1024;       // 256×4 = 1024 bytes per dest row
-            --rows;
-        } while (rows);
-    }
-    return Height;
-}
-
-
-// =============================================================================
-// sub_47F4C0 — upload + render the composed bitmap quad at (a1, a2) with
-// (Width, Height) screen dimensions, clamping to the screen rect (with
-// special HUD bottom-bar handling at byte_7E11D6E).
-//
-// Uploads Bitmaps[0] via glTexImage2D (the same surface populated by
-// sub_47F360), then RenderBitmap(0, ...) with computed UV.  In our build
-// Bitmaps[0].Buffer is NULL until the engine creates the font surface;
-// glTexImage2D with NULL data silently fails — call sites accept this.
-// =============================================================================
-extern "C" void __cdecl sub_47F4C0(int a1, int a2, float Width, float Height,
-                                   int a5, int a6, float a7, int a8)
-{
-    (void)a5; (void)a6;
-    if (Bitmaps[0].Buffer) {
-        glBindTexture(GL_TEXTURE_2D, Bitmaps[0].TextureNumber);
-        glTexImage2D(GL_TEXTURE_2D, 0, Bitmaps[0].Components,
-                     (int)Bitmaps[0].Width, (int)Bitmaps[0].Height, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, Bitmaps[0].Buffer);
-    }
-
-    int x_pos = (a1 < 0) ? 0 : a1;
-    if ((BYTE)a7) {
-        DWORD wScale = 640u * (DWORD)Width / gWindow.GetWidth();
-        if ((int)(wScale + x_pos) > a8) x_pos = a8 - (int)wScale;
-    } else if ((int)Width + x_pos > (int)gWindow.GetWidth()) {
-        x_pos = (int)gWindow.GetWidth() - (int)Width;
-    }
-
-    int y_pos = a2;
-    if (DAT_07e11d6e) {
-        if (a2 < 0) y_pos = 0;
-        if ((BYTE)a7) {
-            DWORD hScale = 480u * (DWORD)Height / gWindow.GetHeight();
-            if ((int)(hScale + y_pos) > 0x1B1) y_pos = 433 - (int)hScale;
-        } else {
-            int v12 = (int)gWindow.GetHeight() - (47 * (int)gWindow.GetHeight()) / 640;
-            if ((int)Height + y_pos > v12) y_pos = v12 - (int)Height;
-        }
-    }
-
-    float bw = (Width  + 0.01f) / Bitmaps[0].Width;
-    float bh = (Height + 0.01f) / Bitmaps[0].Height;
-    GL_DrawTexture(0, (float)x_pos, (float)y_pos, Width, Height,
-                 0.0f, 0.0f, bw, bh, 0, (char)(BYTE)a7);
-}

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
@@ -6,6 +7,8 @@
 #include "Render/Terrain_Render.h"
 #include "Entity/ObjectPose.h"
 #include "Render/WorldEffects.h"
+#include "Game/RenderDerivedState.h"
+#include "Render/DrawDistance.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -37,7 +40,7 @@ static void Terrain_ProcessObjects(bool simulation)
         z_offset = -10.0f;
     }
 
-    DWORD *chunk_ptr = &DAT_083a021c;
+    SceneObjectCell* chunk_ptr = g_ObjectBucketGrid;
 
     int chunk_y = 8;
     do
@@ -47,11 +50,11 @@ static void Terrain_ProcessObjects(bool simulation)
         do
         {
             unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
-            if (simulation) *((char*)chunk_ptr + 8) = (char)vis;
+            if (simulation) chunk_ptr->Visible = static_cast<std::uint8_t>(vis);
 
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
-                char *entity = (char*)*chunk_ptr;
+                char *entity = static_cast<char*>(chunk_ptr->Head);
                 Platform::RunValidatedOperation([&]() {
                     int chunkIter = 0;
                     while (entity != nullptr &&
@@ -59,15 +62,15 @@ static void Terrain_ProcessObjects(bool simulation)
                            SceneObjects::Contains(entity))
                     {
                         if (*entity == '\0' || !DAT_05828d58 ||
-                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= MODEL_MAX_TOTAL)
+                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= ResourceTables::ModelCount())
                         {
-                            entity = *(char**)(entity + 0x1b8);
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                             continue;
                         }
 
                         if (SceneFlag != 5 && *(short*)(entity + 2) == 0)
                         {
-                            entity = *(char**)(entity + 0x1b8);
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                             continue;
                         }
 
@@ -77,7 +80,9 @@ static void Terrain_ProcessObjects(bool simulation)
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
                         vis = TestFrustrum2D(ex, ey, ez);
-                        if (simulation) entity[0x160] = (char)vis;
+                        // DESVIACION: distancia de dibujado; lejos, sólo el terreno.
+                        if (vis && !DrawDistance::Detailed(*(float*)(entity + 0x10), *(float*)(entity + 0x14))) vis = 0;
+                        if (simulation) entity[EntityOffset(0x160)] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
@@ -89,19 +94,20 @@ static void Terrain_ProcessObjects(bool simulation)
                                     HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                                 }
 
-                                WorldEffects_Tick((int)entity);
+                                WorldEffects_Tick((intptr_t)entity);
                             } else {
+                                RenderDerivedState_SaveObject(entity);
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
-                                WorldEffects_Draw((int)entity);
+                                WorldEffects_Draw(AsObject(entity));
                             }
                         }
 
-                        entity = *(char**)(entity + 0x1b8);
+                        entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                     }
                 }); // SEH adicional en Windows; nodos y tipos validados en ambos sistemas.
             }
 
-            chunk_ptr += 4;
+            ++chunk_ptr;
             chunk_x += 0x10;
         }
         while (chunk_x < 0x108);
@@ -122,10 +128,10 @@ static void Terrain_ProcessObjects(bool simulation)
                 float ey = *(float*)(entity + 0x14) * _DAT_005524f8;
                 float ez = z_offset + *(float*)(entity + 0xd0);
                 unsigned short vis = TestFrustrum2D(ex, ey, ez);
-                entity[0x160] = (char)vis;
+                entity[EntityOffset(0x160)] = (char)vis;
             }
-            iVar += 0x394;
-        } while (iVar < 0x59740);
+            iVar += CHARACTER_STRIDE;
+        } while (iVar < 400 * CHARACTER_STRIDE);
     }
 }
 

@@ -1,6 +1,8 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "UI/BuffBar.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -36,6 +38,7 @@ void CNetwork::ResetCharacterData()
     gMoveList.Clear();
     ItemServerValue_ResetSession();
     gEventTimer.Close(); // El calendario pertenece a la misma conexión.
+    gBuffBar.Clear();
 }
 
 void CNetwork::ResetSessionData()
@@ -69,7 +72,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
     // viejo. Si procesamos ese evento tardío como si fuera del socket
     // actual, cerramos la sesión nueva inmediatamente.
     extern int  __fastcall CWsctlc_nRecv(void* ctx);
-    extern int  __fastcall CWsctlc_FDWriteSend(int  ctx);
+    extern int  __fastcall CWsctlc_FDWriteSend(uintptr_t ctx);
     extern void Net_ProcessPacket(void);
     if (evt & 0x01) { // FD_READ
         CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
@@ -83,7 +86,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             Net_ProcessPacket();
     }
     if (evt & 0x02) { // FD_WRITE
-        CWsctlc_FDWriteSend((int)(uintptr_t)SocketClient);
+        CWsctlc_FDWriteSend(reinterpret_cast<uintptr_t>(SocketClient));
         // La conexión no-bloqueante completa suele señalizarse con el primer
         // FD_WRITE (el mask WSAAsyncSelect es 0x23, sin FD_CONNECT), así que el
         // pedido de lista al ConnectServer también sale de acá.
@@ -94,6 +97,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             RequestServerList();
     }
     if (evt & 0x20) { // FD_CLOSE
+        DbgLogPublic("NET: socket cerrado por el servidor");
         // DESVIACION (DLL Reconnect.cpp): en el juego, un cierre que no pidió
         // el jugador arranca la reconexión en vez de sólo avisar.
         const bool reconnecting = !m_ConnectServerMode && gReconnect.OnConnectionLost();
@@ -115,6 +119,24 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
             SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
+        // Antes del login el servidor puede vencer la sesión por inactividad.
+        // La lista visible no significa que el socket siga vivo: liberar la
+        // espera y permitir una nueva selección sin reiniciar el cliente.
+        if (SceneFlag == 2 && !reconnecting) {
+            g_bGameServerConnected = 0;
+            CurrentProtocolState = 0;
+            DAT_083a7c14 = 0;
+            DAT_083a7c44 = 0;
+            DAT_083a7c24 = 0;
+            DAT_083a7c28 = 0;
+            ServerSelectHi = -1;
+            ServerSelectLo = -1;
+            if (m_HasConnectServer) {
+                m_ConnectServerMode = true;
+                m_ServerListRequested = false;
+                MuEmu::SetActive(false);
+            }
+        }
     }
 }
 
@@ -124,8 +146,9 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
 void CNetwork::SendLogin(const char* account, const char* password)
 {
     BYTE user[10] = {}, pass[10] = {};
-    memcpy(user, account, strnlen(account, 10));
-    memcpy(pass, password, strnlen(password, 10));
+    // Cuenta y contraseña son ASCII de 10 bytes (no cambian en 0.97.40).
+    NetText::ToServer(user, 10, account);
+    NetText::ToServer(pass, 10, password);
     static const BYTE kArgXor[3] = { 0xFC, 0xCF, 0xAB };
     BYTE pkt[64] = {0};
     pkt[0] = 0xC1;
@@ -209,13 +232,28 @@ void CNetwork::RequestServerList()
 // binario.
 void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
-    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return;
     if (len <= 0) return;
+    // Sólo metadatos del selector; nunca registrar credenciales ni paquetes de login.
+    if (len >= 4) {
+        char trace[96];
+        Platform::TextFormat(trace, "NET: ConnectServer F4/%02X code=%u", data[3],
+            len >= 6 ? (unsigned)(data[4] | (data[5] << 8)) : 0);
+        DbgLogPublic(trace);
+    }
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) {
+        // El ConnectServer limita la sesión a cinco minutos. Reconectar sólo
+        // al pedir una lista o elegir canal; no mantener conexiones de fondo.
+        if (SceneFlag != 2 || !m_HasConnectServer || !m_ConnectServerMode) return;
+        BeginConnectServerSession();
+        MuEmu::SetActive(false);
+        extern bool CreateSocketNoExit(const char*, unsigned int);
+        if (!CreateSocketNoExit(PTR_s_connect_muonline_co_kr_005615b8, (unsigned int)g_ServerPort)) return;
+    }
     if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len <= 0x2000 - SocketClientSendBufferLength) {
             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
             SocketClientSendBufferLength += len;
-        } else Net_Disconnect((int)(uintptr_t)SocketClient);
+        } else Net_Disconnect(SocketClient);
         return;
     }
     unsigned int remain = (unsigned int)len;
@@ -228,10 +266,10 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
                     SocketClientSendBufferLength += (int)remain;
                 } else {
-                    Net_Disconnect((int)(uintptr_t)SocketClient);
+                    Net_Disconnect(SocketClient);
                 }
             } else {
-                Net_Disconnect((int)(uintptr_t)SocketClient);
+                Net_Disconnect(SocketClient);
             }
             return;
         }
@@ -265,7 +303,7 @@ int CNetwork::SendRaw(const char* buf, int len)
 
     if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len > 0x2000 - SocketClientSendBufferLength) {
-            Net_Disconnect((int)(uintptr_t)SocketClient);
+            Net_Disconnect(SocketClient);
             return -1;
         }
         memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, s_scratch, len);
@@ -286,10 +324,10 @@ int CNetwork::SendRaw(const char* buf, int len)
                            s_scratch + sent, (len - sent));
                     SocketClientSendBufferLength += (len - sent);
                 } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
+                    Net_Disconnect(SocketClient);
                 }
             } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
+                Net_Disconnect(SocketClient);
             }
             return -1;
         }
@@ -369,7 +407,7 @@ void CNetwork::SendFrameC3(const BYTE* pkt, int totalLen)
     int  total   = encLen + 2;
     buf[0] = (char)0xC3;
     buf[1] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 2), plain + 1, bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 2), plain + 1, bodyLen);
     SendRaw(buf, total);
 }
 
@@ -447,6 +485,6 @@ void CNetwork::SendLarge(const BYTE* pkt, int totalLen)
     buf[0] = (char)0xC4;
     buf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
     buf[2] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
     SendRaw(buf, total);
 }

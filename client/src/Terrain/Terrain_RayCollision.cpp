@@ -72,7 +72,7 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
     }
 
     if ( !Collision_PointInPolygon(Targeta, Positiona, Normala, Polygon,
-                       (int)v1, (int)v2, (int)v3, (int)v4, v18, v19) )
+                       v1, v2, v3, v4, v18, v19) )
         return 0;
 
     if ( Collision ) {

@@ -23,8 +23,8 @@ void Sprite_ReplayStep();
 void Fauna_TickSprites();
 void EffectPool_TickRenderState();
 
-void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
-extern "C" void HeroEquipWatchdog(int entity);
+void DivineSkirt_Tick(const OBJECT* entity, int modelType, const PART_t* part, void *model);
+extern "C" void HeroEquipWatchdog(CHARACTER* entity);
 
 namespace {
 struct CameraPose {
@@ -72,12 +72,12 @@ void PrepareCamera() {
         // DESVIACION: cámara y suavizado avanzan una vez por paso de 40 ms.
         MoveMainCamera();
         float origin[3] = {};
-        if (DAT_07abf5d8) memcpy(origin, AsObject((int)DAT_07abf5d8)->Position, sizeof(origin));
-        const int width = GetScreenWidth();
+        if (DAT_07abf5d8) memcpy(origin, AsObject(DAT_07abf5d8)->Position, sizeof(origin));
+        const int width = gWindow.IsWide() ? 640 : GetScreenWidth();
         GL_BeginViewport(0, 0, width, 48);
-        Camera_SetupFrustum((float)width * _DAT_0055283c, origin);
+        Camera_SetupFrustum(gWindow.ViewportFraction((int)width), origin);
         GL_EndOpenGL();
-        const bool full = CameraTopViewEnabled || gUserSettings.GetAntilag(ANTILAG_INTERFACE);
+        const bool full = CameraTopViewEnabled || gUserSettings.GetAntilag(ANTILAG_INTERFACE) || gWindow.IsWide();
         GL_BeginViewport(0, 0, width, full ? 480 : 432);
     } else if (SceneFlag == 4) {
         GL_BeginViewport(0, 0, 640, 480);
@@ -95,11 +95,11 @@ void PrepareItems() {
     if (SceneFlag != 5 || CameraTopViewEnabled) return;
     BYTE *items = (BYTE *)DAT_07e12840;
     for (int slot = 0; slot < 1000; ++slot) {
-        BYTE *base = items + slot * 0x204;
+        BYTE *base = items + slot * GROUND_ITEM_STRIDE;
         if (!base[72]) continue;
         OBJECT &o = *(OBJECT *)(base + 72);
         const char visible = (char)Frustum_TestSphere(o.Position, 400.0f);
-        base[424] = visible;
+        base[72 + EntityOffset(0x160)] = visible;
         if (!visible) continue;
         int type = o.Type;
         if (type >= 624 && type < 784) type = 390;
@@ -109,7 +109,7 @@ void PrepareItems() {
             else if (variant == 2) type = 948;
         }
         if (type < 0 || type >= 1200) continue;
-        LooseWingVisuals_TickGround((int)&o);
+        LooseWingVisuals_TickGround((intptr_t)&o);
         MaterialVisuals_PrepareObject(&o,o.Type,false,o.Alpha>_DAT_005524f8 && !*((BYTE *)&o+140));
         float point[3] = { o.Position[0], o.Position[1], o.Position[2] + _DAT_0055284c };
         int x, y;
@@ -121,36 +121,36 @@ void PrepareItems() {
 
 void PrepareCharacter(CHARACTER &c) {
     OBJECT &o = c.Object;
-    void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
     if (*(short *)((char *)model + 0x26) == 0) return;
     // DESVIACION: la sincronización del equipo puede cambiar piezas/acción y
     // liberar tela. Debe preceder a su pose SIM y no ejecutarse desde el draw.
     if (SceneFlag == 5 && (void *)&c == (void *)DAT_07abf5d8) {
-        HeroEquipWatchdog((int)&c);
-        model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+        HeroEquipWatchdog(&c);
+        model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
     }
-    char context[0xbc];
+    char context[sizeof(BMD)];
     memcpy(context, model, sizeof(context));
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
-    ObjectPose_PrepareSimulation((int)&c, 1);
-    ObjectPose_TickMeshEvents((int)&c, model,
+    ObjectPose_PrepareSimulation(AsObject(&c), 1);
+    ObjectPose_TickMeshEvents(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MoltSilhouette_Tick((int)&c, model,
+    MoltSilhouette_Tick(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MaterialVisuals_TickObjectDraw((int)&c);
-    CharacterCloth_Tick((int)&c);
+    MaterialVisuals_TickObjectDraw(&o);
+    CharacterCloth_Tick(&c);
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
     const int highlighted = !hero && (slot == SelectedCharacter || slot == SelectedNpc);
     CharacterEffectScratch effects;
-    Equipment_BeginCharacter((int)&c);
+    Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_EarlyStage);
-    CharacterEffects_TickEarly((int)&c, effects);
+    CharacterEffects_TickEarly((intptr_t)&c, effects);
     Equipment_EndCharacter();
-    Equipment_Tick((int)&c, highlighted);
-    Equipment_BeginCharacter((int)&c);
+    Equipment_Tick((intptr_t)&c, highlighted);
+    Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_LateStage);
-    CharacterEffects_TickLate((int)&c, effects);
+    CharacterEffects_TickLate((intptr_t)&c, effects);
     Equipment_EndCharacter();
     memcpy(model, context, sizeof(context));
     const bool subtypeNpc = o.Type == 390 && o.SubType >= 206 && o.SubType <= 208;
@@ -160,11 +160,11 @@ void PrepareCharacter(CHARACTER &c) {
             if (piece.Type == -1) continue;
             const int type = gContentCatalog.EntityDrawModel(&c, piece.Type);
             if (type != 707 || o.Alpha <= _DAT_005524f8) continue;
-            void *pants = (void *)(DAT_05828d58 + type * 0xbc);
+            void *pants = (void *)(DAT_05828d58 + type * BMD_STRIDE);
             memcpy(context, pants, sizeof(context));
-            *(float *)((char *)pants + 0x68) = o.Scale;
-            memcpy((char *)pants + 0x6c, o.Position, sizeof(o.Position));
-            DivineSkirt_Tick((int)&c, type, (int)&piece, pants);
+            *(float *)((char *)pants + 0x68 + BMD_FIELD_SHIFT) = o.Scale;
+            memcpy((char *)pants + 0x6c + BMD_FIELD_SHIFT, o.Position, sizeof(o.Position));
+            DivineSkirt_Tick(&c.Object, type, &piece, pants);
             memcpy(pants, context, sizeof(context));
         }
     }
@@ -258,7 +258,8 @@ void Simulation_RestorePickingCamera()
 
 void Simulation_BeginRender()
 {
-    RenderDerivedState_Begin();
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Capture);
+      RenderDerivedState_Begin(); }
     MaterialVisuals_BeginRender();
     LooseWingVisuals_BeginRender();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
@@ -267,15 +268,17 @@ void Simulation_BeginRender()
     Simulation_RestorePickingCamera();
     if (camera.valid && camera.scene == SceneFlag && camera.world == gMapManager.GetCurrentMap())
         ApplyPose(camera);
-    RenderInterpolation_Begin(TimeRemain);
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Apply);
+      RenderInterpolation_Begin(TimeRemain); }
     Sprite_ReplayStep();
 }
 
 void Simulation_EndRender()
 {
     LooseWingVisuals_EndRender();
-    RenderInterpolation_End();
-    RenderDerivedState_End();
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Restore);
+      RenderInterpolation_End();
+      RenderDerivedState_End(); }
     ApplyPose(renderCamera);
     Simulation_RestorePickingCamera();
 }

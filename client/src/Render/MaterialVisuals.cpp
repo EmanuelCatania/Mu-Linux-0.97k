@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/LooseWingVisuals.h"
 #include "Item/ContentCatalog.h"
@@ -51,9 +52,9 @@ void MaterialVisuals_PrepareObject(const void *owner, int model, bool attributes
     if (!RandomMaterial(model)) return;
     MaterialVisuals_Prepare(objects[owner].sample, model, attributes, draw);
 }
-void MaterialVisuals_PrepareWeaponObject(int entity, int model) {
-    OBJECT &o=*AsObject(entity);
-    auto &sample=objects[(void *)entity].sample;
+void MaterialVisuals_PrepareWeaponObject(OBJECT* entity, int model) {
+    OBJECT &o=*entity;
+    auto &sample=objects[entity].sample;
     const float alpha=o.Alpha;
     const BYTE action=o.CurrentAction;
     MaterialVisuals_Prepare(sample,model,true,alpha>_DAT_005524f8);
@@ -68,8 +69,8 @@ void MaterialVisuals_PrepareWeaponObject(int entity, int model) {
     o.Type=type;
     if (type==244) *(DWORD *)&o.Gravity=gravity;
 }
-void MaterialVisuals_TickObjectDraw(int entity) {
-    const OBJECT &o=*AsObject(entity);
+void MaterialVisuals_TickObjectDraw(const OBJECT* entity) {
+    const OBJECT &o=*entity;
     if (gMapManager.GetCurrentMap()!=4 || o.Alpha<_DAT_005524f8 ||
         o.RenderType==0x80 || (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
     if (o.Type==23 || o.Type==19 || o.Type==20 || o.Type==3 || o.Type==4)
@@ -80,9 +81,9 @@ void MaterialVisuals_PrepareUiItem(int itemType, int level) {
     const int model=ItemMaterials_ResolvePreviewModel(itemType,level,&drawLevel);
     if (wingPlanning ? model!=790 : !RandomMaterial(model)) return;
     if (!DAT_05828d58) return;
-    const char *bmd=(const char *)DAT_05828d58+model*0xbc;
+    const char *bmd=(const char *)DAT_05828d58+model* BMD_STRIDE;
     const short meshes=*(const short *)(bmd+0x24);
-    const auto meshBase=*(const unsigned int *)(bmd+0x28);
+    const auto meshBase=(uintptr_t)((BMD*)(uintptr_t)(bmd))->Meshs;
     // El mismo guard de RenderItem3D, antes de crear su objeto local.
     if (meshes<=0 || meshes>1000 || meshBase<0x100000) return;
     if (model==790) { LooseWingVisuals_ExpectPreview((unsigned int)drawLevel); return; }

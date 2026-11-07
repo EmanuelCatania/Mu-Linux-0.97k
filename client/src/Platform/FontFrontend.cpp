@@ -1,6 +1,7 @@
 // Font.cpp — CFont. Ver Font.h.
 
 #include "stdafx.h"
+#include "Render/GlyphAtlas.h"
 #include <algorithm>
 #ifndef _WIN32
 #include <strings.h>
@@ -8,10 +9,17 @@
 #endif
 #include "Core/Font.h"
 #include "Config/UserSettings.h"
+#include "Text/TextCore.h"
 #ifdef MU_SDL_FONTS
 #include "Platform/SDL3/SDLFont.h"
+#include "Text/TextCore.h"
+#include "Text/TextShaper.h"
+#include "Text/TextAtlas.h"
 #include <stdexcept>
-namespace { Platform::SDLFont portableFonts[MAX_FONT_TYPES]; }
+namespace {
+Platform::SDLFont portableFonts[MAX_FONT_TYPES];
+TextEngine::FontStack portableStacks[MAX_FONT_TYPES];
+}
 #endif
 
 CFont gFont;
@@ -216,6 +224,10 @@ void CFont::CreatePortableFonts(DWORD windowWidth)
     ++m_Generation;
 #ifdef MU_SDL_FONTS
     const auto& cfg = gUserSettings.GetFont();
+    // DESVIACION (Fase 4): FontQuality con suavizado (cualquiera menos
+    // NONANTIALIASED, que es el default del DLL) rasteriza en grises.
+    Platform::SDLFont::SetAntialias(cfg.present && cfg.quality != NONANTIALIASED_QUALITY);
+    TextEngine::SetColorEmoji(gUserSettings.GetColorEmoji());
     for (int i = 0; i < MAX_FONT_TYPES; ++i) {
         const int height = i == FONT_BIG ? (cfg.present ? m_Height * 2 : (m_Height - 1) * 2) : m_Height;
         std::string error;
@@ -223,7 +235,10 @@ void CFont::CreatePortableFonts(DWORD windowWidth)
             i != FONT_NORMAL || (cfg.present && cfg.bold), cfg.present && cfg.italic, height,
             cfg.present ? cfg.width : 0, cfg.present && cfg.underline, cfg.present && cfg.strikeOut, error))
             throw std::runtime_error(error);
+        portableStacks[i].Reset(&portableFonts[i], height, i != FONT_NORMAL || (cfg.present && cfg.bold));
     }
+    // Las entradas del atlas apuntan a las caras anteriores.
+    TextAtlas::Release();
 #endif
     (void)windowWidth;
 }
@@ -235,21 +250,32 @@ int CFont::SelectedFont(HDC dc) const
     return FONT_NORMAL;
 }
 
+const TextEngine::ShapedText* CFont::Shape(HDC dc, LPCSTR text, int count)
+{
+#ifdef MU_SDL_FONTS
+    if (!text || count < 0) return nullptr;
+    // El texto del cliente está en UTF-8 (Fase 4); lo arma el layout.
+    return &portableStacks[SelectedFont(dc)].Shape(std::string_view(text, size_t(count)));
+#else
+    (void)dc; (void)text; (void)count;
+    return nullptr;
+#endif
+}
+
 BOOL CFont::MeasureText(HDC dc, LPCSTR text, int count, SIZE* size)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
 #ifdef MU_SDL_FONTS
     if (!size || count < 0 || (!text && count)) return FALSE;
     *size = {};
     if (!count) return TRUE;
-    auto& font = portableFonts[SelectedFont(dc)];
-    std::vector<uint32_t> unicode;
-    unicode.reserve(count);
-    for (int i = 0; i < count; ++i) unicode.push_back(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(text[i])));
-    size->cx = font.Measure(unicode.data(), unicode.size());
-    size->cy = font.Metrics().height;
+    size->cx = Shape(dc, text, count)->width;
+    size->cy = portableFonts[SelectedFont(dc)].Metrics().height;
     return TRUE;
 #else
-    return GetTextExtentPointA(dc, text, count, size);
+    // DESVIACION (Fase 4): el texto está en UTF-8; GDI ANSI recibe 1252.
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return GetTextExtentPointA(dc, legacy.c_str(), (int)legacy.size(), size);
 #endif
 }
 BOOL CFont::MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size)
@@ -257,7 +283,9 @@ BOOL CFont::MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size)
 #ifdef MU_SDL_FONTS
     return MeasureText(dc, text, count, size);
 #else
-    return GetTextExtentPoint32A(dc, text, count, size);
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return GetTextExtentPoint32A(dc, legacy.c_str(), (int)legacy.size(), size);
 #endif
 }
 BOOL CFont::TextMetrics(HDC dc, TEXTMETRICA* metrics)
@@ -283,24 +311,28 @@ void CFont::SetMaskColor(DWORD color)
 }
 void CFont::BeginTextMask()
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
     std::fill(m_Mask.begin(), m_Mask.end(), 0);
 #endif
 }
 BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
     if (!m_pTextBits || !text || count < 0) return FALSE;
     auto& font = portableFonts[SelectedFont(dc)];
     const int baseline = y + font.Metrics().ascent;
     const int stride = (m_SurfaceWidth * 3 + 3) & ~3;
-    for (int i = 0; i < count; ++i) {
-        const auto& glyph = font.Glyph(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(text[i])));
+    const TextEngine::ShapedText* shaped = count ? Shape(dc, text, count) : nullptr;
+    for (size_t i = 0; shaped && i < shaped->glyphs.size(); ++i) {
+        const auto& placed = shaped->glyphs[i];
+        const auto& glyph = placed.font->GlyphIndex(placed.glyph);
         for (int row = 0; row < glyph.height; ++row) {
-            const int dy = baseline - glyph.top + row;
+            const int dy = baseline - placed.y - glyph.top + row;
             if (dy < 0 || dy >= m_SurfaceHeight) continue;
             for (int col = 0; col < glyph.width; ++col) {
-                const int dx = x + glyph.left + col;
+                const int dx = x + placed.x + glyph.left + col;
                 if (dx < 0 || dx >= m_SurfaceWidth || !glyph.coverage[size_t(row) * glyph.width + col]) continue;
                 auto* pixel = static_cast<unsigned char*>(m_pTextBits) + dy * stride + dx * 3;
                 pixel[0] = (m_MaskColor >> 16) & 255;
@@ -308,39 +340,53 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
                 pixel[2] = m_MaskColor & 255;
             }
         }
-        x += glyph.advance;
     }
     return TRUE;
 #else
-    return TextOutA(dc, x, y, text, count);
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return TextOutA(dc, x, y, legacy.c_str(), (int)legacy.size());
 #endif
 }
-BOOL CFont::BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base)
+BOOL CFont::BuildGlyphs(HDC dc, unsigned first, unsigned count, GlyphAtlas::Bitmap* out)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
-    auto& font = portableFonts[SelectedFont(dc)];
-    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_UNPACK_LSB_FIRST, GL_FALSE);
-    for (unsigned i = 0; i < count; ++i) {
-        const auto& glyph = font.Glyph(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(first + i)));
-        const int stride = (glyph.width + 7) / 8;
-        std::vector<unsigned char> bitmap(size_t(stride) * glyph.height, 0);
-        for (int y = 0; y < glyph.height; ++y)
-            for (int x = 0; x < glyph.width; ++x)
-                if (glyph.coverage[size_t(y) * glyph.width + x])
-                    bitmap[size_t(glyph.height - 1 - y) * stride + x / 8] |= 0x80 >> (x % 8);
-        glNewList(base + i, GL_COMPILE);
-        glBitmap(glyph.width, glyph.height, GLfloat(-glyph.left), GLfloat(glyph.height - glyph.top),
-                 GLfloat(glyph.advance), 0, bitmap.empty() ? nullptr : bitmap.data());
-        glEndList();
-    }
-    glPopClientAttrib();
-    return TRUE;
+    (void)dc; (void)first; (void)count; (void)out;
+    return FALSE;
 #else
-    return wglUseFontBitmapsA(dc, first, count, base);
+    // Mismos datos que wglUseFontBitmaps le pasa a glBitmap: caja negra,
+    // origen del glifo y avance de celda; filas de arriba hacia abajo,
+    // alineadas a 32 bits, que se invierten para la máscara.
+    static const MAT2 identity = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
+    std::vector<unsigned char> bits;
+    for (unsigned i = 0; i < count; ++i) {
+        GlyphAtlas::Bitmap& glyph = out[i];
+        glyph = GlyphAtlas::Bitmap();
+        GLYPHMETRICS gm = {};
+        const DWORD size = GetGlyphOutlineA(dc, first + i, GGO_BITMAP, &gm, 0, nullptr, &identity);
+        if (size == GDI_ERROR) {
+            INT advance = 0;
+            if (GetCharWidth32A(dc, first + i, first + i, &advance)) glyph.advanceX = float(advance);
+            continue;
+        }
+        glyph.advanceX = float(gm.gmCellIncX);
+        glyph.advanceY = float(gm.gmCellIncY);
+        if (!size) continue;
+        bits.assign(size, 0);
+        if (GetGlyphOutlineA(dc, first + i, GGO_BITMAP, &gm, size, bits.data(), &identity) == GDI_ERROR) continue;
+        const int width = int(gm.gmBlackBoxX), height = int(gm.gmBlackBoxY);
+        const int stride = ((width + 31) / 32) * 4;
+        if (width <= 0 || height <= 0 || size_t(stride) * height > bits.size()) continue;
+        glyph.left = gm.gmptGlyphOrigin.x;
+        glyph.bottom = gm.gmptGlyphOrigin.y - height;
+        glyph.width = width;
+        glyph.height = height;
+        glyph.coverage.assign(size_t(width) * height, 0);
+        for (int y = 0; y < height; ++y)
+            for (int x = 0; x < width; ++x)
+                if (bits[size_t(y) * stride + x / 8] & (0x80 >> (x % 8)))
+                    glyph.coverage[size_t(height - 1 - y) * width + x] = 255;
+    }
+    return TRUE;
 #endif
 }

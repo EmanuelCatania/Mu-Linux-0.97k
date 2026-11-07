@@ -4,6 +4,7 @@
 #include "Game/RenderSnapshots.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
+#include "Game/RenderDerivedState.h"
 #include <algorithm>
 
 namespace {
@@ -53,10 +54,10 @@ bool Near(const RenderFxView &view, int offset) {
 void ApplyFx() {
     struct Source { void *base; int stride; };
     const Source sources[]={
-        {DAT_07b11670,0x1bc},{DAT_07b27150,0x9d8},{DAT_07abf5f0,0x70},
-        {DAT_07c5ab3c,0x70},{g_WeatherSlotPool,0x1bc},{DAT_083a1218,0x1bc},
-        {DAT_083a2e90,0x1bc},{g_RenderPool_07c608a8,0x2f0},
-        {g_PlayerRenderPool,0x1bc},{g_PointerPool,0x70}
+        {DAT_07b11670,OBJECT_STRIDE},{DAT_07b27150,JOINT_STRIDE},{DAT_07abf5f0,0x70},
+        {DAT_07c5ab3c,0x70},{g_WeatherSlotPool,OBJECT_STRIDE},{DAT_083a1218,OBJECT_STRIDE},
+        {DAT_083a2e90,OBJECT_STRIDE},{g_RenderPool_07c608a8,0x2f0},
+        {g_PlayerRenderPool,OBJECT_STRIDE},{g_PointerPool,0x70}
     };
     static_assert(sizeof(sources)/sizeof(sources[0])==(int)RenderFxPool::Count,"Pools interpolados");
     for (int domain=0;domain<(int)RenderFxPool::Count;++domain) {
@@ -70,20 +71,23 @@ void ApplyFx() {
                 RenderPosePair pair{Pose(view.previous),Pose(view.current),true};
                 OBJECT current; memcpy(&current,view.current,sizeof(current));
                 OBJECT previous; memcpy(&previous,view.previous,sizeof(previous));
-                pair.continuous=!current.Teleport && !previous.Teleport && Near(pair.previous.position,pair.current.position);
+                pair.continuous=current.Teleport==previous.Teleport && current.Teleport!=1 && current.Teleport!=2 &&
+                    Near(pair.previous.position,pair.current.position);
                 ApplyObject(*(OBJECT *)out,pair);
             } else if (pool==RenderFxPool::Joints) {
-                if (!Near(view,0x10) || !Near(view,0x44)) continue;
-                const int previousCount=Load<int>(view.previous,0x50),count=Load<int>(view.current,0x50);
+                const int targetOffset=(int)offsetof(JOINT,TargetPosition),countOffset=(int)offsetof(JOINT,NumTails);
+                const int maxOffset=(int)offsetof(JOINT,MaxTails),tailsOffset=(int)offsetof(JOINT,Tails);
+                if (!Near(view,0x10) || !Near(view,targetOffset)) continue;
+                const int previousCount=Load<int>(view.previous,countOffset),count=Load<int>(view.current,countOffset);
                 if (previousCount<0 || count<0 || previousCount>=MAX_JOINT_TAILS || count>=MAX_JOINT_TAILS ||
-                    Load<int>(view.previous,0x54)!=Load<int>(view.current,0x54)) continue;
-                BlendVector(out,view,0x10); BlendVector(out,view,0x28,true); BlendVector(out,view,0x44);
+                    Load<int>(view.previous,maxOffset)!=Load<int>(view.current,maxOffset)) continue;
+                BlendVector(out,view,0x10); BlendVector(out,view,0x28,true); BlendVector(out,view,targetOffset);
                 BlendVector(out,view,0x34); BlendField(out,view,0x0c);
                 // La cola nueva nace colapsada en el último extremo previo;
                 // NumTails/MaxTails y lifetime conservan siempre su valor SIM.
                 for (int row=0;row<=count;++row) for (int component=0;component<12;++component) {
-                    const int oldOffset=0x58+(std::min)(row,previousCount)*48+component*4;
-                    const int offset=0x58+row*48+component*4;
+                    const int oldOffset=tailsOffset+(std::min)(row,previousCount)*48+component*4;
+                    const int offset=tailsOffset+row*48+component*4;
                     const float value=RenderBlend(Load<float>(view.previous,oldOffset),Load<float>(view.current,offset),fraction);
                     memcpy(out+offset,&value,4);
                 }
@@ -120,8 +124,8 @@ bool RenderInterpolation_OwnerContinuous(const void *owner) {
     if (slot>=0) return RenderSnapshots_Character(slot,RenderInterpolation_MaxDisplacement,pair) && pair.continuous;
     if (SceneObjects::Contains(owner)) return RenderSnapshots_Object(owner,RenderInterpolation_MaxDisplacement,pair) && pair.continuous;
     const uintptr_t itemOffset=(uintptr_t)owner-((uintptr_t)DAT_07e12840+72);
-    if (DAT_07e12840 && itemOffset<1000*0x204 && itemOffset%0x204==0)
-        return RenderSnapshots_Item((int)(itemOffset/0x204),RenderInterpolation_MaxDisplacement,pair) && pair.continuous;
+    if (DAT_07e12840 && itemOffset<1000*GROUND_ITEM_STRIDE && itemOffset%GROUND_ITEM_STRIDE==0)
+        return RenderSnapshots_Item((int)(itemOffset/GROUND_ITEM_STRIDE),RenderInterpolation_MaxDisplacement,pair) && pair.continuous;
     RenderFxView view;
     return RenderFxSnapshots_Owner(owner,view) && view.bytes!=0x2f0 && view.continuous && Near(view,0x10);
 }
@@ -153,11 +157,15 @@ void RenderInterpolation_Begin(int remainder) {
     if (DAT_07e12840) for (int slot=0;slot<1000;++slot) {
         RenderPosePair pair;
         if (RenderSnapshots_Item(slot,RenderInterpolation_MaxDisplacement,pair))
-            ApplyObject(*(OBJECT *)((unsigned char *)DAT_07e12840+slot*0x204+72),pair);
+            ApplyObject(*(OBJECT *)((unsigned char *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72),pair);
     }
-    for (const void *node:SceneObjects::LiveNodes()) {
+    // DESVIACION: sólo los objetos que se movieron; en los quietos la pose
+    // interpolada es la que ya tienen. Guardarlos antes de escribir.
+    for (const void *node:RenderSnapshots_MovingObjects()) {
         RenderPosePair pair;
-        if (RenderSnapshots_Object(node,RenderInterpolation_MaxDisplacement,pair)) ApplyObject(*(OBJECT *)node,pair);
+        if (!RenderSnapshots_Object(node,RenderInterpolation_MaxDisplacement,pair)) continue;
+        RenderDerivedState_SaveObject((void *)node);
+        ApplyObject(*(OBJECT *)node,pair);
     }
     ApplyFx();
 }
@@ -172,8 +180,8 @@ bool RenderInterpolation_OwnerOffset(const void *owner, float *offset) {
     else if (SceneObjects::Contains(owner)) pose=RenderSnapshots_Object(owner,RenderInterpolation_MaxDisplacement,pair);
     else {
         const uintptr_t itemOffset=(uintptr_t)owner-((uintptr_t)DAT_07e12840+72);
-        if (DAT_07e12840 && itemOffset<1000*0x204 && itemOffset%0x204==0)
-            pose=RenderSnapshots_Item((int)(itemOffset/0x204),RenderInterpolation_MaxDisplacement,pair);
+        if (DAT_07e12840 && itemOffset<1000*GROUND_ITEM_STRIDE && itemOffset%GROUND_ITEM_STRIDE==0)
+            pose=RenderSnapshots_Item((int)(itemOffset/GROUND_ITEM_STRIDE),RenderInterpolation_MaxDisplacement,pair);
     }
     if (!pose) {
         RenderFxView view;

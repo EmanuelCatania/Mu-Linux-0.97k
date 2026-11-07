@@ -8,5 +8,5 @@ struct CharacterEffectScratch {
 };
 constexpr int CharacterEffects_EarlyStage = 3;
 constexpr int CharacterEffects_LateStage = 4;
-void CharacterEffects_TickEarly(int entity, CharacterEffectScratch &scratch);
-void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch);
+void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch);
+void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch);

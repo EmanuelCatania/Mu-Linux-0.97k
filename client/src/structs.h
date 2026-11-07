@@ -1,5 +1,6 @@
 #pragma once
 #include "Item/ItemDefines.h"
+#include "Item/ItemTypes.h"
 #include <cstdint>
 #include <cstddef>
 // structs.h — Game type definitions for Mu Online 0.97k reconstruction.
@@ -217,64 +218,6 @@ enum eTextAligns
 
 // ── Game Structs ──────────────────────────────────────────────────────────────
 
-struct ITEM  // size = 68
-{
-    /*+00*/ short  Type;
-    /*+04*/ int    Level;
-    /*+08*/ BYTE   Part;
-    /*+09*/ BYTE   Class;
-    /*+10*/ BYTE   TwoHand;
-    /*+12*/ WORD   DamageMin;
-    /*+14*/ WORD   DamageMax;
-    /*+16*/ BYTE   SuccessfulBlocking;
-    /*+18*/ WORD   Defense;
-    /*+20*/ WORD   MagicDefense;
-    /*+22*/ BYTE   WeaponSpeed;
-    /*+24*/ WORD   WalkSpeed;
-    /*+26*/ BYTE   Durability;
-    /*+27*/ BYTE   Option1;
-    /*+28*/ WORD   RequireStrength;
-    /*+30*/ WORD   RequireDexterity;
-    /*+32*/ WORD   RequireEnergy;
-    /*+34*/ WORD   RequireLevel;
-    /*+36*/ BYTE   SpecialNum;
-    /*+37*/ BYTE   Special[MAX_SPECIAL_OPTION];
-    /*+46*/ BYTE   SpecialValue[MAX_SPECIAL_OPTION];
-    /*+56*/ DWORD  Key;
-    /*+60*/ BYTE   Unknown;
-    /*+61*/ BYTE   byColorState;
-    /*+62*/ BYTE   x;
-    /*+63*/ BYTE   y;
-    /*+64*/ BYTE   Color;
-};
-static_assert(sizeof(ITEM) == 68, "ITEM");
-static_assert(offsetof(ITEM, Type) == 0, "ITEM::Type");
-static_assert(offsetof(ITEM, Level) == 4, "ITEM::Level");
-static_assert(offsetof(ITEM, Part) == 8, "ITEM::Part");
-static_assert(offsetof(ITEM, Class) == 9, "ITEM::Class");
-static_assert(offsetof(ITEM, TwoHand) == 10, "ITEM::TwoHand");
-static_assert(offsetof(ITEM, DamageMin) == 12, "ITEM::DamageMin");
-static_assert(offsetof(ITEM, DamageMax) == 14, "ITEM::DamageMax");
-static_assert(offsetof(ITEM, SuccessfulBlocking) == 16, "ITEM::SuccessfulBlocking");
-static_assert(offsetof(ITEM, Defense) == 18, "ITEM::Defense");
-static_assert(offsetof(ITEM, MagicDefense) == 20, "ITEM::MagicDefense");
-static_assert(offsetof(ITEM, WeaponSpeed) == 22, "ITEM::WeaponSpeed");
-static_assert(offsetof(ITEM, WalkSpeed) == 24, "ITEM::WalkSpeed");
-static_assert(offsetof(ITEM, Durability) == 26, "ITEM::Durability");
-static_assert(offsetof(ITEM, Option1) == 27, "ITEM::Option1");
-static_assert(offsetof(ITEM, RequireStrength) == 28, "ITEM::RequireStrength");
-static_assert(offsetof(ITEM, RequireDexterity) == 30, "ITEM::RequireDexterity");
-static_assert(offsetof(ITEM, RequireEnergy) == 32, "ITEM::RequireEnergy");
-static_assert(offsetof(ITEM, RequireLevel) == 34, "ITEM::RequireLevel");
-static_assert(offsetof(ITEM, SpecialNum) == 36, "ITEM::SpecialNum");
-static_assert(offsetof(ITEM, Special) == 37, "ITEM::Special");
-static_assert(offsetof(ITEM, SpecialValue) == 46, "ITEM::SpecialValue");
-static_assert(offsetof(ITEM, Key) == 56, "ITEM::Key");
-static_assert(offsetof(ITEM, Unknown) == 60, "ITEM::Unknown");
-static_assert(offsetof(ITEM, byColorState) == 61, "ITEM::byColorState");
-static_assert(offsetof(ITEM, x) == 62, "ITEM::x");
-static_assert(offsetof(ITEM, y) == 63, "ITEM::y");
-static_assert(offsetof(ITEM, Color) == 64, "ITEM::Color");
 // Acceso tipado a un item que el código heredado guarda como entero o puntero a byte.
 inline ITEM* AsItem(uintptr_t p) { return reinterpret_cast<ITEM*>(p); }
 inline ITEM* AsItem(void* p) { return static_cast<ITEM*>(p); }
@@ -289,9 +232,11 @@ struct ITEM_t {
     ITEM   Item;         // 0x004
     OBJECT Object;       // 0x048
 };
+#if UINTPTR_MAX == 0xFFFFFFFFu
 static_assert(sizeof(ITEM_t) == 0x204, "ITEM_t");
 static_assert(offsetof(ITEM_t, Item) == 0x004, "ITEM_t::Item");
 static_assert(offsetof(ITEM_t, Object) == 0x048, "ITEM_t::Object");
+#endif
 inline ITEM_t* AsGroundItem(uintptr_t p) { return reinterpret_cast<ITEM_t*>(p); }
 inline ITEM_t* AsGroundItem(void* p) { return static_cast<ITEM_t*>(p); }
 inline const ITEM_t* AsGroundItem(const void* p) { return static_cast<const ITEM_t*>(p); }
@@ -372,10 +317,12 @@ struct BITMAP_t
     float  Width;
     float  Height;
     char   Components;
-    GLuint TextureNumber;
+    unsigned int TextureNumber;
     BYTE   Ref;
     BYTE  *Buffer;
 };
+
+static_assert(sizeof(BITMAP_t) == (sizeof(void*) == 4 ? 0x38 : 0x40), "BITMAP_t");
 
 struct MONSTER_ATTRIBUTE
 {
@@ -485,7 +432,7 @@ struct SERVER_LIST_t
 #define BoneTransform       ((float(*)[3][4])&DAT_06970a9c)
 // g_BitmapsRaw es el array real (stride 0x38). DAT_083a7ca0 es sólo el PRIMER DWORD
 // del slot[0], no el puntero — por eso indexamos sobre la dirección de g_BitmapsRaw.
-extern char g_BitmapsRaw[];
+extern char* g_BitmapsRaw;
 #define Bitmaps             ((BITMAP_t*)&g_BitmapsRaw[0])
 
 // ── Companion-project aliases (IDA decompile compatibility) ──────────────────

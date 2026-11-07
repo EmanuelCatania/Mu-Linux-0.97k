@@ -7,6 +7,43 @@
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 
 #include "stdafx.h"
+#include "Render/MeshDraw.h"
+#include <vector>
+#include <algorithm>
+
+namespace {
+bool selectBackdropWide = false;
+std::vector<int> selectBackdropTextures;
+
+const char* SelectBackdropPath()
+{
+  return gWindow.IsWide() ? "Data\\Logo\\Wide\\" : s_Data_Logo__005606a0;
+}
+}
+
+void Scene_RefreshCharSelectBackdrop()
+{
+  if (selectBackdropWide == gWindow.IsWide()) return;
+  BMD* model = AsModel(DAT_05828d58) + 0xa4;
+  // Mantener las texturas de ambas variantes durante esta escena. El modelo
+  // comparte texturas con otras mallas y puede alternar repetidas veces.
+  const int count = model->NumMeshs;
+  const short* textures = model->IndexTexture;
+  for (int i = 0; i < count; ++i) {
+    const int id = textures[i];
+    if (std::find(selectBackdropTextures.begin(), selectBackdropTextures.end(), id)
+        == selectBackdropTextures.end()) {
+      ++g_BitmapsRaw[id * TEXTURE_STRIDE + 0x30];
+      selectBackdropTextures.push_back(id);
+    }
+  }
+  // Las mallas residentes guardan punteros a la topología que se libera.
+  MeshDraw::Release();
+  BMD__Release(model);
+  AccessModel(0xa4,SelectBackdropPath(),(const char*)&DAT_005606ac,5);
+  OpenTexture(0xa4,s_Logo__00560698,0x2601,'\x01');
+  selectBackdropWide = gWindow.IsWide();
+}
 
 
 // OpenLogoSceneData — Scene_LoadAccountResources
@@ -63,7 +100,7 @@ void Scene_LoadAccountResources(void)
 void Scene_LoadCharSelectResources(void)
 {
   int iVar1;
-  int iVar2;
+  intptr_t iVar2;
 
   OpenTGA(s_Logo_Interface01_tga_00560a4c,0xc,0x2600,0x2900,0,'\x01');
   OpenTGA(s_Logo_Interface02_tga_00560a34,0xd,0x2600,0x2900,0,'\x01');
@@ -90,7 +127,10 @@ void Scene_LoadCharSelectResources(void)
     OpenModel(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
     OpenModel(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
   }
-  AccessModel(0xa4,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,5);
+  // El diorama clásico termina en los bordes del encuadre 4:3. La variante
+  // amplia agrega suelo y bosque lateral para el viewport real del mundo.
+  AccessModel(0xa4,SelectBackdropPath(),(const char*)&DAT_005606ac,5);
+  selectBackdropWide = gWindow.IsWide();
   iVar2 = 0xaa;
   do {
     AccessModel(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005607c0,iVar2 + -0xa9);
@@ -107,8 +147,8 @@ void Scene_LoadCharSelectResources(void)
   iVar2 = 0;
   do {
     iVar1 = iVar2 + 0xbc;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 4) = 0x3e99999a;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 0x14) = 0x3e99999a;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 0) = 0.3f;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 1) = 0.3f;
     iVar2 = iVar1;
   } while (iVar1 < 0x2f0);
   return;
@@ -148,6 +188,9 @@ void ReleaseCharacterSceneData(void)
 {
   int iVar1;
 
+  for (int texture : selectBackdropTextures) UnloadImage(texture);
+  selectBackdropTextures.clear();
+
   iVar1 = 0;
   do {
     UnloadImage(iVar1 + 0xc);
@@ -159,11 +202,8 @@ void ReleaseCharacterSceneData(void)
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
   DeleteObjects();
-  iVar1 = 0x7cd8;
-  do {
-    BMD__Release(DAT_05828d58 + iVar1);
-    iVar1 = iVar1 + 0xbc;
-  } while (iVar1 < 0x7fc8);
+  for (int slot = 0xaa; slot < 0xae; ++slot)
+    BMD__Release(AsModel(DAT_05828d58) + slot);
   ClearCharacters(-1);
   return;
 }

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Net/NetText.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
@@ -27,22 +29,23 @@ struct MoveListLayout {
 using Layout = MoveListLayout;
 bool Inside(int x, int y, int w, int h)
 {
-    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
+    x += gWindow.PanelOrigin(Ui::Move);
+    return Ui::Rect{x, y, w, h}.Contains((int)MouseX, (int)MouseY);
 }
 void Text(int x, int y, const char* text, int width)
 {
     // DLL MoveList.cpp: centrar dentro de cada columna; ancho físico para RenderText.
-    RenderText(x, y, const_cast<char*>(text),
+    RenderText(gWindow.PanelOrigin(Ui::Move) + x, y, const_cast<char*>(text),
         (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
 }
 void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 {
     EnableAlphaTest(true);
-    glColor4f(r, g, b, a);
-    GL_DrawRect((float)x, (float)y, (float)w, (float)h);
+    Gfx::Color4f(r, g, b, a);
+    GL_DrawRect((float)(gWindow.PanelOrigin(Ui::Move) + x), (float)y, (float)w, (float)h);
     GL_ResetState();
     // DLL MoveList.cpp: el texto no debe heredar el color del fondo o del hover.
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
 }
 }
 
@@ -64,6 +67,9 @@ bool CMoveList::Receive(const BYTE* packet, int size)
             if (row[n] < 32 || row[n] == 127) return false;
     }
     if (count) memcpy(m_Maps, packet + header, count * stride);
+    // DESVIACION (Fase 4, texto Unicode): nombres de mapa de 1252 a UTF-8.
+    for (int i = 0; i < count; ++i)
+        TextEngine::ConvertWindows1252InPlace(m_Maps[i].MapName, sizeof(m_Maps[i].MapName));
     m_Count = count;
     m_PKLimitFree = packet[5];
     m_Received = true;
@@ -107,9 +113,9 @@ bool CMoveList::CheckMove(const Proto::MOVE_LIST_INFO& map) const
     if (map.MinReset != -1 && m_Resets < (DWORD)map.MinReset) return false;
     if (map.MaxReset != -1 && m_Resets > (DWORD)map.MaxReset) return false;
     if (*(const DWORD*)(attr + 0x548) < map.Money) return false;
-    if (m_PKLimitFree == 0 && hero[0x2EA] >= PKLVL_OUTLAW) return false;
-    const short wing = *(const short*)(hero + 0x2A0);
-    const short helper = *(const short*)(hero + 0x2B8);
+    if (m_PKLimitFree == 0 && hero[EntityOffset(0x2EA)] >= PKLVL_OUTLAW) return false;
+    const short wing = *(const short*)&((CHARACTER*)(uintptr_t)(hero))->Wing.Type;
+    const short helper = *(const short*)&((CHARACTER*)(uintptr_t)(hero))->Helper.Type;
     const bool uniria = helper == GET_ITEM_MODEL(13, 2);
     const bool dinorant = helper == GET_ITEM_MODEL(13, 3);
     if (map.MapNumber == MAP_ATLANS && (uniria || dinorant)) return false;
@@ -213,5 +219,5 @@ void CMoveList::Render()
     gFont.SelectFont(gFont.GetTextDC(), font);
     m_dwTextColor = color;
     m_dwBackColor = back;
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
 }

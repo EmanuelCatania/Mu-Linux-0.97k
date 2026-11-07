@@ -101,27 +101,27 @@ void Entity_UpdateFacing(float* pos, float* entity_angle, float* target, float s
 //   out[0..2] += local[0..2]  (aplica la rotación al offset out)
 void Entity_ApplyRotation(float* out, float* quat, float* vec);
 
-// 0x0043e5c0  Entity_SmoothAngle(int entity)
+// 0x0043e5c0  Entity_SmoothAngle(intptr_t entity)
 //   Lee entity+0x161 (flag):
 //     0 → lerp suave: entity+0x168 += (entity+0x164 - entity+0x168) * DAT_005524f4
 //   Flag ≠ 0 → avanza/retrocede DAT_00552874 directamente (snap incremental).
 //   Clamp a [0,1] (DAT_0055256c = 1.0f).
 //   Actualiza entity+0x68 si entity+0x168 < entity+0x68.
-void Entity_SmoothAngle(int entity);
+void Entity_SmoothAngle(intptr_t entity);
 
-// 0x0043e680  Entity_SteerAvoid(int entity, int self_idx, int entity_array, int count)
+// 0x0043e680  Entity_SteerAvoid(intptr_t entity, int self_idx, intptr_t entity_array, int count)
 //   Steering de evasión: itera el array de entidades (stride 0x1BC).
 //   Para cada entidad dentro de DAT_00552850 unidades:
 //     Calcula vector de repulsión ponderado.
 //   Promedia todos los vectores de repulsión.
 //   Llama Entity_GetDirCode y Angle_ShortestLerp para actualizar entity+0x24.
-void Entity_SteerAvoid(int entity, int self_idx, int entity_array, int count);
+void Entity_SteerAvoid(intptr_t entity, int self_idx, intptr_t entity_array, int count);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FUNCIONES DE ANIMACIÓN
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 0x0043e820  Entity_SetAnimation(int entity, uint animId)
+// 0x0043e820  Entity_SetAnimation(intptr_t entity, uint animId)
 //   Valida animId:
 //     animId < animData[entity.type * 0xbc + 0x26]  (máximo del tipo)
 //     o animId == 0x4C/0x4D (excepciones fijas)
@@ -130,9 +130,9 @@ void Entity_SteerAvoid(int entity, int self_idx, int entity_array, int count);
 //     entity+0x10c = entity+0x108  (guarda timer anterior)
 //     entity+0x105 = animId
 //     entity+0x108 = 0             (reinicia timer)
-void Entity_SetAnimation(int entity, uint animId);
+void Entity_SetAnimation(intptr_t entity, uint animId);
 
-// 0x0043e890  Entity_FaceTarget(int entity, int target)
+// 0x0043e890  Entity_FaceTarget(intptr_t entity, int target)
 //   Si target != 0:
 //     Entity_GetDirCode(entity.pos, target.pos) → dirCode
 //     Angle_Delta(entity.angle, dirCode, 1) → delta
@@ -141,9 +141,9 @@ void Entity_SetAnimation(int entity, uint animId);
 //       entity+0x38 = (target.z - entity.z - 0.5) * sin_factor  (jitter Y / elevación)
 //       Normaliza ambos a [0, 360)
 //     Si delta >= umbral: reset jitter a (0, 0).
-void Entity_FaceTarget(int entity, int target);
+void Entity_FaceTarget(intptr_t entity, int target);
 
-// 0x0043e940  Entity_AnimTick(int entity)
+// 0x0043e940  Entity_AnimTick(intptr_t entity)
 //   Máquina de estados de animación por frame.
 //   Lee entity+0x105 (anim_state):
 //     0x06 (muerte): no avanzar animación.
@@ -152,13 +152,13 @@ void Entity_FaceTarget(int entity, int target);
 //                        Entity_FaceTarget(entity, target_entity)
 //     Otros: reset entity+0x34=0, entity+0x38=0.
 //   Nota: el avance real de frames de animación está en BMD_Animation (AnimTimer_Tick).
-void Entity_AnimTick(int entity);
+void Entity_AnimTick(intptr_t entity);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOVIMIENTO POR WAYPOINTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 0x0043ea20  Entity_MoveAlongPath(int entity, char update_angle) → int
+// 0x0043ea20  Entity_MoveAlongPath(intptr_t entity, char update_angle) → int
 //   Tick de movimiento a lo largo de la lista de waypoints.
 //   Retorna 0 si no hay movimiento (path_current_wp >= path_wp_count).
 //
@@ -196,13 +196,13 @@ void Entity_AnimTick(int entity);
 //     Las coordenadas cached en entity+0x388/+0x38c se pasan por la misma
 //     rutina HashTable_GetIndex/Insert que en otros lugares del código.
 //     Es obfuscación de posición; las coordenadas reales están en +0x10/+0x14.
-int Entity_MoveAlongPath(int entity, char update_angle);
+int Entity_MoveAlongPath(intptr_t entity, char update_angle);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SELECCIÓN DE ANIMACIÓN DE CAMINATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 0x004430c0  Entity_SetWalkAnimation(int entity)
+// 0x004430c0  Entity_SetWalkAnimation(intptr_t entity)
 //   Determina y aplica el ID de animación de caminata correcta según contexto.
 //   Llama Terrain_GetTileIndex(x, y) = GetTileType para detectar agua/terreno especial.
 //   DAT_07d78068 = tabla de propiedades de tiles (flags de terreno, stride 0x40).
@@ -221,9 +221,9 @@ int Entity_MoveAlongPath(int entity, char update_angle);
 //     Exhausto (entity+0x300 >= 0x28): animId = 0x16
 //   Aplica con Entity_SetAnimation(entity, animId).
 //   Tras setear anim, con rand()&0xF==0 llama PlayBuffer(soundId, entity, 0) — sonido de paso.
-void Entity_SetWalkAnimation(int entity);
+void Entity_SetWalkAnimation(intptr_t entity);
 
-// 0x00443930  Entity_UpdateWalkAnim(int entity)
+// 0x00443930  Entity_UpdateWalkAnim(intptr_t entity)
 //   Versión extendida de Entity_SetWalkAnimation para entidad type==0x186 (y otras).
 //   Gestiona adicionalmente:
 //     c->Run (+0x300): contador de cansancio; se incrementa al correr.
@@ -234,7 +234,7 @@ void Entity_SetWalkAnimation(int entity);
 //     Luego, lógica completa de selección de animación (similar a Entity_SetWalkAnimation)
 //     con más casos para estados de juego (World==7, 8, 10).
 //     Finaliza con Entity_SetAnimation + PlayBuffer para sonidos.
-void Entity_UpdateWalkAnim(int entity);
+void Entity_UpdateWalkAnim(intptr_t entity);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDLERS DE PAQUETES DE MOVIMIENTO DEL SERVIDOR

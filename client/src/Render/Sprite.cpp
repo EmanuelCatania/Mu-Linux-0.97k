@@ -48,6 +48,7 @@
 //   _DAT_00552580 — float 0.0
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -141,11 +142,11 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
     Matrix_BuildFromEuler(local_6c,local_30);
     iVar1 = 0;
     do {
-      pfVar4 = (float *)((int)local_60 + iVar1);
-      Vector_Rotate((float *)((int)rotOffsets + iVar1),local_30,pfVar4);
+      pfVar4 = local_60 + iVar1 / sizeof(float);
+      Vector_Rotate(rotOffsets + iVar1 / sizeof(float),local_30,pfVar4);
       iVar2 = iVar1 + 0xc;
       *pfVar4 = local_ac + *pfVar4;                        // + centerX
-      *(float *)((int)local_60 + iVar1 + 4) = local_a0 + *(float *)((int)local_60 + iVar1 + 4);  // + centerY
+      pfVar4[1] = local_a0 + pfVar4[1];  // + centerY
       iVar1 = iVar2;
     } while (iVar2 < 0x30);
   }
@@ -175,9 +176,9 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   // por geometría más cercana pero NO escriben profundidad. Esto da forma
   // correcta a glows sobre armas/armaduras (siguen el contorno), en vez de
   // cuadrados blanco-fluo cubriendo todo.
-  glBegin(7);
-  if ((&DAT_083a7cc8)[param_1 * 0x38] == '\x03') {
-    glColor3fv(param_5);
+  BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+  if ((&DAT_083a7cc8)[param_1 * TEXTURE_STRIDE] == '\x03') {
+    BufferedDraw::Color3fv(param_5);
   }
   else {
     if (param_1 == 0x4b6) {
@@ -193,18 +194,18 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
       fVar8 = fVar5;
       local_a0 = fVar5;
     }
-    glColor4f(fVar5,fVar6,fVar7,fVar8);
+    BufferedDraw::Color4f(fVar5,fVar6,fVar7,fVar8);
   }
   pfVar4 = local_60;
   pfVar3 = local_tex;
   iVar1 = 4;
   do {
-    glTexCoord2f(*pfVar3,pfVar3[1]);
-    glVertex3fv(pfVar4);
+    BufferedDraw::TexCoord2f(*pfVar3,pfVar3[1]);
+    BufferedDraw::Vertex3fv(pfVar4);
     pfVar3 = pfVar3 + 2;
     pfVar4 = pfVar4 + 3;
     iVar1 = iVar1 + -1;
   } while (iVar1 != 0);
-  glEnd();
+  BufferedDraw::End();
   return;
 }

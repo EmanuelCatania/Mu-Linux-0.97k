@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
@@ -27,7 +28,7 @@ void __cdecl Dialog_LoadBMD(const char *path)
     DWORD *end = DAT_07cf5608 + (0x32000 / 4);   // 200KB array end (era literal 0x7d27608 en binario original)
     do {
         crt_fread(buf, 0x400, 1, (int *)fp);
-        BuxConvert_0((int)buf, 0x400);
+        BuxConvert_0(buf, 0x400);
         DWORD *next = dst + 0x100;
         const char *src = buf;
         for (int i = 0x100; i != 0; i--) {
@@ -38,4 +39,10 @@ void __cdecl Dialog_LoadBMD(const char *path)
     } while (dst < end);
     operator_delete(buf);
     crt_fclose(fp);
+    // DESVIACION (Fase 4, texto Unicode): texto y respuestas de 1252 a UTF-8.
+    for (int i = 0; i < DIALOG_SCRIPT_COUNT; ++i) {
+        TextEngine::ConvertWindows1252InPlace(g_DialogScript[i].m_lpszText, sizeof(g_DialogScript[i].m_lpszText));
+        for (auto& answer : g_DialogScript[i].m_lpszAnswer)
+            TextEngine::ConvertWindows1252InPlace(answer, sizeof(answer));
+    }
 }

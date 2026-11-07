@@ -4,12 +4,16 @@
 // (BMD__RenderBodyShadow).
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/Gfx.h"
+#include "Render/BMDDevice.h"
+#include "Render/MeshDraw.h"
 #include "Config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
 
 // BMD__BeginRender @ 0x00440D30 — BMD_PushMatrix: calls glPushMatrix().
-void __cdecl BMD__BeginRender(void) { glPushMatrix(); }
+void __cdecl BMD__BeginRender(void) { BMDDevice::BeginModel(); }
 // BMD__RenderMesh @ 0x00440D50 — BMD_DrawMesh: implemented in Render/BMD_DrawMesh.cpp
 // BMD__RenderMeshEffect @ 0x00441BE0 — Model_KillAnim
 // Iterates bone meshes; for each vertex in bone 'b', spawns kill/death particle effects.
@@ -21,19 +25,19 @@ void __cdecl BMD__RenderMeshEffect(void *model, int param_1, int param_2)
     // y el mismo `a2` es el que elige el bloque de 15000 vertices del pool
     // BoneVertex.  Los dos call sites pasan a2 = 0.  No recorrer todas las mallas:
     // se spawnearian varias veces mas efectos de los que corresponde.
-    char *this_ = (char*)model;
+    const auto* bmd = AsModel(model);
     const int meshIdx = param_1;
-    if (meshIdx < 0 || meshIdx >= *(short*)(this_ + 0x24)) return;
+    if (meshIdx < 0 || meshIdx >= bmd->NumMeshs) return;
 
-    char *mesh = (char*)(*(int*)(this_ + 0x28) + meshIdx * 0x28);
-    const int triCount = *(short*)(mesh + 10);
+    const auto* mesh = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs) + meshIdx;
+    const int triCount = mesh->TriangleCount;
     if (triCount <= 0) return;
 
     float Angle[3] = { 0.0f, 0.0f, 0.0f };
     float Light[3] = { 1.0f, 1.0f, 1.0f };
 
     for (int tri = 0; tri < triCount; tri++) {
-        short *psVar6 = (short*)(*(int*)(mesh + 0x1c) + tri * 36);
+        const auto* psVar6 = reinterpret_cast<const short*>(mesh->Triangles + tri * sizeof(ModelRuntimeTriangle));
         const int nIdx = (int)(char)*psVar6;
         for (int k = 0; k < nIdx; k++) {
             const int vertIdx = psVar6[k + 1];
@@ -83,33 +87,38 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
 {
     // DESVIACION (DLL Antilag, 0x00441F0D): sin sombras.
     if (gUserSettings.GetAntilag(ANTILAG_SHADOWS)) return;
-    char *this_ = (char*)model;
-    if (*(short*)(this_ + 0x24) == 0) return;
+    // DESVIACION: con las sombras proyectadas activas, la plana sobra.
+    if (Gfx::ShadowMaps()) return;
+    const auto* bmd = AsModel(model);
+    if (bmd->NumMeshs == 0) return;
 
     // IDA: DisableTexture(0). Ese es 0x511590, que en el arbol se llama
     // GL_SetAlphaTest (nombre enganoso: termina en glDisable(GL_TEXTURE_2D)).
     // NO confundir con 0x511680 EnableAlphaTest.
-    GL_SetAlphaTest('\0');
-    GL_DisableDepthWrites();       // 0x511530
+    BMDDevice::Select({BMDDevice::Pass::Shadow});
     BMD__BeginRender();                // thunk -> glPushMatrix()
 
-    const float ox = *(float*)(this_ + 0x6c);
-    const float oy = *(float*)(this_ + 0x70);
-    const float oz = *(float*)(this_ + 0x74);
+    const float ox = bmd->BodyOrigin[0];
+    const float oy = bmd->BodyOrigin[1];
+    const float oz = bmd->BodyOrigin[2];
 
-    const int meshCount = *(short*)(this_ + 0x24);
+    const int meshCount = bmd->NumMeshs;
     int vertBase = 0;                                  // v15: 15000 por mesh
     for (int meshIdx = 0; meshIdx < meshCount; meshIdx++, vertBase += 15000) {
         if (meshIdx == param_2) continue;              // v5 != a3
 
-        char *mesh = (char*)(*(int*)(this_ + 0x28) + meshIdx * 0x28);
-        const int polyCount = *(short*)(mesh + 10);
+        const auto* mesh = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs) + meshIdx;
+        const int polyCount = mesh->TriangleCount;
         if (polyCount <= 0) continue;
-        if ((int)*(short*)(mesh + 2) == param_1) continue;   // *(WORD*)(v6+2) != a2
+        if ((int)mesh->TextureIndex == param_1) continue;   // *(WORD*)(v6+2) != a2
 
-        glBegin(GL_TRIANGLES);
+        // DESVIACION: con la malla residente y la pose capturada, la misma
+        // proyección se hace en el shader en vez de vértice por vértice.
+        if (MeshDraw::DrawShadow(bmd, reinterpret_cast<const char*>(mesh), (const float*)&DAT_0584621c + vertBase * 3, bmd->BodyOrigin))
+            continue;
+        BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
         for (int polyIdx = 0; polyIdx < polyCount; polyIdx++) {
-            char *poly = (char*)(*(int*)(mesh + 0x1c) + polyIdx * 0x24);
+            const auto* poly = reinterpret_cast<const char*>(mesh->Triangles + polyIdx * sizeof(ModelRuntimeTriangle));
             const int numVerts = (int)*(signed char*)poly;   // char en +0
             const short *idx = (const short*)(poly + 2);     // indices en +2
             for (int k = 0; k < numVerts; k++) {
@@ -124,12 +133,12 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
                 v[0] = lx + (lx + 2000.0f) * lz / (lz - 4000.0f) + ox;
                 v[1] = ly + oy;
                 v[2] = oz + 5.0f;
-                glVertex3fv(v);
+                BufferedDraw::Vertex3fv(v);
             }
         }
-        glEnd();
+        BufferedDraw::End();
     }
 
-    glPopMatrix();
-    GL_EnableDepthWrites();        // 0x511510
+    BMDDevice::EndModel();
+    BMDDevice::Select({BMDDevice::Pass::ShadowExit});
 }

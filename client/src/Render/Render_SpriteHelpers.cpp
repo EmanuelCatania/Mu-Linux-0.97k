@@ -4,31 +4,35 @@
 // comentarios de cada función conservan la procedencia IDA.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Render/Materials.h"
+#include "Render/BufferedDraw.h"
 #include "globals.h"
 #include "functions.h"
 // EnableAlphaBlend2 @ 0x00511810 (~28 lines) — OpenGL additive blending
 void __stdcall GL_SetBlendInvSrcColor(void) {
-    // 0x00511810 — OpenGL additive blending (ONE_MINUS_DST_COLOR, ONE)
+    if(Materials::Select(Materials::Preset::InverseAdd))return;
+    // 0x00511810 — factores reales: ONE_MINUS_SRC_COLOR, ONE.
     // Cache de estado real (IDA): DAT_083a412c (AlphaBlendType), DAT_083a411d
     // (AlphaTestEnable), DAT_083a4125 (TextureEnable). Ojo: DAT_07eaa160/164/168
     // son CheckInventory + punteros ITEM vecinos, NO estado GL.
     if (DAT_083a412c != 5) {           // AlphaBlendType
         DAT_083a412c = 5;
-        glEnable(0x0BE2);              // GL_BLEND
-        glBlendFunc(0x0301, 1);        // GL_ONE_MINUS_DST_COLOR, GL_ONE
+        Gfx::Enable(Gfx::Cap::Blend);              // GL_BLEND
+        Gfx::BlendFunc(Gfx::Factor::OneMinusSrcColor, Gfx::Factor::One);        // GL_ONE_MINUS_DST_COLOR, GL_ONE
     }
     GL_DisableCullFace();                    // DisableCullFace
     GL_DisableDepthWrites();                    // DisableDepthMask
     if (DAT_083a411d) {                // AlphaTestEnable
         DAT_083a411d = 0;
-        glDisable(0x0BC0);             // GL_ALPHA_TEST
+        Gfx::Disable(Gfx::Cap::AlphaTest);             // GL_ALPHA_TEST
     }
     if (!DAT_083a4125) {               // TextureEnable
         DAT_083a4125 = 1;
-        glEnable(0x0DE1);              // GL_TEXTURE_2D
+        Gfx::Enable(Gfx::Cap::Texture2D);              // GL_TEXTURE_2D
     }
     if (FogEnable) {
-        glEnable(0x0B60);              // GL_FOG
+        Gfx::Enable(Gfx::Cap::Fog);              // GL_FOG
     }
 }
 
@@ -58,7 +62,7 @@ void __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float H
     transformed[1] = Position[0] * camMat[4] + Position[1] * camMat[5] + Position[2] * camMat[6] + camMat[7];
     transformed[2] = Position[0] * camMat[8] + Position[1] * camMat[9] + Position[2] * camMat[10] + camMat[11];
 
-    glBegin(7);  // GL_QUADS
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);  // GL_QUADS
 
     // Ghidra decompile iterates 4 vertices. Per-vertex data:
     //   Color: Light[vertex][0..2] + Alpha
@@ -82,17 +86,17 @@ void __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float H
     };
 
     for (int i = 0; i < 4; i++) {
-        glColor4f(pColor[i * 3 + 0], pColor[i * 3 + 1], pColor[i * 3 + 2], Alpha);
-        glTexCoord2f(pUV[i * 2 + 0], pUV[i * 2 + 1]);
+        BufferedDraw::Color4f(pColor[i * 3 + 0], pColor[i * 3 + 1], pColor[i * 3 + 2], Alpha);
+        BufferedDraw::TexCoord2f(pUV[i * 2 + 0], pUV[i * 2 + 1]);
         float vtx[3] = {
             transformed[0] + offsets[i][0],
             transformed[1] + offsets[i][1],
             transformed[2]
         };
-        glVertex3fv(vtx);
+        BufferedDraw::Vertex3fv(vtx);
     }
 
-    glEnd();
+    BufferedDraw::End();
 }
 
 // RenderNumber2D vive en Render/HUD_Pass2.cpp.

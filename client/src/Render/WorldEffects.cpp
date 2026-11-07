@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
 #include "Render/MaterialVisuals.h"
@@ -15,7 +16,8 @@ namespace {
 struct Sprite {
     unsigned short type;
     float position[3], scale, light[3], rotation;
-    int owner, mode;
+    intptr_t owner;
+    int mode;
 };
 struct Frame {
     std::uint64_t generation;
@@ -37,7 +39,7 @@ void WorldEffects_BeginStep() {
 }
 
 int WorldEffects_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (!recording) return 0;
     Sprite sprite;
     sprite.type = type; sprite.scale = scale; sprite.owner = owner;
@@ -49,41 +51,41 @@ int WorldEffects_AddSprite(unsigned short type, float *position, float scale,
     return 0;
 }
 
-void WorldEffects_Tick(int entity) {
+void WorldEffects_Tick(intptr_t entity) {
     void *object = (void *)entity;
     if (!SceneObjects::Contains(object) || !AsObject(entity)->Live) return;
     if (frames.find(object) != frames.end()) return;
     Frame &frame = frames[object];
     frame.generation = SceneObjects::Generation(object);
     frame.type = AsObject(entity)->Type;
-    void *model = (void *)(DAT_05828d58 + frame.type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + frame.type * BMD_STRIDE);
     EquipmentModelContext savedModel(model);
-    ObjectPose_PrepareBounds(entity, 0);
-    *(float *)((char *)model + 0x84) = 0.0f;
-    *(BYTE *)((char *)model + 0x45) = AsObject(entity)->ContrastEnable;
-    Entity_GetLightScale(entity, (int)model);
+    ObjectPose_PrepareBounds(AsObject(entity), 0);
+    *(float *)&((BMD*)(uintptr_t)(model))->BodyHeight = 0.0f;
+    *(BYTE *)&((BMD*)(uintptr_t)(model))->ContrastEnable = AsObject(entity)->ContrastEnable;
+    Entity_GetLightScale(entity, reinterpret_cast<uintptr_t>(model));
     // DESVIACION: los efectos necesitan una pose SIM propia, incluso si alpha
     // oculta la malla; nunca heredan huesos del último objeto dibujado.
     memset(g_BoneScratch, 0, sizeof(g_BoneScratch));
     if (*(short *)((char *)model + 0x26) > 0)
-        ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
-    ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
-    MoltSilhouette_Tick(entity, model, (float *)g_BoneScratch, 0);
-    MaterialVisuals_TickObjectDraw(entity);
+        ObjectPose_PrepareBones(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    ObjectPose_TickMeshEvents(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    MoltSilhouette_Tick(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    MaterialVisuals_TickObjectDraw(AsObject(entity));
     recording = &frame;
     Entity_SpawnEffects(entity);
     recording = nullptr;
 }
 
-void WorldEffects_Draw(int entity) {
-    const void *object = (void *)entity;
+void WorldEffects_Draw(const OBJECT* entity) {
+    const void *object = entity;
     // Validar registro/generación antes de leer la dirección: puede haberse
     // liberado o reutilizado entre la publicación SIM y esta pasada.
     if (scene != SceneFlag || world != gMapManager.GetCurrentMap() ||
         !SceneObjects::Contains(object)) return;
     const auto found = frames.find(object);
     if (found == frames.end() || found->second.generation != SceneObjects::Generation(object) ||
-        !AsObject(entity)->Live || found->second.type != AsObject(entity)->Type) return;
+        !entity->Live || found->second.type != entity->Type) return;
     const Frame &frame=found->second;
     // Sin comandos no hay posiciones que mezclar ni sprites que reproducir.
     if (frame.sprites.empty()) return;

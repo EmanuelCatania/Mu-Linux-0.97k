@@ -31,6 +31,7 @@ if(MU_PLATFORM_ONLY)
     return()
 endif()
 include(MuCompilerOptions)
+include(MuWebGPU)
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     include(MuSDLDependencies)
     add_subdirectory(src/Platform/SDL3)
@@ -46,12 +47,33 @@ endif()
 set(MU_SOURCES
     src/stdafx.cpp
     src/Platform/ClientEntry.cpp
+    src/Platform/GLFunctions.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
+    src/Render/GlyphAtlas.cpp
+    src/Render/BufferedDraw.cpp
+    src/Render/Skinning.cpp
+    src/Render/MeshTopology.cpp
+    src/Render/Gfx.cpp
+    src/Render/Backend/GL/GfxDevice.cpp
+    src/Render/Backend/Dispatch.cpp
+    src/Render/ResourceTables.cpp
+    src/Render/Backend/GL/Skinning.cpp
+    src/Render/Backend/GL/MeshDraw.cpp
+    src/Render/Backend/GL/ShadowMap.cpp
+    src/Render/ShadowLight.cpp
+    src/Render/TerrainDraw.cpp
+    src/Render/Backend/GL/TerrainRenderer.cpp
+    src/Render/Materials.cpp
+    src/Render/Backend/GL/FragmentPipeline.cpp
+    src/Render/RenderProfile.cpp
+    src/Render/RenderState.cpp
+    src/Render/Backend/GL/ProfileQueries.cpp
+    src/Render/Backend/GL/BufferedDraw.cpp
     src/Render/WorldEffects.cpp
     src/Render/MaterialVisuals.cpp
     src/Render/LooseWingVisuals.cpp
@@ -81,6 +103,7 @@ set(MU_SOURCES
     src/Platform/SDL3/SDLAudio.cpp
     src/Platform/SDL3/SDLSocket.cpp
     src/Platform/SDL3/SDLFont.cpp
+    src/Text/TextShaper.cpp
     src/Platform/Win32/Win32Audio.cpp
     src/Platform/Win32/Win32Timer.cpp
     src/Platform/Win32/Win32Input.cpp
@@ -115,6 +138,7 @@ set(MU_SOURCES
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
+    src/Terrain/Terrain_RenderTerrain.cpp
     src/Math/Math_3D.cpp
     src/Render/Particle.cpp
     src/Render/Particle_Move.cpp
@@ -156,6 +180,7 @@ set(MU_SOURCES
     src/Net/HWID.cpp
     src/Entity/Entity_Init.cpp
     src/Entity/Entity_MoveClient.cpp
+    src/Entity/Character_Motion.cpp
     src/Entity/Entity_Spawn.cpp
     src/Render/Scene_CharPreview.cpp
     src/Scene/Scene_Resources.cpp
@@ -175,6 +200,7 @@ set(MU_SOURCES
     src/UI/UI_StatsPanel.cpp
     src/Util/Misc.cpp
     src/Core/Legacy_Runtime.cpp
+    src/Entity/EntityName.cpp
     src/Entity/Entity_Lookup.cpp
     src/Net/Net_Disconnect.cpp
     src/Render/Render_MatrixStack.cpp
@@ -182,6 +208,7 @@ set(MU_SOURCES
     src/Render/Particle_Legacy.cpp
     src/Render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
+    src/UI/EmojiPicker.cpp
     src/Terrain/Terrain_RayCollision.cpp
     src/Platform/Win32/MiniDump.cpp
     src/Combat/Combat_AttackEffect.cpp
@@ -279,9 +306,11 @@ set(MU_SOURCES
     src/Game/Game_EnterWorldTick.cpp
     src/Game/Game_SceneUpdate.cpp
     src/Game/Movement.cpp
+    src/Game/CheckGate.cpp
     src/Input/Input.cpp
     src/Input/Mouse_Hover.cpp
     src/Item/Item_Equip.cpp
+    src/Item/Item_EquipSlots.cpp
     src/Item/Item_Move.cpp
     src/Item/Item_Display.cpp
     src/Item/Item_SpecialOption.cpp
@@ -330,6 +359,10 @@ set(MU_SOURCES
     src/Render/Terrain_Render.cpp
     src/Render/Terrain_Water.cpp
     src/Render/Texture/ImageCodec.cpp
+    src/Text/TextCore.cpp
+    src/Text/TextAtlas.cpp
+    src/Text/UniBreak.c
+    src/Text/Utf8Proc.c
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
     src/Render/Weather.cpp
@@ -339,12 +372,16 @@ set(MU_SOURCES
     src/Terrain/Terrain.cpp
     src/Trade/Trade.cpp
     src/UI/UI_InGameMenu.cpp
+    src/UI/UI_PanelInput.cpp
     src/UI/UI_IME.cpp
     src/UI/UI_TextBitmap.cpp
     src/UI/UI_Tooltip.cpp
     src/UI/Chat_Gestures.cpp
     src/UI/GoldenArcher.cpp
     src/UI/EventTimer.cpp
+    src/UI/BuffBar.cpp
+    src/UI/ChatHistory.cpp
+    src/Core/DataPrefetch.cpp
     src/UI/MiniMap.cpp
     src/Render/Camera3D.cpp
     src/UI/OptionsMenu.cpp
@@ -376,6 +413,7 @@ set(MU_HEADERS
     src/Platform/Text.h
     src/Platform/GuardedOperation.h
     src/Scene/ObjectRegistry.h
+    src/Scene/SceneObjectCell.h
     src/Platform/PlatformHeaders.h
     src/Platform/DebugHeaders.h
     src/Platform/Posix/WinTypes.h
@@ -391,10 +429,12 @@ set(MU_HEADERS
     src/UI/UIState.h
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Entity/EntityName.h
     src/Render/WorldEffects.h
     src/Render/MaterialVisuals.h
     src/Render/LooseWingVisuals.h
     src/Render/EquipmentVisuals.h
+    src/Game/FramePointerSet.h
     src/Game/RenderDerivedState.h
     src/Game/RenderSnapshots.h
     src/Game/RenderInterpolation.h
@@ -404,10 +444,15 @@ set(MU_HEADERS
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
     src/Entity/ClothPresentation.h
+    src/Physics/ClothTypes.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
+    src/Game/PathContext.h
     src/Model/ModelTypes.h
+    src/Model/SmdImport.h
+    src/Core/ResourceLimits.h
+    src/Model/BMDFileTypes.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
@@ -427,10 +472,38 @@ set(MU_HEADERS
     src/Platform/IFileSystem.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
+    src/Render/GlyphAtlas.h
+    src/Render/Gfx.h
+    src/Render/ResourceTables.h
+    src/Render/Skinning.h
+    src/Render/MeshDraw.h
+    src/Render/TerrainDraw.h
+    src/Render/BMDDevice.h
+    src/Render/Materials.h
+    src/Render/RenderBackend.h
+    src/Render/Backend/Api.h
+    src/Render/Backend/GfxDevice.h
+    src/Render/MeshTopology.h
+    src/Render/Backend/GL/FragmentPipeline.h
+    src/Render/Backend/GL/TerrainRenderer.h
+    src/Render/RenderProfile.h
+    src/Render/RenderState.h
+    src/Render/ProfileStats.h
+    src/Render/Backend/GL/ProfileUploads.h
+    src/Render/Backend/GL/ProfileQueries.h
+    src/Render/BufferedDraw.h
+    src/Render/TransformMath.h
+    src/Render/TransformWorkers.h
     src/Platform/IGLContext.h
+    src/Platform/GLFunctions.h
+    src/Platform/GL/glad.h
     src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h
+    src/UI/PanelAnchor.h
     src/UI/EventTimer.h
+    src/UI/BuffBar.h
+    src/UI/ChatHistory.h
+    src/Core/DataPrefetch.h
     src/UI/MiniMap.h
     src/Render/Camera3D.h
     src/UI/OptionsMenu.h
@@ -465,6 +538,8 @@ set(MU_HEADERS
     src/Render/Entity_DrawAt.h
     src/Render/Entity_PrepareRender.h
     src/Render/Entity_Render.h
+    src/Render/DamagePointTypes.h
+    src/Item/ItemTypes.h
     src/Render/JointTypes.h
     src/Render/Entity_Render_3D.h
     src/Render/Entity_RenderAll_3D.h
@@ -478,6 +553,10 @@ set(MU_HEADERS
     src/Render/Sprite_Draw.h
     src/Render/Terrain_Render.h
     src/Render/Texture/ImageCodec.h
+    src/Text/TextCore.h
+    src/Net/NetText.h
+    src/Text/TextShaper.h
+    src/Text/TextAtlas.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -514,6 +593,8 @@ endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+# El shaping (HarfBuzz/SheenBidi) vive en la biblioteca de plataforma SDL3.
+list(REMOVE_ITEM MU_SOURCES src/Text/TextShaper.cpp)
 if(NOT WIN32)
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
 endif()
@@ -578,9 +659,12 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
+# La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
+set_source_files_properties(src/Render/Materials.cpp PROPERTIES
+    COMPILE_OPTIONS "$<$<STREQUAL:$<TARGET_PROPERTY:NAME>,mu97k>:/Yustdafx.h>")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
 
@@ -601,7 +685,6 @@ endif()
 if(WIN32)
 target_link_libraries(mu97k PRIVATE
     opengl32
-    glu32
     winmm
     ws2_32
     version
@@ -631,8 +714,120 @@ target_link_options(mu97k PRIVATE
 
 else()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(mu97k PRIVATE OpenGL::GL OpenGL::GLU)
+    target_link_libraries(mu97k PRIVATE OpenGL::GL)
     target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
 endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT mu97k)
+
+# DESVIACION: prueba de crecimiento real sin contexto GL, en ambos sistemas.
+find_package(Threads REQUIRED)
+target_link_libraries(mu97k PRIVATE Threads::Threads)
+if(MU_RENDER_WEBGPU)
+    target_sources(mu97k PRIVATE
+        src/Render/Backend/WebGPU/Device.cpp src/Render/Backend/WebGPU/Renderer.cpp
+        src/Render/Backend/WebGPU/MeshDraw.cpp
+        src/Render/Backend/WebGPU/Stubs.cpp src/Render/Backend/WebGPU/Device.h
+        src/Render/Backend/WebGPU/Renderer.h)
+    target_link_libraries(mu97k PRIVATE dawn::webgpu_dawn)
+    target_compile_definitions(mu97k PRIVATE MU_RENDER_WEBGPU)
+endif()
+enable_testing()
+add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
+    tests/ResourceTables.cpp src/Render/ResourceTables.cpp)
+target_include_directories(mu_resource_tables_test PRIVATE src)
+target_compile_features(mu_resource_tables_test PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(mu_resource_tables_test PRIVATE /EHsc)
+endif()
+add_test(NAME resource_tables COMMAND mu_resource_tables_test)
+
+add_executable(mu_frame_pointer_set_test EXCLUDE_FROM_ALL tests/FramePointerSet.cpp)
+target_include_directories(mu_frame_pointer_set_test PRIVATE src)
+target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
+add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
+
+add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c)
+target_include_directories(mu_text_core_test PRIVATE src)
+target_compile_features(mu_text_core_test PRIVATE cxx_std_17)
+if(MSVC)
+    # Sin /utf-8 MSVC codifica dos veces los \u de los literales u8.
+    target_compile_options(mu_text_core_test PRIVATE /utf-8)
+endif()
+add_test(NAME text_core COMMAND mu_text_core_test)
+
+add_executable(mu_transform_workers_test EXCLUDE_FROM_ALL tests/TransformWorkers.cpp)
+target_include_directories(mu_transform_workers_test PRIVATE src)
+target_compile_features(mu_transform_workers_test PRIVATE cxx_std_17)
+target_link_libraries(mu_transform_workers_test PRIVATE Threads::Threads)
+if(MSVC)
+    target_compile_options(mu_transform_workers_test PRIVATE /EHsc /fp:precise)
+endif()
+add_test(NAME transform_workers COMMAND mu_transform_workers_test)
+
+# DESVIACION: R1 valida percentiles y queries asincronas sin driver/contexto.
+add_executable(mu_render_profile_test EXCLUDE_FROM_ALL
+    tests/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp)
+target_include_directories(mu_render_profile_test PRIVATE src)
+target_compile_features(mu_render_profile_test PRIVATE cxx_std_17)
+add_test(NAME render_profile COMMAND mu_render_profile_test)
+
+add_executable(mu_render_profile_flow_test EXCLUDE_FROM_ALL
+    tests/RenderProfileFlow.cpp src/Render/RenderProfile.cpp)
+target_include_directories(mu_render_profile_flow_test PRIVATE src)
+target_compile_features(mu_render_profile_flow_test PRIVATE cxx_std_17)
+add_test(NAME render_profile_flow COMMAND mu_render_profile_flow_test)
+
+# DESVIACION R3a: contrato de captura/fallback sin necesitar un driver GL.
+add_executable(mu_terrain_draw_flow_test EXCLUDE_FROM_ALL tests/TerrainDrawFlow.cpp src/Render/TerrainDraw.cpp)
+target_include_directories(mu_terrain_draw_flow_test PRIVATE src)
+target_compile_features(mu_terrain_draw_flow_test PRIVATE cxx_std_17)
+add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)
+
+# Verificación gráfica SDL3: obligatoria con Mesa en Linux, omisible si el
+# runner Windows no dispone de un contexto 3.3 (salida77, no un falso pase).
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    add_executable(mu_bmd_device_test EXCLUDE_FROM_ALL
+        tests/BMDDevice.cpp
+        src/Platform/GLFunctions.cpp src/Render/ResourceTables.cpp
+        src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
+        src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp
+        src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
+        src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp
+        src/Render/Backend/GL/Skinning.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp
+        src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp)
+    target_include_directories(mu_bmd_device_test PRIVATE src ${MU_MINIAUDIO_INCLUDE_DIR})
+    target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
+    target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)
+    if(WIN32)
+        target_link_libraries(mu_bmd_device_test PRIVATE opengl32)
+    else()
+        target_link_libraries(mu_bmd_device_test PRIVATE GL)
+    endif()
+    if(MSVC)
+        target_compile_options(mu_bmd_device_test PRIVATE /EHsc /fp:precise /UNDEBUG)
+    else()
+        target_compile_options(mu_bmd_device_test PRIVATE -UNDEBUG $<$<CONFIG:Release>:-g>)
+    endif()
+    add_test(NAME bmd_device COMMAND mu_bmd_device_test)
+
+    # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
+    add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
+        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c
+        src/Render/Texture/ImageCodec.cpp)
+    target_include_directories(mu_text_shaper_test PRIVATE src)
+    target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
+    target_compile_definitions(mu_text_shaper_test PRIVATE
+        MU_TEST_FONT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/bin/Client/Data/Font")
+    target_link_libraries(mu_text_shaper_test PRIVATE mu_platform_sdl)
+    if(MSVC)
+        target_compile_options(mu_text_shaper_test PRIVATE /utf-8 /EHsc)
+    endif()
+    add_test(NAME text_shaper COMMAND mu_text_shaper_test)
+    set_tests_properties(bmd_device PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+endif()
+
+add_executable(mu_panel_anchor_test EXCLUDE_FROM_ALL tests/PanelAnchor.cpp)
+target_include_directories(mu_panel_anchor_test PRIVATE src)
+target_compile_features(mu_panel_anchor_test PRIVATE cxx_std_17)
+add_test(NAME panel_anchor COMMAND mu_panel_anchor_test)

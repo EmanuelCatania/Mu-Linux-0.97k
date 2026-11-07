@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -202,7 +203,7 @@ void Recv_LogOut(const BYTE* Msg)
             Item_ReturnPickedItem();
             ReleaseMainData();
         }
-        CWsctlc_Close((int)(uintptr_t)SocketClient);  // Net_Disconnect (close socket)
+        CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));  // Net_Disconnect (close socket)
         ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0)
         SceneFlag = 2;                // SceneFlag = Login
         DAT_083a7c14 = 0;                // sub-state = ServerSelect
@@ -235,7 +236,7 @@ void Recv_CustomServerList(const BYTE* Msg)
         const char* name = (const char*)(p + 2);
         int group = serverCode / 20;
         if (group >= 0 && group < 24)
-            Platform::TextCopy(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
+            NetText::FromServer(DAT_07d52c34 + 300 * group, 32, name, 32);  // deja hueco null-term
         p += 34;
     }
     NetLog("NET:  → F4/04 CustomServerList count=%d (names populated)", count);
@@ -305,7 +306,7 @@ void Recv_Redirect(const BYTE* Msg)
     // Reactivamos la capa MuEmu (byte-XOR) que el GameServer sí usa.
     gNetwork.EndConnectServerSession();
     MuEmu::SetActive(true);
-    CWsctlc_Close((int)(uintptr_t)SocketClient);   // Net_Disconnect
+    CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));   // Net_Disconnect
     CreateSocket(IpAddr, port);                   // Net_Connect
     g_bGameServerConnected = 1;                              // g_bGameServerConnected
 }

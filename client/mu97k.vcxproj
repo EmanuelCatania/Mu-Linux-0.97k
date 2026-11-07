@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -121,6 +121,7 @@
     <ClInclude Include="src\Platform\Text.h" />
     <ClInclude Include="src\Platform\GuardedOperation.h" />
     <ClInclude Include="src\Scene\ObjectRegistry.h" />
+    <ClInclude Include="src\Scene\SceneObjectCell.h" />
     <ClInclude Include="src\Platform\PlatformHeaders.h" />
     <ClInclude Include="src\Platform\DebugHeaders.h" />
     <ClInclude Include="src\Platform\Posix\WinTypes.h" />
@@ -136,10 +137,12 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\EntityName.h" />
     <ClInclude Include="src\Render\WorldEffects.h" />
     <ClInclude Include="src\Render\MaterialVisuals.h" />
     <ClInclude Include="src\Render\LooseWingVisuals.h" />
     <ClInclude Include="src\Render\EquipmentVisuals.h" />
+    <ClInclude Include="src\Game\FramePointerSet.h" />
     <ClInclude Include="src\Game\RenderDerivedState.h" />
     <ClInclude Include="src\Game\RenderSnapshots.h" />
     <ClInclude Include="src\Game\RenderInterpolation.h" />
@@ -149,10 +152,15 @@
     <ClInclude Include="src\Entity\CharacterEffects.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
     <ClInclude Include="src\Entity\ClothPresentation.h" />
+    <ClInclude Include="src\Physics\ClothTypes.h" />
     <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
+    <ClInclude Include="src\Game\PathContext.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
+    <ClInclude Include="src\Model\SmdImport.h" />
+    <ClInclude Include="src\Core\ResourceLimits.h" />
+    <ClInclude Include="src\Model\BMDFileTypes.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />
@@ -172,10 +180,38 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Render\GlyphAtlas.h" />
+    <ClInclude Include="src\Render\Gfx.h" />
+    <ClInclude Include="src\Render\ResourceTables.h" />
+    <ClInclude Include="src\Render\Skinning.h" />
+    <ClInclude Include="src\Render\MeshDraw.h" />
+    <ClInclude Include="src\Render\TerrainDraw.h" />
+    <ClInclude Include="src\Render\BMDDevice.h" />
+    <ClInclude Include="src\Render\Materials.h" />
+    <ClInclude Include="src\Render\RenderBackend.h" />
+    <ClInclude Include="src\Render\Backend\Api.h" />
+    <ClInclude Include="src\Render\Backend\GfxDevice.h" />
+    <ClInclude Include="src\Render\MeshTopology.h" />
+    <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
+    <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
+    <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\RenderState.h" />
+    <ClInclude Include="src\Render\ProfileStats.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileUploads.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
+    <ClInclude Include="src\Render\BufferedDraw.h" />
+    <ClInclude Include="src\Render\TransformMath.h" />
+    <ClInclude Include="src\Render\TransformWorkers.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
+    <ClInclude Include="src\Platform\GLFunctions.h" />
+    <ClInclude Include="src\Platform\GL\glad.h" />
     <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
+    <ClInclude Include="src\UI\PanelAnchor.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
+    <ClInclude Include="src\UI\BuffBar.h" />
+    <ClInclude Include="src\UI\ChatHistory.h" />
+    <ClInclude Include="src\Core\DataPrefetch.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\Render\Camera3D.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
@@ -210,6 +246,8 @@
     <ClInclude Include="src\Render\Entity_DrawAt.h" />
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
     <ClInclude Include="src\Render\Entity_Render.h" />
+    <ClInclude Include="src\Render\DamagePointTypes.h" />
+    <ClInclude Include="src\Item\ItemTypes.h" />
     <ClInclude Include="src\Render\JointTypes.h" />
     <ClInclude Include="src\Render\Entity_Render_3D.h" />
     <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />
@@ -223,6 +261,10 @@
     <ClInclude Include="src\Render\Sprite_Draw.h" />
     <ClInclude Include="src\Render\Terrain_Render.h" />
     <ClInclude Include="src\Render\Texture\ImageCodec.h" />
+    <ClInclude Include="src\Text\TextCore.h" />
+    <ClInclude Include="src\Net\NetText.h" />
+    <ClInclude Include="src\Text\TextShaper.h" />
+    <ClInclude Include="src\Text\TextAtlas.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -243,12 +285,55 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Platform\ClientEntry.cpp" />
+    <ClCompile Include="src\Platform\GLFunctions.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Local\Text_Data.cpp" />
     <ClCompile Include="src\Scene\Scene_Dispatch.cpp" />
     <ClCompile Include="src\Scene\Scene_Intro.cpp" />
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\MeshTopology.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\GfxDevice.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\Dispatch.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ResourceTables.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\MeshDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ShadowMap.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ShadowLight.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Materials.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\FragmentPipeline.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\RenderProfile.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\RenderState.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\WorldEffects.cpp" />
     <ClCompile Include="src\Render\MaterialVisuals.cpp" />
     <ClCompile Include="src\Render\LooseWingVisuals.cpp" />
@@ -278,6 +363,7 @@
     <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Text\TextShaper.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
@@ -312,6 +398,7 @@
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
     <ClCompile Include="src\Math\Math_3D.cpp" />
     <ClCompile Include="src\Render\Particle.cpp" />
     <ClCompile Include="src\Render\Particle_Move.cpp" />
@@ -353,6 +440,7 @@
     <ClCompile Include="src\Net\HWID.cpp" />
     <ClCompile Include="src\Entity\Entity_Init.cpp" />
     <ClCompile Include="src\Entity\Entity_MoveClient.cpp" />
+    <ClCompile Include="src\Entity\Character_Motion.cpp" />
     <ClCompile Include="src\Entity\Entity_Spawn.cpp" />
     <ClCompile Include="src\Render\Scene_CharPreview.cpp" />
     <ClCompile Include="src\Scene\Scene_Resources.cpp" />
@@ -372,6 +460,7 @@
     <ClCompile Include="src\UI\UI_StatsPanel.cpp" />
     <ClCompile Include="src\Util\Misc.cpp" />
     <ClCompile Include="src\Core\Legacy_Runtime.cpp" />
+    <ClCompile Include="src\Entity\EntityName.cpp" />
     <ClCompile Include="src\Entity\Entity_Lookup.cpp" />
     <ClCompile Include="src\Net\Net_Disconnect.cpp" />
     <ClCompile Include="src\Render\Render_MatrixStack.cpp" />
@@ -379,6 +468,7 @@
     <ClCompile Include="src\Render\Particle_Legacy.cpp" />
     <ClCompile Include="src\Render\Camera_Login.cpp" />
     <ClCompile Include="src\UI\Chat_Log.cpp" />
+    <ClCompile Include="src\UI\EmojiPicker.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
     <ClCompile Include="src\Platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
@@ -476,9 +566,11 @@
     <ClCompile Include="src\Game\Game_EnterWorldTick.cpp" />
     <ClCompile Include="src\Game\Game_SceneUpdate.cpp" />
     <ClCompile Include="src\Game\Movement.cpp" />
+    <ClCompile Include="src\Game\CheckGate.cpp" />
     <ClCompile Include="src\Input\Input.cpp" />
     <ClCompile Include="src\Input\Mouse_Hover.cpp" />
     <ClCompile Include="src\Item\Item_Equip.cpp" />
+    <ClCompile Include="src\Item\Item_EquipSlots.cpp" />
     <ClCompile Include="src\Item\Item_Move.cpp" />
     <ClCompile Include="src\Item\Item_Display.cpp" />
     <ClCompile Include="src\Item\Item_SpecialOption.cpp" />
@@ -529,6 +621,16 @@
     <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Text\TextCore.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\TextAtlas.cpp" />
+    <ClCompile Include="src\Text\UniBreak.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\Utf8Proc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
     <ClCompile Include="src\Render\Trail_Render.cpp" />
     <ClCompile Include="src\Render\Weather.cpp" />
@@ -538,12 +640,16 @@
     <ClCompile Include="src\Terrain\Terrain.cpp" />
     <ClCompile Include="src\Trade\Trade.cpp" />
     <ClCompile Include="src\UI\UI_InGameMenu.cpp" />
+    <ClCompile Include="src\UI\UI_PanelInput.cpp" />
     <ClCompile Include="src\UI\UI_IME.cpp" />
     <ClCompile Include="src\UI\UI_TextBitmap.cpp" />
     <ClCompile Include="src\UI\UI_Tooltip.cpp" />
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
+    <ClCompile Include="src\UI\BuffBar.cpp" />
+    <ClCompile Include="src\UI\ChatHistory.cpp" />
+    <ClCompile Include="src\Core\DataPrefetch.cpp" />
     <ClCompile Include="src\UI\MiniMap.cpp" />
     <ClCompile Include="src\Render\Camera3D.cpp" />
     <ClCompile Include="src\UI\OptionsMenu.cpp" />

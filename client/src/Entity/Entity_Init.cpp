@@ -26,7 +26,7 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   unsigned char *puVar1;
   unsigned short uVar2;
 
-  puVar1 = (unsigned char *)(DAT_07abf5d0 + Index * 0x394);
+  puVar1 = (unsigned char *)(DAT_07abf5d0 + Index * CHARACTER_STRIDE);
   CreateCharacterPointer(puVar1, 0x186, 0, 0, Rotate);
 
   // Object.Light[0..2] = 0.3f (0x3e99999a)
@@ -55,8 +55,8 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(unsigned short *)&AsCharacter(puVar1)->Wing.Type = 0xffff;         // Wing.Type
   *(unsigned short *)&AsCharacter(puVar1)->Helper.Type = 0xffff;         // Helper.Type
 
-  SetCharacterScale((int)puVar1);    // SetCharacterScale
-  SetPlayerStop((int)puVar1);    // SetPlayerStop
+  SetCharacterScale(AsCharacter(puVar1));    // SetCharacterScale
+  SetPlayerStop(AsCharacter(puVar1));    // SetPlayerStop
   return puVar1;
 }
 
@@ -69,12 +69,12 @@ void __cdecl Monster_SaveSetBase(LPCSTR path)
   // DESVIACION: si falla la apertura, no escribir mediante un FILE nulo.
   if (!file) return;
   fprintf(file, "2\n");
-  for (int offset = 0; offset < 0x59740; offset += 0x394) {
+  for (int offset = 0; offset < 400 * CHARACTER_STRIDE; offset += CHARACTER_STRIDE) {
     const unsigned char* entity = (const unsigned char*)(uintptr_t)DAT_07abf5d0 + offset;
     if (entity[0] && entity[0x84] == 32) {
       const unsigned char x = (unsigned char)(long long)(*(const float*)(entity + 0x10) * 0.0099999998);
       const unsigned char y = (unsigned char)(long long)(*(const float*)(entity + 0x14) * 0.0099999998);
-      fprintf(file, "%4d %4d 30 %4d %4d -1\n", entity[0x2eb], gMapManager.GetCurrentMap(), x, y);
+      fprintf(file, "%4d %4d 30 %4d %4d -1\n", entity[EntityOffset(0x2eb)], gMapManager.GetCurrentMap(), x, y);
     }
   }
   fprintf(file, "end\n");

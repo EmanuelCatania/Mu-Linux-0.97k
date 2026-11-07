@@ -2,7 +2,12 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
-#include "Platform/IGLContext.h"
+#include "Text/TextAtlas.h"
+#include "Text/TextCore.h"
+#include "Render/Gfx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
+#include "Render/GlyphAtlas.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
@@ -107,17 +112,19 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int drawX = sx - boxW / 2;
     int drawY = sy - boxH - 8;
     if (drawY < 0) drawY = sy + 8;
-    if (drawX < 0) drawX = 0;
-    if (drawX + boxW > (int)gWindow.GetWidth()) drawX = (int)gWindow.GetWidth() - boxW;
-    if (drawX < 0) drawX = 0;
+    // Pantalla ancha: los bordes son los de la ventana (off = 0 en 4:3).
+    const int edge = gWindow.GetUiOffsetX();
+    if (drawX < -edge) drawX = -edge;
+    if (drawX + boxW > (int)gWindow.GetWidth() + edge) drawX = (int)gWindow.GetWidth() + edge - boxW;
+    if (drawX < -edge) drawX = -edge;
 
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
     GL_DrawRect((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.82f);
     GL_DrawRect((float)drawX, (float)drawY, (float)boxW, (float)boxH);
 
     int lineY = drawY + padY;
@@ -183,7 +190,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     Platform::TextFormatSecure(TextListN(2), 100, "\n");
 
     int v10 = 3;
-    int heroClassFlag = *(unsigned char*)(Hero + 444) & 7;
+    int heroClassFlag = *(unsigned char*)(Hero + EntityOffset(444)) & 7;
 
     // Class 0 (Dark Wizard / magic class): damage line
     if (heroClassFlag == 0) {
@@ -294,8 +301,8 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
     if (skillType == 0 || skillType >= 64) return;
 
-    unsigned char* skillBaseTbl = DAT_07d29d20 ? (unsigned char*)(uintptr_t)DAT_07d29d20 : nullptr;
-    unsigned char* skillStatTbl = DAT_07cf1ff8 ? (unsigned char*)(uintptr_t)DAT_07cf1ff8 : skillBaseTbl;
+    unsigned char* skillBaseTbl = DAT_07d29d20;
+    unsigned char* skillStatTbl = DAT_07cf1ff8 ? DAT_07cf1ff8 : skillBaseTbl;
     if (!skillBaseTbl && !skillStatTbl) return;
 
     char szName[256] = {};
@@ -412,7 +419,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
-    if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
+    if (Hero && ((*(BYTE*)((char*)Hero + EntityOffset(0x1BC)) & 7) == 1) && skillType == 47) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;
@@ -454,6 +461,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // IDA: FUN_0047F7A0
 void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6, size_t textCapacity) {
     (void)param_6;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
     if (!param_3 || textCapacity == 0) return;
     // El caller entrega la capacidad de su array/slot, o la longitud ya
     // medida por su API de cadena. No inferir validez de direcciones virtuales.
@@ -518,15 +526,19 @@ bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
 // CutText @ 0x0047FE30 — Text_SplitAtMiddle(src, dstB_ptr, dstA, len)
 // Splits src at middle: first half → dstA (param_3), second half → *(char*)param_2.
 // Split point: first space near len/2, or forced at len/2+2.
+// DESVIACION (Fase 4, cortes UAX #14): ademas del espacio vale cualquier punto
+// de corte de libunibreak (entre ideogramas, despues de un guion...).
 // IDA: CutText (0x0047FE30)
-void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4) {
+void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_4) {
     char *param_1 = (char*)param_1_v;
     char *param_3 = (char*)param_3_v;
     unsigned int uVar4 = 0, uVar3 = 0;
+    const std::vector<unsigned char> breaks =
+        TextEngine::LineBreaks(std::string_view(param_1, param_4 > 0 ? (std::size_t)param_4 : 0));
     if (param_4 > 0) {
         do {
             uVar3 = uVar4;
-            if ((param_4/2 - 2 <= (int)uVar4 && param_1[uVar4] == ' ') ||
+            if ((param_4/2 - 2 <= (int)uVar4 && (param_1[uVar4] == ' ' || breaks[uVar4])) ||
                 (param_4/2 + 2 <= (int)uVar4)) break;
             char c = mbclen((byte*)(param_1 + uVar4));
             uVar4 += (unsigned int)(unsigned char)c;
@@ -547,9 +559,9 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
 // (compleja, bitmap font procesada). El subclass tipo-0 usa `Bitmaps[0/1]`
 // (Interface/FontInput.tga) para renderizar cada glyph como un quad.
 //
-// Port: implementación autónoma usando wglUseFontBitmapsA sobre la HFONT
-// GDI ya seleccionada en m_hFontDC. Genera 256 display lists a partir de la
-// fuente GDI y emite el texto con glCallLists. Suficiente para UI (login,
+// Port: implementación autónoma con los glifos de la HFONT GDI ya
+// seleccionada en m_hFontDC: 256 bitmaps en un atlas (GlyphAtlas), dibujados
+// con la semántica de glRasterPos + glBitmap. Suficiente para UI (login,
 // char-select, chat) — el look no matchea la fuente TGA original píxel a
 // píxel pero los textos aparecen en su posición con el color y layout
 // correctos.
@@ -564,7 +576,7 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
 // ── Escala "píxeles de framebuffer" → "unidades del ortho 2D" ───────────────
 //   · La GEOMETRÍA 2D (RenderColor / RenderBitmap) se emite en unidades del
 //     ortho y la GPU la estira hasta el viewport.
-//   · Los GLIFOS los pinta wglUseFontBitmaps + glBitmap, un blit 1:1 EN
+//   · Los GLIFOS se pintan como glBitmap, un blit 1:1 EN
 //     PÍXELES DE FRAMEBUFFER desde el raster position, y `GetTextExtentPointA`
 //     mide en esos mismos píxeles.
 // O sea que el ancho del texto y el ancho de su fondo viven en unidades
@@ -624,7 +636,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text)
 //                 tramo activo), con caché de texturas por string.
 //
 // DESVIACIÓN CONSCIENTE: nuestro CUIRenderText_RenderText es una reimplementación propia
-// basada en glifos (wglUseFontBitmapsA), sin la partición type-0/type-1 del
+// basada en glifos GDI (GlyphAtlas), sin la partición type-0/type-1 del
 // original ni su caché de texturas.  Aplicamos siempre el comportamiento del
 // type-1, porque el alternativo es dibujar los bytes de control como glifos
 // basura.  Consecuencia: un cliente vanilla con "TextOut" != 1 muestra esa
@@ -735,6 +747,8 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
 void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const char *text, DWORD /*color_unused*/)
 {
     if (text == NULL || *text == '\0') return;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+    bool profiledString=false;
 
     // ── Espacio de coordenadas: logico 640x480 -> pixel fisico ──────────────
     //
@@ -790,7 +804,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         if (*drawText == '\0') return;
     }
 
-    void* hRC = Platform::GetGLContext().CurrentIdentity();
+    void* hRC = gWindow.RenderIdentity();
     if (!hRC) return;
 
     HDC hFontDC = gFont.GetTextDC();
@@ -803,18 +817,31 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
     HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
-    if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+    if (hFont == NULL) hFont = gFont.GetFont(FONT_NORMAL);
     if (hFont == NULL) return;
 
+#ifdef MU_SDL_FONTS
+    // DESVIACION (Fase 4, texto Unicode): SDL3 arma el texto con el layout
+    // nuevo y lo dibuja por el atlas (TextAtlas); no hay listas de glifos.
+    int s_ascent = 11;
+    {
+        TEXTMETRICA tm;
+        if (gFont.TextMetrics(hFontDC, &tm)) s_ascent = tm.tmAscent;
+    }
+#else
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
-    // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { void* rc; HFONT font; GLuint base; int ascent; unsigned generation; };
-    static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
+    // reconstruir los 256 glifos al alternar fuentes entre llamadas.
+    // DESVIACION (Fase 4): los glifos que armaba wglUseFontBitmapsA (display
+    // lists de glBitmap) van a un atlas con los mismos bitmaps, origen y
+    // avance; se dibujan como quads con la semántica de glRasterPos/glBitmap.
+    struct FontAtlas { void* rc; HFONT font; unsigned key; int ascent; unsigned generation; };
+    static FontAtlas s_cache[4] = { {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0} };
     static int       s_next = 0;
+    static unsigned  s_nextKey = 1;
 
     int slot = -1;
     for (int i = 0; i < 4; ++i) {
-        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
+        if (s_cache[i].key != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
             slot = i;
             break;
         }
@@ -822,59 +849,28 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     if (slot < 0) {
         slot = s_next;
         s_next = (s_next + 1) & 3;
-        if (s_cache[slot].base != 0) {
-            glDeleteLists(s_cache[slot].base, 256);
-            s_cache[slot].base = 0;
+        if (s_cache[slot].key != 0) {
+            GlyphAtlas::Forget(s_cache[slot].key);
+            s_cache[slot].key = 0;
         }
-        GLuint base = glGenLists(256);
-        if (base == 0) return;
         // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
-        // hace falta SelectObject — el que había acá encima pisaba la elección
-        // del caller y contaminaba las mediciones posteriores de otro código.
-        // GL_UNPACK_ALIGNMENT = 1 antes de generar las listas.
-        //
-        // `wglUseFontBitmapsA` llama internamente a `glBitmap` con el mapa de
-        // bits de cada glifo, y `glBitmap` lee las filas usando el
-        // GL_UNPACK_ALIGNMENT ACTUAL, que es estado global de GL y por defecto
-        // vale 4. Todo glifo cuyo ancho en bytes no sea multiplo de 4 se lee
-        // entonces con las filas corridas: basura y lineas horizontales que
-        // cruzan la pantalla.
-        //
-        // El binario hace exactamente esto en su propio camino de texto
-        // (bake a textura): `glBindTexture(...); glPixelStorei(0xCF5, 1);
-        // glTexImage2D(...)`. Nuestro port usa wglUseFontBitmapsA en vez de esa
-        // textura — desviacion ya documentada — y se habia quedado sin el
-        // seteo del alignment.
-        //
-        // Por que dependia de la resolucion: el cuerpo de la fuente cambia con
-        // ella (12/13/14/15 segun WindowWidth, WinMain paso 15), y con el
-        // cuerpo cambian los anchos de los glifos; solo algunos caen en un
-        // ancho no alineado. Y por que "aparecia y desaparecia": estas listas
-        // se generan UNA vez por fuente y quedan cacheadas, asi que la
-        // corrupcion persiste hasta que el cache se regenera.
-        //
-        // Se restaura el valor previo para no alterar el estado global que
-        // espera el resto del render.
-        GLint prevAlign = 4;
-        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
-        if (!fontOk) {
-            glDeleteLists(base, 256);
-            return;
-        }
+        // hace falta SelectObject: uno acá pisaba la elección del caller.
+        static GlyphAtlas::Bitmap s_glyphs[256];
+        if (!gFont.BuildGlyphs(hFontDC, 0, 256, s_glyphs)) return;
+        const unsigned key = s_nextKey++;
+        if (!GlyphAtlas::Build(key, s_glyphs, 256)) return;
         TEXTMETRICA tm;
         int ascent = 11;
         if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
-        s_cache[slot].base   = base;
+        s_cache[slot].key    = key;
         s_cache[slot].ascent = ascent;
         s_cache[slot].generation = gFont.Generation();
     }
-    const GLuint s_fontListBase = s_cache[slot].base;
+    const unsigned int s_fontAtlas = s_cache[slot].key;
     const int    s_ascent       = s_cache[slot].ascent;
+#endif
 
     // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
     // El binario NO deja que la caja de texto se salga: antes de dibujarla
@@ -900,14 +896,17 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         gFont.MeasureText(hFontDC, drawText, (int)strlen(drawText), &tot);
         float wOrtho = (float)tot.cx;
         float hOrtho = (float)tot.cy;
-        if (x < 0) x = 0;
-        if ((float)x + wOrtho > (float)vw) x = (int)((float)vw - wOrtho);
+        // DESVIACION (Fase 4, pantalla ancha): el borde es el de la ventana
+        // (la interfaz ocupa un 4:3 centrado con `off` píxeles a cada lado).
+        const int off = gWindow.GetUiOffsetX();
+        if (x < -off) x = -off;
+        if ((float)x + wOrtho > (float)vw + (float)off) x = (int)((float)vw + (float)off - wOrtho);
         if (DAT_07e11d6e) {
             if (y < 0) y = 0;
             float bottom = (float)vh - (47.0f * (float)vh) / 640.0f;
             if ((float)y + hOrtho > bottom) y = (int)(bottom - hOrtho);
         }
-        if (x < 0) x = 0;
+        if (x < -off) x = -off;
         if (y < 0) y = 0;
     }
 
@@ -921,9 +920,9 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // Se respeta el alpha que el CALLER setea via glColor4f(...,α) antes de
     // RenderText (lo usa p.ej. el cross-fade del banner clase/zona): se
     // multiplican el alpha del texto-color (DAT_00559c78 byte 3) y el del caller.
-    GLfloat curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glGetFloatv(GL_CURRENT_COLOR, curColor);
-    GLubyte callerA = (GLubyte)(curColor[3] * 255.0f + 0.5f);
+    float curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    Gfx::CurrentColor(curColor);
+    unsigned char callerA = (unsigned char)(curColor[3] * 255.0f + 0.5f);
 
     // El color del caller (glColor3f) también MODULA el RGB, no
     // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
@@ -936,13 +935,18 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // Sin esto, los `glColor3f` de RenderItemName (0x4C9E70) no hacían nada y
     // los nombres del suelo salían todos con m_dwTextColor: el Zen sin su
     // dorado y los items +N sin su color por nivel.
-    GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
+    float callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // DESVIACION R4k: texto conserva su dibujo, pero no filtra factores de
+    // mezcla al siguiente productor. Materiales Off mantiene la referencia.
+    const bool scopedText=Materials::BeginText();
+    if(!scopedText){
+        Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent);
+        Gfx::Disable(Gfx::Cap::Texture2D);
+        Gfx::Disable(Gfx::Cap::DepthTest);
+        Gfx::Enable(Gfx::Cap::Blend);
+        Gfx::BlendFunc(Gfx::Factor::SrcAlpha, Gfx::Factor::OneMinusSrcAlpha);
+    }
 
     // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
     // Sin marcadores hay un único tramo con (m_dwTextColor, m_dwBackColor), o
@@ -966,8 +970,6 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         const int drawLen = (int)strlen(drawText);
         const int nRuns   = nMarkers + 1;
 
-        glListBase(s_fontListBase);
-
         for (int run = 0; run < nRuns; ++run) {
             int startChar = (run == 0)        ? 0        : markers[run - 1].charIndex;
             int endChar   = (run == nMarkers) ? drawLen  : markers[run].charIndex;
@@ -985,15 +987,15 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             BOOL haveExtent = gFont.MeasureText(hFontDC, drawText + startChar,
                                                   endChar - startChar, &bsz);
 
-            GLubyte bA = (GLubyte)((bc >> 24) & 0xFF);
+            unsigned char bA = (unsigned char)((bc >> 24) & 0xFF);
             if (bA != 0 && haveExtent && bsz.cx > 0) {
-                GLubyte bR = (GLubyte)( bc        & 0xFF);
-                GLubyte bG = (GLubyte)((bc >>  8) & 0xFF);
-                GLubyte bB = (GLubyte)((bc >> 16) & 0xFF);
-                GLubyte bFinal = (GLubyte)((unsigned)bA * (unsigned)callerA / 255u);
-                bR = (GLubyte)((float)bR * callerR + 0.5f);
-                bG = (GLubyte)((float)bG * callerG + 0.5f);
-                bB = (GLubyte)((float)bB * callerB + 0.5f);
+                unsigned char bR = (unsigned char)( bc        & 0xFF);
+                unsigned char bG = (unsigned char)((bc >>  8) & 0xFF);
+                unsigned char bB = (unsigned char)((bc >> 16) & 0xFF);
+                unsigned char bFinal = (unsigned char)((unsigned)bA * (unsigned)callerA / 255u);
+                bR = (unsigned char)((float)bR * callerR + 0.5f);
+                bG = (unsigned char)((float)bG * callerG + 0.5f);
+                bB = (unsigned char)((float)bB * callerB + 0.5f);
                 // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
                 // texto ocupa [rasterY - descent, rasterY + ascent]. descent = cy - ascent.
                 int descent = (int)bsz.cy - s_ascent;
@@ -1009,32 +1011,47 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 float x1 = runX + wOrtho + 1.0f;
                 float y0 = (float)rasterY - descOrtho;
                 float y1 = (float)rasterY + ascOrtho;
-                glColor4ub(bR, bG, bB, bFinal);
-                glBegin(GL_QUADS);
-                    glVertex2f(x0, y0);
-                    glVertex2f(x1, y0);
-                    glVertex2f(x1, y1);
-                    glVertex2f(x0, y1);
-                glEnd();
+                BufferedDraw::Color4ub(bR, bG, bB, bFinal);
+                BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+                    BufferedDraw::Vertex2f(x0, y0);
+                    BufferedDraw::Vertex2f(x1, y0);
+                    BufferedDraw::Vertex2f(x1, y1);
+                    BufferedDraw::Vertex2f(x0, y1);
+                BufferedDraw::End();
             }
 
-            GLubyte R = (GLubyte)( fg        & 0xFF);
-            GLubyte G = (GLubyte)((fg >>  8) & 0xFF);
-            GLubyte B = (GLubyte)((fg >> 16) & 0xFF);
-            GLubyte A = (GLubyte)((fg >> 24) & 0xFF);
+            unsigned char R = (unsigned char)( fg        & 0xFF);
+            unsigned char G = (unsigned char)((fg >>  8) & 0xFF);
+            unsigned char B = (unsigned char)((fg >> 16) & 0xFF);
+            unsigned char A = (unsigned char)((fg >> 24) & 0xFF);
             if (A == 0) A = 0xFF;
-            GLubyte finalA = (GLubyte)((unsigned)A * (unsigned)callerA / 255u);
+            unsigned char finalA = (unsigned char)((unsigned)A * (unsigned)callerA / 255u);
 
             // Modulación por el color del caller (ver la nota de arriba).
-            R = (GLubyte)((float)R * callerR + 0.5f);
-            G = (GLubyte)((float)G * callerG + 0.5f);
-            B = (GLubyte)((float)B * callerB + 0.5f);
+            R = (unsigned char)((float)R * callerR + 0.5f);
+            G = (unsigned char)((float)G * callerG + 0.5f);
+            B = (unsigned char)((float)B * callerB + 0.5f);
 
-            glColor4ub(R, G, B, finalA);
-            glRasterPos2f(runX, (float)rasterY);
-            glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
-                        drawText + startChar);
+#ifdef MU_SDL_FONTS
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                if (const auto* shaped = gFont.Shape(hFontDC, drawText + startChar, endChar - startChar))
+                    TextAtlas::Draw(*shaped, runX, (float)rasterY, R, G, B, finalA);
+            }
+#else
+            BufferedDraw::Color4ub(R, G, B, finalA);
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                // DESVIACION (Fase 4): el texto está en UTF-8 y los glifos de
+                // GDI son los 256 de 1252.
+                const std::string legacy = TextEngine::ToWindows1252(
+                    std::string_view(drawText + startChar, size_t(endChar - startChar)));
+                GlyphAtlas::Draw(s_fontAtlas, runX, (float)rasterY, legacy.c_str(), (int)legacy.size(), vw, vh);
+            }
+#endif
         }
     }
-    glPopAttrib();
+    if(scopedText)Materials::EndText();else Gfx::PopAttrib();
 }

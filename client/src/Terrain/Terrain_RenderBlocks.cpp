@@ -3,6 +3,7 @@
 // Culling/render de bloques de terreno y la variante de luz dinámica clampeada.
 
 #include "stdafx.h"
+#include "Render/DrawDistance.h"
 #include "globals.h"
 #include "functions.h"
 // AddTerrainLightClip @ 0x004F7800 (~74 lines) — adds clamped light to terrain buffer
@@ -118,6 +119,12 @@ void __cdecl RenderTerrainFrustrum(bool EditFlag) {
                 float blockX = (float)xi;
                 do {
                     unsigned short visible = TestFrustrum2D(blockX + _DAT_0055264c, centerY, -40.0f);
+                    // DESVIACION: distancia de dibujado; el picking del mouse
+                    // (EditFlag) no prueba los bloques fuera del radio de detalle,
+                    // que con el alcance ampliado multiplicaban su costo.
+                    if (visible && EditFlag &&
+                        !DrawDistance::Detailed((blockX + _DAT_0055264c) * _DAT_005524f0, centerY * _DAT_005524f0))
+                        visible = 0;
                     if (visible || CameraTopViewEnabled != 0) {
                         RenderTerrainBlock(blockX, blockY, xi, yi, EditFlag);
                     }

@@ -36,6 +36,6 @@ constexpr unsigned short GameServerPort      = 55901;
 // Identidad del server (ver arriba). ClientVersion acepta "0.97.11" o "09711".
 constexpr char           CustomerName[]      = "MuLinux";
 constexpr char           ServerSerial[]      = "TbYehR2hFUPBKgZj";
-constexpr char           ClientVersion[]     = "0.97.11";
+constexpr char           ClientVersion[]     = "0.97.40";
 
 } // namespace ServerConfig

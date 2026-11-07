@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Render/Gfx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
@@ -22,6 +25,9 @@ constexpr float CenterY = 192.0f - 240.0f + MaxSize * 0.5f;
 constexpr float Rotation = -45.0f;
 constexpr int PointTexture = 9;               // flecha (Interface), como el DLL
 constexpr int ButtonY = 411, ButtonPanelWidth = 96, ButtonSize = 21;
+constexpr Ui::Panel LeftButtons{Ui::Anchor::Izquierda, ButtonPanelWidth};
+constexpr Ui::Panel RightButtons{Ui::Anchor::Derecha, ButtonPanelWidth};
+int ButtonOrigin(bool left) { return gWindow.PanelOrigin(left ? LeftButtons : RightButtons); }
 
 // Estado de cada frame (DLL RenderFullMap).
 struct View {
@@ -45,7 +51,7 @@ View CurrentView(int zoom)
 
 bool Inside(int x, int y, int w, int h)
 {
-    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
+    return (int)MouseX >= x && (int)MouseX < x + w && (int)MouseY >= y && (int)MouseY < y + h;
 }
 
 float ToX(float x) { return x * gWindow.GetWidth() / 640.0f; }
@@ -63,12 +69,12 @@ void EmitQuad(const float p[4][2], float u, float v, float uw, float vh)
 {
     const float tc[4][2] = { { u, v }, { u, v + vh }, { u + uw, v + vh }, { u + uw, v } };
     const float cx = gWindow.GetWidth() / 2.0f, cy = gWindow.GetHeight() / 2.0f;
-    glBegin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
     for (int i = 0; i < 4; ++i) {
-        glTexCoord2f(tc[i][0], tc[i][1]);
-        glVertex2f(p[i][0] + cx, p[i][1] + cy);
+        BufferedDraw::TexCoord2f(tc[i][0], tc[i][1]);
+        BufferedDraw::Vertex2f(p[i][0] + cx, p[i][1] + cy);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // DLL OpenglUtil.cpp MyRenderBitRotate.
@@ -115,7 +121,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
     gFont.MeasureText(gFont.GetTextDC(), tooltip, Platform::TextLength(tooltip), &size);
     const int textWidth = (int)(size.cx * 640 / gWindow.GetWidth());
     const DWORD text = m_dwTextColor, back = m_dwBackColor;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     m_dwBackColor = 0xFF000000u;
     m_dwTextColor = 0xFFFFFF00u;   // cian (ABGR)
     RenderTipText((int)(dx + iw / 2.0f) - textWidth / 2, (int)(480.0f - dy - 5.0f), tooltip);
@@ -177,8 +183,8 @@ void CMiniMap::UpdateMouse()
         }
         return true;
     };
-    if (button(0, 75, &CMiniMap::ChangeZoom)) return;
-    button(640 - ButtonPanelWidth, 640 - ButtonPanelWidth, &CMiniMap::ChangeAlpha);
+    if (button(ButtonOrigin(true), ButtonOrigin(true) + 75, &CMiniMap::ChangeZoom)) return;
+    button(ButtonOrigin(false), ButtonOrigin(false), &CMiniMap::ChangeAlpha);
 }
 
 // DLL LoadMiniMapImage + PaintBorder: cada tile caminable es un bloque de 2x2
@@ -219,15 +225,15 @@ void CMiniMap::BuildTexture()
             put(sx * 2 + 1, sy * 2 + 1, 0, 0, 0, 189);
         }
     }
-    if (!m_Texture) glGenTextures(1, (GLuint*)&m_Texture);
-    glBindTexture(GL_TEXTURE_2D, m_Texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, MapSize, MapSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    const GLfloat border[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+    if (!m_Texture) m_Texture = Gfx::CreateTexture();
+    Gfx::BindTexture(m_Texture);
+    Gfx::TexImage2D(4, MapSize, MapSize, Gfx::Format::RGBA, pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValue::Clamp);
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValue::Clamp);
+    const float border[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    Gfx::TexBorderColor(border);
     DAT_00561574 = 0xFFFFFFFF;   // la caché de BindTexture ya no vale
     m_TextureWorld = gMapManager.GetCurrentMap();
 }
@@ -236,9 +242,9 @@ void CMiniMap::RenderBackground() const
 {
     const View v = CurrentView(m_Zoom);
     EnableAlphaTest(true);
-    glBindTexture(GL_TEXTURE_2D, m_Texture);
+    Gfx::BindTexture(m_Texture);
     DAT_00561574 = 0xFFFFFFFF;
-    glColor4f(1.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
     BitRotate(CenterX, CenterY, MaxSize, MaxSize, Rotation,
               v.offsetX, v.offsetY, v.size / 512.0f, v.size / 512.0f);
 }
@@ -249,7 +255,7 @@ void CMiniMap::RenderMarkers() const
     const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
     if (!base) return;
     for (int i = 0; i < 400; ++i) {
-        const BYTE* c = base + i * 916;
+        const BYTE* c = base + i * CHARACTER_STRIDE;
         if (!c[0]) continue;
         const float tx = ((*(const float*)(c + 0x10) / 100.0f) / 256.0f - v.offsetX) * (MaxSize * v.scale);
         const float ty = ((256.0f - *(const float*)(c + 0x14) / 100.0f) / 256.0f - v.offsetY) * (MaxSize * v.scale);
@@ -263,13 +269,13 @@ void CMiniMap::RenderMarkers() const
             r = 0.5f; g = 0.0f; b = 0.0f; size = 6.0f;
         } else if (kind == 4) {     // NPC, con su nombre
             r = 1.0f; g = 0.0f; b = 1.0f;
-            tooltip = (const char*)(c + 0x1C1);
+            tooltip = EntityName::Get(c);
         } else {
             continue;
         }
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
-        glColor4f(r, g, b, m_Alpha * 0.1f);
+        BufferedDraw::Color4f(r, g, b, m_Alpha * 0.1f);
         PointRotate(tx, ty, v.scale * size, v.scale * size, *(const float*)(c + 0x24) - 45.0f,
                     2.0f / 32.0f, 14.0f / 32.0f, 30.0f / 32.0f, 18.0f / 32.0f, tooltip);
     }
@@ -278,7 +284,7 @@ void CMiniMap::RenderMarkers() const
 void CMiniMap::RenderGates() const
 {
     const View v = CurrentView(m_Zoom);
-    const GATE_ATTRIBUTE* gates = (const GATE_ATTRIBUTE*)(uintptr_t)GateAttribute;
+    const GATE_ATTRIBUTE* gates = GateAttribute;
     if (!gates) return;
     char text[96];
     for (int i = 0; i < MaxGates; ++i) {
@@ -294,7 +300,7 @@ void CMiniMap::RenderGates() const
                   gMapManager.GetName(gates[gate.Target].Map));
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
-        glColor4f(0.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
+        BufferedDraw::Color4f(0.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
         PointRotate(tx, ty, v.scale * 10.0f, v.scale * 10.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, text);
     }
 }
@@ -303,19 +309,19 @@ void CMiniMap::RenderGates() const
 // derecha), botón 0x120/0x121 y el valor en rojo.  Opacos con el mouse encima.
 void CMiniMap::RenderButton(bool left) const
 {
-    const float plateX = left ? 0.0f : 640.0f - 75.0f;
-    const float buttonX = left ? 75.0f : 640.0f - 75.0f - ButtonSize;
-    const int panelX = left ? 0 : 640 - ButtonPanelWidth;
+    const int panelX = ButtonOrigin(left);
+    const float plateX = (float)(panelX + (left ? 0 : ButtonSize));
+    const float buttonX = (float)(panelX + (left ? 75 : 0));
     const float alpha = Inside(panelX, ButtonY, ButtonPanelWidth, ButtonSize) ? 1.0f : 0.3f;
     EnableAlphaTest(true);
-    glColor4f(1.0f, 1.0f, 1.0f, alpha);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, alpha);
     GL_DrawTexture(0xF5, plateX, (float)ButtonY, 75.0f, 21.0f, left ? 0.0f : 75.0f / 128.0f, 0.0f,
                    (left ? 75.0f : -75.0f) / 128.0f, 21.0f / 32.0f, 1, 1);
     const bool pressed = Inside((int)buttonX, ButtonY, ButtonSize, ButtonSize) && MouseLButton;
     GL_DrawTexture(pressed ? 0x121 : 0x120, buttonX, (float)ButtonY, 21.0f, 21.0f,
                    0.0f, 0.0f, 24.0f / 32.0f, 24.0f / 32.0f, 1, 1);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     char text[64];
     if (left) Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
@@ -325,7 +331,7 @@ void CMiniMap::RenderButton(bool left) const
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     m_dwBackColor = 0;
     m_dwTextColor = ((DWORD)(alpha * 255) << 24) | 0x000000FFu;   // rojo (ABGR)
-    RenderText(left ? 5 : (int)buttonX + 31, CenterTextY(text, 421), text,
+    RenderText(left ? panelX + 5 : (int)buttonX + 31, CenterTextY(text, 421), text,
                (int)(60 * gWindow.GetWidth() / 640), 0, nullptr);
     m_dwTextColor = color;
     m_dwBackColor = back;
@@ -346,7 +352,7 @@ void CMiniMap::Render()
     RenderMarkers();
     RenderGates();
     GL_ResetState();
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     RenderButton(true);
     RenderButton(false);
 }

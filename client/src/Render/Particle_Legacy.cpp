@@ -14,13 +14,13 @@
 // Itera por índice acotado (1002 slots).
 void __cdecl Character_UpdateAll(void) {
     char *pcVar2 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar2 += OBJECT_STRIDE) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
             if      (blend == 0) GL_SetBlendAdditive();
             else if (blend == 1) GL_SetBlendSrcAlpha();
             else if (blend == 2) GL_SetBlendSrcOver('\x01');
-            Render_DrawSprite((int)pcVar2);
+            Render_DrawSprite(AsObject(pcVar2));
             *pcVar2 = 0;
         }
     }
@@ -30,9 +30,9 @@ void __cdecl Character_UpdateAll(void) {
 // Itera por índice acotado (1002 slots).
 void __cdecl Effect_UpdateAll(void) {
     char *pcVar1 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar1 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
-            pcVar1[0x160] = '\x01';
+            pcVar1[EntityOffset(0x160)] = '\x01';
     }
 }
 

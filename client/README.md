@@ -13,8 +13,9 @@ de login, mismo render, mismos paquetes. No es una reescritura ni un "cliente
 inspirado en": cada función es un port de su contraparte en el binario, y las
 desviaciones deliberadas están documentadas en un comentario junto al código.
 
-Sobre esa base se integraron las funciones del `Main.dll` de inyección (Fase 2)
-y se agregó soporte para Linux (Fase 3).
+Sobre esa base se integraron las funciones del `Main.dll` de inyección (Fase 2),
+se agregó soporte para Linux (Fase 3) y se pasó a 64 bits, con timing real,
+renderer moderno y texto Unicode (Fase 4).
 
 ---
 
@@ -29,113 +30,135 @@ El cliente arranca, conecta, hace login, elige personaje, entra al mundo y se
 juega: terreno, personajes, NPCs y monstruos, inventario, equipo, tienda, baúl,
 trade, chat, party, guild, combate, skills, efectos, eventos, sonido y música.
 
-| Plataforma | Backend | Estado |
+| Plataforma | Render | Estado |
 |---|---|---|
-| Windows x86 | Win32 (el del binario original) | Completo |
-| Windows x86 | SDL3 | Completo |
-| Linux x86 | SDL3 | Completo; con NVIDIA conviene X11 (ver [Wayland y GPUs NVIDIA](#wayland-y-gpus-nvidia)) |
+| Windows x64 | OpenGL 3.3 y WebGPU (DirectX 12, DirectX 11, Vulkan) | Completo; es el build publicado |
+| Linux x64 | OpenGL 3.3 y WebGPU (Vulkan) | Completo; es el build publicado |
+| Windows x86, Linux x86 | OpenGL 3.3 | Base histórica: compila, pero no se prueba ni recibe WebGPU |
+
+### Novedades de 0.97.40 — cierre de la Fase 4
+
+- **64 bits.** El cliente se compila y se publica en x64. Los layouts de 32 bits
+  del binario original (entidades, modelos, pools, punteros guardados en
+  enteros) se migraron a sus tamaños nativos. x86 queda como base histórica.
+- **Timing real.** La simulación corre a 25 pasos por segundo, como el
+  original, y el dibujo va aparte: más FPS no aceleran el juego. Límite de FPS
+  y VSync configurables.
+- **Renderer moderno.** OpenGL 3.3 core con shaders, en lugar del pipeline fijo
+  del 0.97k, y un segundo backend WebGPU (Dawn) sobre DirectX 12, DirectX 11 o
+  Vulkan. Ver [Render](#render).
+- **Opciones gráficas nuevas**, todas apagadas por defecto: calidad de
+  texturas, nitidez, antialiasing (FXAA y MSAA 4x), sombras proyectadas,
+  niebla por profundidad, distancia de dibujado con la cámara 3D y un pack
+  opcional de texturas HD.
+- **Texto Unicode.** El cliente escribe, dibuja y manda UTF-8: nombres de
+  personaje y guild en cualquier escritura, emojis en color, chat de hasta 200
+  bytes y fuentes de respaldo para chino, japonés, coreano, árabe, hebreo,
+  tailandés y devanagari. Ver [Textos, idiomas y Unicode](#textos-idiomas-y-unicode).
+- **Textos que manda el server.** Nombres de items, monstruos y skills, líneas de
+  tooltip de los items custom y los textos propios del cliente llegan
+  traducidos al idioma del jugador desde el server.
+- **Interfaz.** Panel de eventos (tecla H) paginado, barra de buffs con tiempo
+  restante y quién lo lanzó, chat con historial de los últimos mensajes,
+  selector de emojis, pantallas anchas hasta 3440x1440 con la interfaz anclada
+  a los bordes, niebla con distancias por mapa definidas en el server.
+- **Linux x64** con WebGPU sobre Vulkan, en X11 y Wayland.
+
+**Compatibilidad: cliente 0.97.40 ↔ [server 0.97.40](https://github.com/EmanuelCatania/Mu-Linux-0.97k).**
+El protocolo cambió (nombres de 40 bytes y chat de 200), así que cliente y
+server tienen que actualizarse juntos: un cliente anterior ya no entra a un
+server 0.97.40 y al revés.
 
 ---
 
 ## Qué necesitás
 
 - **Los assets ya están incluidos** en `bin/Client/Data/` (~209 MB: modelos
-  `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos y música). Clonás, compilás y
-  arranca.
-- **Un servidor.** El port está validado contra
+  `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos, música y las fuentes de
+  respaldo). Clonás, compilás y arranca.
+- **Una placa de video con OpenGL 3.3**, con el controlador instalado. Para WebGPU hace falta además DirectX 12,
+  DirectX 11 o Vulkan; si no se puede crear el dispositivo, el cliente sigue con
+  OpenGL.
+- **Un servidor 0.97.40.** El port está validado contra
   [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
-  0.97k), que es la fuente autoritativa para el formato de los paquetes. También
-  se puede usar la versión de Windows,
-  [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito). Cada
-  Release del cliente indica con qué versión del server funciona.
+  0.97k), que es la fuente autoritativa para el formato de los paquetes. Cada
+  Release del cliente indica con qué versión del server funciona. Los servers
+  0.97k sin los cambios de 0.97.40 (por ejemplo,
+  [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito)) usan
+  nombres de 10 bytes y no son compatibles con este cliente.
 
 ---
 
 ## Compilar
 
-Hay dos backends de plataforma, que se eligen con `MU_PLATFORM_BACKEND`:
+El cliente usa **SDL3** para ventana, entrada, sonido y red, y FreeType,
+HarfBuzz y SheenBidi para el texto. Todo se descarga al configurar, en
+versiones fijas, así que la primera configuración necesita internet.
 
-- **`Win32`** (el default): ventana, input, sonido y red con la API de Windows,
-  como el binario original. Sólo Windows.
-- **`SDL3`**: lo mismo sobre SDL3, FreeType y miniaudio. Windows y Linux.
+Los builds publicados son **x64**. El backend `Win32` (la ventana y el texto
+GDI del binario original) y los builds de 32 bits quedan como base histórica:
+compilan, pero no tienen CI ni se prueban.
 
-**Siempre es x86 (32 bits).** El port asume punteros de 32 bits: las direcciones
-del binario original, los layouts de struct y los pools de memoria. CMake corta
-la configuración si se intenta compilar en 64 bits.
-
-### Windows (backend Win32)
+### Windows x64
 
 Requiere **Visual Studio 2022** con el toolset de C++ para escritorio (trae
-CMake). Hay dos formas equivalentes, que generan el mismo exe:
+CMake) y [vcpkg](https://github.com/microsoft/vcpkg) para Dawn, el backend
+WebGPU. La variable de entorno `VCPKG_ROOT` tiene que apuntar a una copia de
+vcpkg (sirve la que trae Visual Studio o un `git clone` propio):
 
-- **Visual Studio:** abrir `mu97k.sln`, elegir **Debug** o **Release** con
-  plataforma **Win32**, y compilar.
-- **CMake:**
-  ```
-  cmake -S . -B build -A Win32 -T v143
-  cmake --build build --config Release
-  ```
-  El primer comando también genera `build/mu97k.sln`, por si querés seguir en
-  Visual Studio con las carpetas de `src/` como filtros.
+```
+cmake --preset windows-sdl3-x64-release
+cmake --build --preset windows-sdl3-x64-release
+```
+
+La primera configuración tarda: vcpkg compila Dawn y después lo deja en su
+caché. Todo se enlaza estático, con el runtime de C++ estático (`/MT`), así que
+el exe no trae DLL propias ni necesita el redistributable de Visual C++. La
+versión de Dawn la fija el baseline de `vcpkg-configuration.json`; para pasar a
+lo más nuevo: `vcpkg x-update-baseline`. El triplet propio está en
+`cmake/triplets/`.
 
 Salida: `bin/Client/main.exe` (más `main.map` para resolver stacks de crash).
 El proyecto enlaza directo sobre `bin/Client/`, que es donde viven los assets y
 `Config.ini`, así que no hay copia intermedia ni riesgo de terminar ejecutando
 un binario viejo.
 
-### Windows (backend SDL3)
+### Linux x64
 
-Mismos requisitos que el anterior, más conexión a internet la primera vez que se
-configura: SDL3, FreeType y miniaudio se descargan con `FetchContent` en
-versiones fijas.
+Hace falta Git, CMake 3.25+, Ninja, Python 3, pkg-config, GCC/G++ y vcpkg (con
+`VCPKG_ROOT` apuntando a su carpeta), más las bibliotecas de desarrollo del
+escritorio:
 
-```
-cmake -S . -B build-sdl3 -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
-cmake --build build-sdl3 --config Release
-```
-
-La salida también es `bin/Client/main.exe`, así que pisa la del backend Win32.
-
-### Linux x86 (backend SDL3)
-
-Hace falta Git, CMake 3.25+, Ninja, Python 3, pkg-config y GCC/G++ con soporte
-`-m32`, más las bibliotecas de desarrollo de **32 bits** (también en un Linux
-x64):
-
-- **Arch** (con `[multilib]` habilitado):
-  `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols`, más las
-  bibliotecas `lib32-*` de [Correr en Linux](#correr-en-linux), que ya incluyen
-  los archivos de desarrollo.
-- **Debian/Ubuntu:** `g++-multilib libc6-dev-i386 cmake ninja-build git python3
-  pkg-config wayland-protocols libx11-dev:i386 libxext-dev:i386
-  libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386
-  libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libwayland-dev:i386
-  libxkbcommon-dev:i386 libdecor-0-dev:i386 libasound2-dev:i386
-  libpulse-dev:i386`. Ubuntu 22.04 trae CMake 3.22: instalá CMake 3.25+ antes de
-  configurar (por ejemplo, en un entorno virtual de Python).
-- **Fedora:** `gcc gcc-c++ cmake ninja-build git python3 pkgconf-pkg-config
-  wayland-devel wayland-protocols-devel glibc-devel.i686 libstdc++-devel.i686
-  mesa-libGLU-devel.i686 libglvnd-devel.i686 libX11-devel.i686
-  libXext-devel.i686 libXrandr-devel.i686 libXinerama-devel.i686
-  libXcursor-devel.i686 libXi-devel.i686 wayland-devel.i686
-  libxkbcommon-devel.i686 libdecor-devel.i686 alsa-lib-devel.i686
-  pulseaudio-libs-devel.i686`.
+- **Debian/Ubuntu:** `build-essential cmake ninja-build git python3 pkg-config
+  libx11-dev libx11-xcb-dev libxext-dev libxrandr-dev libxinerama-dev
+  libxcursor-dev libxi-dev libgl1-mesa-dev libegl-dev libasound2-dev
+  libpulse-dev libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols
+  libvulkan-dev`. Ubuntu 22.04 trae CMake 3.22: instalá CMake 3.25+ antes de
+  configurar. En otras distribuciones, los paquetes equivalentes.
 
 ```sh
-# PKG_CONFIG_LIBDIR tiene que apuntar a las bibliotecas de 32 bits.
-export PKG_CONFIG_LIBDIR=/usr/lib32/pkgconfig:/usr/share/pkgconfig                      # Arch
-# export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig        # Debian / Ubuntu
-# export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig                      # Fedora
-
-cmake -S . -B build/linux-release -G Ninja \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake \
-  -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build build/linux-release --parallel 4
+cmake --preset linux-x64-release
+cmake --build --preset linux-x64-release
 ```
 
-El ejecutable queda en `build/linux-release/bin/main` (no en `bin/Client/`, así
-no se mezcla con el de Windows). Para correrlo contra los assets del repo,
+El ejecutable queda en `build/linux-x64-release/bin/main` (no en `bin/Client/`,
+así no se mezcla con el de Windows). Para correrlo contra los assets del repo,
 apuntá `MU_ASSET_ROOT` a `bin/Client` (ver [Correr en Linux](#correr-en-linux)).
+
+### Builds históricos (x86 y Win32)
+
+Siguen disponibles para comparar contra el binario original, que es de 32 bits.
+Usan sólo OpenGL:
+
+- **Windows x86:** `cmake --preset windows-sdl3-x86-release` y
+  `cmake --build --preset windows-sdl3-x86-release`. También sale en
+  `bin/Client/main.exe`, así que pisa al de x64.
+- **Linux x86:** presets `linux-x86-release` y `linux-x86-debug`, con las
+  bibliotecas de 32 bits y `PKG_CONFIG_LIBDIR` apuntando a ellas (por ejemplo,
+  `/usr/lib32/pkgconfig:/usr/share/pkgconfig` en Arch).
+- **Backend Win32:** `cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=Win32`
+  o `mu97k.sln` en
+  Visual Studio. Su texto es GDI y sólo cubre Windows-1252.
 
 ### Para colaborar
 
@@ -143,11 +166,13 @@ apuntá `MU_ASSET_ROOT` a `bin/Client` (ver [Correr en Linux](#correr-en-linux))
   `.vcxproj` **y** en el `CMakeLists.txt`. El CI falla si las dos listas no
   coinciden; se puede chequear local con
   `python .github/scripts/check_cmake_sources.py`.
-- Dependencias incluidas en el repo: `lib/stb` (decodifica las texturas
-  `.ozj`/`.ozt` y guarda las capturas) y `lib/miniaudio` (música). Con SDL3 se
-  suman SDL3 y FreeType, que se descargan al configurar.
-- El CI compila las tres combinaciones (Windows Win32, Windows SDL3 y Linux
-  SDL3) en Debug y Release, y arma el paquete Linux del Release.
+- Dependencias incluidas en el repo: `lib/stb` (texturas `.ozj`/`.ozt` y
+  capturas), `lib/miniaudio` (música), `lib/utf8proc`
+  (normalización Unicode) y `lib/libunibreak` (dónde se puede cortar una línea).
+  SDL3, FreeType, HarfBuzz y SheenBidi se descargan al configurar; Dawn, con
+  vcpkg.
+- El CI compila Windows x64 con WebGPU, Linux x64 con WebGPU y las bases SDL3
+  históricas, corre las pruebas unitarias y arma los paquetes Linux.
 
 ---
 
@@ -173,7 +198,7 @@ constexpr char           GameServerIP[]      = "mu.server-pups.space";
 constexpr unsigned short GameServerPort      = 55901;
 constexpr char           CustomerName[]      = "MuLinux";
 constexpr char           ServerSerial[]      = "TbYehR2hFUPBKgZj";
-constexpr char           ClientVersion[]     = "0.97.11";
+constexpr char           ClientVersion[]     = "0.97.40";
 ```
 
 **Direcciones.** Con `ConnectServerPort` distinto de 0 se usa el flujo
@@ -199,13 +224,13 @@ no coincide, el cliente **conecta pero no entra**, y sin ningún mensaje útil:
 `CustomerName` y `ServerSerial` alimentan la clave de encriptación, que el
 GameServer deriva de los dos combinados (`GameServer/HackCheck.cpp::InitHackCheck`).
 `ServerSerial` cumple doble función: entra en esa derivación y además el server
-lo compara byte a byte en el login. `ClientVersion` acepta `0.97.11` o `09711`.
+lo compara byte a byte en el login. `ClientVersion` acepta `0.97.40` o `09740`.
 
 **Para diagnosticar**, `debug.log` registra al arrancar la dirección usada y la
 clave derivada:
 
 ```
-ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09711'
+ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09740'
 MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0xC2 EncDecKey2=0x01 (xor=0xC2 add=0xC2)
 ```
 
@@ -229,7 +254,8 @@ está ahí, el default del binario. Lo que se aplicó queda en `debug.log` (lín
 |---|---|---|
 | `[Window] WindowMode` | — (desviación) | `1` = en ventana, `0` = pantalla completa. El 0.97k sólo corre fullscreen y busca un modo de video de 16 bits que en Windows 10/11 no existe. |
 | `[Window] Borderless` | — (desviación) | `1` = sin barra de título ni borde. Sólo aplica en modo ventana. |
-| `[Window] Resolution` | `0` (640x480) | Índices del DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Ojo: el `4` no es el mismo del registro (ahí es 1600x1200). |
+| `[Window] Resolution` | `0` (640x480) | Índices del DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080, y `8` 3440x1440 (desviación). Ojo: el `4` no es el mismo del registro (ahí es 1600x1200). En pantallas anchas la interfaz y los avisos se anclan a los bordes. |
+| `[Window] RenderBackend` | `opengl` | Backend de render; ver [Render](#render), donde también están las opciones gráficas (`TextureQuality`, `Sharpness`, `Antialiasing`, `Shadows`, `DepthFog`, `DrawDistance`, `HDTextures`). |
 | `[Window] RenderDecoupled` | `1` | Desacopla el render; `0` vuelve al límite de 40 ms. La simulación sigue a 25 Hz. |
 | `[Window] FpsLimit` | `60` | Límite de FPS con desacople activo; `0` = sin límite. Opciones → Pantalla permite 25/30/60/120/144/sin límite. |
 | `[Window] VSync` | `0` | Sincronización vertical. Desacople, VSync y FPS se aplican en caliente y se guardan desde Opciones → Pantalla. VSync también limita «sin límite» al refresco de la pantalla. F12 muestra u oculta los FPS a la izquierda dentro del juego, incluso en pantalla completa; comienza oculto. |
@@ -237,10 +263,20 @@ está ahí, el default del binario. Lo que se aplicó queda en `debug.log` (lín
 | `[Sound] EnableMusic` | `0` (apagada) | El `Config.ini` del repo la trae en `1`. El tema del login es `Data\Music\MuTheme.mp3`, que el pack no trae (como en el original). |
 | `[Sound] SoundLevel`, `MusicLevel` | — (desviación) | Volumen de `0` (mudo) a `9` (volumen original); como en el DLL, cada nivel son 6,25 dB. |
 | `[User] Username` | — | Precarga el campo de usuario del login. |
-| `[Language] LangSelection` | — (`Text.bmd`, que acá es la variante en español) | Idioma de la interfaz: `Eng`, `Spn` o `Por`. Elige entre los `Text_*.bmd` y `Dialog_*.bmd` de `Data/Local/`. Los nombres de items, skills y quests están en inglés y no tienen variante. |
+| `[Language] LangSelection` | — (`Text.bmd`, que acá es la variante en español) | Idioma de la interfaz: `Eng`, `Spn` o `Por`. Elige entre los `Text_*.bmd` y `Dialog_*.bmd` de `Data/Local/` y es el idioma que el cliente le pide al server para los nombres de items, monstruos y skills; ver [Textos, idiomas y Unicode](#textos-idiomas-y-unicode). |
 | `[MiniMap] Alpha`, `ZoomLevel` | `10`, `0` | Transparencia (`3` a `10`) y zoom (`0` a `6`) del minimapa. |
 | `[Antilag] Delete…` | `0` | Apagan partes del render para equipos lentos: `DeleteShadows`, `DeleteObjects`, `DeleteFloor`, `DeleteSkills`, `DeleteStaticEffects`, `DeleteDynamicEffects`, `DeleteWings`, `DeleteHealthBar`, `DeleteInterface`, `DeleteWeather`, `DeleteGlow`. |
 | `[Font] FontName`, `FontHeight`, `FontBold`, `FontItalic`, `FontCharset`, `FontWidth`, `FontUnderline`, `FontQuality`, `FontStrikeOut` | Arial, alto según la resolución | Como el DLL: alto fijo (tope 25) y la fuente grande al doble. El `Config.ini` del repo trae Verdana 13. Si se borra la sección `[Font]` completa, el cliente vuelve a la fuente original. |
+| `[Font] TextShadow`, `TextOutline`, `ColorEmoji` | `0`, `0`, `1` | Sombra y contorno del texto, y emojis en color (desviaciones). También en Opciones → Fuente. |
+
+### Atajos que no son del original
+
+| Tecla | Qué hace |
+|---|---|
+| **F10** / **F11** | Activa la cámara 3D / la vuelve a la normal |
+| **F12** | Muestra u oculta los FPS |
+| **H** | Panel de eventos |
+| **Ctrl+V** | Pega en el campo de texto |
 
 ### Correr en Windows
 
@@ -248,38 +284,19 @@ Ejecutar `bin/Client/main.exe`.
 
 ### Correr en Linux
 
-El CI arma un paquete del cliente Linux (artefacto `mu97k-linux-release`: el
-`.tar.gz`, su SHA256 y el inventario de bibliotecas). Trae `main`, `Data`,
-licencias, README y `launch.sh`; no lleva el `Config.ini` del desarrollador.
+Cada Release trae el paquete Linux x64 (en el CI, artefacto
+`mu97k-linux-x64-release`): el `.tar.gz`, su SHA256 y el inventario de
+bibliotecas. Trae `main`, `Data`, licencias, README y `launch.sh`; no lleva el
+`Config.ini` del desarrollador.
 
-El ejecutable es **ELF32 con SSE2**, compilado sobre Ubuntu 22.04 (no usa
-símbolos de glibc posteriores a 2.35). SDL3, FreeType y miniaudio van enlazados
-estáticamente; OpenGL, glibc y las bibliotecas del escritorio son del sistema y
-tienen que estar en **32 bits**, incluso en un Linux x64:
-
-```sh
-# Arch ([multilib] habilitado)
-sudo pacman -S --needed lib32-glibc lib32-gcc-libs lib32-glu lib32-libglvnd \
-  lib32-libx11 lib32-libxext lib32-libxrandr lib32-libxcursor lib32-libxi \
-  lib32-wayland lib32-libxkbcommon lib32-libdecor lib32-alsa-lib lib32-libpulse
-# Intel/AMD: lib32-mesa. NVIDIA: lib32-nvidia-utils de la misma versión que el driver.
-
-# Debian 12 / Ubuntu 22.04+
-sudo dpkg --add-architecture i386
-sudo apt-get update
-sudo apt-get install libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
-  libglu1-mesa:i386 libgl1:i386 libegl1:i386 libgl1-mesa-dri:i386 \
-  libx11-6:i386 libxext6:i386 libxrandr2:i386 libxcursor1:i386 libxi6:i386 \
-  libwayland-client0:i386 libwayland-cursor0:i386 libwayland-egl1:i386 \
-  libxkbcommon0:i386 libdecor-0-0:i386 libdecor-0-plugin-1-cairo:i386 libpulse0:i386
-# ALSA: libasound2:i386 (Debian 12 / Ubuntu 22.04), libasound2t64:i386 (Ubuntu 24.04+).
-
-# Fedora
-sudo dnf install glibc.i686 libstdc++.i686 libgcc.i686 mesa-libGLU.i686 \
-  libglvnd-glx.i686 libglvnd-egl.i686 mesa-dri-drivers.i686 \
-  libX11.i686 libXext.i686 libXrandr.i686 libXcursor.i686 libXi.i686 \
-  wayland.i686 libxkbcommon.i686 libdecor.i686 alsa-lib.i686 pulseaudio-libs.i686
-```
+El ejecutable es **ELF64 x86-64**, compilado sobre Ubuntu 24.04 (no usa símbolos
+de glibc posteriores a 2.39). SDL3, FreeType, HarfBuzz, SheenBidi, miniaudio y
+Dawn van enlazados estáticamente; OpenGL, Vulkan, glibc y las bibliotecas del
+escritorio (X11, Wayland, ALSA/PulseAudio) son del sistema. En un escritorio con
+el driver de video instalado normalmente ya están; si falta alguna,
+`ldd ./main` la muestra. Para WebGPU hace falta el loader de Vulkan
+(`libvulkan1` en Debian/Ubuntu, `vulkan-icd-loader` en Arch) y el driver Vulkan
+de la placa.
 
 Descomprimí el `.tar.gz` en una partición Linux (en NTFS se pierden los permisos
 de ejecución) y ejecutá `./launch.sh` desde una terminal, sin sudo. La
@@ -297,58 +314,152 @@ MU_ASSET_ROOT='/run/media/usuario/HDD/ruta/Client' ./launch.sh
 ```
 
 Sin `SDL_VIDEODRIVER`, una sesión Wayland prueba Wayland y después
-X11/XWayland; el backend elegido y el renderer OpenGL quedan en stderr al
-arrancar (`Backend de video: …` y `OpenGL: vendor | renderer | versión`). Para
-forzar uno: `SDL_VIDEODRIVER=x11 ./launch.sh` o `SDL_VIDEODRIVER=wayland
-./launch.sh`.
+X11/XWayland; el backend elegido y el renderer quedan en stderr y en
+`debug.log` al arrancar. Para forzar uno: `SDL_VIDEODRIVER=x11 ./launch.sh` o
+`SDL_VIDEODRIVER=wayland ./launch.sh`. WebGPU funciona en los dos.
 
 Otros detalles de Linux:
 
-- `lib32-libdecor` da las decoraciones de ventana del lado del cliente. Sin él,
-  un compositor que no decora del lado del server puede mostrar la ventana sin
+- `libdecor` da las decoraciones de ventana del lado del cliente. Sin él, un
+  compositor que no decora del lado del server puede mostrar la ventana sin
   marco.
 - En HiDPI se conserva la resolución lógica del juego y el compositor escala la
   imagen, que puede verse menos nítida.
-- El IME usa la entrada de texto de SDL/Wayland, limitada al repertorio
-  Windows-1252 del juego; no muestra el indicador IMM de Windows.
+- Los emojis en color salen de Noto Color Emoji, si está instalada (paquete
+  `noto-fonts-emoji` en Arch, `fonts-noto-color-emoji` en Debian/Ubuntu).
 - La captura de pantalla es con **Impr Pant**. En KDE la toma Spectacle antes
   de que llegue al juego.
 
-### Wayland y GPUs NVIDIA
+### Build x86 en Linux: Wayland y GPUs NVIDIA
 
-El cliente es de 32 bits, y con NVIDIA eso tiene dos consecuencias en Wayland
-nativo (encontradas en Arch, KDE Plasma, RTX 3080 Ti, driver 615):
+Esto afecta sólo al build histórico de 32 bits. Con NVIDIA tiene dos
+consecuencias en Wayland nativo (encontradas en Arch, KDE Plasma, RTX 3080 Ti,
+driver 615):
 
 - **Sin la plataforma EGL Wayland de 32 bits, Wayland usa render por software.**
   NVIDIA sólo distribuye `egl-wayland` para x64. Sin
   `libnvidia-egl-wayland.so.1` en `/usr/lib32`, el contexto GL de Wayland cae en
-  Mesa `llvmpipe`: 24 fps, efectos de skill en cuadrados blancos y negros
-  transparentes. El cliente lo detecta al arrancar (`Renderer por software en
+  Mesa `llvmpipe`. El cliente lo detecta al arrancar (`Renderer por software en
   wayland`) y pasa solo a X11/XWayland, donde GLX sí usa la GPU.
 - **Con esa plataforma instalada, Wayland nativo funciona pero rinde mucho
-  menos.** El driver EGL de NVIDIA en 32 bits resuelve variables thread-local con
-  `__tls_get_addr` en cada llamada GL, y el cliente dibuja en modo inmediato
-  (`glVertex`/`glTexCoord` por vértice, como el 0.97k). Medido en el mismo punto
-  del juego: 4,7 ms por frame con X11/GLX contra 70-85 ms con Wayland/EGL, o sea
-  25 fps contra 11-17. `__GL_SYNC_TO_VBLANK` y `__GL_MaxFramesAllowed` no lo
-  cambian. No se corrige desde el cliente: se resuelve con el renderer moderno o
-  el paso a x64 de la hoja de ruta.
+  menos**: el driver EGL de NVIDIA en 32 bits resuelve variables thread-local en
+  cada llamada GL. Con NVIDIA, corré el build x86 en X11
+  (`SDL_VIDEODRIVER=x11 ./launch.sh`).
 
-En el segundo caso el cliente **no** cae solo a X11, porque el renderer es
-acelerado. **Con NVIDIA, corré el cliente en X11:**
+---
 
-```sh
-SDL_VIDEODRIVER=x11 ./launch.sh
-```
+## Render
 
-Wayland nativo queda para GPUs con Mesa (Intel/AMD), cuyo EGL de 32 bits no
-tiene este problema.
+El 0.97k dibuja con el pipeline fijo de OpenGL 1.x, vértice por vértice. El
+cliente conserva lo que se ve (los mismos modelos, texturas, mezclas y efectos),
+pero lo manda a la placa por buffers y shaders. Hay dos backends, que se eligen
+en **Opciones → Pantalla → Avanzado → Gráficos** (`[Window] RenderBackend` en
+`Config.ini`) y se aplican al reiniciar:
 
-`egl-wayland` de 32 bits no está en los repositorios oficiales de Arch. El
-paquete `lib32-egl-wayland` de AUR suele estar atrasado y exige la misma versión
-que `egl-wayland`; instalarlo con un helper puede bajar el de 64 bits. Si lo
-querés para probar, compilá el PKGBUILD cambiando `pkgver` a la versión de tu
-`egl-wayland`, y recompilalo cada vez que actualices el driver.
+| Backend | Clave | Qué usa |
+|---|---|---|
+| OpenGL | `opengl` (default) | Contexto OpenGL 3.3 core. Disponible en todos los builds. |
+| WebGPU | `auto` | [Dawn](https://dawn.googlesource.com/dawn) elige: en Windows prefiere Vulkan, y si no hay, DirectX 12 o 11; en Linux, Vulkan. |
+| DirectX 12 / DirectX 11 / Vulkan | `d3d12` / `d3d11` / `vulkan` | WebGPU forzado sobre esa API. DirectX sólo en Windows. |
+
+WebGPU sólo existe en los builds x64. Si el dispositivo no se puede crear, el
+cliente sigue con OpenGL. Con WebGPU los modelos quedan residentes en la placa y
+el skinning (deformar la malla con los huesos) lo hace la GPU.
+
+El backend activo y la placa quedan en `debug.log` al arrancar (por ejemplo
+`WebGPU: Vulkan | NVIDIA GeForce RTX 3080 Ti`).
+
+> **NVIDIA y DirectX:** el driver de NVIDIA trae un perfil para los ejecutables
+> llamados `main.exe` que limita DirectX 11 y 12 a 60 FPS. Vulkan no lo tiene;
+> por eso `auto` lo prefiere en Windows.
+
+### Opciones gráficas
+
+Todas son desviaciones respecto del original y arrancan apagadas: con los
+valores por defecto se ve como el 0.97k. Se cambian desde el mismo submenú, **Opciones
+→ Pantalla → Avanzado → Gráficos**, y se guardan en `[Window]`.
+
+| Clave | Valores | Qué hace |
+|---|---|---|
+| `TextureQuality` | `0` original, `1` mipmaps, `2` mipmaps + bicúbico | Texturas lejanas sin parpadeo. El paso a mipmaps se aplica al reiniciar. |
+| `Sharpness` | `0` a `3` | Realce de bordes sobre la imagen 3D; `3` es el máximo de AMD CAS. |
+| `Antialiasing` | `0` apagado, `1` FXAA, `2` MSAA 4x, `3` MSAA 4x + FXAA | MSAA se aplica al reiniciar. |
+| `Shadows` | `0` sombra plana del original, `1` suaves, `2` fuertes | Sombras proyectadas con mapa de sombras. |
+| `DepthFog` | `0` / `1` | Niebla por profundidad con la cámara 3D. |
+| `DrawDistance` | `0` a `3` (×1, ×1,5, ×2, ×3) | Alcance de dibujado con la cámara 3D. Lejos sólo se dibuja el terreno. |
+| `HDTextures` | `0` / `1` | Usa el pack de texturas HD de `Data/HD/` si está. No viene en el repo; se aplica al reiniciar. |
+
+La **cámara 3D** (tecla **F10**, **F11** la vuelve a la normal) es la del DLL de
+inyección. La distancia de dibujado y la niebla por profundidad sólo se aplican
+con ella: la cámara normal ve lo mismo que el original. La niebla de cada mapa
+la define el server (`MapFog.txt`); con la cámara 3D y `DepthFog=1` la
+reemplaza la niebla por profundidad.
+
+---
+
+## Textos, idiomas y Unicode
+
+El 0.97k guarda y dibuja el texto en Windows-1252: sólo alfabeto latino, y los
+nombres de personaje tienen 10 bytes. Desde 0.97.40 **cliente y server usan
+UTF-8 de punta a punta**.
+
+### Qué se puede escribir
+
+- **Nombres de personaje y guild** en cualquier escritura: hasta 10 caracteres
+  el de personaje y 8 el de guild (cada uno cuenta como lo ve el jugador, aunque
+  ocupe varios bytes). Se aceptan letras, marcas y dígitos; el server aplica la
+  misma regla y los guarda normalizados (NFC). Las cuentas y contraseñas siguen
+  siendo ASCII.
+- **Chat, susurros, avisos de guild y `/post`** de hasta 200 bytes.
+- **Entrada:** el teclado del sistema (con IME para chino, japonés o coreano) y
+  **Ctrl+V** para pegar.
+- **Emojis** en color, con la fuente del sistema (Segoe UI Emoji en Windows, Noto
+  Color Emoji en Linux). Hay un selector junto al campo del chat, y los códigos
+  `:D`, `<3` y `:fire:` se reemplazan por su emoji. Con `[Font] ColorEmoji=0`
+  salen en blanco y negro.
+
+### Cómo se dibuja
+
+El texto pasa por HarfBuzz (forma de los caracteres, ligaduras), SheenBidi
+(escrituras de derecha a izquierda, como árabe y hebreo) y libunibreak (dónde se
+puede cortar una línea en chat, burbujas y diálogos). Lo que la fuente elegida
+no tiene se busca, carácter por carácter, en las fuentes de respaldo de
+`bin/Client/Data/Font/` (chino, japonés, coreano, árabe, hebreo, tailandés,
+devanagari y emoji) y después en las del sistema. Se pueden agregar más `.ttf` u
+`.otf` a esa carpeta; el detalle está en
+[`Respaldo-README.md`](bin/Client/Data/Font/Respaldo-README.md).
+
+`[Font]` en `Config.ini` elige la fuente principal, el tamaño, el suavizado
+(`FontQuality`), una sombra (`TextShadow=1`) y un contorno (`TextOutline=1`);
+también se cambia desde Opciones → Fuente.
+
+### Idiomas y textos que manda el server
+
+`[Language] LangSelection` (`Eng`, `Spn` o `Por`) elige dos cosas:
+
+1. **Los textos del cliente**, como en el original: los `Text_*.bmd` y
+   `Dialog_*.bmd` de `Data/Local/`.
+2. **Los textos que pide al server.** Al conectarse, el cliente le dice su
+   idioma, y el server le manda, junto con el catálogo de contenido, las
+   traducciones de ese idioma:
+
+| Archivo del server | Qué traduce |
+|---|---|
+| `Data/Text/<idioma>/Item.txt` | nombres de items |
+| `Data/Text/<idioma>/Monster.txt` | nombres de monstruos y NPCs |
+| `Data/Text/<idioma>/Skill.txt` | nombres de skills |
+| `Data/Text/<idioma>/Tooltip.txt` | líneas del tooltip de los items custom |
+| `Data/Text/<idioma>/Client.txt` | los textos propios del cliente (opciones, panel de eventos, barra de buffs, título de la ventana) |
+
+Lo que no esté traducido sale de los `.bmd` del cliente (o, para `Client.txt`,
+del inglés que trae compilado). Así un server puede traducir sus items custom, o
+corregir una traducción, sin repartir un cliente nuevo. En `Client.txt`, los
+`%d`/`%s` de cada línea tienen que ser los mismos que los del inglés y en el
+mismo orden: si no, el cliente descarta la línea y usa la suya.
+
+Los archivos se editan a mano (UTF-8 sin BOM) o desde el editor de traducciones
+del panel web del server, que valida lo mismo que el cliente. El formato está
+explicado en el encabezado de cada archivo.
 
 ---
 
@@ -522,15 +633,22 @@ en `GameServer/LOG`.
 
 ```
 mu97k-src/
-├── mu97k.sln            solución de VS2022 (backend Win32)
-├── mu97k.vcxproj        proyecto (Win32)
-├── CMakeLists.txt       build de las tres combinaciones (Win32, SDL3 Windows, SDL3 Linux)
-├── cmake/               módulos de CMake y el toolchain de Linux x86
+├── CMakeLists.txt       build del cliente (SDL3 en Windows y Linux, x64 y x86)
+├── CMakePresets.json    presets de Windows y Linux
+├── vcpkg.json           Dawn (WebGPU), sólo para los builds x64
+├── mu97k.sln            solución de VS2022 (backend Win32 histórico)
+├── mu97k.vcxproj        proyecto (Win32 histórico)
+├── cmake/               módulos de CMake, toolchains y el triplet de vcpkg
+├── tests/               pruebas unitarias que corre el CI
 ├── lib/stb/             decodifica las texturas .ozj/.ozt y guarda las capturas
 ├── lib/miniaudio/       reproduce la música
+├── lib/utf8proc/        normalización Unicode
+├── lib/libunibreak/     cortes de línea (UAX #14)
 └── src/
     ├── WinMain.cpp      punto de entrada + loop de mensajes
-    ├── Platform/        interfaces de plataforma y sus backends (Win32/, SDL3/, Posix/)
+    ├── Platform/        interfaces de plataforma y sus backends (SDL3/, Posix/, Win32/)
+    ├── Render/Backend/  backends de render (OpenGL 3.3 y WebGPU)
+    ├── Text/            texto UTF-8: medición, shaping, cortes y emojis
     ├── globals.{h,cpp}  estado global; los DAT identificados conservan trazabilidad IDA
     ├── functions.h      declaraciones compartidas y procedencia IDA de símbolos renombrados
     ├── structs.h        layouts de struct verificados contra IDA
@@ -538,7 +656,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
+    └── Render/  Scene/   Sound/   Terrain/ Text/      Trade/     UI/    Util/
 ```
 
 Los módulos agrupan por responsabilidad. La dirección en el binario sigue
@@ -565,7 +683,7 @@ flowchart TD
     F1["0.97.10 · Fase 1: base de ingeniería<br/>CMake, CI, limpieza de código y comentarios, espejo de protocolo"] --> F2
     F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización<br/>customs integrados a la lógica base; switches y defines de Webzen → tablas y enums"] --> F3
     F3["0.97.30 · Fase 3: abstracción de plataforma + Linux"] --> F4
-    F4["0.97.40 · Fase 4: timing real + renderer moderno<br/>simulación separada del render, fps altos sin acelerar el juego, OpenGL 3.3 y x64"] --> F5
+    F4["0.97.40 · Fase 4: timing real + renderer moderno + Unicode<br/>simulación separada del render, fps altos sin acelerar el juego, OpenGL 3.3, WebGPU, x64 y texto UTF-8"] --> F5
     F5["0.97.50 · Fase 5: contenido compartido cliente + server, autoridad del server y seguridad<br/>0.97.5x: launcher, updater y otras mejoras"] --> F6
     F6["0.97.60 → 0.97.8x · contenido y funciones nuevas"] --> F9
     F9["0.97.9x · 97+99: items y mapas del 0.99 sobre el 0.97"] --> V99
@@ -647,8 +765,11 @@ La licencia cubre **el código**: todo lo que está bajo `src/`.
 **No** cubre los assets de `bin/Client/Data/`, que son copyright de WebZen Inc.
 
 Las bibliotecas de terceros mantienen sus propias licencias: stb y miniaudio
-(dominio público / MIT-0), y SDL3 (zlib) y FreeType (FreeType License) en el
-backend SDL3. El paquete Linux las incluye en `licenses/`.
+(dominio público / MIT-0), utf8proc (MIT), libunibreak (zlib), SDL3 (zlib),
+FreeType (FreeType License), HarfBuzz (MIT), SheenBidi (Apache 2.0) y Dawn
+(BSD 3-Clause). Las fuentes de `bin/Client/Data/Font/` tienen la suya al lado
+(SIL OFL 1.1 o Apache 2.0). El paquete Linux incluye las licencias en
+`licenses/`.
 
 ---
 
@@ -776,5 +897,10 @@ servidor:
   mismo (`CPatchs::SendRequestMagicContinue`).
 - **Triple Shot manda el byte `angle`.** El server arma el cono con `angle`, no
   con `dir` (`SkillManager.cpp:1185`).
+- **Texto en UTF-8 (0.97.40).** Nombres de personaje de 40 bytes, de guild de
+  32 y chat de 200, en lugar de los 10 bytes en Windows-1252 del 0.97k. Los
+  paquetes que con esos largos pasan de 255 bytes (lista de personajes, party,
+  ranking de Devil Square) viajan con header C2. Un server sin estos cambios no
+  es compatible.
 - **F3/12 al entrar al mundo.** Sin ese ACK el server deja `RegenOk` en 1 y
   rechaza todo `/move` posterior además de no mandar las entidades del mapa.

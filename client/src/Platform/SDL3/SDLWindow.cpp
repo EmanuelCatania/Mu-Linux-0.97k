@@ -12,22 +12,8 @@
 #endif
 namespace Platform {
 namespace {
-// El título del cliente conserva Windows-1252; SDL recibe UTF-8 en ambos sistemas.
-std::string TitleUTF8(const char* text) {
-    const unsigned short extra[32] = {0x20ac,0x81,0x201a,0x192,0x201e,0x2026,0x2020,0x2021,0x2c6,0x2030,0x160,0x2039,0x152,0x8d,0x17d,0x8f,0x90,0x2018,0x2019,0x201c,0x201d,0x2022,0x2013,0x2014,0x2dc,0x2122,0x161,0x203a,0x153,0x9d,0x17e,0x178};
-    std::string result;
-    if (!text) return result;
-    for (auto p = reinterpret_cast<const unsigned char*>(text); *p; ++p) {
-        unsigned code = *p >= 128 && *p < 160 ? extra[*p - 128] : *p;
-        if (code < 128) result += char(code);
-        else {
-            if (code >= 2048) { result += char(0xe0 | (code >> 12)); result += char(0x80 | ((code >> 6) & 63)); }
-            else result += char(0xc0 | (code >> 6));
-            result += char(0x80 | (code & 63));
-        }
-    }
-    return result;
-}
+// El texto del cliente es UTF-8 (Fase 4), igual que lo que recibe SDL.
+std::string TitleUTF8(const char* text) { return text ? std::string(text) : std::string(); }
 #ifndef _WIN32
 // Crea una ventana oculta con contexto GL y devuelve si el renderer es por
 // software (llvmpipe/softpipe/swrast). Caso real: NVIDIA no publica la
@@ -36,8 +22,8 @@ std::string TitleUTF8(const char* text) {
 // sí usa el driver propietario.
 bool ProbeSoftwareGL() {
     SDL_Window* probe = SDL_CreateWindow("probe", 16, 16, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-    if (!probe) return false;
-    bool software = false;
+    if (!probe) return true;
+    bool software = true;
     if (SDL_GLContext ctx = SDL_GL_CreateContext(probe)) {
         const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         software = renderer && (SDL_strcasestr(renderer, "llvmpipe") || SDL_strcasestr(renderer, "softpipe") ||
@@ -92,7 +78,16 @@ public:
 #ifdef _WIN32
         auto hwnd = window ? static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window),
             SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr)) : nullptr;
-        MessageBoxA(attach ? hwnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
+        // El texto es UTF-8: se convierte a UTF-16 para la API W.
+        auto wide = [](const char* s) {
+            std::wstring out;
+            if (!s) return out;
+            const int n = MultiByteToWideChar(CP_UTF8, 0, s, -1, nullptr, 0);
+            if (n > 0) { out.resize(size_t(n)); MultiByteToWideChar(CP_UTF8, 0, s, -1, &out[0], n); out.resize(size_t(n - 1)); }
+            return out;
+        };
+        MessageBoxW(attach ? hwnd : nullptr, wide(text).c_str(), title ? wide(title).c_str() : nullptr,
+                    MB_OK | (errorIcon ? MB_ICONERROR : 0));
 #else
         const auto caption = TitleUTF8(title ? title : "Error");
         const auto body = TitleUTF8(text);
@@ -112,11 +107,11 @@ public:
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
 #endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
-        SetGLAttributes();
+        if (settings.openGL && !SetGLAttributes(settings.samples)) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
 #ifndef _WIN32
         // Si Wayland sólo ofrece GL por software y el usuario no forzó el
         // driver, se reintenta con X11 (XWayland), que llega al driver de la GPU.
-        if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0 && !SDL_getenv("SDL_VIDEODRIVER") &&
+        if (settings.openGL && SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0 && !SDL_getenv("SDL_VIDEODRIVER") &&
             ProbeSoftwareGL()) {
             SDL_QuitSubSystem(SDL_INIT_VIDEO);
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11", SDL_HINT_OVERRIDE);
@@ -124,12 +119,18 @@ public:
                 SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
                 if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
             }
-            SetGLAttributes();
+            if (!SetGLAttributes(settings.samples)) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         }
 #endif
         SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
         window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+            (settings.openGL ? SDL_WINDOW_OPENGL : 0) | SDL_WINDOW_HIDDEN);
+        if (!window && settings.openGL && settings.samples > 0) {
+            // El driver no ofrece un formato con MSAA: se sigue sin él.
+            SDL_Log("MSAA %dx no disponible: %s", settings.samples, SDL_GetError());
+            SetGLAttributes(0);
+            window = SDL_CreateWindow("Mu Online", settings.width, settings.height, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        }
         if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         if (SDL_Surface* icon = LoadWindowIcon()) { SDL_SetWindowIcon(window, icon); SDL_DestroySurface(icon); }
         InstallSDLInput();
@@ -138,17 +139,24 @@ public:
         SDL_StartTextInput(window);
         return true;
     }
-    static void SetGLAttributes() {
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    static bool SetGLAttributes(int samples) {
+        // DESVIACION: OpenGL 3.3 core; el pipeline fijo del 0.97k se emula en
+        // RenderState y en los shaders del backend.
+        const bool context=SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_CORE) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,0);
         // IDA: OpenGL_Init (0x0041DE30), mínimos de color/profundidad de 16 bits.
-        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
-        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 6);
-        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
-        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
-        SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16);
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        return context && SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5) &&
+            SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 6) &&
+            SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5) &&
+            SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0) &&
+            SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16) &&
+            SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) &&
+            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16) &&
+            // DESVIACION: MSAA opcional (opción de antialiasing).
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, samples > 0 ? 1 : 0) &&
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples > 0 ? samples : 0);
     }
     void ServiceLoadingEvents(unsigned) override { ServiceEvents(); }
     void ServiceEvents() override {

@@ -29,7 +29,7 @@ extern "C" int __cdecl ConvertItemType(BYTE* Item);
 // OffsetInventoryItems[64 * 68] está en HUD_Pass3.cpp como `BYTE` array sized
 // para el grid 8×8.  Cada slot es un ITEM (struct, 68 B).
 extern "C" BYTE OffsetInventoryItems[];
-extern "C" void HeroEquipWatchdog(int c);
+extern "C" void HeroEquipWatchdog(CHARACTER* c);
 extern int DAT_00559c60;
 extern int DAT_00559c64;
 extern int DAT_00559c68;
@@ -40,11 +40,11 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
 // La tabla la carga `Item_LoadFromBmd` desde Data\Local\Item.bmd al startup.
 // Si no está cargada (ItemAttribute=0 o type fuera de rango), defaulteamos
 // a 1×1 (worst case visualmente, pero al menos el item aparece).
-extern "C" int DAT_07d78068;
+extern "C" std::uintptr_t DAT_07d78068;
 
 static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
 {
-    const unsigned int p = ItemAttribute_Base();
+    const std::uintptr_t p = ItemAttribute_Base();
     if (!p) return nullptr;  // tabla sin cargar → no crash
     if (type < 0 || type >= ITEM_MAX_EX) return nullptr;   // 0.97.20: índice de 13 bits
     return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];
@@ -206,7 +206,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
         AsItem(slot)->Type  = -1;
         AsItem(slot)->Key = 0;
         if (SceneFlag == 5 && DAT_07abf5d8) {
-            HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+            HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
         }
         return;
     }
@@ -228,7 +228,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     AsItem(slot)->byColorState  = extByte;
     ItemData_FillStats((ITEM*)slot, level);
     ((ITEM*)slot)->Level = (int)optByte;
-    ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+    ItemConvert(AsItem(slot), (int)optByte, (int)byteHi);
     // Slot ocupado real del equipo. En la base más nueva esto vive en Number;
     // en nuestra estructura 97k lo espejamos en Key.
     ITEM* equip = (ITEM*)slot;
@@ -237,7 +237,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     equip->y = 0;
     equip->Color = 0;
     if (SceneFlag == 5 && DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
     }
 }
 
@@ -292,7 +292,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
 
             ItemData_FillStats(slot, level);
             slot->Level      = (int)optByte;
-            ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+            ItemConvert(slot, (int)optByte, (int)byteHi);
 
             // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6
             // a RenderItem3D → RenderObjectScreen, que extrae el level con
@@ -392,7 +392,7 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
     SeedQuickPotionTypesFromInventory();
 
     if (SceneFlag == 5 && DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
     }
 
 }

@@ -3,14 +3,15 @@
 #include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Config/UserSettings.h"
+#include "Text/TextCore.h"
+#include <string>
 
 extern "C" void DbgLogPublic(const char* msg);
 
 CClientText gClientText;
 namespace {
-// Las cadenas van en cp1252 (el texto se dibuja con GDI ANSI y el proyecto
-// compila en MultiByte): los acentos son escapes y el literal se corta después
-// de cada uno para que la letra siguiente no se lea como dígito hexadecimal.
+// Cadenas UTF-8. Los literales se cortan después de los escapes hexadecimales
+// para que la letra siguiente no se lea como parte del mismo byte.
 const char* const English[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
     "Success rate: pending",
@@ -40,6 +41,7 @@ const char* const English[] = {
     "Borderless",
     "Bold",
     "Italic",
+    "Smooth text", "Text shadow", "Text outline", "Color emoji",
     "FPS: %.0f",
     "Free render", "VSync", "FPS: %d", "FPS: unlimited", "VSync unavailable",
     "Gate to %s",
@@ -48,101 +50,98 @@ const char* const English[] = {
     "Reconnecting...",
     "Logging in...",
     "Waiting character list...",
-    "Waiting character info..."
-};
-const char* const Spanish[] = {
-    "%.10s || %s: %u || PING: %s || FPS: %.0f",
-    "Tasa de \xE9" "xito: pendiente",
-    "Costo: pendiente",
-    "Eventos",
-    "Esperando informaci\xF3" "n de eventos",
-    "No hay eventos programados",
-    "Deshabilitado",
-    "Abierto",
-    "En curso",
-    "%lu d\xED" "as",
-    "Teletransporte",
-    "Mapa",
-    "VIP",
-    "Esperando destinos",
-    "Sin destinos",
-    "< Anterior",
-    "Siguiente >",
-    "Predeterminado",
-    "Eliminar Clima",
-    "Eliminar Brillo",
-    "Mundo",
-    "Efectos",
-    "Interfaz",
-    "Ventana",
-    "Pantalla completa",
-    "Sin bordes",
-    "Negrita",
-    "Cursiva",
-    "FPS: %.0f",
-    "Desacople", "VSync", "FPS: %d", "FPS: sin l\xED" "mite", "VSync no disponible",
-    "Puerta a %s",
-    "Zoom: %d",
-    "Opacidad: %d%%",
-    "Reconectando...",
-    "Iniciando sesi\xF3" "n...",
-    "Esperando la lista de personajes...",
-    "Esperando los datos del personaje..."
-};
-const char* const Portuguese[] = {
-    "%.10s || %s: %u || PING: %s || FPS: %.0f",
-    "Taxa de sucesso: pendente",
-    "Custo: pendente",
-    "Eventos",
-    "Aguardando informa\xE7\xF5" "es de eventos",
-    "Nenhum evento programado",
-    "Desativado",
-    "Aberto",
-    "Em andamento",
-    "%lu dias",
-    "Teletransporte",
-    "Mapa",
-    "VIP",
-    "Aguardando destinos",
-    "Sem destinos",
-    "< Anterior",
-    "Pr\xF3" "ximo >",
-    "Padr\xE3" "o",
-    "Remover Clima",
-    "Remover Brilho",
-    "Mundo",
-    "Efeitos",
-    "Interface",
-    "Janela",
-    "Tela cheia",
-    "Sem bordas",
-    "Negrito",
-    "It\xE1" "lico",
-    "FPS: %.0f",
-    "Render livre", "VSync", "FPS: %d", "FPS: sem limite", "VSync indispon\xED" "vel",
-    "Portal para %s",
-    "Zoom: %d",
-    "Opacidade: %d%%",
-    "Reconectando...",
-    "Entrando...",
-    "Aguardando a lista de personagens...",
-    "Aguardando os dados do personagem..."
+    "Waiting character info...",
+    "Could not initialize OpenGL 3.3 core. Check the graphics driver.",
+    "Starts in %s",
+    "Render: %s",
+    "Applies on restart",
+    "Textures: %s",
+    "Sharpness: %s",
+    "Antialiasing: %s",
+    "Advanced",
+    "Graphics",
+    "HD textures",
+    "Shadows: %s",
+    "Depth fog",
+    "Draw distance: %s",
+    "Time left: %s", "Cast by: %s", "Damage +%d", "Defense +%d",
+    "Damage taken -%d%%", "Max HP +%d%%"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
-static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");
-static_assert(sizeof(Spanish) / sizeof(Spanish[0]) == Count, "Faltan textos en espa\xF1ol");
-static_assert(sizeof(Portuguese) / sizeof(Portuguese[0]) == Count, "Faltan textos en portugu\xE9s");
+static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
+
+// Textos del server, por id.  Vacío = no hay: se usa el inglés.
+std::string s_ServerText[Count];
+
+// Antes de conectar todavía no hay tabla del server. Las opciones deben
+// respetar el idioma guardado también en esa pantalla.
+const char* MenuFallback(ClientTextId id, int language)
+{
+    struct Entry { ClientTextId id; const char* spanish; const char* portuguese; };
+    static const Entry entries[] = {
+        { ClientTextId::LanguageDefault, "Predeterminado", "Padr\xC3\xA3" "o" },
+        { ClientTextId::ScreenWindowed, "Ventana", "Janela" },
+        { ClientTextId::ScreenFullscreen, "Pantalla completa", "Tela cheia" },
+        { ClientTextId::ScreenBorderless, "Sin bordes", "Sem bordas" },
+        { ClientTextId::RenderDecoupled, "Render libre", "Render livre" },
+        { ClientTextId::RenderVSync, "VSync", "VSync" },
+        { ClientTextId::RenderBackend, "Render: %s", "Render: %s" },
+        { ClientTextId::TextureQuality, "Texturas: %s", "Texturas: %s" },
+        { ClientTextId::Sharpness, "Nitidez: %s", "Nitidez: %s" },
+        { ClientTextId::Antialiasing, "Antialiasing: %s", "Antialiasing: %s" },
+        { ClientTextId::OptionsAdvanced, "Avanzado", "Avançado" },
+        { ClientTextId::OptionsGraphics, "Gráficos", "Gráficos" },
+        { ClientTextId::HDTextures, "Texturas HD", "Texturas HD" },
+        { ClientTextId::Shadows, "Sombras: %s", "Sombras: %s" },
+        { ClientTextId::DepthFog, "Niebla de profundidad", "N\xC3\xA9voa de profundidade" },
+        { ClientTextId::DrawDistance, "Distancia: %s", "Dist\xC3\xA2ncia: %s" },
+        { ClientTextId::BuffTimeLeft, "Tiempo restante: %s", "Tempo restante: %s" },
+        { ClientTextId::BuffCaster, "Lanzado por: %s", "Lan\xC3\xA7" "ado por: %s" },
+        { ClientTextId::BuffDamage, "Da\xC3\xB1" "o +%d", "Dano +%d" },
+        { ClientTextId::BuffDefense, "Defensa +%d", "Defesa +%d" },
+        { ClientTextId::BuffDamageReduction, "Da\xC3\xB1" "o recibido -%d%%", "Dano recebido -%d%%" },
+        { ClientTextId::BuffMaxLife, "Vida m\xC3\xA1" "xima +%d%%", "Vida m\xC3\xA1" "xima +%d%%" },
+        { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
+        { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
+        { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },
+        { ClientTextId::RenderVSyncUnavailable, "VSync no disponible", "VSync indispon\xC3\xAD" "vel" },
+    };
+    for (const Entry& entry : entries) {
+        if (entry.id != id) continue;
+        if (language == USER_LANG_SPANISH) return entry.spanish;
+        if (language == USER_LANG_PORTUGUESE) return entry.portuguese;
+        break;
+    }
+    return nullptr;
+}
 }
 
 const char* CClientText::Get(ClientTextId id) const
 {
     const size_t index = (size_t)id;
     if (index >= Count) return "";
-    switch (gUserSettings.GetLanguage()) {
-    case USER_LANG_SPANISH:    return Spanish[index];
-    case USER_LANG_PORTUGUESE: return Portuguese[index];
-    default:              return English[index];
+    if (!s_ServerText[index].empty()) return s_ServerText[index].c_str();
+    const char* local = MenuFallback(id, gUserSettings.GetLanguage());
+    return local ? local : English[index];
+}
+
+bool CClientText::SetServerText(size_t id, const char* utf8)
+{
+    if (id >= Count || !utf8 || !*utf8) return false;
+    // Un formato distinto del inglés rompería el printf del que lo usa.
+    if (!TextEngine::SameFormatSpecifiers(utf8, English[id])) {
+        char line[160];
+        Platform::TextFormat(line, "ClientText: el texto %u del server no tiene los mismos especificadores que el ingl\xC3\xA9s, se descarta", (unsigned)id);
+        DbgLogPublic(line);
+        return false;
     }
+    s_ServerText[id] = utf8;
+    return true;
+}
+
+void CClientText::ClearServerTexts()
+{
+    for (std::string& text : s_ServerText) text.clear();
 }
 
 // DESVIACION (DLL Language.cpp): con [Language] LangSelection el archivo pasa a

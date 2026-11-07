@@ -82,9 +82,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   P+1460  RIDE_SKILL               v34 + 0.3
 extern DWORD CharacterAttribute_var;     // alias - already in our globals
 void __cdecl SetAttackSpeed(void) {
-    DWORD ca = (DWORD)DAT_07cf1ff4;       // CharacterAttribute base
+    const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);
     if (ca == 0) return;
-    DWORD models = DAT_05828d58;          // Models base
+    const BYTE* models = reinterpret_cast<const BYTE*>(DAT_05828d58);
     if (models == 0) return;
 
     // Read stats (16-bit unsigned)
@@ -110,12 +110,12 @@ void __cdecl SetAttackSpeed(void) {
 
     // Models[Player(390)] base animation table pointer at offset 0x11E18
     // (= 188*390 + 48 = entry +0x30 = animation array ptr).
-    int* tablePtrPtr = (int*)((char*)(uintptr_t)models + 73368);  // 0x11E18
-    if (*tablePtrPtr == 0) return;
-    char* P = (char*)(uintptr_t)*tablePtrPtr;
+    // El campo BMD conserva 32 bits hasta la migración de su layout en B2.
+    char* P = (char*)AsModel(models + BMD_STRIDE * 390)->Actions;
+    if (!P) return;
 
     // FIST
-    *(float*)(P + 548) = v33 + 0.6f;
+    *(float*)(P + ModelActionByte(548)) = v33 + 0.6f;
 
     // SWORD/RIDE attacks.  IDA L189-191:
     //   for (i = 560; i <= 880; *(P + i - 12) = v24) i += 16;
@@ -125,27 +125,27 @@ void __cdecl SetAttackSpeed(void) {
     float swordSpeed = v33 + 0.25f;
     for (int i = 560; i <= 880; ) {
         i += 16;
-        *(float*)(P + i - 12) = swordSpeed;
+        *(float*)(P + ModelActionByte(i - 12)) = swordSpeed;
     }
 
     // Magic sword skills
     float skillSpeed3 = v33 + 0.3f;
-    *(float*)(P + 900)  = skillSpeed3;   // SKILL_SWORD1
-    *(float*)(P + 916)  = skillSpeed3;   // SKILL_SWORD2
-    *(float*)(P + 932)  = v33 + 0.27f;   // SKILL_SWORD3
-    *(float*)(P + 948)  = skillSpeed3;   // SKILL_SWORD4
+    *(float*)(P + ModelActionByte(900))  = skillSpeed3;   // SKILL_SWORD1
+    *(float*)(P + ModelActionByte(916))  = skillSpeed3;   // SKILL_SWORD2
+    *(float*)(P + ModelActionByte(932))  = v33 + 0.27f;   // SKILL_SWORD3
+    *(float*)(P + ModelActionByte(948))  = skillSpeed3;   // SKILL_SWORD4
     float skillSpeed5 = v33 + 0.24f;
-    *(float*)(P + 964)  = skillSpeed5;   // SKILL_SWORD5
-    *(float*)(P + 980)  = skillSpeed5;   // SKILL_WHEEL
-    *(float*)(P + 1076) = skillSpeed3;   // ATTACK_ONETOONE
-    *(DWORD*)(P + 996)  = 0x3EC28F5C;    // FURY_STRIKE = 0.38
-    *(DWORD*)(P + 1012) = 0x3EAE147B;    // VITALITY    = 0.34
-    *(float*)(P + 1060) = skillSpeed3;   // SKILL_SPEAR
-    *(float*)(P + 1028) = skillSpeed3;   // SKILL_RIDER
-    *(float*)(P + 1044) = skillSpeed3;   // SKILL_RIDER_FLY
+    *(float*)(P + ModelActionByte(964))  = skillSpeed5;   // SKILL_SWORD5
+    *(float*)(P + ModelActionByte(980))  = skillSpeed5;   // SKILL_WHEEL
+    *(float*)(P + ModelActionByte(1076)) = skillSpeed3;   // ATTACK_ONETOONE
+    *(DWORD*)(P + ModelActionByte(996))  = 0x3EC28F5C;    // FURY_STRIKE = 0.38
+    *(DWORD*)(P + ModelActionByte(1012)) = 0x3EAE147B;    // VITALITY    = 0.34
+    *(float*)(P + ModelActionByte(1060)) = skillSpeed3;   // SKILL_SPEAR
+    *(float*)(P + ModelActionByte(1028)) = skillSpeed3;   // SKILL_RIDER
+    *(float*)(P + ModelActionByte(1044)) = skillSpeed3;   // SKILL_RIDER_FLY
 
     // Two-hand sword2
-    *(float*)(P + 1300) = swordSpeed;
+    *(float*)(P + ModelActionByte(1300)) = swordSpeed;
 
     // BOW attacks: P+i-12 for i ∈ {752,768,784} (loop starts at 736+16).
     // Usan la velocidad de SKILL_SWORD1: IDA L195 reasigna `v35 = v26`
@@ -154,17 +154,17 @@ void __cdecl SetAttackSpeed(void) {
     int v28 = 736;
     do {
         v28 += 16;
-        *(float*)(P + v28 - 12) = skillSpeed3;
+        *(float*)(P + ModelActionByte(v28 - 12)) = skillSpeed3;
     } while (v28 <= 784);
 
     // RIDE BOW (IDA L216-218, mismo patron): offsets 868, 884 = acciones 54, 55.
     for (int j = 864; j <= 880; ) {
         j += 16;
-        *(float*)(P + j - 12) = skillSpeed3;
+        *(float*)(P + ModelActionByte(j - 12)) = skillSpeed3;
     }
 
     // Skills
-    *(float*)(P + 1380) = v38 + 0.25f;        // ELF1
+    *(float*)(P + ModelActionByte(1380)) = v38 + 0.25f;        // ELF1
     float magicSkill = v34 + 0.29f;
     // HAND1..WEAPON2 (IDA L222-224, mismo patron): offsets 1316..1364 =
     // acciones 82..85.  El port asignaba 81..84: pisaba TWO_HAND_SWORD_TWO (81)
@@ -172,13 +172,13 @@ void __cdecl SetAttackSpeed(void) {
     // en esa animacion despues de atacar.
     for (int k = 1312; k <= 1360; ) {
         k += 16;
-        *(float*)(P + k - 12) = magicSkill;
+        *(float*)(P + ModelActionByte(k - 12)) = magicSkill;
     }
 
     float teleportSpeed = v34 + 0.3f;
-    *(float*)(P + 1396) = teleportSpeed;       // TELEPORT
-    *(float*)(P + 1412) = v34 + 0.4f;          // FLASH
-    *(float*)(P + 1428) = v34 + 0.6f;          // INFERNO
-    *(float*)(P + 1444) = v34 + 0.5f;          // HELL
-    *(float*)(P + 1460) = teleportSpeed;       // RIDE_SKILL
+    *(float*)(P + ModelActionByte(1396)) = teleportSpeed;       // TELEPORT
+    *(float*)(P + ModelActionByte(1412)) = v34 + 0.4f;          // FLASH
+    *(float*)(P + ModelActionByte(1428)) = v34 + 0.6f;          // INFERNO
+    *(float*)(P + ModelActionByte(1444)) = v34 + 0.5f;          // HELL
+    *(float*)(P + ModelActionByte(1460)) = teleportSpeed;       // RIDE_SKILL
 }

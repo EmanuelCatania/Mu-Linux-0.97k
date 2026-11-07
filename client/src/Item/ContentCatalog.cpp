@@ -1,9 +1,13 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
+#include "Net/NetText.h"
+#include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
 #include <algorithm>
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
+#include "Local/ClientText.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include <map>
@@ -32,7 +36,19 @@ PendingSection s_PendingFog;
 PendingSection s_PendingEffects;
 PendingSection s_PendingPets;
 PendingSection s_PendingTooltips;
+PendingSection s_PendingTexts;
+
+// Textos traducidos del server (F3/F0).  Los nombres de items y skills se
+// escriben en sus tablas; los originales se guardan para volver a ellos.
+constexpr int MAX_SKILL_NAME = 64;            // SkillAttribute: 64 entradas x 40
+constexpr int SKILL_NAME_SIZE = 32;
+char s_VanillaSkillNames[MAX_SKILL_NAME][SKILL_NAME_SIZE];
+bool s_HasVanillaSkillNames = false;
+char s_MonsterTexts[512][64];                 // índice de monstruo -> nombre
 std::map<int, std::vector<Proto::CATALOG_TOOLTIP>> s_Tooltips;   // item -> líneas
+// Traducciones de las líneas del tooltip: clave = item * 8 + número de línea.
+std::map<int, std::string> s_TooltipTexts;
+constexpr int TOOLTIP_TEXT_LINES = 8;
 std::map<int, Proto::CATALOG_PET> s_Pets;           // item -> pet
 
 // Efecto ya resuelto (textura cargada) de un item.
@@ -64,7 +80,7 @@ struct ItemExtraData
 
 // Piezas puestas: por entidad, modelo lógico -> modelo propio.
 constexpr int MAX_ENTITY = 400;
-constexpr int ENTITY_STRIDE = 0x394;
+constexpr int ENTITY_STRIDE = CHARACTER_STRIDE;
 constexpr int ENTITY_PARTS = 9;
 struct EntityPart { short Logic; short Own; };
 EntityPart s_EntityParts[MAX_ENTITY][ENTITY_PARTS];
@@ -90,7 +106,7 @@ void InitEntityParts()
 
 std::vector<ItemExtraData> s_Items(ITEM_MAX_EX);
 CatalogMonster s_Monsters[MAX_CATALOG_MONSTER] = {};
-struct FogEntry { bool Present; float Day[3]; float Night[3]; };
+struct FogEntry { bool Present; float Day[3]; float Night[3]; float Start, End; };
 FogEntry s_Fog[MAX_CATALOG_MAP] = {};
 std::map<std::string, int> s_LoadedModels;   // ruta -> slot
 std::map<int, int> s_DynamicModelItem;        // slot dinámico -> primer item que lo usa
@@ -103,15 +119,15 @@ unsigned int FindTwoSidedMeshes(const BYTE* model)
 {
     unsigned int bits = 0;
     const short meshCount = *(const short*)(model + 0x24);
-    const BYTE* meshes = (const BYTE*)(uintptr_t)*(const int*)(model + 0x28);
+    const BYTE* meshes = (const BYTE*)(uintptr_t)(intptr_t)((BMD*)(uintptr_t)(model))->Meshs;
     if (!meshes) return 0;
     for (int m = 0; m < meshCount && m < 32; ++m) {
-        const BYTE* mesh = meshes + m * 0x28;
+        const BYTE* mesh = meshes + m * sizeof(ClothModelMesh);
         const short vCount = *(const short*)(mesh + 4), nCount = *(const short*)(mesh + 6);
         const short fCount = *(const short*)(mesh + 10);
-        const BYTE* verts = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x10);
-        const BYTE* norms = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x14);
-        const BYTE* faces = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x1c);
+        const BYTE* verts = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
+        const BYTE* norms = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Normals;
+        const BYTE* faces = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Triangles;
         if (!verts || !norms || !faces) continue;
         int inverted = 0;
         for (int f = 0; f < fCount; ++f) {
@@ -210,17 +226,17 @@ bool ReadSection(PendingSection& section, const BYTE* msg, int size)
 void SetMonsterSpeeds(int slot, bool npc)
 {
     if (slot < 0 || !DAT_05828d58) return;
-    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
-    BYTE* actions = *(BYTE**)(model + 0x30);
+    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
+    BYTE* actions = *(BYTE**)&((BMD*)(uintptr_t)(model))->Actions;
     const short count = *(short*)(model + 0x26);
     if (!actions || count <= 0) return;
     if (npc) {
-        for (int i = 0; i < count; ++i) *(float*)(actions + 16 * i + 4) = 0.25f;
+        for (int i = 0; i < count; ++i) *(float*)(actions + sizeof(ModelAnimationAction) * i + 4) = 0.25f;
         return;
     }
     static const float speeds[7] = { 0.25f, 0.2f, 0.34f, 0.33f, 0.33f, 0.5f, 0.55f };
-    for (int i = 0; i < count && i < 7; ++i) *(float*)(actions + 16 * i + 4) = speeds[i];
-    if (count > 6) *(bool*)(actions + 16 * 6) = true;   // MONSTER01_DIE: Loop
+    for (int i = 0; i < count && i < 7; ++i) *(float*)(actions + sizeof(ModelAnimationAction) * i + 4) = speeds[i];
+    if (count > 6) *(bool*)(actions + sizeof(ModelAnimationAction) * 6) = true;   // MONSTER01_DIE: Loop
 }
 
 bool SectionComplete(const PendingSection& section)
@@ -259,6 +275,75 @@ void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
     if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveTexts(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingTexts, msg, size)) Log("ContentCatalog: F0 descartado (size=%d)", size);
+}
+
+namespace {
+char* SkillName(char* table, int index) { return table + index * 0x28; }
+
+// Vuelve a los nombres de item.bmd / skill.bmd y aplica los textos recibidos.
+void ApplyTexts(ITEM_ATTRIBUTE* attr)
+{
+    if (!s_HasVanillaSkillNames) {
+        for (int i = 0; i < MAX_SKILL_NAME; ++i)
+            memcpy(s_VanillaSkillNames[i], SkillName(SkillAttribute.Raw, i), SKILL_NAME_SIZE);
+        s_HasVanillaSkillNames = true;
+    }
+    for (int i = 0; i < MAX_SKILL_NAME; ++i) {
+        memcpy(SkillName(SkillAttribute.Raw, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+        memcpy(SkillName((char*)DAT_07cf1ff8, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+    }
+    const ITEM_ATTRIBUTE* vanilla = (const ITEM_ATTRIBUTE*)s_VanillaAttributes.data();
+    for (int i = 0; i < ITEM_MAX_VANILLA && !s_VanillaAttributes.empty(); ++i)
+        memcpy(attr[i].Name, vanilla[i].Name, sizeof(attr[i].Name));
+    memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
+    s_TooltipTexts.clear();
+
+    const int textSize = s_PendingTexts.recordSize;
+    if (!SectionComplete(s_PendingTexts) || textSize <= 0) return;
+    int applied = 0;
+    for (size_t off = 0; off + textSize <= s_PendingTexts.records.size(); off += textSize) {
+        Proto::CATALOG_TEXT row = {};
+        memcpy(&row, &s_PendingTexts.records[off], (std::min)((int)sizeof(row), textSize));
+        // Los campos de las tablas del binario son más cortos que el texto:
+        // FromServer corta sin partir un grapheme cluster.
+        switch (row.Table) {
+        case Proto::CATALOG_TEXT_ITEM:
+            if (row.Index >= ITEM_MAX_EX) continue;
+            NetText::FromServer(attr[row.Index].Name, sizeof(attr[row.Index].Name), row.Text, sizeof(row.Text));
+            break;
+        case Proto::CATALOG_TEXT_MONSTER:
+            if (row.Index >= 512) continue;
+            NetText::FromServer(s_MonsterTexts[row.Index], sizeof(s_MonsterTexts[row.Index]), row.Text, sizeof(row.Text));
+            break;
+        case Proto::CATALOG_TEXT_SKILL:
+            if (row.Index >= MAX_SKILL_NAME) continue;
+            NetText::FromServer(SkillName(SkillAttribute.Raw, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
+            NetText::FromServer(SkillName((char*)DAT_07cf1ff8, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
+            break;
+        case Proto::CATALOG_TEXT_CLIENT:
+            if (!gClientText.SetServerText(row.Index, row.Text)) continue;
+            break;
+        case Proto::CATALOG_TEXT_TOOLTIP: {
+            // Reemplaza el texto de esa línea del tooltip (el color y el orden son los del JSON).
+            if (row.Index >= ITEM_MAX_EX || row.Reserved >= TOOLTIP_TEXT_LINES) continue;
+            char line[sizeof(Proto::CATALOG_TOOLTIP::Text)];
+            NetText::FromServer(line, sizeof(line), row.Text, sizeof(row.Text));
+            if (line[0] == 0) continue;
+            s_TooltipTexts[row.Index * TOOLTIP_TEXT_LINES + row.Reserved] = line;
+            break;
+        }
+        default:
+            continue;
+        }
+        ++applied;
+    }
+    Log("ContentCatalog: %d textos traducidos", applied);
+}
+} // namespace
+
 void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_CATALOG_END_SEND)) return;
@@ -294,6 +379,16 @@ void CContentCatalog::Clear()
     s_Pets.clear();
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
+    s_PendingTexts = PendingSection();
+    gClientText.ClearServerTexts();
+    s_TooltipTexts.clear();
+    memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
+    if (s_HasVanillaSkillNames) {
+        for (int i = 0; i < MAX_SKILL_NAME; ++i) {
+            memcpy(SkillName(SkillAttribute.Raw, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+            memcpy(SkillName((char*)DAT_07cf1ff8, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+        }
+    }
     // Los modelos y texturas ya cargados se conservan: si el server vuelve a
     // mandar las mismas rutas se reusan sin volver a leer el disco.
     m_Loaded = false;
@@ -328,7 +423,7 @@ void CContentCatalog::Publish()
         monster.Golden = row.Golden != 0;
         monster.Scale = row.Scale;
         monster.Model = -1;
-        memcpy(monster.Name, row.Name, sizeof(monster.Name) - 1);
+        NetText::FromServer(monster.Name, sizeof(monster.Name), row.Name, sizeof(row.Name));
         if (row.Flags & Proto::CATALOG_MONSTER_HAS_MODEL) {
             row.ModelFolder[sizeof(row.ModelFolder) - 1] = 0;
             row.ModelName[sizeof(row.ModelName) - 1] = 0;
@@ -349,9 +444,17 @@ void CContentCatalog::Publish()
             fog.Day[c] = row.DayRGB[c] / 255.0f;
             fog.Night[c] = row.NightRGB[c] / 255.0f;
         }
+        // Sin distancias (server viejo), las fijas del DLL.
+        const bool range = row.Start > 0 && row.End > row.Start;
+        fog.Start = range ? row.Start : 2000.0f;
+        fog.End = range ? row.End : 2700.0f;
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
+
+    // Textos traducidos: sección opcional.
+    ApplyTexts(attr);
+    s_PendingTexts = PendingSection();
 
     // Tooltips: sección opcional.
     s_Tooltips.clear();
@@ -360,8 +463,21 @@ void CContentCatalog::Publish()
         for (size_t off = 0; off + tooltipSize <= s_PendingTooltips.records.size(); off += tooltipSize) {
             Proto::CATALOG_TOOLTIP line = {};
             memcpy(&line, &s_PendingTooltips.records[off], (std::min)((int)sizeof(line), tooltipSize));
-            line.Text[sizeof(line.Text) - 1] = 0;
-            if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
+            // 0.97.40: el server manda el tooltip en UTF-8; sólo se sanea.
+            char text[sizeof(line.Text)];
+            NetText::FromServer(text, sizeof(text), line.Text, sizeof(line.Text));
+            memcpy(line.Text, text, sizeof(line.Text));
+            if (line.Item < ITEM_MAX_EX && line.Color <= 8) {
+                std::vector<Proto::CATALOG_TOOLTIP>& lines = s_Tooltips[line.Item];
+                // La traducción de esta línea (por su número dentro del item), si el server la mandó.
+                const std::map<int, std::string>::const_iterator translated =
+                    s_TooltipTexts.find(line.Item * TOOLTIP_TEXT_LINES + (int)lines.size());
+                if (translated != s_TooltipTexts.end()) {
+                    memset(line.Text, 0, sizeof(line.Text));
+                    memcpy(line.Text, translated->second.c_str(), (std::min)(translated->second.size(), sizeof(line.Text) - 1));
+                }
+                lines.push_back(line);
+            }
         }
     }
 
@@ -409,7 +525,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
     // del server se usa sólo para los items que el .bmd no tiene.
     if (row.Index >= ITEM_MAX_VANILLA || attr->Name[0] == 0) {
         memset(attr->Name, 0, sizeof(attr->Name));
-        memcpy(attr->Name, row.Name, sizeof(attr->Name) - 1);
+        NetText::FromServer(attr->Name, sizeof(attr->Name), row.Name, sizeof(row.Name));
     }
     attr->TwoHand = row.TwoHand != 0;
     attr->Level = ClampByte(row.Level);
@@ -489,17 +605,14 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
 
     int slot = fixedSlot;
     if (slot < 0) {
-        if (m_NextDynamicModel >= MODEL_MAX_DYNAMIC) {
-            Log("ContentCatalog: sin slots de modelo para '%s%s'", sub, name);
-            return -1;
-        }
         slot = MODEL_MAX_VANILLA + m_NextDynamicModel++;
     }
 
+    ResourceTables::EnsureModels(std::size_t(slot)+1);
     char dir[128];
     Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
-    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
+    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
     if (*(const short*)(model + 0x24) <= 0) {
         Log("ContentCatalog: no se pudo cargar %s%s.bmd", dir, name);
         s_LoadedModels[key] = -1;
@@ -509,14 +622,10 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     if (m_NextTexture == 0) m_NextTexture = BITMAP_MAX_VANILLA;
     const DWORD savedBegin = TextureBegin;
     const DWORD savedCurrent = TextureCurrent;
-    if (m_NextTexture + 32 <= BITMAP_MAX_TOTAL) {
-        TextureBegin = BITMAP_MAX_VANILLA;
-        TextureCurrent = m_NextTexture;
-        OpenTexture(slot, sub, 0x2600, '\x01');
-        m_NextTexture = (int)TextureCurrent;
-    } else {
-        Log("ContentCatalog: sin espacio de texturas para %s%s", sub, name);
-    }
+    TextureBegin = BITMAP_MAX_VANILLA;
+    TextureCurrent = m_NextTexture;
+    OpenTexture(slot, sub, 0x2600, '\x01');
+    m_NextTexture = (int)TextureCurrent;
     TextureBegin = savedBegin;
     TextureCurrent = savedCurrent;
 
@@ -543,11 +652,8 @@ int CContentCatalog::LoadTexture(const char* path)
     if (it != s_LoadedTextures.end()) return it->second;
 
     if (m_NextTexture == 0) m_NextTexture = BITMAP_MAX_VANILLA;
-    if (m_NextTexture >= BITMAP_MAX_TOTAL) {
-        Log("ContentCatalog: sin espacio de texturas para %s", sub);
-        return -1;
-    }
     const int slot = m_NextTexture++;
+    ResourceTables::EnsureTextures(std::size_t(slot)+1);
     const char* ext = strrchr(sub, '.');
     const bool tga = ext && (Platform::TextCompareIgnoreCase(ext, ".tga") == 0);
     if (tga) OpenTGA(sub, slot, 0x2601, 0x2900, 0, '\x01');
@@ -578,7 +684,7 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
             float position[3];
             BMD_TransformPosition(modelPtr, (float*)(g_BoneScratch + data.Bones[b] * 0x30), offset, position, '\x01');
             if (data.Type == Proto::CATALOG_EFFECT_SPRITE) {
-                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (int)(uintptr_t)c, 0.0f, 0);
+                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (intptr_t)c, 0.0f, 0);
             } else if (data.Type == Proto::CATALOG_EFFECT_PARTICLE) {
                 Particle_Spawn(data.Particle, position, (float*)((BYTE*)c + 28), light, data.SubType, scale, 0);
             }
@@ -638,6 +744,12 @@ const CatalogItemPose* CContentCatalog::GetItemPose(int type) const
     return &s_Items[type].Pose;
 }
 
+char* CContentCatalog::GetMonsterText(int index) const
+{
+    if (index < 0 || index >= 512 || s_MonsterTexts[index][0] == 0) return nullptr;
+    return s_MonsterTexts[index];
+}
+
 const CatalogMonster* CContentCatalog::GetMonster(int index) const
 {
     if (index < 0 || index >= MAX_CATALOG_MONSTER || !s_Monsters[index].Present) return nullptr;
@@ -650,6 +762,13 @@ bool CContentCatalog::GetMapFog(int map, float day[3], float night[3]) const
     memcpy(day, s_Fog[map].Day, sizeof(float) * 3);
     memcpy(night, s_Fog[map].Night, sizeof(float) * 3);
     return true;
+}
+
+void CContentCatalog::GetFogRange(int map, float& start, float& end) const
+{
+    start = 2000.0f; end = 2700.0f;   // MapFog.h del DLL
+    if (map < 0 || map >= MAX_CATALOG_MAP || !s_Fog[map].Present) return;
+    start = s_Fog[map].Start; end = s_Fog[map].End;
 }
 
 void CContentCatalog::GetFogColor(int map, float rgba[4])

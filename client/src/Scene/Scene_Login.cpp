@@ -56,6 +56,8 @@
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_Login.h"
@@ -81,7 +83,7 @@ uint Scene_Login(void)
 
     DAT_083a42ea = 0;
     DAT_07e11d6e = 0;
-    glClearColor(0, 0, 0, 1.0f);
+    Gfx::ClearColor(0, 0, 0, 1.0f);
     GL_BeginViewport(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
 
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
@@ -92,16 +94,18 @@ uint Scene_Login(void)
     GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
     Render_DrawSpritePool();    // RenderSprites
     RenderParticles();    // RenderParticles
-    glPopMatrix();     // balancea BeginSprite
+    Gfx::PopMatrix();     // balancea BeginSprite
+    // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D.
+    Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
     GL_Begin2D();    // BeginBitmap — setup 2D ortho
 
     // ── Font / color setup ────────────────────────────────────────────────────
     DAT_00559c8c = 0x77;                  // InputTextWidth = 119
     GL_SetBlendSrcOver('\x01');                 // EnableAlphaTest(1)
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffd2e6ff;            // m_dwTextColor
     SetBackgroundTextColor = 0;                     // m_dwBackColor
-    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
 
     // ── Credential input panel (sub-states 2..3) ─────────────────────────────
     iVar3 = DAT_005616a4;
@@ -153,7 +157,7 @@ uint Scene_Login(void)
 
     // ── Version strings (bottom of screen) ───────────────────────────────────
     DAT_00559c8c = 0x100;                 // InputTextWidth = 256
-    glColor3f(0.8f, 0.7f, 0.6f);
+    Gfx::Color3f(0.8f, 0.7f, 0.6f);
     uVar6 = 0xffffffff;
     DAT_00559c78 = 0xffffffff;
 
@@ -226,7 +230,7 @@ uint Scene_Login(void)
     iVar3   = Platform::TextLength(acStack_64);
     gFont.MeasureText(gFont.GetTextDC(), acStack_64, iVar3, ptVar10);
     // IDA 0x521630 L96: esta va en x=0.
-    UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
+    UI_RenderText(gWindow.PanelOrigin(Ui::WindowLeft), 0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // ── Sub-state dispatch ────────────────────────────────────────────────────
@@ -235,10 +239,10 @@ uint Scene_Login(void)
 
     if ((DAT_083a7c14 == 1) || (DAT_083a7c14 == 0xc)) {
         // Connecting / Timeout: progress bar + cancel button
-        glColor3f(0.5f, 0.5f, 0.5f);
+        Gfx::Color3f(0.5f, 0.5f, 0.5f);
         GL_DrawTexture(0xf0, 213.0f, 228.0f, 213.0f, 64.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, '\x01', '\x01');
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_SetBlendAdditive();   // EnableAlphaBlend
 
         // Progress bar track
@@ -286,9 +290,7 @@ uint Scene_Login(void)
     if (DAT_083a7af4 == 1) {
         if (DAT_005615e8 < 0x10) {
             tStack_74.cx = (LONG)((float)(0x10 - DAT_005615e8) * _DAT_005526dc);
-            glColor3f((float)tStack_74.cx,
-                      (float)tStack_74.cx * _DAT_005526e8,
-                      (float)tStack_74.cx * _DAT_00552530);
+            Gfx::Color3f((float)tStack_74.cx, (float)tStack_74.cx * _DAT_005526e8, (float)tStack_74.cx * _DAT_00552530);
         } else {
             DAT_083a7af4 = 2;
         }

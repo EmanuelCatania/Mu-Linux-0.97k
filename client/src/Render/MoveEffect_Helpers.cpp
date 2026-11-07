@@ -148,7 +148,7 @@ void __cdecl Effect_SpawnSmokeExplosion(undefined4 *param_1, char param_2)
 // Matrix_TransformPoint. Used for electric/thunder death effects.
 // param_1: entity pointer (float* to entity struct at stride 0x394)
 // IDA: FUN_00460c30
-void __cdecl Effect_SpawnLightningBurst(int param_1)
+void __cdecl Effect_SpawnLightningBurst(intptr_t param_1)
 {
   int iVar1;
   int iVar2;
@@ -175,7 +175,7 @@ void __cdecl Effect_SpawnLightningBurst(int param_1)
     // Spawn lightning joint: type=0x4eb, from entity pos, width 5.0, persistent
     Joint_Create(0x4eb, position, (float *)(param_1 + 0x10), local_48,
                  *(undefined4 *)(param_1 + 4),
-                 *(int *)(param_1 + 0xfc), 5.0f, -1, 0);
+                 (intptr_t)*(OBJECT**)&((OBJECT*)(uintptr_t)(param_1))->Owner, 5.0f, -1, 0);
     iVar2 = iVar2 + -1;
   } while (iVar2 != 0);
   return;
@@ -190,7 +190,7 @@ void __cdecl Effect_SpawnLightningBurst(int param_1)
 //   0x049C: spawns particle 0x498 at scale 6.0 (area-of-effect indicator)
 // param_1: entity pointer (int, base of entity struct)
 // IDA: FUN_00465e60
-void __cdecl Effect_SpawnProximityHit(int param_1)
+void __cdecl Effect_SpawnProximityHit(intptr_t param_1)
 {
   float *pfVar1;
   short sVar2;
@@ -209,9 +209,9 @@ void __cdecl Effect_SpawnProximityHit(int param_1)
   byte bVar15;
   float local_c[3];
 
-  pcVar3 = *(char **)(param_1 + 0xfc);
+  pcVar3 = *(char **)&((OBJECT*)(uintptr_t)(param_1))->Owner;
   // Check: target valid, active, alive, and within distance threshold
-  if ((((pcVar3 != (char *)0x0) && (*pcVar3 != '\0')) && (pcVar3[0x160] != '\0')) &&
+  if ((((pcVar3 != (char *)0x0) && (*pcVar3 != '\0')) && (pcVar3[EntityOffset(0x160)] != '\0')) &&
       (fVar4 = *(float *)(param_1 + 0x10) - *(float *)(pcVar3 + 0x10),
        pfVar1 = (float *)(param_1 + 0x10),
        fVar5 = *(float *)(param_1 + 0x14) - *(float *)(pcVar3 + 0x14),

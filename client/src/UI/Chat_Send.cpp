@@ -1,6 +1,9 @@
 // Chat_Send.cpp
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Entity/EntityName.h"
+#include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -45,7 +48,7 @@ void __cdecl SendChat(char* Text) {
     // GM name check: if Hero->ID contains "webzen" substring, block
     // Hero is char* (DAT_07abf5d8), ID at offset 0x1C1
     {
-        const char* heroId = Hero + 0x1C1;
+        const char* heroId = EntityName::Get(Hero);
         const char* webzenStr = &DAT_005592dc;  // "webzen" string in binary
         int webzenLen = (int)strlen(webzenStr);
         if (webzenLen > 0) {
@@ -64,7 +67,7 @@ void __cdecl SendChat(char* Text) {
 
     // If hero is dead, check for GM command prefix
     // Dead at offset 0x2FD in CHARACTER struct
-    if (*(BYTE*)(Hero + 0x2FD) != '\0') {
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->Dead != '\0') {
         // Only allow GM command (DAT_07d3cdd4) when dead
         int cmdLen = (int)strlen(&DAT_07d3cdd4);
         if (cmdLen > 0 && strncmp(Text, &DAT_07d3cdd4, cmdLen) == 0) {
@@ -105,15 +108,15 @@ void __cdecl SendChat(char* Text) {
     // byte auxiliar de la pila de IDA, no al paquete transmitido.
     pkt[pos++] = 0x00;  // opcode: chat (IDA: C1 <len> 00)
 
-    // Copy Hero->ID (10 bytes) — ID at offset 0x1C1 in CHARACTER struct
-    memcpy(pkt + pos, Hero + 0x1C1, 10);
-    pos += 10;  // pos = 13
+    // name[40] con el nombre del héroe (0.97.40).
+    NetText::ToServer(pkt + pos, NetText::CharacterNameSize, EntityName::Get(Hero));
+    pos += (int)NetText::CharacterNameSize;
 
-    // Copy chat text (max 60 bytes including null)
-    int textLen = (int)strlen(Text) + 1;
-    if (textLen > 0x3c) textLen = 0x3c;
+    // Mensaje con su NUL, hasta 200 bytes sin partir un cluster.
+    const int textLen = (int)TextEngine::FitBytes(Text, NetText::ChatMessageSize - 1);
     memcpy(pkt + pos, Text, textLen);
-    pos += textLen;
+    pkt[pos + textLen] = 0;
+    pos += textLen + 1;
 
     short totalLen = (short)pos;
 

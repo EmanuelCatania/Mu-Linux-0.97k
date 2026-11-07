@@ -78,6 +78,15 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+#include <chrono>
+#include "Render/Gfx.h"
+#include "Render/ResourceTables.h"
+#include "Render/BufferedDraw.h"
+#include "Render/RenderState.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
@@ -87,6 +96,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <cstdio>
+#include <vector>
 
 extern "C" { void DbgLogPublic(const char* msg); }
 
@@ -108,7 +119,7 @@ struct TexSlot
     void*    pixels;         // +0x34
 };
 
-static TexSlot* TexTable = (TexSlot*)g_BitmapsRaw;
+#define TexTable ((TexSlot*)ResourceTables::TextureBase())
 
 extern int  g_bound_texture_id;   // DAT_00561574
 extern int  g_screen_height;      // DAT_00561570
@@ -148,9 +159,9 @@ void Texture_BindLocalCached(int id)
     g_bound_texture_id = id;
 
     if (id >= 0)
-        glBindTexture(GL_TEXTURE_2D, TexTable[id].gl_handle);
+        Gfx::BindTexture(TexTable[id].gl_handle);
     else
-        glBindTexture(GL_TEXTURE_2D, (UINT)(-id));
+        Gfx::BindTexture((UINT)(-id));
 }
 
 
@@ -161,6 +172,7 @@ void Texture_BindLocalCached(int id)
 // ============================================================
 void Texture_Unload(int id)
 {
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     if (slot->pixels == nullptr)
         return;
@@ -173,7 +185,7 @@ void Texture_Unload(int id)
         slot->ref_count--;
         if (slot->ref_count == 0)
         {
-            glDeleteTextures(1, &slot->gl_handle);
+            Gfx::DeleteTexture(slot->gl_handle);
             slot->active = 0;
             operator_delete(slot->pixels);
             slot->pixels = nullptr;
@@ -222,8 +234,7 @@ static int tex_max_size(void)
 {
     static int s_max = 0;
     if (s_max <= 0) {
-        GLint v = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &v);
+        int v = Gfx::MaxTextureSize();
         s_max = (v >= 256) ? (int)v : 0;
         if (s_max == 0) return 4096;
     }
@@ -245,6 +256,7 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 
     // DIAG: log actual dimensions and decode success
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);   // free any previous slot pixels + GL handle
 
@@ -261,13 +273,13 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
             image.width * 3);
 
     slot->ref_count++;
-    glGenTextures(1, &slot->gl_handle);
-    glBindTexture(GL_TEXTURE_2D, slot->gl_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, slot->pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     wrap);
+    slot->gl_handle = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->gl_handle);
+    Gfx::TexImage2D(3, w, h, Gfx::Format::RGB, slot->pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
 
     return 1;
 }
@@ -285,6 +297,7 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     int w = ImageCodec::PaddedExtent(image.width, tex_max_size());
     int h = ImageCodec::PaddedExtent(image.height, tex_max_size());
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);
 
@@ -302,14 +315,14 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
             image.width * 4);
 
     slot->ref_count++;
-    glGenTextures(1, &slot->gl_handle);
-    glBindTexture(GL_TEXTURE_2D, slot->gl_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, slot->pixels);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     wrap);
+    slot->gl_handle = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->gl_handle);
+    Gfx::TexImage2D(4, w, h, Gfx::Format::RGBA, slot->pixels);
+    Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
     return 1;
 }
 
@@ -422,13 +435,13 @@ void Texture_Draw2D(int id,
         x + w, gl_bottom,    // vertex 3 position
     };
 
-    glBegin(GL_QUAD_STRIP);  // 6 = GL_QUAD_STRIP
+    BufferedDraw::Begin(BufferedDraw::Primitive::QuadStrip);  // 6 = GL_QUAD_STRIP
     for (int i = 0; i < 4; i++)
     {
-        glTexCoord2f(uvs[i*2], uvs[i*2+1]);
-        glVertex2f(pos[i*2], pos[i*2+1]);
+        BufferedDraw::TexCoord2f(uvs[i*2], uvs[i*2+1]);
+        BufferedDraw::Vertex2f(pos[i*2], pos[i*2+1]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 
@@ -445,6 +458,197 @@ void Texture_Draw2D(int id,
 // Not called directly from game code outside Texture_Load.
 // ============================================================
 // (Implementation not reproduced — same pipeline as Texture_Load above)
+
+// ── Pack HD ──────────────────────────────────────────────────────────────
+// DESVIACION: con la opción de texturas HD, "Data\X\nombre.OZJ" se reemplaza en
+// la GPU por "Data\HD\X\nombre.ozj.png" si existe. El PNG es la misma imagen (en
+// el orden de filas que deja el decodificador) ampliada un factor entero k; se
+// sube sobre un lienzo k veces el de potencia de 2 del original, así los UV no
+// cambian. Medidas del slot y copia en CPU (Buffer) quedan las originales.
+namespace {
+bool HDPath(const char* fullPath, const char* format, char* out, size_t size)
+{
+    if (!fullPath || tolower((unsigned char)fullPath[0]) != 'd' || tolower((unsigned char)fullPath[1]) != 'a' ||
+        tolower((unsigned char)fullPath[2]) != 't' || tolower((unsigned char)fullPath[3]) != 'a' ||
+        (fullPath[4] != '\\' && fullPath[4] != '/')) return false;
+    const char* dot = strrchr(fullPath, '.');
+    if (!dot || size_t(dot - fullPath) + 16 > size) return false;
+    // Conserva la extensión original (casa.ozj.png / casa.ozt.png): hay
+    // texturas con el mismo nombre en los dos formatos.
+    char ext[8]{};
+    for (int i = 0; i < 7 && dot[1 + i]; ++i) ext[i] = char(tolower((unsigned char)dot[1 + i]));
+    std::snprintf(out, size, "Data\\HD\\%.*s.%s.%s", int(dot - (fullPath + 5)), fullPath + 5, ext, format);
+    return true;
+}
+// Decodifica la imagen HD y arma el lienzo; corre en un hilo aparte.
+// Sin transparencia se acepta JPEG (casa.ozj.jpg), que ocupa varias veces
+// menos que PNG; si no hay JPEG se busca el PNG.
+struct HDJob {
+    int id = 0; unsigned handle = 0; unsigned generation = 0;
+    std::vector<unsigned char> bytes; bool jpeg = false;
+    int width = 0, height = 0, paddedWidth = 0, paddedHeight = 0, channels = 0, maxSize = 0;
+    int k = 0, canvasWidth = 0, canvasHeight = 0;
+    std::vector<unsigned char> canvas;
+    char path[300]{};
+    char pngPath[300]{};
+};
+// Lee el archivo HD (JPEG si hay, si no PNG). Corre en el hilo de carga: en
+// disco mecánico una lectura en frío tarda 10-50 ms y frenaba el juego.
+bool ReadHD(HDJob& job)
+{
+    FILE* file = nullptr;
+    if (job.path[0] && (file = Platform::GetFileSystem().Open(job.path, "rb"))) {
+        job.jpeg = true;
+    } else {
+        file = Platform::GetFileSystem().Open(job.pngPath, "rb");
+        if (!file) return false;
+        memcpy(job.path, job.pngPath, sizeof(job.path));
+    }
+    long size = -1;
+    if (fseek(file, 0, SEEK_END) == 0) size = ftell(file);
+    if (size > 0 && fseek(file, 0, SEEK_SET) == 0) {
+        job.bytes.resize(size_t(size));
+        if (fread(job.bytes.data(), 1, size_t(size), file) != size_t(size)) job.bytes.clear();
+    }
+    fclose(file);
+    return !job.bytes.empty();
+}
+bool BuildHD(HDJob& job)
+{
+    if (!ReadHD(job)) return false;
+    ImageCodec::Image hd;
+    const size_t length = job.bytes.size();
+    job.bytes.resize(length + 2);   // espacio para el marcador final del JPEG
+    const bool decoded = job.jpeg
+        ? ImageCodec::DecodeBuffer(job.bytes.data(), length, ImageCodec::Format::Jpeg, job.maxSize, hd) && hd.channels == 3
+        : ImageCodec::DecodePngBuffer(job.bytes.data(), length, job.channels, job.maxSize, hd);
+    std::vector<unsigned char>().swap(job.bytes);
+    if (!decoded || hd.width % job.width || hd.height % job.height) return false;
+    const int k = hd.width / job.width;
+    if (k < 2 || k > 8 || hd.height / job.height != k) return false;
+    const long long pw = (long long)job.paddedWidth * k, ph = (long long)job.paddedHeight * k;
+    if (pw > job.maxSize || ph > job.maxSize) return false;
+    const int c = job.channels;
+    job.canvas.assign(size_t(pw * ph * c), 0);
+    for (int y = 0; y < hd.height; ++y)
+        memcpy(job.canvas.data() + size_t(y) * size_t(pw) * c, hd.pixels + size_t(y) * hd.width * c, size_t(hd.width) * c);
+    job.k = k; job.canvasWidth = int(pw); job.canvasHeight = int(ph);
+    return true;
+}
+
+// DESVIACION: decodificar una HD frena entre 30 y 70 ms, y los modelos de
+// NPC y monstruos se cargan recién cuando aparecen en pantalla, así que el
+// juego se trababa en el medio del mapa. La textura original se sube en el
+// momento y la HD la reemplaza unos frames después, cuando el hilo terminó.
+class HDLoader {
+public:
+    ~HDLoader()
+    {
+        { std::lock_guard<std::mutex> lock(m_mutex); m_stop = true; }
+        m_wake.notify_all();
+        for (std::thread& t : m_threads) if (t.joinable()) t.join();
+    }
+    void Push(HDJob&& job)
+    {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_threads.empty()) {
+                const unsigned cores = std::thread::hardware_concurrency();
+                const unsigned count = cores > 4 ? 3 : cores > 2 ? 2 : 1;
+                for (unsigned i = 0; i < count; ++i) m_threads.emplace_back([this] { Work(); });
+            }
+            m_pending.push_back(std::move(job));
+        }
+        m_wake.notify_all();
+    }
+    // Pasa a la GPU lo que ya terminó, con un tope de tiempo por frame.
+    template <class Apply> void Drain(Apply apply)
+    {
+        const auto start = std::chrono::steady_clock::now();
+        for (;;) {
+            HDJob job;
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (m_done.empty()) break;
+                job = std::move(m_done.front());
+                m_done.pop_front();
+            }
+            m_wake.notify_one();
+            apply(job);
+            if (std::chrono::steady_clock::now() - start > std::chrono::milliseconds(4)) break;
+        }
+    }
+private:
+    void Work()
+    {
+        for (;;) {
+            HDJob job;
+            {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                // Mientras se carga un mapa no hay frames que suban lo
+                // terminado: sin este tope los lienzos se apilaban en memoria
+                // (cientos de MB) y todo el cliente se volvía lento.
+                m_wake.wait(lock, [this] { return m_stop || (!m_pending.empty() && m_done.size() < MaxDone); });
+                if (m_stop) return;
+                job = std::move(m_pending.front());
+                m_pending.pop_front();
+            }
+            if (!BuildHD(job)) continue;
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_done.push_back(std::move(job));
+        }
+    }
+    static constexpr size_t MaxDone = 8;
+    std::mutex m_mutex;
+    std::condition_variable m_wake;
+    std::deque<HDJob> m_pending, m_done;
+    std::vector<std::thread> m_threads;
+    bool m_stop = false;
+};
+HDLoader& Loader() { static HDLoader loader; return loader; }
+// Una carga nueva en el mismo slot invalida la HD que estaba en camino.
+std::vector<unsigned> s_hdGeneration;
+
+// Encola la HD de la textura recién creada. El llamador sube la original
+// igual: la HD la reemplaza cuando esté lista (Texture_PumpHD).
+void UploadHD(int id, unsigned handle, const char* fullPath, int width, int height, int paddedWidth, int paddedHeight, int channels)
+{
+    if (id < 0) return;
+    if (s_hdGeneration.size() <= size_t(id)) s_hdGeneration.resize(size_t(id) + 1, 0);
+    ++s_hdGeneration[size_t(id)];
+    if (!Gfx::HDTextures()) return;
+    HDJob job;
+    // El archivo lo abre y lo lee el hilo de carga (ReadHD), que lo cierra
+    // enseguida: los trabajos en cola no tienen archivos abiertos (el CRT tiene
+    // un tope de ~512 y al agotarse fallaba la apertura de Item.bmd).
+    if (!HDPath(fullPath, "png", job.pngPath, sizeof(job.pngPath))) return;
+    if (channels == 3) HDPath(fullPath, "jpg", job.path, sizeof(job.path));
+    job.id = id; job.handle = handle; job.generation = s_hdGeneration[size_t(id)];
+    job.width = width; job.height = height; job.paddedWidth = paddedWidth; job.paddedHeight = paddedHeight;
+    job.channels = channels; job.maxSize = tex_max_size();
+    Loader().Push(std::move(job));
+}
+}
+
+void Texture_PumpHD()
+{
+    Loader().Drain([](HDJob& job) {
+        // Si el slot se liberó o se recargó mientras tanto, la HD ya no corresponde.
+        if (size_t(job.id) >= s_hdGeneration.size() || s_hdGeneration[size_t(job.id)] != job.generation) return;
+        if (!Bitmaps[job.id].Buffer || Bitmaps[job.id].TextureNumber != job.handle) return;
+        const unsigned previous = RenderState::Get().texture;
+        Gfx::BindTexture(job.handle);
+        Gfx::TexImage2D(job.channels, job.canvasWidth, job.canvasHeight,
+                        job.channels == 4 ? Gfx::Format::RGBA : Gfx::Format::RGB, job.canvas.data());
+        Gfx::BindTexture(previous);
+        static unsigned loaded = 0;
+        if (++loaded == 1 || loaded % 100 == 0) {
+            char line[340];
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Texturas HD: %u cargadas (ultima %s, x%d)", loaded, job.path, job.k);
+            DbgLogPublic(line);
+        }
+    });
+}
 
 // ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with stb_image, uploads to GL.
@@ -514,6 +718,7 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
     UnloadImage(id);  // Unload any existing texture in this slot
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     BITMAP_t* slot = &Bitmaps[id];
     slot->Components = 3;          // RGB
     slot->Width  = (float)pow2_w;
@@ -557,14 +762,14 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     slot->Ref++;
 
     // --- GL upload ---
-    glGenTextures(1, &slot->TextureNumber);
-    glBindTexture(GL_TEXTURE_2D, slot->TextureNumber);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, pow2_w, pow2_h, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    slot->TextureNumber = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->TextureNumber);
+    UploadHD(id, slot->TextureNumber, full_path, img_w, img_h, pow2_w, pow2_h, 3);
+    Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(filter));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(filter));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
 
     return 1;
 }
@@ -662,6 +867,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     const int ph = ImageCodec::PaddedExtent(height, tex_max_size());
     {
         // ── Unload existing slot ──────────────────────────────────────────────
+        ResourceTables::EnsureTextures(std::size_t(uiTextureIndex)+1);
         UnloadImage(uiTextureIndex);
 
         // ── Write slot metadata (stride 0x38 bytes = 0xe floats) ─────────────
@@ -670,19 +876,18 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         char*  texBpp    = (char*)  &DAT_083a7cc8;
         UINT*  texGL     = (UINT*)  &DAT_083a7ccc;
         char*  texRef    = (char*)  &DAT_083a7cd0;
-        UINT*  texPix    = (UINT*)  &DAT_083a7cd4;
-        int    byteStride = uiTextureIndex * 0x38;
+        int    byteStride = uiTextureIndex * TEXTURE_STRIDE;
 
         texBpp  [byteStride] = 4;                        // 4 components: RGBA
-        texWidth [uiTextureIndex * 0xe] = (float)pw;
-        texHeight[uiTextureIndex * 0xe] = (float)ph;
+        texWidth [uiTextureIndex * TEXTURE_STRIDE_DWORDS] = (float)pw;
+        texHeight[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = (float)ph;
 
         BYTE* pixBuf = (BYTE*)operator_new(pw * ph * 4);
         // DESVIACION CONSCIENTE vs IDA: idem OpenJPG (ver el bloque largo en
         // OpenJPG). El original (OpenTGA 0x529BD0) tampoco inicializa:
         // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
         memset(pixBuf, 0, (size_t)pw * ph * 4);
-        texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
+        Bitmaps[uiTextureIndex].Buffer = pixBuf;
         *(int*)&m_dwUsedTextureMemory += 4 * pw * ph;
 
         // The codec preserves the legacy vertical flip and BGRA conversion.
@@ -693,29 +898,19 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         texRef[byteStride]++;
 
         // ── Upload to OpenGL ──────────────────────────────────────────────────
-        UINT glHandle = 0;
-        glGenTextures(1, &glHandle);
-        texGL[uiTextureIndex * 0xe] = glHandle;
-        glBindTexture(GL_TEXTURE_2D, glHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, 4, pw, ph, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, pixBuf);
+        UINT glHandle = Gfx::CreateTexture();
+        texGL[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = glHandle;
+        Gfx::BindTexture(glHandle);
+        UploadHD(uiTextureIndex, glHandle, local_200, width, height, pw, ph, 4);
+        Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
         // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
         // válido para GL_TEXTURE_ENV_MODE → GL_INVALID_ENUM, que el driver NVIDIA
         // acumula y puede convertir en AV en una llamada GL siguiente.
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, (float)GL_MODULATE); // 0x2100 = 8448.0f
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, uiFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, uiFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, uiWrapMode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, uiWrapMode);
-        // [DIAG TEMP #4] ungate: ver qué OZT suben realmente (chair2=0x348 etc.). REMOVER al cerrar #4.
-        {
-            static int s_tgaup = 0;
-            if (s_tgaup < 250) { s_tgaup++;
-                char m[256];
-                GLenum e = glGetError();
-                BYTE* cp = pixBuf + (4 * (ph/2) * pw) + 4*(pw/2);
-            }
-        }
+        Gfx::TexEnvMode(Gfx::TexEnv::Modulate); // 0x2100 = 8448.0f
+        Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(uiFilter));
+        Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(uiFilter));
+        Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(uiWrapMode));
+        Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(uiWrapMode));
         return 1;
     }
 
@@ -728,13 +923,13 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
 // IDA: UnloadImage (0x0052A050)
 void __cdecl UnloadImage(int param_1)
 {
-    int iVar1 = param_1 * 0x38;
-    DWORD *texArr_cd4 = (DWORD*)&DAT_083a7cd4;
+    ResourceTables::EnsureTextures(std::size_t(param_1)+1);
+    int iVar1 = param_1 * TEXTURE_STRIDE;
     char  *texArr_cc8 = (char*) &DAT_083a7cc8;
     char  *texArr_cd0 = (char*) &DAT_083a7cd0;
     DWORD *texArr_ccc = (DWORD*)&DAT_083a7ccc;
     DWORD *texArr_ca0 = (DWORD*)&DAT_083a7ca0;
-    if (texArr_cd4[param_1 * 0xe] == 0) return;
+    if (!Bitmaps[param_1].Buffer) return;
     char cVar2 = texArr_cc8[iVar1];
     // __ftol calls were computing width/height — skip since we don't have the floats
     char *ref = texArr_cd0 + iVar1;
@@ -742,12 +937,12 @@ void __cdecl UnloadImage(int param_1)
         char cVar4 = *ref - 1;
         *ref = cVar4;
         if (cVar4 == '\0') {
-            GLuint glHandle = texArr_ccc[param_1 * 0xe];
-            glDeleteTextures(1, &glHandle);
-            void *pixels = (void*)(uintptr_t)texArr_cd4[param_1 * 0xe];
-            texArr_ca0[param_1 * 0xe] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
+            unsigned int glHandle = texArr_ccc[param_1 * TEXTURE_STRIDE_DWORDS];
+            Gfx::DeleteTexture(glHandle);
+            void *pixels = Bitmaps[param_1].Buffer;
+            texArr_ca0[param_1 * TEXTURE_STRIDE_DWORDS] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
             operator_delete((unsigned char*)pixels);
-            texArr_cd4[param_1 * 0xe] = 0;
+            Bitmaps[param_1].Buffer = nullptr;
             (void)cVar2; // used in original for m_dwUsedTextureMemory -= cVar2 * w * h
         }
     }

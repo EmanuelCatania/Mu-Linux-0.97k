@@ -1,6 +1,10 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
+#include "Render/Gfx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
 #include "Item/ContentCatalog.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -48,20 +52,21 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Resolves the entity reference at slot+0x3c, copies its world position to the
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
-void __cdecl ItemDrop_SetupRenderRef(int param_1) {
-    int iVar1 = *(int*)(param_1 + 0x3c);
+void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
+    // +0x3C guarda sólo 32 bits; el dueño completo vive en g_ParticleOwner.
+    intptr_t iVar1 = (intptr_t)g_ParticleOwner[(param_1 - reinterpret_cast<BYTE*>(DAT_07abf5f0)) / 0x70];
     float local_c[3] = {0.0f, 0.0f, 0.0f};
-    void *this_ = (void*)(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
+    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * BMD_STRIDE);
     if (*(int*)(param_1 + 4) == 0x4d0)
         local_c[1] = -120.0f;
-    *(unsigned int*)((int)this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);
-    *(unsigned int*)((int)this_ + 0x70) = *(unsigned int*)(iVar1 + 0x14);
-    *(unsigned int*)((int)this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
+    *(unsigned int*)(this_ + 0x6c + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x10);
+    *(unsigned int*)(this_ + 0x70 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x14);
+    *(unsigned int*)(this_ + 0x74 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x18);
     uint uVar2 = *(uint*)(param_1 + 8) & 0x80000001;
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
     BMD_TransformPosition(this_,
-        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + uVar2 * 0x18)) * 0x30
-                 + *(int*)(iVar1 + 0x114)),
+        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + EntityOffset(0x274 + static_cast<intptr_t>(static_cast<int32_t>(uVar2)) * 0x18))) * 0x30
+                 + *(intptr_t*)&AsObject(iVar1)->BoneMatrices),
         local_c,
         (float*)(param_1 + 0x10),
         '\x01');
@@ -70,12 +75,15 @@ void __cdecl ItemDrop_SetupRenderRef(int param_1) {
 // Renders a billboard quad at pos[], scaled by sc, rotated around Z by rot[0] angle,
 // using texture slot param_1.
 void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
-    GL_BindTextureSlot(cls);
-    GL_SetBlendAdditive();
-    glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
+    const Materials::TexturedMaterial material{{cls},Materials::Describe(Materials::Preset::Add)};
+    if(!Materials::ApplyTextured(material)){
+        GL_BindTextureSlot(cls);
+        GL_SetBlendAdditive();
+    }
+    Gfx::PushMatrix();
+    Gfx::Translate(pos[0], pos[1], pos[2]);
     float angle = rot ? rot[0] : 0.0f;
-    glRotatef(angle, 0.0f, 0.0f, 1.0f);
+    Gfx::Rotate(angle, 0.0f, 0.0f, 1.0f);
     // Quad: half-size sc, CCW, full UV
     float q[4][3] = {
         {-sc, -sc, 0.0f},
@@ -83,13 +91,13 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
         { sc,  sc, 0.0f},
         { sc, -sc, 0.0f}
     };
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); glVertex3fv(q[0]);
-    glTexCoord2f(0.0f, 0.0f); glVertex3fv(q[1]);
-    glTexCoord2f(1.0f, 0.0f); glVertex3fv(q[2]);
-    glTexCoord2f(1.0f, 1.0f); glVertex3fv(q[3]);
-    glEnd();
-    glPopMatrix();
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+    BufferedDraw::TexCoord2f(0.0f, 1.0f); BufferedDraw::Vertex3fv(q[0]);
+    BufferedDraw::TexCoord2f(0.0f, 0.0f); BufferedDraw::Vertex3fv(q[1]);
+    BufferedDraw::TexCoord2f(1.0f, 0.0f); BufferedDraw::Vertex3fv(q[2]);
+    BufferedDraw::TexCoord2f(1.0f, 1.0f); BufferedDraw::Vertex3fv(q[3]);
+    BufferedDraw::End();
+    Gfx::PopMatrix();
     GL_ResetState();
 }
 // BMD__PlayAnimation (BMD::PlayAnimation / BMD_AnimTick) — en src/Render/BMD_Anim.cpp
@@ -206,10 +214,11 @@ void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float
 // Sets model color at +0x48..+0x50. Special cases for type 0x144 (two-tone), 0x1d7
 // (sets entity +0x58=2 then resets to -1 afterward), 0x235 (BMD__RenderBody with extra arg).
 // Falls through to BMD__RenderBody for bone rendering.
-void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, float scale,
+void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
-    float *color = (float *)((char*)model + 0x48);
+    float *color = AsModel(model)->BodyLight;
+    auto* owner = AsObject(entity);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else if (etype == 0x144) {
@@ -220,41 +229,42 @@ void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, floa
             color[0] = 1.0f; color[1] = 0.1f; color[2] = 0.1f;
         }
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, -1, (uint)rgba);
         return nullptr;
     } else {
         PartObjectColor(etype, scale, alpha, color, (char)((flags >> 8) & 1));
     }
     if (etype == 0x1d7) {
-        *(int *)(entity + 0x58) = 2;
+        owner->HiddenMesh = 2;
     } else if (etype == 0x235) {
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), 1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, 1, (uint)rgba);
         return nullptr;
     } else if (etype != 0x1af && etype != 0x1fa && etype != 0x260) {
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, -1, (uint)rgba);
         return nullptr;
     }
-    int fVar1 = *(int*)(entity + 0x58);
+    int fVar1 = owner->HiddenMesh;
     BMD__RenderBody(model, (uint)flags, scale,
-                 *(int *)(entity+100), *(float*)(entity+0x68),
-                 *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
+                 owner->BlendMesh, owner->BlendMeshLight,
+                 owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, fVar1, (uint)rgba);
     if (etype == 0x1d7) {
-        *(int *)(entity + 0x58) = -1;
+        owner->HiddenMesh = -1;
     }
     return nullptr;
 }
 
 // Entity_SetModelColorAlt @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
 // No special type 0x144 path; uses Weapon_SetColorAlt instead of PartObjectColor.
-void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float scale,
+void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
-    float *color = (float *)((char*)model + 0x48);
+    float *color = AsModel(model)->BodyLight;
+    auto* owner = AsObject(entity);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else {
@@ -262,8 +272,8 @@ void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float 
     }
     int fVar1 = (etype == 0x235) ? 1 : -1;   // HiddenMesh: malla 1 / ninguna
     BMD__RenderBody(model, (uint)flags, scale,
-                 *(int *)(entity+100), *(float*)(entity+0x68),
-                 *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
+                 owner->BlendMesh, owner->BlendMeshLight,
+                 owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, fVar1, (uint)rgba);
     return nullptr;
 }
 // RenderLinkObject @ 0x00455430 — RenderLinkObject (COMPLETO)
@@ -275,41 +285,31 @@ void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float 
 // For param3: clears one link at +0x14 via Widget_Release + vtable[0](1).
 // Widget_Release signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
 // IDA: DeleteCloth (0x00449840)
-void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
+void __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part)
 {
-    if ((param_2 != 0) && (*(int*)(param_2 + 0x184) != 0)) {
-        int count = (int)(unsigned char)*(char*)(param_2 + 0x180);
-        int *puVar1 = (int*)*(int*)(param_2 + 0x184);
-        for (int i = 0; i < count; i++) {
-            Widget_Release((int)puVar1, 0, 0);
-            puVar1 += 0x15;
-        }
-        int *base = (int*)*(int*)(param_2 + 0x184);
-        if (base != nullptr) {
-            FUN_0045aaa0_impl(base, 3);   // vtable[0] = sub_45AAA0
-        }
-        *(int*)(param_2 + 0x184) = 0;
-        *(char*)(param_2 + 0x180) = '\0';
+    if (object && object->Cloth) {
+        const int count = object->ClothCount;
+        auto* widgets = static_cast<ClothWidget*>(object->Cloth);
+        for (int i=0;i<count;++i) Widget_Release(widgets+i,0,0);
+        auto* base = static_cast<ClothWidget*>(object->Cloth);
+        if (base) FUN_0045aaa0_impl(base,3);
+        object->Cloth = nullptr;
+        object->ClothCount = 0;
     }
-    if (param_1 != 0) {
-        int *piVar4 = (int*)(param_1 + 0x1f4);
-        for (int i = 0; i < 6; i++) {
-            int *puVar1 = (int*)*piVar4;
-            if (puVar1 != nullptr) {
-                Widget_Release((int)puVar1, 0, 0);
-                // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
-                // El port lo llamaba como cdecl sin `this`.
-                FUN_0045aaa0_impl(puVar1, 1);
-                *piVar4 = 0;
+    if (character) {
+        for (int i=0;i<6;++i) {
+            PART_t& piece = character->BodyPart[i];
+            if (piece.Cloth) {
+                Widget_Release(piece.Cloth,0,0);
+                FUN_0045aaa0_impl(piece.Cloth,1);
+                piece.Cloth = nullptr;
             }
-            piVar4 += 6;
         }
     }
-    if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
-        int *puVar1 = (int*)*(int*)(param_3 + 0x14);
-        Widget_Release((int)puVar1, 0, 0);
-        FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
-        *(int*)(param_3 + 0x14) = 0;
+    if (part && part->Cloth) {
+        Widget_Release(part->Cloth,0,0);
+        FUN_0045aaa0_impl(part->Cloth,1);
+        part->Cloth = nullptr;
     }
 }
 // RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
@@ -319,9 +319,9 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
     if (alpha == _DAT_0055256c)
-        glColor3fv(col);
+        BufferedDraw::Color3fv(col);
     else
-        glColor4f(col[0], col[1], col[2], alpha);
+        BufferedDraw::Color4f(col[0], col[1], col[2], alpha);
 
     float rot_data[3] = { 0.0f, 0.0f, angle };
     float rot_mat[12];
@@ -363,7 +363,7 @@ void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, floa
                 corners[k][2] = out[2];
             }
             Terrain_RenderQuad((float)icx + ti, (float)icy + tj, 1.0f, 1,
-                         (int)corners, '\0', alpha);
+                         corners, '\0', alpha);
         }
     }
     return;

@@ -151,6 +151,7 @@
 //   DAT_00552488  → Z oscillation scale factor
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Entity_Render.h"
 #include <math.h>
@@ -185,10 +186,10 @@ void __cdecl MoveCharacterClient(float *param_1)
 
   if (*(char *)param_1 != '\0') {
     uVar1 = TestFrustrum2D(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
-    *(char *)(param_1 + 0x58) = (char)uVar1;
-    MoveMonsterClient((int)param_1,(int)param_1);
-    MoveCharacter((int)param_1);
-    MoveCharacterVisual((int)param_1);
+    AsObject(param_1)->Visible = (BYTE)uVar1;
+    MoveMonsterClient(AsCharacter(param_1), AsObject(param_1));
+    MoveCharacter((intptr_t)param_1);
+    MoveCharacterVisual((intptr_t)param_1);
   }
   return;
 }
@@ -210,25 +211,25 @@ void Entity_RenderAll_3D(void)
   iVar2 = 0;
   do {
     pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
-    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[0x1c0] & 4U) != 0)) && (SceneFlag == 5)) {
-      pcVar1[0x130] = '\0';
-      pcVar1[0x131] = '\0';
-      pcVar1[0x132] = 'z';
-      pcVar1[0x133] = 'D';
-      pcVar1[0x15c] = '\0';
-      pcVar1[0x15d] = '\0';
-      pcVar1[0x15e] = -0x80;
-      pcVar1[0x15f] = '?';
-      pcVar1[0x14c] = '\0';
-      pcVar1[0x14d] = '\0';
-      pcVar1[0x14e] = -0x80;
-      pcVar1[0x14f] = '?';
-      pcVar1[0x13c] = '\0';
-      pcVar1[0x13d] = '\0';
-      pcVar1[0x13e] = -0x80;
-      pcVar1[0x13f] = '?';
+    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[EntityOffset(0x1c0)] & 4U) != 0)) && (SceneFlag == 5)) {
+      pcVar1[EntityOffset(0x130)] = '\0';
+      pcVar1[EntityOffset(0x131)] = '\0';
+      pcVar1[EntityOffset(0x132)] = 'z';
+      pcVar1[EntityOffset(0x133)] = 'D';
+      pcVar1[EntityOffset(0x15c)] = '\0';
+      pcVar1[EntityOffset(0x15d)] = '\0';
+      pcVar1[EntityOffset(0x15e)] = -0x80;
+      pcVar1[EntityOffset(0x15f)] = '?';
+      pcVar1[EntityOffset(0x14c)] = '\0';
+      pcVar1[EntityOffset(0x14d)] = '\0';
+      pcVar1[EntityOffset(0x14e)] = -0x80;
+      pcVar1[EntityOffset(0x14f)] = '?';
+      pcVar1[EntityOffset(0x13c)] = '\0';
+      pcVar1[EntityOffset(0x13d)] = '\0';
+      pcVar1[EntityOffset(0x13e)] = -0x80;
+      pcVar1[EntityOffset(0x13f)] = '?';
     }
-    else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
+    else if ((*pcVar1 != '\0') && (pcVar1[EntityOffset(0x160)] != '\0')) {
       DAT_07abf5d4 = DAT_07abf5d4 + 1;
       if ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc)) {
         puVar4 = (undefined4 *)0x1;
@@ -238,9 +239,9 @@ void Entity_RenderAll_3D(void)
       }
       RenderCharacter((undefined4 *)pcVar1,(undefined4 *)pcVar1,puVar4);
     }
-    iVar3 = iVar3 + 0x394;
+    iVar3 = iVar3 + CHARACTER_STRIDE;
     iVar2 = iVar2 + 1;
-  } while (iVar3 < 0x59740);
+  } while (iVar3 < 400 * CHARACTER_STRIDE);
   return;
 }
 #endif  // duplicate Entity_RenderAll_3D disabled — use Entity_RenderAll_3D.cpp
@@ -286,15 +287,16 @@ uint RenderBugs(void)
 
     char* base = (char*)&DAT_083a1218[0];
     for (int i = 0; i < 10; ++i) {
-        char* slot = base + i * 0x1BC;
+        char* slot = base + i * OBJECT_STRIDE;
         if (slot[0] == 0) continue;            // not active
 
         float posX = *(float*)(slot + 16);
         float posY = *(float*)(slot + 20);
         unsigned short vis = TestFrustrum2D(posX * 0.01f, posY * 0.01f, -20.0f);
+        AsObject(slot)->Visible = (BYTE)(vis != 0);
         if (!vis) continue;
 
-        DWORD ownerPtr = *(DWORD*)(slot + 0xFC);
+        intptr_t ownerPtr = (intptr_t)AsObject(slot)->Owner;
         short typeCode = *(short*)(slot + 2);
 
         bool ownerIsPlayer = false;
@@ -318,37 +320,17 @@ uint RenderBugs(void)
 }
 
 
-// Entity_SetGravity — Entity_SetGravity
-// Sets the gravity value at param_2+0x84 based on entity type param_1.
-// Maps specific type ranges to negative float constants (gravity strengths).
-void __cdecl Entity_SetGravity(int param_1,int param_2)
+// IDA: sub_503830 (0x00503830)
+// BodyHeight de las piezas de armadura en el suelo: se dibujan sobre el
+// esqueleto del jugador y hay que bajarlas hasta el piso.
+void __cdecl Entity_SetGravity(intptr_t param_1, void* model)
 {
-  if (param_1 < 0x270) {
-    if (param_1 < 0x290) goto LAB_0050386e;
-  }
-  else if (param_1 < 0x290) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc3200000;
-    return;
-  }
-  if (param_1 < 0x2b0) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc2c80000;
-    return;
-  }
-LAB_0050386e:
-  if ((0x2cf < param_1) && (param_1 < 0x2f0)) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc28c0000;
-    return;
-  }
-  if ((0x2af < param_1) && (param_1 < 0x2d0)) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc2480000;
-    return;
-  }
-  if ((0x2ef < param_1) && (param_1 < 0x310)) {
-    *(undefined4 *)(param_2 + 0x84) = 0;
-    return;
-  }
-  *(undefined4 *)(param_2 + 0x84) = 0;
-  return;
+  float bodyHeight = 0.0f;
+  if (param_1 >= 624 && param_1 < 656)      bodyHeight = -156.0f;  // cascos
+  else if (param_1 >= 656 && param_1 < 688) bodyHeight = -96.0f;   // armaduras
+  else if (param_1 >= 688 && param_1 < 720) bodyHeight = -48.0f;   // pantalones
+  else if (param_1 >= 720 && param_1 < 752) bodyHeight = -72.0f;   // guantes
+  AsModel(model)->BodyHeight = bodyHeight;
 }
 
 
@@ -363,21 +345,24 @@ LAB_0050386e:
 void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,char param_4,int param_5)
 {
   undefined *puVar1;
-  int param_2 = (int)(uintptr_t)param_2_v;
+  intptr_t param_2 = (intptr_t)param_2_v;
 
-  *(undefined1 *)((int)param_1 + 0x44) = 0;
+  // BMD+0x44 (x86) = LightEnable: el contorno de selección se dibuja sin luz,
+  // con el color de BodyLight (dorado). En x64 el offset crudo caía dentro de
+  // un puntero del modelo y el contorno salía iluminado (plateado).
+  AsModel(param_1)->LightEnable = 0;
   // _DAT_005597c8 is float; param_5 is a float passed as undefined4. Reinterpret
   // the bit pattern (cast through uint) so we don't do an int→float conversion.
   *(unsigned int *)&_DAT_005597c8 = (unsigned int)param_5;
   if (*(char *)&AsObject(param_2)->EnableBoneMatrix == '\x01') {
-    puVar1 = *(undefined **)(param_2 + 0x114);
+    puVar1 = *(undefined **)(param_2 + EntityOffset(0x114));
   }
   else {
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  Skeleton_Transform(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
-               (float *)(param_2 + 0x130),param_4);
+  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + EntityOffset(0x118)),(float *)(param_2 + EntityOffset(0x124)),
+               (float *)(param_2 + EntityOffset(0x130)),param_4);
   BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
                AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
                AsObject(param_2)->HiddenMesh,0xffffffff);
@@ -393,7 +378,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
 // class 0x35c by sub-class bits. Copies position/flag fields from entity
 // to render object, then calls RenderPartObjectEffect for final draw.
 void __cdecl
-RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float param_5,uint param_6,
+RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param_4,float param_5,uint param_6,
             byte param_7,char param_8,undefined1 param_9,char param_10,int param_11,uint param_12)
 {
   void *this_;
@@ -410,14 +395,14 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
         param_2 = 0x3b4;
       }
     }
-    this_ = (void *)(DAT_05828d58 + param_2 * 0xbc);
-    *(undefined1 *)((int)this_ + 0x99) = param_9;
-    *(undefined4 *)((int)this_ + 0x68) = *(undefined4 *)(param_1 + 0xc);
-    *(undefined1 *)((int)this_ + 0x45) = *(undefined1 *)(param_1 + 0xe4);
-    *(undefined1 *)((int)this_ + 0x44) = *(undefined1 *)(param_1 + 0xdc);
-    *(undefined4 *)((int)this_ + 0x6c) = *(undefined4 *)(param_1 + 0x10);
-    *(undefined4 *)((int)this_ + 0x70) = *(undefined4 *)(param_1 + 0x14);
-    *(undefined4 *)((int)this_ + 0x74) = *(undefined4 *)(param_1 + 0x18);
+    this_ = (void *)(DAT_05828d58 + param_2 * BMD_STRIDE);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->HideSkin = param_9;
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyScale = *(undefined4 *)(param_1 + 0xc);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->ContrastEnable = *(undefined1 *)(param_1 + 0xe4);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->LightEnable = *(undefined1 *)(param_1 + 0xdc);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[0] = *(undefined4 *)(param_1 + 0x10);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[1] = *(undefined4 *)(param_1 + 0x14);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[2] = *(undefined4 *)(param_1 + 0x18);
     _DAT_005597c8 = 1.0f;
     if (param_11 == 3) {
       _DAT_005597c8 = 1.4f;
@@ -427,38 +412,38 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
     }
     else if (param_11 == 1) {
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3ca3d70a;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3dcccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3ca3d70a;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3dcccccd;
       }
       else {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3dcccccd;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3cf5c28f;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3dcccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3cf5c28f;
       }
-      *(undefined4 *)((int)this_ + 0x50) = 0;
+      *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f99999a);
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3e23d70a;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3f333333;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3e23d70a;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3f333333;
       }
       else {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3f333333;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3e4ccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3f333333;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3e4ccccd;
       }
-      *(undefined4 *)((int)this_ + 0x50) = 0;
+      *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
-    Entity_GetLightScale(param_1,(int)this_);
+    Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));
     if (param_8 == '\0') {
-      puVar2 = *(undefined **)(param_1 + 0x114);
+      puVar2 = *(undefined **)&((OBJECT*)(uintptr_t)(param_1))->BoneMatrices;
     }
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    Skeleton_Transform(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
-                 (float *)(param_1 + 0x130),param_10);
+    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + EntityOffset(0x118)),(float *)(param_1 + EntityOffset(0x124)),
+                 (float *)(param_1 + EntityOffset(0x130)),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
-    DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
+    DivineSkirt_Apply(AsObject(static_cast<intptr_t>(param_1)), param_2, param_3, this_);
     RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;

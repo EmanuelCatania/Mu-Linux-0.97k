@@ -3,6 +3,7 @@
 // Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
@@ -48,7 +49,7 @@ static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 // Correspondencia: skillId = el byte de CharacterAttribute[dword_7D7809C + 87];
 //   targetIdx = MovementSkillTarget (0x07D780A0); angle = retorno de CreateAngle
 //   (0x0043E050, que el decompile llama `Movement_Tick`); targetKey = entidad+476.
-void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
+void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     // IDA: sub_4889D0 @ 0x004889D0.  `c` is the queued caster CHARACTER
     // (IDA: c); `o` is its OBJECT (IDA: a2).  The skill selector itself is
     // deliberately global in the original, not a member of either parameter.
@@ -70,22 +71,22 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     // path-list sender at 0x491C40.
     if (skillId != 15) {
         BYTE movement[6] = { 0xC1, 6, 0x10,
-            *(BYTE*)((BYTE*)(uintptr_t)Hero + 904), *(BYTE*)((BYTE*)(uintptr_t)Hero + 908),
+            *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(904)), *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(908)),
             (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
         gNetwork.SendC1(movement, sizeof(movement));
-        *(BYTE*)((BYTE*)(uintptr_t)c + 748) = 0;
+        *(BYTE*)((BYTE*)(uintptr_t)c + EntityOffset(748)) = 0;
     }
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
-    char* heroEntity = (char*)(DWORD)c;
+    char* heroEntity = (char*)c;
     int targetIdx = (int)MovementSkillTarget;  // MovementSkillTarget
-    DWORD entityBase = DAT_07abf5d0;    // CharactersClient array base
+    intptr_t entityBase = DAT_07abf5d0;    // CharactersClient array base
 
     // Target entity position: entityBase + targetIdx * 0x394 + offset
     // Ghidra: CharactersClient[_MovementSkillTarget].Object.Position[0/1/2]
-    float targetPosX = *(float*)(entityBase + targetIdx * 0x394 + 0x10);
-    float targetPosY = *(float*)(entityBase + targetIdx * 0x394 + 0x14);
-    float targetPosZ = *(float*)(entityBase + targetIdx * 0x394 + 0x18);
+    float targetPosX = *(float*)(entityBase + targetIdx * CHARACTER_STRIDE + 0x10);
+    float targetPosY = *(float*)(entityBase + targetIdx * CHARACTER_STRIDE + 0x14);
+    float targetPosZ = *(float*)(entityBase + targetIdx * CHARACTER_STRIDE + 0x18);
 
     // Store target position at entity offset +0x314 (TargetPosition[3])
     AsCharacter(heroEntity)->TargetPosition[0] = targetPosX;
@@ -94,11 +95,11 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
 
     // Compute facing angle toward target
     // CreateAngle(heroX, heroY, targetX, targetY)
-    float heroX = *(float*)((char*)(DWORD)o + 0x10);
-    float heroY = *(float*)((char*)(DWORD)o + 0x14);
+    float heroX = *(float*)((char*)o + 0x10);
+    float heroY = *(float*)((char*)o + 0x14);
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
     float angle = ((CreateAngleFn)&CreateAngle)(heroX, heroY, targetPosX, targetPosY);
-    *(float*)((char*)(DWORD)o + 36) = angle;
+    *(float*)((char*)o + 36) = angle;
 
     // ── Switch on skill ID ──
     switch (skillId) {
@@ -109,7 +110,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         // Hero->ID at entity offset +0x1C1
         // In original: strlen-based strstr scan. If hero name contains "webzen", skip.
         // This is an anti-impersonation check — GM accounts get special treatment.
-        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)c));
         {
             // Simple strstr check for "webzen" in hero name
             const char* gmStr = DAT_00559d94;
@@ -155,7 +156,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         // The entity index IS the key in some sense, but Ghidra shows .Key as a field.
         // Looking at Combat.cpp and other code: entity key is used as network ID.
         // From DAT_07abf5d0 + idx * 0x394 — the Key field in Ghidra is likely at offset 0x00.
-        WORD targetKey = *(WORD*)(entityBase + targetIdx * 0x394 + 476); // IDA: *v38
+        WORD targetKey = *(WORD*)(entityBase + targetIdx * CHARACTER_STRIDE + EntityOffset(476)); // IDA: *v38
 
         // Real server recv:
         //   PMSG_SKILL_ATTACK_RECV { PBMSG_HEAD // C3:19, BYTE skill, BYTE index[2] }
@@ -166,7 +167,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     case 0xd:
     {
         // GM name check: compare Hero->ID with "webzen" (DAT_00559d9c)
-        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)c));
         {
             const char* gmStr = DAT_00559d9c;
             int gmLen = (int)strlen(gmStr);
@@ -195,7 +196,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         // DESVIACION (fix del DLL, Patchs.cpp 0x00489769): enviar dirección y key del objetivo seleccionado válido.
         WORD targetKey = 0xFFFF;
         if (CheckAttack())
-            targetKey = *(WORD*)(entityBase + SelectedCharacter * 0x394 + 476);
+            targetKey = *(WORD*)(entityBase + SelectedCharacter * CHARACTER_STRIDE + EntityOffset(476));
         const BYTE dir = (BYTE)(int)(AsCharacter(heroEntity)->Object.Angle[2] / 360.0f * 256.0f);
         SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
         break;
@@ -212,7 +213,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     // Ghidra: SetPlayerMagic @ 0x00444a80
     // If entity type != 0x186: alternate between action 3 and 4 based on combo counter % 3
     // If entity type == 0x186: SetAttackSpeed, then class-specific action
-    SetPlayerMagic((int)c);
+    SetPlayerMagic(AsCharacter(c));
 }
 
 // ── SkillElf support ──────────────────────────────────────────────────────────
@@ -335,18 +336,18 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //   skillId            = *(BYTE *)(pItem + i + 37) = ITEM::Special[i]
 //   i                  = i           (L119, la variable de bucle del binario)
 //   result             = v110        (el valor de retorno)
-//   gridX / gridY      = v44 / v113  (*(_DWORD *)(c + 904) / (c + 908))
+//   gridX / gridY      = v44 / v113  (*(_DWORD *)(c + EntityOffset(904)) / (c + EntityOffset(908)))
 //   angle              = v37         (Movement_Tick = CreateAngle @0x0043E050)
 //   dir                = v52         (angulo * 0.71111113)
 //   skillDistance      = v112        (SkillAttribute[40*skill + 38])
 // ~60% of the original decompile is anti-tamper hash table operations
 // (HashTable_Insert, FUN_004041e0, HashTable_GetNode, Packet_DecryptByte, Packet_DecryptBuffer,
 //  Packet_EncryptBuffer) and XOR key init + dead forward/reverse loops — all skipped.
-bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
+bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
     // c = CHARACTER* (hero entity), pItem = CHARACTER_ATTRIBUTE* (char attributes)
     // Cast to usable pointers
-    char* hero    = (char*)(DWORD)c;      // CHARACTER* — entity struct
-    char* charAttr = (char*)(DWORD)pItem;  // CHARACTER_ATTRIBUTE* — skill/stat struct
+    char* hero    = (char*)c;      // CHARACTER* — entity struct
+    char* charAttr = (char*)pItem;  // CHARACTER_ATTRIBUTE* — skill/stat struct
 
     if (hero == nullptr || charAttr == nullptr) return false;
 
@@ -377,7 +378,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
     // and current AG +0x24.
     WORD currentMana = *(WORD*)(charAttrBase + 0x1E);
     WORD currentAG = *(WORD*)(charAttrBase + 0x24);
-    const BYTE selectedSkill = charAttrBase[(BYTE)*(BYTE*)(Hero + 913) + 87];
+    const BYTE selectedSkill = charAttrBase[(BYTE)*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
 
     for (int i = 0; i < (int)skillCount && i < 20; i++) {
         BYTE skillId = *(BYTE*)(charAttr + 0x25 + i);
@@ -455,7 +456,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
         // IDA: SkillElf (0x0048BD70).
         // DESVIACION (fix del DLL, Patchs.cpp 0x0048C6F9): usar SelectedCharacter si CheckAttack permite atacarlo; conservar la ruta sin blanco.
         const int targetIndex = CheckAttack() ? (int)SelectedCharacter : (int)MovementSkillTarget;
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * 0x394 + 476);
+        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * CHARACTER_STRIDE + EntityOffset(476));
         if (targetKey == 0xFFFF) {
             continue;
         }
@@ -538,7 +539,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
 
             // Set player attack animation
             // SetPlayerAttack(hero) — Ghidra shows 1-arg; use 4-arg decl with dummies
-            SetPlayerAttack((int)(DWORD)heroEntity, 0, 0, 0);
+            SetPlayerAttack(AsCharacter(heroEntity), 0, 0, 0);
 
             // If object type is not 0x186 (special entity), create arrow projectiles
             WORD objType = *(WORD *)&AsCharacter(heroEntity)->Object.Type;  // Object.Type at offset +0x02
@@ -557,7 +558,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
                 // del case 52 de Attack, que manda el byte de skill encolado c+770.
 
                 // Spawn arrow visual effect
-                CreateArrows((DWORD)heroEntity, (DWORD)(heroEntity),
+                CreateArrows((intptr_t)heroEntity, (intptr_t)(heroEntity),
                                   (DWORD)0, (WORD)skillIndex, 1, 0);
             }
             result = true;

@@ -19,7 +19,7 @@
 //                   `Entity_ResetToWalk` es inventado del port).  Toma el
 //                   PUNTERO a la entidad, no el indice.
 //   SetPlayerMagic  = Entity_SelectTarget_Player — set caster's attack target to player entity
-//   SetPlayerDie (per Net/SecondPassword.cpp); the port's `Entity_TeleportEnd`
+//   SetPlayerDie (per Entity/Character_Motion.cpp); the port's `Entity_TeleportEnd`
 //                   helper has no verified FUN mapping.
 //   FUN_004792c0  = CreatePoint (per Entity_LegacyTeleport.cpp); the port's `Entity_TeleportAnim`
 //                   helper has no verified FUN mapping.
@@ -55,15 +55,15 @@
 
 
 // Forward declarations for functions identified in decompilation
-extern "C" void __cdecl CreateTeleportBegin(unsigned int entity); // 0x004742b0
-extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);   // 0x00474310
-extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
-extern void Entity_TeleportEnd(int entity_idx);             // Legacy helper; no verified FUN mapping.
+extern "C" void __cdecl CreateTeleportBegin(OBJECT* entity); // 0x004742b0
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);   // 0x00474310
+extern void Entity_ResetToWalk(intptr_t entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
+extern void Entity_TeleportEnd(intptr_t entity_idx);             // Legacy helper; no verified FUN mapping.
 extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
-extern void Entity_MeleeAttackStart(int entity_idx);        // Legacy helper; no verified FUN mapping.
+extern void Entity_MeleeAttackStart(intptr_t entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
 
 // SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
 // the walking variant when a path is active.
@@ -72,13 +72,13 @@ static void SetPlayerBow97k(BYTE* entity)
     if (!entity) return;
     const short leftType = AsCharacter(entity)->Weapon[1].Type;
     if ((leftType >= 528 && leftType < 535) || leftType == 545) {
-        SetAction((int)(intptr_t)entity,
+        SetAction(AsObject(entity),
                      ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 46 : 48);
         return;
     }
     const short rightType = AsCharacter(entity)->Weapon[0].Type;
     if ((rightType >= 536 && rightType < 543) || rightType == 544) {
-        SetAction((int)(intptr_t)entity,
+        SetAction(AsObject(entity),
                      ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 47 : 49);
     }
 }
@@ -91,10 +91,10 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
     if (!caster || caster == (BYTE*)DAT_07abf5d8)
         return;
     if (*(WORD*)(caster + 2) == 390)
-        SetPlayerMagic((int)(intptr_t)caster);
+        SetPlayerMagic(AsCharacter(caster));
     else
-        SetPlayerAttack((int)(intptr_t)caster, 0, 0, 0);
-    *(DWORD*)(caster + 264) = 0;
+        SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
+    *(DWORD*)&((OBJECT*)(uintptr_t)(caster))->AnimationFrame = 0;
 }
 
 // External data
@@ -103,8 +103,8 @@ extern BYTE* g_CharData;     // DAT_07cf1ffc
 
 // g_EntityBase is never wired to the actual entity array — the real
 // base lives in DAT_07abf5d0 (set by WinMain).
-#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
-#define STRIDE       0x394
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
+#define STRIDE       CHARACTER_STRIDE
 
 // ============================================================
 // PacketHandler_0x19  @ 0x0042bca0
@@ -209,7 +209,7 @@ void PacketHandler_0x19(BYTE* pkt)
             const BYTE targetAction = AsObject(target)->CurrentAction;
             if (targetAction == 0x8B || targetAction == 0x8C ||
                 targetAction == 0x85 || targetAction == 0x87) {
-                SetPlayerStop((int)(intptr_t)target);
+                SetPlayerStop(AsCharacter(target));
             }
         }
         AnimateRemoteSkillCaster97k(caster);
@@ -220,21 +220,21 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // Unlike the other cases, IDA returns immediately after the
         // teleport-begin animation rather than marking the common skill tail.
-        CreateTeleportBegin((unsigned int)(uintptr_t)caster);
+        CreateTeleportBegin(AsObject(caster));
         return;
     }
 
     case 0x0F:  // 15 Teleport Party
     {
         if (target != nullptr)
-            CreateTeleportBegin((unsigned int)(uintptr_t)target);
-        CreateTeleportEnd((unsigned int)(uintptr_t)caster);
+            CreateTeleportBegin(AsObject(target));
+        CreateTeleportEnd(AsObject(caster));
         // IDA 0x42BCA0 L198-201: `if (sc == Hero) Teleport = 0;`
         // (Teleport = 0x05826D14 = Teleport).  Faltaba: el flag quedaba
         // armado despues de terminar el teleport propio.
         if (caster == (BYTE*)DAT_07abf5d8)
             Teleport = 0;
-        PlayBuffer(102, (DWORD)(uintptr_t)caster, 0);
+        PlayBuffer(102, AsObject(caster), 0);
         return;
     }
 
@@ -273,21 +273,21 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x13:  // 19 Falling Slash
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(82, 0, 0);
         goto common_tail;
     }
 
     case 0x14:  // 20 Lunge
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(83, 0, 0);
         goto common_tail;
     }
 
     case 0x15:  // 21 Uppercut
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(84, 0, 0);
         goto common_tail;
     }
@@ -295,7 +295,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x16:  // 22 Cyclone
     {
         // ReceiveMagic case 0x16: SetAction(sc, 0x16 + 37), then sound 85.
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }
@@ -304,9 +304,9 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // The alternating action is controlled by the caster-local counter
         // at +771, not by the current map/state.
-        SetAction((int)(intptr_t)caster,
-                     (caster[771] & 1) ? 41 : skill_type + 37);
-        caster[771] += 1;
+        SetAction(AsObject(caster),
+                     (caster[EntityOffset(771)] & 1) ? 41 : skill_type + 37);
+        caster[EntityOffset(771)] += 1;
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }
@@ -320,7 +320,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x2B:  // 43 Death Stab
     {
-        SetAction((int)(intptr_t)caster, 67);
+        SetAction(AsObject(caster), 67);
         if (caster != (BYTE*)DAT_07abf5d8 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
             *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
         goto common_tail;
@@ -328,7 +328,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x2F:  // 47 Impale
     {
-        SetAction((int)(intptr_t)caster, 66);
+        SetAction(AsObject(caster), 66);
         goto common_tail;
     }
 
@@ -341,20 +341,20 @@ void PacketHandler_0x19(BYTE* pkt)
             // Ese efecto es el que spawnea cada tick las particulas 1150/sub4
             // que se cuelgan de los huesos del personaje (MoveParticles).
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
-                DeleteEffect(1150, (DWORD)(uintptr_t)target, 1);
+                DeleteEffect(1150, (intptr_t)target, 1);
                 CreateEffect(1150, (float*)(target + 16),
                              (float*)(target + 28), (float*)(target + 232),
                              (float*)1, (float*)target, (float*)-1, nullptr, 0);
             }
             *(DWORD*)(target + 120) |= 0x10;
         }
-        SetAction((int)(intptr_t)caster, 63);
+        SetAction(AsObject(caster), 63);
         goto common_tail;
     }
 
     case 0x31:  // 49 Fire Breath
     {
-        SetAction((int)(intptr_t)caster,
+        SetAction(AsObject(caster),
                      (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
         goto common_tail;
     }
@@ -367,7 +367,7 @@ void PacketHandler_0x19(BYTE* pkt)
         SetPlayerBow97k(caster);
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
+            DeleteEffect(190, (intptr_t)target, 1);
             float angle[3] = {
                 AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
@@ -377,8 +377,8 @@ void PacketHandler_0x19(BYTE* pkt)
             CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)2, (float*)target, (float*)-1, nullptr, 0);
             // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
-            target[748] = 0;
-            SetPlayerStop((int)(intptr_t)target);
+            target[EntityOffset(748)] = 0;
+            SetPlayerStop(AsCharacter(target));
             // Set ice status bit
             *(DWORD*)(target + 120) |= 0x20;
         }
@@ -389,12 +389,12 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
+            DeleteEffect(1274, (intptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);
             // Set lightning status bit
-            PlayBuffer(104, (DWORD)(uintptr_t)target, 0);
+            PlayBuffer(104, AsObject(target), 0);
             *(DWORD*)(target + 120) |= 0x40;
         }
         return;
@@ -402,7 +402,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x38:  // 56 Power Slash
     {
-        SetAction((int)(intptr_t)caster, 81);
+        SetAction(AsObject(caster), 81);
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }

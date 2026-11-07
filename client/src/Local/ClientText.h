@@ -9,16 +9,34 @@ enum class ClientTextId {
     LanguageDefault, AntilagWeather, AntilagGlow,
     AntilagWorld, AntilagEffects, AntilagInterface,
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
-    FontBold, FontItalic,
+    FontBold, FontItalic, FontSmooth, FontShadow, FontOutline, FontColorEmoji,
     RenderFpsOverlay,
     RenderDecoupled, RenderVSync, RenderFps, RenderUnlimited, RenderVSyncUnavailable,
     MiniMapGate, MiniMapZoom, MiniMapAlpha,
     ReconnectConnecting, ReconnectLogin, ReconnectCharList, ReconnectCharInfo,
+    RenderGLUnavailable,
+    EventStartsIn,
+    RenderBackend, RenderBackendRestart,
+    TextureQuality,
+    Sharpness,
+    Antialiasing,
+    OptionsAdvanced, OptionsGraphics,
+    HDTextures,
+    Shadows,
+    DepthFog,
+    DrawDistance,
+    BuffTimeLeft, BuffCaster, BuffDamage, BuffDefense, BuffDamageReduction, BuffMaxLife,
     Count
 };
+// Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).
+// Lo que el server no manda sale del inglés que trae el cliente.
 class CClientText {
 public:
     const char* Get(ClientTextId id) const;
+    // false si el texto no sirve (índice inválido o formato distinto del inglés).
+    bool SetServerText(size_t id, const char* utf8);
+    // Al desconectar: vuelve el inglés incorporado.
+    void ClearServerTexts();
 };
 extern CClientText gClientText;
 

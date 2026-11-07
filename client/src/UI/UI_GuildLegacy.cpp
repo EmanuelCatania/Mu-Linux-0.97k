@@ -1,6 +1,9 @@
 // UI_GuildLegacy.cpp
 
 #include "stdafx.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -50,22 +53,22 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // tras `sub_51D9E0` (opcode 0x93) que deja ErrorMessage = 140 y copia las
 // entradas a DAT_083a7af8.
 //
-// Registro (24 bytes, = PMSG_DEVIL_SQUARE_SCORE del server, con el padding del
-// DWORD): +0 name[10] · +12 score · +16 RewardExperience · +20 RewardMoney.
+// Registro (= PMSG_DEVIL_SQUARE_SCORE del server, 0.97.40): +0 name[40] ·
+// +40 score · +44 RewardExperience · +48 RewardMoney.
 int __cdecl RenderMatchScore(void)
 {
     // Columnas: puesto, personaje, puntos, experiencia, recompensa.
     static const int kCol[5] = { 219, 235, 287, 345, 383 };
     char buf[64];
 
-    glColor3f(0.5f, 1.0f, 0.5f);
+    Gfx::Color3f(0.5f, 1.0f, 0.5f);
     UI_RenderText(229, 70, GlobalText[647], (LPSIZE)0, '\0', 0);
-    Platform::TextFormat(buf, GlobalText[648], (const char *)((int)DAT_07abf5d8 + 0x1c1));
+    Platform::TextFormat(buf, GlobalText[648], EntityName::Get(DAT_07abf5d8));
     UI_RenderText(229, 86, buf, (LPSIZE)0, '\0', 0);
 
     // Encabezados 680..684.  El original SALTEA el 681 ("Personaje") y le suma
     // 10 px al indice 2; es asi en el binario.
-    glColor3f(0.5f, 0.5f, 1.0f);
+    Gfx::Color3f(0.5f, 0.5f, 1.0f);
     for (int i = 0; i < 5; ++i) {
         if (i == 1) continue;
         UI_RenderText(kCol[i] + (i == 2 ? 10 : 0), 110, GlobalText[680 + i],
@@ -78,14 +81,14 @@ int __cdecl RenderMatchScore(void)
     if (count <= 0) return DAT_083a7c30;
 
     int y = 126;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     for (int i = 0; i < count; ++i) {
         // El registro 0 del buffer es el del propio jugador y va ULTIMO: por eso
         // el original indexa con (i+1) % count.
         const BYTE *e = &DAT_083a7af8[GUILD_MEMBER_STRIDE * ((i + 1) % count)];
 
         if (i == count - 1) {
-            glColor3f(0.9f, 0.9f, 0.0f);
+            Gfx::Color3f(0.9f, 0.9f, 0.0f);
             UI_RenderText(219, 286, GlobalText[685], (LPSIZE)0, '\0', 0);
             y = 302;
             Platform::TextFormat(buf, "%2d", DAT_083a7c34);
@@ -95,21 +98,21 @@ int __cdecl RenderMatchScore(void)
         m_dwTextColor = 0xFFFFFFFFu;
         UI_RenderText(kCol[0], y, buf, (LPSIZE)0, '\0', 0);
 
-        char name[11];
-        memcpy(name, e, 10);
-        name[10] = '\0';
+        char name[NetText::CharacterNameSize + 1];
+        NetText::FromServer(name, sizeof(name), e, NetText::CharacterNameSize);
         UI_RenderText(kCol[1], y, name, (LPSIZE)0, '\0', 0);
 
+        const int NAME = (int)NetText::CharacterNameSize;
         m_dwTextColor = 0xFFFFD2D2u;
-        Platform::TextFormat(buf, "%10d", *(const int *)(e + 12));
+        Platform::TextFormat(buf, "%10d", *(const int *)(e + NAME));
         UI_RenderText(kCol[2], y, buf, (LPSIZE)0, '\0', 0);
 
         m_dwTextColor = 0xFFD2FFD2u;
-        Platform::TextFormat(buf, "%6d", *(const int *)(e + 16));
+        Platform::TextFormat(buf, "%6d", *(const int *)(e + NAME + 4));
         UI_RenderText(kCol[3], y, buf, (LPSIZE)0, '\0', 0);
 
         m_dwTextColor = 0xFFD2D2FFu;
-        Platform::TextFormat(buf, "%6d", *(const int *)(e + 20));
+        Platform::TextFormat(buf, "%6d", *(const int *)(e + NAME + 8));
         UI_RenderText(kCol[4], y, buf, (LPSIZE)0, '\0', 0);
 
         y += 16;
@@ -124,7 +127,7 @@ int __cdecl RenderMatchScore(void)
 // DAT_083a7c30=0 → "draw" strings; !=0 → "win/loss" strings.
 int __cdecl GuildOverview_Render(void)
 {
-    glColor3f(0.5f, 0.5f, 0.5f);
+    Gfx::Color3f(0.5f, 0.5f, 0.5f);
     const char *title, *subtitle;
     tagSIZE sz = {};
     HDC hdc = (HDC)(uintptr_t)gFont.GetTextDC();
@@ -145,9 +148,9 @@ int __cdecl GuildOverview_Render(void)
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffffffff;
-    gFont.SelectFont(hdc, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+    gFont.SelectFont(hdc, (HGDIOBJ)gFont.GetFont(FONT_BOLD));
 
     // Score total
     char buf[256];
@@ -209,8 +212,8 @@ void __cdecl GuildMemberList_Update(int count, int p2, void *data)
     // Copy menu descriptor: 5 DWORDs
     DWORD desc[5] = { 1, 0x47, 0x104, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
-    // Copy member list data: count * 0x18 bytes into DAT_083a7af8
-    // La tabla tiene 11 registros (0x108 bytes, ver globals.h).
+    // Copy member list data: count registros de GUILD_MEMBER_STRIDE bytes
+    // (11 registros, ver globals.h).
     // IDA no acota `count` porque alli el hueco es exactamente ese; aca el
     // clamp evita que un `count` grande escriba sobre los globals vecinos.
     int nMembers = count;
@@ -232,9 +235,8 @@ void __cdecl GuildMemberList_Add(int p1, void *data)
     DAT_083a7c30 = (int)(DWORD)p1;
     DWORD desc[5] = { 1, 0x47, 0x82, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
-    DWORD *src = (DWORD*)data;
-    DWORD *dst = (DWORD*)&DAT_083a7af8[0];   // un registro = 6 DWORDs
-    for (int i = 0; i < 6; i++) *dst++ = *src++;
+    // Un registro (6 DWORDs en el binario; GUILD_MEMBER_STRIDE desde 0.97.40).
+    memcpy(&DAT_083a7af8[0], data, GUILD_MEMBER_STRIDE);
 }
 
 // ItemList_Select @ 0x0051D840 — ItemList_Select(slot)

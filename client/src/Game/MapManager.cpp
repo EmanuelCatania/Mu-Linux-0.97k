@@ -33,7 +33,7 @@ constexpr int kPubTile = 4;
 
 bool InSafeZone()
 {
-    return Hero && *(Hero + 0x34E) != 0;   // c->SafeZone
+    return Hero && *(Hero + EntityOffset(0x34E)) != 0;   // c->SafeZone
 }
 
 // IDA Game_MainLoop: la catedral de Devias es el rectángulo de celdas
@@ -41,8 +41,8 @@ bool InSafeZone()
 bool InDeviasCathedral()
 {
     if (!Hero) return false;
-    const int x = *(int*)(Hero + 904);
-    const int y = *(int*)(Hero + 908);
+    const int x = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionX;
+    const int y = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionY;
     return x > 204 && x < 215 && y > 12 && y < 32;
 }
 }
@@ -138,14 +138,14 @@ bool CMapManager::IsAnyMapTrack(const char* track) const
 void CMapManager::UpdateMusic() const
 {
     if (gSound.GetCurrentTrack()[0] && !IsMapTrack(gMapManager.GetCurrentMap(), gSound.GetCurrentTrack()))
-        Music_StopTrack((DWORD)(uintptr_t)gSound.GetCurrentTrack(), 0);
+        Music_StopTrack(gSound.GetCurrentTrack(), 0);
 
     const MapInfo* info = Get(gMapManager.GetCurrentMap());
     if (!info || !info->music) return;
     if (info->musicSafeZoneOnly && !InSafeZone()) return;
 
     const char* track = SelectZoneMusic(gMapManager.GetCurrentMap());
-    Music_PlayTrack((DWORD)(uintptr_t)(track ? track : info->music), 0);
+    Music_PlayTrack(track ? track : info->music, 0);
 }
 
 // IDA: StopMusic (0x00513420) recorre los 6 temas de g_lpszMp3 con StopMp3; o
@@ -153,5 +153,5 @@ void CMapManager::UpdateMusic() const
 void CMapManager::StopMusic() const
 {
     if (gSound.GetCurrentTrack()[0] && IsAnyMapTrack(gSound.GetCurrentTrack()))
-        Music_StopTrack((DWORD)(uintptr_t)gSound.GetCurrentTrack(), 0);
+        Music_StopTrack(gSound.GetCurrentTrack(), 0);
 }

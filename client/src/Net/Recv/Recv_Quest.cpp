@@ -28,7 +28,7 @@ void NetRecv_A0(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // seteado y es de donde Recv_JoinMapServer copia hero+444.
     int heroClass = -1;
     if (DAT_07abf5d8 != 0)
-        heroClass = *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 444);
+        heroClass = AsCharacter(DAT_07abf5d8)->Class;
     else if (CharacterAttribute != nullptr)
         heroClass = *(BYTE*)((BYTE*)CharacterAttribute + 11);
     // El destino (CSQuest + 0x1C848) son 0x32 bytes: IDA hace
@@ -40,7 +40,7 @@ void NetRecv_A0(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (num > 0x32) num = 0x32;
     if (Size < 4 + num) num = Size - 4;
     if (num > 0)
-        CSQuest__setQuestLists((int)g_csQuest, 0, (BYTE*)Msg + 4, num, heroClass);
+        CSQuest__setQuestLists(reinterpret_cast<BYTE*>(g_csQuest), 0, (BYTE*)Msg + 4, num, heroClass);
 }
 
 // 0xA1
@@ -49,7 +49,7 @@ void NetRecv_A1(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // ReceiveQuestState @ 0x00437480
     if (Size < 5 || g_csQuest == 0) return;
     NetLog("NET:  → 0xA1 QuestState index=%d result=%d", Msg[3], Msg[4]);
-    CSQuest__setQuestList((int)g_csQuest, 0, Msg[3], Msg[4]);
+    CSQuest__setQuestList(reinterpret_cast<BYTE*>(g_csQuest), 0, Msg[3], Msg[4]);
     CSQuest__ShowQuestNpcWindow((void*)(uintptr_t)g_csQuest, 0, -1);
 }
 
@@ -61,7 +61,7 @@ void NetRecv_A2(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     NetLog("NET:  → 0xA2 QuestResult index=%d err=%d state=%d",
            Msg[3], Msg[4], Msg[5]);
     if (Msg[4] == 0) {          // IDA: sólo si el byte 4 es 0
-        CSQuest__setQuestList((int)g_csQuest, 0, Msg[3], Msg[5]);
+        CSQuest__setQuestList(reinterpret_cast<BYTE*>(g_csQuest), 0, Msg[3], Msg[5]);
         CSQuest__ShowQuestNpcWindow((void*)(uintptr_t)g_csQuest, 0, -1);
     }
 }
@@ -85,7 +85,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (idx < 0 || idx >= 400) return;
     if (DAT_07abf5d0 == 0) return;
 
-    BYTE *c    = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 916;
+    BYTE *c    = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE;
     BYTE *hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
     BYTE *attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     // Clase codificada igual que en la lista de personajes:
@@ -104,7 +104,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // 15 chispas + destello, sin rebuild del personaje
         for (int n = 0; n < 15; ++n)
             Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
-                         (float*)(c + 28), 0, (int)(uintptr_t)c,
+                         (float*)(c + 28), 0, (intptr_t)c,
                          40.0f, 2, 0);
         CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                      (float*)(c + 232), nullptr, (float*)c,
@@ -114,7 +114,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 
     if (Msg[5] == 0xC9 || Msg[5] == 0xCA || Msg[5] == 0xCB) {
-        *(BYTE*)(c + 444) = klass;
+        *(BYTE*)(c + EntityOffset(444)) = klass;
         if (c == hero && attr) {
             *(BYTE*)(attr + 11) = klass;
             // Sólo el sub-tipo 0xCA suma puntos, y usa EL MISMO
@@ -133,17 +133,17 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                         *(float*)(c + 24) + 200.0f };
         for (int n = 0; n < 15; ++n) {
             Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
-                         (float*)(c + 28), 0, (int)(uintptr_t)c,
+                         (float*)(c + 28), 0, (intptr_t)c,
                          40.0f, 2, 0);
             Joint_Create(1249, up, up,
-                         (float*)(c + 28), 10, (int)(uintptr_t)c,
+                         (float*)(c + 28), 10, (intptr_t)c,
                          40.0f, 2, 0);
         }
         CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                      (float*)(c + 232), nullptr, (float*)c,
                      (float*)-1, nullptr, 0);
-        Character_UpdateEquipSlotAnimations((int)(uintptr_t)c);   // rebuild de body-parts
-        SetAction((int)(uintptr_t)c, 124);
+        Character_UpdateEquipSlotAnimations(AsCharacter(c));   // rebuild de body-parts
+        SetAction(AsObject(c), 124);
         PlayBuffer(72, 0, 0);
     }
 }

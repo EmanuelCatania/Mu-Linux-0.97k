@@ -30,12 +30,12 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Game/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <GL/gl.h>
 
 // External helpers ported in earlier passes.
 extern "C" int    GetScreenWidth(void);
@@ -212,9 +212,9 @@ extern "C" void __cdecl sub_4BB940(float HeightArg, float xArg, float yArg,
     if (!v10) return;
 
     if (v10 == 47) {
-        WORD heroFlag = *(WORD*)((BYTE*)(uintptr_t)Hero + 696);
+        WORD heroFlag = *(WORD*)((BYTE*)(uintptr_t)Hero + EntityOffset(696));
         if (heroFlag != 818 && heroFlag != 819) {
-            glColor3f(1.0f, 0.5f, 0.5f);
+            Gfx::Color3f(1.0f, 0.5f, 0.5f);
         }
     }
 
@@ -343,9 +343,9 @@ void __cdecl Render_HudPass_4BD650_(void)
     // ── Skill bar (when CharacterAttribute+86 != 0) ──────────────────────────
     if (CA[86]) {
         bool hoveredSkill = false;
-        glColor3f(1.0f, 0.9f, 0.8f);
+        Gfx::Color3f(1.0f, 0.9f, 0.8f);
         // Main weapon skill icon.
-        BYTE mainSlot = *(unsigned char*)((BYTE*)(uintptr_t)Hero + 913);
+        BYTE mainSlot = *(unsigned char*)((BYTE*)(uintptr_t)Hero + EntityOffset(913));
         float mainSkill = (float)mainSlot;
         sub_4BB940(mainSkill, 304.0f, 444.0f, 32, 36);
         if ((double)MouseX >= 304.0 && (double)MouseX < 336.0 &&
@@ -365,9 +365,9 @@ void __cdecl Render_HudPass_4BD650_(void)
                     int slotCount = (unsigned char)CA[86];
                     double xCenter = 320.0 - (double)slotCount * 16.0 + (double)v92 * 32.0;
                     if (slotIdx == mainSlot) {
-                        glColor3f(1.0f, 0.9f, 0.8f);
+                        Gfx::Color3f(1.0f, 0.9f, 0.8f);
                     } else {
-                        glColor3f(0.6f, 0.7f, 0.8f);
+                        Gfx::Color3f(0.6f, 0.7f, 0.8f);
                     }
                     sub_4BB940((float)slotIdx, (float)(int)xCenter, 370.0f, 32, 36);
                     if ((double)MouseX >= xCenter && (double)MouseX < xCenter + 32.0 &&
@@ -396,15 +396,15 @@ void __cdecl Render_HudPass_4BD650_(void)
     // pintarian negros.  0x511680 -> GL_SetBlendSrcOver en este arbol.
     GL_SetBlendSrcOver(1);
 
-    int v53 = *(int*)((BYTE*)(uintptr_t)Hero + 904);
-    glColor3f(0.6f, 0.6f, 0.6f);
+    int v53 = *(int*)((BYTE*)(uintptr_t)Hero + EntityOffset(904));
+    Gfx::Color3f(0.6f, 0.6f, 0.6f);
     RenderNumber2D(24.0f, 462.0f, v53, 8.0f, 9.0f);
 
-    int v62 = *(int*)((BYTE*)(uintptr_t)Hero + 908);
+    int v62 = *(int*)((BYTE*)(uintptr_t)Hero + EntityOffset(908));
     RenderNumber2D(48.0f, 462.0f, v62, 8.0f, 9.0f);
 
     // ── HP / MP cur values ───────────────────────────────────────────────────
-    glColor3f(1.0f, 0.95f, 0.75f);
+    Gfx::Color3f(1.0f, 0.95f, 0.75f);
     // DESVIACION: centrados en su esfera (97..150 y 489..542) y con 32 bits.
     // El 0.97k los dibuja en x=100 y x=540, y con 5 cifras el de mana se
     // pisa con el de AG (el DLL lo corría 20 px).

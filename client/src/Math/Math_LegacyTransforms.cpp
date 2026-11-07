@@ -85,8 +85,9 @@ void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float
 
     if (Translate) {
         // Scale by BMD scale factor and add origin
-        float scale = *(float *)((int)This + 0x68);
-        float *origin = (float *)((int)This + 0x6c);
+        const BMD& model = *AsModel(This);
+        float scale = model.BodyScale;
+        const float *origin = model.BodyOrigin;
         WorldPos[0] = scale * temp[0] + origin[0];
         WorldPos[1] = scale * temp[1] + origin[1];
         WorldPos[2] = scale * temp[2] + origin[2];

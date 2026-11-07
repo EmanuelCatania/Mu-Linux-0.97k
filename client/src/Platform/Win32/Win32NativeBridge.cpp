@@ -5,7 +5,7 @@
 namespace Platform {
 void BindNativeDispatch(HINSTANCE instance, WNDPROC procedure) { GetWin32Window().BindDispatch(instance, procedure); }
 void DispatchNativeMessage(const MSG& message) {
-    if (message.message != WM_SYSKEYDOWN && message.message != WM_SYSKEYUP) DispatchMessageA(&message);
+    if (message.message != WM_SYSKEYDOWN && message.message != WM_SYSKEYUP) DispatchMessageW(&message);
 }
 HWND NativeWindow() { return GetWin32Window().GetHwnd(); }
 HINSTANCE NativeInstance() { return GetWin32Window().GetInstance(); }

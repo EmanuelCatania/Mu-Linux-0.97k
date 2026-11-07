@@ -2,6 +2,7 @@
 // UI_SkillHotkeys.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -77,9 +78,9 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
     // helper (Hero + 696 = c+0x2B8).
     if (skillId == 0x2f) {
         const BYTE* hero = (const BYTE*)(uintptr_t)DAT_07abf5d8;
-        const short helperType = hero ? *(const short*)(hero + 696) : -1;
+        const short helperType = hero ? *(const short*)(hero + EntityOffset(696)) : -1;
         if (helperType != 818 && helperType != 819)
-            glColor3f(1.0f, 0.5f, 0.5f);
+            Gfx::Color3f(1.0f, 0.5f, 0.5f);
     }
 
     float fWidth = (float)(int)width;

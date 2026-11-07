@@ -51,7 +51,7 @@ private:
     WORD     m_Port = 0;
     char     m_Account[11] = {};
     char     m_Password[11] = {};
-    char     m_Name[11] = {};
+    char     m_Name[64] = {};   // nombre completo (0.97.40)
 };
 
 extern CReconnect gReconnect;

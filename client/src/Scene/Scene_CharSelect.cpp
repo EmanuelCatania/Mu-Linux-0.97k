@@ -178,6 +178,9 @@
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Render/Gfx.h"
+#include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_CharSelect.h"
@@ -196,8 +199,8 @@ void SceneCharSelect_PrepareLighting()
         (long double)_DAT_005528e0) * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
     // El slot de creación usa DWORD con sentinel -1; IDA lo compara con signo.
     const float brightness=(int)DAT_005616b0>=0 ? 0.2f : pulse;
-    if (DAT_083a021c) {
-        OBJECT &hover=*AsObject(DAT_083a021c);
+    if (g_ObjectBucketGrid[0].Head) {
+        OBJECT &hover=*AsObject(g_ObjectBucketGrid[0].Head);
         hover.Light[0]=hover.Light[1]=hover.Light[2]=brightness;
         hover.BlendMeshLight=brightness;
     }
@@ -236,7 +239,7 @@ int Scene_CharSelect(void)
         DAT_083a42ea = 0;
         DAT_07e11d6e = 0;
         // 0x3f800000 son los bits de 1.0f, no la magnitud.
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
         Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
 
@@ -254,13 +257,12 @@ int Scene_CharSelect(void)
         iVar4 = DAT_005616ac;
         iVar9 = SelectedCharacter;
         iVar7 = 0;
-        pfVar3 = (float *)(DAT_07abf5d0 + 0xec);
         _DAT_0055a7c0 = 0;
         do {
-            if (*(short *)(pfVar3 + 0x73) == 0x333)
-                pfVar3[-0x35] = 20.0f;
+            CHARACTER* preview = AsCharacter(DAT_07abf5d0) + iVar7;
+            if (preview->Helper.Type == 0x333)
+                preview->Object.Position[2] = 20.0f;
             iVar7++;
-            pfVar3 = pfVar3 + 0xe5;
         } while (iVar7 < 5);
 
         // ── DIAG: log 5 slots once a second so we can verify MG entity state ──
@@ -270,7 +272,7 @@ int Scene_CharSelect(void)
             if (now - s_lastDiag > 1000) {
                 s_lastDiag = now;
                 for (int s = 0; s < 5; ++s) {
-                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * 0x394);
+                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * CHARACTER_STRIDE);
                 }
             }
         }
@@ -285,14 +287,14 @@ int Scene_CharSelect(void)
         Entity_RenderAll_3D();
 
         // Orbital particles for selected char
-        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
+        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE] != '\0')) {
             GL_SetBlendAdditive();   // Frame_UpdateTimer
             uVar12  = (unsigned int)(*(float*)&WorldTime);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000,  local_70, 0, 0.0f);
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 
@@ -305,13 +307,15 @@ int Scene_CharSelect(void)
         Trail_RenderAll();
         GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
         GL_BindTextureSlot(0x15);
-        glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
+        Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.8f);
         GL_BeginSprite();                    // SkillEffect_Render_2
         Render_DrawSpritePool();                    // Portal_Render
         RenderParticles();                    // ItemDrop_Render_2
-        glPopMatrix();
+        Gfx::PopMatrix();
+        // DESVIACION: antialiasing y nitidez opcionales sobre la imagen 3D.
+        Gfx::PostProcess(gUserSettings.GetAntialiasing(), gUserSettings.SharpnessAmount());
         GL_Begin2D();                    // GL_SetupOrtho2D
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_SetBlendSrcOver('\x01');
         GL_ResetState();
 
@@ -325,7 +329,7 @@ int Scene_CharSelect(void)
         }
         if (DAT_005616b0 == -1) {
             GL_SetBlendSrcOver('\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
             iVar9 = 0;
             pcVar5 = (char*)DAT_07abf5d0;
             do {
@@ -336,18 +340,22 @@ int Scene_CharSelect(void)
                     float posBuf[3];
                     posBuf[0] = *(float *)(pcVar5 + iVar9 + 0x10);
                     posBuf[1] = *(float *)(pcVar5 + iVar9 + 0x14);
-                    posBuf[2] = *(float *)(pcVar5 + iVar9 + 0x18) + _DAT_00552974;
+                    // DESVIACION (Fase 4): se sube la etiqueta sobre la altura original para
+                    // que las alas, que sobresalen de la cabeza, no la tapen. Va en unidades
+                    // del mundo para que escale con la distancia de cada personaje.
+                    constexpr float kLabelLift = 70.0f;
+                    posBuf[2] = *(float *)(pcVar5 + iVar9 + 0x18) + _DAT_00552974 + kLabelLift;
                     fStack_5c = posBuf[0];
                     uStack_58 = *(undefined4 *)&posBuf[1];
                     fStack_54 = posBuf[2];
                     {
                         static DWORD s_lastNI[5] = {0};
-                        int slotIdx = iVar9 / 0x394;
+                        int slotIdx = iVar9 / CHARACTER_STRIDE;
                         DWORD now2 = Platform::GetTimer().Ticks();
                         if (slotIdx >= 0 && slotIdx < 5 && now2 - s_lastNI[slotIdx] > 1000) {
                             s_lastNI[slotIdx] = now2;
                             char b[400];
-                            const char* nm = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
+                            const char* nm = EntityName::Get((BYTE*)DAT_07abf5d0 + iVar9);
                             float* M = (float*)&CameraMatrix;
                         }
                     }
@@ -357,13 +365,13 @@ int Scene_CharSelect(void)
                     Camera_ProjectWorldToScreen(posBuf, &local_6c, &nameProjY);
                     {
                         static DWORD s_lastNO[5] = {0};
-                        int slotIdx2 = iVar9 / 0x394;
+                        int slotIdx2 = iVar9 / CHARACTER_STRIDE;
                         DWORD now3 = Platform::GetTimer().Ticks();
                         if (slotIdx2 >= 0 && slotIdx2 < 5 && now3 - s_lastNO[slotIdx2] > 1000) {
                             s_lastNO[slotIdx2] = now3;
                         }
                     }
-                    bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + 0x1c0];
+                    bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + EntityOffset(0x1c0)];
                     // Color by class/flags
                     if      (bVar2 & 1)    { SetBackgroundTextColor = 0x8000ffff; DAT_00559c78 = 0xff000000; }
                     else if (bVar2 & 0x12) { SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000; }
@@ -371,15 +379,19 @@ int Scene_CharSelect(void)
                     else if (bVar2 & 8)    { SetBackgroundTextColor = 0x80ff0000; DAT_00559c78 = 0xff000000; }
                     else                   { SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffc8b4; }
                     // Name (top, bold font) — IDA L194-198: sprintf(String, "%s", entity+449)
-                    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+                    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
                     {
-                        const char* charName = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
+                        const char* charName = EntityName::Get((BYTE*)DAT_07abf5d0 + iVar9);
                         crt_sprintf(aCStack_50, DAT_00561a30, charName);
                     }
                     iVar4 = Platform::TextLength(aCStack_50);
                     gFont.MeasureText((HDC)(uintptr_t)gFont.GetTextDC(), aCStack_50, iVar4, &tStack_68);
+                    // MeasureText mide en píxeles de la ventana y nameProjY está en la grilla
+                    // de 640: el alto se pasa a la grilla igual que el ancho. Sin esto el
+                    // nombre quedaba tantos píxeles más arriba como escala la resolución.
+                    const int nameHeight = (int)(((uint)tStack_68.cy * 0x280) / gWindow.GetWidth());
                     UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
-                                 (nameProjY - tStack_68.cy) + -3,
+                                 (nameProjY - nameHeight) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
                     // Class name + level (bottom, normal font) — IDA L202-209:
                     //   sprintf(String, "%s %d",
@@ -387,10 +399,10 @@ int Scene_CharSelect(void)
                     //           level)
                     // klass byte at entity+0x1bc (444): DW=0, DK=1, ELF=2, MG=3, SM=8, BK=9, ME=10
                     SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffffff;
-                    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+                    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
                     {
-                        BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + 0x1bc];
-                        WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1be);
+                        BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + EntityOffset(0x1bc)];
+                        WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + EntityOffset(0x1be));
                         int  cidx  = (klass & 7) + 4 * (klass >> 3);
                         // 0.97k tiene DW/DK/ELF/MG y evolved SM/BK/ME (no DL).
                         static const char* kClassNames[16] = {
@@ -413,14 +425,14 @@ int Scene_CharSelect(void)
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
                 }
-                iVar9 += 0x394;
-            } while (iVar9 < 0x11e4);
+                iVar9 += CHARACTER_STRIDE;
+            } while (iVar9 < 5 * CHARACTER_STRIDE);
         }
 
         // ── Warning text ──────────────────────────────────────────────────────
         if (DAT_083a7c4d != '\0') {
             SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000;
-            gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+            gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
             iVar9 = Platform::TextLength((LPCSTR)lpString_07d49c14);
             gFont.MeasureText((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
             UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x14a,
@@ -433,7 +445,7 @@ int Scene_CharSelect(void)
 
         // ── Server info text (bottom right, blue) ─────────────────────────────
         SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xff67bfdf;
-        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         iVar9 = Platform::TextLength((LPCSTR)&lpString_00561a3c);
         gFont.MeasureText((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
         UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x186,
@@ -455,16 +467,16 @@ int Scene_CharSelect(void)
             GL_BeginViewport(0, 0, 0x280, 0x1e0);
             GL_Begin2D();
             GL_SetBlendSrcOver('\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
             iVar9 = DAT_005616a4;
             uVar8 = 2;
             iVar4 = 5;
             pcVar5 = (char*)DAT_07abf5d0;
             do {
-                if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + 0x1be)))
+                if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + EntityOffset(0x1be))))
                     uVar8 = 3;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar4 != 0);
 
             local_6c = DAT_005616a4;
@@ -482,9 +494,9 @@ int Scene_CharSelect(void)
             }
             if ((char)DAT_07abf20c == '\0') {
                 // 0x3f4ccccd son los bits de 0.8f (pasado como int sería 1062836429.0f).
-                glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+                Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(364.0f, (float)(int)local_70, 20.0f, 19.0f);
-                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
             local_70 = fVar1;
             if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
@@ -495,9 +507,9 @@ int Scene_CharSelect(void)
             if (uVar8 <= (DAT_07abf20c & 0xff)) {
                 // IDA RenderColor(384, dialogY+196, ...): el overlay de "flecha derecha
                 // bloqueada" usa la misma Y que la izquierda.
-                glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+                Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(384.0f, (float)(int)local_70, 20.0f, 19.0f);
-                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
             GL_SetBlendSrcOver('\x01');
@@ -531,7 +543,7 @@ int Scene_CharSelect(void)
                 GL_DrawTexture(0x19, 335.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
 
-            gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+            gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
             DAT_00559c8c = 0x49;
             // IDA: `if (dword_5616B0 >= 0)`. DAT_005616b0 es DWORD (unsigned): comparar
             // con signo, `-1 < DAT_005616b0` sería siempre falso.
@@ -592,7 +604,7 @@ int Scene_CharSelect(void)
             pcVar5 = (char*)DAT_07abf5d0;
             do {
                 if (*pcVar5 == '\0') bVar10 = true;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar9 != 0);
 
             // Create button brightness
@@ -601,7 +613,7 @@ int Scene_CharSelect(void)
             float fR, fG, fB;
             if (bVar10) { fR = fG = fB = 1.0f; }
             else         { fR = fG = fB = 0.5f; }
-            glColor3f(fR, fG, fB);
+            Gfx::Color3f(fR, fG, fB);
 
             iVar9 = DAT_005616a4;
             local_6c = DAT_005616a4;
@@ -619,25 +631,28 @@ int Scene_CharSelect(void)
             // Delete char button brightness (literales float, igual que arriba)
             if (bVar10) { fR = fG = fB = 0.5f; }
             else         { fR = fG = fB = 1.0f; }
-            glColor3f(fR, fG, fB);
+            Gfx::Color3f(fR, fG, fB);
 
             // Left/right navigation arrows
+            // DESVIACION (Fase 4, pantalla ancha): los brazos DELETE y OK se pegan
+            // al marco, que va en los bordes de la ventana (s unidades de más).
+            const int s = gWindow.GetRightShift();
             fVar1 = DAT_005616a8;
             local_70 = DAT_005616a8;
-            GL_DrawTexture(0x12, (float)(int)DAT_005616a8, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
-            local_70 = (float)((int)fVar1 + 0x80);
-            if ((((!bVar10) && ((int)local_70 <= DAT_083a427c)) && (DAT_083a427c < (int)fVar1 + 0xc6)) &&
+            GL_DrawTexture(0x12, (float)((int)DAT_005616a8 - s), 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
+            local_70 = (float)((int)fVar1 + 0x80 - s);
+            if ((((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) && ((int)DAT_083a427c < (int)fVar1 + 0xc6 - s)) &&
                 ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7)))
             {
                 GL_DrawTexture(0x13, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }
 
             iVar9 = -(int)DAT_005616a8;
-            local_70 = (float)(iVar9 + 0x1b2);
+            local_70 = (float)(iVar9 + 0x1b2 + s);
             GL_DrawTexture(0x14, (float)(int)local_70, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
-            local_70 = (float)(iVar9 + 0x1b9);
-            if (((!bVar10) && ((int)local_70 <= DAT_083a427c)) &&
-                ((DAT_083a427c < iVar9 + 0x1ff) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
+            local_70 = (float)(iVar9 + 0x1b9 + s);
+            if (((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) &&
+                (((int)DAT_083a427c < iVar9 + 0x1ff + s) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
             {
                 GL_DrawTexture(0x15, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }

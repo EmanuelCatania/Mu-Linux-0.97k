@@ -1,6 +1,6 @@
 // Music.cpp — elección del tema de fondo.
 //
-// IDA: PlayMp3 y StopMp3 (0x004127F0). Las dos comparan el nombre recibido con
+// IDA: PlayMp3 (0x00412890) y StopMp3 (0x004127F0). Comparan el nombre recibido con
 // el tema en curso (m_CurrentTrack) y respetan m_MusicEnabled (Config.ini
 // [Sound] EnableMusic, o el registro) y Destroy (DAT_055ca018, el cliente se
 // está cerrando).
@@ -61,15 +61,15 @@ void CSound::PlayTrack(const char* Name, int bEnforce)
 }
 
 
-// IDA: PlayMp3 / StopMp3 (0x004127F0). Puentes para los callers heredados.
-void __cdecl Music_PlayTrack(DWORD name, int enforce)
+// IDA: PlayMp3 (0x00412890) / StopMp3 (0x004127F0). Puentes para callers heredados.
+void __cdecl Music_PlayTrack(const char* name, int enforce)
 {
-    gSound.PlayTrack((const char*)(uintptr_t)name, enforce);
+    gSound.PlayTrack(name, enforce);
 }
 
-void __cdecl Music_StopTrack(DWORD name, int enforce)
+void __cdecl Music_StopTrack(const char* name, int enforce)
 {
-    gSound.StopTrack((const char*)(uintptr_t)name, enforce);
+    gSound.StopTrack(name, enforce);
 }
 
 // FUN_00412180 @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to
@@ -91,7 +91,7 @@ void __cdecl FUN_004124d0(void *a1, const void *a2)
 }
 
 // FUN_004124f0 @ 0x004124F0 — GG module ~dtor
-void __fastcall FUN_004124f0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_004124f0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00412510((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -104,7 +104,7 @@ void __fastcall FUN_00412510(DWORD* param_1) {
 }
 
 // FUN_004125f0 @ 0x004125F0 — GG module2 ~dtor
-void __fastcall FUN_004125f0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_004125f0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00412610((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }

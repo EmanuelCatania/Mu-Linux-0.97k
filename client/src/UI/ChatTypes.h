@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Entity/EntityTypes.h"
 #include <cstddef>
+#include <cstdint>
 
 // IDA: CHAT, 0x254 bytes; burbujas de chat sobre los personajes, pool de 100
 // en 0x07E016F8 (DAT_07e016f8).
@@ -28,7 +29,10 @@ struct CHAT {
     vec3_t      Position;              // 0x248
 };
 #pragma pack(pop)
+// El pool DAT_07e016f8 (globals) se dimensiona con esta misma cuenta.
+static_assert(sizeof(CHAT) == 0x254 + sizeof(void*) - 4, "CHAT: tamano del pool de burbujas");
 
+#if UINTPTR_MAX == 0xFFFFFFFFu
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
 static_assert(sizeof(CHAT) == 0x254, "CHAT");
 MU_ASSERT_FIELD(CHAT, Guild, 0x018);
@@ -41,7 +45,13 @@ MU_ASSERT_FIELD(CHAT, Owner, 0x234);
 MU_ASSERT_FIELD(CHAT, x, 0x238);
 MU_ASSERT_FIELD(CHAT, Position, 0x248);
 #undef MU_ASSERT_FIELD
+#endif
 
 inline CHAT* AsChat(uintptr_t p) { return reinterpret_cast<CHAT*>(p); }
+
+// Nombre y prefijo de guild para mostrar (0.97.40). CHAT::ID y Guild conservan
+// el tamaño del binario (24 y 12 bytes); el texto completo sale del Owner.
+const char* ChatDisplayName(const CHAT* c);
+const char* ChatDisplayGuild(const CHAT* c);
 inline CHAT* AsChat(void* p) { return static_cast<CHAT*>(p); }
 inline const CHAT* AsChat(const void* p) { return static_cast<const CHAT*>(p); }

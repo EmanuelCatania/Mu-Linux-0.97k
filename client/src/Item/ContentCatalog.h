@@ -54,6 +54,7 @@ public:
     void ReceiveEffects(const BYTE* msg, int size);    // F3/EC
     void ReceivePets(const BYTE* msg, int size);       // F3/EE
     void ReceiveTooltips(const BYTE* msg, int size);   // F3/EF
+    void ReceiveTexts(const BYTE* msg, int size);      // F3/F0
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -119,6 +120,8 @@ public:
     const Proto::CATALOG_PET* GetPetByModel(int model) const;
 
     const CatalogMonster* GetMonster(int index) const;
+    // Nombre traducido de un monstruo o NPC, o nullptr si el server no lo mandó.
+    char* GetMonsterText(int index) const;
 
     // Niebla del mapa: colores de día y de noche (0..1).  false = sin fila.
     bool GetMapFog(int map, float day[3], float night[3]) const;
@@ -127,6 +130,8 @@ public:
     // mapa mezcla día y noche según la hora local; los mapas sin fila usan los
     // colores por defecto del DLL.  Se recalcula al cambiar de mapa o cada 10 s.
     bool HasMapFog() const { return m_HasFog; }
+    // Distancias de la niebla del server (2000..2700 si no las manda).
+    void GetFogRange(int map, float& start, float& end) const;
     void GetFogColor(int map, float rgba[4]);
 
 private:

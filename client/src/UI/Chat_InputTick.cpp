@@ -24,6 +24,12 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
+#include "UI/ChatHistory.h"
+#include "Text/TextCore.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
@@ -62,16 +68,16 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
 
     if (*requestedName != '\0' && DAT_07abf5d0) {
         char* candidate = (char*)(uintptr_t)DAT_07abf5d0;
-        for (int i = 0; i < 400; ++i, candidate += 916) {
+        for (int i = 0; i < 400; ++i, candidate += CHARACTER_STRIDE) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
-                Platform::TextCompareIgnoreCase(candidate + 449, requestedName) == 0) {
+                Platform::TextCompareIgnoreCase(EntityName::Get(candidate), requestedName) == 0) {
                 entity = candidate;
                 break;
             }
         }
     } else if (SelectedCharacter >= 0 && SelectedCharacter < 400 && DAT_07abf5d0) {
-        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * 916;
+        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE;
         if (candidate[0] && *(short*)(candidate + 2) == 390 && candidate[132] == 1)
             entity = candidate;
     }
@@ -92,7 +98,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
 
     char* entity = Chat_FindPlayerInteractionTarget(text + commandLen);
     if (entity) {
-        const WORD key = *(WORD*)(entity + 476);
+        const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(entity))->Key;
         BYTE packet[5] = { 0xC1, 0x05, head, (BYTE)(key >> 8), (BYTE)key };
         // El frame lo decide `Data\Hack\HackPacketCheck.txt` (columna Encrypt):
         //   0x40 party y 0x36 trade → Encrypt=1 → C3
@@ -124,30 +130,30 @@ static bool Chat_TrySendPartyRequest(const char* text)
 
     // IDA: PartyNumber > 0 && strcmp(Party[0].name, Hero->name).
     // Only the first listed member may initiate another invitation.
-    if (PartyNumber > 0 && strcmp((const char*)Party, hero + 449) != 0) {
+    if (PartyNumber > 0 && strcmp(Party_GetName(0), EntityName::Get(hero)) != 0) {
         UIChatLogWindow_AddText(nullptr, GlobalText[257], 1);
         return true;
     }
 
     auto IsPlayerTarget = [hero](char* entity) {
         return entity && entity != hero && entity[0] && entity[132] == 1 &&
-               (*(short*)(entity + 2) == 390 || entity[847] != 0);
+               (*(short*)(entity + 2) == 390 || entity[EntityOffset(847)] != 0);
     };
     auto IsAdjacent = [hero](const char* entity) {
-        return abs(*(const int*)(entity + 904) - *(const int*)(hero + 904)) <= 1 &&
-               abs(*(const int*)(entity + 908) - *(const int*)(hero + 908)) <= 1;
+        return abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionX - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX) <= 1 &&
+               abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionY - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY) <= 1;
     };
 
     char* target = nullptr;
     if (SelectedCharacter >= 0 && SelectedCharacter < 400) {
-        char* candidate = entities + SelectedCharacter * 916;
+        char* candidate = entities + SelectedCharacter * CHARACTER_STRIDE;
         if (IsPlayerTarget(candidate) && IsAdjacent(candidate))
             target = candidate;
     } else {
         const int heroDirection = ((int)((*(float*)(hero + 36) + 22.5f) *
                                          0.022222223f + 1.0f)) & 7;
         for (int i = 0; i < 400; ++i) {
-            char* candidate = entities + i * 916;
+            char* candidate = entities + i * CHARACTER_STRIDE;
             if (!IsPlayerTarget(candidate) || !IsAdjacent(candidate))
                 continue;
 
@@ -163,7 +169,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     if (!target)
         return true;
 
-    const WORD key = *(WORD*)(target + 476);
+    const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(target))->Key;
     PartyKey = key;
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
     gNetwork.Send(packet, sizeof(packet));
@@ -171,7 +177,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
         char message[300] = {};
-        sprintf(message, GlobalText[476], entities + targetIndex * 916 + 449);
+        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * CHARACTER_STRIDE));
         UIChatLogWindow_AddText(nullptr, message, 1);
     }
     return true;
@@ -200,6 +206,13 @@ static bool Chat_TrySendGuildRequest(const char* text)
 extern "C" void Chat_SendChatLine(const char* text)
 {
     if (!text || !*text) return;
+    // DESVIACION (Fase 4): ":D", "<3" y ":fire:" salen como emoji. Los
+    // comandos ("/...") se mandan tal cual.
+    std::string expanded;
+    if (text[0] != '/') {
+        expanded = TextEngine::ExpandEmoticons(text);
+        text = expanded.c_str();
+    }
     if (Chat_TrySendPartyRequest(text)) return;
 
 
@@ -221,20 +234,19 @@ extern "C" void Chat_SendChatLine(const char* text)
     // CommandManager parses slash commands from CGChatRecv, which keeps this
     // client compatible with every command enabled in Command.txt (including
     // future server-side additions) without another client patch.
-    size_t tlen = strlen(text);
-    if (tlen > 0x3c) tlen = 0x3c;
-
-    // ── PMSG_CHAT_RECV (server MuEmu Protocol.h, header C1:00) ───────────────
+    // ── PMSG_CHAT_RECV (server MuEmu Protocol.h, header C1:00; 0.97.40) ──────
     //   +0..2   PBMSG_HEAD  { C1, size, headcode=0x00 }
-    //   +3..12  char name[10]
-    //   +13..72 char message[60]
+    //   +3..42  char name[40]
+    //   +43..   char message[200]
     // IDA, SendChat @ 0x004C1B90: el C1 se construye con tamaño variable.
-    // Primero agrega los diez bytes del nombre y después `strlen(texto)+1`;
-    // para una entrada de 59+ caracteres limita ese último bloque a 60.
+    // Primero agrega el nombre y después `strlen(texto)+1`, con el mensaje
+    // cortado (sin partir un cluster) para que entre con su NUL.
     // No se debe rellenar a sizeof(PMSG_CHAT_RECV): el ejecutable original
     // cifra y envía únicamente los bytes que realmente construyó.
-    const size_t msgBytes = (tlen + 1 >= 0x3c) ? 0x3c : (tlen + 1);
-    const int pktLen = 3 + 10 + (int)msgBytes;
+    const int NAME = (int)NetText::CharacterNameSize;
+    const size_t tlen = TextEngine::FitBytes(text, NetText::ChatMessageSize - 1);
+    const size_t msgBytes = tlen + 1;
+    const int pktLen = 3 + NAME + (int)msgBytes;
 
     BYTE pkt[0x410];
     memset(pkt, 0, sizeof(pkt));
@@ -250,7 +262,7 @@ extern "C" void Chat_SendChatLine(const char* text)
     //     PlayBuffer(25, 0, 0);
     //
     // Formato del wire (server MuEmu Protocol.h) — las dos structs son
-    // idénticas salvo el headcode y QUIÉN va en name[10]:
+    // idénticas salvo el headcode y QUIÉN va en name[40]:
     //   C1:00 PMSG_CHAT_RECV          name = el PROPIO personaje
     //         CGChatRecv: `if (strcmp(name, lpObj->Name) != 0) return;`
     //   C1:02 PMSG_CHAT_WHISPER_RECV  name = el DESTINATARIO
@@ -271,22 +283,21 @@ extern "C" void Chat_SendChatLine(const char* text)
         if (FUN_0047fed0(6, whisperTarget) != 1)
             return;
         pkt[2] = 0x02;                        // headcode = whisper
-        memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
+        NetText::ToServer(pkt + 3, NAME, whisperTarget);   // name[40] = DESTINATARIO
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
-        // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
-        // ("no esta conectado") como remitente.
-        memcpy(ChatWhisperID, whisperTarget, 10);
-        ChatWhisperID[10] = '\0';
+        // InputText[1][0..9], con '\0' en [10] (0.97.40: el nombre entero).
+        // Lo usa el aviso del 0x0C ("no esta conectado") como remitente.
+        TextEngine::CopyTruncated(ChatWhisperID, sizeof(ChatWhisperID), whisperTarget);
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
-        // name[10] = nombre del héroe: con el campo en CEROS el server descarta el
+        // name[40] = nombre del héroe: con el campo en CEROS el server descarta el
         // mensaje en silencio.
         if (DAT_07abf5d8) {
-            memcpy(pkt + 3, (const char*)DAT_07abf5d8 + 0x1C1, 10);
+            NetText::ToServer(pkt + 3, NAME, EntityName::Get(DAT_07abf5d8));
         }
     }
 
-    memcpy(pkt + 13, text, msgBytes);
+    memcpy(pkt + 3 + NAME, text, tlen);   // el NUL ya está en el buffer
     const bool isWhisper = (pkt[2] == 0x02);
 
     // C1 con chain-XOR (lo aplica CNetwork; el server lo revierte en XorData).
@@ -296,10 +307,11 @@ extern "C" void Chat_SendChatLine(const char* text)
     // manda, asi que el cliente agrega la linea con el nombre propio y el
     // tipo 0 (colores del chat normal).
     if (isWhisper && DAT_07abf5d8)
-        UIChatLogWindow_AddText((const char*)DAT_07abf5d8 + 0x1C1, text, 0);
+        UIChatLogWindow_AddText(EntityName::Get(DAT_07abf5d8), text, 0);
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
-    memcpy(&DAT_05826adc[0], text, tlen + 1);
+    memcpy(&DAT_05826adc[0], text, tlen);
+    DAT_05826adc[tlen] = '\0';
     ChatTime = 0x46;
 }
 
@@ -342,18 +354,19 @@ void __cdecl Chat_InputTick(void)
             const char *activePtr = (const char *)&DAT_07df938b + slot * 0x118;
             const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x118;
             const int  *posXPtr   = (const int *)((const char *)&DAT_07df9494 + slot * 0x118);
-            int         posX_scaled = (int)((unsigned int)(*posXPtr * 0x280) / gWindow.GetWidth());
+            const int leftEdge = gWindow.PanelOrigin(Ui::WindowLeft);
+            int posX_scaled = leftEdge + (int)((unsigned int)(*posXPtr * 0x280) / gWindow.GetWidth());
 
             if (*activePtr != '\0' &&
                 (DAT_00559bf1 != '\0' || *typePtr != 3) &&
-                (-1 < mouseX) &&
+                (leftEdge <= mouseX) &&
                 (mouseX < posX_scaled) &&
                 ((int)rowY <= mouseY) && (mouseY < (int)(rowY + 0xd)) &&
                 (DAT_00559c84 != '\0') &&
-                (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
             {
                 // Compare entity name at +0x1c1 against table name
-                const char *entityName = DAT_07abf5d8 + 0x1c1;
+                const char *entityName = EntityName::Get(DAT_07abf5d8);
                 if (strcmp(tableName, entityName) != 0 && MouseRButtonPush != '\0')
                 {
                     MouseRButtonPush = '\0';
@@ -384,7 +397,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
@@ -406,7 +419,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
@@ -433,6 +446,13 @@ void __cdecl Chat_InputTick(void)
         }
         if (edge != 0) continue;
         edge = 1;
+        // DESVIACION (Fase 4): con el chat abierto y el foco en el campo del
+        // mensaje, las flechas recorren los últimos mensajes enviados. Con el
+        // foco en el nombre (Tab) siguen con los nombres de susurro.
+        if (DAT_00559c84 && DAT_07e11d78 == 0) {
+            if (ChatHistory::Browse(dir == 0)) PlayBuffer(0x19, 0, 0);
+            continue;
+        }
         int idx = (int)DAT_00559cc4;
         if (dir == 0 ? idx <= 0 : idx >= 4) continue;
         // Guardar lo tipeado en history[idx] y cargar history[idx -/+ 1].
@@ -485,7 +505,7 @@ void __cdecl Chat_InputTick(void)
                 if ((0x12f < mouseX) && (mouseX < 0x150) &&
                     (0x1bb < mouseY) && (mouseY < 0x1e0))
                 {
-                    DAT_0055a3e4 = (DWORD)*(BYTE *)(DAT_07abf5d8 + 0x391);
+                    DAT_0055a3e4 = (DWORD)*(BYTE *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill;
                     DAT_07ea840c = 0x140;
                     DAT_07ea8408 = 0x1bc;
                     DAT_07d78094 = 1;
@@ -517,7 +537,7 @@ void __cdecl Chat_InputTick(void)
                                 DAT_0055a3e4 = uVar14;
                                 if (IsClickPushed()) {
                                     DAT_083a4124 = '\0';
-                                    *(char *)((char *)DAT_07abf5d8 + 0x391) = (char)uVar14;
+                                    *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill = (char)uVar14;
                                     DAT_07db870c = '\0';
                                     PlayBuffer(0x19, 0, 0);
                                     DAT_07e11d28 = 0;
@@ -604,9 +624,9 @@ void __cdecl Chat_InputTick(void)
                             continue;
 
                         // Validate input
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate((char *)chBuf) != '\0')
@@ -636,14 +656,14 @@ void __cdecl Chat_InputTick(void)
                         // Player name length for name-match check
                         {
                             int pnLen = (int)strlen(&DAT_005592dc);
-                            int enLen = (int)strlen(DAT_07abf5d8 + 0x1c1);
+                            int enLen = (int)strlen(EntityName::Get(DAT_07abf5d8));
                             // Try to find player name in entity name substring
                             // (tab-complete name match — sets up struct at DAT_005592d4/d8)
                             // Simplified: set name match refs
                         }
 
                         // Command parsing
-                        if (*(char *)(DAT_07abf5d8 + 0x2fd) == '\0') {
+                        if (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead == '\0') {
                             if (chBuf[0] == '/') {
                                 if (Chat_TrySendPartyRequest((const char*)chBuf)) {
                                     goto chat_done;
@@ -700,9 +720,9 @@ void __cdecl Chat_InputTick(void)
                         // fixed PMSG_CHAT_RECV past the received packet.
                         if (DAT_07e108c8 == '\0')
                             goto whisper_done;
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate(&DAT_07e108c8) == '\0') {
@@ -710,20 +730,21 @@ void __cdecl Chat_InputTick(void)
                                 bool bDupWhisper = (ChatTime > 0) &&
                                                    (strcmp(&DAT_07e108c8, &DAT_05826adc[0]) == 0);
                                 if (!bDupWhisper) {
-                                size_t tlen = strlen(&DAT_07e108c8);
-                                if (tlen > 0x3c) tlen = 0x3c;
-                                memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen + 1);
+                                size_t tlen = TextEngine::FitBytes(&DAT_07e108c8, NetText::ChatMessageSize - 1);
+                                memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen);
+                                DAT_05826adc[tlen] = '\0';
                                 ChatTime = 0x46;
 
                                 // Build and send whisper packet (same XOR+encode pattern)
                                 {
-                                    int pktLen = (int)(tlen + 0x0d);
+                                    const int msgOff = 3 + (int)NetText::CharacterNameSize;
+                                    int pktLen = (int)tlen + msgOff;
                                     if ((DWORD)pktLen < 0x401) {
                                         BYTE pkt[0x410];
                                         memset(pkt, 0, sizeof(pkt));
                                         pkt[0] = 0xC1;
                                         pkt[1] = (BYTE)pktLen;
-                                        memcpy(pkt + 0x0d, &DAT_07e108c8, tlen);
+                                        memcpy(pkt + msgOff, &DAT_07e108c8, tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
                                             pkt[xi] ^= CNetwork::XorKey[xi & 0x1f];
                                         CSimpleModulus_Encode(0, pkt, pktLen);

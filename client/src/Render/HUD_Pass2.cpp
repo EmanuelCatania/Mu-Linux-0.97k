@@ -20,6 +20,10 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/EmojiPicker.h"
+extern "C" const char* Guild_GetMarkName(int row);
+int GuildMark_FindRecordByName(const char* name);
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Item/ContentCatalog.h"
@@ -28,7 +32,6 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <GL/gl.h>
 
 extern "C" BYTE OffsetInventoryItems[];
 
@@ -63,7 +66,7 @@ extern "C" {
 #define dword_55C9CC4        DAT_00559cc4                      // chat scroll cursor
 #define byte_7E11D6E         DAT_07e11d6e
 #define ItemAttribute        ((ITEM_ATTRIBUTE*)DAT_07d78068)
-extern "C" int DAT_07d78068;     // ItemAttribute base (ITEM_ATTRIBUTE*, stride 64)
+extern "C" std::uintptr_t DAT_07d78068;     // ItemAttribute base (ITEM_ATTRIBUTE*, stride 64)
 
 // aTime_0 — string constant.  In IDA it lives in .rdata; replicate.
 static const char aTime_0[] = "Time";
@@ -143,23 +146,25 @@ void __cdecl RenderBar(float x, float y, float Width, float Height,
                         float Bar, bool Disabled, bool clipping)
 {
     if (clipping) {
-        if (x < 0.0f) x = 0.0f;
+        // Pantalla ancha: los límites son los de la ventana (shift = 0 en 4:3).
+        const float edge = (float)gWindow.GetRightShift();
+        if (x < -edge) x = -edge;
         if (y < 0.0f) y = 0.0f;
-        if (x + Width  + 4.0f > 640.0f) x = 640.0f - (Width + 5.0f);
+        if (x + Width  + 4.0f > 640.0f + edge) x = 640.0f + edge - (Width + 5.0f);
         if (y + Height + 4.0f > 433.0f) y = 433.0f - (Height + 5.0f);
     }
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.5f);
     GL_DrawRect(x + 1.0f, y + 1.0f, Width + 4.0f, Height + 4.0f);
     EnableAlphaBlend();
-    if (Disabled) glColor3f(0.2f, 0.0f, 0.0f);
-    else          glColor3f(0.0f, 0.2f, 0.2f);
+    if (Disabled) Gfx::Color3f(0.2f, 0.0f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.2f, 0.2f);
     GL_DrawRect(x, y, Width + 4.0f, Height + 4.0f);
-    if (Disabled) glColor3f(0.19607843f, 0.039215688f, 0.0f);
-    else          glColor3f(0.0f, 0.19607843f, 0.19607843f);
+    if (Disabled) Gfx::Color3f(0.19607843f, 0.039215688f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.19607843f, 0.19607843f);
     GL_DrawRect(x + 2.0f, y + 2.0f, Width, Height);
-    if (Disabled) glColor3f(0.78431374f, 0.19607843f, 0.0f);
-    else          glColor3f(0.0f, 0.78431374f, 0.19607843f);
+    if (Disabled) Gfx::Color3f(0.78431374f, 0.19607843f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.78431374f, 0.19607843f);
     GL_DrawRect(x + 2.0f, y + 2.0f, Bar, Height);
     GL_ResetState();   // DisableAlphaBlend
 }
@@ -214,13 +219,15 @@ extern "C" int __cdecl GetScreenWidth(void);
 // IDA: GetScreenWidth (0x004CB520)
 int __cdecl GetScreenWidth(void)
 {
+    // DESVIACION (Fase 4, pantalla ancha): el borde derecho es el de la ventana,
+    // no el del 4:3 de la interfaz (DLL CWideScreen: numW - 190 / numW - 380).
     if (InventoryOpened) {
-        if (CharacterOpened) return 260;
-        if (HUD_IsInventorySidePairOpen()) return 260;
-        return 450;
+        if (CharacterOpened || PartyOpened) return gWindow.PanelOrigin(Ui::InventoryPair);
+        if (HUD_IsInventorySidePairOpen()) return gWindow.PanelOrigin(Ui::InventoryPair);
+        return gWindow.PanelOrigin(Ui::RightPanel);
     }
-    if (HUD_IsAnyRightPanelOpen()) return 450;
-    return 640;
+    if (HUD_IsAnyRightPanelOpen()) return gWindow.PanelOrigin(Ui::RightPanel);
+    return gWindow.PanelOrigin(Ui::WindowRight);
 }
 
 // =============================================================================
@@ -232,18 +239,19 @@ int __cdecl GetScreenWidth(void)
 extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
-    if (!(InputEnable || DAT_07e11d71)) return;
+    if (!(InputEnable || DAT_07e11d71)) { EmojiPicker::OnChatClosed(); return; }
 
     GL_ResetState();   // DisableAlphaBlend
     GL_DrawTexture(248, 186.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
     GL_DrawTexture(249, 320.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
     EnableAlphaTest(true);
 
-    InputTextWidth = 180 * (int)gWindow.GetWidth() / 0x280;
-    if ((int)(180 * gWindow.GetWidth() / 0x280) > 256) InputTextWidth = 256;
+    // DESVIACION (Fase 4): 16 px menos, que ocupa el botón de emojis.
+    InputTextWidth = 164 * (int)gWindow.GetWidth() / 0x280;
+    if ((int)(164 * gWindow.GetWidth() / 0x280) > 256) InputTextWidth = 256;
     RenderInputText(191, 422, 0);
 
     InputTextWidth = 50 * (int)gWindow.GetWidth() / 0x280;
@@ -274,6 +282,8 @@ void Render_ChatBox_(void)
     if (DAT_00559bf0 != 0) {
         GL_DrawTexture(239, 432.0f, 420.0f, 15.0f, 16.0f, 0.0f, 0.0f, 0.9375f, 1.0f, 1, 1);
     }
+    // DESVIACION (Fase 4): selector de emojis junto al campo de texto.
+    EmojiPicker::Render();
 }
 
 void Render_ChatBox(void) { Render_ChatBox_(); }
@@ -312,11 +322,11 @@ char Render_CharInfoPanel_(void)
     float v24_y0 = 4.0f;
     float x = 0.0f;
 
-    if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
+    if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + EntityOffset(474)) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
+        int v20 = *(short*)((BYTE*)(uintptr_t)Hero + EntityOffset(474));
         if (v20 < 0 || (size_t)v20 >= sizeof(DAT_07e919bc) / 80) return ret;
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
@@ -329,23 +339,15 @@ char Render_CharInfoPanel_(void)
         int n = Platform::TextLength(String);
         gFont.MeasureText(gFont.GetTextDC(), String, n, &TextSize);
 
-        const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
+        const char* v1 = Guild_GetMarkName(v20);
         int v2 = (int)x + 30;
         UI_DrawText(v2, 4, (char*)v1, 0, 1, 0, 80);
 
-        // Walk the name table to find the GuildWarName slot index.
-        int v23 = 0;
-        const char* v22 = (char*)&DAT_07e919bc;
+        // IDA recorre la tabla de 80 bytes buscando GuildWarName; desde 0.97.40
+        // los nombres completos están en la tabla de Recv_Guild.
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFF008000u : 0xFFFF9560;
-        int v5 = 0;
-        while (strcmp(v22, GuildWarName) != 0) {
-            bool keep = (int)(v22 + 80) < (int)DWORD_7EA51EC_LIMIT;
-            ++v23;
-            v22 += 80;
-            if (!keep) { v5 = 0; goto LABEL_7; }
-        }
-        v5 = v23;
-LABEL_7:
+        int v5 = GuildMark_FindRecordByName(GuildWarName);
+        if (v5 < 0) v5 = 0;
         CreateGuildMark(v5, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         Platform::TextFormat(String, "%d", GuildWarScore[1]);
@@ -416,7 +418,7 @@ int RenderEquipedHelperLife_(bool a2)
 {
     // El gate lee la ENTIDAD del heroe, no el slot de item.  IDA (0x4BEC00,
     // verificado en el disassembly del prologo):
-    //     mov ax, [eax+2B8h]   ; Hero + 696 = tipo del helper
+    //     mov ax, [eax+2B8h]   ; Hero + EntityOffset(696) = tipo del helper
     //     cmp ax, 330h / 333h  ; 816..819
     // Ese campo lo escriben SetCharacterClass, ChangeCharacterExt y el handler
     // 0x25.  El slot de item (`CharacterMachine + 536 + 68*8`) se usa SOLO para la
@@ -425,7 +427,7 @@ int RenderEquipedHelperLife_(bool a2)
     int retY = 15;                       // `mov esi, 0Fh` del prologo
 
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
-    const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
+    const WORD helperType = hero ? *(const WORD*)(hero + EntityOffset(0x2B8)) : 0;
 
     DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;
@@ -470,11 +472,11 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
 
         RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
         retY = (int)posY + 23;
     }
@@ -495,11 +497,11 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), summonText, Platform::TextLength(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
 
         RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
 
     SetBackgroundTextColor = backupBgTextColor;
@@ -536,10 +538,10 @@ void RenderBrokenItem_(int a1)
     if (!CharacterMachine) return;
 
     float v32 = (PartyNumber > 0 && !PartyOpened) ? 50.0f : 0.0f;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
 
-    float screenW = 640.0f;
+    float screenW = (float)gWindow.PanelOrigin(Ui::WindowRight);
     float v38 = screenW - v32 - 10.0f;
     float v37 = (float)a1;
 
@@ -551,7 +553,7 @@ void RenderBrokenItem_(int a1)
         // Anti-tamper inner block — skipped (CharacterMachine path).
 
         WORD v12 = *(WORD*)((BYTE*)CharacterMachine + v33 + 536);
-        DWORD v13 = (DWORD)((BYTE*)CharacterMachine + v33 + 536);
+        BYTE* v13 = (BYTE*)CharacterMachine + v33 + 536;
 
         if (v12 != 0xFFFF) {
             // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
@@ -571,7 +573,7 @@ void RenderBrokenItem_(int a1)
             const int kind = ItemBehaviorType((short)v12);   // 0.97.20
             if (kind != 135 && kind != 143 && (kind < 416 || kind > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
-                int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
+                int v30 = (int)Item_CalculateMaxDurability((void*)v13, v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;
                 BYTE v21 = *(BYTE*)(v13 + 26);
 
@@ -674,17 +676,17 @@ void RenderExperience_(void)
     if (iExp >= 9)      iExp = 9;
     else if (iExp < 0)  iExp = 0;
 
-    glColor3f(0.92f, 0.80f, 0.34f);
+    Gfx::Color3f(0.92f, 0.80f, 0.34f);
     double width = (fExpBarNum - (double)iExp) * 198.0;
     if (width >= 198.0) GL_DrawRect(221.0f, 439.0f, 198.0f, 4.0f);
     else if (width >= 0.0) GL_DrawRect(221.0f, 439.0f, (float)width, 4.0f);
     else GL_DrawRect(221.0f, 439.0f, 0.0f, 4.0f);
 
     EnableAlphaTest(true);
-    glColor3f(0.91f, 0.81f, 0.60f);
+    Gfx::Color3f(0.91f, 0.81f, 0.60f);
     RenderNumber2D(425.0f, 434.0f, iExp, 9.0f, 10.0f);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Hover tooltip when mouse is over the bar (219..421, 439..445).
     double mx = (double)MouseX;

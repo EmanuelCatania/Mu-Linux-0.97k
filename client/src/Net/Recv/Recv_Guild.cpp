@@ -3,23 +3,31 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include "Net/Recv/NetRecv.h"
 
 int  s_GuildRecordKey[kGuildMarkRecordCount] = { 0 };
 
+// DESVIACION (0.97.40): el registro de 80 bytes guarda el nombre en +0..8 y la
+// marca en +9, así que un nombre de 32 bytes no entra. El completo vive en esta
+// tabla; el registro conserva una copia cortada en un borde de cluster.
+static char s_GuildMarkName[kGuildMarkRecordCount][NetText::GuildNameSize + 1] = {};
+
 BYTE* GuildMark_Record(int row)
 {
     return (BYTE*)DAT_07e919bc + row * 80;
 }
 
-int GuildMark_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
+int GuildMark_UpsertRecord(int key, const BYTE* serverName, const BYTE* mark32)
 {
+    char name[NetText::GuildNameSize + 1] = {};
+    NetText::FromServer(name, sizeof(name), serverName, NetText::GuildNameSize);
     int row = -1;
     for (int i = 0; i < kGuildMarkRecordCount; ++i) {
-        if (GuildMark_Record(i)[0] != 0 &&
-            memcmp(GuildMark_Record(i), name8, 8) == 0) {
+        if (GuildMark_Record(i)[0] != 0 && strcmp(s_GuildMarkName[i], name) == 0) {
             row = i;
             break;
         }
@@ -34,7 +42,8 @@ int GuildMark_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
     BYTE* dst = GuildMark_Record(row);
     s_GuildRecordKey[row] = key;
     memset(dst, 0, 80);
-    memcpy(dst, name8, 8);
+    TextEngine::CopyTruncated((char*)dst, 9, name);
+    TextEngine::CopyTruncated(s_GuildMarkName[row], sizeof(s_GuildMarkName[row]), name);
     if (mark32) {
         for (int i = 0; i < 64; ++i)
             dst[9 + i] = (i & 1) ? (mark32[i / 2] & 0x0F)
@@ -54,8 +63,8 @@ extern "C" int GuildMark_FindRecordByKey(int key)
 
 extern "C" const char* Guild_GetMarkName(int row)
 {
-    return (row >= 0 && row < kGuildMarkRecordCount)
-        ? (const char*)GuildMark_Record(row) : "";
+    return (row >= 0 && row < kGuildMarkRecordCount && GuildMark_Record(row)[0])
+        ? s_GuildMarkName[row] : "";
 }
 
 // sub_434DC0 guarda las celdas 8x8 decodificadas de la marca de guild en record+9. Dejamos
@@ -73,28 +82,27 @@ extern "C" const BYTE* Guild_GetMarkPixels(int row)
 // de guerra pertenecen a una unidad funcional posterior.
 void GuildWar_CopyOpponentName(const BYTE* packet)
 {
-    memcpy(GuildWarName, packet + 3, 8);
-    GuildWarName[8] = '\0';
+    NetText::FromServer(GuildWarName, NetText::GuildNameSize + 1, packet + 3, NetText::GuildNameSize);
 }
 
 int GuildMark_FindRecordByName(const char* name)
 {
     for (int i = 0; i < kGuildMarkRecordCount; ++i)
-        if (GuildMark_Record(i)[0] != 0 && strcmp((const char*)GuildMark_Record(i), name) == 0)
+        if (GuildMark_Record(i)[0] != 0 && strcmp(s_GuildMarkName[i], name) == 0)
             return i;
     return -1;
 }
 
 // IDA: FUN_00423CE0 — recalcula la relación local, aliada o enemiga de una entidad.
 // IDA: FUN_00423CE0 (0x00423CE0)
-void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int)
+void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, int)
 {
     BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
     if (!entity || !AsCharacter(entity)->Object.Live || !hero) return;
 
     AsCharacter(entity)->GuildTeam = 0;
-    const short heroGuild = *(short*)(hero + 474);
+    const short heroGuild = *(short*)(hero + EntityOffset(474));
     if (heroGuild != -1 && AsCharacter(entity)->GuildMarkIndex == heroGuild)
         AsCharacter(entity)->GuildTeam = 1;
 
@@ -113,8 +121,8 @@ void GuildWar_RefreshEntityRelations()
     if (!entities) return;
 
     for (int i = 0; i < 400; ++i) {
-        BYTE* entity = entities + i * 916;
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        BYTE* entity = entities + i * CHARACTER_STRIDE;
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
     }
 }
 
@@ -135,8 +143,7 @@ void ReceiveDeclareWar97k(const BYTE* packet, int size)
     if (size < (int)sizeof(Proto::PMSG_GUILD_WAR_DECLARE_SEND)) return;
     Proto::PMSG_GUILD_WAR_DECLARE_SEND message;
     memcpy(&message, packet, sizeof(message));
-    memcpy(GuildWarName, message.GuildName, sizeof(message.GuildName));
-    GuildWarName[sizeof(message.GuildName)] = 0;
+    NetText::FromServer(GuildWarName, sizeof(message.GuildName) + 1, message.GuildName, sizeof(message.GuildName));
     // DESVIACION DLL: GCGuildWarDeclareRecv asigna ambos tipos, sin heredar soccer.
     EnableSoccer = (message.type == 1);
     SetErrorMessage(128);
@@ -158,12 +165,14 @@ void ReceiveDeclareWarResult97k(const BYTE* packet, int size)
 
 void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
 {
-    if (size < 13) return;
+    // PMSG_GUILD_WAR_START_SEND (0.97.40): GuildName[32]@+3, type, team.
+    const int NAME = (int)NetText::GuildNameSize;
+    if (size < 5 + NAME) return;
     EnableGuildWar = 1;
     GuildWar_CopyOpponentName(packet);
-    const bool soccer = packet[11] != 0;
+    const bool soccer = packet[3 + NAME] != 0;
     if (soccer) EnableSoccer = 1;   // IDA no lo apaga en la otra rama
-    HeroSoccerTeam = packet[12];
+    HeroSoccerTeam = packet[4 + NAME];
     GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
 
     char notice[300] = {};
@@ -174,7 +183,7 @@ void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
 
     // IDA: SetActionClass(Hero, Hero, 128, 128) y además manda el 0x18 por su
     // cuenta (doble envío, igual que el binario).
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, 128, 128);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), 128, 128);
     SendRequestAction(128);
 }
 
@@ -197,7 +206,7 @@ void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     // SetActionClass y ademas manda el 0x18 por su cuenta (doble envio fiel).
     if (result == 6) return;
     const bool victoryAction = result == 1 || result == 2 || result == 4;
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), victoryAction ? 113 : 107, victoryAction ? 121 : 117);
     SendRequestAction(victoryAction ? 121 : 117);
 }
 
@@ -212,12 +221,13 @@ void NetRecv_53(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         UIChatLogWindow_AddText(nullptr, GlobalText[textIndex[result]], 2);
     if (result == 1 || result == 4) {
         if (result == 4 && Hero) {
-            const short row = *(short*)((BYTE*)Hero + 474);
+            const short row = *(short*)((BYTE*)Hero + EntityOffset(474));
             if (row >= 0 && row < kGuildMarkRecordCount) {
                 s_GuildRecordKey[row] = -1;
                 GuildMark_Record(row)[0] = 0;
+                s_GuildMarkName[row][0] = 0;
             }
-            *(short*)((BYTE*)Hero + 474) = -1;
+            *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
         }
         g_nGuildMemberCount = -1;
         GuildOpened = 0;
@@ -325,17 +335,19 @@ void NetRecv_52(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     //         DWORD TotalScore;    //         +8..11   (alineado a 4)
     //         BYTE  score;         //         +12
     //     };                       // sizeof = 16
-    // Los miembros (`PMSG_GUILD_LIST`, 12 bytes: name[10], number,
-    // connected) arrancan en +16, no en +11.
+    // Los miembros (`PMSG_GUILD_LIST`, 0.97.40: name[40], number, connected =
+    // 42 bytes) arrancan en +16, no en +11.
     const int kHeaderSize = 16;
     if (Size < kHeaderSize) return;
     const BYTE count = Msg[5];
     // IDA: FUN_004348B0 avanza el staging DAT_07e91790 de a 13
     // bytes. El espacio real hasta DAT_07e919bc es 0x22C: admite
     // 42 registros, aunque MuEmu hoy envíe como máximo 40.
-    const int maxMembers = 42;
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int memberSize = NAME + 2;
+    const int maxMembers = kGuildMemberRecordCount;
     const int memberCount = (count < maxMembers) ? count : maxMembers;
-    if (Size < kHeaderSize + (int)count * 12) return;
+    if (Size < kHeaderSize + (int)count * memberSize) return;
 
     g_nGuildMemberCount = memberCount;
     GuildTotalScore = *(const int*)(Msg + 8);
@@ -345,28 +357,27 @@ void NetRecv_52(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // que para el nombre del guild en el título).
     // Fiel a IDA ReceiveGuildList @0x4348B0: vtable[10] para limpiar
     // y vtable[28] por cada miembro, con el registro de 13 bytes
-    //   +0..9 name · +10 NUL · +11 connected · +12 party (o -1).
+    //   name[41] · connected · party (o -1), ver kGuildMemberRecordSize.
     GuildList_Clear();
-    memset(byte_7E91790, 0, 0x22C);
+    memset(byte_7E91790, 0, kGuildMemberRecordCount * kGuildMemberRecordSize);
     for (int i = 0; i < memberCount; ++i) {
-        const BYTE* src = Msg + kHeaderSize + i * 12;
+        const BYTE* src = Msg + kHeaderSize + i * memberSize;
         // El original arma cada registro EN `byte_7E91790` (stride
         // 13) y desde ahi se lo pasa a vtable[28]; el estado 126 de
         // UI_InGameMenu lo re-lee para el paquete de expulsar, asi
         // que hay que dejarlo escrito, no solo en un local.
-        char* rec = &byte_7E91790[i * 13];
-        memcpy(rec, src, 10);
-        rec[10] = 0;
+        char* rec = &byte_7E91790[i * kGuildMemberRecordSize];
+        NetText::FromServer(rec, NAME + 1, src, NAME);
         // IDA: FUN_004348B0 lee `number` en +10 y lo entrega al
         // widget como estado visual; el byte +11 determina el
         // número de party: negativo → byte & 0x7F, no negativo → -1.
         // MuEmu conserva ese orden en PMSG_GUILD_LIST.
-        char connected = (char)src[10];
-        char partyByte = (char)src[11];
+        char connected = (char)src[NAME];
+        char partyByte = (char)src[NAME + 1];
         char party     = (partyByte >= 0) ? (char)-1
                                            : (char)(partyByte & 0x7F);
-        rec[11] = connected;
-        rec[12] = party;
+        rec[NAME + 1] = connected;
+        rec[NAME + 2] = party;
         GuildList_AddMember(rec, connected, party);
     }
     NetLog("NET: -> 0x52 GuildList result=%u members=%d score=%d",
@@ -377,14 +388,17 @@ void NetRecv_52(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 void NetRecv_5A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // IDA: ProtocolCore → FUN_00434DC0 una vez por registro. El
-    // contador es pkt[4]; cada registro de 42 bytes es [key:2][name:8][mark:32].
+    // contador es pkt[4]; cada registro (PMSG_VIEWPORT_GUILD_INFO, 0.97.40) es
+    // [key:2][name:32][mark:32] = 66 bytes.
+    const int NAME = (int)NetText::GuildNameSize;
+    const int entrySize = 2 + NAME + 32;
     if (Size < 5) return;
     const BYTE count = Msg[4];
-    if (Size < 5 + (int)count * 42) return;
+    if (Size < 5 + (int)count * entrySize) return;
     for (int i = 0; i < count; ++i) {
-        const BYTE* entry = Msg + 5 + i * 42;
+        const BYTE* entry = Msg + 5 + i * entrySize;
         GuildMark_UpsertRecord((entry[0] << 8) | entry[1],
-                               entry + 2, entry + 10);
+                               entry + 2, entry + 2 + NAME);
     }
     NetLog("NET: GuildMark batch count=%u", (unsigned)count);
 }
@@ -394,9 +408,10 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // IDA: clave de entidad + registro independiente de nombre/marca;
     // asocia la fila devuelta a Character+474 y luego recalcula la relación.
-    if (Size < 45) return;
+    // PMSG_GUILD_VIEWPORT_CREATE_SEND (0.97.40): index[2], GuildName[32], Mark[32].
+    if (Size < 5 + (int)NetText::GuildNameSize + 32) return;
     const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
-    const int row = GuildMark_UpsertRecord(-1, Msg + 5, Msg + 13);
+    const int row = GuildMark_UpsertRecord(-1, Msg + 5, Msg + 5 + NetText::GuildNameSize);
     if (s_IsRebuildingHero && entityKey == g_HeroKey) {
         // Ver Recv_JoinMapServer: no asociar al slot viejo que va
         // a ser borrado; la marca queda pendiente para el héroe nuevo.
@@ -409,10 +424,10 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const int entitySlot = FindCharacterIndex(entityKey);
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400) {
-        BYTE* entity = base + entitySlot * 916;
-        *(short*)(entity + 474) = (short)row;
+        BYTE* entity = base + entitySlot * CHARACTER_STRIDE;
+        *(short*)(entity + EntityOffset(474)) = (short)row;
         // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
         GuildWar_RefreshEntityRelations();
     }
     NetLog("NET: GuildMark entity=%u row=%d", (unsigned)entityKey, row);
@@ -428,7 +443,7 @@ void NetRecv_5D(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const int entitySlot = FindCharacterIndex(entityKey);
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400)
-        *(short*)(base + entitySlot * 916 + 474) = -1;
+        *(short*)(base + entitySlot * CHARACTER_STRIDE + EntityOffset(474)) = -1;
     GuildOpened = 0;
     g_nGuildMemberCount = -1;
     NetLog("NET: GuildMark clear entity=%u", (unsigned)entityKey);
@@ -501,7 +516,7 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         const int guildKey = (e[2] << 8) | e[3];
         const int entitySlot = FindCharacterIndex(entityId);
         BYTE* slot = (basePtr && entitySlot >= 0 && entitySlot < 400)
-            ? basePtr + entitySlot * 916 : nullptr;
+            ? basePtr + entitySlot * CHARACTER_STRIDE : nullptr;
         if (slot) {
             const int guildRow = GuildMark_FindRecordByKey(guildKey);
             // IDA sub_435110: si la clave no esta en la tabla de marcas,
@@ -513,7 +528,7 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // Mismo guild que el heroe.  IDA no excluye al heroe: el
             // propio personaje tambien queda marcado con 1.
             if (DAT_07abf5d8) {
-                const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + EntityOffset(474));
                 if (heroGuild != -1 && AsCharacter(slot)->GuildMarkIndex == heroGuild)
                     AsCharacter(slot)->GuildTeam = 1;
             }

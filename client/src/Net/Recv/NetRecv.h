@@ -22,7 +22,8 @@ void RestorePickedItemToSource(void);
 
 // 0x00474310. Queda acá porque el paquete 0x1C es el fin autoritativo de un
 // Teleport local, después de que el paquete de skill 0x19 arrancó su animación.
-extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);
+struct OBJECT;
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);
 
 extern "C" void __cdecl CreatePoint(float Position[3], int Value,
                                     float Color[3], float scale);
@@ -41,13 +42,13 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 //   }
 // ============================================================================
 
-extern int __fastcall CWsctlc_GetReadMsg(int poolBase);   // GetReadMsg (Scene/Scene_CharSelect_Nav.cpp) — returns ptr as int
+extern BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t poolBase); // Dirección del paquete dentro del contexto.
 
 // Forward decls for inventory packet handlers (Item/Item_Inventory.cpp).
 extern "C" void __cdecl Recv_Inventory     (const BYTE* Msg);   // F3/10
 extern "C" void __cdecl Recv_InventoryOpen (const BYTE* Msg);   // 0x55
 extern "C" void __cdecl Recv_InventoryClose(const BYTE* Msg);   // 0x54
-extern "C" void HeroEquipWatchdog(int c);
+extern "C" void HeroEquipWatchdog(CHARACTER* c);
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
 extern "C" void SetGuildNoticeText(const char* text);
 
@@ -70,7 +71,11 @@ extern "C" void ChaosBoxCloseAck(void);
 
 extern "C" int  g_nGuildMemberCount;
 extern "C" int  GuildTotalScore;
-extern "C" char byte_7E91790[];   // tabla de miembros, stride 13
+// Tabla de miembros del guild (IDA: byte_7E91790, stride 13). 0.97.40: el
+// nombre mide 40 bytes, así que cada registro es name[41], connected, party.
+constexpr int kGuildMemberRecordSize = 43;
+constexpr int kGuildMemberRecordCount = 42;
+extern "C" char byte_7E91790[];
 extern "C" void GuildList_Clear(void);
 extern "C" void GuildList_AddMember(const char* name, char connected, char partyNumber);
 #define byte_7E919BC  DAT_07e919bc   // tabla global stride 80 (ver globals.h)
@@ -81,8 +86,8 @@ constexpr int kGuildMarkRecordCount = 1000;
 extern "C" void DbgLogPublic(const char* msg);
 static inline WORD ClampToWord(DWORD v) { return v >= 0xFFFF ? (WORD)0xFFFF : (WORD)v; }
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
+extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType);
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
 extern "C" void __cdecl DeleteCharacter(int Key);  // 0045AC20
 extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);
 
@@ -121,7 +126,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state);
 void CreateMagicShiny97k(BYTE* entity, int hand);
 // Recv_Item.cpp
 void ShopInsertItem(int slot, const BYTE* Item);
-BYTE* ItemMove_GetPool(DWORD pool);
+BYTE* ItemMove_GetPool(BYTE* pool);
 int ItemMove_GetGridH(BYTE* pool);
 int ItemMove_ToGridSlot(BYTE* pool, int slot);
 BYTE* ItemMove_GetEquipSlotPtr(int slot);
@@ -146,7 +151,7 @@ extern "C" const char* Guild_GetMarkName(int row);
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
 void GuildWar_CopyOpponentName(const BYTE* packet);
 int GuildMark_FindRecordByName(const char* name);
-void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int);
+void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, int);
 void GuildWar_RefreshEntityRelations();
 extern "C" void GuildWar_ResetClientState();
 void ReceiveDeclareWar97k(const BYTE* packet, int size);

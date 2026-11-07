@@ -12,6 +12,10 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "UI/BuffBar.h"
+#include "Model/SmdImport.h"
+#include "Physics/ClothTypes.h"
+#include "Text/TextCore.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -53,11 +57,14 @@ void __cdecl RenderInformation(void) {
     gReconnect.Render();  // DESVIACION (DLL Reconnect.cpp, 0x00525CC1)
     Scene_MapTick(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
-    if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {
-        UI_RenderChatLogOverlay(); // SystemText / chat list
-    }
+    // DESVIACION (Fase 4): la zona de avisos del sistema se dibuja siempre; en
+    // modo clásico el original la apagaba y los mostraba mezclados en el chat.
+    UI_RenderChatLogOverlay(); // SystemText / chat list
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
+    // DESVIACION (Fase 4): barra de buffs. Va antes del mapa y del menú M
+    // para que esas ventanas la tapen.
+    gBuffBar.Render();
     // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): mapa (Tab) y menú M.
     gMiniMap.Render();
     gMoveList.Render();
@@ -96,12 +103,14 @@ void __cdecl OpenMacro(char *FileName) {
         char* slot = MacroText + i * 0x100;
         if (fgets(slot, 0x100, fp) == NULL) break;
         slot[strcspn(slot, "\r\n")] = '\0';
+        // DESVIACION (Fase 4, texto Unicode): el archivo puede venir en UTF-8 o en 1252.
+        TextEngine::NormalizeTextFileInPlace(slot, 0x100);
     }
     fclose(fp);
 }
 
 // CSQuest::setQuestLists @ 0x00401160 (73 bytes) — set quest list from packet
-void __fastcall CSQuest__setQuestLists(int ecx, int /*edx*/, BYTE *byList, int num, int Class) {
+void __fastcall CSQuest__setQuestLists(BYTE* ecx, int /*edx*/, BYTE *byList, int num, int Class) {
     if (Class != -1) {
         *(BYTE *)(ecx + 4) = (BYTE)Class & 7;
         *(char *)(ecx + 5) = (char)(Class >> 3);
@@ -135,7 +144,7 @@ int __cdecl CheckMouseIn(int x, int y, int width, int height, int direction) {
 // CreateClassAttribute @ 0x0047D240 (97 bytes) — set class base stats
 void __cdecl CreateClassAttribute(int Class, int Str, int Dex, int Vit, int Eng,
     int Life, int Mana, int LvLife, int LvMana, int VitToLife, int EngToMana) {
-    int off = Class * 0x50;
+    intptr_t off = Class * 0x50;
     *(short *)(off + 0x7d77f28) = (short)Str;
     *(short *)(off + 0x7d77f2a) = (short)Dex;
     *(short *)(off + 0x7d77f2c) = (short)Vit;
@@ -175,14 +184,14 @@ void __cdecl CreateClassAttributes(void) {
 // FUN_00406cd0 @ 0x00406CD0 (79 bytes) — HashWidget deinit (SEH + cleanup)
 void __fastcall FUN_00406cd0(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
-    *param_1 = (int)&PTR_FUN_005524d8; // intermediate vtable
-    FUN_00406d40((int)param_1);
+    *param_1 = (intptr_t)&PTR_FUN_005524d8; // intermediate vtable
+    FUN_00406d40((intptr_t)param_1);
     param_1[3] = 0; param_1[1] = 0; param_1[2] = 0;
-    *param_1 = (int)&PTR_FUN_005524d8; // final vtable
+    *param_1 = (intptr_t)&PTR_FUN_005524d8; // final vtable
 }
 
 // FUN_00406d40 @ 0x00406D40 (102 bytes) — free all hash table buckets
-void __cdecl FUN_00406d40(int param_1) {
+void __cdecl FUN_00406d40(intptr_t param_1) {
     unsigned int uVar1 = 0;
     do {
         void *lpMem = *(void **)(*(int *)(param_1 + 4) + uVar1);
@@ -205,14 +214,14 @@ void __cdecl FUN_00406d40(int param_1) {
 void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     void *n1 = operator_new(0xc);
-    if (n1 != NULL) { *(int *)((int)n1 + 8) = 0; *(int *)((int)n1 + 4) = 0; }
+    if (n1 != NULL) { *(int *)((intptr_t)n1 + 8) = 0; *(int *)((intptr_t)n1 + 4) = 0; }
     else n1 = NULL;
-    param_1[1] = (int)n1;
+    param_1[1] = (intptr_t)n1;
     void *n2 = operator_new(0xc);
-    if (n2 != NULL) { *(int *)((int)n2 + 8) = 0; *(int *)((int)n2 + 4) = 0; }
+    if (n2 != NULL) { *(int *)((intptr_t)n2 + 8) = 0; *(int *)((intptr_t)n2 + 4) = 0; }
     else n2 = NULL;
-    param_1[2] = (int)n2;
-    *(int *)(param_1[1] + 8) = (int)n2;
+    param_1[2] = (intptr_t)n2;
+    *(int *)(param_1[1] + 8) = (intptr_t)n2;
     *(int *)(param_1[2] + 4) = param_1[1];
     *param_1 = 0;
 }
@@ -221,20 +230,20 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
 // FUN_00408070 @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
 void __fastcall FUN_00408070(void *param_1_raw) {
     ClothPresentation_Forget(param_1_raw);
-    int *param_1 = (int *)param_1_raw;
-    *param_1 = 0x00552520; // PTR_LAB_00552520
-    *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;
-    void *pvVar1 = *(void **)(param_1[0x13] + 8);
-    while (pvVar1 != NULL) {
-        void *next = *(void **)((int)pvVar1 + 8);
-        operator_delete(pvVar1);
-        pvVar1 = next;
+    ClothWidget& w = ClothSystem(param_1_raw);
+    w.VTable = reinterpret_cast<void**>(static_cast<uintptr_t>(0x00552520));
+    w.Tail->Previous->Next = nullptr;
+    ClothLink* entry = w.Head->Next;
+    while (entry) {
+        ClothLink* next = entry->Next;
+        operator_delete(entry);
+        entry = next;
     }
-    *(int *)(param_1[0x13] + 8) = param_1[0x14];
-    *(int *)(param_1[0x14] + 4) = param_1[0x13];
-    param_1[0x12] = 0;
-    if ((void *)param_1[0x14] != NULL) operator_delete((void *)param_1[0x14]);
-    if ((void *)param_1[0x13] != NULL) operator_delete((void *)param_1[0x13]);
+    w.Head->Next = w.Tail;
+    w.Tail->Previous = w.Head;
+    w.AnchorCount = 0;
+    if (w.Tail) operator_delete(w.Tail);
+    if (w.Head) operator_delete(w.Head);
 }
 
 // Xor_ConvertBlock @ 0x00405130 (131 bytes) — XOR buffer with 16-byte key
@@ -268,14 +277,14 @@ int __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int iKey) {
 // Escanea slots [TextureBegin .. TextureCurrent) comparando el filename en
 // [+0x00..+0x1F] de cada slot de Bitmaps. En hit, escribe el puntero del slot
 // en *dwTexture y devuelve el índice; en miss, devuelve -1 y deja *dwTexture=0.
-int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
-    *dwTexture = 0;
+int __cdecl FindTextureByName(char *Name, char **dwTexture) {
+    *dwTexture = nullptr;
     int lo = (int)TextureBegin;   // TextureBegin
     int hi = (int)TextureCurrent;   // TextureCurrent
     for (int i = lo; i < hi; i++) {
-        char* slot = &g_BitmapsRaw[i * 0x38];
+        char* slot = &g_BitmapsRaw[i * TEXTURE_STRIDE];
         if (strncmp(slot, Name, 32) == 0) {
-            *dwTexture = (DWORD)(uintptr_t)slot;
+            *dwTexture = slot;
             return i;
         }
     }
@@ -292,23 +301,24 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
 
 // CSQuest::ShowQuestNpcWindow @ 0x00401910 (75 bytes) — open quest NPC dialog
 void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) {
+    BYTE* quest = static_cast<BYTE*>(This);
     if (index != -1) {
-        *(char *)((int)This + 0x1c87a) = (char)index;
+        *(char *)(quest + 0x1c87a) = (char)index;
     }
     CloseInventoryRelatedWindows();
     _g_bEventChipDialogEnable = 0;
     InventoryOpened = 0;
     CharacterOpened = 0;
-    *(BYTE *)((int)This + 0x1c87f) = 1;
+    *(quest + 0x1c87f) = 1;
     CSQuest__CheckQuestState(This, 0xff);
-    CSQuest__ShowDialogText((int)*(short *)((int)This + 0x1c880), 0);
+    CSQuest__ShowDialogText((int)*(short *)(quest + 0x1c880), 0);
 }
 
 
 // FUN_0040e730 @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
 int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
-    char *Token = (char *)((int)This + 200);
-    if (*(char *)((int)This + 200) == '\0') return 1;
+    char *Token = static_cast<char*>(This) + 200;
+    if (*Token == '\0') return 1;
     int i = 0;
     while (true) {
         if (*Token == '\0') return 0;
@@ -321,12 +331,12 @@ int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
 }
 
 // FUN_00451ea0 @ 0x00451EA0 (78 bytes) — transform bone position to world coords
-void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
+void __cdecl FUN_00451ea0(intptr_t param_1, void *param_2, int param_3) {
     float Position[3] = {0.0f, 0.0f, 0.0f};
     float WorldPosition[3] = {0.0f, 0.0f, 0.0f};
     Position[2] = 1.4013e-45f;
     BMD__TransformPosition(param_2,
-        (float (*)[4])(param_3 * 0x30 + *(int *)(param_1 + 0x114)),
+        (float (*)[4])(param_3 * 0x30 + (intptr_t)((OBJECT*)(uintptr_t)(param_1))->BoneMatrices),
         Position, WorldPosition, false);
 }
 
@@ -388,18 +398,17 @@ void __cdecl MoveCharacterCamera(float *Origin, float *Position, float *Angle) {
 }
 
 // OpenSMDFile @ 0x0040B200 (106 bytes) — open and parse SMD model file
-// ParseNodes/ParseSkeleton/ParseTriangles son stubs vacios: si se abriera
-// SMDFile aca, el fclose lo dejaria apuntando a un FILE* liberado y el
-// siguiente GetToken (Monster_Data, etc.) reventaria.  No tocar SMDFile hasta
-// que existan los parsers.  Devuelve false (el 0.97k sólo trae .bmd).
-bool __cdecl OpenSMDFile(char *FileName, int /*Type*/, bool /*Flip*/) {
-    if (FileName == NULL) return false;
-    FILE* probe = Platform::GetFileSystem().Open(FileName, "r");
-    if (!probe) return false;
-    fclose(probe);
-    // SMDFile global intentionally untouched — parsers are stubs and consumers
-    // (GetToken/Monster_Data/Item_Data/...) own SMDFile via their own fopen().
-    return false;
+// Parser con estado propio; el archivo se cierra sin alterar el lector de tablas.
+bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip) {
+    // Invalidar la conversión pendiente incluso si falla la apertura. No tocar
+    // SMDFile: GetToken y los lectores de tablas poseen ese FILE* por separado.
+    Smd::Read(nullptr,Type,Flip);
+    if (!FileName) return false;
+    FILE* file = Platform::GetFileSystem().Open(FileName,"rb");
+    if (!file) return false;
+    const bool result = Smd::Read(file,Type,Flip);
+    fclose(file);
+    return result;
 }
 
 
@@ -409,7 +418,7 @@ bool __cdecl OpenSMDFile(char *FileName, int /*Type*/, bool /*Flip*/) {
 void __fastcall FUN_004112b0_impl(int *param_1) {
     int *puVar1 = *(int **)(*param_1 + 8);
     if ((void *)puVar1 == DAT_055c9b98) {
-        int iVar3 = *(int *)(*param_1 + 4);
+        intptr_t iVar3 = *(int *)(*param_1 + 4);
         if (*param_1 == *(int *)(iVar3 + 8)) {
             do {
                 *param_1 = iVar3;
@@ -425,7 +434,7 @@ void __fastcall FUN_004112b0_impl(int *param_1) {
     for (puVar2 = (int *)*puVar1; (void *)puVar2 != DAT_055c9b98; puVar2 = (int *)*puVar2) {
         puVar1 = puVar2;
     }
-    *param_1 = (int)puVar1;
+    *param_1 = (intptr_t)puVar1;
 }
 
 // FUN_00411420 @ 0x00411420 (37 bytes) — BST recursive post-order delete
@@ -447,11 +456,11 @@ void __cdecl FUN_00411420_impl(int *param_1) {
 // BSTIterator_PostIncrement (IDA-activated)
 DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 {
-  int v3; // edi
+  intptr_t v3; // edi
   DWORD **v4; // edx
   DWORD *j; // eax
   DWORD *result; // eax
-  int i; // eax
+  intptr_t i; // eax
 
   v3 = *_this;
   v4 = *(DWORD ***)(*_this + 8);
@@ -475,7 +484,7 @@ DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
       v4 = (DWORD **)j;
     }
     result = a2;
-    *_this = (int)v4;
+    *_this = (intptr_t)v4;
     *a2 = v3;
   }
   return result;
@@ -485,31 +494,31 @@ DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 // FUN_00411870 @ 0x00411870 (95 bytes) — BST iterator: pre-decrement
 void __fastcall FUN_00411870_impl(int *param_1) {
     int *piVar3 = (int *)*param_1;
-    if ((piVar3[0x4d] == 0) && (*(int *)(piVar3[1] + 4) == (int)piVar3)) {
+    if ((piVar3[0x4d] == 0) && (*(int *)(piVar3[1] + 4) == (intptr_t)piVar3)) {
         *param_1 = piVar3[2];
         return;
     }
-    int iVar1 = *piVar3;
+    intptr_t iVar1 = *piVar3;
     if ((void *)iVar1 == DAT_055c9b98) {
         piVar3 = (int *)piVar3[1];
         if (*param_1 == *piVar3) {
             do {
-                *param_1 = (int)piVar3;
+                *param_1 = (intptr_t)piVar3;
                 piVar3 = (int *)piVar3[1];
             } while (*param_1 == *piVar3);
         }
-        *param_1 = (int)piVar3;
+        *param_1 = (intptr_t)piVar3;
         return;
     }
-    int iVar2;
-    for (iVar2 = *(int *)(iVar1 + 8); iVar2 != (int)DAT_055c9b98; iVar2 = *(int *)(iVar2 + 8)) {
+    intptr_t iVar2;
+    for (iVar2 = *(int *)(iVar1 + 8); iVar2 != (intptr_t)DAT_055c9b98; iVar2 = *(int *)(iVar2 + 8)) {
         iVar1 = iVar2;
     }
     *param_1 = iVar1;
 }
 
 // FUN_004118d0 @ 0x004118D0 (82 bytes) — doubly-linked list: clear all nodes
-void __fastcall FUN_004118d0_impl(int param_1) {
+void __fastcall FUN_004118d0_impl(intptr_t param_1) {
     int *piVar1 = *(int **)(param_1 + 0x5c);
     int *lpMem = (int *)*piVar1;
     while (lpMem != piVar1) {
@@ -524,7 +533,7 @@ void __fastcall FUN_004118d0_impl(int param_1) {
 }
 
 // FUN_004122c0 @ 0x004122C0 (85 bytes) — list: trim excess entries from tail
-void __fastcall FUN_004122c0_impl(int param_1) {
+void __fastcall FUN_004122c0_impl(intptr_t param_1) {
     int iVar1 = *(int *)(param_1 + 0x60);
     int iVar2 = *(int *)(param_1 + 0x84);
     if (iVar2 <= iVar1 && iVar1 != iVar2 && iVar1 - iVar2 > 0) {
@@ -542,26 +551,26 @@ void __fastcall FUN_004122c0_impl(int param_1) {
 
 // FUN_00411300 @ 0x00411300 (95 bytes) — doubly-linked list: insert node after position
 int *__fastcall FUN_00411300(void *This, int /*edx*/, int *param_1, void *param_2, int *param_3) {
-    int *puVar3 = *(int **)((int)param_2 + 4);
+    int *puVar3 = *(int **)((intptr_t)param_2 + 4);
     int *puVar1 = (int *)operator_new(0xc);
     int *puVar2 = (int *)param_2;
     if (param_2 == NULL) puVar2 = puVar1;
-    *puVar1 = (int)puVar2;
+    *puVar1 = (intptr_t)puVar2;
     if (puVar3 == NULL) puVar3 = puVar1;
-    puVar1[1] = (int)puVar3;
-    *(int **)((int)param_2 + 4) = puVar1;
-    *(int *)puVar1[1] = (int)puVar1;
+    puVar1[1] = (intptr_t)puVar3;
+    *(int **)((intptr_t)param_2 + 4) = puVar1;
+    *(int *)puVar1[1] = (intptr_t)puVar1;
     if (puVar1 + 2 != NULL) {
         puVar1[2] = *param_3;
     }
-    *(int *)((int)This + 8) = *(int *)((int)This + 8) + 1;
-    *param_1 = (int)puVar1;
+    *(int *)((intptr_t)This + 8) = *(int *)((intptr_t)This + 8) + 1;
+    *param_1 = (intptr_t)puVar1;
     return param_1;
 }
 
 
 // FUN_00410d90 @ 0x00410D90 (78 bytes) — list: destroy all + free sentinel
-void __fastcall FUN_00410d90_impl(int param_1) {
+void __fastcall FUN_00410d90_impl(intptr_t param_1) {
     int *piVar1 = *(int **)(param_1 + 4);
     int *lpMem = (int *)*piVar1;
     while (lpMem != piVar1) {
@@ -677,7 +686,7 @@ static char *__cdecl FUN_00543ac0_impl(BYTE *name) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── FUN_0052f4d0 (IDA-activated, absent in Ghidra) ──
-int __cdecl FUN_0052f4d0(int a1, int a2, int a3, int a4)
+int __cdecl FUN_0052f4d0(intptr_t a1, int a2, int a3, int a4)
 {
   return *(DWORD *)(*(DWORD *)(a1 + 4) + 44) - a4;
 }

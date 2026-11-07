@@ -49,14 +49,14 @@ void ShopInsertItem(int slot, const BYTE* Item)
             // normalizaría al slot 0 y el tooltip mostraría siempre el primer item.
             AsItem(cell)->x               = (BYTE)(slot % 8);             // x
             AsItem(cell)->y               = (BYTE)(slot / 8);             // y
-            ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
+            ItemConvert(AsItem(cell), (int)Item[1], (int)Item[3]);
         }
     }
 }
 
-BYTE* ItemMove_GetPool(DWORD pool)
+BYTE* ItemMove_GetPool(BYTE* pool)
 {
-    return (BYTE*)(uintptr_t)pool;
+    return pool;
 }
 
 int ItemMove_GetGridH(BYTE* pool)
@@ -151,8 +151,12 @@ BYTE* ItemMove_GetActiveSecondaryPool()
 void ItemMove_ClearPoolPreview(BYTE* pool, int slots)
 {
     if (!pool) return;
+    // IDA sub_4E6550: ocupada = gris (1), vacía = blanco (0).
+    // El ack puede llegar entre pasos SIM; publicar ya el estado normal evita
+    // un draw desacoplado con todas las casillas ocupadas en blanco.
+    ITEM* items = AsItem(pool);
     for (int i = 0; i < slots; ++i) {
-        pool[i * 0x44 + 0x40] = 0;
+        items[i].Color = items[i].Type != -1 ? 1 : 0;
     }
 }
 
@@ -697,7 +701,7 @@ void NetRecv_34(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         DWORD gold = *(DWORD*)(Msg + 4);
         if (gold != 0) {
             *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
-            CalculateAll((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
+            CalculateAll(static_cast<BYTE*>(DAT_07cf1ffc), 0, 0);   // sub_47E3C0
             PlayBuffer(37, 0, 0);
         }
     }
@@ -756,8 +760,8 @@ void NetRecv_83(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     Send_ActionRequest((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
                 } else {
                     DAT_07eaa165 = 1;   // EquipmentItem
-                    g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
-                    g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                    g_ItemMoveSourcePool = &OffsetWarehouseItems[0];
+                    g_ItemMoveTargetPool = &OffsetInventoryItems[0];
                     SendRequestEquipmentItem((int)DAT_07ea9804, (int)DAT_07ea9808,
                         (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
                 }
@@ -953,7 +957,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         int type = ItemBehaviorType(ItemWire_GetType(Item));
         bool jewel = (type == 461 || type == 462 || type == 464 ||
                       type == 399 || type == 470);
-        PlayBuffer(jewel ? 49 : 29, (DWORD)(uintptr_t)Hero, 0);
+        PlayBuffer(jewel ? 49 : 29, AsObject(Hero), 0);
     }
     DAT_07e11998 = -1;  // SendGetItem
 }
@@ -990,11 +994,11 @@ void NetRecv_29(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     *(WORD*)(ca + 42 + 2 * number) = (WORD)(24 * *(const WORD*)(Msg + 4));
     if (number == 0) {
         ca[40] |= 1;
-        CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
+        CalculateAttackSpeed(static_cast<BYTE*>(CharacterMachine));   // CalculateAttackSpeed
     } else if (number == 1) {
         ca[40] |= 2;
-        Stats_CalcBase((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
-        Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+        Stats_CalcBase(static_cast<BYTE*>(CharacterMachine));   // Stats_CalcBase
+        Stats_CalcMagicDmgRange(static_cast<BYTE*>(CharacterMachine));   // Stats_CalcMagicDmgRange
     }
     EnableUse = 0;
 }

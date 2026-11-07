@@ -13,6 +13,9 @@
 #include <string>
 #include <vector>
 
+namespace TextEngine { struct ShapedText; }
+namespace GlyphAtlas { struct Bitmap; }
+
 enum eFontTypes {
     FONT_NORMAL = 0,   // texto común
     FONT_BOLD,         // títulos y texto destacado
@@ -63,9 +66,14 @@ public:
     BOOL MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size);
     BOOL TextMetrics(HDC dc, TEXTMETRICA* metrics);
     BOOL DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count);
-    BOOL BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base);
+    // Win32: bitmaps de los glifos `first..first+count-1` de la fuente
+    // seleccionada, como los arma wglUseFontBitmaps (GetGlyphOutline GGO_BITMAP).
+    BOOL BuildGlyphs(HDC dc, unsigned first, unsigned count, GlyphAtlas::Bitmap* out);
     void BeginTextMask();
     void SetMaskColor(DWORD color);
+    // SDL3: el texto 1252 ya armado por el layout Unicode (orden visual,
+    // respaldo y shaping). Nulo en el build GDI, que usa BuildGlyphs.
+    const TextEngine::ShapedText* Shape(HDC dc, LPCSTR text, int count);
     unsigned Generation() const { return m_Generation; }
 
 private:

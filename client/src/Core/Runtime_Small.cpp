@@ -9,6 +9,9 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
+#include "Item/ContentCatalog.h"
+#include "Render/Gfx.h"
 #include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
@@ -42,14 +45,14 @@ HRESULT __cdecl FillBuffer(int Buffer, int MaxChannel, BOOL Enable) { return 0; 
 // ── 7-byte: vtable setters ──────────────────────────────────────────────────
 
 // FUN_00403310 @ 0x00403310 (7 bytes)
-void __fastcall FUN_00403310(int *param_1) { *param_1 = (int)&PTR_LAB_00552460; }
+void __fastcall FUN_00403310(int *param_1) { *param_1 = (intptr_t)&PTR_LAB_00552460; }
 
 // FUN_00407970 @ 0x00407970 (7 bytes)
 // FUN_00407970 (IDA-activated)
 void __cdecl FUN_00407970(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
-  *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
+  ClothPoint(_this).VTable = g_ClothNodeVTable;
 }
 
 
@@ -57,15 +60,15 @@ void __cdecl FUN_00407970(void *_this)
 // FUN_00407de0 (IDA-activated)
 void __cdecl FUN_00407de0(DWORD *_this)
 {
-  *_this = (DWORD)&DAT_00552508;
+  ClothBody(_this).VTable = reinterpret_cast<void**>(&DAT_00552508);
 }
 
 
 // FUN_0040f690 @ 0x0040F690 (7 bytes)
-void __fastcall FUN_0040f690(void *This) { *(int *)This = (int)&PTR_LAB_005527e4; }
+void __fastcall FUN_0040f690(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
 
 // FUN_0040f680 @ 0x0040F680 (9 bytes) — same vtable as 0040f690 (duplicate entry)
-void __fastcall FUN_0040f680(void *This) { *(int *)This = (int)&PTR_LAB_005527e4; }
+void __fastcall FUN_0040f680(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
 
 
 
@@ -85,7 +88,7 @@ void __fastcall FUN_0040f680(void *This) { *(int *)This = (int)&PTR_LAB_005527e4
 void __cdecl FUN_00407ec0(DWORD *_this)
 {
   extern void *g_ClothAnchorVTable[3];
-  *_this = (DWORD)g_ClothAnchorVTable;
+  ClothBody(_this).VTable = g_ClothAnchorVTable;
   FUN_00407de0(_this);
 }
 
@@ -93,7 +96,7 @@ void __cdecl FUN_00407ec0(DWORD *_this)
 
 // FUN_0040a6e0 @ 0x0040A6E0 (11 bytes)
 void __fastcall FUN_0040a6e0(void *This) {
-    *(int *)This = (int)&PTR_LAB_005524e8;
+    *(int *)This = (intptr_t)&PTR_LAB_005524e8;
     WidgetB_SetVtable(This);
 }
 
@@ -125,7 +128,7 @@ void __cdecl CenterMouseY(void) { MouseY = (unsigned int)gWindow.GetHeight() >> 
 // ── 15-byte ─────────────────────────────────────────────────────────────────
 
 // CErrorReport::AddSeparator @ 0x00405580 (15 bytes)
-void __fastcall CErrorReport__AddSeparator(DWORD This) {
+void __fastcall CErrorReport__AddSeparator(intptr_t This) {
     CErrorReport__Write(This, (char *)"---------------------------------------");
 }
 
@@ -142,7 +145,7 @@ void __cdecl ClearNotice(void) { memset(DAT_07db80d8, 0, 0x630); }
 
 // FUN_00406de0 @ 0x00406DE0 (18 bytes) — HashTable init (set vtable + zero fields)
 void __fastcall FUN_00406de0_impl(int *param_1) {
-    *param_1 = (int)&PTR_FUN_005524d8;
+    *param_1 = (intptr_t)&PTR_FUN_005524d8;
     param_1[3] = 0;
     param_1[1] = 0;
     param_1[2] = 0;
@@ -160,10 +163,11 @@ int __stdcall FUN_0053d580(void) {
 // ── 19-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00405290 @ 0x00405290 (19 bytes) — CErrorReport field init
-static void __cdecl FUN_00405290_impl(int param_1) {
-    *(int *)(param_1 + 4) = -1;  // 0xffffffff
-    *(BYTE *)(param_1 + 8) = 0;
-    *(int *)(param_1 + 0x10c) = 0;
+static void __cdecl FUN_00405290_impl(void* param_1) {
+    BYTE* fields = static_cast<BYTE*>(param_1);
+    *(int *)(fields + 4) = -1;  // 0xffffffff
+    *(BYTE *)(fields + 8) = 0;
+    *(int *)(fields + 0x10c) = 0;
 }
 
 // FUN_0047cfe0 @ 0x0047CFE0 (19 bytes) — item field accessor (word at +0x14)
@@ -189,14 +193,15 @@ short __cdecl FUN_0047d000(short *param_1) {
 //   Item[+36] BYTE  numSpecials (count of properties)
 //   Item[+37+i] BYTE specialID[i]
 //   Item[+45+i] BYTE specialValue[i]
-extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item)
+extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const ITEM* Item)
 {
-    if (*(unsigned short*)Item == 0xFFFF) return;
-    int count = AsItem(Item)->SpecialNum;
+    if (Item->Type == -1) return;
+    const BYTE* data = reinterpret_cast<const BYTE*>(Item);
+    int count = Item->SpecialNum;
     for (int i = 0; i < count; ++i) {
-        if (*(unsigned char*)(Item + i + 37) == (unsigned int)Special) {
-            if (AsItem(Item)->Durability) {
-                *Value += *(unsigned char*)(i + Item + 45);
+        if (data[i + 37] == (unsigned int)Special) {
+            if (Item->Durability) {
+                *Value += data[i + 45];
             }
         }
     }
@@ -231,12 +236,13 @@ extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level,
 // sub_47CF40 @ 0x0047CF40 (104 bytes) — Stats_ApplyBonus2 (percentage).
 // Like PlusSpecial but multiplies: *a1 += a4 * (*a1) / 100 if any special
 // matches `a2`. Used for percentage-based stat bonuses (defense %, etc).
-int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
-    int result = a3;
-    if (*(unsigned short*)a3 == 0xFFFF) return result;
-    int count = *(unsigned char*)(a3 + 36);
+const ITEM* __cdecl PlusSpecialPercent(short *a1, int a2, const ITEM* a3, unsigned short a4) {
+    const ITEM* result = a3;
+    const BYTE* data = reinterpret_cast<const BYTE*>(a3);
+    if (a3->Type == -1) return result;
+    int count = a3->SpecialNum;
     for (int i = 0; i < count; ++i) {
-        if (*(unsigned char*)(a3 + i + 37) == (unsigned int)a2) {
+        if (data[i + 37] == (unsigned int)a2) {
             *(unsigned short*)a1 += (unsigned short)(a4 * (unsigned short)*a1 / 100);
         }
     }
@@ -259,24 +265,22 @@ int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
 // Then per-slot bonuses (Wings/WeaponL/WeaponR/Ring1) with durability scaling.
 // Bow+arrows + crossbow+bolts synergy: special level boost based on arrow type.
 // dword_7E91388/pPickedItem preview path skipped (hover-time UI).
-int __fastcall Stats_CalcBase(int a1) {
+int __fastcall Stats_CalcBase(BYTE* a1) {
     // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
     // `(a1 + 604)` (slots de arma) sin chequear.
     if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    if ((uintptr_t)ca < 0x100000) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr || reinterpret_cast<uintptr_t>(charAttr) < 0x100000) return 0;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese
     // puntero se pisa a 0x1 en runtime.
     ITEM_ATTRIBUTE* ITEM_ATTR = (ITEM_ATTRIBUTE*)(uintptr_t)ItemAttribute_Base();
     if (ITEM_ATTR == nullptr) return 0;
 
-    DWORD wp_L = (DWORD)(uintptr_t)(a1 + 536);
-    DWORD wp_R = (DWORD)(uintptr_t)(a1 + 604);
-    DWORD ring1 = (DWORD)(uintptr_t)(a1 + 1148);
+    BYTE* wp_L = a1 + 536;
+    BYTE* wp_R = a1 + 604;
+    BYTE* ring1 = a1 + 1148;
 
     // Skip hover-preview override (dword_7E91388 path)
 
@@ -324,7 +328,7 @@ int __fastcall Stats_CalcBase(int a1) {
     }
 
     // Wings (this+1012) attack bonus, special 60, durability scaled
-    DWORD wings = (DWORD)(uintptr_t)(a1 + 1012);
+    BYTE* wings = a1 + 1012;
     {
         // OJO: el binario original NO chequea 0xFFFF en el slot de alas (si lo
         // hace en los 3 slots de abajo).  Alla es inofensivo porque
@@ -337,8 +341,8 @@ int __fastcall Stats_CalcBase(int a1) {
                                            attr->Durability,
                                            *(int*)(a1 + 1016), 0);
         unsigned short minB = 0, maxB = 0;
-        PlusSpecial(&minB, 60, wings);
-        PlusSpecial(&maxB, 60, wings);
+        PlusSpecial(&minB, 60, AsItem(wings));
+        PlusSpecial(&maxB, 60, AsItem(wings));
         unsigned short minDed = (unsigned short)((double)minB * (double)durP);
         unsigned short maxDed = (unsigned short)((double)maxB * (double)durP);
         unsigned short minNet = minB - minDed;
@@ -361,8 +365,8 @@ skip_wings: ;
                                                AsItem(wp_L)->Option1);
             unsigned short minB = AsItem(wp_L)->DamageMin;
             unsigned short maxB = AsItem(wp_L)->DamageMax;
-            PlusSpecial(&minB, 60, wp_L);
-            PlusSpecial(&maxB, 60, wp_L);
+            PlusSpecial(&minB, 60, AsItem(wp_L));
+            PlusSpecial(&maxB, 60, AsItem(wp_L));
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
             unsigned short maxNet = maxB - (unsigned short)((double)maxB * (double)durP);
             short t = *(short*)wp_L;
@@ -374,10 +378,10 @@ skip_wings: ;
                 *atkMinL += minNet;
                 *atkMaxL += maxNet;
             }
-            PlusSpecial(atkMinL, 73, wp_L);
-            PlusSpecial(atkMaxL, 73, wp_L);
-            PlusSpecialPercent((short*)atkMinL, 74, (int)wp_L, 2);
-            PlusSpecialPercent((short*)atkMaxL, 74, (int)wp_L, 2);
+            PlusSpecial(atkMinL, 73, AsItem(wp_L));
+            PlusSpecial(atkMaxL, 73, AsItem(wp_L));
+            PlusSpecialPercent((short*)atkMinL, 74, AsItem(wp_L), 2);
+            PlusSpecialPercent((short*)atkMaxL, 74, AsItem(wp_L), 2);
         }
     }
 
@@ -393,8 +397,8 @@ skip_wings: ;
                                                AsItem(wp_R)->Option1);
             unsigned short minB = AsItem(wp_R)->DamageMin;
             unsigned short maxB = AsItem(wp_R)->DamageMax;
-            PlusSpecial(&minB, 60, wp_R);
-            PlusSpecial(&maxB, 60, wp_R);
+            PlusSpecial(&minB, 60, AsItem(wp_R));
+            PlusSpecial(&maxB, 60, AsItem(wp_R));
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
             unsigned short maxNet = maxB - (unsigned short)((double)maxB * (double)durP);
             short t = *(short*)wp_R;
@@ -405,23 +409,23 @@ skip_wings: ;
                 *atkMinR += minNet;
                 *atkMaxR += maxNet;
             }
-            PlusSpecial(atkMinR, 73, wp_R);
-            PlusSpecial(atkMaxR, 73, wp_R);
-            PlusSpecialPercent((short*)atkMinR, 74, (int)wp_R, 2);
-            PlusSpecialPercent((short*)atkMaxR, 74, (int)wp_R, 2);
+            PlusSpecial(atkMinR, 73, AsItem(wp_R));
+            PlusSpecial(atkMaxR, 73, AsItem(wp_R));
+            PlusSpecialPercent((short*)atkMinR, 74, AsItem(wp_R), 2);
+            PlusSpecialPercent((short*)atkMaxR, 74, AsItem(wp_R), 2);
         }
     }
 
     // Ring1 (this+1148) — applies to both hands
     if (*(unsigned short*)ring1 != 0xFFFF && *(unsigned char*)(ring1 + 26)) {
-        PlusSpecial(atkMinL, 73, ring1);
-        PlusSpecial(atkMaxL, 73, ring1);
-        PlusSpecialPercent((short*)atkMinL, 74, (int)ring1, 2);
-        PlusSpecialPercent((short*)atkMaxL, 74, (int)ring1, 2);
-        PlusSpecial(atkMinR, 73, ring1);
-        PlusSpecial(atkMaxR, 73, ring1);
-        PlusSpecialPercent((short*)atkMinR, 74, (int)ring1, 2);
-        PlusSpecialPercent((short*)atkMaxR, 74, (int)ring1, 2);
+        PlusSpecial(atkMinL, 73, AsItem(ring1));
+        PlusSpecial(atkMaxL, 73, AsItem(ring1));
+        PlusSpecialPercent((short*)atkMinL, 74, AsItem(ring1), 2);
+        PlusSpecialPercent((short*)atkMaxL, 74, AsItem(ring1), 2);
+        PlusSpecial(atkMinR, 73, AsItem(ring1));
+        PlusSpecial(atkMaxR, 73, AsItem(ring1));
+        PlusSpecialPercent((short*)atkMinR, 74, AsItem(ring1), 2);
+        PlusSpecialPercent((short*)atkMaxR, 74, AsItem(ring1), 2);
     }
 
     // Bow + arrows synergy (Type 135 with arrows option) / Crossbow + bolts (Type 143)
@@ -451,15 +455,15 @@ skip_wings: ;
 
 
 // ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
-void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, 0x6e); }
+void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, sizeof(WhisperRegistID)); }
 
 // CUIRenderText_SetFont @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
-void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
+void __fastcall CUIRenderText_SetFont(intptr_t ecx, int /*edx*/, int param_1) {
     if (param_1 != 0) {
         // Call release method: (*(this+4))->vtable[2](param_1)
         typedef void (__cdecl *ReleaseFunc)(int);
-        int *pObj = *(int **)(ecx + 4);
-        ReleaseFunc fn = (ReleaseFunc)(*(int *)(*pObj + 8));
+        void ***pObj = *(void ****)(ecx + 0x10);
+        ReleaseFunc fn = (ReleaseFunc)(*pObj)[2];
         fn(param_1);
     }
 }
@@ -469,7 +473,7 @@ void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
 
 
 // FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
-void __fastcall FUN_00406d20(int param_1) {
+void __fastcall FUN_00406d20(intptr_t param_1) {
     *(int *)(param_1 + 0x1c) = 0x83;
     *(int *)(param_1 + 0xc) = 0;
     *(int *)(param_1 + 4) = 0;
@@ -520,57 +524,57 @@ void __cdecl ReleaseMainData(void) {
 
 
 // FUN_00406cb0 @ 0x00406CB0 — HashWidget ~dtor
-void __fastcall FUN_00406cb0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_00406cb0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00406cd0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// FUN_00407dc0 @ 0x00407DC0 — CWaveFile base ~dtor
-void __fastcall FUN_00407dc0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407de0((DWORD *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+// FUN_00407dc0 @ 0x00407DC0 — destructor base con liberación opcional.
+void __fastcall FUN_00407dc0(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00407de0(static_cast<DWORD*>(ecx));
+    if (param_1 & 1) operator_delete(ecx);
 }
 
-// FUN_00407ea0 @ 0x00407EA0 — CWaveFile derived ~dtor
-void __fastcall FUN_00407ea0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407ec0((DWORD *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+// FUN_00407ea0 @ 0x00407EA0 — destructor usado por el slot 0 del ancla de tela.
+void __fastcall FUN_00407ea0(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00407ec0(static_cast<DWORD*>(ecx));
+    if (param_1 & 1) operator_delete(ecx);
 }
 
 
 
 // FUN_0040a6c0 @ 0x0040A6C0 — WidgetC derived ~dtor
-void __fastcall FUN_0040a6c0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040a6c0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040a6e0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040db60 @ 0x0040DB60 — DSDevice ~dtor
-void __fastcall FUN_0040db60(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040db60(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040d550((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040db80 @ 0x0040DB80 — DSBuffer ~dtor
-void __fastcall FUN_0040db80(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040db80(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040dba0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040eac0 @ 0x0040EAC0 — DSBufferB ~dtor
-void __fastcall FUN_0040eac0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040eac0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040eae0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040f520 @ 0x0040F520 — Stream deinit ~dtor
-void __fastcall FUN_0040f520(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040f520(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040f540((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040f840 @ 0x0040F840 — StreamB ~dtor
-void __fastcall FUN_0040f840(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040f840(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040f950((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -584,15 +588,15 @@ void __fastcall FUN_0040f840(int ecx, int /*edx*/, BYTE param_1) {
 // FUN_00405240 @ 0x00405240 (30 bytes) — ErrorReport init (vtable + open log)
 // NOTE: FUN_004052b0 opens the log file — stub it as nop for now
 void __fastcall FUN_00405240_init(void *This) {
-    *(int *)This = (int)&PTR_FUN_005524c4;
-    FUN_00405290_impl((int)This);
+    *(int *)This = (intptr_t)&PTR_FUN_005524c4;
+    FUN_00405290_impl(This);
     // FUN_004052b0(This, "MuError.log"); — opens MuError.log for writing
 }
 
 // ── 32-byte ─────────────────────────────────────────────────────────────────
 
 // CSQuest::setQuestList @ 0x004011B0 (32 bytes)
-void __fastcall CSQuest__setQuestList(int ecx, int /*edx*/, int index, int result) {
+void __fastcall CSQuest__setQuestList(BYTE* ecx, int /*edx*/, int index, int result) {
     *(char *)(ecx + 0x1c87a) = (char)index;
     *(BYTE *)(((index & 0xff) >> 2) + 0x1c848 + ecx) = (BYTE)result;
 }
@@ -611,7 +615,7 @@ void __cdecl StopMusic(void) {
 // ── 33-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406e60 @ 0x00406E60 (33 bytes) — free two allocations + zero count
-void __fastcall FUN_00406e60(int param_1) {
+void __fastcall FUN_00406e60(intptr_t param_1) {
     operator_delete(*(void **)(param_1 + 8));
     operator_delete(*(void **)(param_1 + 4));
     *(int *)(param_1 + 0xc) = 0;
@@ -631,19 +635,19 @@ void __cdecl AllStopSound(void) {
 
 // EndOpengl @ 0x00511BC0 (35 bytes) — pop GL matrices
 void __cdecl EndOpengl(void) {
-    glPopMatrix();
-    glMatrixMode(0x1701);  // GL_PROJECTION
-    glPopMatrix();
-    glMatrixMode(0x1700);  // GL_MODELVIEW
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);  // GL_PROJECTION
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);  // GL_MODELVIEW
 }
 
 // ── 36-byte ─────────────────────────────────────────────────────────────────
 
 // GetHandOfWeapon @ 0x00448900 (36 bytes) — returns 1 if entity type 390 and action 37/38
-int __cdecl GetHandOfWeapon(int obj) {
+int __cdecl GetHandOfWeapon(intptr_t obj) {
     int hand = 0;
     if (*(short *)(obj + 2) == 390) {
-        BYTE act = *(BYTE *)(obj + 0x105);
+        BYTE act = *(BYTE *)&((OBJECT*)(uintptr_t)(obj))->CurrentAction;
         if (act == 37 || act == 38) hand = 1;
     }
     return hand;
@@ -652,7 +656,7 @@ int __cdecl GetHandOfWeapon(int obj) {
 // ── 37-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_0040a830 @ 0x0040A830 (37 bytes) — free two optional allocations
-void __fastcall FUN_0040a830(int param_1) {
+void __fastcall FUN_0040a830(intptr_t param_1) {
     if (*(void **)(param_1 + 0x1c) != NULL) operator_delete(*(void **)(param_1 + 0x1c));
     if (*(void **)(param_1 + 8) != NULL) operator_delete(*(void **)(param_1 + 8));
 }
@@ -662,17 +666,6 @@ bool __cdecl getEqualMonster(int addV) {
     return m_iKillMonster <= m_iMaxKillMonster + addV;
 }
 
-// DeleteBug @ 0x004FFFA0 (38 bytes) — disable butterfly objects owned by Owner
-void __cdecl DeleteBug(int Owner) {
-    char *o = (char *)&Butterfles;
-    char *end = (char *)&Butterfles + 0x1158;  // 10 entries × 0x1BC stride
-    do {
-        if ((*(BYTE *)o != 0) && (*(int *)(o + 0xFC) == Owner)) {
-            *(BYTE *)o = 0;
-        }
-        o += 0x1BC;  // Butterfles OBJECT stride
-    } while (o < end);
-}
 
 // ── 42-byte ─────────────────────────────────────────────────────────────────
 
@@ -693,11 +686,11 @@ void __cdecl FreeDirectSound(void) {
 // ── 43-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406ec0 @ 0x00406EC0 (43 bytes) — hash table destructor (zero fields + set vtable + conditional delete)
-void __fastcall FUN_00406ec0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_00406ec0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     *(int *)(ecx + 0xc) = 0;
     *(int *)(ecx + 4) = 0;
     *(int *)(ecx + 8) = 0;
-    *(int *)ecx = (int)&PTR_FUN_005524d8;
+    *(int *)ecx = (intptr_t)&PTR_FUN_005524d8;
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
@@ -706,7 +699,7 @@ void __fastcall FUN_00406ec0(int ecx, int /*edx*/, BYTE param_1) {
 // FUN_0040f540 @ 0x0040F540 (45 bytes) — Stream deinit: set vtable + release sub-object
 void __fastcall FUN_0040f540(void *This) {
     int *piVar1 = (int *)((int *)This)[1];
-    *(int *)This = (int)&PTR_FUN_005527e0;
+    *(int *)This = (intptr_t)&PTR_FUN_005527e0;
     if (piVar1 != NULL) {
         typedef void (__cdecl *RelFunc)(int);
         RelFunc fn = (RelFunc)(*(int *)(*piVar1 + 0x14));
@@ -719,7 +712,7 @@ void __fastcall FUN_0040f540(void *This) {
 // ── 48-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406db0 @ 0x00406DB0 (48 bytes) — thiscall: set fields + random hash prime
-void __fastcall FUN_00406db0(int ecx, int /*edx*/, int param_1, int param_2) {
+void __fastcall FUN_00406db0(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x10) = param_1;
     *(int *)(ecx + 0x14) = param_2;
     int r = rand();
@@ -736,7 +729,7 @@ void __fastcall FUN_00406db0(int ecx, int /*edx*/, int param_1, int param_2) {
 // `< 0x7c72e78` = base + 100*0x2f0).
 void __cdecl MoveBlurs(void) {
     int *piVar2 = &DAT_07c608b8;
-    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 = (int*)((int)piVar2 + 0x2f0)) {
+    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 = (int*)((char*)piVar2 + 0x2f0)) {
         if (*(char *)(piVar2 - 4) != '\0') {
             int iVar1 = piVar2[-2];
             piVar2[-2] = iVar1 - 1;
@@ -785,6 +778,8 @@ void __cdecl clearMatchInfo(void) {
 // BYTE en [0]), stride 0x36, hasta GateAttribute.  Aca acotamos por el contador
 // real (EditMonsterNumber = EditMonsterNumber) en vez del literal 0x7cf5600.
 char *__cdecl getMonsterName(int type) {
+    // DESVIACION (0.97.40): el nombre traducido que mandó el server va primero.
+    if (char *text = gContentCatalog.GetMonsterText(type)) return text;
     int n = EditMonsterNumber;
     if (n > 512) n = 512;
     for (int i = 0; i < n; ++i) {
@@ -836,15 +831,10 @@ int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
 }
 
 // ── FUN_00405290 (IDA-activated, absent in Ghidra) ──
-int __cdecl FUN_00405290(int _this)
+int __cdecl FUN_00405290(void* _this)
 {
-  int result; // eax
-
-  result = 0;
-  *(DWORD *)(_this + 4) = -1;
-  *(BYTE *)(_this + 8) = 0;
-  *(DWORD *)(_this + 268) = 0;
-  return result;
+  FUN_00405290_impl(_this);
+  return 0;
 }
 
 // ── FUN_0053ad80 (IDA-activated, absent in Ghidra) ──

@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Game/RenderSnapshots.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -66,8 +68,8 @@ static void ApplyCustomEquipment(BYTE* c, const BYTE* items)
     // CustomPet: el CharSet lo trajo como "sin helper"; acá se crea su bug.
     const WORD helper = *(const WORD*)(items + 8 * 2);
     if (helper != 0xFFFF && gContentCatalog.GetPet(helper)) {
-        *(WORD*)(c + 696) = (WORD)ItemModel(helper);
-        DeleteBug((DWORD)(uintptr_t)c);
+        *(WORD*)(c + EntityOffset(696)) = (WORD)ItemModel(helper);
+        DeleteBug((intptr_t)c);
         CreateBug(ItemModel(helper), (void*)(c + 16), (void*)c, 0);
     }
 }
@@ -78,7 +80,7 @@ void Recv_CustomEquipment(const BYTE* Msg, int Size)
     const int key = ((Msg[4] & 0x7F) << 8) | Msg[5];
     const int idx = FindCharacterIndex(key);
     if (idx < 0 || idx >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394, Msg + 6);
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE, Msg + 6);
 }
 
 // 0.97.20: C1:F3:ED — lo mismo para un personaje de la lista del
@@ -89,7 +91,7 @@ void Recv_CharacterListCustom(const BYTE* Msg, int Size)
     if (Size < 24 || !DAT_07abf5d0) return;
     const int slot = Msg[4];
     if (slot >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * 0x394, Msg + 6);
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * CHARACTER_STRIDE, Msg + 6);
 }
 
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
@@ -102,7 +104,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
         NetLog("NET:  -> 0x25 ChangePlayer key=%d (entidad ausente)", key);
         return;
     }
-    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394;
+    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE;
 
     const bool  empty  = (Msg[5] == 0xFF);
     const int   type   = ConvertItemType((BYTE*)Msg + 5);   // 0x0047B110
@@ -166,14 +168,14 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
         case 8: {  // helper / mascota
             if (empty) {
                 *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)-1;
-                DeleteBug((DWORD)(uintptr_t)c);        // DeleteBug
+                DeleteBug((intptr_t)c);        // DeleteBug
             } else {
                 *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)ItemEntityModel(type);
                 AsCharacter(c)->Helper.Level = 0;
                 float* pos = (float*)(c + 16);
                 // 0.97.20: un agregado crea el bug del pet que imita.
                 const int pet = ItemBehaviorType(type);
-                DeleteBug((DWORD)(uintptr_t)c);
+                DeleteBug((intptr_t)c);
                 if (pet == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
                 else if (pet == 418) CreateBug(195, (void*)pos, (void*)c, 0);
                 else if (pet == 419) CreateBug(267, (void*)pos, (void*)c, 0);
@@ -185,7 +187,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
             break;
     }
 
-    SetCharacterScale((int)(uintptr_t)c);   // SetCharacterScale
+    SetCharacterScale(AsCharacter(c));   // SetCharacterScale
 }
 
 // 0x10
@@ -204,15 +206,15 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
-            BYTE* slot = basePtr + s * 0x394;
-            if (slot[0] && *(WORD*)(slot + 0x1dc) == entityId) {
+            BYTE* slot = basePtr + s * CHARACTER_STRIDE;
+            if (slot[0] && *(WORD*)(slot + EntityOffset(0x1dc)) == entityId) {
                 h = slot; break;
             }
         }
     }
     if (h && AsCharacter(h)->Dead == 0) {
         // ReceiveMoveCharacter @ 00427B90: speed is always updated.
-        h[0x2fc] = (BYTE)(Msg[7] >> 4);
+        h[EntityOffset(0x2fc)] = (BYTE)(Msg[7] >> 4);
 
         if (h == (BYTE*)DAT_07abf5d8) {
             // IDA no pisa acá la ruta local del héroe ni su posición
@@ -229,21 +231,21 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // deja que el tick normal de movimiento consuma esa ruta.
             AsCharacter(h)->TargetX = gx;
             AsCharacter(h)->TargetY = gy;
-            if (h[848] == 0) {
+            if (h[EntityOffset(848)] == 0) {
                 const int srcX = AsCharacter(h)->PositionX;
                 const int srcY = AsCharacter(h)->PositionY;
-                if (Path_FindRoute(srcX, srcY, gx, gy, h + 852, 0.0f)) {
+                if (Path_FindRoute(srcX, srcY, gx, gy, h + EntityOffset(852), 0.0f)) {
                     AsCharacter(h)->Movement = 1;
                     // 00427B90 invokes SetPlayerWalk immediately
                     // para el tipo 322. Al resto de las entidades remotas las
                     // cambia MoveMonsterClient antes de MovePath.
                     if (*(WORD *)&AsCharacter(h)->Object.Type == 322) {
-                        SetPlayerWalk((int)(uintptr_t)h);
+                        SetPlayerWalk(AsCharacter(h));
                         AsCharacter(h)->JumpTime = 1;
                     }
                 } else {
                     AsCharacter(h)->Movement = 0;
-                    SetPlayerStop((int)(uintptr_t)h);
+                    SetPlayerStop(AsCharacter(h));
                 }
             }
         }
@@ -265,8 +267,8 @@ void NetRecv_11(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
-            BYTE* slot = basePtr + s * 0x394;
-            if (slot[0] && *(WORD*)(slot + 0x1dc) == entityId) {
+            BYTE* slot = basePtr + s * CHARACTER_STRIDE;
+            if (slot[0] && *(WORD*)(slot + EntityOffset(0x1dc)) == entityId) {
                 h = slot; break;
             }
         }
@@ -317,39 +319,31 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetLog("NET:    0x12 SKIP - count=%d out of range", count);
         return;
     }
+    // PMSG_VIEWPORT_PLAYER (0.97.40): index[2], x, y, CharSet[11], padding,
+    // ViewSkillState, name[40], tx, ty, DirAndPkLevel, padding = 62 bytes.
+    const int NAME = (int)NetText::CharacterNameSize;
     int entryStart = 4 + hdrOff;
-    int entryStride = 32;
+    const int entryStride = 22 + NAME;
     if ((entryStart + count * entryStride) > Size) {
-        // Probamos strides más chicos que usan algunos emuladores de server
-        int payloadLen = Size - entryStart;
-        int autoStride = payloadLen / count;
-        if (autoStride >= 18 && autoStride <= 36) {
-            entryStride = autoStride;
-            NetLog("NET:    0x12 auto-stride=%d (payload=%d, count=%d)",
-                   autoStride, payloadLen, count);
-        } else {
-            NetLog("NET:    0x12 SKIP - bad stride (count=%d, payload=%d)",
-                   count, payloadLen);
-            return;
-        }
+        NetLog("NET:    0x12 SKIP - payload corto (count=%d, size=%d)", count, Size);
+        return;
     }
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
-    for (int i = 0; i < count && (entryStart + i*entryStride + 30) <= Size; ++i) {
+    for (int i = 0; i < count && (entryStart + (i + 1) * entryStride) <= Size; ++i) {
         const BYTE* e = Msg + entryStart + i*entryStride;
         // Layout decompilado del binario MuEmu
         // server (CViewport::GCViewportPlayerSend, asm a1590).
-        // Stride 32 bytes:
+        // Stride 62 bytes (0.97.40):
         //   e[0..1]=Key BE, e[2]=PosX, e[3]=PosY,
-        //   e[4..b]=Equipment(8B), e[c..d]=PkLevel,
-        //   e[e]=CtlCode, e[f]=padding,
-        //   e[10..11]=ViewSkillState (LE), e[12..1b]=Name(10B),
-        //   e[1c]=TargetX, e[1d]=TargetY, e[1e]=Path|Dir.
+        //   e[4..14]=CharSet(11B), e[15]=padding,
+        //   e[16..17]=ViewSkillState (LE), e[18..57]=Name(40B),
+        //   e[58]=TargetX, e[59]=TargetY, e[60]=Path|Dir.
         WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];   // strip CREATE bit
         BYTE x = e[2], y = e[3];
-        char name[11] = {0};
-        memcpy(name, e + 0x12, 10);
-        BYTE tx = e[0x1C], ty = e[0x1D];
-        BYTE dirpk = e[0x1E];
+        char name[NetText::CharacterNameSize + 1] = {0};
+        NetText::FromServer(name, sizeof(name), e + 0x12, NAME);
+        BYTE tx = e[0x12 + NAME], ty = e[0x13 + NAME];
+        BYTE dirpk = e[0x14 + NAME];
         BYTE dir = (dirpk >> 4) & 0x0F;
         const WORD viewSkillState = (WORD)(e[0x10] | (e[0x11] << 8));
         // Un refresco de viewport por gate de mapa de MuEmu puede devolver
@@ -361,7 +355,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // heroe por Key y lo re-inicializaria SIN pasar por la restauracion de abajo
         // (se perderia, entre otras cosas, el byte de clase +0x1BC).
         BYTE* heroEnt = (BYTE*)(uintptr_t)DAT_07abf5d8;
-        const WORD heroKeyReal = heroEnt ? *(WORD*)(heroEnt + 0x1DC) : g_HeroKey;
+        const WORD heroKeyReal = heroEnt ? *(WORD*)(heroEnt + EntityOffset(0x1DC)) : g_HeroKey;
         if (entityId == g_HeroKey || entityId == heroKeyReal) {
             BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
             if (hero) {
@@ -393,7 +387,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     AsCharacter(hero)->Object.Kind   = 1;
                     AsCharacter(hero)->TargetX = tx;
                     AsCharacter(hero)->TargetY = ty;
-                    SetCharacterClass((int)(uintptr_t)hero);   // SetCharacterClass
+                    SetCharacterClass(AsCharacter(hero));   // SetCharacterClass
                     NetLog("NET:    0x12 heroe restaurado de transformacion");
                 }
 
@@ -412,9 +406,12 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // conserva estado que no pertenece al viewport. Sí
                 // reproducimos los dos resets visuales que necesita
                 // esta fila del protocolo.
+                // IDA 0x00429690 repone el nombre después de recrear el slot.
+                // La ruta local también lo necesita para autenticar chat y comandos.
+                EntityName::Set(hero, name);
                 *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
                 ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
-                Hero_ApplyCatalogEquipment((int)(uintptr_t)hero);
+                Hero_ApplyCatalogEquipment(AsCharacter(hero));
                 ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
             }
             NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
@@ -432,8 +429,8 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // y el offset random inicial se come a lo sumo 127, o sea
         // quedan 402 utiles.
         float rot = ((float)dir - 1.0f) * 45.0f;
-        BYTE* slot = (BYTE*)(uintptr_t)CreateCharacter(entityId, 390, x, y, rot);
-        int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
+        BYTE* slot = reinterpret_cast<BYTE*>(CreateCharacter(entityId, 390, x, y, rot));
+        int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / CHARACTER_STRIDE);
         if (slot) {
             AsCharacter(slot)->Key = entityId;
             // Combat_PacketDispatch (00429690) applies the packed
@@ -446,25 +443,25 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             AsCharacter(slot)->PK = dirpk & 0x0F;
             switch (charSet0 & 0x0F) {
             case 1:
-                CreateTeleportEnd((unsigned int)(uintptr_t)slot);
+                CreateTeleportEnd(AsObject(slot));
                 break;
             case 2:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 135 : 133);
                 break;
             case 3:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 140 : 139);
                 break;
             case 4:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 138 : 137);
                 break;
             default:
                 break;
             }
             ChangeCharacterExt(spawnSlot, (BYTE*)e + 5);
-            memcpy(slot + 449, name, 10);  // Character.Name (+0x1C1)
+            EntityName::Set(slot, name);
             AsCharacter(slot)->Object.Kind = 1;     // type: player (1)
             AsCharacter(slot)->Object.Visible = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
             AsCharacter(slot)->Object.LightEnable = 1;     // also "is rendered" sub-flag
@@ -505,9 +502,8 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // ViewportChange lo emite MuEmu cuando una entidad ya visible
     // player changes skin.  Unlike the old client packet, MuEmu's
-    // el PMSG_VIEWPORT_CHANGE nativo son los 32 bytes con alineación por defecto
-    // record from Viewport.h:
-    //   id(2), x, y, skin, pad, ViewSkillState(LE), name(10),
+    // el PMSG_VIEWPORT_CHANGE nativo (Viewport.h, 0.97.40) son 62 bytes:
+    //   id(2), x, y, skin, pad, ViewSkillState(LE), name(40),
     //   tx, ty, dir|pk, charset(11).
     // ReceiveCreateTransformViewport (00429C50) creates the
     // la forma de monstruo transformada para esta clave; no es apenas
@@ -517,7 +513,8 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     const int count = Msg[3 + hdrOff];
     const int entryStart = 4 + hdrOff;
-    constexpr int entryStride = 32;
+    constexpr int NAME = (int)NetText::CharacterNameSize;
+    constexpr int entryStride = 22 + NAME;
     if (count <= 0 || count > 255 || entryStart + count * entryStride > Size) {
         NetLog("NET:    0x45 SKIP count=%d size=%d", count, Size);
         return;
@@ -535,21 +532,24 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // Campos de estado exactos de 00429C50, adaptados sólo para el
         // MuEmu record offsets above.
-        if (entity[747] == 7) *(float*)(entity + 12) = 0.8f;
-        if (DAT_07abf5d8) entity[444] = ((BYTE*)DAT_07abf5d8)[444];
-        entity[746] = e[20] & 0x0F;
+        if (entity[EntityOffset(747)] == 7) *(float*)(entity + 12) = 0.8f;
+        if (DAT_07abf5d8) entity[EntityOffset(444)] = ((BYTE*)DAT_07abf5d8)[EntityOffset(444)];
+        entity[EntityOffset(746)] = e[10 + NAME] & 0x0F;
         entity[132] = 1;
-        entity[847] = 1;
-        entity[0x160] = 1; // required by this renderer's active pass
+        entity[EntityOffset(847)] = 1;
+        entity[EntityOffset(0x160)] = 1; // required by this renderer's active pass
         entity[0xdc] = 1;
-        entity[0x305] = 0;
-        entity[0x306] = e[18];
-        entity[0x307] = e[19];
-        *(float*)(entity + 36) = ((float)(e[20] >> 4) - 1.0f) * 45.0f;
-        *(int*)(entity + 0x388) = e[2];
-        *(int*)(entity + 0x38c) = e[3];
-        memcpy(entity + 449, e + 8, 10);
-        entity[459] = 0;
+        entity[EntityOffset(0x305)] = 0;
+        entity[EntityOffset(0x306)] = e[8 + NAME];
+        entity[EntityOffset(0x307)] = e[9 + NAME];
+        *(float*)(entity + 36) = ((float)(e[10 + NAME] >> 4) - 1.0f) * 45.0f;
+        *(int*)(entity + EntityOffset(0x388)) = e[2];
+        *(int*)(entity + EntityOffset(0x38c)) = e[3];
+        {
+            char name[NetText::CharacterNameSize + 1];
+            NetText::FromServer(name, sizeof(name), e + 8, NAME);
+            EntityName::Set(entity, name);
+        }
         ApplyPersistentSkillEffect97k(entity, viewSkillState, 1);
 
         if ((e[0] & 0x80) != 0) {
@@ -559,9 +559,9 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                          (float*)(entity + 232), nullptr, (float*)entity,
                          (float*)-1, nullptr, 0);
             CreateSprite(1191, (float*)(entity + 16), 1.0f,
-                         (float*)(entity + 232), (int)(uintptr_t)entity,
+                         (float*)(entity + 232), (intptr_t)entity,
                          0.0f, 0);
-            *(DWORD*)(entity + 360) = 0;
+            *(DWORD*)(entity + EntityOffset(360)) = 0;
         }
         ++transformed;
     }
@@ -656,7 +656,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 AsCharacter(slot)->MoveSpeed = 4;
             }
             ApplyPersistentSkillEffect97k(slot, viewSkillState, 1);
-            int spawnSlot = (int)((slot - basePtr) / 0x394);
+            int spawnSlot = (int)((slot - basePtr) / CHARACTER_STRIDE);
             NetLog("NET:    0x13 spawn monster slot=%d id=%d type=%d pos=(%d,%d) rot=%.0f",
                    spawnSlot, entityId, type, x, y, rot);
         } else {
@@ -690,15 +690,17 @@ void NetRecv_14(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // ReceiveCreateSummonViewport @ 0042A530.  MuEmu emits this
-    // como C2:1F, seguido de un contador y registros alineados de 22 bytes:
+    // como C2:1F, seguido de un contador y registros alineados de 52 bytes
+    // (0.97.40):
     //   KeyH|CREATE, KeyL, Type, pad, ViewSkillState(WORD),
-    //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[10], pad.
-    // Padding en los offsets 3 y 21; OwnerName arranca en +11.
+    //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[40], pad.
+    // Padding en los offsets 3 y 51; OwnerName arranca en +11.
     // IDA 0x42A530 copia desde ReceiveBuffer+16 (la entrada arranca en +5).
     const int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
     const int countOff = 3 + hdrOff;
     const int entryStart = 4 + hdrOff;
-    const int entryStride = 22;
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int entryStride = 12 + NAME;
     // Idem 0x12/0x13: no exigir el heroe (`DAT_07abf5d8`) para procesar el
     // paquete al entrar al mapa. Este handler tampoco usa el heroe.
     if (Size <= countOff || !DAT_07abf5d0) return;
@@ -749,18 +751,19 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // "<owner name>'s <old monster name>".  Preserve the
         // important owner identity without relying on localized
         // el storage de GlobalText mientras se portea el subsistema de texto.
-        char oldName[101] = {};
-        strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-        memcpy(summon + 449, e + 11, 10);
-        summon[459] = 0;
-        strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
-        strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
+        // El nombre compuesto entra entero en EntityName (antes se cortaba en
+        // los 25 bytes de CHARACTER::ID).
+        const std::string oldName = EntityName::Get(summon);
+        char owner[NetText::CharacterNameSize + 1] = {};
+        NetText::FromServer(owner, sizeof(owner), e + 11, NAME);
+        const std::string label = std::string(owner) + "'s " + oldName;
+        EntityName::Set(summon, label.c_str());
         AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 
-        if (create) AppearMonster((DWORD)(uintptr_t)summon);
-        NetLog("NET:    0x1F summon id=%d type=%d owner=%.10s pos=(%d,%d)",
-               key, type, (const char*)(e + 11), x, y);
+        if (create) AppearMonster((intptr_t)summon);
+        NetLog("NET:    0x1F summon id=%d type=%d owner=%s pos=(%d,%d)",
+               key, type, owner, x, y);
     }
 }
 
@@ -784,8 +787,8 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int cursor = 4 + hdrOff;
     // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-    extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
-    extern void __cdecl ItemAngle(int);   // ItemAngle
+    extern int  __cdecl ItemObjectAttribute(OBJECT*);   // ItemObjectAttribute
+    extern void __cdecl ItemAngle(OBJECT*);   // ItemAngle
     // DESVIACION: el server manda PMSG_VIEWPORT_ITEM (Viewport.h) con
     // stride fijo index[2] + x + y + ItemInfo[MAX_ITEM_INFO + 1] = 12,
     // no el stride variable del 0.97k. Bound y avance usan el mismo valor.
@@ -828,9 +831,9 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // distinto que el resto.
                 if (itemType == 461 || itemType == 462 || itemType == 464 ||
                     itemType == 399 || itemType == 470)
-                    PlayBuffer(49, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(49, AsObject(o), 0);
                 else
-                    PlayBuffer(30, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(30, AsObject(o), 0);
             }
         }
         o->Live = 1;
@@ -865,7 +868,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
         // de render del objeto. Sin esto el modelo puede
         // quedar sin scale/flags → invisible.
-        ItemObjectAttribute((int)(uintptr_t)o);
+        ItemObjectAttribute(AsObject(o));
 
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).
@@ -905,7 +908,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // ItemAngle (CreateItem final): setea rotación del item en
         // el suelo según el terreno.
-        ItemAngle((int)(uintptr_t)o);
+        ItemAngle(AsObject(o));
 
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);
@@ -929,7 +932,7 @@ void NetRecv_21(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         WORD raw = (Msg[entryStart + i*2] << 8) | Msg[entryStart + i*2 + 1];
         WORD key = raw & 0x7FFF;
         if (key < 1000) {
-            itemPool[(size_t)key * 0x204 + 72] = 0;  // active flag = 0
+            itemPool[(size_t)key * GROUND_ITEM_STRIDE + 72] = 0;  // active flag = 0
         }
     }
 }

@@ -1,6 +1,7 @@
 // Entity_LegacyEffects.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -45,7 +46,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
 // IDA: ItemAngle (0x005030C0)
-void __cdecl ItemAngle(int param_1) {
+void __cdecl ItemAngle(OBJECT* object) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     short sVar1 = *(short*)(param_1 + 2);
     *(unsigned int*)(param_1 + 0x1c) = 0;
     *(unsigned int*)(param_1 + 0x20) = 0;
@@ -112,8 +114,9 @@ lbl_z45:
 // FUN_00503650 @ 0x00503650 — Entity_UpdateSparkleEffect(entity_ptr)
 // Every 0x30 ticks spawns two Shiny01 particles (type 0x4ce) at random direction offset
 // from entity's facing matrix. Stack layout: {local_48[3], 0, local_34} = random XZ offsets.
-void __cdecl Entity_UpdateSparkleEffect(int param_1)
+void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
 {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     int iVar2 = *(int *)(param_1 + 4);
     *(int *)(param_1 + 4) = iVar2 + 1;
     if (iVar2 % 0x30 == 0) {
@@ -150,7 +153,7 @@ void __cdecl Entity_UpdateSparkleEffect(int param_1)
 // IDA `sub_408940` devuelve `sub_408E30(this) != 0` — el "¿convergió?" que usa
 // el bucle de `sub_408900`. El port lo descartaba (void).
 int __cdecl Sound_UpdateChannel3D_Tick(int *param_1, float dt) {
-    double angle = (*(float*)(param_1[1] + 0x24) + *(float*)&_DAT_005524ec) * *(float*)&_DAT_0055253c;
+    double angle = (ClothSystem(param_1).Owner->Angle[2] + *(float*)&_DAT_005524ec) * *(float*)&_DAT_0055253c;
     DAT_00590af4 = (float)(sin(angle)  * *(float*)&_DAT_00590af0);
     DAT_00590af8 = (float)(-cos(angle) * *(float*)&_DAT_00590af0);
     Cloth_Integrate(param_1, dt);

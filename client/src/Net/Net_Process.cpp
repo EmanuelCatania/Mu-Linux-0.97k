@@ -550,7 +550,7 @@
 //     Vector_Rotate(vec, mat4x3, &local) — matriz × vector
 //     out[0..2] += local[0..2]  (aplica rotación al offset)
 //
-//   0x0043e5c0  Entity_SmoothAngle(int entity)
+//   0x0043e5c0  Entity_SmoothAngle(intptr_t entity)
 //     entity+0x161 (char flag): si 0 → lerp suave hacia target:
 //       entity+0x168 += (entity+0x164 - entity+0x168) * _DAT_005524f4
 //     Si flag != 0 → snap directo (o animación invertida)
@@ -559,20 +559,20 @@
 //     Función compleja (~40 líneas) con muchos floats y ftol
 //     Actualiza la trayectoria de movimiento de una entidad
 //
-//   0x0043e820  Entity_SetAnimation(int entity, uint animId)
+//   0x0043e820  Entity_SetAnimation(intptr_t entity, uint animId)
 //     Verifica animId < animData[entity.type * 0xbc + 0x26] o == 0x4c/0x4d
 //     Si animId != anim actual:
 //       entity+0x106 = entity+0x105  (prev anim)
 //       entity+0x10c = entity+0x108  (prev anim timer)
 //       entity+0x105 = animId; entity+0x108 = 0  (reset timer)
 //
-//   0x0043e890  Entity_FaceTarget(int entity, int target)
+//   0x0043e890  Entity_FaceTarget(intptr_t entity, int target)
 //     Si target != 0:
 //       Entity_GetDirCode(entity.pos, target.pos)
 //       Angle_Delta(entity.angle, dirCode, 1)
 //       Actualiza entity.angle suavemente
 //
-//   0x0043e940  Entity_AnimTick(int entity)
+//   0x0043e940  Entity_AnimTick(intptr_t entity)
 //     Lee entity+0x105 (anim state). Si != 0x06: avanza frame de animación
 //     Máquina de estados de animación (idle/walk/attack/die/...)
 //
@@ -661,7 +661,7 @@ void NetLog(const char* fmt, ...)
 void Net_ProcessPacket(void)
 {
     while (true) {
-        BYTE* Msg = (BYTE*)CWsctlc_GetReadMsg((int)(uintptr_t)SocketClient);
+        BYTE* Msg = CWsctlc_GetReadMsg(reinterpret_cast<uintptr_t>(SocketClient));
         if (!Msg) return;
 
         int HeadCode, Size;
@@ -718,13 +718,13 @@ void Net_ProcessPacket(void)
                        (hdr == 0xC3) ? '3' : '4', encLen);
                 continue;
             }
-            int needLen = CSimpleModulus_Decode(0, (int)(Msg + hdrSz), encLen, 0);
+            int needLen = CSimpleModulus_Decode(0, Msg + hdrSz, encLen, 0);
             if (needLen <= 0 || needLen > (int)sizeof(scratch)) {
                 NetLog("NET: C%c decode no entra: encLen=%d needLen=%d > scratch=%d — descarto",
                        (hdr == 0xC3) ? '3' : '4', encLen, needLen, (int)sizeof(scratch));
                 continue;
             }
-            int outLen  = CSimpleModulus_Decode((int)scratch, (int)(Msg + hdrSz), encLen, 0);
+            int outLen  = CSimpleModulus_Decode(scratch, Msg + hdrSz, encLen, 0);
             if (outLen <= 0) {
                 NetLog("NET: C%c decode FAILED encLen=%d outLen=%d",
                        (hdr == 0xC3) ? '3' : '4', encLen, outLen);

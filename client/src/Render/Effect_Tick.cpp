@@ -13,6 +13,8 @@
 // Joint pool:   DAT_07b27150, stride 0x9d8 bytes
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/Text.h"
 extern "C" void DbgLogPublic(const char* msg);
@@ -37,7 +39,7 @@ void Effect_TickAll(void)
       })) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);
         const int   subType = *(int*)((char*)pfVar1 + 4);
-        const int   owner   = *(int*)((char*)pfVar1 + 252);
+        const intptr_t owner = *(intptr_t*)&AsObject(pfVar1)->Owner;
         static unsigned char s_seen[2048] = {0};
         if (type >= 0 && type < 2048 && !s_seen[type]) {
           s_seen[type] = 1;
@@ -49,7 +51,7 @@ void Effect_TickAll(void)
         *(char *)pfVar1 = '\0';   // matar el efecto para no repetir el crash
       }
     }
-    pfVar1 = pfVar1 + 0x6f;
+    pfVar1 = pfVar1 + OBJECT_STRIDE / 4;
     iVar2 = iVar2 + 1;
   } while ((uintptr_t)pfVar1 < poolEnd);
 }
@@ -164,13 +166,13 @@ Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4
     verts[3][1] += param_2[1];
     verts[3][2] += param_2[2];
 
-    glBegin(7);  // GL_QUADS
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);  // GL_QUADS
     for (int i = 0; i < 4; i++) {
-      glTexCoord2f(uv[i][0], param_8 + uv[i][1]);
-      glColor3fv((const GLfloat*)&colors[i][0]);
-      glVertex3fv(&verts[i][0]);
+      BufferedDraw::TexCoord2f(uv[i][0], param_8 + uv[i][1]);
+      BufferedDraw::Color3fv((const float*)&colors[i][0]);
+      BufferedDraw::Vertex3fv(&verts[i][0]);
     }
-    glEnd();
+    BufferedDraw::End();
     t = fVar2;
   } while (fVar2 < _DAT_00552664);
   return;
@@ -198,11 +200,11 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 
   GL_BindTextureSlot(param_1);
   GL_SetBlendAdditive();
-  glPushMatrix();
-  glTranslatef(*(float*)&param_2[0],*(float*)&param_2[1],*(float*)&param_2[2]);
+  Gfx::PushMatrix();
+  Gfx::Translate(*(float*)&param_2[0], *(float*)&param_2[1], *(float*)&param_2[2]);
   // 0x3f800000 son los bits de 1.0f: pasarlos como int haría int→float
   // (1065353216.0f) en el eje Z y en los UVs. Van como floats.
-  glRotatef(*(float*)&param_4, 0.0f, 0.0f, 1.0f);
+  Gfx::Rotate(*(float*)&param_4, 0.0f, 0.0f, 1.0f);
   local_30 = -param_3;
   local_28 = 0;
   local_24 = param_3;
@@ -215,17 +217,17 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
   local_2c = local_30;
   local_20 = local_30;
   local_18 = local_30;
-  glBegin(7);   // GL_QUADS
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex3fv(&local_30);
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex3fv(&local_18);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex3fv(&local_c);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex3fv(&local_24);
-  glEnd();
-  glPopMatrix();
+  BufferedDraw::Begin(BufferedDraw::Primitive::Quads);   // GL_QUADS
+  BufferedDraw::TexCoord2f(0.0f, 1.0f);
+  BufferedDraw::Vertex3fv(&local_30);
+  BufferedDraw::TexCoord2f(1.0f, 1.0f);
+  BufferedDraw::Vertex3fv(&local_18);
+  BufferedDraw::TexCoord2f(1.0f, 0.0f);
+  BufferedDraw::Vertex3fv(&local_c);
+  BufferedDraw::TexCoord2f(0.0f, 0.0f);
+  BufferedDraw::Vertex3fv(&local_24);
+  BufferedDraw::End();
+  Gfx::PopMatrix();
   GL_ResetState();
   return;
 }
@@ -235,12 +237,12 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 void Effect_TickFade(void)
 {
   for (int index=0;index<100;++index) {
-    char *slot=g_PlayerRenderPool+index*0x1bc;
+    char *slot=g_PlayerRenderPool+index*OBJECT_STRIDE;
     if (!slot[0]) continue;
     int &life=*(int *)(slot+0x60);
     --life;
     if (life<=0) slot[0]=0;
-    Joint_BoneOffsetApply((int)slot,1);
+    Joint_BoneOffsetApply(reinterpret_cast<BYTE*>(slot),1);
     // IDA lee/escribe estos campos como float, salvo el contador de vida.
     if (life<10) {
       const double fade=(double)life*(double)_DAT_005524f4;
@@ -323,28 +325,13 @@ LAB_004794f9:
 // IDA: MovePoints
 void DamageNumbers_Tick(void)
 {
-  // Mismo pool que CreatePoint/RenderPoints, desplazado +0x18 como en IDA.
-  float *pfVar2 = (float *)((char *)&DAT_07c80110[0] + 0x18);
-  const uintptr_t poolEnd = (uintptr_t)&DAT_07c80110[0] + sizeof(DAT_07c80110);
-  float fVar1;
-
-  do {
-    // El contador de delay (+0x38) es un DWORD en IDA
-    // (`v1 = *((_DWORD *)v0 + 8) - 1;`), no un float: se decrementa como entero.
-    int *pDelay = (int *)&pfVar2[8];
-    if ((*(char *)(pfVar2 + -6) != '\0') && (--(*pDelay) < 0)) {
-      *pfVar2 = pfVar2[0xc] + *pfVar2;
-      fVar1 = pfVar2[0xc] - _DAT_005528b8;
-      pfVar2[0xc] = fVar1;
-      if (fVar1 <= _DAT_00552580) {
-        *(undefined1 *)(pfVar2 + -6) = 0;
-      }
-      fVar1 = pfVar2[-3] - _DAT_00552660;
-      pfVar2[-3] = fVar1;
-      if (fVar1 < _DAT_00552834) {
-        pfVar2[-3] = 15.0;
-      }
+    for (DamagePoint& point : DAT_07c80110) {
+        if (point.Active && --point.Delay < 0) {
+            point.Position[2] = point.LifeTime + point.Position[2];
+            point.LifeTime = point.LifeTime - _DAT_005528b8;
+            if (point.LifeTime <= _DAT_00552580) point.Active = 0;
+            point.Scale = point.Scale - _DAT_00552660;
+            if (point.Scale < _DAT_00552834) point.Scale = 15.0f;
+        }
     }
-    pfVar2 = pfVar2 + 0x1c;
-  } while ((uintptr_t)pfVar2 < poolEnd);
 }

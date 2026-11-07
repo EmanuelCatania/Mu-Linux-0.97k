@@ -17,7 +17,7 @@ DWORD g_trade_requester= 0;   // DAT_05826c00
 char  g_active_shop_name[4]= {};  // lpString_05826bfc
 int   g_cached_shop_slot   = 0;   // DAT_00559684
 BYTE* g_EntityBase    = nullptr;  // DAT_07abf5d0
-DWORD g_LocalEntity   = 0;        // DAT_07abf5d8
+intptr_t g_LocalEntity = 0;        // DAT_07abf5d8
 
 // Sound.cpp — real DirectSound8 globals live in globals.cpp:
 //   g_EnableSound, g_Enable3DSound, g_lpDS, g_lpDS3DListener, wavefile,

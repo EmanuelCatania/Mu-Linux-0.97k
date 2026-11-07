@@ -4,6 +4,7 @@
 // Pases de render del inventario y del equipo.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/MaterialVisuals.h"
 #include "globals.h"
 #include "functions.h"
@@ -11,16 +12,16 @@
 void __cdecl InventoryColor(ITEM* p) {
     if (!p) return;
     switch (p->Color) {
-    case 0:  glColor3f(1.0f, 1.0f, 1.0f); return;        // white (normal)
-    case 1:  glColor3f(0.8f, 0.8f, 0.8f); return;         // light gray
-    case 2:  glColor3f(0.6f, 0.7f, 1.0f); return;         // blue (magic)
+    case 0:  Gfx::Color3f(1.0f, 1.0f, 1.0f); return;        // white (normal)
+    case 1:  Gfx::Color3f(0.8f, 0.8f, 0.8f); return;         // light gray
+    case 2:  Gfx::Color3f(0.6f, 0.7f, 1.0f); return;         // blue (magic)
     case 3:
-    case 99: glColor3f(1.0f, 0.2f, 0.1f); break;          // red (excellent)
-    case 4:  glColor3f(0.5f, 1.0f, 0.6f); return;         // green (set)
-    case 5:  glColor4f(0.8f, 0.7f, 0.0f, 1.0f); return;   // gold
-    case 6:  glColor4f(0.8f, 0.5f, 0.0f, 1.0f); return;   // orange
-    case 7:  glColor4f(0.8f, 0.3f, 0.3f, 1.0f); return;   // pink
-    case 8:  glColor4f(1.0f, 0.0f, 0.0f, 1.0f); return;   // bright red
+    case 99: Gfx::Color3f(1.0f, 0.2f, 0.1f); break;          // red (excellent)
+    case 4:  Gfx::Color3f(0.5f, 1.0f, 0.6f); return;         // green (set)
+    case 5:  Gfx::Color4f(0.8f, 0.7f, 0.0f, 1.0f); return;   // gold
+    case 6:  Gfx::Color4f(0.8f, 0.5f, 0.0f, 1.0f); return;   // orange
+    case 7:  Gfx::Color4f(0.8f, 0.3f, 0.3f, 1.0f); return;   // pink
+    case 8:  Gfx::Color4f(1.0f, 0.0f, 0.0f, 1.0f); return;   // bright red
     }
     // IDA 0x4E2420: el `default` sale sin tocar el color.  Aca habia un
     // glColor3f(1,1,1) que, ademas, pisaba el rojo del case 3/99 (que hace
@@ -132,7 +133,7 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
     if (IsVisualEquipSlotOccupied(slot)) {
         InventoryColor(slot);
     } else {
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -218,7 +219,7 @@ void __stdcall RenderEquipmentBox(void) {
     SetEquipmentSlotPlaceholderColorForIndex(11);
     GL_DrawTexture(0x10E, colPendant, rowBottom, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // RenderEquipmentPart3D @ 0x004E2E40 (~201 lines) — renders one 3D equipment piece
@@ -238,7 +239,7 @@ void __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, f
                      (int)src->Type, src->Level, src->Option1,
                      0, false);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // RenderEquipment3D @ 0x004E3100 — port FIEL desde IDA decompile.
@@ -312,7 +313,7 @@ void __stdcall RenderEquipment3D(void) {
     InventoryColor(GetPanelEquipmentSourceItem(11));
     RenderEquipmentPart3D(11, colPendant, rowBottom, 20.0f, 20.0f);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // RenderItemsBoxes vive en Render/HUD_Pass6.cpp.
@@ -362,7 +363,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
 
                             if (p6 != '\0' && itemType > 0x1bf && itemType < 0x1c9 &&
                                 cell->Durability > 1) {
-                                glColor3f(1.0f, 0.9f, 0.7f);
+                                Gfx::Color3f(1.0f, 0.9f, 0.7f);
                                 RenderNumber2D(x + _DAT_005527dc, y,
                                     (unsigned int)cell->Durability, 9.0f, 10.0f);
                             }
@@ -385,7 +386,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                             int r5 = rand();
                             float fy = (float)(r5 % 0x14) + y;
                             float mixRot = (float)((std::int64_t)WorldTime % 100) * 20.0f;
-                            glColor3f(colorR, colorG, 0.2f);
+                            Gfx::Color3f(colorR, colorG, 0.2f);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, 0);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
                             GL_DrawRotatedRect(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
@@ -410,14 +411,14 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
             if (cell->Type != -1 && (int)cell->Key > 0 &&
                 (int)cell->x == (s % 8) && (int)cell->y == (s / 8) &&
                 cell->Color == 'c') {
-                glColor3f(0.0f, 1.0f, 1.0f);
+                Gfx::Color3f(0.0f, 1.0f, 1.0f);
                 float glowX = (float)((unsigned int)cell->x * 0x14)
                               + (float)DAT_07ea5290 + _DAT_00552834;
                 float sinVal = (float)sin((double)((float)WorldTime * _DAT_005529cc));
                 float glowY = (float)((unsigned int)cell->y * 0x14)
                               + (float)DAT_07ea528c + _DAT_00552938 + sinVal + _DAT_00552660;
                 GL_DrawTexture(9, glowX, glowY, 24.0f, 24.0f, 0.0f, 0.4f, 1.0f, 1.0f, 1, 1);
-                glColor3f(1.0f, 1.0f, 1.0f);
+                Gfx::Color3f(1.0f, 1.0f, 1.0f);
                 // Text rendering for new item label — simplified
                 // (original uses SelectObject, RenderText with bold font)
             }

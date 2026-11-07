@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
@@ -53,7 +54,7 @@ void __cdecl Skill_SaveBMD(const char *path)
     char *p = buf;
     for (const char *end = src + 0xa00; src < end; src += 0x28, p += 0x28) {
         memcpy(p, src, 0x28);
-        BuxConvert_0((int)p, 0x28);
+        BuxConvert_0(p, 0x28);
     }
     crt_fwrite(buf, 0xa00, 1, (int *)fp);
     DWORD cs = DAT_00b43000;
@@ -119,7 +120,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     //     SkillAttribute2[j - 2] *= 2;        // el byte +0x26 de la sombra
     int off = 0;
     do {
-        BuxConvert_0((int)buf, 0x28);
+        BuxConvert_0(buf, 0x28);
         if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
             memcpy(SkillAttribute.Raw + off, buf, 0x28);
         memcpy((char *)DAT_07cf1ff8 + off, buf, 0x28);
@@ -128,4 +129,10 @@ void __cdecl Skill_LoadBMD(const char *path)
         buf += 0x28;
     } while (off <= 0x9ff);
     operator_delete(buf0);
+    // DESVIACION (Fase 4, texto Unicode): nombres (32 bytes) de 1252 a UTF-8.
+    for (off = 0; off + 0x28 <= 0xa00; off += 0x28) {
+        if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
+            TextEngine::ConvertWindows1252InPlace(SkillAttribute.Raw + off, 32);
+        TextEngine::ConvertWindows1252InPlace((char *)DAT_07cf1ff8 + off, 32);
+    }
 }

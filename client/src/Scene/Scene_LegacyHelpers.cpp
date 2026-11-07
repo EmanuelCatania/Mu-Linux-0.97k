@@ -22,7 +22,7 @@ void* __fastcall WidgetB_CtorFull(void *param_1)
 
 // VTable_Release @ 0x0040A860 — VTable_Release
 // Iterates object->edge_list and calls FUN_0040a8f0 on each edge.
-void __cdecl VTable_Release(void *obj, int param_1)
+void __cdecl VTable_Release(void *obj, float* vertices)
 {
     char *this_ = (char*)obj;
     int count = *(int*)(this_ + 0x18);
@@ -30,8 +30,8 @@ void __cdecl VTable_Release(void *obj, int param_1)
     for (int i = 0; i < count; i++) {
         short *psVar1 = (short*)(*(int*)(this_ + 0x1c) + i * 10);
         int iVar2 = (int)psVar1[2] * 15000;
-        float *p1 = (float*)(param_1 + (*psVar1 + iVar2) * 12);
-        float *p2 = (float*)(param_1 + (psVar1[1] + iVar2) * 12);
+        float *p1 = vertices + (*psVar1 + iVar2) * 3;
+        float *p2 = vertices + (psVar1[1] + iVar2) * 3;
         FUN_0040a8f0(obj, p1, p2);
     }
 }
@@ -39,32 +39,33 @@ void __cdecl VTable_Release(void *obj, int param_1)
 // ── Scene entity grid helpers ─────────────────────────────────────────────────
 // Entity_GridUnlink @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
 // Unlinks node from its doubly-linked list in the 16x16 scene grid.
-void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
-    char *param_1 = (char*)param_1_v;
+void __cdecl Entity_GridUnlink(void *param_1_v, void* cell) {
+    OBJECT* param_1 = AsObject(param_1_v);
+    SceneObjectCell* param_2 = static_cast<SceneObjectCell*>(cell);
     if (!param_1) return;
     SceneObjects::Unregister(param_1);
-    int iVar1 = *(int*)(param_1 + 0x1b8); // next
-    int iVar2 = *(int*)(param_1 + 0x1b4); // prev
+    OBJECT* iVar1 = param_1->SceneNext;
+    OBJECT* iVar2 = param_1->ScenePrevious;
     if (iVar1 != 0) {
         if (iVar2 != 0) {
-            *(int*)(iVar2 + 0x1b8) = iVar1;
-            *(int*)(iVar1 + 0x1b4) = *(int*)(param_1 + 0x1b4);
+            iVar2->SceneNext = iVar1;
+            iVar1->ScenePrevious = param_1->ScenePrevious;
             operator_delete(param_1);
             return;
         }
-        *(int*)(iVar1 + 0x1b4) = 0;
-        *(int*)(param_2 + 4) = iVar1;
+        iVar1->ScenePrevious = nullptr;
+        param_2->Head = iVar1;
         operator_delete(param_1);
         return;
     }
     if (iVar2 != 0) {
-        *(int*)(iVar2 + 0x1b8) = 0;
-        *(int*)(param_2 + 8) = iVar2;
+        iVar2->SceneNext = nullptr;
+        param_2->Tail = iVar2;
         operator_delete(param_1);
         return;
     }
-    *(int*)(param_2 + 4) = 0;
-    *(int*)(param_2 + 8) = 0;
+    param_2->Head = nullptr;
+    param_2->Tail = nullptr;
     operator_delete(param_1);
 }
 

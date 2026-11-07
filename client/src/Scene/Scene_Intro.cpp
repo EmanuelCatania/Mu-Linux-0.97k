@@ -116,6 +116,7 @@
 //   CErrorReport_Write  → Log(hashtable, msg)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Scene/Scene_Intro.h"
 
 // Debug trace (defined in WinMain.cpp)
@@ -130,11 +131,11 @@ void __cdecl Scene_Intro(HDC param_1)
     uint        uVar4;
     void       *pvVar5;
     undefined4 *puVar6;
-    int         iVar7, iVar8;
+    intptr_t         iVar7, iVar8;
     byte       *pbVar9, *pbVar10, *pbVar11;
     bool        bVar12, bVar13;
     uint        uVar14;
-    int         iStack_10;
+    intptr_t         iStack_10;
     undefined4 *local_c;
     undefined1 *local_8;
     uint        uStack_4;
@@ -142,15 +143,9 @@ void __cdecl Scene_Intro(HDC param_1)
     DWORD       stack_e8;   // local hash-compare buffer (4 bytes at EBP-0x18)
 
     // Reset Bitmaps table (stride 0x38, ~1414 entries = 0x13D30 bytes)
-    puVar3 = (undefined1*)&DAT_083a7cd0;
-    {
-        // NOTE: loop bound must stay within g_BitmapsRaw[0x13D30]; starts at offset 0x30
-        undefined1 *endPtr = (undefined1*)&g_BitmapsRaw[0] + 0x13D30;
-        do {
-            *(undefined4 *)(puVar3 + 4) = 0;
-            *puVar3 = 0;
-            puVar3 = puVar3 + 0x38;
-        } while (puVar3 + 0x38 <= endPtr);
+    for (int i = 0; i < 0x13D30 / 0x38; ++i) {
+        Bitmaps[i].Ref = 0;
+        Bitmaps[i].Buffer = nullptr;
     }
 
     OpenFont();    // World_Init
@@ -165,16 +160,18 @@ void __cdecl Scene_Intro(HDC param_1)
     // en Game_SceneUpdate al entrar a Login — ruteado via PlayBuffer +
     // kUISounds mapping en Sound_DS3D.cpp. NO tocar aquí (sonaría 2x).
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer);
     GL_Begin2D();                       // GL_SetupOrtho2D
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
+    // DESVIACION: IDA 0x005137A0 deduce la altura desde el ancho (4:3).
+    // Centrar con la altura real conserva 4:3 y corrige pantallas wide.
     // Webzen logo — centered
     uStack_4 = 0;
     local_8 = (undefined1 *)gWindow.GetWidth();
     GL_DrawTexture(0xc,
         (float)gWindow.GetWidth() * _DAT_00552504 - _DAT_005529bc,
-        (float)gWindow.GetWidth() * _DAT_00552d3c - _DAT_00552d38,
+        (float)gWindow.GetHeight() * _DAT_00552504 - _DAT_00552d38,
         256.0f, 195.0f, 0.0f, 0.0f, 1.0f, 0.76171875f, '\0', '\0');
 
     // ESRB "Everyone" badge — top right
@@ -186,13 +183,13 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Debug overlay (only in bypass mode)
     if (DAT_083a410c != '\0') {
-        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
-        UI_RenderText(0, 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
+        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
+        UI_RenderText(gWindow.PanelOrigin(Ui::WindowLeft), 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
     }
 
     GL_End2D();           // GL_End2D
     GL_PopMatrixAll();
-    glFlush();
+    Gfx::Flush();
     gWindow.Present();
 
     // Unload splash textures immediately after display
@@ -217,9 +214,9 @@ void __cdecl Scene_Intro(HDC param_1)
     // Spawn local entity at hardcoded position (5414.4f, 21981.5f)
     // 0x44a8c000 = 1350.0f (x), 0x46a9ec00 = 21742.0f (y)
     local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
-    puVar1  = (undefined4 *)(local_8 + 0x388);
+    puVar1  = (undefined4 *)(local_8 + EntityOffset(0x388));
     local_c = puVar1;
-    uVar4   = (**(code **)(MAIN_HASH_CLASS + 0xc))(puVar1);
+    uVar4   = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
 
     // HashTable anti-tamper tracking (ref-count register/unregister, not game logic)
     uVar14 = 0;
@@ -264,13 +261,13 @@ void __cdecl Scene_Intro(HDC param_1)
 
 LAB_00513a36:
     pvVar5 = AntiTamper_HashNode();
-    *(undefined1 *)((int)pvVar5 + 4) = 1;
+    static_cast<BYTE*>(pvVar5)[4] = 1;
     HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
 
 LAB_00513a50:
     iVar7 = MAIN_HASH_CLASS;
     *puVar1 = 0xd;
-    uVar4 = (**(code **)(iVar7 + 0xc))(puVar1);
+    uVar4 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
     uStack_4 = 0;
     if (DAT_055c9bd4 != 0) {
         do {
@@ -309,11 +306,11 @@ LAB_00513a50:
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 
 LAB_00513b4e:
-    puVar1 = (undefined4 *)(iStack_10 + 0x38c);
+    puVar1 = (undefined4 *)(iStack_10 + EntityOffset(0x38c));
     uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 == 0xffffffff) {
         pvVar5 = AntiTamper_HashNode();
-        *(undefined1 *)((int)pvVar5 + 4) = 1;
+        static_cast<BYTE*>(pvVar5)[4] = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
     }
     *puVar1 = 0xd9;

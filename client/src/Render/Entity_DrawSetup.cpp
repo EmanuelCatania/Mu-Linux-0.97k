@@ -30,15 +30,17 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
+#include "Render/Gfx.h"
 #include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 
-void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
+void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,
                            undefined4 param_7, uint param_8)
 {
-    void   *this_;
+    BYTE   *this_;
     short   sVar3;
     short   effectType;
     byte    bVar4;
@@ -146,54 +148,54 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     // pecho de los personajes demo del server-select (sin armadura). Eliminados
     // para ser fieles a IDA.
 
-    this_ = (void *)(DAT_05828d58 + param_2 * 0xbc);
+    this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + param_2 * BMD_STRIDE);
     sVar3 = *(short *)(param_1 + 2);
     effectType = sVar3;
 
     if (effectType == 505) {
-        *(float *)((int)this_ + 0x48) = 0.5f;
-        *(float *)((int)this_ + 0x4c) = 0.5f;
-        *(float *)((int)this_ + 0x50) = 1.5f;
-        *(char *)((int)this_ + 0x88) = 0;
-        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 1.5f;
+        *(char *)&((BMD*)(uintptr_t)(this_))->StreamMesh = 0;
+        BMD__RenderBody(this_, 2, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
-        *(char *)((int)this_ + 0x88) = -1;
+        *(char *)&((BMD*)(uintptr_t)(this_))->StreamMesh = -1;
     }
     else if (effectType == 831) {
         if (ItemLevelFx == 0) {
-            *(float *)((int)this_ + 0x48) = 0.0f;
-            *(float *)((int)this_ + 0x4c) = 0.5f;
-            *(float *)((int)this_ + 0x50) = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.5f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 1.0f;
         }
         else if (ItemLevelFx == 1) {
-            *(float *)((int)this_ + 0x48) = 1.0f;
-            *(float *)((int)this_ + 0x4c) = 0.2f;
-            *(float *)((int)this_ + 0x50) = 0.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.2f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0.0f;
         }
         else if (ItemLevelFx == 2) {
-            *(float *)((int)this_ + 0x48) = 1.0f;
-            *(float *)((int)this_ + 0x4c) = 0.8f;
-            *(float *)((int)this_ + 0x50) = 0.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.8f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0.0f;
         }
         else if (ItemLevelFx == 3) {
-            *(float *)((int)this_ + 0x48) = 0.65f;
-            *(float *)((int)this_ + 0x4c) = 0.8f;
-            *(float *)((int)this_ + 0x50) = 0.4f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.65f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.8f;
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0.4f;
         }
-        BMD__RenderBody(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 8, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
-        BMD__RenderBody(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 0x44, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
         return;
     }
     else if (effectType == 958) {
-        *(float *)((int)this_ + 0x48) = 1.0f;
-        *(float *)((int)this_ + 0x4c) = 1.0f;
-        *(float *)((int)this_ + 0x50) = 1.0f;
-        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 1.0f;
+        BMD__RenderBody(this_, 2, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), -1, -1);
         BMD__RenderBody(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
@@ -205,30 +207,30 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     // ── Status-flag tints (entity +0x78 bits) ─────────────────────────────────
     else if (effectType == 833) {
         float rotU;
-        *(float *)((int)this_ + 0x48) = 0.9f;
-        *(float *)((int)this_ + 0x4c) = 0.1f;
-        *(float *)((int)this_ + 0x50) = 0.1f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.9f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.1f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0.1f;
         rotU = sinf((float)gMapManager.GetCurrentMap() * 0.0001f);
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
-        *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
-        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        *(char *)(DAT_05828d58 + effectType * BMD_STRIDE + 0x88 + BMD_FIELD_SHIFT) = 0;
+        BMD__RenderBody(this_, 2, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
-        *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = -1;
-        *(float *)((int)this_ + 0x48) = 1.0f;
-        *(float *)((int)this_ + 0x4c) = 1.0f;
-        *(float *)((int)this_ + 0x50) = 1.0f;
-        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        *(char *)(DAT_05828d58 + effectType * BMD_STRIDE + 0x88 + BMD_FIELD_SHIFT) = -1;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 1.0f;
+        BMD__RenderBody(this_, 2, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), -1);
         return;
     }
     else if (effectType == 834) {
         float pulse;
-        *(float *)((int)this_ + 0x48) = 0.8f;
-        *(float *)((int)this_ + 0x4c) = 0.8f;
-        *(float *)((int)this_ + 0x50) = 0.8f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.8f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.8f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0.8f;
         pulse = sinf((float)WorldTime * 0.002f) * 0.3f + 0.7f;
         BMD__RenderBody(this_, 0x42, 1.0f, 0, pulse,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
@@ -240,7 +242,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(int *)(param_1 + 100) = 1;
         wave = sinf((float)WorldTime * 0.002f) * 10.0f + 15.65f;
         *(float *)(param_1 + 104) = wave;
-        *(float *)(param_1 + 0x168) = 2.0f;
+        *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = 2.0f;
         *(float *)(param_1 + 0x70) = (float)((long long)WorldTime % 2000) * 0.0005f;
         *(float *)(param_1 + 0xe8) = wave * 0.2f;
         *(float *)(param_1 + 0xec) = wave * 0.2f;
@@ -311,10 +313,10 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     if (*(BYTE *)(param_1 + 140) != 0) {
         if (gMapManager.GetCurrentMap() == 7) {
             EnableAlphaTest(true);
-            glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
+            Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.2f);
         } else {
             GL_ResetState();
-            glColor3f(0.0f, 0.0f, 0.0f);
+            Gfx::Color3f(0.0f, 0.0f, 0.0f);
         }
         if (gMapManager.GetCurrentMap() != 10)
             BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));
@@ -324,15 +326,15 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     bVar4 = (byte)*(uint *)(param_1 + 0x78);
     if ((*(uint *)(param_1 + 0x78) & 1) == 1) {
         // bit 0 set → poisoned/slowed color (green-tinted)
-        *(float *)((int)this_ + 0x48) = 0.3f;   // 0x3e99999a
-        *(float *)((int)this_ + 0x4c) = 1.0f;   // 0x3f800000
-        *(float *)((int)this_ + 0x50) = ((bVar4 & 2) == 2) ? 1.0f : 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.3f;   // 0x3e99999a
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 1.0f;   // 0x3f800000
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = ((bVar4 & 2) == 2) ? 1.0f : 0.5f;
     }
     else if ((bVar4 & 2) == 2) {
         // bit 1 set → frozen color (blue-tinted)
-        *(float *)((int)this_ + 0x48) = 0.3f;
-        *(float *)((int)this_ + 0x4c) = 0.5f;
-        *(float *)((int)this_ + 0x50) = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.3f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 1.0f;
     }
     else {
         // ── +N item-level glow (IDA RenderPartObjectEffect L415-510) ───────────
@@ -354,9 +356,9 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 float mixG  = baseB * 0.60000002f;
                 float mixB  = mixG;
                 // Component-wise multiply: model.color[i] = mix[i] * light[i]
-                *(float*)((int)this_ + 0x48) = mixR * param_3[0];
-                *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
-                *(float*)((int)this_ + 0x50) = mixB * param_3[2];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = mixR * param_3[0];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = mixG * param_3[1];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = mixB * param_3[2];
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
@@ -366,35 +368,35 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 float mixR  = baseB * 0.5f;
                 float mixG  = baseB * 0.69999999f;
                 float mixB  = baseB;
-                *(float*)((int)this_ + 0x48) = mixR * param_3[0];
-                *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
-                *(float*)((int)this_ + 0x50) = mixB * param_3[2];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = mixR * param_3[0];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = mixG * param_3[1];
+                *(float*)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = mixB * param_3[2];
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
             else if (ItemLevel < 8) {
                 // +7 — tint * 0.4 + 1 extra body color render
-                *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
-                *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
-                *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2] * 0.80000001f;
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel == 8) {
                 // +8 — same as +7 (caída por else)
-                *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
-                *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
-                *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1] * 0.80000001f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2] * 0.80000001f;
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel < 10) {
                 // +9 — tint * 0.9 + DOUBLE body color render (0x44 y 0x48)
-                *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
-                *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
-                *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2] * 0.89999998f;
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
@@ -403,9 +405,9 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             }
             else if (ItemLevel < 11) {
                 // +10 — same pattern
-                *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
-                *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
-                *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2] * 0.89999998f;
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
@@ -414,9 +416,9 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             }
             else if (ItemLevel < 12) {
                 // +11 — además Entity_SetModelColorAlt con flag 0x240 (extra mesh)
-                *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
-                *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
-                *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1] * 0.89999998f;
+                *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2] * 0.89999998f;
                 BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 Entity_SetModelColorAlt(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
@@ -428,9 +430,9 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
 
         if (!didExtraRender) {
             // ── Normal path (level 0-2): copy light directly ────────────────
-            *(float *)((int)this_ + 0x48) = param_3[0];
-            *(float *)((int)this_ + 0x4c) = param_3[1];
-            *(float *)((int)this_ + 0x50) = param_3[2];
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = param_3[0];
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = param_3[1];
+            *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = param_3[2];
             BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
         }
         // skip the unconditional BMD_SetupRenderByType below (we already called it)
@@ -450,9 +452,9 @@ LAB_after_render: ;
     if (((param_6 & 0x3f) != 0) && ((pulseType < 0x310) || (0x316 < pulseType))) {
         fVar10 = (float10)fsin((float10)WorldTime * (float10)_DAT_005528e0);
         fVar10 = (fVar10 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
-        *(float *)((int)this_ + 0x48) = (float)fVar10;
-        *(float *)((int)this_ + 0x4c) = (float)(fVar10 * (float10)_DAT_005528b8);
-        *(float *)((int)this_ + 0x50) = (float)((float10)_DAT_0055256c - fVar10);
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = (float)fVar10;
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = (float)(fVar10 * (float10)_DAT_005528b8);
+        *(float *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = (float)((float10)_DAT_0055256c - fVar10);
 
         // flags=0x42 (int flags, NOT a pointer!), f1=1.0, then anim data
         BMD__RenderBody(this_, 0x42, 1.0f,
@@ -464,7 +466,7 @@ LAB_after_render: ;
     }
 }
 
-void Equipment_EmitWing790(void *this_, int param_1, int owner) {
+void Equipment_EmitWing790(void *this_, intptr_t param_1, intptr_t owner) {
 
         float fxLight[3];
         float zeroPos[3];

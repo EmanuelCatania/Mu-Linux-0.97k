@@ -33,32 +33,35 @@ void __cdecl SendRequestAction(BYTE actionType)
 
 // IDA: SetActionClass (0x00497870). La elfa usa la animacion siguiente salvo
 // en las acciones 123..128, que son comunes a todas las clases.
-void __cdecl SetActionClass(int c, int o, int action, int actionType)
+void __cdecl SetActionClass(CHARACTER* character, OBJECT* object, int action, int actionType)
 {
-    BYTE cur = *(BYTE*)(o + 261);
+    const BYTE* c = reinterpret_cast<const BYTE*>(character);
+    const BYTE* o = reinterpret_cast<const BYTE*>(object);
+    BYTE cur = *(BYTE*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
     if (cur == 0 || cur > 12) return;
     int act = action;
-    if ((*(BYTE*)(c + 444) & 7) == 2 && (action < 123 || action > 128))
+    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2 && (action < 123 || action > 128))
         act = action + 1;
-    SetAction(o, act);
+    SetAction(object, act);
     SendRequestAction((BYTE)actionType);
 }
 
-// Emoticones de .rdata 0x00559E2C..0x00559E74 (los bytes >= 0x80 son EUC-KR).
+// Emoticones de .rdata 0x00559E2C..0x00559E74. En el binario los coreanos
+// están en EUC-KR; el texto del cliente es UTF-8, así que acá van en UTF-8.
 static char s_Semicolon[] = ";";                   // 0x559E2C
-static char s_Kr_TT1[]    = "\xA4\xD0.\xA4\xD0";   // 0x559E30
-static char s_Kr_TT2[]    = "\xA4\xCC.\xA4\xCC";   // 0x559E38
+static char s_Kr_TT1[]    = "\xE3\x85\xA0.\xE3\x85\xA0";   // 0x559E30
+static char s_Kr_TT2[]    = "\xE3\x85\x9C.\xE3\x85\x9C";   // 0x559E38
 static char s_TT[]        = "T_T";                 // 0x559E40
-static char s_Kr_Dot1[]   = "\xA4\xD1.\xA4\xD1";   // 0x559E44
-static char s_Kr_Dot2[]   = "\xA4\xD1.,\xA4\xD1";  // 0x559E4C
-static char s_Kr_Dot3[]   = "\xA4\xD1,.\xA4\xD1";  // 0x559E54
+static char s_Kr_Dot1[]   = "\xE3\x85\xA1.\xE3\x85\xA1";   // 0x559E44
+static char s_Kr_Dot2[]   = "\xE3\x85\xA1.,\xE3\x85\xA1";  // 0x559E4C
+static char s_Kr_Dot3[]   = "\xE3\x85\xA1,.\xE3\x85\xA1";  // 0x559E54
 static char s_DashDot[]   = "-.-";                 // 0x559E5C
 static char s_DashUnd[]   = "-_-";                 // 0x559E60
 static char s_Caret[]     = "^^";                  // 0x559E64
 static char s_CaretDot[]  = "^.^";                 // 0x559E68
 static char s_CaretUnd[]  = "^_^";                 // 0x559E6C
-static char s_Kr_Slash[]  = "/\xA4\xD1";           // 0x559E70
-static char s_Kr_Caret[]  = "\xA4\xD1^";           // 0x559E74
+static char s_Kr_Slash[]  = "/\xE3\x85\xA1";           // 0x559E70
+static char s_Kr_Caret[]  = "\xE3\x85\xA1^";           // 0x559E74
 
 static bool AnyGlobal(char* text, int first, int last)
 {
@@ -76,7 +79,7 @@ static bool AnyOf(char* text, std::initializer_list<char*> words)
 
 static void Gesture(int action, BYTE actionType)
 {
-    SetActionClass((int)Hero, (int)Hero, action, actionType);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), action, actionType);
     SendRequestAction(actionType);
 }
 

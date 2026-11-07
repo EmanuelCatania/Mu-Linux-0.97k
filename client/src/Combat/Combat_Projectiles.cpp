@@ -13,45 +13,46 @@
 // visual effect, plays sound, sets CurrentSkill, then dispatches through
 // two switch tables: first by weapon-type for the projectile, second by
 // adjusted weapon-type (+400) for the trail effect.
-void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
+void __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey) {
     // Read weapon types from character equipment slots
     int weaponType0 = (int)AsCharacter(c)->Weapon[0].Type;  // Weapon[0].Type
     int weaponType1 = (int)AsCharacter(c)->Weapon[1].Type;  // Weapon[1].Type
 
-    bool isHero = (c == (DWORD)DAT_07abf5d8);
+    bool isHero = (reinterpret_cast<const void*>(static_cast<std::uintptr_t>(c)) == DAT_07abf5d8);
 
     if (isHero) {
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt/lookup)
         // Read weapon types from CharacterMachine instead
-        DWORD cm = (DWORD)DAT_07cf1ffc;
+        const BYTE* cm = static_cast<const BYTE*>(DAT_07cf1ffc);
         // The projectile switch uses CharacterMachine+536; its companion
         // trail switch uses +604.
         weaponType0 = (int)*(short*)(cm + 0x218);
         weaponType1 = (int)*(short*)(cm + 0x25C);
     }
 
-    // Adjust: add ITEM_BASE_MODEL (400) if not -1
+    // IDA 0x474370: el +400 se suma SOLO en la rama del héroe, porque
+    // CharacterMachine guarda el tipo de item; las armas de otra entidad
+    // (c+624/c+648) ya son el modelo vanilla que imita el item.  Sumarlo
+    // siempre dejaba sin flecha a la elfa vista desde otro cliente.
     int adjType0 = weaponType0;
-    if (weaponType0 != -1) {
-        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + ITEM_MODEL_BASE;   // 0.97.20
-    }
     int adjType1 = weaponType1;
-    if (weaponType1 != -1) {
+    if (isHero && weaponType0 != -1)
+        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + ITEM_MODEL_BASE;   // 0.97.20
+    if (isHero && weaponType1 != -1)
         adjType1 = gContentCatalog.GetItemBehavior(weaponType1) + ITEM_MODEL_BASE;
-    }
 
     // Play sound based on SKKey
     DWORD effectFlags = 0;
     if ((char)SKKey == '4') {
         effectFlags = 2;
-        PlayBuffer(0x41, (DWORD)o, 0);
+        PlayBuffer(0x41, AsObject(o), 0);
     }
 
     // Set CurrentSkill
     CurrentSkill = (DWORD)(SKKey & 0xFF);
 
     if ((char)SKKey == '3') {
-        PlayBuffer(0x65, (DWORD)o, 0);
+        PlayBuffer(0x65, AsObject(o), 0);
     }
 
     // Pointers for CreateEffect calls
@@ -174,7 +175,7 @@ void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill
 // SKKey '3'/'4': single arrow + counter increment.
 // Skill 1: triple shot (center + 2 angle offsets).
 // Skill 2: five-way shot with 4 additional angle offsets.
-void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
+void __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey) {
     // 0x00474BD0 — Multi-arrow skill handler.
     // SKKey '3' or '4': single arrow + increment arrow counter in CharacterMachine.
     // Skill 1: triple shot (center + 2 angle offsets via _DAT_00552834 / _DAT_0055284c).
@@ -193,7 +194,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
         // anti-tamper hash table — skipped (encrypt CharacterMachine)
         // Increment the native projectile serial at CharacterMachine +1408.
         // CharacterMachine = DAT_07cf1ffc
-        char* cm = (char*)(DWORD)DAT_07cf1ffc;
+        char* cm = static_cast<char*>(DAT_07cf1ffc);
         cm[1408] = cm[1408] + 1;
         // anti-tamper hash table — skipped (decrypt CharacterMachine)
     }
@@ -210,7 +211,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
             *pAngleZ += _DAT_00552834;  // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
-            char* cm = (char*)(DWORD)DAT_07cf1ffc;
+            char* cm = static_cast<char*>(DAT_07cf1ffc);
             cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }
@@ -227,7 +228,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
             *pAngleZ += _DAT_00552834;   // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
-            char* cm = (char*)(DWORD)DAT_07cf1ffc;
+            char* cm = static_cast<char*>(DAT_07cf1ffc);
             cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }

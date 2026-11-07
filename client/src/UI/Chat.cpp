@@ -16,6 +16,11 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Net/NetText.h"
+#include "UI/ChatTypes.h"
+#include "Text/TextCore.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Config/UserSettings.h"
 
@@ -43,7 +48,7 @@ static void ScaleGlobalTextSize(void)
     float rx = gWindow.GetScreenRateX(), ry = gWindow.GetScreenRateY();
     if (rx <= 0.0f) rx = 1.0f;
     if (ry <= 0.0f) ry = 1.0f;
-    lpsz_07e113d0 = (LPSIZE)(LONG)((double)(LONG)(intptr_t)lpsz_07e113d0 / (double)rx);
+    g_TextExtent07E113D0.cx = (LONG)((double)g_TextExtent07E113D0.cx / (double)rx);
     _DAT_07e113d4 = (LONG)((double)(LONG)_DAT_07e113d4 / (double)ry);
 }
 
@@ -61,20 +66,20 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
             undefined4 param_6)
 {
   int c;
-  LPSIZE *lpsz;
+  const int maxWidth = (int)(intptr_t)param_4;
 
   c = Platform::TextLength(param_3);
-  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
-  lpsz = &lpsz_07e113d0;
-  gFont.MeasureText(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
-  if ((0 < (int)param_4) && ((int)param_4 < (int)lpsz_07e113d0)) {
-    lpsz_07e113d0 = param_4;
+  UI_DrawText(param_1,param_2,(char*)param_3,maxWidth,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
+  LPSIZE lpsz = &g_TextExtent07E113D0;
+  gFont.MeasureText(gFont.GetTextDC(),param_3,c,lpsz);
+  if ((0 < maxWidth) && (maxWidth < g_TextExtent07E113D0.cx)) {
+    g_TextExtent07E113D0.cx = maxWidth;
   }
   // IDA RenderText @0x47F650: TextSize.cx /= g_fScreenRate_x; .cy /= g_fScreenRate_y;
   ScaleGlobalTextSize();
   // IDA devuelve &TextSize; el CONCAT44 con lVar1>>32 era ruido de Ghidra
   // (par de registros del retorno de 64 bits).
-  return CONCAT44(0,&lpsz_07e113d0);
+  return (undefined8)(uintptr_t)&g_TextExtent07E113D0;
 }
 
 
@@ -97,14 +102,15 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
     SetBackgroundTextColor = 0;
 
     if (hide == 1 || hide == 2) {
-        size_t i = 0;
-        if (hide == 2) {
-            // IDA 0x47F12A..0x47F144: copy bytes 0..6 from this slot.
-            memcpy(text, input, 7);
-            i = 7;
-        }
-        const size_t length = strlen(input);
-        for (; i < length; ++i) text[i] = '*';
+        // DESVIACION (Fase 4, texto Unicode): un '*' por letra visible, no por
+        // byte; el prefijo visible del modo 2 (IDA: 7 bytes) se corta sin
+        // partir una letra.
+        const std::string_view value(input);
+        size_t shown = hide == 2 ? TextEngine::FitBytes(value, 7) : 0;
+        memcpy(text, input, shown);
+        size_t i = shown;
+        const size_t stars = TextEngine::ClusterCount(value.substr(shown));
+        for (size_t n = 0; n < stars && i + 1 < sizeof(text); ++n) text[i++] = '*';
         text[i] = 0;
     } else {
         strcpy(text, input);
@@ -175,7 +181,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     char *dst;
     char text1[256], text2[256];
     if (sz.cx >= 256) {
-        CutText(param_1, (int)(uintptr_t)text1, text2, (int)strlen(param_1));
+        CutText(param_1, text1, text2, (int)strlen(param_1));
         int next = DAT_07e11d9c + 1;
         strcpy(notice + 264 * DAT_07e11d9c, text2);
         if (next > 5) {
@@ -209,7 +215,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   char local_200 [256];
   char local_100 [256];
 
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
   lpsz = &local_208;
   iVar2 = Platform::TextLength(param_1);
   gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
@@ -256,7 +262,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
       cVar1 = *pcVar6;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    CutText((undefined4 *)param_1,(int)local_100,(undefined4 *)local_200,~uVar4 - 1);
+    CutText((undefined4 *)param_1,local_100,(undefined4 *)local_200,~uVar4 - 1);
     uVar4 = 0xffffffff;
     iVar2 = DAT_07e11d9c + 1;
     pcVar6 = local_200;
@@ -363,12 +369,12 @@ void UI_RenderNotices(void)
   int iVar2;
   longlong lVar3;
   tagSIZE *lpsz;
-  LPSIZE *lpsz_00;
+  LPSIZE lpsz_00;
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
-  glColor3f(1.0f, 1.0f, 1.0f);
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
   for (int slot = 0; slot < 6; ++slot) {
@@ -387,9 +393,9 @@ void UI_RenderNotices(void)
       iVar1 = iVar2 + -0x118;
     }
     UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0, 256);
-    lpsz_00 = &lpsz_07e113d0;
+    lpsz_00 = &g_TextExtent07E113D0;
     iVar1 = Platform::TextLength(lpString);
-    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,lpsz_00);
     // IDA RenderNotices @0x47FCE0 hace exactamente esto acá.
     ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     lpString = lpString + 0x108;
@@ -418,14 +424,14 @@ void UI_RenderChatLogOverlay(void)
   bool bVar8;
   longlong lVar9;
   tagSIZE *lpsz;
-  LPSIZE *lpsz_00;
+  LPSIZE lpsz_00;
   int local_10c;
   tagSIZE local_108;
   CHAR local_100 [256];
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
-  glColor3f(1.0f, 1.0f, 1.0f);
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
   iVar7 = 0;
   local_10c = 0;
   do {
@@ -485,18 +491,20 @@ void UI_RenderChatLogOverlay(void)
       lpsz = &local_108;
       iVar3 = Platform::TextLength(local_100);
       gFont.MeasureText(gFont.GetTextDC(),local_100,iVar3,lpsz);
-      iVar3 = DAT_083a427c;
-      bVar8 = -1 < DAT_083a427c;
+      iVar3 = (int)DAT_083a427c;
+      // DESVIACION (Fase 4, pantalla ancha): las líneas van pegadas al borde
+      // izquierdo de la ventana (x = -shift), no al del 4:3.
+      bVar8 = gWindow.PanelOrigin(Ui::WindowLeft) - 1 < iVar3;
       // &DAT_07df9494 es int* (alias a offset
       // 0x114 del buffer), sumarle iVar5*0x118 como int* avanzaría 4x. Casteo
       // a char* antes de sumar el stride-en-bytes 0x118 para que el LONG
       // aterrice en el slot correcto.
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
       uVar2 = SetBackgroundTextColor;
-      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()))) &&
+      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) + gWindow.PanelOrigin(Ui::WindowLeft))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
-         (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
-        pbVar4 = (byte *)(DAT_07abf5d8 + 0x1c1);
+         (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0')) {
+        pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
         do {
           bVar1 = *pbVar6;
           bVar8 = bVar1 < *pbVar4;
@@ -519,10 +527,10 @@ LAB_00480b8e:
           DAT_00559c78 = uVar2;
         }
       }
-      UI_DrawText(0,iVar7,local_100,0,1,0, sizeof(local_100));
-      lpsz_00 = &lpsz_07e113d0;
+      UI_DrawText(gWindow.PanelOrigin(Ui::WindowLeft),iVar7,local_100,0,1,0, sizeof(local_100));
+      lpsz_00 = &g_TextExtent07E113D0;
       iVar5 = Platform::TextLength(local_100);
-      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,lpsz_00);
       ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     }
     iVar7 = iVar7 + 0xd;
@@ -559,7 +567,7 @@ void UI_TickHoverBubbles(void)
       c->LifeTime[1] = c->LifeTime[1] + -1;
     }
     const char* owner = (const char*)c->Owner;
-    if ((owner != nullptr) && ((*owner == '\0' || (owner[0x160] == '\0')))) {
+    if ((owner != nullptr) && ((*owner == '\0' || (owner[EntityOffset(0x160)] == '\0')))) {
       c->IDLifeTime = 0;
       c->LifeTime[0] = 0;
       c->LifeTime[1] = 0;
@@ -571,9 +579,9 @@ void UI_TickHoverBubbles(void)
         (c->y <= DAT_083a4278) &&
         (DAT_083a4278 < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
         (DAT_00559c84 != '\0') && (AsCharacter(DAT_07abf5d8)->SafeZone != '\0') &&
-        strcmp(c->ID, AsCharacter(DAT_07abf5d8)->ID) != 0 &&
+        strcmp(ChatDisplayName(c), EntityName::Get(DAT_07abf5d8)) != 0 &&
         (MouseRButtonPush != '\0')) {
-      strcpy((char *)DAT_07db8810, c->ID);
+      TextEngine::CopyTruncated((char *)DAT_07db8810, NetText::CharacterNameSize + 1, ChatDisplayName(c));
       DAT_07d780ac = (DWORD)strlen((char *)DAT_07db8810);
       MouseRButtonPush = '\0';
       PlayBuffer(0x19,0,0);
@@ -610,8 +618,8 @@ char Chat_ValidateInputCommand(void)
   } while (cVar1 != '\0');
   if (0 < (int)(~uVar2 - 1)) {
     do {
-      if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-        local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+      if (((char*)DAT_07db8710)[iVar3] != ' ') {
+        local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
         iVar4 = iVar4 + 1;
       }
       uVar2 = 0xffffffff;
@@ -649,8 +657,8 @@ char Chat_ValidateInputCommand(void)
     } while (cVar1 != '\0');
     if (0 < (int)(~uVar2 - 1)) {
       do {
-        if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-          local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+        if (((char*)DAT_07db8710)[iVar3] != ' ') {
+          local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
           iVar4 = iVar4 + 1;
         }
         uVar2 = 0xffffffff;

@@ -1,7 +1,9 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Item/ContentCatalog.h"
 #pragma warning(disable: 4554 4244 4700)
 #include "Render/Camera.h"
+#include "Render/Materials.h"
 
 // External math helpers are declared in functions.h (included via stdafx.h)
 
@@ -46,13 +48,15 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // terreno en los bordes.  Acá se arma con la proyección de verdad
     // (gluPerspective: semialto tan(FOV/2), semiancho * W/H de la ventana,
     // que en pantallas anchas no es 4:3).
-    if (SceneFlag == 5) {
+    if (SceneFlag == 5 || gWindow.IsWide()) {
         const long double depth = (long double)(Ff(DAT_00561550) * _DAT_005526e8);
         near_h = fov_tan * depth + (long double)_DAT_005524f0;
         const long double aspect = (gWindow.GetHeight() > 0)
-            ? (long double)gWindow.GetWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
+            ? (long double)gWindow.GetRealWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
         near_w = fov_tan * depth * (long double)param_1 * aspect + (long double)_DAT_005524f0;
     }
+    // En selección y login anchos se usa también el semialto de la proyección:
+    // ensanchar sólo near_w conserva un frustum demasiado bajo y recorta terreno.
     float near_dist     = -(Ff(DAT_00561550) * _DAT_005526e8);  // negative near depth
 
     // Step 2 — 5 view-space corners ───────────────────────────────────────────
@@ -196,7 +200,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 // out_ray[0..2] = world-space ray direction vector
 void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 {
-    float view_x = ((float)gWindow.GetWidth() * (float)mouseX / 0x280 - Ff(ViewportCenterX)) *
+    float view_x = ((float)gWindow.PixelFromUiX(mouseX) - Ff(ViewportCenterX)) *
                    Ff(DAT_083a42a4) * Ff(DAT_00561550);
     float view_y = -((float)gWindow.GetHeight() * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
                    Ff(DAT_083a42a8) * Ff(DAT_00561550);
@@ -223,7 +227,7 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 // CÓDIGO MUERTO: esta función NO se llama. Es una decompilación errónea
 // que asume corners en DAT_07eab1bc..1e8 (que ya están en world coords post
 // Camera_SetupFrustum). La verdadera FUN_004F8EB0 (CreateFrustrum2D) vive en
-// src/Net/SecondPassword.cpp — usa 4 corners hardcoded escalados por
+// src/Terrain/Terrain_RenderTerrain.cpp — usa 4 corners hardcoded escalados por
 // GetScreenWidth(), rotados Z=45°, trasladados por cam_pos. Se mantiene por la
 // declaración en Camera.h pero no debe llamarse.
 void __cdecl Camera_SetMatrix(float *cam_pos)
@@ -342,11 +346,9 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
   // Scale from real-window pixels to logical 640×480
   // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
   // a (int) del divisor esta justamente para eso).
-  int ww = (int)gWindow.GetWidth();
   int wh = (int)gWindow.GetHeight();
-  if (ww == 0) ww = 640;
   if (wh == 0) wh = 480;
-  int outX = 640 * sx / ww;
+  int outX = gWindow.UiXFromPixel(sx);
   int outY = 480 * sy / wh;
 
 
@@ -368,14 +370,15 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   uint uVar3;
   uint uVar4;
 
-  uVar1 = gWindow.GetWidth() * param_1;
+  int viewportX, viewportWidth;
+  gWindow.ViewportX(param_1, param_3, viewportX, viewportWidth);
   uVar2 = gWindow.GetHeight() * param_2;
-  uVar3 = (uint)(gWindow.GetWidth() * param_3) / 0x280;
+  uVar3 = (uint)viewportWidth;
   uVar4 = (uint)(gWindow.GetHeight() * param_4) / 0x1e0;
-  glMatrixMode(0x1701);
-  glPushMatrix();
-  glLoadIdentity();
-  GL_SetViewport(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
+  GL_SetViewport(viewportX,uVar2 / 0x1e0,uVar3,uVar4);
   // DAT_00561550 es DWORD (bit-pattern float): reinterpretar con Ff() antes de
   // multiplicar. `DAT_00561550 * float` haría int→float (0x461c4000=10000.0f
   // pasaría a 1.17e9) y daría un far plane astronómico.
@@ -387,56 +390,77 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   // Solo el far necesita Ff() en el caller porque lo multiplicamos por _DAT_00552d34
   // (1.4f) ANTES de pasarlo — la multiplicación es en float-space aquí.
   GL_SetPerspective(DAT_00561554,(float)uVar3 / (float)uVar4,DAT_0056154c,Ff(DAT_00561550) * _DAT_00552d34);
-  glMatrixMode(0x1700);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   // Los ángulos DAT_083a42b8/bc/c0 son DWORD (bit-pattern de float): en el asm
   // original FLD los lee como float. Pasarlos directo a glRotatef haría int→float
   // (pitch=-40.0f, 0xc2200000, saldría 3.26e9°): se reinterpretan con Ff(). El
   // eje va como 1.0f literal, no como el bit pattern 0x3f800000.
-  glRotatef(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
+  Gfx::Rotate(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
   if (CameraTopViewEnabled == '\0') {
-    glRotatef(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
+    Gfx::Rotate(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
   }
-  glRotatef(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
-  glTranslatef(-_DAT_083a42d4,-_DAT_083a42d8,-_DAT_083a42dc);
-  glDisable(0xbc0);   // GL_ALPHA_TEST
-  glEnable(0xde1);    // GL_TEXTURE_2D
-  glEnable(0xb71);    // GL_DEPTH_TEST
-  glEnable(0xb44);    // GL_CULL_FACE (matches original binary)
-  glDepthMask(1);
+  Gfx::Rotate(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
+  Gfx::Translate(-_DAT_083a42d4, -_DAT_083a42d8, -_DAT_083a42dc);
+  // DESVIACION R4g: el productor declara su entrada; el backend aplica los
+  // mismos campos que la referencia, sin normalizar blend ni bindings.
+  // El color de la niebla legacy sin catálogo aún no tiene un recurso RGBA
+  // propio: conservar esa rama de referencia hasta resolver su almacenamiento.
+  // DESVIACION: la niebla del server usa sus distancias por mapa (2000..2700
+  // si no las manda), calibradas para el alcance normal; se estiran con el
+  // alcance de la cámara (cámara 3D y distancia de dibujado), si no con el
+  // alcance ampliado tapa todo lo lejano.
+  const float fogScale = Ff(DAT_00561550) > 3000.0f ? Ff(DAT_00561550) / 3000.0f : 1.0f;
+  float fogStart, fogEnd;
+  gContentCatalog.GetFogRange((int)gMapManager.GetCurrentMap(), fogStart, fogEnd);
+  if(Materials::Enabled() && (DAT_083a42ea=='\0'||gContentCatalog.HasMapFog())){
+    Materials::ViewState state;
+    if(DAT_083a42ea!='\0'){
+      state.fog=Materials::ViewFog::Linear;state.fogStart=fogStart*fogScale;state.fogEnd=fogEnd*fogScale;
+      gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
+    }
+    Materials::BeginView(state);
+    GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
+    return;
+  }
+  Gfx::Disable(Gfx::Cap::AlphaTest);   // GL_ALPHA_TEST
+  Gfx::Enable(Gfx::Cap::Texture2D);    // GL_TEXTURE_2D
+  Gfx::Enable(Gfx::Cap::DepthTest);    // GL_DEPTH_TEST
+  Gfx::Enable(Gfx::Cap::CullFace);    // GL_CULL_FACE (matches original binary)
+  Gfx::DepthMask(true);
   DAT_083a411d = 0;
   DAT_083a4125 = 1;
   DAT_083a411e = 1;
   DAT_083a411c = 1;
   DAT_083a42e8 = 1;
-  glDepthFunc(0x203);
+  Gfx::DepthFunc(Gfx::Compare::LessEqual);
   // 0.25f literal: 0x3e800000 es el bit pattern de 0.25f y glAlphaFunc espera
   // GLclampf. Como int se convertiría a 1048576000.0f → clamp a 1.0 → el test
   // "alpha > 1.0" siempre falla y todo el UI con alpha-test queda invisible.
-  glAlphaFunc(GL_GREATER, 0.25f);
+  Gfx::AlphaFunc(Gfx::Compare::Greater, 0.25f);
   if (DAT_083a42ea != '\0' && gContentCatalog.HasMapFog()) {
     // DESVIACION (DLL MapFog glEnableFog, ahora catálogo 0.97.20): niebla
     // lineal 2000..2700 con el color del mapa.
     float fog[4];
     gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(), fog);
-    glEnable(GL_FOG);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogf(GL_FOG_START, 2000.0f);
-    glFogf(GL_FOG_END, 2700.0f);
-    glFogfv(GL_FOG_COLOR, fog);
+    Gfx::Enable(Gfx::Cap::Fog);
+    Gfx::SetFogMode(Gfx::FogMode::Linear);
+    Gfx::FogStart(fogStart * fogScale);
+    Gfx::FogEnd(fogEnd * fogScale);
+    Gfx::FogColor(fog);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
   if (DAT_083a42ea != '\0') {
-    glEnable(0xb60);
-    glFogi(0xb65,0x801);
-    glFogf(0xb62,DAT_00561558);
-    glFogfv(0xb66,(const GLfloat*)&FogColor);
+    Gfx::Enable(Gfx::Cap::Fog);
+    Gfx::SetFogMode(Gfx::FogMode::Exp2);
+    Gfx::FogDensity(DAT_00561558);
+    Gfx::FogColor((const float*)&FogColor);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
-  glDisable(0xb60);
+  Gfx::Disable(Gfx::Cap::Fog);
   GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   return;
 }

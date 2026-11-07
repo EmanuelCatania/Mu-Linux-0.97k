@@ -60,8 +60,8 @@ static void ChatLB_ScrollBy0(int* self)
     ((FnScrollByN)vt[12])(self, 0, 0);
 }
 
-void __cdecl ChatListBox_ScrollByN(DWORD val) {
-    int *param_1 = (int*)(uintptr_t)val;
+void __cdecl ChatListBox_ScrollByN(void* val) {
+    int *param_1 = static_cast<int*>(val);
     if (!param_1 || !*(int*)param_1) return;   // objeto sin construir / vtable nula
     switch (param_1[0x23]) {
     case 3:

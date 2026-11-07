@@ -101,11 +101,11 @@ extern DWORD g_trade_requester;        // DAT_05826c00
 extern char  g_active_shop_name[4];    // lpString_05826bfc (at 0x05826bfc)
 extern int   g_cached_shop_slot;       // DAT_00559684
 extern BYTE* g_EntityBase;             // DAT_07abf5d0 (legacy alias, may be null)
-extern DWORD g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
+extern intptr_t g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
 
 // g_EntityBase nunca apunta al array de entidades: la base real es DAT_07abf5d0
 // (la setea WinMain), y ENTITY la usa directo.
-#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
 
 
 // ============================================================
@@ -141,7 +141,7 @@ int Shop_RegisterItem(DWORD entity_id, DWORD* name, BYTE* item_data)
         }
         entry += SHOP_SLOT_STRIDE;
         slot++;
-        if ((int)entry > 0x7ea51eb)
+        if ((intptr_t)entry > 0x7ea51eb)
         {
             // Overflow — find first empty slot (name[0] == 0)
             slot = 0;
@@ -150,7 +150,7 @@ int Shop_RegisterItem(DWORD entity_id, DWORD* name, BYTE* item_data)
                 if (*entry == 0) goto write_slot;
                 entry += SHOP_SLOT_STRIDE;
                 slot++;
-            } while ((int)entry < 0x7ea51ec);
+            } while ((intptr_t)entry < 0x7ea51ec);
             return 0;
         }
     }
@@ -240,7 +240,7 @@ void Shop_EntitySlots(BYTE* pkt)
         // La tabla de tiendas del binario (literal 0x07e919b8, 1238 slots) no está
         // alocada en el port: slot queda en -1 (sin match).
         SHORT slot = -1;
-        *(SHORT*)(ent + 0x1da) = slot;
+        *(SHORT*)&((CHARACTER*)(uintptr_t)(ent))->GuildMarkIndex = slot;
 
         // Update trade flag
         Entity_UpdateTradeFlag(ent);
@@ -264,7 +264,7 @@ void PacketHandler_0x5c(BYTE* pkt)
     if (!ent) return;                    // entity base not yet initialised
 
     int slot = Shop_RegisterItem(0xFFFFFFFF, (DWORD*)(pkt + 5), pkt + 0xD);
-    *(SHORT*)(ent + 0x1da) = (SHORT)slot;
+    *(SHORT*)&((CHARACTER*)(uintptr_t)(ent))->GuildMarkIndex = (SHORT)slot;
     Entity_UpdateTradeFlag(ent);
 }
 
@@ -284,7 +284,7 @@ void PacketHandler_0x5d(BYTE* pkt)
     BYTE* ent = ENTITY(entity_idx);
     if (!ent) return;
 
-    *(SHORT*)(ent + 0x1da) = (SHORT)0xFFFF;
+    *(SHORT*)&((CHARACTER*)(uintptr_t)(ent))->GuildMarkIndex = (SHORT)0xFFFF;
     // Símbolos del linker para 0x07eaa114 y 0x07eaa0d0 (no las direcciones
     // literales del binario).
     DAT_07eaa114 = 0;
@@ -306,11 +306,11 @@ void Entity_UpdateTradeFlag(BYTE* entity)
 
     if (*entity == 0) return;  // entity not active
 
-    entity[0x2e9] = 0;
+    entity[EntityOffset(0x2e9)] = 0;
 
-    SHORT local_slot = *(SHORT*)(local + 0x1da);
-    if (local_slot != -1 && *(SHORT*)(entity + 0x1da) == local_slot)
-        entity[0x2e9] = 1;
+    SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(local))->GuildMarkIndex;
+    if (local_slot != -1 && *(SHORT*)&((CHARACTER*)(uintptr_t)(entity))->GuildMarkIndex == local_slot)
+        entity[EntityOffset(0x2e9)] = 1;
 
     if (g_trade_active)
     {
@@ -319,8 +319,8 @@ void Entity_UpdateTradeFlag(BYTE* entity)
             if (g_active_shop_name[0] == 0) return;
             g_cached_shop_slot = Shop_FindSlotByName((BYTE*)g_active_shop_name);
         }
-        if (g_cached_shop_slot >= 0 && *(SHORT*)(entity + 0x1da) == g_cached_shop_slot)
-            entity[0x2e9] = 2;
+        if (g_cached_shop_slot >= 0 && *(SHORT*)&((CHARACTER*)(uintptr_t)(entity))->GuildMarkIndex == g_cached_shop_slot)
+            entity[EntityOffset(0x2e9)] = 2;
     }
 }
 
@@ -336,7 +336,7 @@ int Shop_FindSlotByName(BYTE* name)
     int slot = 0;
     BYTE* entry = (BYTE*)0x07e919bc;  // name column
 
-    while ((int)entry < 0x7ea51ec)
+    while ((intptr_t)entry < 0x7ea51ec)
     {
         if (memcmp(entry, name, 4) == 0)
             return slot;
@@ -391,14 +391,14 @@ static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
         g_cached_shop_slot = -1;
         g_active_shop_name[0] = 0;
 
-        BYTE* ent = g_EntityBase + 0x2e9;
-        for (int i = 400; i > 0; i--, ent += 0x394)
+        BYTE* ent = g_EntityBase + EntityOffset(0x2e9);
+        for (int i = 400; i > 0; i--, ent += CHARACTER_STRIDE)
         {
-            if (ent[-0x2e9] != 0)  // entity is active
+            if (*(ent - EntityOffset(0x2e9)) != 0)  // entity is active
             {
-                SHORT local_slot = *(SHORT*)((BYTE*)g_LocalEntity + 0x1da);
+                SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(g_LocalEntity))->GuildMarkIndex;
                 *ent = 0;
-                if (local_slot != -1 && *(SHORT*)(ent - 0x10F) == local_slot)
+                if (local_slot != -1 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == local_slot)
                     *ent = 1;
             }
         }
@@ -477,16 +477,16 @@ static void LegacyMisclassified_TradeOpen(BYTE* pkt)
     g_cached_shop_slot = -1;
 
     // Update trade flags for all active entities
-    BYTE* ent = g_EntityBase + 0x2e9;
-    for (int i = 400; i > 0; i--, ent += 0x394)
+    BYTE* ent = g_EntityBase + EntityOffset(0x2e9);
+    for (int i = 400; i > 0; i--, ent += CHARACTER_STRIDE)
     {
-        if (ent[-0x2e9] != 0)
+        if (*(ent - EntityOffset(0x2e9)) != 0)
         {
-            SHORT local_slot = *(SHORT*)((BYTE*)g_LocalEntity + 0x1da);
+            SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(g_LocalEntity))->GuildMarkIndex;
             *ent = 0;
-            if (local_slot != -1 && *(SHORT*)(ent - 0x10F) == local_slot)
+            if (local_slot != -1 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == local_slot)
                 *ent = 1;
-            if (g_cached_shop_slot >= 0 && *(SHORT*)(ent - 0x10F) == g_cached_shop_slot)
+            if (g_cached_shop_slot >= 0 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == g_cached_shop_slot)
                 *ent = 2;
         }
     }
@@ -545,15 +545,15 @@ static void LegacyMisclassified_TradeItemUpdate(BYTE* pkt)
     // Reset trade flags for all active entities
     BYTE* ent_ptr = (BYTE*)g_EntityBase;
     BYTE* local = (BYTE*)g_LocalEntity;
-    for (int off = 0; off < 0x394 * 400; off += 0x394)
+    for (int off = 0; off < CHARACTER_STRIDE * 400; off += CHARACTER_STRIDE)
     {
         BYTE* ent = ent_ptr + off;
         if (*ent != 0)
         {
-            SHORT local_slot = *(SHORT*)(local + 0x1da);
-            ent[0x2e9] = 0;
-            if (local_slot != -1 && *(SHORT*)(ent + 0x1da) == local_slot)
-                ent[0x2e9] = 1;
+            SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(local))->GuildMarkIndex;
+            ent[EntityOffset(0x2e9)] = 0;
+            if (local_slot != -1 && *(SHORT*)&((CHARACTER*)(uintptr_t)(ent))->GuildMarkIndex == local_slot)
+                ent[EntityOffset(0x2e9)] = 1;
         }
     }
 

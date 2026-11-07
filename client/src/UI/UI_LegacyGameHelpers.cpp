@@ -69,7 +69,7 @@ void __cdecl Item_ReturnPickedItem(void)
     const int selCol = (int)(BYTE)DAT_07e9138e;
     const int selRow = (int)(BYTE)DAT_07e9138f;
     const int pos    = (int)DAT_07ea5b18;
-    BYTE* const src  = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* const src  = DAT_07ea9800;
 
     auto fill = [&](BYTE* pool, int cell0) {
         const int col0 = cell0 % 8, row0 = cell0 / 8;
@@ -95,7 +95,7 @@ void __cdecl Item_ReturnPickedItem(void)
     }
 
     DAT_07e91388 = 0;
-    if (DAT_07abf5d8) SetCharacterClass((int)DAT_07abf5d8);      // SetCharacterClass(Hero)
+    if (DAT_07abf5d8) SetCharacterClass(AsCharacter(DAT_07abf5d8));      // SetCharacterClass(Hero)
     PlayBuffer(29, 0, 0);                                  // PlayBuffer(29)
     // (bloques de hash-table anti-tamper omitidos)
 }
@@ -134,11 +134,11 @@ char __cdecl SelectSkillByHotkey(int a1)
     for (int i = 0; i < 20; i++) {
         if (CA[i + 87] != 0 &&
             (unsigned char)CA[(hero << 6) + i + 215] == (unsigned char)a1) {
-            playerEnt[913] = (char)i;
+            playerEnt[EntityOffset(913)] = (char)i;
             found = 1;
         }
         if (m_bAutoAttack != 0 && gMapManager.GetCurrentMap() != 6) {
-            const char skillType = CA[(unsigned char)playerEnt[913] + 87];
+            const char skillType = CA[(unsigned char)playerEnt[EntityOffset(913)] + 87];
             if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;
                 Attacking      = 0xffffffff;   // Attacking = -1

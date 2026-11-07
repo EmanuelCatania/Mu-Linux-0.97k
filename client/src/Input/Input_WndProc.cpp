@@ -3,6 +3,9 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
+#include "Net/NetText.h"
+#include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "Render/Camera3D.h"
 #include "Input/Input.h"
@@ -11,6 +14,7 @@
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
+#include "UI/ChatHistory.h"
 void ChatListBox_AddWheel(int notches);
 extern "C" BYTE InputTextHide[10];
 
@@ -60,6 +64,8 @@ static bool Chat_TryAssignMacro(const char* text)
     return true;
 }
 
+static bool Input_AppendCharacter(DWORD slot, uint32_t c);
+
 void Input_OnEvent(const Platform::InputEvent& event)
 {
     switch (event.type)
@@ -68,9 +74,10 @@ void Input_OnEvent(const Platform::InputEvent& event)
         // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
         // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
         {
-            DWORD sw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
+            // En pantalla ancha, sobre los costados la columna sale de 0..639
+            // (negativa o mayor): se guarda con signo.
             DWORD sh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
-            DAT_083a427c = ((DWORD)event.x * 640) / sw;
+            DAT_083a427c = (DWORD)gWindow.UiXFromPixel(event.x);
             DAT_083a4278 = ((DWORD)event.y * 480) / sh;
         }
         gCamera3D.Drag(event.x, event.y);
@@ -181,9 +188,12 @@ void Input_OnEvent(const Platform::InputEvent& event)
         }
 
         if (event.character == 8) {           // Backspace
+            // DESVIACION (Fase 4, texto Unicode): borra la última letra visible
+            // entera (un acento, una sílaba hangul o un emoji compuesto).
             if (len > 0) {
-                lens[slot] = (DWORD)(len - 1);
-                buf[len - 1] = 0;
+                const int previous = (int)TextEngine::PreviousCluster(std::string_view(buf, (size_t)len), (size_t)len);
+                memset(buf + previous, 0, (size_t)(len - previous));
+                lens[slot] = (DWORD)previous;
             }
             break;
         }
@@ -245,8 +255,10 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     } else {
                         // Abre el input de chat — inicializa los campos de texto.
                         // Per IDA Game.cpp:4326-4327: InputTextMax[0]=42, [1]=10.
-                        _InputTextMaxArr[0] = 42;               // chat msg max
-                        _InputTextMaxArr[1] = 10;               // whisper target name max
+                        // Desde 0.97.40 son caracteres: el mensaje entra en
+                        // 199 bytes y el nombre del susurro en 40.
+                        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);
+                        Input_SetLimit(1, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
                         // IDA: WndProc restablece el modo visible al abrir
                         // chat. El diálogo 126 deja este slot enmascarado
                         // para el Personal Code.
@@ -255,6 +267,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
                         // GoldInputEnable = 0 — ya está en 0 en el juego normal
                         DAT_00559c84 = 1;                       // InputEnable = 1
                         DAT_07e11d78 = 0;                       // InputIndex = 0
+                        ChatHistory::ResetBrowse();
                     }
                     PlayBuffer(0x19, 0, 0);   // click sfx
                 } else if (DAT_00559c84) {
@@ -265,6 +278,8 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     // loop de canales de Chat_InputTick; el envío crudo anda
                     // bien para el caso del chat normal).
                     char* line = (char*)DAT_07db8710 + slot * 0x100;
+                    // DESVIACION (Fase 4): historial del campo del mensaje (flechas).
+                    if (slot == 0) ChatHistory::Push(line);
                     // "/N texto" guarda la macro N en vez de enviarse (desviacion).
                     if (Chat_TryAssignMacro(line)) {
                         memset(line, 0, 0x100);
@@ -275,8 +290,8 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     // IDA WndProc L2265-2268: antes del SendChat (no en el
                     // susurro) revisa los gestos, salvo montado fuera de zona segura.
                     if (((const char*)&DAT_07db8810)[0] == '\0') {
-                        WORD helper = *(WORD*)(DAT_07abf5d8 + 0x2b8);
-                        if ((helper != 818 && helper != 819) || *(char*)(DAT_07abf5d8 + 0x34e))
+                        WORD helper = *(WORD*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type;
+                        if ((helper != 818 && helper != 819) || *(char*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone)
                             CheckChatText(line);
                     }
                     Chat_SendChatLine(line);
@@ -303,28 +318,20 @@ void Input_OnEvent(const Platform::InputEvent& event)
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
-            BYTE c = (BYTE)event.character;
-            if (GoldInputEnable && (c < '0' || c > '9')) break;
-            // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
-            // CreateFontA (ver WinMain paso 15).
-            // Acá había `c < 0x7F`, o sea ASCII puro: por eso no se podía
-            // escribir 'ñ' (0xF1 en Windows-1252) ni vocales acentuadas.
-            // El original acepta 0x20..0x7E y manda los bytes >= 0x81 por el
-            // camino DBCS (lead byte + trail byte), porque su entrada es
-            // coreana.  Nuestro texto es Latin-1 de un solo byte, así que ese
-            // camino los destrozaría igual que HANGEUL_CHARSET destrozaba el
-            // render.  Los aceptamos como carácter simple.
-            // 0x7F es DEL: se sigue descartando.
-            if (c >= 0x20 && c != 0x7F) {
-                // InputTextMax[8] @ 0x00559c94 — leído como int desde el array
-                // tipado (NO vía la referencia aliasada a float, que castea el valor).
-                int maxLen = _InputTextMaxArr[slot];
-                if (maxLen <= 0) maxLen = 10;  // login-default fallback
-                if (len < maxLen) {
-                    buf[len]   = (char)c;
-                    lens[slot] = (DWORD)(len + 1);
+            // DESVIACION (Fase 4): Ctrl+V pega el portapapeles carácter por
+            // carácter, con los mismos filtros y topes que el tipeo.
+            if (event.character == 0x16) {
+                const std::string clip = Platform::GetInput().ClipboardText();
+                for (size_t at = 0; at < clip.size();) {
+                    char32_t code = 0;
+                    const size_t used = TextEngine::Decode(clip, at, code);
+                    at += used ? used : 1;
+                    if (code == '\r' || code == '\n' || code == '\t') break;
+                    if (!Input_AppendCharacter(slot, (uint32_t)code)) break;
                 }
+                break;
             }
+            Input_AppendCharacter(slot, event.character);
         }
         break;
     }
@@ -332,4 +339,62 @@ void Input_OnEvent(const Platform::InputEvent& event)
     default:
         break;
     }
+}
+
+// Agrega un carácter al slot de texto activo. Devuelve false si no entra.
+//
+// IDA WndProc L1953-1963 acepta 0x20..0x7E y manda los bytes >= 0x81 por el
+// camino DBCS coreano. DESVIACION (Fase 4, texto Unicode): el carácter llega
+// como code point y se guarda en UTF-8, sin los controles C0/C1 ni surrogates.
+// InputTextMax cuenta bytes, así que una letra que no entra entera no se
+// agrega; InputTextMaxClusters limita además los grapheme clusters
+// (nombres: 10, guild: 8, chat: 42). Con GoldInputEnable sólo pasan dígitos.
+static bool Input_AppendCharacter(DWORD slot, uint32_t c)
+{
+    if (GoldInputEnable && (c < '0' || c > '9')) return false;
+    if (c < 0x20 || c == 0x7F || (c >= 0x80 && c < 0xA0) ||
+        (c >= 0xD800 && c <= 0xDFFF) || c > 0x10FFFF)
+        return true;   // se ignora sin cortar un pegado
+
+    DWORD* lens = (DWORD*)DAT_07d780a8;
+    const int len = (int)lens[slot];
+    char* buf = (char*)DAT_07db8710 + slot * 0x100;
+
+    // InputTextMax[8] @ 0x00559c94 — leído como int desde el array tipado.
+    int maxLen = _InputTextMaxArr[slot];
+    if (maxLen <= 0) maxLen = 10;  // login-default fallback
+    if (maxLen > 0xFF) maxLen = 0xFF;
+    std::string encoded;
+    TextEngine::Append(encoded, (char32_t)c);
+    if (len + (int)encoded.size() > maxLen) return false;
+    if (InputTextMaxClusters[slot] > 0) {
+        std::string candidate(buf, (size_t)len);
+        candidate += encoded;
+        if ((int)TextEngine::ClusterCount(candidate) > InputTextMaxClusters[slot]) return false;
+    }
+    memcpy(buf + len, encoded.data(), encoded.size());
+    lens[slot] = (DWORD)(len + (int)encoded.size());
+    return true;
+}
+
+// Agrega un texto UTF-8 entero al campo (selector de emojis). Atómico: si algún
+// carácter no entra por el límite de bytes o de caracteres, el campo queda
+// como estaba.
+extern "C" bool Input_AppendText(DWORD slot, const char* utf8)
+{
+    if (!utf8 || slot >= 8) return false;
+    DWORD* lens = (DWORD*)DAT_07d780a8;
+    const DWORD previous = lens[slot];
+    std::string_view rest(utf8);
+    while (!rest.empty()) {
+        char32_t cp;
+        const size_t n = TextEngine::Decode(rest, 0, cp);
+        if (!n || !Input_AppendCharacter(slot, (uint32_t)cp)) {
+            lens[slot] = previous;
+            ((char*)DAT_07db8710)[slot * 0x100 + previous] = 0;
+            return false;
+        }
+        rest.remove_prefix(n);
+    }
+    return true;
 }

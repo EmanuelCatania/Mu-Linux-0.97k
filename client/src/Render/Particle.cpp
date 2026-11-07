@@ -42,32 +42,34 @@ extern "C" { void DbgLogPublic(const char* msg); }
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl Alpha(int param_1)
+// IDA 0x0043E5C0: el argumento es la base de OBJECT, no un entero de 32 bits.
+void __cdecl Alpha(OBJECT* object)
 
 {
+  const std::uintptr_t param_1 = reinterpret_cast<std::uintptr_t>(object);
   float fVar1;
 
-  if (*(char *)(param_1 + 0x161) == '\0') {
-    *(float *)(param_1 + 0x168) =
-         (*(float *)(param_1 + 0x164) - *(float *)(param_1 + 0x168)) * _DAT_005524f4 +
-         *(float *)(param_1 + 0x168);
+  if (*(char *)&((OBJECT*)(uintptr_t)(param_1))->AlphaEnable == '\0') {
+    *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha =
+         (*(float *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget - *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha) * _DAT_005524f4 +
+         *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha;
   }
-  else if (*(float *)(param_1 + 0x164) <= *(float *)(param_1 + 0x168)) {
-    if ((*(float *)(param_1 + 0x164) < *(float *)(param_1 + 0x168)) &&
-       (fVar1 = *(float *)(param_1 + 0x168) - _DAT_00552874, *(float *)(param_1 + 0x168) = fVar1,
+  else if (*(float *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget <= *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha) {
+    if ((*(float *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget < *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha) &&
+       (fVar1 = *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha - _DAT_00552874, *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = fVar1,
        fVar1 < _DAT_00552580)) {
-      *(undefined4 *)(param_1 + 0x168) = 0;
+      *(undefined4 *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = 0;
     }
   }
   else {
-    fVar1 = *(float *)(param_1 + 0x168) + _DAT_00552874;
-    *(float *)(param_1 + 0x168) = fVar1;
+    fVar1 = *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha + _DAT_00552874;
+    *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = fVar1;
     if (_DAT_0055256c < fVar1) {
-      *(undefined4 *)(param_1 + 0x168) = 0x3f800000;
+      *(undefined4 *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = 0x3f800000;
     }
   }
-  if (*(float *)(param_1 + 0x168) < *(float *)(param_1 + 0x68)) {
-    *(undefined4 *)(param_1 + 0x68) = *(undefined4 *)(param_1 + 0x168);
+  if (*(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha < *(float *)(param_1 + 0x68)) {
+    *(undefined4 *)(param_1 + 0x68) = *(undefined4 *)&((OBJECT*)(uintptr_t)(param_1))->Alpha;
   }
   return;
 }
@@ -75,15 +77,17 @@ void __cdecl Alpha(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4)
+void __cdecl Particle_PathUpdate(OBJECT* object, int param_2, const void* table, int param_4)
 
 {
+  BYTE* param_1 = reinterpret_cast<BYTE*>(object);
+  const BYTE* param_3 = static_cast<const BYTE*>(table);
   float fVar1;
   float fVar2;
   float fVar3;
   float fVar4;
   float fVar5;
-  float *pfVar6;
+  const float *pfVar6;
   int iVar7;
   int iVar8;
   longlong lVar9;
@@ -91,11 +95,11 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
   iVar8 = 0;
   iVar7 = 0;
   if (0 < param_4) {
-    pfVar6 = (float *)(param_3 + 0x14);
+    pfVar6 = reinterpret_cast<const float*>(param_3 + 0x14);
     fVar3 = _DAT_00552580;
     fVar5 = _DAT_00552580;
     do {
-      if (((*(char *)(pfVar6 + -5) != '\0') && (iVar7 != param_2)) &&
+      if (((*reinterpret_cast<const char*>(pfVar6 + -5) != '\0') && (iVar7 != param_2)) &&
          (fVar1 = *(float *)(param_1 + 0x10) - pfVar6[-1],
          fVar2 = *(float *)(param_1 + 0x14) - *pfVar6, fVar1 = SQRT(fVar1 * fVar1 + fVar2 * fVar2),
          fVar1 < _DAT_00552850)) {
@@ -114,7 +118,7 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
         fVar5 = fVar1 / fVar4 + fVar5;
       }
       iVar7 = iVar7 + 1;
-      pfVar6 = pfVar6 + 0x6f;
+      pfVar6 = pfVar6 + OBJECT_STRIDE / 4;
     } while (iVar7 < param_4);
     if (0 < iVar8) {
       fVar1 = *(float *)(param_1 + 0x10);
@@ -160,7 +164,7 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
 
 int __cdecl
 CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
-             int param_5, float param_6, int param_7)
+             intptr_t param_5, float param_6, int param_7)
 {
   // El pool DAT_07c85890 (1002 slots × 0x1bc) se itera por índice acotado, no
   // por la dirección absoluta del binario.
@@ -182,24 +186,24 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
   }
   const int kPoolSlots = 1002;
   char *pcVar2 = DAT_07c85890;
-  for (int iVar1 = 0; iVar1 < kPoolSlots; ++iVar1, pcVar2 += 0x1bc) {
+  for (int iVar1 = 0; iVar1 < kPoolSlots; ++iVar1, pcVar2 += OBJECT_STRIDE) {
     if (*pcVar2 == '\0') {
       *(unsigned short *)(pcVar2 + 2) = param_1;
       *(int *)(pcVar2 + 4) = param_7;
-      *(int *)(pcVar2 + 0xfc) = param_5;
+      *(OBJECT**)&((OBJECT*)(uintptr_t)(pcVar2))->Owner = (OBJECT*)param_5;
       *(float *)(pcVar2 + 0xc) = param_3;
       *(float *)(pcVar2 + 0x24) = param_6;
       *pcVar2 = '\x01';
-      pcVar2[0x108] = '\0';
-      pcVar2[0x109] = '\0';
-      pcVar2[0x10a] = -0x80;
-      pcVar2[0x10b] = '?';
+      pcVar2[EntityOffset(0x108)] = '\0';
+      pcVar2[EntityOffset(0x109)] = '\0';
+      pcVar2[EntityOffset(0x10a)] = -0x80;
+      pcVar2[EntityOffset(0x10b)] = '?';
       *(float *)(pcVar2 + 0x10) = param_2[0];
       *(float *)(pcVar2 + 0x14) = param_2[1];
       *(float *)(pcVar2 + 0x18) = param_2[2];
-      *(float *)(pcVar2 + 0x170) = param_2[0];
-      *(float *)(pcVar2 + 0x174) = param_2[1];
-      *(float *)(pcVar2 + 0x178) = param_2[2];
+      *(float *)&((OBJECT*)(uintptr_t)(pcVar2))->StartPosition[0] = param_2[0];
+      *(float *)&((OBJECT*)(uintptr_t)(pcVar2))->StartPosition[1] = param_2[1];
+      *(float *)&((OBJECT*)(uintptr_t)(pcVar2))->StartPosition[2] = param_2[2];
       *(float *)(pcVar2 + 0xe8) = param_4[0];
       *(float *)(pcVar2 + 0xec) = param_4[1];
       *(float *)(pcVar2 + 0xf0) = param_4[2];

@@ -1,5 +1,7 @@
 // UI_LegacyText.cpp
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include <string_view>
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -40,57 +42,41 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
 // SeparateTextIntoLines @ 0x0051D600 -- corta un texto en lineas de ancho fijo.
 //
-// Port 1:1 contra el raw: rebobina al ultimo espacio solo si esta dentro de
-// los ultimos min(iLineSize/2, 10) caracteres de la linea; si no, parte a lo
-// ancho de la linea, sin rebobinar.
+// IDA: avanza por caracteres MBCS y, al llenar la linea (iLineSize - 1 bytes),
+// rebobina al ultimo espacio solo si esta dentro de los ultimos
+// min(iLineSize/2, 10) caracteres; si no, parte a lo ancho. El terminador de
+// cada linea se escribe antes de saltar al slot siguiente y el retorno es
+// `indiceDeLinea + 1` -- nunca 0.
 //
-// Detalles fieles que importan: avanza por caracteres MBCS (_mbclen; con el
-// locale "C" que usa este build devuelve siempre 1), el terminador de cada
-// linea se escribe ANTES de saltar al slot siguiente, y el retorno es
-// `indiceDeLinea + 1` -- nunca 0 para texto no vacio.
+// DESVIACION (Fase 4, cortes UAX #14): en vez del ultimo espacio se usa el
+// ultimo punto de corte de libunibreak (entre ideogramas, despues de un
+// guion, antes de un salto de linea...), con la misma ventana de rebobinado;
+// fuera de ella se corta a lo ancho sin partir un grapheme cluster. Los
+// saltos de linea del texto cortan la linea y no se copian.
 int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int iMaxLine, int iLineSize) {
     if (!lpszText || !lpszSeparated || iMaxLine <= 0 || iLineSize <= 0) return 0;  // guard de port
 
-    const unsigned char *pSrc      = (const unsigned char *)lpszText;
-    char                *pDst      = lpszSeparated;
-    const unsigned char *pPrevSpc  = nullptr;   // v6: espacio visto en la vuelta anterior
-    const unsigned char *pLastSpc  = nullptr;   // String: ultimo espacio de esta linea
-    const char          *pLineHead = lpszText;  // v13
-    char                *pLineBase = lpszSeparated;  // v14
-    int                  iLine     = 0;         // v12
+    const std::size_t width = (std::size_t)(iLineSize - 1);
+    std::size_t rewind = (std::size_t)(iLineSize / 2);
+    if (rewind > 10) rewind = 10;
 
-    if (*lpszText) {
-        while (true) {
-            const unsigned int nChar = (unsigned int)Platform::TextCharacterBytes(pSrc);
-
-            if ((int)(nChar + (unsigned int)(pSrc - (const unsigned char *)pLineHead)) >= iLineSize) {
-                if (pPrevSpc) {
-                    int iBack = iLineSize / 2;
-                    if (iBack > 10) iBack = 10;
-                    if ((int)(pSrc - pPrevSpc) < iBack) {
-                        const int iDelta = (int)(pPrevSpc - pSrc);
-                        pSrc  = pPrevSpc + 1;
-                        pDst += iDelta + 1;
-                    }
-                }
-                pLineHead = (const char *)pSrc;
-                *pDst = 0;
-                if (iLine >= iMaxLine - 1) break;
-                pDst = &pLineBase[iLineSize];
-                ++iLine;
-                pLineBase += iLineSize;
-                pLastSpc = nullptr;
-            }
-
-            memcpy(pDst, pSrc, nChar);
-            if (*pSrc == ' ') pLastSpc = pSrc;
-            pSrc += nChar;
-            pDst += nChar;
-            if (!*pSrc) break;
-            pPrevSpc = pLastSpc;
-        }
+    std::string_view rest(lpszText);
+    int iLine = 0;
+    while (true) {
+        char *pDst = lpszSeparated + (std::size_t)iLine * (std::size_t)iLineSize;
+        std::size_t take = TextEngine::FitLineBreak(rest, width);
+        if (rest.size() > width && (take == 0 || width - take + 1 >= rewind))
+            take = TextEngine::FitBytes(rest, width);
+        if (take == 0 && !rest.empty())
+            take = TextEngine::NextCluster(rest, 0);   // un cluster mas ancho que la linea
+        std::size_t copy = take < width ? take : width;
+        while (copy > 0 && (rest[copy - 1] == '\n' || rest[copy - 1] == '\r')) --copy;
+        memcpy(pDst, rest.data(), copy);
+        pDst[copy] = 0;
+        rest.remove_prefix(take);
+        if (rest.empty() || iLine >= iMaxLine - 1) break;
+        ++iLine;
     }
-    *pDst = 0;
     return iLine + 1;
 }
 

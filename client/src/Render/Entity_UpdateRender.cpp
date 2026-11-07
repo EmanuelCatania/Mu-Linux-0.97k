@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
@@ -6,6 +7,7 @@
 #include "Render/EquipmentVisuals.h"
 #include "Entity/CharacterEffects.h"
 
+extern "C" const char* Guild_GetMarkName(int row);
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
 //
@@ -30,25 +32,25 @@
 // ── RenderCharacter  Entity_UpdateRender ──────────────────────────────────────
 extern "C" {
     // From Render_PlayerEquipment.cpp
-    void Render_PlayerHelper(int c, int o);
-    void Render_PlayerWeaponLoop(int c, int o);
+    void Render_PlayerHelper(intptr_t c, intptr_t o);
+    void Render_PlayerWeaponLoop(intptr_t c, intptr_t o);
     // Back-weapon render decision. Returns 1 if weapon was rendered
     // on back (LinkBone 47). When 1, Render_PlayerWeaponLoop should be skipped.
-    int  RenderCharacterBackItem(int c, int o);
+    int  RenderCharacterBackItem(intptr_t c, intptr_t o);
 }
 
 // IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
 // sobre el hueso 26 del modelo de jugador. El segundo parámetro es el escudo
 // equipado; sólo modifica el desplazamiento vertical del emblema.
-void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
+void __cdecl RenderGuildMarkOnShield(intptr_t entity, int shield_id)
 {
     BYTE* object = (BYTE*)(uintptr_t)entity;
 
     EnableAlphaTest(true);
     GL_EnableCullFace();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_BindTextureSlot(34);
-    glPushMatrix();
+    Gfx::PushMatrix();
 
     float angles[3] = {
         *(float*)(object + 28) + 80.0f,
@@ -62,13 +64,37 @@ void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
     localMatrix[11] = (shield_id == 676) ? -18.0f : -10.0f;
 
     // `object+276` es el buffer de matrices animadas; 26 * 48 = 1248.
-    float* bone26 = (float*)((BYTE*)(uintptr_t)*(DWORD*)(object + 276) + 1248);
+    float* bone26 = (float*)((BYTE*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(object))->BoneMatrices + 1248);
     R_ConcatTransforms(bone26, localMatrix, &DAT_06989c9c);
 
-    glTranslatef(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));
+    Gfx::Translate(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));
     GL_DrawBillboard(5.0f, 7.0f, &DAT_06989c9c);
-    glPopMatrix();
+    Gfx::PopMatrix();
     GL_DisableCullFace();
+}
+
+// IDA: RenderCharacter (0x00456770), case 390: brillo de Greater Damage en las
+// manos. DESVIACION: tambien se dibuja en monstruos (invocaciones), para que el
+// aura siga visible mientras el buff este activo; ahi solo si el hueso es valido.
+static void RenderAttackBuffSparkles(BYTE* entity)
+{
+    OBJECT& object = *AsObject(entity);
+    if ((*(DWORD*)(entity + 120) & 4) == 0 || !object.BoneMatrices) return;
+    void* model = (void*)(uintptr_t)(DAT_05828d58 + object.Type * BMD_STRIDE);
+    const int boneCount = AsModel(model)->NumBones;
+    const float* bones = (const float*)object.BoneMatrices;
+    float offset[3] = { 0.0f, 0.0f, 0.0f };
+    for (int hand = 0; hand < 2; ++hand) {
+        const int bone = AsCharacter(entity)->Weapon[hand].LinkBone;
+        if (bone < 7 || bone >= boneCount) continue;
+        const float brightness = (float)(rand() % 30 + 70) * 0.01f;
+        float light[3] = { brightness, brightness * 0.3f, brightness * 0.2f };
+        for (int back : { 0, 6, 7 }) {
+            float position[3];
+            BMD_TransformPosition(model, (float*)(bones + 12 * (bone - back)), offset, position, 1);
+            CreateSprite(1231, position, 1.5f, light, (intptr_t)entity, 0.0f, 0);
+        }
+    }
 }
 
 void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
@@ -77,10 +103,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
-    short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
+    short sVar2    = *(short *)((intptr_t)puVar13 + 2);        // entity_type
 
-    int  entity_type = (int)sVar2;
-    void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
+    intptr_t  entity_type = (int)sVar2;
+    void *model = (void *)(DAT_05828d58 + entity_type * BMD_STRIDE);
 
 
 
@@ -94,22 +120,22 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     #define local_58 (local_60_buf[2])
 
     // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
-    char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
+    char cVar6 = *(char *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;  // tipo de monstruo
     switch (cVar6) {
     case 'Y': case '_': case 'p': case 'v': case '|':
     case (char)-0x7e: case (char)-0x78:
     {
         // Skill channel active — beam/barrier widget path
-        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (intptr_t)param_3);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         if ((BYTE)uVar11 != 0)
-            Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
+            Draw_RenderObject(puVar13, 1, (intptr_t)param_3, '\0');
         break;
     }
     default:
         // Normal state — prepare entity render (bone / AABB)
         cVar6 = ((cVar6 == 'C') || (cVar6 == 'J') || (cVar6 == 'K')) ? '\x01' : '\0';
-        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, cVar6);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (intptr_t)param_3, cVar6);
         break;
     }
     // IDA RenderCharacter 0x456770: draw the projected shadow immediately
@@ -117,9 +143,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // o+140 selects the shadow branch in RenderPartObjectEffect (0x504B50).
     // A late opaque body pass here would cover Silver Valkyrie's glow.
     if (sVar2 != 0x186 && *(BYTE *)((char *)puVar13 + 0x84) != 8) {
-        BYTE v11 = *(BYTE *)((char *)param_1 + 747);   // *(c + 747)
+        BYTE v11 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;   // *(c + 747)
         // Use the global World; a same-name local here was self-initialized.
-        float alpha = *(float *)((char *)puVar13 + 0x168);   // o + 360
+        float alpha = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha;   // o + 360
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
             v11 != 59 && v11 != 63 &&
@@ -128,8 +154,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // Blood Castle (11..16): clamp Z to terrain height when
             // entity is dead+action-start (Blood Castle special case).
             if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
-                if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
-                    *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
+                if (*(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->ActionStart != 0 &&     // o+405 m_bActionStart
+                    *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Dead != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
                     float wy = *(float *)((char *)puVar13 + 0x14);
                     float th = RequestTerrainHeight(wx, wy);
@@ -147,10 +173,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             short v15 = sVar2;
             if (v15 != 330 && v15 != 331) {
                 *(BYTE *)((char *)puVar13 + 0x8C) = 1;       // EnableShadow = 1
-                RenderPartObject((int)param_1,
+                RenderPartObject((intptr_t)param_1,
                              (int)v15,
                              0,
-                             (float *)(param_1 + 200),       // c+800 Light
+                             (float *)((int *)((char *)param_1 + EntityOffset(200 * 4))),       // c+800 Light
                              alpha,
                              0, 0, '\0', 0, '\x01',
                              0, 2);
@@ -173,10 +199,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    Equipment_Draw((int)param_1, CharacterEffects_EarlyStage);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_EarlyStage);
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
-    BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
+    BYTE bVar7 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;   // tipo de monstruo
 
     // IDA 00456770 groups these MonsterIDs before the individual Icarus
     // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
@@ -189,32 +215,32 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
         if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
-            RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                         *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
+            RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                         *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x48, bodyBright, 0xffffffff);
         }
         const int secondFlags = (bVar7 == 67) ? 0x144 : 0x44;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), secondFlags, bodyBright, 0xffffffff);
     }
     else if (bVar7 == 0x45 || bVar7 == 0x46) {
         // Los sprites se reproducen desde la muestra SIM de esta entidad.
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
     }
     else if (bVar7 == 0x49) {
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        Entity_SetModelColorAlt(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x44, 1.0f, 0xffffffff);
+        Entity_SetModelColorAlt(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
         // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
         // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x144, 1.0f, 0xffffffff);
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x144, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4d) {
         // Phoenix of Darkness (MonsterID 77): IDA 00456770 case 'M'.
@@ -222,23 +248,23 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // caching the attack-effect bones and ticking the cloth widget.
         const float targetLight = (sinf(fmodf(WorldTime, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
         const float bodyBright = targetLight * 0.7f + 0.3f;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x44, bodyBright, 0xffffffff);
 
         // IDA temporarily changes the render pose components, prepares slots
         // 2 and 3, restores X, increments ModelID for the Select pose, then
         // restores it after the cloth/effect pass.
-        *(int *)((BYTE *)puVar13 + 100) = 0;
-        *(float *)((BYTE *)puVar13 + 104) = (2.0f - targetLight) * 0.3f;
+        *(int *)((BYTE *)(int *)((char *)puVar13 + EntityOffset(100 * 4))) = 0;
+        *(float *)((BYTE *)(int *)((char *)puVar13 + EntityOffset(104 * 4))) = (2.0f - targetLight) * 0.3f;
         Entity_PrepareRender((unsigned char *)puVar13, 1, 2, 0);
         Entity_PrepareRender((unsigned char *)puVar13, 1, 3, 0);
 
-        *(int *)((BYTE *)puVar13 + 100) = -1;
+        *(int *)((BYTE *)(int *)((char *)puVar13 + EntityOffset(100 * 4))) = -1;
         ++*(short *)((BYTE *)puVar13 + 2);
-        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (intptr_t)param_3, 0);
 
 
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
@@ -247,11 +273,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // diferencia del resto — una textura FIJA (1231) en vez de -1.
     // Faltaba entero en el port.
     if (bVar7 == 53 || bVar7 == 54) {
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
+                     *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))), 0x48, 1.0f, 1231);
     }
 
-    Equipment_Draw((int)param_1, 0);
+    Equipment_Draw(AsCharacter(param_1), 0);
 
     // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
     // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
@@ -260,23 +286,23 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)(o + 360) >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
+        if (*(float *)&((OBJECT*)(uintptr_t)(o))->Alpha >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
             *(short *)(o + 2) == 390)
         {
-            const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
-            if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
+            const unsigned short helper = *(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type;
+            if (helper < 818 || helper > 819 || *((char *)param_1 + EntityOffset(846)) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
                 if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 &&
-                    *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
+                    *(BYTE *)&((OBJECT*)(uintptr_t)(o))->ActionStart != 0 && *((BYTE *)param_1 + EntityOffset(765)) != 0)
                 {
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
                     if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;
                 }
-                const float shadowAlpha = *(float *)(o + 360);
+                const float shadowAlpha = *(float *)&((OBJECT*)(uintptr_t)(o))->Alpha;
                 *(BYTE *)(o + 140) = 1;              // EnableShadow
-                RenderPartObject((int)param_1, 391, 0,
-                             (float *)((char *)param_1 + 800), shadowAlpha,
+                RenderPartObject((intptr_t)param_1, 391, 0,
+                             (float *)((char *)param_1 + EntityOffset(800)), shadowAlpha,
                              0, 0, '\0', 0, '\x01', 0, 2);
                 *(BYTE *)(o + 140) = 0;
             }
@@ -312,16 +338,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // el original solo alcanza a lo que se dibuja despues: las alas.  Por eso
     // aca va solo la luz base; la segunda escritura (PK) vive mas abajo, justo
     // antes del bloque de armas y alas.
-    *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
-    *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-    *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+    *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4)))  = local_60 + *(float *)(puVar13 + 0x3a);
+    *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = local_5c + *(float *)(puVar13 + 0x3b);
+    *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = local_58 + *(float *)(puVar13 + 0x3c);
 
     // IDA RenderCharacter: ModelID 325 (Phoenix of Darkness) overrides the
     // final terrain-derived BodyLight before the body and attachment passes.
     if (sVar2 == 325) {
-        *(float *)(param_1 + 200) = 0.6f;
-        *(float *)(param_1 + 0xc9) = 0.3f;
-        *(float *)(param_1 + 0xca) = 0.3f;
+        *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4))) = 0.6f;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = 0.3f;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = 0.3f;
     }
 
     // ── BodyLight del heroe + tinte de las bebidas (IDA RenderCharacter
@@ -344,12 +370,12 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             ? *((unsigned char *)(uintptr_t)CharacterAttribute + 40) : 0;
         if (drink & 1) { L0 = 0.9f;   L1 = 0.5f;   L2 = 0.5f;   }
         if (drink & 2) { L0 *= 0.5f;  L1 *= 0.9f;  L2 *= 0.5f;  }
-        *(float *)(param_1 + 200)  = L0;
-        *(float *)(param_1 + 0xc9) = L1;
-        *(float *)(param_1 + 0xca) = L2;
+        *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4)))  = L0;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = L1;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = L2;
     }
 
-    Equipment_Draw((int)param_1, 1);
+    Equipment_Draw(AsCharacter(param_1), 1);
 
     // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
     //
@@ -363,9 +389,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // Se vuelve a poner la luz base justo antes del loop de partes.  El efecto
     // final es el del binario (alas rojas, cuerpo con su luz normal) sin tener
     // que reordenar los dos bloques de render, que estan muy anidados.
-    *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
-    *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-    *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+    *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4)))  = local_60 + *(float *)(puVar13 + 0x3a);
+    *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = local_5c + *(float *)(puVar13 + 0x3b);
+    *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = local_58 + *(float *)(puVar13 + 0x3c);
     if ((void *)param_1 == DAT_07abf5d8) {
         // El heroe no usa la luz del terreno (ver el bloque de mas arriba).
         float L0 = 1.0f, L1 = 1.0f, L2 = 1.0f;
@@ -373,9 +399,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             ? *((unsigned char *)(uintptr_t)CharacterAttribute + 40) : 0;
         if (drink & 1) { L0 = 0.9f;   L1 = 0.5f;   L2 = 0.5f;   }
         if (drink & 2) { L0 *= 0.5f;  L1 *= 0.9f;  L2 *= 0.5f;  }
-        *(float *)(param_1 + 200)  = L0;
-        *(float *)(param_1 + 0xc9) = L1;
-        *(float *)(param_1 + 0xca) = L2;
+        *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4)))  = L0;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = L1;
+        *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = L2;
     }
 
     // ── 7b. Body-part render loop (Ghidra RenderCharacter lines 1622-1700) ──────
@@ -415,22 +441,22 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (sVar2 == 0x186) {
         int subType = *(int *)((char *)puVar13 + 4);
         if (subType >= 206 && subType <= 208) {
-            float alphaST = *(float *)((char *)puVar13 + 0x168);
+            float alphaST = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha;
             int   flags   = 0;
             if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
-                flags = 8 * (int)*(unsigned short *)((char *)param_1 + 446);
+                flags = 8 * (int)*(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Level;
             }
-            RenderPartObject((int)param_1, subType, 0,
-                         (float *)(param_1 + 200), alphaST,
+            RenderPartObject((intptr_t)param_1, subType, 0,
+                         (float *)((int *)((char *)param_1 + EntityOffset(200 * 4))), alphaST,
                          flags, 0, '\0', 0, '\x01', 0, 2);
             bSubTypeNpcRendered = true;
         }
     }
 
-    if (!bSubTypeNpcRendered && *(char *)((int)param_1 + 0x34f) == '\0') {
-        int *piVar16 = param_1 + 0x7d;   // int*-index: byte offset +0x1f4
+    if (!bSubTypeNpcRendered && *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Change == '\0') {
+        PART_t *piVar16 = AsCharacter(param_1)->BodyPart;   // int*-index: byte offset +0x1f4
         for (int nSlot = 6; nSlot > 0; nSlot--) {
-            short sSlot = (short)piVar16[-5];   // slot model_idx at -20 bytes
+            short sSlot = piVar16->Type;   // slot model_idx at -20 bytes
             if (sSlot != (short)-1) {
                 int iVar9 = (int)sSlot;
                 // Class byte @ entity+0x1BC (IDA sub_456770: *(BYTE*)(c + 444))
@@ -440,36 +466,36 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // login demo characters render as DW (class=0). Fixed to 0x1bc.
                 // 0.97.20: modelo propio de la pieza (catálogo).
                 iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
-                BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
-                *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
+                BYTE bClassByte = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Class;
+                *(BYTE *)(DAT_05828d58 + iVar9 * BMD_STRIDE + 0x98 + BMD_FIELD_SHIFT) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
                 // ── DIAG: log per-call to RenderPartObject (Entity_DrawAt) for char-select
                 // dump scale, model addr, animCount@26, and DAT_005524f8 (cull thresh).
                 if (SceneFlag == 4) {
-                    int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
+                    int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / CHARACTER_STRIDE);
                     if (csSlot >= 0 && csSlot < 5) {
                         static DWORD s_lastDA[5] = {0,0,0,0,0};
                         DWORD now = Platform::GetTimer().Ticks();
                         if (now - s_lastDA[csSlot] > 1000) {
                             // log only the FIRST body-part draw of this slot per second
                             s_lastDA[csSlot] = now;
-                            void* bm = (void*)(DAT_05828d58 + iVar9 * 0xbc);
-                            float fScale = *(float *)(puVar13 + 0x5a);
+                            void* bm = (void*)(DAT_05828d58 + iVar9 * BMD_STRIDE);
+                            float fScale = *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4)));
                         }
                     }
                 }
                 {
-                    BYTE rawLvl = *(BYTE *)((char *)piVar16 - 0x12);
-                    BYTE rawOpt = *(BYTE *)((char *)piVar16 - 0x11);
+                    BYTE rawLvl = piVar16->Level;
+                    BYTE rawOpt = piVar16->Option1;
                     // c+482 es el nivel RAW (0-15) del equipo; el shift <<3 lo
                     // encoda para que RenderPartObjectEffect lo decodifique con
                     // (val>>3)&0xF. FIEL a IDA (8 * *(BYTE*)(v76-18)).
                     UINT shiftedLvl = (UINT)rawLvl << 3;
-                    RenderPartObject((int)param_1,
+                    RenderPartObject((intptr_t)param_1,
                                  iVar9,
-                                 (int)(piVar16 - 5),
-                                 (float *)(param_1 + 200),
-                                 *(float *)(puVar13 + 0x5a),
+                                 piVar16,
+                                 (float *)((int *)((char *)param_1 + EntityOffset(200 * 4))),
+                                 *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))),
                                  shiftedLvl,
                                  rawOpt,
                                  '\0', 0, '\x01',
@@ -481,25 +507,25 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // El port lo salteaba con la etiqueta "guild-mark related",
                 // que era incorrecta: la capita de atras se movia pegada al
                 // cuerpo en vez de simularse.
-                if (iVar9 == 706 && *piVar16 && *(float *)(puVar13 + 0x5a) > 0.01f)
-                    FUN_00408ff0((void *)*piVar16);
+                if (iVar9 == 706 && piVar16->Cloth && *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))) > 0.01f)
+                    FUN_00408ff0(piVar16->Cloth);
 
             }
-            piVar16 += 6;   // advance to next slot (+0x18 bytes)
+            ++piVar16;   // advance to next slot (+0x18 bytes)
         }
         // IDA: RenderCharacter llama CreateGuildMark/RenderGuildMarkOnShield después de
         // renderizar las seis piezas, sólo para modelos de jugador visibles.
-        const short guildMarkIndex = *(short*)((BYTE*)param_1 + 474);
+        const short guildMarkIndex = *(short*)&((CHARACTER*)(uintptr_t)(param_1))->GuildMarkIndex;
         if (guildMarkIndex >= 0 &&
             *(short*)((BYTE*)puVar13 + 2) == 390 &&
-            *(float*)((BYTE*)puVar13 + 360) != 0.0f) {
+            *(float*)&((OBJECT*)(uintptr_t)(puVar13))->Alpha != 0.0f) {
             CreateGuildMark(guildMarkIndex, true);
-            RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
-                          *(short*)((BYTE*)param_1 + 528));
+            RenderGuildMarkOnShield((intptr_t)puVar13,
+                          *(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[2].Type);
         }
     }
 
-    Equipment_Draw((int)param_1, 2);
+    Equipment_Draw(AsCharacter(param_1), 2);
 
     if (sVar2 == 390) {
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
@@ -532,11 +558,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // the current MuEmu build does not emit F3/23 observer state.
             const short guildIndex = AsCharacter(cb)->GuildMarkIndex;
             if (guildIndex != -1) {
-                const char* guildName = DAT_07e919bc + 80 * guildIndex;
+                const char* guildName = Guild_GetMarkName(guildIndex);
                 if (EnableSoccer && DAT_07abf5d8) {
-                    const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                    const short heroGuild = *(short*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->GuildMarkIndex;
                     if (heroGuild != -1 &&
-                        (strcmp(DAT_07e919bc + 80 * heroGuild, guildName) == 0 ||
+                        (strcmp(Guild_GetMarkName(heroGuild), guildName) == 0 ||
                          strcmp(GuildWarName, guildName) == 0)) {
                         bCape = true;
                     }
@@ -548,11 +574,12 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 }
             }
 
-            if (bCape && param_1[0x61])
-                FUN_00408ff0((void *)param_1[0x61]);
+            if (bCape && AsObject(param_1)->Cloth)
+                FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         }
     }
-    Equipment_Draw((int)param_1, CharacterEffects_LateStage);
+    RenderAttackBuffSparkles((BYTE*)param_1);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_LateStage);
     return puVar13;
 }
 
@@ -562,7 +589,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
 // IDA: bloques de equipo de RenderCharacter (0x00456770).
 // DESVIACION: avanzan y emiten una vez por paso, con huesos de simulación.
-void Equipment_Tick(int entity, int highlighted)
+void Equipment_Tick(intptr_t entity, int highlighted)
 {
     int *param_1 = (int *)entity, *puVar13 = (int *)entity;
     short sVar2 = AsObject(entity)->Type;
@@ -571,33 +598,33 @@ void Equipment_Tick(int entity, int highlighted)
     void *local_74 = nullptr;
     float fVar32 = (float)highlighted * _DAT_005524f8;
     float savedLight[3];
-    memcpy(savedLight, (char *)param_1 + 800, sizeof(savedLight));
-    Equipment_BeginCharacter(entity);
+    memcpy(savedLight, (char *)param_1 + EntityOffset(800), sizeof(savedLight));
+    Equipment_BeginCharacter(AsCharacter(static_cast<intptr_t>(entity)));
     _DAT_005597c8 = 1.0f;
     Equipment_SetStage(0);
     // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
     if (bVar7 == 0x2a) {
         // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
-        short *psVar1 = (short *)(param_1 + 0xa8);
+        short *psVar1 = (short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4)));
         *psVar1 = 0xea;
-        *(char *)(param_1 + 0xa9) = 9;
-        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
-        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
+        *(char *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 9;
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd; // 0.2f alpha
+        RenderLinkObject(0.0f, 0.0f, -40.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      0xea, '\0', 0, '\0', '\x01', 0);
         *psVar1 = 0xeb;
-        *(char *)(param_1 + 0xa9) = 0x3d;
-        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
+        *(char *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 0x3d;
+        RenderLinkObject(0.0f, -40.0f, 45.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      0xeb, '\0', 0, '\0', '\x01', 0);
     }
     else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
         // Special class shield / weapon glow
-        short *psVar1 = (short *)(param_1 + 0xa8);
-        *(char *)(param_1 + 0xa9) = 1;
-        param_1[0xac] = 0x3e4ccccd;
+        short *psVar1 = (short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4)));
+        *(char *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 1;
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd;
         if (bVar7 == 0x84) *psVar1 = 0x23a;
         if (bVar7 == 0x85) *psVar1 = 0x1a3;
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
-        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
     }
 
@@ -611,8 +638,8 @@ void Equipment_Tick(int entity, int highlighted)
     // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
     // renombró la variable; la lógica queda tal cual el decompile.
     {
-        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        bool bSafeZone = *(char *)&((CHARACTER*)(uintptr_t)(param_1))->SafeZone != '\0';
+        BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
         if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
@@ -632,7 +659,7 @@ void Equipment_Tick(int entity, int highlighted)
     // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
     // verde y azul, solo cambia el rojo.
     {
-        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
+        const BYTE pkLevel = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->PK;
         bool bTint = false;
         if (pkLevel < 6) {
             // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
@@ -641,28 +668,28 @@ void Equipment_Tick(int entity, int highlighted)
             // tinte de las bebidas que dejo el bloque del heroe, de modo que
             // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
             // Sacarlo hace que el Ale tina tambien las alas.
-            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
-            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+            *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4)))  = local_60 + *(float *)(puVar13 + 0x3a);
+            *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = local_5c + *(float *)(puVar13 + 0x3b);
+            *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = local_58 + *(float *)(puVar13 + 0x3c);
 
             // Override de escala por zona (World - 9 en [1..7])
             const int iSub = (int)gMapManager.GetCurrentMap() - 9;
-            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
+            const BYTE bv2 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;
             const bool bInRange =
                 (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
                 (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
                 (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
             if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
-                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
+                *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4))) = (float)(iSub / 3) * _DAT_00552504;
                 bTint = true;
             }
         } else {
-            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
+            *(float *)((int *)((char *)param_1 + EntityOffset(200 * 4))) = 1.0f;   // PKLVL_KILLER: rojo
             bTint = true;
         }
         if (bTint) {
-            *(float *)(param_1 + 0xc9) = 0.1f;
-            *(float *)(param_1 + 0xca) = 0.1f;
+            *(float *)((int *)((char *)param_1 + EntityOffset(0xc9 * 4))) = 0.1f;
+            *(float *)((int *)((char *)param_1 + EntityOffset(0xca * 4))) = 0.1f;
         }
     }
 
@@ -686,16 +713,16 @@ void Equipment_Tick(int entity, int highlighted)
         // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
         // siempre se alcanza.
         if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
-            (*(char *)(param_1 + 0xba) != 0)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            char cType = *(char *)(param_1 + 0xba);
+            (*(char *)((int *)((char *)param_1 + EntityOffset(0xba * 4))) != 0)) {
+            *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 0x2f;   // LinkBone = 47
+            BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            char cType = *(char *)((int *)((char *)param_1 + EntityOffset(0xba * 4)));
             int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
                            (cType == 2) ? 0x1a3 :   // 419 Sword
                            (cType == 3) ? 0x222 : 0; // 546 Bow
             if (iSecType != 0) {
-                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))),
                              iSecType, 0, 0, 1, 1, 0);
             }
         }
@@ -704,45 +731,45 @@ void Equipment_Tick(int entity, int highlighted)
         // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
         // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
         // aditivas no escriben profundidad y el cuerpo la taparía siempre.
-        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
-            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+        if (*(short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4)))) >= MODEL_MAX_VANILLA) {
             bDeferWing = true;
-        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                         (int)*(short *)(param_1 + 0xa8),
-                         *(char *)((int)param_1 + 0x2a2),
-                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+        } else if (*(short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
+            *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 0x2f;
+            BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))),
+                         (int)*(short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))),
+                         *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
+                         *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);
         }
 
         // Wings / shield bone (slot 0xae == 0x331)
-        if (*(short *)(param_1 + 0xae) == 0x331) {
-            *(BYTE *)(param_1 + 0xaf) = 0x22;
-            param_1[0xb2] = 0x3f000000; // 0.5f
-            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
+        if (*(short *)((int *)((char *)param_1 + EntityOffset(0xae * 4))) == 0x331) {
+            *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xaf * 4))) = 0x22;
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Helper.PlaySpeed = 0x3f000000; // 0.5f
+            RenderLinkObject(20.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xae * 4))),
                          0x331,
-                         *(char *)((int)param_1 + 0x2ba),
+                         *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,
                          (UINT)(size_t)local_74, '\0', '\x01', 0);
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
-            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
-                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((intptr_t)puVar13 + 2) * BMD_STRIDE),
+                         (float *)((intptr_t)AsCharacter(puVar13)->Helper.LinkBone * 0x30 + (intptr_t)AsObject(puVar13)->BoneMatrices),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
-            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
+            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (intptr_t)puVar13, 0, 0);
         }
 
         // ── Helper render (IDA 1267-1288) ──────────────────────────────────
         // Pet helper (Type 817) attached at bone 34 of player.
-        Render_PlayerHelper((int)param_1, (int)puVar13);
+        Render_PlayerHelper((intptr_t)param_1, (intptr_t)puVar13);
 
         // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
         // Si bBindBack=1, renderiza armas en la espalda (LinkBone
         // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
-        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
+        int bBindBack = RenderCharacterBackItem((intptr_t)param_1, (intptr_t)puVar13);
 
         bSkipWeaponLoop = bBindBack != 0;
     }
@@ -751,21 +778,21 @@ void Equipment_Tick(int entity, int highlighted)
     // block above is player-specific; ordinary monster weapons continue through
     // the shared two-slot renderer.
     if (!bSkipWeaponLoop)
-        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+        Render_PlayerWeaponLoop((intptr_t)param_1, (intptr_t)puVar13);
 
 
     Equipment_SetStage(2);
     if (bDeferWing) {
-        *(BYTE *)(param_1 + 0xa9) = 0x2f;
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                     (int)*(short *)(param_1 + 0xa8),
-                     *(char *)((int)param_1 + 0x2a2),
-                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+        *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 0x2f;
+        BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))),
+                     (int)*(short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4))),
+                     *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
+                     *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);
     }
 
 
-    memcpy((char *)param_1 + 800, savedLight, sizeof(savedLight));
+    memcpy((char *)param_1 + EntityOffset(800), savedLight, sizeof(savedLight));
     Equipment_EndCharacter();
 }

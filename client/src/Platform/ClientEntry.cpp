@@ -27,6 +27,8 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Core/DataPrefetch.h"
+#include "Render/ResourceTables.h"
 #include "Platform/Diagnostics.h"
 #include "Platform/Text.h"
 #include "Platform/NativeBridge.h"
@@ -310,6 +312,14 @@ static void DbgLog(const char* msg)
         if (h == INVALID_HANDLE_VALUE) {
             h = CreateFileA("debug.log", GENERIC_WRITE, FILE_SHARE_READ,
                             NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h == INVALID_HANDLE_VALUE) {
+                // Otro cliente de la misma carpeta ya tiene debug.log abierto:
+                // el segundo escribe en debug-<pid>.log en vez de quedarse mudo.
+                char alt[64];
+                Platform::TextFormat(alt, "debug-%u.log", (unsigned)GetCurrentProcessId());
+                h = CreateFileA(alt, GENERIC_WRITE, FILE_SHARE_READ,
+                                NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            }
             if (h == INVALID_HANDLE_VALUE) { s_killed = 1; s_inside = false; return; }
         }
         // El debugger de VS captura las first-chance exceptions ANTES que el SEH del
@@ -405,7 +415,7 @@ void Client_SocketEvent(uint16_t event, uint16_t error) { gNetwork.OnSocketEvent
 void Client_ClosePortable() {
     gPing.Reset(); gFrameLimiter.Shutdown();
     DAT_055ca018 = 1;
-    CWsctlc_Close((int)(uintptr_t)SocketClient);
+    CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));
     for (int buffer = 0; buffer < 420; ++buffer) Sound_ReleaseBuffer(buffer);
     OpenGL_Release();
 }
@@ -510,6 +520,7 @@ int main(int, char**)
     BOOL okDec = CSimpleModulus_LoadDecryptionKey(g_SimpleModulusSC, "Data\\Dec2.dat");
 
     if (!Config_Load()) { DbgLog("Config_Load FAILED"); return 0; }
+    StartDataPrefetch("Data");   // DESVIACION: precarga de Data/ (Core/DataPrefetch.cpp)
 
     // 10b: localized string pool — Data/Local/Text.bmd → GlobalText[1000][300].
     // El WinMain original llama OpenTextData() antes del chequeo de versión/integridad.
@@ -597,23 +608,23 @@ int main(int, char**)
         RandomTable[j] = rand() % 360;
 
     // 19: alocación de buffers (tamaños sacados del decompile)
-    GateAttribute = (DWORD)malloc(900);     memset((void*)GateAttribute, 0, 0xe1 * 4);
-    DAT_07d29d20 = (int)malloc(0xa00);     memset((void*)DAT_07d29d20, 0, 0x280 * 4);
-    DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
+    GateAttribute = static_cast<GATE_ATTRIBUTE*>(malloc(900)); memset(GateAttribute, 0, 0xe1 * 4);
+    DAT_07d29d20 = static_cast<BYTE*>(malloc(0xa00)); memset(DAT_07d29d20, 0, 0x280 * 4);
+    DAT_07cf1ff8 = static_cast<BYTE*>(malloc(0xa00)); memset(DAT_07cf1ff8, 0, 0x280 * 4);
 
     // ItemAttribute — base aleatorizada (anti-tamper, pero igual necesitamos el alloc)
     // DESVIACION (0.97.20): la tabla tiene ITEM_MAX_EX filas (agregados del
     // catálogo del server por encima de 512); el binario reservaba 0x18000.
-    DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
+    DAT_055c9e44 = reinterpret_cast<std::uintptr_t>(malloc((ITEM_MAX_EX + 0x400) * 0x40));
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
-    DAT_07cf1ff0 = (int)malloc(0x8000);
-    memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
+    DAT_07cf1ff0 = static_cast<BYTE*>(malloc(0x8000));
+    memset(DAT_07cf1ff0, 0, 0x2000 * 4);
 
     // Array de entidades — CRÍTICO, todo lo accede
-    DAT_055c9e48 = (DWORD)malloc(0x764d4);
-    DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * 0x394;
-    memset((void*)DAT_07abf5d0, 0, 0x166b5 * 4);
+    DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(529 * CHARACTER_STRIDE));
+    DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * CHARACTER_STRIDE;
+    memset((void*)DAT_07abf5d0, 0, 401 * CHARACTER_STRIDE);
 
     // CharacterMachine / HashTable
     {
@@ -652,19 +663,19 @@ int main(int, char**)
     // queda nula y todos los sitios de dispatch (Render_GameFrame +0x10,
     // UIChatLogWindow_AddText +0x70, CreateChat +0x70) crashean.
     // ChatListBox_Construct portea sub_40C5D0+sub_40C7D0 1:1.
-    DAT_055c9ff0 = (DWORD)ChatListBox_Construct();
+    DAT_055c9ff0 = static_cast<BYTE*>(ChatListBox_Construct());
     // DAT_055c9ff4 es el segundo widget de chat (susurro / panel de notificaciones,
     // esquina superior derecha). El WinMain de IDA llama operator_new(0xBC) +
     // sub_40E990 (hermana de sub_40C7D0, con nodo de lista más chico, 0x18, y 24
     // filas visibles). Sin construirlo la vtable queda nula y el dispatch
-    // vtable[+0x14] desde SecondPassword_Screen1 crashea.
-    DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
+    // vtable[+0x14] desde GuildCreator_HitTest crashea.
+    DAT_055c9ff4 = static_cast<BYTE*>(ChatListBox_ConstructWhisper());
 
     // Los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0: los
     // scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/
     // sub_482E40) toman el 0 como un tipo de arma válido y matchean celdas vacías.
     HUD_InitInventoryPools();
-    DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
+    DAT_055c9ff8 = (uintptr_t)calloc(1, 0x18);
 
     // Fallback de la tabla de modelos: Model_LoadPlayerAndItemMeshes
     // (IDA: OpenPlayers) sólo corre
@@ -672,10 +683,8 @@ int main(int, char**)
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
-        size_t modelPoolSz = (size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc;
-        DAT_06f42a58 = malloc(modelPoolSz);
-        memset(DAT_06f42a58, 0, modelPoolSz);
-        DAT_05828d58 = (DWORD)DAT_06f42a58;
+        DAT_06f42a58=ResourceTables::ModelBase();
+        DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
     }
 
     // Class name table (DAT_07d2b494, stride 300, indexed por cidx = (klass&7) +
@@ -705,9 +714,9 @@ int main(int, char**)
         Platform::GetWindow().ServiceEvents();
         if (Platform::GetWindow().CloseRequested()) break;
 #ifdef _WIN32
-        if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE))
+        if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE))
         {
-            if (!GetMessageA(&msg, NULL, 0, 0))
+            if (!GetMessageW(&msg, NULL, 0, 0))
                 break; // WM_QUIT
 
             // IDA WinMain (0x0041E8A0): TranslateMessage va para TODOS los

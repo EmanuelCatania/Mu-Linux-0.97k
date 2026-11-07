@@ -1,14 +1,21 @@
-set(MU_PLATFORM_BACKEND "Win32" CACHE STRING "Backend de plataforma del cliente")
-set_property(CACHE MU_PLATFORM_BACKEND PROPERTY STRINGS Win32 SDL3)
+set(MU_PLATFORM_BACKEND "SDL3" CACHE STRING "Backend de plataforma del cliente")
+set_property(CACHE MU_PLATFORM_BACKEND PROPERTY STRINGS SDL3 Win32)
 option(MU_PLATFORM_ONLY "Compilar sólo la biblioteca de plataforma (Linux en esta tanda)" OFF)
 if(NOT MU_PLATFORM_BACKEND MATCHES "^(Win32|SDL3)$")
     message(FATAL_ERROR "MU_PLATFORM_BACKEND debe ser Win32 o SDL3")
 endif()
-if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "El cliente y sus backends requieren x86: -A Win32 o toolchain linux-x86")
-endif()
 if(MU_PLATFORM_BACKEND STREQUAL "Win32" AND NOT WIN32)
     message(FATAL_ERROR "El backend Win32 requiere Windows")
+endif()
+# El backend Win32 (ventana, entrada y texto GDI del 0.97k) queda como base
+# histórica: no tiene presets ni CI, y su texto sólo cubre Windows-1252.
+# Los builds de 32 bits quedan como base histórica: compilan con OpenGL pero no
+# se prueban ni reciben WebGPU. Los publicados son x64.
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(WARNING "Build x86 (32 bits): base histórica sin mantenimiento; los builds publicados son x64")
+endif()
+if(MU_PLATFORM_BACKEND STREQUAL "Win32")
+    message(WARNING "Backend Win32: base histórica sin mantenimiento; los builds publicados usan SDL3")
 endif()
 if(NOT MU_PLATFORM_ONLY)
     if(WIN32)

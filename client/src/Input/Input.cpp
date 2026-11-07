@@ -1,6 +1,7 @@
 // Input.cpp
 // Sistema de input del cliente — análisis completo
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Platform/IInput.h"
 #include "Input/Input.h"
 
@@ -308,6 +309,7 @@ void __cdecl ClearInput(int param_1)
       }
       DAT_07d780a8[iVar2] = 0;
       DAT_07e113d8[iVar2] = 0;
+      InputTextMaxClusters[iVar2] = 0;
     }
     iVar2 = iVar2 + 1;
   } while (iVar2 < 10);
@@ -348,9 +350,9 @@ void Input_ProcessFunctionKeys(void)
       DAT_07e11ab0 = 1;
       PlayBuffer(0x19,0,0);
       // vtable[+0x30] = slot 12 = ChatLB_scrollByN (__fastcall this+n).
-      if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+      if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
           DWORD* obj = (DWORD*)DAT_055c9ff0;
-          void** vt  = (void**)*obj;
+          void** vt  = ChatWidget_GetVTable(obj);
           typedef int (__fastcall *FnScroll)(DWORD*, int /*edx*/, int);
           ((FnScroll)vt[12])(obj, 0, 0);
       }

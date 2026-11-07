@@ -5,6 +5,7 @@
 // FUN_005239a0 @ 0x005239a0 - UI_DrawLoginBg
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 
 // IDA: RenderInfomation3D (0x0051E0C0)
 void RenderInfomation3D(void)
@@ -23,16 +24,16 @@ void RenderInfomation3D(void)
     return;
   }
 
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  GL_SetViewport(0, 0, gWindow.GetWidth(), gWindow.GetHeight());
-  aspect = (float)((double)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
+  GL_SetViewport(0, 0, gWindow.GetRealWidth(), gWindow.GetHeight());
+  aspect = (float)((double)gWindow.GetRealWidth() / (double)(int)gWindow.GetHeight());
   GL_SetPerspective(0x3f800000, aspect, (int)DAT_0056154c, DAT_00561550);
 
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   GL_EnableDepthTest();
   GL_EnableDepthWrites();
@@ -48,22 +49,26 @@ void RenderInfomation3D(void)
 
   RenderItem3D(245.0f, 115.0f, 40.0f, 60.0f, (int)itemType, level, option1, 0, '\x01');
 
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
 }
 
 void FUN_005239a0(void)
 {
   GL_SetBlendSrcOver('\x01');
-  glColor3f(1.0f, 1.0f, 1.0f);
-  GL_DrawTexture(0xc,320.0,0.0,256.0,86.0,0.0,0.0,1.0,0.671875,'\x01','\x01');
-  GL_DrawTexture(0xc,64.0,0.0,256.0,86.0,1.0,0.0,-1.0,0.671875,'\x01','\x01');
-  GL_DrawTexture(0xd,576.0,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xd,0.0,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xe,576.0,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'\x01','\x01');
-  GL_DrawTexture(0xe,0.0,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'\x01','\x01');
-  GL_DrawTexture(0xf,320.0,448.0,256.0,32.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xf,64.0,448.0,256.0,32.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
+  // DESVIACION (Fase 4, pantalla ancha; DLL WRenderInterfaceEdge): el marco se
+  // pega a los bordes de la ventana (`s` unidades de más a cada lado) y las
+  // barras de arriba y de abajo se estiran para cerrar el hueco.  Con 4:3, s = 0.
+  const float s = (float)gWindow.GetRightShift();
+  GL_DrawTexture(0xc,320.0,0.0,256.0f + s,86.0,0.0,0.0,1.0,0.671875,'','');
+  GL_DrawTexture(0xc,64.0f - s,0.0,256.0f + s,86.0,1.0,0.0,-1.0,0.671875,'','');
+  GL_DrawTexture(0xd,576.0f + s,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'','');
+  GL_DrawTexture(0xd,-s,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'','');
+  GL_DrawTexture(0xe,576.0f + s,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'','');
+  GL_DrawTexture(0xe,-s,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'','');
+  GL_DrawTexture(0xf,320.0,448.0,256.0f + s,32.0,0.0,0.0,1.0,1.0,'','');
+  GL_DrawTexture(0xf,64.0f - s,448.0,256.0f + s,32.0,1.0,0.0,-1.0,1.0,'','');
 }
