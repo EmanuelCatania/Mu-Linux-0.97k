@@ -14,6 +14,7 @@
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
+#include "UI/ChatHistory.h"
 void ChatListBox_AddWheel(int notches);
 extern "C" BYTE InputTextHide[10];
 
@@ -266,6 +267,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
                         // GoldInputEnable = 0 — ya está en 0 en el juego normal
                         DAT_00559c84 = 1;                       // InputEnable = 1
                         DAT_07e11d78 = 0;                       // InputIndex = 0
+                        ChatHistory::ResetBrowse();
                     }
                     PlayBuffer(0x19, 0, 0);   // click sfx
                 } else if (DAT_00559c84) {
@@ -276,6 +278,8 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     // loop de canales de Chat_InputTick; el envío crudo anda
                     // bien para el caso del chat normal).
                     char* line = (char*)DAT_07db8710 + slot * 0x100;
+                    // DESVIACION (Fase 4): historial del campo del mensaje (flechas).
+                    if (slot == 0) ChatHistory::Push(line);
                     // "/N texto" guarda la macro N en vez de enviarse (desviacion).
                     if (Chat_TryAssignMacro(line)) {
                         memset(line, 0, 0x100);

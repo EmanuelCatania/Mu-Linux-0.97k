@@ -210,6 +210,7 @@
     <ClInclude Include="src\UI\PanelAnchor.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\UI\BuffBar.h" />
+    <ClInclude Include="src\UI\ChatHistory.h" />
     <ClInclude Include="src\Core\DataPrefetch.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\Render\Camera3D.h" />
@@ -642,6 +643,7 @@
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
     <ClCompile Include="src\UI\BuffBar.cpp" />
+    <ClCompile Include="src\UI\ChatHistory.cpp" />
     <ClCompile Include="src\Core\DataPrefetch.cpp" />
     <ClCompile Include="src\UI\MiniMap.cpp" />
     <ClCompile Include="src\Render\Camera3D.cpp" />
