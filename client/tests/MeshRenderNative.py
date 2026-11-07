@@ -27,6 +27,7 @@ std::vector<std::array<float,2>> expectedUV;bool checkUV;
 BMD* subject;ClothModelMesh* wantedMesh;int wantedModel,wantedIndex;
 void Value(float value){std::uint32_t bits;std::memcpy(&bits,&value,4);events.push_back(bits);}
 struct Catalog{bool IsTwoSidedMesh(int model,int mesh){Require(model==wantedModel&&mesh==wantedIndex);return (model+mesh)%2!=0;}}gContentCatalog;
+struct MapManagerStub{int GetCurrentMap()const{return 0;}}gMapManager;  // fuera de Icarus: el destello del trueno no aplica
 namespace Materials{TwoSidedScope::TwoSidedScope(bool){}TwoSidedScope::~TwoSidedScope(){}}
 namespace BMDDevice{
 MeshScope::MeshScope(bool two):cull(two){events.push_back(10);events.push_back(two);}
