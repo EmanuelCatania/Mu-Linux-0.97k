@@ -3,5 +3,5 @@ kayito_ref/
 web/_template/
 node_modules/
 
-/out/
-/Source/MuServer/bin/
+/server/out/
+/server/Source/MuServer/bin/
