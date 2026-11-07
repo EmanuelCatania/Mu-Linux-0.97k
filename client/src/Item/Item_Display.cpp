@@ -1,0 +1,652 @@
+// Item_Display.cpp
+
+#include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Platform/Text.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "globals.h"
+#include "functions.h"
+#include "Net/Net.h"
+
+extern "C" BYTE OffsetTradeItems[];
+extern "C" BYTE OffsetMixItems[];
+extern "C" BYTE OffsetWarehouseItems[];
+extern "C" BYTE Inventory[];
+extern DWORD g_PickupLatchX, g_PickupLatchY;   // Item_ClickHandler.cpp (IDA dword_83A42E0/E4)
+extern "C" int dword_7EAA0C8;
+extern "C" int dword_7EAA0CC;
+
+static BYTE InventoryPoolToMoveFlag(const BYTE* poolBase) {
+    if (poolBase == &OffsetTradeItems[0] || poolBase == &Inventory[0]) return 1;
+    if (poolBase == &OffsetWarehouseItems[0]) return 2;
+    if (poolBase == &OffsetMixItems[0]) return 3;
+    return 0;
+}
+
+static void InventoryMove_SetPendingPools(BYTE* sourcePoolBase,
+                                          BYTE* targetPoolBase) {
+    g_ItemMoveSourcePool = sourcePoolBase;
+    g_ItemMoveTargetPool = targetPoolBase;
+}
+
+// ConvertGold64 @ 0x004C3E10 (~23 lines) — formats gold with thousand separators
+int __cdecl ConvertGold64(int Zen, char* Buffer) {
+    if (Zen > 999999999)
+        return sprintf(Buffer, "%d,%03d,%03d,%03d", Zen / 1000000000, (Zen / 1000000) % 1000, (Zen / 1000) % 1000, Zen % 1000);
+    if (Zen > 999999)
+        return sprintf(Buffer, "%d,%03d,%03d", Zen / 1000000, (Zen / 1000) % 1000, Zen % 1000);
+    if (Zen > 999)
+        return sprintf(Buffer, "%d,%03d", Zen / 1000, Zen % 1000);
+    return sprintf(Buffer, "%d", Zen);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RenderItemName @ 0x004C9E70 — nombre flotante de un item del suelo
+// ─────────────────────────────────────────────────────────────────────────────
+// Port 1:1 del decompile (mu97k-src-IDA/raw/004C9E70_RenderItemName.c).  Lo
+// llama sub_4CB6F0 (Target_Render): para el item bajo el cursor con Sort=0 y
+// para todos los del suelo con Sort=1 mientras Alt esté activo.
+//
+//   o          = &Items[i][72]  → o+2 = índice de modelo (tipo + 400)
+//   ItemLevel  = Items+8        → para el Zen (modelo 863) es la CANTIDAD
+//   ItemOption = Items+31
+//
+// Zen (863): `sprintf(String, "%s %d", name, ItemLevel)` = "Zen <cantidad>".
+// Los colores: IDA llena v38[2],v38[1],v38[0] y llama glColor3f(v38[0],v38[1],v38[2]).
+//
+// Ruido anti-tamper omitido por policy: las ramas 795 y 826 del binario están
+// envueltas en lookups de hash-table (ref-count + XOR sobre la entrada de
+// SkillAttribute).  Con nuestra tabla en claro el resultado es el mismo.
+//
+// Desviación: donde IDA hace `sprintf(String, GlobalText[N])` (una cadena de
+// datos usada como formato) nosotros usamos `sprintf(String, "%s", GlobalText[N])`.
+void __cdecl RenderItemName(int i, const OBJECT* object, int ItemLevel, int ItemOption, bool Sort) {
+    (void)i;
+    const BYTE* o = reinterpret_cast<const BYTE*>(object);
+
+    const int v5 = ItemLevel;
+    const int v6 = (ItemLevel >> 3) & 0xF;
+    // DESVIACION: IDA usa CHAR String[52] y concatena con strcat sin límite.
+    // Un nombre largo con nivel, skill, suerte y opción pasa de 52 bytes y
+    // pisa la pila (el crash del cliente con DLL). Buffer más grande y los
+    // agregados truncan en vez de desbordar.
+    char  String[256];
+    float v38[3];
+    String[0] = '\0';
+    auto AppendName = [&String](const char* text) {
+        if (!text) return;
+        size_t used = strlen(String);
+        while (*text && used + 1 < sizeof(String)) String[used++] = *text++;
+        String[used] = '\0';
+    };
+
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));   // g_hFont
+    const short v7 = *(short*)(o + 2);
+
+    // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.
+    // Guard defensivo (no está en IDA): DAT_07d78068 se corrompe a valores
+    // chicos en algunos caminos, igual que en los guards del tooltip.
+    const char* name = "";
+    {
+        // DESVIACION (0.97.32): un item con modelo propio no cumple
+        // modelo = tipo + 400; el catálogo da el tipo de ese modelo.
+        int attrIdx = gContentCatalog.GetModelItemType((int)v7);
+        if (attrIdx < 0) attrIdx = (int)v7 - ITEM_MODEL_BASE;
+        std::uintptr_t abase = ItemAttribute_Base();
+        if (abase && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
+            name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
+    }
+
+    switch (v7) {
+    case 863:                                   // Zen / dinero
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        sprintf(String, "%s %d", name, v5);
+        goto renderLabel;
+
+    case 861: case 862: case 864:               // joyas
+    case 799: case 870: case 830:
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        sprintf(String, "%s", name);
+        goto renderLabel;
+
+    case 865: case 866: case 867:               // Devil (Chaos) items
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        if ((v5 & 0x78) != 0) sprintf(String, "%s +%d", name, v6);
+        else                  sprintf(String, "%s", name);
+        goto renderLabel;
+    }
+
+    if (v7 == 859 && v6 == 7) {
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        sprintf(String, "%s", GlobalText[111]);
+        goto renderLabel;
+    }
+
+    switch (v7) {
+    case 860:                                   // Event item
+        if (v6 == 0)      sprintf(String, "%s", GlobalText[100]);
+        else if (v6 == 1) sprintf(String, "%s", GlobalText[101]);
+        else if (v6 == 2) sprintf(String, "%s", GlobalText[104]);
+        goto renderLabel;
+
+    case 831:                                   // alas: prefijo por sub-tipo
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        switch (v6) {
+        case 0: sprintf(String, "%s %s", GlobalText[168], name); break;
+        case 1: sprintf(String, "%s %s", GlobalText[169], name); break;
+        case 2: sprintf(String, "%s %s", GlobalText[167], name); break;
+        case 3: sprintf(String, "%s %s", GlobalText[166], name); break;
+        default: break;
+        }
+        goto renderLabel;
+
+    case 951: sprintf(String, "%s", GlobalText[105]); goto renderLabel;
+    case 952: sprintf(String, "%s", GlobalText[106]); goto renderLabel;
+    case 953: sprintf(String, "%s", GlobalText[107]); goto renderLabel;
+    case 954: sprintf(String, "%s", GlobalText[108]); goto renderLabel;
+    case 955: sprintf(String, "%s", GlobalText[109]); goto renderLabel;
+    case 956: sprintf(String, "%s", GlobalText[110]); goto renderLabel;
+    case 957: sprintf(String, "%s +%d", GlobalText[115], v6 - 7); goto renderLabel;
+    case 958:
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
+        sprintf(String, "%s", GlobalText[810]);
+        goto renderLabel;
+
+    case 795: {                                 // pergamino de skill
+        // IDA: v45 = 8 * (5 * v6 + 150); sprintf("%s %s", &SkillAttribute[v45],
+        // GlobalText[102]).  Las entradas de SkillAttribute son de 40 bytes
+        // (WinMain reserva 0xA00 = 64 entradas y el anti-tamper copia de a
+        // 0x28), así que el índice es 40 * (v6 + 30) y el nombre va en offset 0.
+        int v45 = 8 * (5 * v6 + 150);
+        const char* skillName = (const char*)((const char*)&SkillAttribute + v45);
+        sprintf(String, "%s %s", skillName, GlobalText[102]);
+        goto renderLabel;
+    }
+    }
+
+    if (v7 != 826) {
+        if (v7 == 570 || v7 == 419 || v7 == 546) {
+            v38[2] = 1.0f;
+            v38[1] = 0.1f;
+        } else {
+            if ((ItemOption & 0x3F) != 0 && (v7 < MODEL_WING_SPIRITS || v7 > MODEL_WING_DARKNESS)) {
+                v38[2] = 0.5f; v38[1] = 1.0f; v38[0] = 0.1f;
+                goto LABEL_118;
+            }
+            if (v6 < 7) {
+                if ((v5 & 0x87) != 0) goto LABEL_115;
+                if (v6 == 0) {
+                    Gfx::Color3f(0.7f, 0.7f, 0.7f);
+                    goto LABEL_119;
+                }
+                if (v6 < 3) {
+                    v38[0] = 0.9f; v38[1] = 0.9f; v38[2] = 0.9f;
+                    goto LABEL_118;
+                }
+                if (v6 >= 5) {
+LABEL_115:
+                    v38[2] = 1.0f; v38[1] = 0.7f; v38[0] = 0.4f;
+                    goto LABEL_118;
+                }
+                v38[2] = 0.2f; v38[1] = 0.5f;
+            } else {
+                v38[2] = 0.1f; v38[1] = 0.8f;
+            }
+        }
+        v38[0] = 1.0f;
+LABEL_118:
+        Gfx::Color3f(v38[0], v38[1], v38[2]);
+        if (v6 != 0) {
+            sprintf(String, "%s +%d", name, v6);
+            goto LABEL_121;
+        }
+LABEL_119:
+        sprintf(String, "%s", name);
+LABEL_121:
+        if ((v5 & 0x80) != 0) {
+            // IDA escribe " +" (word_55A6B0) sobre el NUL y luego concatena
+            // GlobalText[179] para el tipo 819; el resto usa GlobalText[176].
+            if (v7 == MODEL_HELPER_DINORANT) {
+                AppendName(" +");
+                AppendName(GlobalText[179]);
+            } else {
+                AppendName(GlobalText[176]);
+            }
+        }
+        if ((v5 & 3) != 0 || (ItemOption & 0x40) != 0) AppendName(GlobalText[177]);
+        if ((v5 & 4) != 0)                             AppendName(GlobalText[178]);
+        goto renderLabel;
+    }
+
+    {   // v7 == 826: piedra de invocación — nombre del monstruo + GlobalText[103]
+        static const int SommonTable[6] = { 2, 7, 14, 8, 9, 41 };
+        if (v6 < 6) {
+            const MONSTER_SCRIPT* ms = (const MONSTER_SCRIPT*)&MonsterScript;
+            int target = SommonTable[v6];
+            for (int m = 0; m < MAX_MONSTER; ++m) {
+                if (ms[m].Type == target) {
+                    sprintf(String, "%s %s", ms[m].Name, GlobalText[103]);
+                    break;
+                }
+            }
+        }
+    }
+
+renderLabel:
+    {
+        int  textLen = Platform::TextLength(String);
+        SIZE sz;
+        gFont.MeasureText(gFont.GetTextDC(), String, textLen, &sz);
+        if (Sort) {
+            // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
+            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
+            int y = (int)*(short*)(o + 0x5e) - 15;
+            RenderText(x, y, String, 0, 0, (SIZE*)3);
+        } else {
+            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
+            int y = (int)MouseY - 15;
+            RenderText(x, y, String, 0, 0, (SIZE*)3);
+        }
+    }
+}
+
+unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
+                                            BYTE* invBase, int gridW,
+                                            int gridH, int slotType);
+
+unsigned int __stdcall Inventory_DropItem(void) {
+    BYTE* invBase = DAT_07ea9800;
+    int gridW = 8;
+    int gridH = (invBase == &OffsetMixItems[0]) ? 4 : 8;
+    int originX = 0;
+    int originY = 0;
+
+    if (invBase == &OffsetInventoryItems[0]) {
+        originX = InventoryStartX + 15;
+        originY = InventoryStartY + 200;
+    } else if (invBase == &OffsetTradeItems[0]) {
+        originX = TradeInventoryStartX + 15;
+        originY = TradeInventoryStartY + 270;
+        gridH = 4;
+    } else if (invBase == &Inventory[0]) {
+        originX = TradeInventoryStartX + 15;
+        originY = TradeInventoryStartY + 70;
+        gridH = 4;
+    } else if (invBase == &OffsetWarehouseItems[0]) {
+        originX = dword_7EAA0C8 + 15;
+        originY = dword_7EAA0CC + 50;
+        gridH = 15;
+    } else if (invBase == &OffsetMixItems[0]) {
+        originX = dword_7EAA0C8 + 15;
+        originY = dword_7EAA0CC + 110;
+        gridH = 4;
+    }
+
+    return Inventory_DropItemEx(originX, originY, invBase, gridW, gridH, 0);
+}
+
+unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
+                                            BYTE* invBase, int gridW,
+                                            int gridH, int slotType) {
+    bool actionTaken = false;
+    bool retVal = false;   // IDA: v487
+    // 0x004D6470 — Giant item drag-and-drop handler (~3011 lines decompiled).
+    // Called when player releases mouse on inventory/equipment grid.
+    //
+    // Anti-tamper notes (all skipped in this implementation):
+    //   - ~22 unreachable blocks (dead code removed by Ghidra)
+    //   - ~63 phantom stack params (in_stack_00006cec..in_stack_00009d10) — fake anti-tamper,
+    //     not real args. The real "params" are caller locals read via stack overlap in the
+    //     original binary. Our re-implementation reads them as globals instead.
+    //   - Repeated XOR key init (0x893a6de7/0x739fb2bc/0xb6fea823) + single-iteration loops
+    //     around every packet byte — compiler artifact / anti-tamper padding.
+    //   - Hash table operations (HashTable_Insert, FUN_004041e0, FUN_004042b0, HashTable_GetNode,
+    //     Packet_DecryptByte, Packet_EncryptBuffer) interspersed around every packet send — anti-tamper
+    //     hash table, skipped.
+    //
+    // The caller (Inventory_DropDispatch @ 0x004DF410) calls this up to 4 times per frame,
+    // once for each open inventory context:
+    //   1. Main inventory (OffsetInventoryItems, grid 8x8, slotType=0)
+    //   2. Trade window    (TradeOpened, same grid)
+    //   3. Warehouse       (WarehouseOpened, same grid)
+    //   4. Chaos mix       (ChaosMixOpened + MixState, grid 8x4)
+    //
+    // In the original binary, context params (inventoryBase, gridWidth, gridHeight, slotType,
+    // gridOffsetX, gridOffsetY) are passed via stack-frame overlap. In this reimplementation
+    // we read the relevant globals directly, matching the caller's setup pattern.
+    //
+    // Return value: low byte used as bool success flag by caller.
+
+    // --- Alias Ghidra globals to readable names ---
+    // pPickedItem       = DAT_07e91350 (short, type of item being dragged)
+    // ItemAttribute     = DAT_07d78068 (ITEM_ATTRIBUTE*, stride 0x40)
+    // OffsetInventoryItems = DAT_07ea8410 (inventory item array base)
+    // OffsetWarehouseItems = DAT_07ea5b30 (warehouse item array base, char type in globals)
+    // OffsetMixItems    = DAT_07ea9848 (chaos mix item array base)
+    // MixState          = DAT_07eaa140 (chaos mix active flag)
+    // EquipmentItem     = DAT_07eaa165 (equipment move in-progress guard)
+    // InventoryOpened   = (extern) InventoryOpened
+    // WarehouseOpened   = DAT_07eaa119
+    // TradeOpened       = DAT_07eaa11b
+    // MouseX            = DAT_083a427c
+    // MouseY            = DAT_083a4278
+    // MouseLButtonPush  = DAT_083a4124
+    // DAT_083a42eb      = auto-drop trigger flag
+    // DAT_07e11e78      = target inventory slot index
+    // DAT_07ea5b18      = source inventory slot index (picked-from)
+    // DAT_07e91354      = picked item level (Level)
+    // DAT_07e9136a      = picked item durability/option byte
+    // DAT_07e9136b      = picked item extra dur byte
+    // DAT_07ea9800      = current inventory context pointer
+    // DAT_07ea8414      = inventory item level array (offset +4 from base)
+    // EnableUse         = DAT_05826d1c (extern EnableUse)
+
+
+    short pickedType = *(short*)DAT_07e91350;
+    ITEM_ATTRIBUTE* pAttr = (ITEM_ATTRIBUTE*)DAT_07d78068;
+    if (!pAttr || pickedType < 0) return 0;
+    int itemWidth  = (int)pAttr[pickedType].Width;
+    int itemHeight = (int)pAttr[pickedType].Height;
+    if (itemWidth <= 0 || itemHeight <= 0) return 0;
+
+    // Use the args directly.
+    BYTE* sourceInvBase = DAT_07ea9800;
+    BYTE  sourceMoveFlag = InventoryPoolToMoveFlag(sourceInvBase);
+    BYTE  targetMoveFlag = InventoryPoolToMoveFlag(invBase);
+    int   gridWidth  = gridW;
+    int   gridHeight = gridH;
+
+    // No escribir DAT_07ea9800 acá: IDA sub_4D6470 SOLO LEE dword_7EA9800 (los
+    // unicos writers son sub_4D23B0 L798/L1401 y Player_InputTick L711, todos en
+    // el PICKUP). Es el pool de ORIGEN del item agarrado, y el dispatcher
+    // sub_4DF410 llama a esta funcion hasta 4 veces por frame (main inv, trade,
+    // baul, mix): pisarlo cambiaría el SourceFlag que se manda al server.
+
+    // ── Mouse-to-grid conversion (per IDA L595-597) ─────────────────────────
+    //   gridX = (MouseX - origin_x) * 0.05 - itemW * 0.5 + 0.5  →  __ftol
+    //   gridY = (MouseY - origin_y) * 0.05 - itemH * 0.5 + 0.5
+    // The 0.05 factor = 1/20 (cells are 20 px wide). The half-width offset
+    // centers the multi-cell footprint on the cursor.
+    int mouseGridX = (int)(((double)((int)DAT_083a427c - origin_x)) * 0.05
+                            - (double)itemWidth  * 0.5 + 0.5);
+    int mouseGridY = (int)(((double)((int)DAT_083a4278 - origin_y)) * 0.05
+                            - (double)itemHeight * 0.5 + 0.5);
+
+    // Bounds check: negative grid coords = outside the grid (mouse left/up
+    // of origin).
+    if (mouseGridX < 0 || mouseGridY < 0) {
+        return 0;
+    }
+
+    bool cursorInsideGrid = (mouseGridX < gridWidth && mouseGridY < gridHeight);
+    bool footprintInsideGrid = cursorInsideGrid &&
+        mouseGridX + itemWidth <= gridWidth && mouseGridY + itemHeight <= gridHeight;
+
+    // (Pool aliases declared at file scope above.)
+    // --- Check if target is MixItems with MixState active ---
+    bool spaceFree = false;
+    if ((BYTE*)invBase == &OffsetMixItems[0] && DAT_07eaa140 != 0) {
+        // IDA sub_4D6470 L601-604: con MixState != 0 la grilla del Chaos se
+        // trata como SIN lugar (`v487 = 0`).  Despues de un mix MixState queda
+        // en >= 2 (ReceiveMix) hasta reabrir la maquina.  El port la daba por
+        // libre, y eso ademas disparaba el aviso de la rama "no libre" de abajo
+        // en cada drop.
+        spaceFree = false;
+    } else {
+        // Call CheckInventorySpace to validate placement.
+        // Recibe SCREEN OFFSETS (origin_x, origin_y), no grid coords: hace la
+        // conversión mouseX-p1 → pixel relativo → grid internamente.
+        unsigned long long result = CheckInventorySpace(
+            origin_x, origin_y,
+            (unsigned short*)invBase,
+            gridWidth, gridHeight
+        );
+        spaceFree = (char)result != 0;
+    }
+
+    // --- Mark grid cells with color state ---
+    // Iterate over the item's width x height footprint
+    int endY = mouseGridY + itemHeight;
+    int endX = mouseGridX + itemWidth;
+    for (int gy = mouseGridY; gy < endY; gy++) {
+        for (int gx = mouseGridX; gx < endX; gx++) {
+            if (gx >= 0 && gy >= 0 && gx < gridWidth && gy < gridHeight) {
+                int cellIdx = gy * gridWidth + gx;
+                BYTE* cellBase = (BYTE*)(invBase + cellIdx * 0x44);  // stride 0x22 words = 0x44 bytes
+                // IDA sub_4D6470 L630-642:
+                //   entra                     -> 2 (azul, InventoryColor)
+                //   no entra, jewel 461/462/464 -> 4 (verde: se aplica al item)
+                //   no entra                  -> 3 (rojo)
+                if (spaceFree) {
+                    cellBase[0x40] = 2;
+                } else if (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE) {
+                    cellBase[0x40] = 4;
+                } else {
+                    cellBase[0x40] = 3;
+                }
+            }
+        }
+    }
+
+    // --- Check for mouse click to confirm drop ---
+    if (DAT_083a42eb == '\0' && DAT_083a4124 == 0) {
+        // Sin click ni auto-drop: solo la vista previa.  IDA L661: return v487.
+        return spaceFree ? 1u : 0u;
+    }
+
+    // === MOUSE BUTTON PRESSED OR AUTO-DROP: Execute the drop ===
+
+    if (!spaceFree) {
+        // --- Space check failed: target slot is occupied ───────────────────
+        // (Currency stacking / "can't place" UI message only.)
+        // Check for currency item stacking on existing inventory item
+        bool canStack = false;
+        if (cursorInsideGrid
+            && (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE)
+            && slotType == 0 && InventoryOpened != 0)
+        {
+            int targetSlot = mouseGridY * gridWidth + mouseGridX;
+            // 0.97.20: un agregado acepta joyas como el vanilla que imita.
+            short targetType = (short)ItemBehaviorType(*(short*)(invBase + targetSlot * 0x44));
+            int targetLevel = *(int*)(invBase + targetSlot * 0x44 + 4) >> 3 & 0xf;
+            bool validTarget = (targetType < 0x187);
+
+            // Jewels 0x87 / 0x8f cannot receive upgrade
+            if (targetType == 0x87 || targetType == 0x8f) {
+                validTarget = false;
+            }
+            // IDA L5836-5848: desde aca `v487 = v400`, o sea la funcion devuelve
+            // si el item destino admite la jewel, AUNQUE despues no se mande
+            // nada (tope de nivel, cooldown, baul/trade abiertos).  Con 1 el
+            // dispatcher no sigue a la rama de tirar al suelo.
+            retVal = validTarget;
+
+            // Level cap per currency type
+            if (pickedType == ITEM_JEWEL_BLESS && targetLevel > 5) {
+                // Jewel of Bless: max +5
+                canStack = false;
+                goto drop_done;
+            }
+            if (pickedType == ITEM_JEWEL_SOUL && targetLevel > 8) {
+                // Jewel of Soul: max +8
+                canStack = false;
+                goto drop_done;
+            }
+
+            if (validTarget) {
+                // Record which slot the currency is being applied to
+                DAT_07e11e78 = (DWORD)(
+                    (DWORD)*(invBase + targetSlot * 0x44 + 0x3f) * gridWidth + 0xc
+                    + (DWORD)*(invBase + targetSlot * 0x44 + 0x3e)
+                );
+
+                // Con el baul o el trade abiertos no se puede aplicar la
+                // jewel: IDA salta a LABEL_807, que muestra el mensaje. Por eso
+                // `canStack` queda en false en esos dos casos.
+                if (DAT_07eaa119 != '\0' || DAT_07eaa11b != '\0') {
+                    // IDA LABEL_807: jewel sobre un item con el baul o el trade
+                    // abiertos.  Es el UNICO sitio de sub_4D6470 que muestra
+                    // GlobalText[474]; el resto de la rama "no libre" sale en
+                    // silencio (LABEL_808).
+                    UIChatLogWindow_AddText((const char*)&DAT_07eaa190, GlobalText[474], 2);
+                } else {
+                    // Aplicar una jewel es 0x26 PMSG_ITEM_USE_RECV, como IDA (sub_4D6470
+                    // L5919-5931), no 0x24 (mover): dispara CharacterUseJewelOfBles/Soul/Life en
+                    // el server, que contesta con GCItemDeleteSend + GCItemModifySend (F3/14).
+                    //
+                    //   struct PMSG_ITEM_USE_RECV {   // ItemManager.h:49
+                    //       PBMSG_HEAD header;        // C1 : 5 : 0x26
+                    //       BYTE SourceSlot;          // +3
+                    //       BYTE TargetSlot;          // +4
+                    //   };
+                    //
+                    // Va por gNetwork.Send porque HackPacketCheck.txt da
+                    // Encrypt=1 para el indice 38 -> el frame final tiene que
+                    // ser C3 con serial. El 0xC1 que arma IDA es el texto plano
+                    // previo al encriptador, no el frame que viaja.
+                    if ((int)EnableUse < 1) {
+                        // IDA: `if (EnableUse > 0) goto LABEL_808;` — durante el
+                        // cooldown NO se manda nada.
+                        EnableUse = 10;
+
+                        BYTE pkt[8];
+                        memset(pkt, 0, sizeof(pkt));
+                        pkt[0] = 0xC1;
+                        pkt[1] = 5;                          // lo pisa el serial
+                        pkt[2] = 0x26;                       // ItemUse
+                        pkt[3] = (BYTE)(int)DAT_07ea5b18;    // SourceSlot (la jewel)
+                        pkt[4] = (BYTE)(int)DAT_07e11e78;    // TargetSlot (el item)
+                        gNetwork.Send(pkt, 5);
+                        actionTaken = true;
+
+                        // Sonido segun el item de origen (IDA LABEL_802).
+                        short sndItem = *(short*)((char*)OffsetInventoryItems + ((int)DAT_07ea5b18 - 0xc) * 0x44);
+                        if (sndItem == 0x1c0) {
+                            PlayBuffer(0x21, 0, 0);
+                        } else if (sndItem > 0x1c0 && sndItem < 0x1ca) {
+                            PlayBuffer(0x20, 0, 0);
+                        }
+                    }
+                    canStack = true;
+                }
+            }
+        }
+        // (Aca se imprimia GlobalText[474] para CUALQUIER drop sin lugar, en
+        //  todos los grids que llama el dispatcher en el mismo click.  IDA
+        //  sale en silencio: ver LABEL_807 arriba.)
+        (void)canStack;
+        goto drop_done;
+    }
+
+    // === Hay lugar: IDA sub_4D6470 L663-2673 + L2675-5345 ===
+    // La funcion devuelve v487 (= hay lugar) en LABEL_808 aunque no se mande
+    // nada: guard de EquipmentItem, InventoryOpened en 0 o tipos 471..474.
+    // Con 0 el dispatcher sub_4DF410 seguia a la rama de tirar al suelo.
+    retVal = true;
+
+    if (slotType == 0 && InventoryOpened != 0) {
+        // Destino = inventario principal.  IDA ramifica por el pool de ORIGEN
+        // (dword_7EA9800), no por el destino: el port ramificaba por invBase,
+        // que con slotType 0 siempre es OffsetInventoryItems, asi que la rama
+        // del password del baul estaba muerta y las comprobaciones de celda
+        // propia/apilado corrian tambien para items que venian del baul.
+        DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + 0xc + mouseGridX);
+
+        if (sourceInvBase == &OffsetInventoryItems[0]) {
+            // IDA L669-692
+            bool isDifferentSlot = (DAT_07ea5b18 != DAT_07e11e78);          // v21
+            int targetOffset = ((int)DAT_07e11e78 - 0xc) * 0x44;
+            short targetType = *(short*)((char*)OffsetInventoryItems + targetOffset);   // v24
+            bool sendIt = false;
+            if (pickedType == targetType) {
+                if (pickedType >= 448 && pickedType <= 456 && targetType >= 448 && targetType <= 456)
+                    isDifferentSlot = true;
+                // Pociones 135/143 del mismo nivel (Level entero, sin shift):
+                // se mandan aunque sea la misma celda.
+                if ((pickedType == 135 || pickedType == 143)
+                    && (targetType == 135 || targetType == 143)
+                    && (int)DAT_07e91354 == *(int*)((char*)OffsetInventoryItems + targetOffset + 4))
+                    sendIt = true;
+            }
+            if (!sendIt && !isDifferentSlot) {
+                // LABEL_42: misma celda -> sub_4CD3B0 devuelve el item.
+                Item_ReturnPickedItem();
+                goto drop_done;
+            }
+        } else if (sourceInvBase == &OffsetWarehouseItems[0]) {
+            // IDA L1186-1220: sacar del baul con el candado puesto pide el PIN.
+            if (DAT_00559f5f != '\0' && DAT_07eaa148 == '\0') {
+                DAT_07ea9810 = DAT_07e11e78;
+                DAT_07ea9808 = DAT_07ea5b18;
+                DAT_07ea9804 = 2;
+                DAT_07ea980c = 0;
+                short* shuffleArr = (short*)&DAT_07e91394;
+                for (short i = 0; i < 10; i++)
+                    shuffleArr[i] = i;
+                for (int n = 0; n < 20; n++) {
+                    int a = rand() % 10;
+                    int b = rand() % 10;
+                    if (a != b) {
+                        shuffleArr[a] ^= shuffleArr[b];
+                        shuffleArr[b] ^= shuffleArr[a];
+                        shuffleArr[a] ^= shuffleArr[b];
+                    }
+                }
+                DAT_07eaa14c = 1;
+                memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                DAT_07ea9818 = 0;
+                DAT_07ea981c = 0;
+                DAT_07ea981e = 0;
+                goto drop_done;
+            }
+        }
+        // Origen inventario / baul / Chaos / trade: mismo 0x24 con destino 0.
+        // (El m_nMyTradeWait = 150 de LABEL_288 lo aplica el helper de envio.)
+        if (DAT_07eaa165 != '\0') goto drop_done;
+        DAT_07eaa165 = '\x01';
+        InventoryMove_SetPendingPools(sourceInvBase, invBase);
+        SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
+            (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
+        actionTaken = true;
+        goto drop_done;
+    }
+
+    // IDA L2671: los tipos 471..474 no se sueltan fuera del inventario.
+    if (pickedType >= 471 && pickedType <= 474) goto drop_done;
+
+    // Destinos trade (1), baul (2) y Chaos (3): la celda es sin el +12.
+    if (slotType != 1 && slotType != 2 && slotType != 3) goto drop_done;
+    DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + mouseGridX);
+
+    if (slotType == 1 && sourceInvBase == &OffsetInventoryItems[0]) {
+        // IDA L5158-5163: del inventario al trade primero se retira la
+        // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
+        m_bMyConfirm = 0;                               // m_bMyConfirm
+        BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
+        gNetwork.Send(unconfirm, 4);
+    }
+
+    if (DAT_07eaa165 != '\0') goto drop_done;
+    DAT_07eaa165 = '\x01';
+    InventoryMove_SetPendingPools(sourceInvBase, invBase);
+    SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
+        (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
+    actionTaken = true;
+
+drop_done:
+    // IDA sub_4D6470 LABEL_808: el quick-move del click derecho (sub_4D23B0
+    // L1401-1438) mueve el mouse a un hueco libre del baul y prende
+    // byte_83A42EB para que este drop se haga solo.  Al terminar, el original
+    // devuelve el cursor a donde estaba y apaga el flag.  Sin esto el flag
+    // quedaba prendido y los drops siguientes se disparaban solos.
+    if (DAT_083a42eb) {
+        DAT_083a427c = g_PickupLatchX;
+        DAT_083a4278 = g_PickupLatchY;
+    }
+    DAT_083a42eb = 0;
+    (void)actionTaken;
+    return retVal ? 1u : 0u;
+}

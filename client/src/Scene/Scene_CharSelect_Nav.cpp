@@ -1,0 +1,2543 @@
+#include <cstdint>
+// Scene_CharSelect_Nav.cpp
+//
+// Char-select slot navigation helpers:
+//   CSQuest_FindQuestContext (IDA: FUN_004011D0)
+//   CSQuest_CheckActCondition (IDA: FUN_00401650)
+//   CSQuest_ShowDialogText (IDA: FUN_004017E0)
+//   CSQuest_clearQuest (slot-list navigation forward)
+//   FUN_00401af0 (slot-list navigation back)
+//   ... and related slot scroll/select helpers.
+//
+// Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
+
+#include "stdafx.h"
+#include "Model/ModelTypes.h"
+#include "Game/RenderFxSnapshots.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
+#include "Platform/IFileSystem.h"
+#include "Item/ContentCatalog.h"
+#include "Net/ServerCharacterStats.h"
+#include "Game/MapManager.h"
+#include "globals.h"
+#include "functions.h"
+
+extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
+extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const ITEM* Item);
+// -- Declaraciones de funciones que viven en otros modulos --------------
+// Migrar a functions.h mas adelante.
+int __cdecl LevelConvert(BYTE Level);
+int __cdecl Net_Disconnect(void* ctx);
+
+
+
+extern "C" void DbgLogPublic(const char* msg);
+extern void __cdecl operator_delete(void* ptr);
+
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+
+// IDA Hex-Rays intrinsic shims.
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SHIBYTE(x)           (*(((char*)&(x))+1))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+// ── Char-select slot navigation helpers ────────────────────────────────────────
+
+// CSQuest::FindQuestContext @ 0x004011D0 (IDA: FUN_004011D0).
+short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param_2)
+{
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    int iVar1 = 0;
+    char *pcVar2 = reinterpret_cast<char*>(param_1) + *(quest + 4) + 0x2c;
+    if (0 < *param_1) {
+        do {
+            if (*pcVar2 != '\0') {
+                return param_1[param_2 + iVar1 * 9 + 0x18];
+            }
+            iVar1++;
+            pcVar2 += 0x12;
+        } while (iVar1 < *param_1);
+    }
+    *(char *)(quest + 0x1c87a) = *(char *)(quest + 0x1c87a) - 1;
+    CSQuest_CheckQuestState(pThis, -1);
+    return *(short *)(quest + 0x1c880);
+}
+
+// CSQuest::getQuestState @ 0x004016E0 (IDA: FUN_004016E0).
+void __fastcall CSQuest_GetQuestState(void *pThis, int param_1)
+{
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    uint uVar2;
+    if (param_1 == -1) {
+        uVar2 = 0;
+    } else {
+        uVar2 = (uint)(*(quest + 0x1c87a) >> 2);
+    }
+    int iVar3 = *(quest + 0x1c87a) - (int)uVar2;
+    BYTE bVar1;
+    if (iVar3 == 0) {
+        bVar1 = *(quest + uVar2 + 0x1c848);
+    } else {
+        bVar1 = *(quest + uVar2 + 0x1c848) >> (((BYTE)iVar3 & 0xf) << 1);
+    }
+    if (param_1 == -1) {
+        *(quest + 0x1c882) = bVar1 & 3;
+    }
+}
+
+// CSQuest::CheckActCondition @ 0x00401650 (IDA: FUN_00401650).
+uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
+{
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
+    uint legacyResult = 0;
+    int iVar3 = 0;
+    if (0 < *param_1) {
+        BYTE *pbVar4 = record + 0x28;
+        do {
+            // IDA 0x401669/0x401678: se cancela la base; EAX contiene un índice.
+            legacyResult = static_cast<uint>(pbVar4 - record - 0x28) + *(quest + 4);
+            if ((*(pbVar4 + 4 + *(quest + 4)) == 1) &&
+                ((legacyResult = static_cast<uint>(pbVar4[-1] - 1)), legacyResult == 0)) {
+                int iVar2 = CSQuest_FindQuestItemsInInven(
+                    (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
+                    (uint)pbVar4[2], 0xffffffff);
+                if (iVar2 != 0) {
+                    short sVar1 = CSQuest_FindQuestContext(pThis, param_1, 1);
+                    *(short *)(quest + 0x1c880) = sVar1;
+                    // Se conservan los bits del retorno legado; el llamador sólo lee AL.
+                    return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
+                }
+                legacyResult = 0;
+            }
+            iVar3++;
+            pbVar4 += 0x12;
+        } while (iVar3 < *param_1);
+    }
+    return (legacyResult & 0xffffff00u) | 1u;
+}
+
+// CSQuest::CheckQuestState @ 0x00401730 (IDA: FUN_00401730).
+void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
+{
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    short *psVar1 = reinterpret_cast<short*>(quest + (uint)*(quest + 0x1c87a) * 0x248 + 8);
+    if (param_1 == -1) {
+        CSQuest_GetQuestState(pThis, -1);
+    } else {
+        *(char *)(quest + 0x1c882) = param_1;
+    }
+    char cVar2 = *(char *)(quest + 0x1c882);
+    if (cVar2 == '\x01') {
+        uint uVar5 = CSQuest_CheckActCondition(pThis, psVar1);
+        if ((char)uVar5 != '\0') {
+            short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 2);
+            *(short *)(quest + 0x1c880) = sVar3;
+            *(quest + 0x1c882) = 1;
+        }
+    } else if (cVar2 == '\x02') {
+        short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 3);
+        *(short *)(quest + 0x1c880) = sVar3;
+    } else if (cVar2 == '\x03') {
+        uint uVar4 = CSQuest_CheckRequestCondition(pThis, psVar1, '\0');
+        if ((char)uVar4 != '\0') {
+            short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 0);
+            *(short *)(quest + 0x1c880) = sVar3;
+        }
+    }
+}
+
+// CSQuest::CheckRequestCondition @ 0x00401230 (IDA: FUN_00401230).
+uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char param_2)
+{
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
+    int iVar8 = 0;
+    int local_8 = 0;
+    if (0 < *param_1) {
+        int local_10 = 0;
+        char *local_c = reinterpret_cast<char*>(record + 0x2b);
+        do {
+            if ((uint)*(record + *(quest + 4) + local_10 + 0x2c) ==
+                *(quest + 5) + 1) {
+                iVar8 = 0;
+                char cVar1 = *local_c;
+                if (0 < param_1[1]) {
+                    short *puVar12 = (short *)(param_1 + 0xa6);
+                    do {
+                        if ((*(reinterpret_cast<char*>(puVar12) - 3) == cVar1) ||
+                            (*(reinterpret_cast<char*>(puVar12) - 3) == -1)) {
+                            ushort uVar3 = *(ushort *)((BYTE *)DAT_07cf1ff4 + 0xe);
+                            if (*puVar12 != 0 && uVar3 < *puVar12) {
+                                *(short *)(quest + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
+                                *(quest + 0x1c882) = 5;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
+                            }
+                            if (puVar12[1] != 0 && puVar12[1] < uVar3) {
+                                short sVar4 = param_1[iVar8 * 8 + 0xaa];
+                                *(quest + 0x1c882) = 5;
+                                *(short *)(quest + 0x1c880) = sVar4;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
+                            }
+                            if (*(int *)(puVar12 + 2) != 0) {
+                                if (param_2 == '\0') {
+                                    *(int *)(quest + 0x1c884) = *(int *)(puVar12 + 2);
+                                } else {
+                                    int iVar5 = ((int *)DAT_07cf1ffc)[0x152];
+                                    int iVar6 = *(int *)(puVar12 + 2);
+                                    *(int *)(quest + 0x1c884) = iVar6;
+                                    if (iVar5 < iVar6) {
+                                        short sVar4 = param_1[iVar8 * 8 + 0xaa];
+                                        *(quest + 0x1c882) = 5;
+                                        *(short *)(quest + 0x1c880) = sVar4;
+                                        return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
+                                    }
+                                }
+                            }
+                        }
+                        iVar8++;
+                        puVar12 += 8;
+                    } while (iVar8 < param_1[1]);
+                }
+            }
+            local_10 += 0x12;
+            local_c += 0x12;
+            local_8++;
+        } while (local_8 < *param_1);
+    }
+    return (static_cast<uint>(iVar8) & 0xffffff00u) | 1u;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Math utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Math_Fmin @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
+// Math_Fmin (IDA-activated)
+double __cdecl Math_Fmin(float a1, float a2)
+{
+  if ( a1 <= (double)a2 )
+  {
+    return a1;
+  }
+  else
+  {
+    return a2;
+  }
+}
+
+
+// Math_Fmax @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
+// Math_Fmax (IDA-activated)
+double __cdecl Math_Fmax(float a1, float a2)
+{
+  if ( a1 <= (double)a2 )
+  {
+    return a2;
+  }
+  else
+  {
+    return a1;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vec3 math helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Vec3_Multiply @ 0x004F9CB0 — Vec3_Multiply(a, b, out) — component-wise multiply
+void __cdecl Vec3_Multiply(float *param_1, float *param_2, float *param_3)
+{
+    *param_3     = *param_1 * *param_2;
+    param_3[1]   = param_1[1] * param_2[1];
+    param_3[2]   = param_1[2] * param_2[2];
+}
+
+// Vec3_Cross @ 0x004F9D20 — Vec3_Cross(a, b, out) — standard cross product
+void __cdecl Vec3_Cross(float *param_1, float *param_2, float *param_3)
+{
+    *param_3     = param_2[2] * param_1[1] - param_1[2] * param_2[1];
+    param_3[1]   = param_1[2] * *param_2  - *param_1  * param_2[2];
+    param_3[2]   = *param_1   * param_2[1] - *param_2  * param_1[1];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GuildMark helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ClearActionObject @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
+// esa etiqueta era un mismap del port).  Deja los tres parametros de
+// SetActionObject en -1 y el acumulador de velocidad en -1.0f, o sea desarma la
+// animacion de derrumbe de la puerta del evento.  La llama MoveObject_Special
+// (0x4FA5F0) cuando el contador llega a 0.
+void ClearActionObject(void)
+{
+    _DAT_0055a7bc = -1.0f;  // 0xbf800000 in IEEE 754
+    DAT_0055a7b0  = 0xffffffff;
+    DAT_0055a7b4  = 0xffffffff;
+    DAT_0055a7b8  = 0xffffffff;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Entity / Character helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// SetPlayerTeleport @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
+// source de MU 5.2, ZzzCharacter.cpp:1243; alli toma CHARACTER* y usa &c->Object,
+// que en el 0.97k es el mismo puntero).
+// Anima el casteo de teleport: jugador (tipo 0x186 = MODEL_PLAYER) -> accion 0x57
+// (PLAYER_SKILL_TELEPORT), cualquier otra entidad -> 5 (MONSTER01_SHOCK).
+// Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
+// skills 6 (teleport propio) y 15 (recall de party).
+// El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
+void __cdecl SetPlayerTeleport(OBJECT* param_1)
+{
+    if (param_1->Type == 0x186) {
+        SetAction(param_1, 0x57);
+    } else {
+        SetAction(param_1, 5);
+    }
+}
+
+// IDA: FUN_0047E350 (0x0047E350)
+// Calcula la experiencia que falta para el nivel siguiente y la guarda en
+// el struct de datos del personaje, en el offset +0x34.
+// Formula: (lvl+9)*lvl²*10, plus cubic correction term if lvl > 255.
+void __fastcall CalculateNextExperince(void* machine)
+{
+    BYTE* param_1 = static_cast<BYTE*>(machine);
+    uint uVar1 = (uint)*(ushort *)(param_1 + 0xe);
+    int  iVar2 = (uVar1 + 9) * uVar1 * uVar1 * 10;
+    *(int *)(param_1 + 0x34) = iVar2;
+    if (uVar1 > 0xff) {
+        *(uint *)(param_1 + 0x34) = iVar2 +
+            (uVar1 - 0xf6) * (uVar1 - 0xff) * (uVar1 - 0xff) * 1000;
+    }
+}
+
+// HotkeyBar_FindFreeSlot @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
+// Scans 12 hotkey bar slots (stride 0x44) starting at CharData+0x232.
+// Returns slot index with low byte = 1 on success, or raw index (no flag) if full.
+// HotkeyBar_FindFreeSlot (IDA-activated)
+char __cdecl HotkeyBar_FindFreeSlot(char *_this)
+{
+  int v1; // eax
+  BYTE *i; // ecx
+
+  v1 = 0;
+  for ( i = (BYTE *)(_this + 562); *i; i += 68 )
+  {
+    if ( ++v1 >= 12 )
+    {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+
+// Character_FindByKey_WithClear @ 0x0045ACC0 — Character_FindByKey_WithClear
+// Scans entity array (stride 0x394, 400 entries) for an entity whose
+// la clave (short en +0x1dc) coincide con param_1. Limpia el byte +0x2e8 de cada
+// entidad durante el escaneo. Devuelve el índice coincidente, o 400 si no lo encontró.
+// Character_FindByKey_WithClear (IDA-activated)
+int __cdecl Character_FindByKey_WithClear(int a1)
+{
+  int v1; // esi
+  int result; // eax
+  int i; // ecx
+
+  v1 = 0;
+  result = 400;
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
+  {
+    if ( *(BYTE *)(i + CharactersClient) )
+    {
+      if ( *(short *)(i + CharactersClient + EntityOffset(476)) == a1 )
+      {
+        result = v1;
+      }
+    }
+    *(BYTE *)(i + CharactersClient + EntityOffset(744)) = 0;
+    ++v1;
+  }
+  return result;
+}
+
+
+// Characters_SetActionAll @ 0x0045AD10 — Characters_SetActionAll
+// Setea la acción dada en todas las entidades vivas de tipo DK (0x186).
+// Resetea el Angle a (0, 0, 180°) antes de aplicar la acción.
+// Characters_SetActionAll (IDA-activated)
+void __cdecl Characters_SetActionAll(int Action)
+{
+  int i; // esi
+  std::uintptr_t v2; // eax
+  std::uintptr_t v3; // [esp-8h] [ebp-14h]
+
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
+  {
+    v2 = i + CharactersClient;
+    if ( *(BYTE *)(i + CharactersClient) )
+    {
+      if ( *(WORD *)(v2 + 2) == 390 )
+      {
+        v3 = i + CharactersClient;
+        *(DWORD *)(v2 + 28) = 0;
+        *(DWORD *)(v2 + 32) = 0;
+        *(DWORD *)(v2 + 36) = 1127481344;
+        SetAction(AsObject(v3), Action);
+      }
+    }
+  }
+}
+
+
+// Characters_FreeAllBMDBuffers @ 0x0045AD60 — Characters_FreeAllBMDBuffers
+// Libera los buffers de heap de BMD por entidad (puntero en entity+0x114) de todo el array,
+// y después libera el buffer BMD extra compartido (DAT_07abf164).
+// Characters_FreeAllBMDBuffers (IDA-activated)
+void Characters_FreeAllBMDBuffers()
+{
+  int i; // edi
+  LPVOID *v1; // esi
+
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
+  {
+    v1 = (LPVOID *)(i + CharactersClient + EntityOffset(276));
+    if ( *v1 )
+    {
+      delete__(*v1);
+      *v1 = 0;
+    }
+  }
+  if ( DAT_07abf164 )
+  {
+    delete__(DAT_07abf164);
+    DAT_07abf164 = 0;
+  }
+}
+
+
+// Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
+// Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
+// equipment-slot model indices, selecting the correct animated variant based
+// on Class (bits 0-2 = clase, bits 3+ = segunda clase).
+void __cdecl Character_UpdateEquipSlotAnimations(CHARACTER* param_1)
+{
+    if (AsCharacter(param_1)->Object.Type != 0x186) return;
+
+    BYTE v1 = AsCharacter(param_1)->Object.CurrentAction;
+    bool v2 = true;
+    if (v1 >= 0x85u && v1 <= 0x8Cu) {
+        v2 = false;
+    }
+    if ((v1 < 0x22u || v1 > 0x5Bu) && v2) {
+        SetPlayerStop(AsCharacter(param_1));
+    }
+
+    int v3 = AsCharacter(param_1)->Class & 7;
+    int v4 = AsCharacter(param_1)->Class >> 3;
+    if (AsCharacter(param_1)->BodyPart[1].Type == v3 + 912) {
+        AsCharacter(param_1)->BodyPart[1].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[1].Type = (WORD)(v3 + 4 * v4 + 912);
+        AsCharacter(param_1)->BodyPart[1].Option1 = 0;
+    }
+    if (AsCharacter(param_1)->BodyPart[3].Type == v3 + 919) {
+        AsCharacter(param_1)->BodyPart[2].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[2].Type = (WORD)(v3 + 4 * v4 + 919);
+        AsCharacter(param_1)->BodyPart[2].Option1 = 0;
+    }
+    if (AsCharacter(param_1)->BodyPart[4].Type == v3 + 926) {
+        AsCharacter(param_1)->BodyPart[3].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[3].Type = (WORD)(v3 + 4 * v4 + 926);
+        AsCharacter(param_1)->BodyPart[3].Option1 = 0;
+    }
+    if (AsCharacter(param_1)->BodyPart[5].Type == v3 + 933) {
+        AsCharacter(param_1)->BodyPart[4].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[4].Type = (WORD)(v3 + 4 * v4 + 933);
+        AsCharacter(param_1)->BodyPart[4].Option1 = 0;
+    }
+    if (AsCharacter(param_1)->Weapon[0].Type == v3 + 940) {
+        AsCharacter(param_1)->BodyPart[5].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[5].Type = (WORD)(v3 + 4 * v4 + 940);
+        AsCharacter(param_1)->BodyPart[5].Option1 = 0;
+    }
+    SetCharacterScale(AsCharacter(param_1));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sound
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Sound_PlayFootstep @ 0x00451A90 — Sound_PlayFootstep
+// Plays a terrain-appropriate footstep sound.
+//   World 2 (Devias): tile < 10 and != 3 → snd 10
+//   World 0 or 3 (Lorencia/Noria): tile == 0 → snd 9
+//   mapa con nado (Atlans) fuera de zona segura → snd 11
+//   Default → snd 8
+// Sound_PlayFootstep (IDA-activated)
+char Sound_PlayFootstep()
+{
+  char result; // al
+
+  result = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
+  if ( result != 30 && result != 31 )
+  {
+    if ( gMapManager.GetCurrentMap() == 2 )
+    {
+      if ( HeroTile != 3 && HeroTile < 10 )
+      {
+        return PlayBuffer(10, 0, 0);
+      }
+    }
+    else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
+    {
+      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)&((CHARACTER*)(uintptr_t)(Hero))->SafeZone )   // IDA: World == 7
+      {
+        return PlayBuffer(11, 0, 0);
+      }
+    }
+    else if ( !HeroTile )
+    {
+      return PlayBuffer(9, 0, 0);
+    }
+    return PlayBuffer(8, 0, 0);
+  }
+  return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Network helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// NetContext_ClearSendBuffer @ 0x0043DAF0 — NetContext_ClearSendBuffer
+// Pone en cero la cola grande de paquetes de envío (0x96258 DWORDs = ~600 KB) y resetea
+// los dos contadores de longitud en los offsets +0x4014 y +0x4018.
+uintptr_t __fastcall NetContext_ClearSendBuffer(uintptr_t param_1)
+{
+    DWORD *puVar2 = (DWORD *)(param_1 + 0x401c);
+    for (int i = 0x96258; i != 0; i--) *puVar2++ = 0;
+    *(DWORD *)(param_1 + 0x4014) = 0;
+    *(DWORD *)(param_1 + 0x4018) = 0;
+    return param_1;
+}
+
+// CWsctlc_FDWriteSend @ 0x0043DDD0 — Net_FlushSendBuffer
+// Manda la cola de salida pendiente vía send(); maneja WSAEWOULDBLOCK
+// con elegancia (devuelve 1). Llama a CWsctlc_Close ante errores fatales de socket (devuelve 0).
+// Devuelve 1 si tuvo éxito o si el bloqueo no es fatal.
+// IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
+int __fastcall CWsctlc_FDWriteSend(uintptr_t param_1)
+{
+    char* buffer = (char*)(param_1 + 0xc);
+    int& pending = *(int*)(param_1 + 0x200c);
+    while (pending > 0) {
+        const int sent = send(*(SOCKET*)(param_1 + 8), buffer, pending, 0);
+        if (sent == -1 && Platform::GetSocket().LastError() == Platform::SocketWouldBlock) return 1;
+        if (sent <= 0) { CWsctlc_Close(param_1); return 0; }
+        if (*(int*)(param_1 + 0x4014) != 0) FUN_0043de60();
+        pending -= sent;
+        // Conserva sólo la cola no enviada, incluso si el siguiente send bloquea.
+        if (pending > 0) memmove(buffer, buffer + sent, pending);
+    }
+    return 1;
+}
+
+// CWsctlc_nRecv @ 0x0043DE70 — Net_Recv
+// Lee los datos entrantes del socket al buffer de recepción del contexto, y después despacha
+// todos los paquetes completos vía CPacketQueue_PushPacket. Los paquetes parciales los maneja corriendo
+// los bytes restantes al frente del buffer.
+// Returns 0 on clean dispatch, 1 on no data / WSAEWOULDBLOCK, 3 on incomplete header.
+// IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
+int __fastcall CWsctlc_nRecv(void *context)
+{
+    BYTE* param_1 = static_cast<BYTE*>(context);
+    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)(param_1 + 8),
+                     (char *)(*(int *)(param_1 + 0x4010) + 0x2010 + param_1),
+                     0x2000 - *(int *)(param_1 + 0x4010), 0);
+    if (iVar2 == 0) { DbgLogPublic("NET: Net_Recv recv=0 (peer closed)"); return 1; }
+    if (iVar2 == -1) {
+        int err = Platform::GetSocket().LastError();
+        char dbg[96];
+        Platform::TextFormat(dbg, "NET: Net_Recv recv=-1 WSA=%d", err);
+        DbgLogPublic(dbg);
+        return 1;
+    }
+    // MuEmu: decrypt the fresh chunk in place (no-op for vanilla servers).
+    // Esto tiene que pasar ANTES de que el parser de headers C1/C2/C3/C4 vea nada,
+    // porque cada byte del cable — headers incluidos — viene encriptado.
+    {
+        BYTE *pNew = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
+        MuEmu::DecryptRecv(pNew, iVar2);
+    }
+    {
+        char dbg[256];
+        BYTE *p = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
+        int nShow = iVar2 > 24 ? 24 : iVar2;
+        char hexbuf[128]; hexbuf[0] = 0;
+        for (int hi = 0; hi < nShow; ++hi) {
+            char tmp[8]; Platform::TextFormat(tmp, "%02X ", p[hi]);
+            Platform::TextConcat(hexbuf, sizeof(hexbuf), tmp);
+        }
+    }
+
+    iVar2 = *(int *)(param_1 + 0x4010) + iVar2;
+    *(int *)(param_1 + 0x4010) = iVar2;
+    if (iVar2 < 3) return 3;
+
+    int iOff = 0;
+    while (true) {
+        BYTE *pBase = (BYTE *)(param_1 + 0x2010);
+        BYTE  hdr   = pBase[iOff];
+        BYTE *pPkt  = pBase + iOff;
+        uint  uLen;
+        if ((hdr == 0xc1) || (hdr == 0xc3)) {
+            uLen = pBase[iOff + 1];
+        } else if ((hdr == 0xc2) || (hdr == 0xc4)) {
+            uLen = (uint)pBase[iOff + 1] * 0x100 + pBase[iOff + 2];
+        } else {
+            // Después de MuEmu::DecryptRecv los bytes nuevos ya son texto plano,
+            // así que cualquier cosa que no arranque con C1/C2/C3/C4 es un error real
+            // de protocolo — se descarta el buffer y se sale.
+            char dbg[96];
+            Platform::TextFormat(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
+            DbgLogPublic(dbg);
+            *(int *)(param_1 + 0x4010) = 0;
+            return 0;
+        }
+        if (uLen == 0) return 0;
+        if (*(int *)(param_1 + 0x4010) < (int)uLen) break;
+
+        CPacketQueue_PushPacket(reinterpret_cast<uintptr_t>(param_1), pPkt, uLen);
+        if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
+        iOff += uLen;
+        int rem = *(int *)(param_1 + 0x4010) - uLen;
+        *(int *)(param_1 + 0x4010) = rem;
+        if (rem < 1) return 0;
+    }
+
+    if (iOff < 1) return 0;
+    uint uRem = (uint)*(int *)(param_1 + 0x4010);
+    if ((int)uRem < 1) return 0;
+
+    // Corre los bytes restantes al frente del buffer
+    BYTE *pDst = (BYTE *)(param_1 + 0x2010);
+    BYTE *pSrc = pDst + iOff;
+    for (uint i = uRem >> 2; i != 0; i--, pDst += 4, pSrc += 4)
+        *(DWORD *)pDst = *(DWORD *)pSrc;
+    for (uint i = uRem & 3; i != 0; i--)
+        *pDst++ = *pSrc++;
+    return 0;
+}
+
+// CWsctlc_GetReadMsg @ 0x0043E010 — NetContext_AllocSlot
+// Scans 300 packet slots (stride 0x2008) looking for a free slot (flag==1).
+// Si tiene éxito lo marca como usado (flag=0) y devuelve el puntero a su región de datos (+0x4024).
+// Returns NULL if no free slot is available.
+// IDA: CWsctlc::GetReadMsg (0x0043E010)
+BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t param_1)
+{
+    int iVar1 = 0;
+    int *piVar2 = (int *)(param_1 + 0x401c);
+    do {
+        if (*piVar2 == 1) {
+            uintptr_t slotBase = param_1 + iVar1 * 0x2008;
+            *(DWORD *)(slotBase + 0x401c) = 0;
+            return reinterpret_cast<BYTE*>(slotBase + 0x4024);
+        }
+        iVar1++;
+        piVar2 = reinterpret_cast<int*>(reinterpret_cast<BYTE*>(piVar2) + 0x2008);
+    } while (iVar1 < 300);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Effect physics
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Effect_PhysicsTick @ 0x0046CA00 — Effect_PhysicsTick
+// Actualización física por frame de una partícula de efecto a nivel del piso (p.ej. una moneda o un drop).
+// Si el héroe está atacando y el efecto está en rango, lo atrae hacia
+// el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
+// Effect_PhysicsTick (IDA-activated)
+// IDA 0x0046CA00: Object se desreferencia como dirección durante todo el tick.
+void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
+{
+  unsigned char v2; // al
+  double v3; // st7
+  double v4; // st6
+  double v5; // st7
+  float v6; // [esp+4h] [ebp-1Ch]
+  float v7; // [esp+8h] [ebp-18h]
+  float v8; // [esp+Ch] [ebp-14h]
+  float v9; // [esp+10h] [ebp-10h]
+  float Objecta; // [esp+24h] [ebp+4h]
+  float Objectb; // [esp+24h] [ebp+4h]
+
+  v2 = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
+  if ( v2 >= 0xDu && v2 <= 0x21u && *(float *)(Object + 192) < 0.1 )
+  {
+    v3 = *(float *)(Hero + 16) - *(float *)(Object + 16);
+    v4 = *(float *)(Hero + 20) - *(float *)(Object + 20);
+    Objecta = v4;
+    if ( sqrt(v4 * Objecta + v3 * v3) < 50.0 )
+    {
+      *(DWORD *)(Object + 200) = 0;
+      *(float *)(Object + 192) = v3 * -0.40000001;
+      *(float *)(Object + 196) = Objecta * -0.40000001;
+      *(float *)(Object + 44) = v3 * -4.0;
+      *(float *)(Object + 40) = Objecta * -4.0;
+      PlayBuffer(94, AsObject(Object), 0);
+    }
+  }
+  v5 = *(float *)(Object + 192) * 0.60000002;
+  *(float *)(Object + 192) = v5;
+  Objectb = *(float *)(Object + 196) * 0.60000002;
+  *(float *)(Object + 196) = Objectb;
+  v6 = *(float *)(Object + 200) * 0.60000002;
+  *(float *)(Object + 200) = v6;
+  v7 = *(float *)(Object + 40) * 0.60000002;
+  *(float *)(Object + 40) = v7;
+  v8 = *(float *)(Object + 44) * 0.60000002;
+  *(float *)(Object + 44) = v8;
+  v9 = *(float *)(Object + 48) * 0.60000002;
+  *(float *)(Object + 48) = v9;
+  *(float *)(Object + 16) = v5 + *(float *)(Object + 16);
+  *(float *)(Object + 20) = Objectb + *(float *)(Object + 20);
+  *(float *)(Object + 24) = v6 + *(float *)(Object + 24);
+  *(float *)(Object + 28) = v7 + *(float *)(Object + 28);
+  *(float *)(Object + 32) = v8 + *(float *)(Object + 32);
+  *(float *)(Object + 36) = v9 + *(float *)(Object + 36);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Floating labels
+// ─────────────────────────────────────────────────────────────────────────────
+
+// FloatingLabel_Add @ 0x004793F0 — FloatingLabel_Add
+// Agrega al pool una etiqueta flotante de daño/curación (base DAT_07c82cd0, stride 0x70,
+// hasta el límite del pool en 0x7c8588f). Elige el slot con la "edad" más chica
+// value. Special range 0x4b5–0x4d8 gets a randomised lifetime (50+rand%32).
+// param_1 = label text or ID, param_2 = world position (float[3]),
+// param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
+// FloatingLabel_Add (IDA-activated)
+int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5)
+{
+  BYTE *v5; // edx
+  int v6; // ecx
+  DWORD *v7; // esi
+  int result; // eax
+
+  v5 = (BYTE *)a1;
+  v6 = 9999;
+  v7 = (DWORD *)g_PointerPool;
+  int index=0;
+  while ( *(BYTE *)v7 )
+  {
+    result = v7[14];
+    if ( v6 > result )
+    {
+      v6 = v7[14];
+      v5 = (BYTE *)v7;
+    }
+    v7 += 28;
+    if ( ++index>=100 )
+    {
+      *v5 = 0;
+      return result;
+    }
+  }
+  RenderFxSnapshots_New(v7);
+  *(BYTE *)v7 = 1;
+  v7[1] = a1;
+  v7[4] = *a2;
+  v7[5] = a2[1];
+  v7[6] = a2[2];
+  v7[10] = *a4;
+  v7[11] = a4[1];
+  v7[12] = a4[2];
+  result = a5;
+  v7[9] = a3;
+  v7[13] = 1065353216;
+  v7[3] = a5;
+  if ( a1 >= 1205 && (a1 <= 1206 || a1 == 1240) )
+  {
+    result = rand() % 32 + 50;
+    v7[14] = result;
+  }
+  return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SkillAttribute loaders
+// ─────────────────────────────────────────────────────────────────────────────
+
+// SkillAttribute_LoadNames @ 0x004797B0 — SkillAttribute_LoadNames (text file)
+// Parsea un archivo de texto: lee pares de índice de skill + nombre vía GetToken y guarda
+// cada string de nombre en SkillAttribute[index*300 + 4].
+void __cdecl SkillAttribute_LoadNames(const char *param_1)
+{
+    DAT_07d7806c = (FILE *)Platform::GetFileSystem().Open(param_1, (const char *)DAT_005580ac);
+    if (DAT_07d7806c == NULL) return;
+
+    int iVar2;
+    while ((iVar2 = GetToken()) != 2) {
+        if (iVar2 == 1) {
+            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (std::int64_t)TokenNumber  (ParserTokenNumber)
+            GetToken();
+            // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
+            size_t uLen = strlen(TokenString) + 1;
+            char  *pSrc = TokenString;
+            char  *pDst = reinterpret_cast<char *>(&SkillAttribute) + (int)lVar7 * 300 + 4;
+            for (size_t i = uLen >> 2; i; i--, pDst += 4, pSrc += 4)
+                *(DWORD *)pDst = *(DWORD *)pSrc;
+            for (size_t i = uLen & 3; i; i--)
+                *pDst++ = *pSrc++;
+        }
+    }
+}
+
+// LoadGlobalTextBin @ 0x00479830 — LoadGlobalTextBin (NOT SkillAttribute_LoadBin!)
+// Mal nombrada por Ghidra. IDA confirma que es el loader del pool de strings localizados:
+// lee Data\Local\Text.bmd (300000 bytes), lo desencripta con BuxConvert_0 y llena
+// el array GlobalText[] de 1000 × 300 bytes. La implementación real vive en
+// src/Local/Text_Data.cpp como LoadTextData_Bin(); acá ruteamos el nombre FUN_ hacia allá
+// para que cualquier cosa enlazada contra el símbolo del decompile funcione.
+void __cdecl LoadGlobalTextBin(const char *param_1)
+{
+    LoadTextData_Bin(param_1);
+}
+
+// SkillAttribute_SaveBin @ 0x00479950 — SkillAttribute_SaveBin (binary file)
+// Guarda la tabla SkillAttribute a un archivo binario, encriptando con XOR cada
+// entrada de 300 bytes con BuxConvert_0 antes de escribirla.
+void __cdecl SkillAttribute_SaveBin(const char *param_1)
+{
+    return;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
+    FILE *pFile = Platform::GetFileSystem().Open(param_1, (const char *)&DAT_005597d4);
+    BYTE *Buffer = (BYTE *)operator_new(300);
+
+    char *pcVar3 = reinterpret_cast<char *>(&SkillAttribute) + 4;
+    int nRowGT = 0;
+    do {
+        BYTE *pBuf = Buffer;
+        char *pcVar4 = pcVar3;
+        for (int i = 0x4b; i != 0; i--, pcVar4 += 4, pBuf += 4)
+            *(DWORD *)pBuf = *(DWORD *)pcVar4;
+        BuxConvert_0(Buffer, 300);
+        crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
+        pcVar3 += 300;
+        // IDA usa la dirección absoluta 0x7d73104 como bound. La base es
+        // `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
+        // (0x7D73104 - 0x7D29D24) / 300 = 1000 -- las 1000 filas de GlobalText.
+        // (Confirma que esta funcion escribe GlobalText, no SkillAttribute.)
+        if (++nRowGT >= 1000) break;
+    } while (true);
+
+    operator_delete(Buffer);
+    fclose(pFile);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Terrain helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Terrain_SpawnAmbientObjects @ 0x004F7060 — Terrain_SpawnAmbientObjects
+// Itera la tabla de atributos del terreno (base DAT_081cb2ed, stride 8) y
+// spawns ambient world objects (type 8) at non-zero flag positions.
+void Terrain_SpawnAmbientObjects(void)
+{
+    // IDA: base 0x081CB2ED, bound 0x081CB60D → (0x320)/8 = 100 iteraciones. El
+    // bound es un contador: la dirección absoluta del binario no sirve en nuestro
+    // build.
+    BYTE *pbVar1 = (BYTE *)&DAT_081cb2ed;
+    for (int i = 0; i < 100; i++, pbVar1 += 8) {
+        if (pbVar1[-5] != 0) {
+            float scale = (float)((double)pbVar1[1] * 1.4117647);
+            RenderTerrainBitmap(8, (int)pbVar1[-1], (int)*pbVar1, scale);
+        }
+    }
+}
+
+// Terrain_WaterWaveUpdate @ 0x004F9A30 — Terrain_WaterWaveUpdate
+// Simulación de olas de agua por frame: mezcla los valores de altura adyacentes del
+// buffer de olas anterior en el buffer actual, para una grilla de terreno de 256×256.
+// param_1 selects between the two ping-pong buffers (0 or 1).
+// Terrain_WaterWaveUpdate (IDA-activated)
+int __cdecl Terrain_WaterWaveUpdate(int a1)
+{
+  char *v1; // ebx
+  int v2; // esi
+  int result; // eax
+  int v4; // edi
+  char *v5; // edx
+  char *v6; // ecx
+  int v7; // eax
+  char *v8; // [esp+14h] [ebp+4h]
+
+  v1 = (char *)&DAT_0814b2e0 + 0x40000 * a1;
+  v2 = 257;
+  v8 = (char *)&DAT_0814b2e0 + 0x40000 * (a1 ^ 1);
+  do
+  {
+    result = v2 + 254;
+    if ( !__OFSUB__(v2, v2 + 254) )
+    {
+      v4 = 254;
+      v5 = &v1[4 * v2];
+      v6 = &v8[4 * v2 + 1024];
+      v2 += 254;
+      do
+      {
+        v7 = ((*(DWORD *)v6 + *((DWORD *)v6 - 255) + *((DWORD *)v6 - 257) + *((DWORD *)v6 - 512)) >> 1)
+           - *(DWORD *)v5;
+        v6 += 4;
+        v5 += 4;
+        result = v7 - (v7 >> 4);
+        --v4;
+        *((DWORD *)v5 - 1) = result;
+      }
+      while ( v4 );
+    }
+    v2 += 2;
+  }
+  while ( v2 < 65280 );
+  return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Collision / intersection helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Collision_PointInPolygon @ 0x00512A50 — Collision_PointInPolygon
+// Tests whether a 3D point (param_1,param_2,param_3) lies inside the polygon
+// formado por param_4 vértices (los punteros están en el array param_5..param_8).
+// param_9 elige el plano de proyección (1=YZ, 2=XZ, 4=XY y las variantes en sentido horario).
+// Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
+// Devuelve 1 si está adentro, 0 si está afuera.
+// Collision_PointInPolygon (IDA-activated)
+int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const float* a5, const float* a6, const float* a7, const float* a8, int a9, float a10)
+{
+  int v10; // esi
+  int v11; // edx
+  int v12; // edi
+  int v14; // esi
+  int v15; // edx
+  int v16; // edi
+  int v17; // esi
+  int v18; // edi
+  const float *v19; // eax
+  int v20; // esi
+  int v21; // edx
+  int v22; // edi
+  int v23; // esi
+  int v24; // edx
+  int v25; // edi
+  int v26; // esi
+  int v27; // edi
+  const float *v28; // eax
+  const float* v29[4]; // [esp+0h] [ebp-10h]
+
+  if ( a10 > 0.0 )
+  {
+    a9 *= 8;
+  }
+  v29[0] = a5;
+  v29[2] = a7;
+  v29[3] = a8;
+  v29[1] = a6;
+  switch ( a9 )
+  {
+    case 1:
+      v10 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v11 = a4 - 1;
+      do
+      {
+        v12 = v10;
+        if ( (v29[v11][2] - a3) * (v29[v10][1] - a2)
+           - (v29[v11][1] - a2) * (v29[v10][2] - a3) <= 0.0 )
+        {
+          return 0;
+        }
+        ++v10;
+        v11 = v12;
+      }
+      while ( v10 < a4 );
+      return 1;
+    case 2:
+      v14 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v15 = a4 - 1;
+      while ( 1 )
+      {
+        v16 = v14;
+        if ( (v29[v14][2] - a3) * (*v29[v15] - a1)
+           - (v29[v15][2] - a3) * (v29[v14][0] - a1) <= 0.0 )
+        {
+          break;
+        }
+        ++v14;
+        v15 = v16;
+        if ( v14 >= a4 )
+        {
+          return 1;
+        }
+      }
+      return 0;
+    case 4:
+      v17 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v18 = a4 - 1;
+      while ( 1 )
+      {
+        v19 = v29[v18];
+        v18 = v17;
+        if ( (v19[1] - a2) * (v29[v17][0] - a1) - (v29[v17][1] - a2) * (*v19 - a1) <= 0.0 )
+        {
+          break;
+        }
+        if ( ++v17 >= a4 )
+        {
+          return 1;
+        }
+      }
+      return 0;
+    case 8:
+      v20 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v21 = a4 - 1;
+      while ( 1 )
+      {
+        v22 = v20;
+        if ( (v29[v21][2] - a3) * (v29[v20][1] - a2)
+           - (v29[v21][1] - a2) * (v29[v20][2] - a3) >= 0.0 )
+        {
+          break;
+        }
+        ++v20;
+        v21 = v22;
+        if ( v20 >= a4 )
+        {
+          return 1;
+        }
+      }
+      return 0;
+    case 16:
+      v23 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v24 = a4 - 1;
+      while ( 1 )
+      {
+        v25 = v23;
+        if ( (v29[v23][2] - a3) * (*v29[v24] - a1)
+           - (v29[v24][2] - a3) * (v29[v23][0] - a1) >= 0.0 )
+        {
+          break;
+        }
+        ++v23;
+        v24 = v25;
+        if ( v23 >= a4 )
+        {
+          return 1;
+        }
+      }
+      return 0;
+    case 32:
+      v26 = 0;
+      if ( a4 <= 0 )
+      {
+        return 1;
+      }
+      v27 = a4 - 1;
+      break;
+    default:
+      return 1;
+  }
+  while ( 1 )
+  {
+    v28 = v29[v27];
+    v27 = v26;
+    if ( (v28[1] - a2) * (v29[v26][0] - a1) - (v29[v26][1] - a2) * (*v28 - a1) >= 0.0 )
+    {
+      break;
+    }
+    if ( ++v26 >= a4 )
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+// FUN_005130f0 @ 0x005130F0 — AABB_IntersectOBB
+// Separating-axis test between an OBB (param_4..param_15) and an AABB defined
+// by two corner vectors (param_2, param_3) projected onto axis param_1.
+// Devuelve 1 si se superponen, 0 si están separados.
+int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
+                          float param_4,  float param_5,  float param_6,
+                          float param_7,  float param_8,  float param_9,
+                          float param_10, float param_11, float param_12,
+                          float param_13, float param_14, float param_15)
+{
+    float fVar2 = *param_1 * *param_2 + param_2[2] * param_1[2] + param_2[1] * param_1[1];
+    float fVar3 = *param_1 * *param_3 + param_3[2] * param_1[2] + param_3[1] * param_1[1];
+    float fMax  = Math_Fmax(fVar2, fVar3);
+    float fMin  = Math_Fmin(fVar2, fVar3);
+
+    float fV3 = param_6  * param_1[2] + param_4  * *param_1 + param_5  * param_1[1];
+    float fV5 = param_9  * param_1[2] + param_7  * *param_1 + param_8  * param_1[1];
+    float fV6 = param_12 * param_1[2] + param_10 * *param_1 + param_11 * param_1[1];
+    float fV7 = param_15 * param_1[2] + param_13 * *param_1 + param_14 * param_1[1];
+
+    float fOMin = fV3, fOMax = fV3;
+    if (fV5 <= _DAT_00552580) fOMin += fV5; else fOMax = fV3 + fV5;
+    if (fV6 <= _DAT_00552580) fOMin += fV6; else fOMax += fV6;
+    if (fV7 <= _DAT_00552580) fOMin += fV7; else fOMax += fV7;
+
+    if (fMin >= fOMax) return 0;
+    if (fOMin >= fMax) return 0;
+    return 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// IDA: FUN_00401010 @ 0x00401010 — calls quest table init
+void Quest_InitializeStaticState(void) { Quest_FullInit((void *)&DAT_00567500); }
+
+// Los wrappers de atexit registraban callbacks en direcciones literales del
+// binario (0x004XXXXX), que en nuestro build no son código: quedan neutralizados.
+
+// FUN_00401020 @ 0x00401020 (12 bytes)
+void FUN_00401020(void) {}
+
+// BuxConvert_1 @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
+// 3-byte repeating XOR key at bBuxCode.
+void __cdecl BuxConvert_1(void* buffer, int size) {
+    // IDA 0x00401120 recorre el buffer con un puntero a byte.
+    byte* buf = static_cast<byte*>(buffer);
+    for (int i = 0; i < size; i++)
+        *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
+}
+
+// CSQuest::ShowDialogText @ 0x004017E0 (IDA: FUN_004017E0).
+void __fastcall CSQuest_ShowDialogText(int param_1)
+{
+    char local_48[72];
+
+    // Los accesos a la tabla de dialogos van por la struct DIALOG_SCRIPT (ver
+    // globals.h).
+    if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return;   // guard de port
+    const DIALOG_SCRIPT *dlg = &g_DialogScript[param_1];
+
+    g_iCurrentDialogScript = param_1;
+    DAT_083a4324 = SeparateTextIntoLines(
+        dlg->m_lpszText,
+        (char *)&DAT_083a44c4, 7, 0x26);
+
+    // Zero the name display buffer (0x5f DWORD-slots = 0x17c bytes)
+    int *puVar8 = (int *)DAT_083a4348;
+    for (int i = 0x5f; i != 0; i--)
+        *puVar8++ = 0;
+
+    int iVar3 = 0;
+    DAT_083a7c0c = 0;
+
+    int charCount = dlg->m_iNumAnswer;
+    if (charCount > 10) charCount = 10;   // la tabla tiene 10 slots de respuesta
+    if (charCount > 0) {
+        char *pbVar6 = (char *)DAT_083a4348;
+        int iVar7 = 0;
+        do {
+            iVar3 = iVar7 + 1;
+            Platform::TextFormat((LPSTR)local_48, s__d___s_005580b0, iVar3,
+                      dlg->m_lpszAnswer[iVar7]);
+            int iVar2 = SeparateTextIntoLines(local_48, pbVar6, 1, 0x26);
+            if (iVar2 < 0) {
+                ((char *)DAT_083a4348)[(iVar2 + iVar7) * 0x26] = 0;
+            }
+            DAT_083a7c0c = DAT_083a7c0c + 1;
+            pbVar6 += 0x26;
+            iVar7 = iVar3;
+        } while (iVar3 < charCount);
+    }
+
+    if (charCount == 0) {
+        // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
+        // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
+        Platform::TextFormat((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
+        // Copy string to DAT_083a4348
+        uint uVar4 = (uint)strlen(local_48) + 1;
+        DAT_083a7c0c = 1;
+        char *pbVar6 = local_48;
+        char *pbVar9 = (char *)DAT_083a4348;
+        for (uint u5 = uVar4 >> 2; u5 != 0; u5--)
+        { *(int *)pbVar9 = *(int *)pbVar6; pbVar6 += 4; pbVar9 += 4; }
+        for (uint u4 = uVar4 & 3; u4 != 0; u4--)
+        { *pbVar9++ = *pbVar6++; }
+    }
+
+    SetErrorMessage(0);
+}
+
+// Declaraciones adelantadas de los helpers definidos más abajo en este archivo
+void __fastcall CSQuest_clearQuest(void*);
+void __fastcall FUN_00401af0(void*);
+void __fastcall Cloth_Integrate(int*, float);
+
+// Packet_ParseType2 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
+// Variante más simple: actualiza el flag de hover, llama a FUN_00401af0 para procesar el click en el personaje,
+// y después chequea un hotspot secundario para el envío de keepalive / reintento.
+// El tipo de retorno es undefined4, según la declaración de functions.h.
+unsigned int __cdecl Packet_ParseType2(void *param_1) {
+    if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
+        DAT_07d78094 = 1;
+    FUN_00401af0(param_1);
+    if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
+        (IsClickPushed())) {
+        DAT_083a4124 = '\0';
+        DAT_07e11d28 = 0;
+        DAT_00559bec = 6;
+        CSQuest_clearQuest(param_1);
+    }
+    return 1;
+}
+
+// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo
+// (NO es char-select): hit-test sobre las lineas de respuesta del panel de
+// quest, y despacho por m_iReturnForAnswer del dialogo activo.
+//   1 = aceptar la quest  -> CheckRequestCondition(bLastCheck=1); si falla,
+//                            muestra el dialogo de rechazo y no manda nada.
+//   2 = cerrar            -> CSQuest::clearQuest
+//   3 = continuar         -> manda el paquete sin verificar condiciones
+// Todas las ramas convergen en LABEL_107 (PlayBuffer 28 + encadenar
+// m_iLinkForAnswer si es > 0 y no hubo rechazo).
+// Paquete cliente->server de quest.  IDA sub_401AF0 arma en los dos sitios
+// (L152-199 y L399-446) exactamente el mismo buffer:
+//     *(DWORD*)v103 = 0x01C10003   -> len=3, packet = C1 ?? A2
+//     v103[4] = 0xA2               -> opcode
+//     append  *(BYTE*)(this + 116858)   (indice de quest actual)
+//     append  1
+// = [C1][05][A2][questIndex][01].  El wrapper anti-tamper lo mete en un frame
+// C3 (`local_914[0] = 0xC3`), que es lo que corresponde: HackPacketCheck.txt
+// da Encrypt = 1 para el indice 162 (0xA2), o sea C3/C4 con serial.
+// El server (Protocol.cpp case 0xA2 -> CGQuestStateRecv) sólo lee QuestIndex y
+// avanza el estado él mismo; el byte 1 del final lo ignora.
+// Se manda con el sender estandar del proyecto.
+static void Quest_SendState(void *pThis)
+{
+    BYTE pkt[5];
+    pkt[0] = 0xC1;
+    pkt[1] = 0x05;
+    pkt[2] = 0xA2;
+    pkt[3] = *(static_cast<BYTE*>(pThis) + 0x1c87a);   // índice de quest actual
+    pkt[4] = 0x01;
+    gNetwork.Send(pkt, 5);
+}
+
+void __fastcall FUN_00401af0(void *param_1)
+{
+    BYTE* quest = static_cast<BYTE*>(param_1);
+    // Compute Y-base of char list
+    int yBase;
+    if (*(char *)(quest + 0x1c882) != '\x01' &&
+        *(char *)(quest + 0x1c87f) == '\x01') {
+        yBase = 0xfa;
+    } else {
+        yBase = ((7 - ((int)DAT_083a7c0c + (int)DAT_083a4324)) * 0x12) / 2
+                + 0x42 + (int)DAT_083a4324 * 0x12;
+    }
+
+    if ((int)DAT_083a4278 < 0)  return;
+    if ((int)DAT_083a7c0c * 0x12 <= (int)DAT_083a4278 - yBase)  return;
+
+    int distS = Ui::QuestAnswerCenter(gWindow.GetRightShift()) - (int)MouseX;
+    if (distS < 0) distS = -distS;
+    if (0x6a < distS)  return;
+
+    if (!IsClickPushed())  return;
+    DAT_083a4124 = 0;
+
+    int slot = ((int)DAT_083a4278 - yBase) / 0x12;
+    DAT_083a42c4 = 0;
+    DAT_07e11d28 = 0;
+    DAT_00559bec = 6;
+
+    if (slot < 0) {
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        return;
+    }
+
+    char local_d29 = '\0';
+
+    // Lee el tipo de slot de la tabla
+    // m_iReturnForAnswer[slot] del dialogo activo (IDA sub_401AF0 0x401BE4:
+    // `mov eax, [eax*4 + 0x07CF5760]` con eax = curScript*0x100 + slot).
+    int curScript = g_iCurrentDialogScript;
+    int slotType  = 0;
+    if (curScript >= 0 && curScript < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10)
+        slotType = g_DialogScript[curScript].m_iReturnForAnswer[slot];
+
+
+    if (slotType == 1) {
+        short *slotData = reinterpret_cast<short*>(quest
+                          + (uint)*(quest + 0x1c87a) * 0x248 + 8);
+        uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
+        if ((char)ok == '\0') {
+            local_d29 = '\x01';
+            // IDA L145: `v65 = *(std::int16_t *)(v1 + 116864);` — es un SHORT.
+            // Leerlo como int se lleva ademas el byte de estado (0x1c882),
+            // que CheckRequestCondition acaba de poner en 5, asi que el
+            // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
+            CSQuest_ShowDialogText(*(short *)(quest + 0x1c880));
+            goto done;
+        }
+        Quest_SendState(param_1);
+    } else if (slotType == 2) {
+        DAT_083a4124 = 0;
+        DAT_07e11d28 = 0;
+        DAT_00559bec = 6;
+        CSQuest_clearQuest(param_1);
+    } else if (slotType == 3) {
+        DAT_083a4124 = 0;
+        DAT_07e11d28 = 0;
+        DAT_00559bec = 6;
+        Quest_SendState(param_1);
+    }
+
+done:
+    PlayBuffer(0x1c, 0, 0);
+    // m_iLinkForAnswer[slot] = indice del dialogo siguiente (IDA sub_401AF0
+    // L387: `v64 = g_DialogScript[g_iCurrentDialogScript].m_iLinkForAnswer[v100];`
+    // y solo encadena `if (v64 > 0 && !v98)`).
+    {
+        int cur = g_iCurrentDialogScript;
+        if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10) {
+            int link = g_DialogScript[cur].m_iLinkForAnswer[slot];
+            if (link > 0 && local_d29 == '\0') CSQuest_ShowDialogText(link);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BATCH 17 — Other addresses: entity, combat, rendering, IME, chat, particles
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Send_ActionRequest @ 0x0043CE50 (~217 lines) — builds C1 packet opcode 0x81 (action request)
+void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
+    // 0x0043CE50 — Build and send C1 packet opcode 0x81 (action request)
+    // param_1 = action sub-type (unused in payload beyond opcode), param_2 = 4-byte payload data
+    // Packet format: [C1][len][01][81][...payload XOR-encrypted...]
+    // Usa la clave XOR de 32 bytes (la misma que la encriptación del login).
+    // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
+    // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
+
+
+    // Build packet buffer (max 0x401 bytes)
+    unsigned char pktBuf[0x401];
+    memset(pktBuf, 0, sizeof(pktBuf));
+
+    // Header: C1 packet, opcode area
+    pktBuf[0] = 0xC1;      // packet type
+    pktBuf[2] = 0x01;      // sequence/sub-opcode
+    pktBuf[3] = 0x81;      // opcode: action request
+
+    // Encripta con XOR el byte del índice 3 con la clave
+    {
+        unsigned int idx = 3;
+        unsigned int keyIdx = idx & 0x1f;
+        pktBuf[idx] = pktBuf[idx] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[idx - 2];
+    }
+
+    // Escribe el payload de 4 bytes en el offset 4, y después lo encripta con XOR
+    unsigned short payloadLen = 4;
+    if (payloadLen + 4 < 0x401) {
+        *(int*)(pktBuf + payloadLen) = param_2;
+        for (unsigned int i = payloadLen; i < payloadLen + 4; i++) {
+            unsigned int keyIdx = i & 0x1f;
+            pktBuf[i] = pktBuf[i] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[i - 2];
+        }
+        payloadLen = 8;
+    }
+
+    // Set packet length field
+    if (pktBuf[0] == 0xC1) {
+        pktBuf[1] = (unsigned char)payloadLen;
+    } else if (pktBuf[0] == 0xC2) {
+        *(unsigned short*)(pktBuf + 1) = payloadLen;
+    }
+
+    gNetwork.Send(pktBuf, payloadLen);
+}
+
+// IDA: STRUCT_ENCRYPT (0x0043D1D0)
+void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
+
+// FUN_0043de60 @ 0x0043DE60 — NOP (empty function in original binary).
+// IDA live/raw: nullsub_2 (`retn 8`), not a send-queue drain.
+void FUN_0043de60(void) {}
+
+// CPacketQueue_PushPacket @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
+// Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
+// Returns: 0=success, 1=queue full, 2=packet too large.
+// IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
+void __cdecl CPacketQueue_PushPacket(uintptr_t param_1, const void* param_2, int param_3) {
+    // param_1 = net context ptr, param_2 = packet data ptr, param_3 = packet length
+    if ((int)param_3 > 0x2000) return; // packet too large
+
+    int *piSlot = (int *)(param_1 + 0x401c);
+    for (int i = 0; i < 300; i++) {
+        if (*piSlot == 0) {
+            // Mark slot as occupied
+            *(int *)(param_1 + i * 0x2008 + 0x401c) = 1;
+            // Store length
+            *(int *)(param_1 + i * 0x2008 + 0x4020) = param_3;
+            // Copy packet data (DWORD-aligned copy + trailing bytes)
+            DWORD *pDst = (DWORD *)(param_1 + i * 0x2008 + 0x4024);
+            const DWORD *pSrc = static_cast<const DWORD*>(param_2);
+            unsigned int dwords = (unsigned int)param_3 >> 2;
+            for (unsigned int d = 0; d < dwords; d++) { *pDst++ = *pSrc++; }
+            unsigned int trail = (unsigned int)param_3 & 3;
+            BYTE *bDst = (BYTE *)pDst; const BYTE *bSrc = reinterpret_cast<const BYTE*>(pSrc);
+            for (unsigned int b = 0; b < trail; b++) { *bDst++ = *bSrc++; }
+            return;
+        }
+        piSlot += 0x802; // stride 0x2008 bytes = 0x802 ints
+    }
+    // queue full — packet dropped
+}
+
+// Movement / pathfinding
+// IDA: Movement_Tick (0x0043E050)
+// Calcula el ángulo (en grados, 0..360) del punto (x1,y1) al (x2,y2).
+// Usa atan2 para el caso general; trata aparte los casos de dx o dy cercanos a cero.
+// Constants: _DAT_00552868 ~ 0.0001 (epsilon), _DAT_00552860 = 57.29578 (180/pi),
+//            _DAT_00552848 = 90.0, _DAT_005524ec = 180.0, _DAT_0055286c = 360.0,
+//            _DAT_00552580 = 0.0, _DAT_00552864 = 270.0
+float __cdecl CreateAngle(float x1, float y1, float x2, float y2)
+{
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+
+    if (fabsf(dx) < _DAT_00552868) {
+        // Nearly vertical — return 0 or 180
+        if (dy < _DAT_00552580) {
+            return _DAT_00552580; // 0 degrees
+        }
+        return _DAT_005524ec; // 180 degrees
+    }
+    if (fabsf(dy) >= _DAT_00552868) {
+        // General case — PORT FIEL 1:1 (0x43E0DA): el IDA usa atan2(dy/dx, 1.0)
+        // (= atan del RATIO, rango [-90,90]) y RECONSTRUYE el cuadrante con +180 si
+        // dx<0. Antes usábamos atan2f(dy,dx) (dos args, que YA resuelve el cuadrante)
+        // Y ADEMÁS sumábamos +180 → doble corrección de 180° cuando dx<0 → el hada
+        // (y todo facing hacia la izquierda) apuntaba al revés. dx≠0 aquí (guard arriba).
+        float angle = atan2f(dy / dx, 1.0f) * _DAT_00552860 + _DAT_00552848;
+        if (dx < _DAT_00552580) {
+            angle += _DAT_005524ec; // +180 if dx negative (reconstrucción de cuadrante)
+        }
+        return angle;
+    }
+    // Nearly horizontal — return 90 or 270
+    if (dx < _DAT_00552580) {
+        return _DAT_00552864; // 270 degrees
+    }
+    return _DAT_00552848; // 90 degrees
+}
+
+// Angle_Clamp @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
+// Clampea la diferencia angular entre el ángulo actual y el objetivo a ±maxDelta,
+// y la devuelve como el ángulo nuevo módulo 360. Todos los ángulos en unidades del juego (0..0x167).
+int __cdecl Angle_Clamp(int param_1, int param_2, int param_3) {
+    unsigned int uVar5 = (unsigned int)(param_1 - param_2);
+    int iVar3 = (int)((uVar5 ^ ((int)uVar5 >> 0x1f)) - ((int)uVar5 >> 0x1f)); // abs
+    int iVar2 = param_1;
+    if (param_2 < param_1) {
+        unsigned int uVar1 = (unsigned int)(param_2 - param_1) + 0x168u;
+        unsigned int uVar4 = (unsigned int)((int)uVar1 >> 0x1f);
+        if (iVar3 < (int)((uVar1 ^ uVar4) - uVar4)) {
+            iVar2 = param_3;
+            if (iVar3 <= param_3) iVar2 = iVar3;
+            iVar2 = -iVar2;
+        } else {
+            iVar2 = iVar3;
+            if (param_3 < iVar3) iVar2 = param_3;
+        }
+    }
+    if (param_1 < param_2) {
+        unsigned int uVar1 = uVar5 + 0x168u;
+        unsigned int uVar4 = (unsigned int)((int)uVar1 >> 0x1f);
+        if (iVar3 < (int)((uVar1 ^ uVar4) - uVar4)) {
+            iVar2 = iVar3;
+            if (param_3 < iVar3) iVar2 = param_3;
+        } else {
+            if (iVar3 <= param_3) param_3 = iVar3;
+            iVar2 = -param_3;
+        }
+    }
+    return (iVar2 + 0x168 + param_1) % 0x168;
+}
+
+// IDA: TurnAngle2 (0x0043E1B0)
+// Avanza curAngle hacia tgtAngle a lo sumo 'step' grados, manejando la vuelta de 360.
+// Devuelve tgtAngle directo si está dentro del rango de step; si no, curAngle +/- step.
+//
+// El decomp de IDA deja 5 flags FPU x87 sin reconstruir (`v5/v7/v9/v12/v14`):
+// esto es la reconstrucción con matemática estándar ("smooth turn-toward con
+// wrap de 360°"): snap si |delta| <= step, si no avanzar `step` grados por el
+// camino más corto.
+float __cdecl TurnAngle2(float a1, float a2, float a3)
+{
+  if ( a1 < 0.0f ) a1 += 360.0f;
+  if ( a2 < 0.0f ) a2 += 360.0f;
+
+  // Shortest signed delta in (-180, +180]
+  float delta = a2 - a1;
+  if      ( delta >  180.0f ) delta -= 360.0f;
+  else if ( delta < -180.0f ) delta += 360.0f;
+
+  // Snap if target within step
+  if ( delta >= 0.0f )
+  {
+    if ( delta <= a3 ) return a2;
+    float next = a1 + a3;
+    if ( next >= 360.0f ) next -= 360.0f;
+    return next;
+  }
+  else
+  {
+    if ( -delta <= a3 ) return a2;
+    float next = a1 - a3;
+    if ( next < 0.0f ) next += 360.0f;
+    return next;
+  }
+}
+
+// SetPlayerAttack @ 0x00444410 (1627 bytes) — port FIEL desde IDA.
+// Setea la animación de ataque + el sonido de la entidad según:
+//   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
+//   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
+//     (c+624 LH, c+648 RH) determine animation 34..89.
+// Calls: SetAction, CreateEffect, PlayBuffer,
+//   SetAttackSpeed. All implemented.
+//
+// functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
+// IDA: SetPlayerAttack (0x00444410)
+void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, int /*extra*/) {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
+    if (c == 0) return;
+    short v1 = AsCharacter(c)->Object.Type;
+
+    if (v1 != 390) {
+        // Non-player entities
+        switch (v1) {
+        case 39:
+            CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                         nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
+            PlayBuffer(16, AsObject(c), 0);
+            break;
+        case 40:
+            SetAction(AsObject(c), 1);
+            PlayBuffer(16, AsObject(c), 0);
+            break;
+        case 51:
+            CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                         nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
+            PlayBuffer(91, 0, 0);
+            break;
+        case 302: {
+            int r = rand() % 8;
+            if (r <= 2) {
+                SetAction(AsObject(c), (r <= 0) ? 9 : 8);
+            } else {
+                SetAction(AsObject(c), rand() % 2 + 3);
+            }
+            break;
+        }
+        default:
+            if (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3) {
+                SetAction(AsObject(c), 4);
+            } else {
+                SetAction(AsObject(c), 3);
+            }
+            ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
+            break;
+        }
+        goto LABEL_85;
+    }
+
+    // Player path
+    SetAttackSpeed();  // SetAttackSpeed
+    { // El salto de salida no entra en el ámbito de estas variables.
+    short v2 = AsCharacter(c)->Helper.Type;  // Helper.Type
+
+    // Helper path (818/819 = pet/fairy ranged)
+    if ((v2 != 818 && v2 != 819) || AsCharacter(c)->SafeZone) {
+        // No helper → weapon-based
+        short v5 = AsCharacter(c)->Weapon[0].Type;  // Helmet/LH? Actually weapon left
+        if (v5 != -1 || *(unsigned short *)&AsCharacter(c)->Weapon[1].Type != 0xFFFF) {
+            // Sword (400-495) — ItemAttribute[v5-399].TwoHand at offset -34
+            if (v5 >= 400 && v5 < 496) {
+                if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
+                    if (v5 == 431) {
+                        SetAction(AsObject(c), 81);
+                    } else {
+                        SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 39);
+                    }
+                } else {
+                    short v6 = AsCharacter(c)->Weapon[1].Type;
+                    if (v6 < 400 || v6 >= 496) {
+                        SetAction(AsObject(c), (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 1) + 35);
+                    } else {
+                        switch (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 3) {
+                        case 0: SetAction(AsObject(c), 35); break;
+                        case 1: SetAction(AsObject(c), 37); break;
+                        case 2: SetAction(AsObject(c), 36); break;
+                        case 3: SetAction(AsObject(c), 38); break;
+                        }
+                    }
+                }
+                goto LABEL_85;
+            }
+            short v7 = AsCharacter(c)->Weapon[1].Type;
+            if (v7 >= 400 && v7 < 496) {
+                SetAction(AsObject(c), rand() % 2 + 37);
+                goto LABEL_85;
+            }
+            // Spear (560-591)
+            if (v5 >= 560 && v5 < 592) {
+                if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
+                    SetAction(AsObject(c), rand() % 2 + 84);
+                } else {
+                    SetAction(AsObject(c), rand() % 2 + 35);
+                }
+                goto LABEL_85;
+            }
+            // Mace 497/498
+            if (v5 == 497 || v5 == 498) {
+                SetAction(AsObject(c), 42);
+                goto LABEL_85;
+            }
+            // Mace/staff (496-527)
+            if (v5 >= 496 && v5 < 528) {
+                SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 43);
+                goto LABEL_85;
+            }
+            // Bow/crossbow type detection on right hand
+            if ((v7 >= 528 && v7 < 535) || v7 == 545) {
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
+                goto LABEL_85;
+            }
+            if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
+                goto LABEL_85;
+            }
+        }
+        SetAction(AsObject(c), 34);
+        goto LABEL_85;
+    }
+
+    // Helper-active path (helper attack animations)
+    {
+        short v3 = AsCharacter(c)->Weapon[0].Type;
+        if (v3 < 496) {
+            // fall through to LABEL_11 (right-hand weapon check)
+        } else if (v3 < 501) {
+            SetAction(AsObject(c), 52);
+            goto LABEL_85;
+        } else if (v3 >= 528) {
+            // continue to LABEL_11
+        } else {
+            SetAction(AsObject(c), 53);
+            goto LABEL_85;
+        }
+        // LABEL_11: weapon checks
+        short v4 = AsCharacter(c)->Weapon[1].Type;
+        if ((v4 >= 528 && v4 < 535) || v4 == 545) {
+            SetAction(AsObject(c), 54);
+        } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
+            SetAction(AsObject(c), 55);
+        } else if (v3 != -1 &&
+                   *((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3 - 399] - 34)) {
+            SetAction(AsObject(c), 51);
+        } else {
+            SetAction(AsObject(c), 50);
+        }
+    }
+
+    }
+LABEL_85:
+    if (AsCharacter(c)->Object.AnimationFrame == 0.0f) {
+        if (AsCharacter(c)->Object.Type == 390) {
+            int v13 = AsCharacter(c)->Object.SubType;
+            if (v13 < 206 || v13 > 208) {
+                short v14 = AsCharacter(c)->Weapon[1].Type;
+                if ((v14 >= 528 && v14 < 535) || v14 == 545) {
+                    PlayBuffer(65, AsObject(c), 0);
+                } else {
+                    short v15 = AsCharacter(c)->Weapon[0].Type;
+                    if ((v15 >= 536 && v15 < 543) || (v15 >= 544 && v15 < 545) || v15 == 546) {
+                        PlayBuffer(66, AsObject(c), 0);
+                    } else if (v15 == 410 || v15 == 496) {
+                        PlayBuffer(42, AsObject(c), 0);
+                    } else if (v15 != -1 || v14 != -1) {
+                        PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
+                    }
+                }
+            } else {
+                int v17 = AsCharacter(c)->Object.SubType;
+                if (v17 >= 206 && v17 <= 208) {
+                    PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
+                }
+                short modelType = AsCharacter(c)->Object.Type;
+                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+                if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
+                    const BMD* soundModel = AsModel(modelBase);
+                    PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
+                }
+            }
+        } else {
+            int v17 = AsCharacter(c)->Object.SubType;
+            if (v17 >= 206 && v17 <= 208) {
+                PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
+            }
+            short modelType = AsCharacter(c)->Object.Type;
+            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+            if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
+                const BMD* soundModel = AsModel(modelBase);
+                PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
+            }
+        }
+    }
+    ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
+}
+
+// SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
+// Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
+// If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
+// Declarada en functions.h como SetPlayerMagic(CHARACTER* c)
+// IDA: SetPlayerMagic (0x00444A80)
+void __cdecl SetPlayerMagic(CHARACTER* c) {
+    if (c == 0) return;
+    short entityType = AsCharacter(c)->Object.Type;
+    if (entityType != 0x186) {
+        int action;
+        if ((UINT)AsCharacter(c)->SwordCount % 3 == 0) {
+            action = 3;
+        } else {
+            action = 4;
+        }
+        // SetAction(entity, action) — SetAction
+        SetAction(AsObject(c), action);
+        *(char *)&AsCharacter(c)->SwordCount = *(char *)&AsCharacter(c)->SwordCount + 1;
+        return;
+    }
+    // Special entity type 0x186: SetAttackSpeed then class-based action
+    SetAttackSpeed();  // SetAttackSpeed
+    short charClass = AsCharacter(c)->Helper.Type;
+    if ((charClass == 0x332 || charClass == 0x333) && *(char *)&AsCharacter(c)->SafeZone == '\0') {
+        SetAction(AsObject(c), 0x5b);
+        return;
+    }
+    if ((AsCharacter(c)->Class & 7) == 2) {
+        SetAction(AsObject(c), 0x56);
+        return;
+    }
+    int r = rand();
+    UINT v = r & 0x80000001;
+    if ((int)v < 0) {
+        v = (v - 1 | 0xFFFFFFFE) + 1;
+    }
+    SetAction(AsObject(c), (int)(v + 0x52));
+}
+
+// SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
+// Reproduce la reacción de "me pegaron" (anim 130 para el jugador, anim 5 para los monstruos) más
+// a hit-grunt sound (PlayBuffer). Port FIEL desde IDA decompile (546 bytes).
+//
+// El parche `IgnoreRandomStuck` del DLL companion (Patchs.cpp:291) saltea el
+// *shock aleatorio del 50%* que se tira en ReceiveAttackDamage cuando la
+// entidad es el jugador (tipo 390) — ése es un arreglo de gameplay, no de esta
+// función. Los llamadores que quieran el comportamiento IgnoreRandom deberían
+// gatear con `*(WORD*)(c+2) != 390` antes de llamar.
+//
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
+// Forward decls (signatures match functions.h / existing impls — return type
+// de SetAction en algunos headers es `void*`, así que delegamos vía el global
+// header rather than re-declaring locally).
+
+// IDA: SetPlayerShock (0x00444B60)
+void __cdecl SetPlayerShock(CHARACTER* c, int Hit)
+{
+    if (!c) return;
+    if (AsCharacter(c)->Dead) return;            // already dead
+    short v2 = AsCharacter(c)->Helper.Type;
+    if (v2 == 818 || v2 == 819) return;      // mount-skip
+    BYTE v3 = AsCharacter(c)->Object.CurrentAction;
+    if (v3 == 62 || v3 == 63 || Hit <= 0) return; // dying anim or no damage
+
+    short etype = AsCharacter(c)->Object.Type;
+    if (etype == 390) {
+        // Player: shock anim, clear alive flag
+        (void)SetAction(AsObject(c), 130);
+        AsCharacter(c)->Movement = 0;
+    } else if (v3 < 3 || v3 > 4) {
+        // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
+        (void)SetAction(AsObject(c), 5);
+    }
+
+    // Sonido: sólo cuando no está a mitad de una animación (frame == 0)
+    if (AsCharacter(c)->Object.AnimationFrame == 0.0f) {
+        if (etype == 390) {
+            int sub = AsCharacter(c)->Object.SubType;
+            if (sub < 206 || sub > 208) {
+                if ((AsCharacter(c)->Class & 7) == 2) {
+                    // Swimming: alternate splash sound 79 or 80
+                    int v7 = rand() % 2;
+                    PlayBuffer(v7 + 79, AsObject(c), 0);
+                    goto label_26;
+                }
+                int v6 = rand() % 3 + 75;     // generic player hit grunt
+                PlayBuffer(v6, AsObject(c), 0);
+                goto label_26;
+            }
+        }
+        int v8 = AsCharacter(c)->Object.SubType;
+        if (v8 >= 206 && v8 <= 208) {
+            PlayBuffer(93, AsObject(c), 0);           // Lorencia skeleton-NPC hit sound
+            goto label_26;
+        }
+        if (etype != 284) {
+            // Monster-table sound lookup: Models[etype].Sound[rand()%2]
+            const BYTE* modelsBase = reinterpret_cast<const BYTE*>(DAT_05828d58);
+            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + BMD_STRIDE * etype + 174 + BMD_FIELD_SHIFT);
+            if ((unsigned short)*sndTbl != 0xFFFF) {
+                int v6 = sndTbl[rand() % 2] + 170;
+                PlayBuffer(v6, AsObject(c), 0);
+            }
+        }
+    }
+label_26:
+    // Special case: monster type 331 — shower of sparkles around victim
+    if (etype == 331) {
+        for (int i = 5; i > 0; --i) {
+            // 50% chance per spark
+            unsigned r = (unsigned)rand() & 0x80000001u;
+            bool fire = (r == 0) || (((int)r < 0) && (((char)r - 1) | (int)0xFFFFFFFE) == -1);
+            if (fire) {
+                int v12 = rand() % 128;
+                float pos[3];
+                pos[0] = (float)(v12 - 64) + AsCharacter(c)->Object.Position[0];
+                pos[1] = AsCharacter(c)->Object.Position[1];
+                pos[2] = (float)(rand() % 50) + AsCharacter(c)->Object.Position[2] + 200.0f;
+                Particle_Spawn(1221, pos, c->Object.Angle, c->Object.Light, 0, 1.0f, 0);
+            }
+        }
+        PlayBuffer(105, 0, 0);
+    }
+}
+
+// IDA: FindCharacterIndex (0x0045AC80)
+// Devuelve el índice de slot 0-399, o 400 si no lo encontró.
+int __cdecl FindCharacterIndex(int param_1)
+{
+    char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
+    for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += CHARACTER_STRIDE) {
+        if (*pcVar2 != '\0' && *(short*)&((CHARACTER*)(uintptr_t)(pcVar2))->Key == (short)param_1)
+            return iVar1;
+    }
+    return 400;
+}
+
+// IDA: ChangeCharacterExt (0x0045C8C0)
+// Decodes a 10-byte CharSet[] payload (helmet/armor/pants/gloves/boots type+level packed bits) and
+// escribe campos WORD/BYTE repartidos por el slot de entidad en +624..+651 (slots de cabeza/alas) y
+// +504..+603 (5 body parts × 24-byte stride: type, lvl, exc-flag).
+// Side effects:
+//   • DeleteBug(c)       — limpia las mariposas de FX de clase viejas atadas al personaje
+//   • CreateBug(...)     — spawn new wing FX (type 816/195/267/819) per Equipment[4]&3
+//   • SetCharacterScale  — recompute height/weight after equipment changes
+// Guard: sólo corre cuando la clase de la entidad (+2) == 390 (jugador). 0xFF en un slot de equipo = "vacío"
+// (writes -1/0 sentinel). Bit-pattern (Equipment[2/3/4]>>4) + ((Equipment[8] >> N) & 1) == 31
+// indica un set "antiguo/especial", que usa entity+444 (el nibble de skin de clase) como ID de sprite.
+// Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt.c.
+// IDA: ChangeCharacterExt (0x0045C8C0)
+void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
+    // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
+    // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
+    intptr_t c = DAT_07abf5d0 + CHARACTER_STRIDE * Key;
+    if (*(WORD *)&AsCharacter(c)->Object.Type != 390) return;
+    // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
+    // el ala custom (más abajo).
+    gContentCatalog.ClearEntityParts((const void*)(uintptr_t)c);
+
+    // Helmet (slot 0)
+    if (Equipment[0] == 0xFF) {
+        *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)-1;
+        AsCharacter(c)->Weapon[0].Option1 = 0;
+    } else {
+        *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)(Equipment[0] + 400);
+    }
+    // Armor (slot 1)
+    BYTE Type = Equipment[1];
+    if (Type == 0xFF) {
+        *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)-1;
+        AsCharacter(c)->Weapon[1].Option1 = 0;
+    } else {
+        *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)(Type + 400);
+    }
+    // Right-hand weapon (slot at +672 / 0x2A0)
+    if (((Equipment[4] >> 2) & 3) == 3) {
+        if ((Equipment[8] & 7) != 0) {
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)((Equipment[8] & 7) + 786);
+        } else {
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)-1;
+            AsCharacter(c)->Wing.Option1 = 0;
+        }
+    } else if ((Equipment[8] & 7) != 0) {
+        // DESVIACION (DLL CustomWingChangeCharacterExt, ahora catálogo
+        // 0.97.20): con los bits del ala vanilla en 0..2, Equipment[8] & 7 es
+        // el índice + 1 del ala custom (ObjectManager del server).
+        const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
+        if (wingItem >= 0) {
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)ItemEntityModel(wingItem);
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, 7, wingItem);
+        } else {
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)-1;
+            AsCharacter(c)->Wing.Option1 = 0;
+        }
+    } else {
+        *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)(((Equipment[4] >> 2) & 3) + 784);
+    }
+
+    // Wings: clear class-FX, then spawn type-specific
+    DeleteBug(c);  // DeleteBug
+    Type = Equipment[4] & 3;
+    if (Type == 3) {
+        if ((Equipment[9] & 1) == 1) {
+            *(WORD *)&AsCharacter(c)->Helper.Type = 819;
+            float* pos = (float*)(c + 16);
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
+        } else {
+            *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)-1;
+            AsCharacter(c)->Helper.Option1 = 0;
+        }
+    } else {
+        *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)(Type + 816);
+        float* pos = (float*)(c + 16);
+        if (Type == 0) {
+            CreateBug(816, (void*)pos, (void*)(uintptr_t)c, 0);
+        } else if (Type == 2) {
+            CreateBug(195, (void*)pos, (void*)(uintptr_t)c, 0);
+        } else if (Type == 3) {
+            // inalcanzable — ya se atrapó arriba; se deja por paridad con IDA
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
+        }
+    }
+
+    // 19-bit packed level field (Equipment[5..7] bigendian)
+    int Level = Equipment[7] + ((Equipment[6] + (Equipment[5] << 8)) << 8);
+    AsCharacter(c)->Weapon[0].Level = (BYTE)LevelConvert(Equipment[7] & 7);          // weapon[0] exc lvl
+    AsCharacter(c)->Weapon[1].Level = (BYTE)LevelConvert((Level >> 3) & 7);          // weapon[1] exc lvl
+    char Change = *(char *)&AsCharacter(c)->Change;  // class change flag
+    AsCharacter(c)->Wing.Level = 0;
+    AsCharacter(c)->Helper.Level = 0;
+    if (Change) return;  // class-changed chars get default body parts; skip detailed slots
+
+    // 5 body-part slots at c+504, +528, +552, +576, +600 (stride 24)
+    {
+        short v7 = Equipment[2] >> 4;
+        if ((BYTE)v7 + 16 * (Equipment[8] >> 7) == 31) {
+            BYTE v8 = AsCharacter(c)->Class;
+            v7 = v8 >> 3;
+            *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)((v8 & 7) + 4 * (BYTE)v7 + 912);
+        } else {
+            v7 = (BYTE)v7 + 16 * (Equipment[8] >> 7);
+            *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)((BYTE)v7 + 624);
+        }
+    }
+    {
+        short v9 = Equipment[2] & 0xF;
+        if ((BYTE)v9 + 16 * ((Equipment[8] & 0x40) != 0) == 31) {
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)((b & 7) + 4 * (b >> 3) + 919);
+        } else {
+            v9 = (BYTE)v9 + 16 * ((Equipment[8] & 0x40) != 0);
+            *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)((BYTE)v9 + 656);
+        }
+    }
+    {
+        char v10 = Equipment[3] >> 4;
+        if (v10 + 16 * ((Equipment[8] & 0x20) != 0) == 31) {
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)((b & 7) + 4 * (b >> 3) + 926);
+        } else {
+            *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)((BYTE)(v10 + 16 * ((Equipment[8] & 0x20) != 0)) + 688);
+        }
+    }
+    {
+        char v11 = Equipment[3] & 0xF;
+        if (v11 + 16 * ((Equipment[8] & 0x10) != 0) == 31) {
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)((b & 7) + 4 * (b >> 3) + 933);
+        } else {
+            *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)((BYTE)(v11 + 16 * ((Equipment[8] & 0x10) != 0)) + 720);
+        }
+    }
+    {
+        char v12 = Equipment[4] >> 4;
+        if (v12 + 16 * ((Equipment[8] & 8) != 0) == 31) {
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)((b & 7) + 4 * (b >> 3) + 940);
+        } else {
+            *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)((BYTE)(v12 + 16 * ((Equipment[8] & 8) != 0)) + 752);
+        }
+    }
+    AsCharacter(c)->BodyPart[1].Level = (BYTE)LevelConvert((Level >> 6) & 7);
+    AsCharacter(c)->BodyPart[2].Level = (BYTE)LevelConvert((Level >> 9) & 7);
+    AsCharacter(c)->BodyPart[3].Level = (BYTE)LevelConvert((Level >> 12) & 7);
+    AsCharacter(c)->BodyPart[4].Level = (BYTE)LevelConvert((Level >> 15) & 7);
+    AsCharacter(c)->BodyPart[5].Level = (BYTE)LevelConvert((Level >> 18) & 7);
+    AsCharacter(c)->BodyPart[1].Option1 = Equipment[9] >> 7;
+    AsCharacter(c)->BodyPart[2].Option1 = (Equipment[9] & 0x40) != 0;
+    AsCharacter(c)->BodyPart[3].Option1 = (Equipment[9] & 0x20) != 0;
+    AsCharacter(c)->BodyPart[4].Option1 = (Equipment[9] & 0x10) != 0;
+    AsCharacter(c)->BodyPart[5].Option1 = (Equipment[9] & 8) != 0;
+    AsCharacter(c)->Weapon[0].Option1 = (Equipment[9] & 4) != 0;
+    AsCharacter(c)->Weapon[1].Option1 = (Equipment[9] & 2) != 0;
+    SetCharacterScale(AsCharacter(c));
+}
+
+// FUN_0046c7f0 @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)
+// Port FIEL de IDA `sub_46C7F0`. Es el spawner de fuego/humo de los objetos
+// del mundo: lo llama `MoveObjects` (0x4FDC00) para los braseros, la forja del
+// herrero, las chimeneas y los faroles.
+//
+//   kind 0 → llama de fuego: partícula 1195 (subtipo aleatorio 0..3, 50% de
+//            las veces) + `AddTerrainLight` con tinte naranja (radio 4).
+//   kind 1 → HUMO: partícula 1220, subtipo 0, 50% de las veces.
+//   kind 2 → HUMO: partícula 1220, subtipo 2, 50% de las veces.
+//
+// (dx,dy,dz) es un desplazamiento LOCAL que se rota por los ángulos del objeto
+// (`o+28`) — así el efecto sale del punto correcto del modelo (la boca de la
+// chimenea, la punta del farol). Luego se le suma la posición del objeto
+// (`o+16`) y un jitter de ±8 por eje.
+void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float param_4, float param_5) {
+    // IDA 0x0046C7F0: a2 es la base del objeto; sus ángulos empiezan en a2+7.
+    float *a2 = reinterpret_cast<float*>(object);
+    if (!a2) return;
+
+    float *v5 = a2 + 7;          // o+28  = Angle[3]
+    float in2[3][4];
+    AngleMatrix(v5, in2);
+
+    float in1[3] = { param_3, param_4, param_5 };
+    float out[3];
+    Vector_Rotate(in1, (float *)in2, out);      // VectorRotate
+
+    out[0] += a2[4];             // o+16 = Position[0]
+    out[1] += a2[5];
+    out[2] += a2[6];
+    out[0] += (float)(rand() % 16 - 8);
+    out[1] += (float)(rand() % 16 - 8);
+    out[2] += (float)(rand() % 16 - 8);
+
+    if (param_1 == 0) {
+        float v10 = (float)(rand() % 6 + 6) * 0.1f;
+        float Light[3] = { v10, v10 * 0.60000002f, v10 * 0.40000001f };
+        if ((rand() % 2) == 0)
+            Particle_Spawn(1195, out, v5, Light, rand() % 4, 1.0f, 0);
+        AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
+    } else if (param_1 == 1) {
+        if ((rand() % 2) == 0)
+            Particle_Spawn(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
+    } else if (param_1 == 2) {
+        if ((rand() % 2) == 0)
+            Particle_Spawn(1220, out, v5, a2 + 58, 2, 1.0f, 0);
+    }
+}
+
+// CheckSprites @ 0x00479790 — Effect_UpdateAll
+// Marca todos los slots activos del pool de personajes/efectos (DAT_07c85890, stride 0x1BC)
+// para el tick de render, poniendo el byte [+0x160] = 1 en cada entrada activa (flag de activo distinto de cero).
+// Se llama una vez por frame antes del loop de render, para que cada slot se procese exactamente una vez.
+void CheckSprites(void)
+{
+    char *pcVar1 = DAT_07c85890;
+    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
+        if (*pcVar1 != '\0')
+            pcVar1[EntityOffset(0x160)] = '\x01';
+    }
+}
+
+// BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
+void __cdecl BuxConvert_0(void* buffer, int len) {
+    BYTE* buf = static_cast<BYTE*>(buffer);
+    for (int i = 0; i < len; i++)
+        *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
+}
+
+// sub_47DAE0 @ 0x0047DAE0 (618 bytes) — Stats_CalcMagicDmgRange.
+// Calcula el daño mágico mínimo/máximo en this[+70]/this[+72]:
+//   min = Energy/9
+//   max = Energy>>2 (= Energy/4)
+//   + el special 61 de las Alas (this+1012) (escalado por durabilidad)
+//   + el special 60 (o 61 para wand=31) de WeaponL (this+536) — escalado por durabilidad
+//   + special 75 (flat add) on WeaponL
+//   + special 76 (percent +2%) on WeaponL
+//   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
+const ITEM* __cdecl Stats_CalcMagicDmgRange(BYTE* param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
+    unsigned short energy = *(unsigned short*)(param_1 + 26);
+    unsigned short *minPtr = (unsigned short*)(param_1 + 70);
+    unsigned short *maxPtr = (unsigned short*)(param_1 + 72);
+    *minPtr = energy / 9;
+    *maxPtr = energy >> 2;
+
+    BYTE* itemRing1 = param_1 + 1148;
+    BYTE* weaponL = param_1 + 536;
+
+    // Wings (this+1012) magic damage bonus, durability scaled
+    short wingsType = *(short*)(param_1 + 1012);
+    if (wingsType != -1) {
+        ITEM_ATTRIBUTE* attr = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[wingsType];
+        float durP = CalcDurabilityPercent(*(unsigned char*)(param_1 + 1038),
+                                           attr->Durability,
+                                           *(int*)(param_1 + 1016), 0);
+        unsigned short minBonus = 0, maxBonus = 0;
+        PlusSpecial(&minBonus, 61, AsItem((param_1 + 1012)));
+        PlusSpecial(&maxBonus, 61, AsItem((param_1 + 1012)));
+        unsigned short minRed = (unsigned short)((double)minBonus * (double)durP);
+        unsigned short maxRed = (unsigned short)((double)maxBonus * (double)durP);
+        *minPtr += minBonus - minRed;
+        *maxPtr += maxBonus - maxRed;
+    }
+
+    // WeaponL (this+536) magic damage bonus
+    if (*(unsigned short*)weaponL != 0xFFFF) {
+        unsigned char dur = AsItem(weaponL)->Durability;
+        if (dur != 0) {
+            short type = *(short*)weaponL;
+            ITEM_ATTRIBUTE* attr = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[type];
+            float durP = CalcDurabilityPercent(dur, attr->Durability,
+                                               AsItem(weaponL)->Level,
+                                               AsItem(weaponL)->Option1);
+            int specId = (type == 31) ? 60 : 61;  // Wand uses special 60
+            unsigned short minBonus = 0, maxBonus = 0;
+            PlusSpecial(&minBonus, specId, AsItem(weaponL));
+            PlusSpecial(&maxBonus, specId, AsItem(weaponL));
+            *minPtr += (unsigned short)(minBonus - (unsigned short)((double)minBonus * (double)durP));
+            *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
+            PlusSpecial(minPtr, 75, AsItem(weaponL));
+            PlusSpecial(maxPtr, 75, AsItem(weaponL));
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(weaponL), 2);
+            PlusSpecialPercent((short*)maxPtr, 76, AsItem(weaponL), 2);
+        }
+    }
+
+    // Ring1 (this+1148) magic damage bonus
+    if (*(unsigned short*)itemRing1 != 0xFFFF) {
+        if (*(unsigned char*)(itemRing1 + 26) != 0) {
+            PlusSpecial(minPtr, 75, AsItem(itemRing1));
+            PlusSpecial(maxPtr, 75, AsItem(itemRing1));
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(itemRing1), 2);
+            return PlusSpecialPercent((short*)maxPtr, 76, AsItem(itemRing1), 2);
+        }
+    }
+    return AsItem(itemRing1);
+}
+
+// IDA: CHARACTER_MACHINE::GetMagicSkillDamage (0x0047E4F0).  Fuera del ruido
+// anti-tamper (que descifra el registro de SkillAttribute; el nuestro ya esta en
+// claro): el dano del skill es el BYTE +0x21 del registro de 40 bytes, y se suma
+// al rango magico de CHARACTER_MACHINE (+70 / +72); el maximo lleva +50%.
+void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage)
+{
+    const BYTE damage = (BYTE)SkillAttribute.Raw[40 * (iType & 0xFF) + 0x21];
+    *piMinDamage = damage + *(unsigned short*)(This + 70);
+    *piMaxDamage = (damage >> 1) + damage + *(unsigned short*)(This + 72);
+}
+
+// sub_47DD50 @ 0x0047DD50 (39 bytes) — Stats_CalcAddStrength (or similar).
+// Computes a derived stat from CharacterMachine fields:
+//   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
+// donde this es un puntero WORD; los offsets +14, +20, +22 y +58 van en bytes.
+int __cdecl Stats_CalcAddStrength(short *param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
+    int v = 5 * (unsigned short)param_1[7]
+          + ((unsigned short)param_1[10] >> 2)
+          + ((unsigned short)param_1[11] * 3) / 2;
+    param_1[29] = (short)v;
+    return v;
+}
+
+// IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
+// CHARACTER_MACHINE::CalculateAttackSpeed @ 0x0047DD80 (598 bytes).
+// Calcula la velocidad de ataque/magia en this[+0x38] / this[+0x44] (o +56/+68
+// for non-class-1/2/3 = elf/etc).
+//   Formulas based on (CharAttribute[+11] & 7) class:
+//     class 2 (Wizard): atk = Dex/50, mag = Dex/50
+//     class 1/3 (DK/MG): atk = Dex/15, mag = Dex/20
+//     el resto: atk = (this+22)/20, mag = (this+22)/10
+//   Después los bonus de velocidad de arma de WeaponL/R (slots 0/1).
+//   Pants (slot 5 = this+876) speed bonus.
+//   Flag de estado (this+40 bit 0): +20 a los dos.
+//   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
+int __cdecl CalculateAttackSpeed(BYTE* param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
+    int charClass = *(unsigned char*)(charAttr + 11) & 7;
+
+    unsigned short *atkPtr;
+    unsigned short *magPtr;
+    if (charClass == 2) {
+        atkPtr = (unsigned short*)(param_1 + 0x38);
+        magPtr = (unsigned short*)(param_1 + 0x44);
+        unsigned short dex = *(unsigned short*)(param_1 + 0x16);
+        *atkPtr = dex / 50;
+        *magPtr = dex / 50;
+    } else if (charClass == 1 || charClass == 3) {
+        atkPtr = (unsigned short*)(param_1 + 0x38);
+        magPtr = (unsigned short*)(param_1 + 0x44);
+        unsigned short dex = *(unsigned short*)(param_1 + 0x16);
+        *atkPtr = dex / 15;
+        *magPtr = dex / 20;
+    } else {
+        atkPtr = (unsigned short*)(param_1 + 56);
+        magPtr = (unsigned short*)(param_1 + 68);
+        unsigned short v = *(unsigned short*)(param_1 + 22);
+        *atkPtr = v / 20;
+        *magPtr = v / 10;
+    }
+
+    BYTE* weaponR = param_1 + 604;  // WeaponR
+    BYTE* weaponL = param_1 + 536;  // WeaponL
+    BYTE* pants   = param_1 + 876;  // Pants
+
+    // Skip dword_7E91388/pPickedItem hover preview for non-runtime simplicity.
+
+    bool weaponLValid = false, weaponRValid = false, pantsValid = false;
+    if (*(unsigned char*)(weaponL + 26)) {
+        short t = *(short*)weaponL;
+        if (t != 135 && t != 143 && t >= 0 && t < 192) weaponLValid = true;
+    }
+    if (*(unsigned char*)(weaponR + 26)) {
+        short t = *(short*)weaponR;
+        if (t != 135 && t != 143 && t >= 0 && t < 192) weaponRValid = true;
+    }
+    if (*(unsigned char*)(pants + 26) && *(unsigned short*)pants != 0xFFFF) {
+        pantsValid = true;
+    }
+
+    int magBonus = 0;
+    if (weaponLValid) {
+        if (weaponRValid) {
+            *atkPtr += (*(unsigned char*)(weaponL + 22) + *(unsigned char*)(weaponR + 22)) / 2;
+            magBonus = (*(unsigned char*)(weaponL + 22) + *(unsigned char*)(weaponR + 22)) / 2;
+        } else {
+            *atkPtr += *(unsigned char*)(weaponL + 22);
+            magBonus = *(unsigned char*)(weaponL + 22);
+        }
+        *magPtr += (unsigned short)magBonus;
+    } else if (weaponRValid) {
+        *atkPtr += *(unsigned char*)(weaponR + 22);
+        magBonus = *(unsigned char*)(weaponR + 22);
+        *magPtr += (unsigned short)magBonus;
+    }
+
+    if (pantsValid) {
+        *atkPtr += *(unsigned char*)(pants + 22);
+        *magPtr += *(unsigned char*)(pants + 22);
+    }
+
+    if ((*(unsigned char*)(param_1 + 40) & 1) != 0) {
+        *atkPtr += 20;
+        *magPtr += 20;
+    }
+
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 1148)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 1148)));
+    BYTE* helm = param_1 + 1080;
+    PlusSpecial(atkPtr, 77, AsItem(helm));
+    PlusSpecial(magPtr, 77, AsItem(helm));
+    return 0;
+}
+
+// sub_47DFE0 @ 0x0047DFE0 (369 bytes) — Stats_CalcDefense.
+// Calcula el stat de defensa en this[+76]:
+//   class==2 (Wizard): defense = Vit/4 (this[+22]>>2)
+//   else: defense = Vit/3
+//   + el Escudo (this+604), con la defensa escalada por durabilidad
+//   + los bonus porcentuales de cada slot de equipo (special 70)
+const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
+    int charClass = *(unsigned char*)(charAttr + 11) & 7;
+
+    unsigned short *defPtr = (unsigned short*)(param_1 + 76);
+    if (charClass == 2) {
+        *defPtr = (unsigned short)(*(unsigned short*)(param_1 + 22) >> 2);
+    } else {
+        *defPtr = (unsigned short)(*(unsigned short*)(param_1 + 22) / 3);
+    }
+
+    short v3 = *(short*)(param_1 + 0x25C);  // WeaponR/Shield item type
+    if (v3 != -1) {
+        unsigned char dur = *(unsigned char*)(param_1 + 0x276);  // escudo +26: Durability (CharacterMachine, no CHARACTER)
+        if (dur != 0) {
+            unsigned char maxDur = ((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3].Durability;
+            int level = *(int *)(param_1 + 0x260);  // escudo +4: Level
+            unsigned char opt = *(unsigned char*)(param_1 + 631);
+            float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
+            unsigned char defenseBase = *(unsigned char*)(param_1 + 0x26C);
+            unsigned short reduction = (unsigned short)((double)defenseBase * (double)durP);
+            *defPtr += defenseBase - reduction;
+
+            // Shield "Plus Defense" special (62)
+            unsigned short Value = 0;
+            PlusSpecial(&Value, 62, AsItem((param_1 + 604)));
+            *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
+
+            PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 604), 10);
+        }
+    }
+    // Apply percent defense bonuses from all equipment slots
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 672), 10);  // Pendant
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 740), 10);  // Armor
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 808), 10);  // Pants
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 876), 10);  // Gloves
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 944), 10);  // Boots
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1284), 10);  // Necklace
+    return PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1216), 10);  // Ring2
+}
+
+// sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.
+// Calcula el stat de tasa de defensa en this[+78]:
+//   class 0 (Knight): Vit/4   (>>2)
+//   class 1 (DK?):    Vit/3
+//   class 2 (Wiz):    Vit/10
+//   class 3+ (DL?):   Vit/5
+// Then iterates 7 equipment slots checking durability-scaled rate bonus.
+// Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
+int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
+    int charClass = *(unsigned char*)(charAttr + 11) & 7;
+    unsigned short vit = *(unsigned short*)(param_1 + 22);
+
+    int v4;
+    if (charClass == 2)       v4 = vit / 10;
+    else if (charClass == 1)  v4 = vit / 3;
+    else if (charClass != 0)  v4 = vit / 5;
+    else                       v4 = vit >> 2;
+    *(short*)(param_1 + 78) = (short)v4;
+
+    int totalReduction = 0;
+    for (int i = 1; i <= 7; ++i) {
+        BYTE* slotPtr = param_1 + 68 * i;
+        if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
+            unsigned int v7 = Item_GetDefenseWithSpecial(0, (short*)(slotPtr + 536));
+            ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].AnimationFrame];
+            float durP;
+            if (i == 7) {
+                durP = CalcDurabilityPercent(*(unsigned char*)(param_1 + 1038),
+                                             v8->Durability,
+                                             *(int*)(param_1 + 1016), 0);
+            } else {
+                durP = CalcDurabilityPercent(*(unsigned char*)(slotPtr + 562),
+                                             v8->Durability,
+                                             *(int*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].PriorAnimationFrame,
+                                             *(unsigned char*)(slotPtr + 563));
+            }
+            int reduction = (int)((double)(unsigned short)v7 * (double)durP);
+            totalReduction += (int)v7 - reduction;
+        }
+    }
+    *(short*)(param_1 + 78) += (short)totalReduction;
+
+    // Bonus de set completo (IDA L68-83). g_bAddDefense la escribe CheckFullSet
+    // (0x451B20); EquipmentLevelSet es el MIN level de las 5 piezas del set.
+    short defBefore = *(short*)(param_1 + 78);   // DEFRATE probe
+    if (g_bAddDefense) {
+        double v11 = 0.0;
+        if (EquipmentLevelSet == 10)      v11 = 0.050000001;
+        else if (EquipmentLevelSet == 11) v11 = 0.1;
+        *(short*)(param_1 + 78) = (short)(*(short*)(param_1 + 78)
+                                          + (int)((double)*(unsigned short*)(param_1 + 78) * v11));
+    }
+
+    // ── DEFRATE (temporal): verificación del bonus de set completo del +10/+11.
+    // Loguea SÓLO cuando cambia algo, así se ve el antes/después al sacarse una
+    // pieza del set. Esperado con set completo +11: bonus=+10%; al sacar una
+    // pieza, EquipmentLevelSet cae a 0 y el bonus desaparece.
+    {
+        static int  s_add = -1, s_els = -1;
+        static short s_before = -1, s_after = -1;
+        short defAfter = *(short*)(param_1 + 78);
+        if (g_bAddDefense != s_add || EquipmentLevelSet != s_els ||
+            defBefore != s_before || defAfter != s_after) {
+            s_add = g_bAddDefense; s_els = EquipmentLevelSet;
+            s_before = defBefore;  s_after = defAfter;
+        }
+    }
+    return *(short*)(param_1 + 78);
+}
+
+// sub_47E2E0 @ 0x0047E2E0 (46 bytes) — Stats_CalcExtraOption1.
+// Iterates 6 equipment slots (CharacterMachine + 672 .. + 1012, stride 68
+// bytes = tamaño de ITEM). Por cada slot con Option1 (byte +26) seteado, llama a
+// FUN_0047cfe0 (accesor de item +0x14). Guarda el último resultado válido en
+// CharacterMachine + 80 (this[40] si es puntero WORD).
+int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
+    short *slot = param_1 + 336;  // CharacterMachine + 672 (Pendant)
+    short last = 0;
+    for (int n = 0; n < 6; ++n) {
+        if (*((unsigned char*)slot + 26)) {
+            last = FUN_0047cfe0(slot);
+            param_1[40] = last;  // CharacterMachine + 80
+        }
+        slot += 34;  // +68 bytes (next ITEM)
+    }
+    return (int)(unsigned char)last;
+}
+
+// sub_47E310 @ 0x0047E310 (63 bytes) — Stats_CalcExtraOption2.
+// Lee el Option1 (byte +26 dentro de ITEM) de los slots de Guantes y Alas. Por cada uno:
+//   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
+//   Alas    (Option1 en +1038, ITEM en +1012): this+82 += FUN_0047d000(alas)
+// Orden: primero los guantes (reemplaza), después las alas (suma).
+int __cdecl Stats_ExtraOptionGlovesWings(BYTE* param_1) {
+    short v = 0;
+    if (*(unsigned char*)(param_1 + 970)) {
+        *(short*)(param_1 + 82) = FUN_0047d000((short*)(param_1 + 944));
+    }
+    if (*(unsigned char*)(param_1 + 1038)) {
+        v = FUN_0047d000((short*)(param_1 + 1012));
+        *(short*)(param_1 + 82) += v;
+    }
+    return (int)(unsigned char)v;
+}
+
+// IDA: Terrain_QuadEqual (0x004F9C70), compara cuatro componentes por dirección.
+int __cdecl Terrain_QuadEqual(const float* param_1, const float* param_2, int param_3, int param_4) {
+    const float* p2 = param_2;
+    int iVar1 = 0;
+    do {
+        float diff = param_1[iVar1] - *p2;
+        if (diff < 0.0f) diff = -diff;
+        if (_DAT_005528a8 < diff)
+            return 0;
+        iVar1++;
+        p2++;
+    } while (iVar1 < 4);
+    (void)param_3; (void)param_4;
+    return 1;
+}
+
+// VectorMA @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
+// IDA-ported: 3-vector multiply-add (Quake-style).
+void __cdecl VectorMA(float *va, float scale, float *vb, float *vc) {
+    vc[0] = scale * vb[0] + va[0];
+    vc[1] = scale * vb[1] + va[1];
+    vc[2] = scale * vb[2] + va[2];
+}
+
+// Vec3_Normalize @ 0x004F9D60 — Vec3_Normalize(vec[3])
+// Normalises a 3-component float vector in-place.
+void __cdecl Vec3_Normalize(float *vec) {
+    float len = sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+    if (len > 0.0f) { vec[0] /= len; vec[1] /= len; vec[2] /= len; }
+}
+
+// Collision_SegmentToOBB @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
+// separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
+// `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
+// (box[3..5], box[6..8], box[9..11]).
+//
+// IDA prueba SEIS ejes y exige que TODOS solapen:
+//     cross(dir, eje0), cross(dir, eje1), cross(dir, eje2), eje0, eje1, eje2
+// con `dir = rayTarget - rayOrigin`.  La proyeccion de cada uno la hace
+// `sub_5130F0` (FUN_005130f0), que ya estaba portada fiel mas arriba.
+bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box)
+{
+    if (!rayOrigin || !rayTarget || !box) return false;
+
+    float dir[3] = { rayTarget[0] - rayOrigin[0],
+                     rayTarget[1] - rayOrigin[1],
+                     rayTarget[2] - rayOrigin[2] };
+
+    float n0[3], n1[3], n2[3];
+    Vec3_Cross(dir, (float *)(box + 3), n0);
+    Vec3_Cross(dir, (float *)(box + 6), n1);
+    Vec3_Cross(dir, (float *)(box + 9), n2);
+
+    float *axes[6] = { n0, n1, n2,
+                       (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };
+
+    for (int i = 0; i < 6; ++i) {
+        if (!FUN_005130f0(axes[i], rayOrigin, rayTarget,
+                          box[0], box[1], box[2],
+                          box[3], box[4], box[5],
+                          box[6], box[7], box[8],
+                          box[9], box[10], box[11]))
+            return false;
+    }
+    return true;
+}

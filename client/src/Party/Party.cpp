@@ -1,0 +1,482 @@
+// Party.cpp
+// Sistema de Party/grupo — handlers de paquetes y datos de barras de HP
+//
+// Handlers de paquetes (server→client):
+//   0x44  Party_HPBars        — inline in Net_Process; party member HP bar update
+//   0x46  Terrain_TileUpdate  @ 0x00436d60 — terrain tile rect/point changes
+//   0x71  Party_Keepalive     @ 0x00433900 — passive legacy reply [C1][03][71]
+//   0x73  ReceiveGGAuth       @ 0x00433a80 — pertenece a protocolo, no a Party
+//
+// ── PARTY HP BAR DATA (opcode 0x44) ──────────────────────────────────────────
+//
+//   Table: DAT_07e11e98  stride 0x24 per member slot
+//     slot = upper nibble of each packet byte (max 10 members?)
+//     HP%  = lower nibble, clamped to 10 (represents HP in 10% steps)
+//
+//   Packet: [C1][len][44][count][byte_N...]
+//     count = byte[3]
+//     per byte: upper_nibble = member_slot, lower_nibble = hp_percent_step
+//     DAT_07e11e98[slot * 0x24] = min(hp_step, 10)
+//
+// ── TERRAIN TILE UPDATE (opcode 0x46, FUN_00436d60) ──────────────────────────
+//
+//   byte[3] == 0x00 → Rectangle tile update:
+//     if World in [10..16] and byte[4]==8:
+//       SetActionObject(World, 0x24, 0, 1)  — map zone transition
+//     Loop byte[6] count, stride 4 from byte[8]:
+//       byte[-1] = x1, byte[0] = y1, byte[1] = x2, byte[2] = y2
+//       Terrain_UpdateTileAttributeRect (IDA: FUN_004f6f30)
+//       (x1, y1, x2-x1+1, y2-y1+1, byte[4], !(byte[5]))
+//         — update terrain attrib in rect (floor_id=byte[4], door_open=!byte[5])
+//
+//   byte[3] == 0x01 → Single tile update:
+//     Loop byte[6] count, stride 2 from byte[7]:
+//       byte[0] = tile_x, byte[1] = tile_y
+//       if byte[5]==0: Terrain_SetTileAttributeBits (IDA: FUN_004f6ef0)
+//       else:          Terrain_ClearTileAttributeBits (IDA: SubTerrainAttribute)
+//
+//   Terrain tile-attribute writers (IDA: FUN_004f6ef0 / SubTerrainAttribute / FUN_004f6f30).
+//
+// ── PARTY KEEPALIVE (opcode 0x71, Party_PacketHandler) ───────────────────────
+//
+//   Legacy response path: if an external server sends opcode 0x71, the client
+//   replies with [0xC1][0x03][0x71].  Current MuEmu has no 0x71 route, so this
+//   handler remains passive and never schedules or emits traffic on its own.
+//
+// ── PARTY CHAR SYNC (opcode 0x73, FUN_00433a80, 380 lines) ───────────────────
+//
+//   Dual-purpose handler dispatched on packet length (param_2):
+//
+//   param_2 == 0  →  Char-data request ACK:
+//     Builds a small C1 packet with opcode 0xF1 sub-opcode 0x01:
+//       [0xC1][len][0xF1][0x01][0x00][rand_byte]
+//     XOR-encrypts with standard 32-byte key {0xe7,0x6d,0x3a,...,0xe8,0x56}
+//     then RC4-encodes via CSimpleModulus_Encode (same cipher as login)
+//     and wraps in C3 or C4 envelope depending on final length.
+//     Sends with standard WSAEWOULDBLOCK retry loop.
+//     Purpose: re-send character authentication sync (used when joining party).
+//
+//   param_2 != 0  →  BGM notification:
+//     Pipe_QueryResource(*(CHAR**)(param_1 + 4))
+//     Passes string pointer from packet to background music player.
+//     Purpose: server instructs client to play a specific BGM track.
+//
+//   HashTable operations (MAIN_HASH_CLASS, key DAT_05826ceb) interspersed
+//   throughout — anti-tamper obfuscation, not game logic.
+//
+// ── GUILD (opcodes 0x90-0x99) ────────────────────────────────────────────────
+//
+//   Packet handlers dispatched by Net_Process for guild operations.
+//   All take a raw packet pointer (param_1).
+//
+// ── Guild create result (opcode 0x90, FUN_00436820) ──────────────────────────
+//   Sends a 3-byte ACK [C1][03][31] to the server.
+//   Switches on packet[3] (sub-type 1–5) to select a pre-loaded string buffer,
+//   then calls CreateOkMessageBox to decode and display the guild notification in chat.
+//     1 → DAT_07d5b680  (create success variant A)
+//     2 → DAT_07d5b7ac  (create success variant B)
+//     3 → DAT_07d5c10c  (create success variant C)
+//     4 → DAT_07d5c238  (create success variant D)
+//     5 → DAT_07d5b8d8  (create success variant E)
+//
+// ── Guild member add result (opcode 0x91, FUN_00436cb0) ──────────────────────
+//   Sub-type dispatch on packet[3]:
+//     ==1: Join request result — if packet[4]==0 show DAT_07d58ea8 (OK message),
+//          else format param_2_07d58fd4 with packet[4] (error/rank code) via wsprintfA.
+//     ==2: Join confirm result — if packet[4]==0 show DAT_07d6813c (OK message),
+//          else format param_2_07d68268 with packet[4] via wsprintfA.
+//   Result message shown via CreateOkMessageBox.
+//
+// ── Guild member list (opcode 0x93, FUN_00436a80) ────────────────────────────
+//   Dispatch on packet[4]:
+//     ==0xFF: GuildMemberList_Add(packet[3], packet+5) — add one member record (0x18 bytes).
+//     else:   GuildMemberList_Update(packet[4], packet[3], packet+5) — full list update
+//             (packet[4] = member count, packet[3] = param, packet+5 = data array).
+//   Guild member list table at DAT_083a7af8, stride 0x18 per member.
+//   UI sub-state: 0x8c (member list panel) or 0x9a (single add).
+//
+// ── Guild char-select result (opcode 0x94, FUN_004372c0) ─────────────────────
+//   Sets GoldenArcherOpenType = packet[3]+1 (guild load stage) and
+//        GoldenArcherItemCount = packet[4..5] (short: guild ID or member count).
+//   When stage reaches 3 (packet[3]==2):
+//     Zeroes 64 bytes at GoldenArcherLuckyNumberText (guild entity pool).
+//     Calls ClearInput(0) to reset char-select.
+//     Sets InputTextMax=0xC (login sub-state → CharSelectInit),
+//     clears DAT_00559c84/0x88, GoldInputEnable/74, StorageGoldFlag.
+//     Sets GoldenArcherLuckyNumberTicket=1 (char-select flag D).
+//   When stage==1 and packet[6..10] are all != -1:
+//     GoldenArcherLuckyNumber = packet[6..9] (dword, guild target tile X)
+//     DAT_00559f5c  = packet[10..11] (word, guild target tile Y)
+//   Clears DAT_07eaa117 and DAT_07eaa116.
+//
+// ── Guild update pos (opcode 0x95, FUN_00437380) ──────────────────────────────
+//   If packet[4..5] (ushort) != 0xFFFF:
+//     GoldenArcherItemCount = packet[4..5]  — update guild ID / member count
+//
+// ── Guild set target pos (opcode 0x96, FUN_004373a0) ─────────────────────────
+//   If packet[4..5], packet[6..7], packet[8..9] are all != -1:
+//     GoldenArcherLuckyNumber = packet[4..7] (dword, guild target X)
+//     DAT_00559f5c  = packet[8..9] (word, guild target Y)
+//
+// ── Guild join toggle (opcode 0x99, FUN_004373d0) ────────────────────────────
+//   packet[3] == 0 → SetErrorMessage(0x90)  — guild join accept UI
+//   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
+
+#include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Net/NetText.h"
+#include "Platform/Text.h"
+#include "Party.h"
+#include "Net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
+
+// World está declarado en globals.h.
+extern BYTE* g_PartyHPTable;           // DAT_07e11e98  stride 0x24
+
+#define PARTY_HP_STRIDE  0x24
+
+// DESVIACION (0.97.40): el registro de 36 bytes de la party guarda el nombre en
+// +0..10; el completo (hasta 40 bytes) vive en esta tabla, una entrada por fila.
+static char s_PartyName[2048 / 36][NetText::CharacterNameSize + 1] = {};
+
+extern "C" const char* Party_GetName(int index)
+{
+    return (index >= 0 && index < (int)(sizeof(s_PartyName) / sizeof(s_PartyName[0])))
+        ? s_PartyName[index] : "";
+}
+
+extern "C" const char* Party_NameOf(const void* slot)
+{
+    const BYTE* p = (const BYTE*)slot;
+    if (p < Party || p >= Party + sizeof(Party)) return "";
+    return Party_GetName((int)((p - Party) / 36));
+}
+
+// sub_4AFDC0/sub_4E5980 re-arm these runtime fields with -2 whenever the
+// viewport may have changed. sub_4AFB00 resolves them strictly by name against
+// currently visible players; these fields never represent Party membership.
+void Party_RefreshViewportLinks(void)
+{
+    for (int i = 0; i < PartyNumber; ++i) {
+        BYTE* const slot = Party + i * 36;
+        *(int*)(slot + 28) = -2;
+        *(int*)(slot + 32) = 0;
+    }
+    Party_MatchEntityNames();
+}
+
+// ============================================================
+// ReceivePartyList97k  (ReceivePartyList @ 00434660, opcode 0x42)
+//
+// MuEmu PMSG_PARTY_LIST_SEND (0.97.40, C2):
+//   [C2][size:2][42][result][count][members...]
+// Native-aligned PMSG_PARTY_LIST members have a 52-byte stride:
+//   name[40], number, map, x, y, CurLife(DWORD), MaxLife(DWORD).
+//
+// The client party table is the original 36-byte slot layout.  Its first
+// 24 bytes are populated exactly as 00434660; the remaining UI-only fields
+// are maintained by the existing HUD/HP-bar paths.
+// ============================================================
+void ReceivePartyList97k(BYTE* pkt, int size)
+{
+    if (!pkt || size < 6) return;
+
+    const int hdrOff = (pkt[0] == 0xC1) ? 0 : 1;
+    const int count = pkt[4 + hdrOff];
+    constexpr int kMaxPartyMembers = 5; // MuEmu MAX_PARTY_USER
+    constexpr int NAME = (int)NetText::CharacterNameSize;
+    const int kHeaderSize = 5 + hdrOff;
+    constexpr int kWireStride = NAME + 12;
+    if (count < 0 || count > kMaxPartyMembers ||
+        kHeaderSize + count * kWireStride > size) {
+        return;
+    }
+
+    // 00434660 writes PartyNumber before its per-member copy loop.  The
+    // trailing two dwords are runtime link fields used by sub_4AFB00; the
+    // original table starts them at -2 (unmatched), rather than zero.
+    PartyNumber = count;
+    for (int i = 0; i < count; ++i) {
+        const BYTE* const wire = pkt + kHeaderSize + i * kWireStride;
+        BYTE* const local = Party + i * 36;
+
+        NetText::FromServer(s_PartyName[i], sizeof(s_PartyName[i]), wire, NAME);
+        TextEngine::CopyTruncated((char*)local, 11, s_PartyName[i]);
+        local[11] = wire[NAME];               // member number
+        local[12] = wire[NAME + 1];           // map
+        local[13] = wire[NAME + 2];           // X
+        local[14] = wire[NAME + 3];           // Y
+        memcpy(local + 16, wire + NAME + 4, 4);   // CurLife
+        memcpy(local + 20, wire + NAME + 8, 4);   // MaxLife
+        *(int*)(local + 28) = -2;             // CharactersClient index sentinel
+        *(int*)(local + 32) = 0;              // cached entity status
+    }
+
+    Party_MatchEntityNames();
+}
+
+
+// ============================================================
+// PacketHandler_0x44  (inline in Net_Process)
+// Party member HP bar update.
+// Packet: [C1][len][44][count][byte...]
+//   Each byte: high nibble = member slot (0-9), low nibble = HP step (0-10)
+//   Stored: Party[slot * 36 + 24] = min(hp_step, 10)
+// ============================================================
+void PacketHandler_0x44(BYTE* pkt, int size)
+{
+    if (!pkt || size < 4) return;
+    int count = (BYTE)pkt[3];
+    if (count < 0 || 4 + count > size) return;
+    for (int i = 0; i < count; i++)
+    {
+        // ProtocolCore @ 004389A0: entries begin at ReceiveBuffer+4.
+        BYTE b = pkt[4 + i];
+        int  slot    = (b >> 4) & 0xF;
+        int  hp_step = (b & 0xF);
+        if (hp_step > 10) hp_step = 10;
+        if (slot < 5) {
+            Party[slot * 36 + 24] = (BYTE)hp_step;
+        }
+    }
+}
+
+
+// ============================================================
+// Terrain_TileUpdate  @ 0x00436d60  (opcode 0x46)
+// Updates terrain tile attributes in response to server events
+// (doors opening/closing, map transitions, etc.)
+// See Terrain.cpp for the underlying tile write functions.
+// ============================================================
+void Terrain_TileUpdate(BYTE* pkt)
+{
+    if (pkt[3] == 0x00)
+    {
+        // Rectangle update
+        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11 && pkt[4] == 8)
+            SetActionObject(gMapManager.GetCurrentMap(), 0x24, 0, 1);  // map zone transition
+
+        int count = (BYTE)pkt[6];
+        BYTE* entry = pkt + 8;
+        for (int i = 0; i < count; i++, entry += 4)
+        {
+            int x1 = entry[-1], y1 = entry[0];
+            int x2 = entry[1],  y2 = entry[2];
+            int w  = (x2 - x1) + 1;
+            int h  = (y2 - y1) + 1;
+            Terrain_UpdateTileAttributeRect(x1, y1, w, h, pkt[4], !pkt[5]);
+        }
+    }
+    else if (pkt[3] == 0x01)
+    {
+        // Single tile update
+        int count = (BYTE)pkt[6];
+        BYTE* entry = pkt + 7;
+        for (int i = 0; i < count; i++, entry += 2)
+        {
+            int tile_x = entry[0], tile_y = entry[1];
+            if (pkt[5] == 0)
+                Terrain_SetTileAttributeBits(tile_x, tile_y, pkt[4]);  // set
+            else
+                Terrain_ClearTileAttributeBits(tile_x, tile_y, pkt[4]);  // clear
+        }
+    }
+}
+
+
+// ============================================================
+// Party_Keepalive  @ 0x00433900  (opcode 0x71)
+// Passive legacy reply. MuEmu does not currently emit or receive this route.
+// Standard send() + WSAEWOULDBLOCK queue at SocketClientSendBuffer.
+// ============================================================
+void Party_Keepalive(void)
+{
+    const BYTE pkt[3] = { 0xC1, 0x03, 0x71 };
+    // IDA: Party_PacketHandler envía la trama C1 por la ruta normal de socket/cola.
+    // Este opcode no va cifrado según la política de tramas del cliente.
+    gNetwork.SendC1(pkt, sizeof(pkt));
+}
+
+
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  CÓDIGO MUERTO — no tienen callers                                       ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+//
+// Las siete funciones `Guild_*` que siguen hasta el final del archivo estaban
+// enganchadas a los opcodes 0x90-0x99. Ese rango NO es guild: IDA y MuEmu
+// coinciden en que son eventos (Devil Square, Blood Castle, Golden Archer).
+// La tabla opcode -> función real está en la cabecera de
+// `src/Net/Net_Events.cpp`, que es quien los atiende.
+//
+// El guild de verdad usa 0x50-0x56 y lo atiende Net_Process.cpp
+// (`ReceiveGuildResult`, `ReceiveGuildList`, `ReceiveCreateGuildResult`, ...).
+//
+// Se conservan como referencia por si alguna vez se porta el protocolo de
+// guild de otra versión. Ojo con reengancharlas:
+// `Guild_CreateOk` ENVÍA un `[C1][03][31]`, así que colgada del opcode
+// equivocado no sólo muestra un cartel de más, también le manda basura al
+// server.
+//
+// ============================================================
+// ============================================================
+// Guild_AddMemberResult  @ 0x00436cb0  (opcode 0x91)
+// Server reports result of a guild join request or confirmation.
+//
+// pkt[3]==1: join-request result
+//   pkt[4]==0 → show DAT_07d58ea8 (success)
+//   pkt[4]!=0 → wsprintfA format param_2_07d58fd4 with pkt[4] (error code)
+// pkt[3]==2: join-confirm result
+//   pkt[4]==0 → show DAT_07d6813c (success)
+//   pkt[4]!=0 → wsprintfA format param_2_07d68268 with pkt[4] (error code)
+// Result shown via CreateOkMessageBox.
+// ============================================================
+void Guild_AddMemberResult(BYTE* pkt)
+{
+    char buf[256];
+
+    if (pkt[3] == 1)
+    {
+        if (pkt[4] == 0)
+        {
+            CreateOkMessageBox((char*)&DAT_07d58ea8);
+        }
+        else
+        {
+            Platform::TextFormat(buf, &param_2_07d58fd4, (UINT)pkt[4]);
+            CreateOkMessageBox((char*)buf);
+        }
+    }
+    else if (pkt[3] == 2)
+    {
+        if (pkt[4] == 0)
+        {
+            CreateOkMessageBox((char*)&DAT_07d6813c);
+        }
+        else
+        {
+            Platform::TextFormat(buf, &param_2_07d68268, (UINT)pkt[4]);
+            CreateOkMessageBox((char*)buf);
+        }
+    }
+}
+
+
+// ============================================================
+// Guild_MemberList  @ 0x00436a80  (opcode 0x93)
+// Server sends guild member list (full update or single add).
+//
+// pkt[4]==0xFF → GuildMemberList_Add(pkt[3], pkt+5)
+//   Add one member record (0x18 bytes at pkt+5).
+// pkt[4]!=0xFF → GuildMemberList_Update(pkt[4], pkt[3], pkt+5)
+//   Full member list: pkt[4]=count, pkt[3]=param, pkt+5=data array.
+// Guild member list at DAT_083a7af8, stride 0x18 per entry.
+// UI sub-state: 0x9a (add) or 0x8c (full list).
+// ============================================================
+void Guild_MemberList(BYTE* pkt)
+{
+    if (pkt[4] == 0xFF)
+        GuildMemberList_Add((UINT)pkt[3], pkt + 5);
+    else
+        GuildMemberList_Update((int)pkt[4], (int)pkt[3], pkt + 5);
+}
+
+
+// ============================================================
+// Guild_CharSelectResult  @ 0x004372c0  (opcode 0x94)
+// Server sends guild-load pipeline stage result.
+//
+// GoldenArcherOpenType = pkt[3]+1  (stage counter)
+// GoldenArcherItemCount = pkt[4..5] (short: guild ID or member count)
+//
+// Stage==3 (pkt[3]==2): reset char-select
+//   Zero GoldenArcherLuckyNumberText[0..63], call ClearInput(0)
+//   Set InputTextMax=0xC (CharSelectInit), clear various flags
+//   Set GoldenArcherLuckyNumberTicket=1
+//
+// Stage==1 and pkt[6..10] all != -1: store target tile coords
+//   GoldenArcherLuckyNumber = pkt[6..9] (dword)
+//   DAT_00559f5c  = pkt[10..11] (word)
+//
+// Always clears DAT_07eaa117 and DAT_07eaa116.
+// ============================================================
+void Guild_CharSelectResult(BYTE* pkt)
+{
+    CloseInventoryRelatedWindows();   // char-select reset helper
+    GoldenArcherItemCount = (int)*(short*)(pkt + 4);
+    GoldenArcherOpenType = (int)(BYTE)pkt[3] + 1;
+
+    if (GoldenArcherOpenType == 3)
+    {
+        // Zero guild entity pool
+        memset(GoldenArcherLuckyNumberText, 0, sizeof(GoldenArcherLuckyNumberText));
+        ClearInput(0);                // reset char select
+        InputTextMax = 0xC;           // login sub-state → CharSelectInit
+        DAT_00559c84  = 0;
+        InputNumber  = 1;
+        GoldInputEnable  = 0;
+        InputGold  = 0;
+        StorageGoldFlag  = 0;
+        GoldenArcherLuckyNumberTicket  = 1;
+    }
+
+    DAT_07eaa117 = 0;
+    DAT_07eaa116 = 0;
+
+    if (GoldenArcherOpenType == 1
+        && *(short*)(pkt + 6)  != -1
+        && *(short*)(pkt + 8)  != -1
+        && *(short*)(pkt + 10) != -1)
+    {
+        GoldenArcherLuckyNumber = *(DWORD*)(pkt + 6);
+        DAT_00559f5c  = *(WORD*) (pkt + 10);
+    }
+}
+
+
+// ============================================================
+// Guild_UpdatePos  @ 0x00437380  (opcode 0x95)
+// Updates guild member count / guild ID if packet value is valid.
+//
+// pkt[4..5] (ushort) != 0xFFFF → GoldenArcherItemCount = pkt[4..5]
+// ============================================================
+void Guild_UpdatePos(BYTE* pkt)
+{
+    USHORT val = *(USHORT*)(pkt + 4);
+    if (val != 0xFFFF)
+        GoldenArcherItemCount = (int)val;
+}
+
+
+// ============================================================
+// Guild_SetTargetPos  @ 0x004373a0  (opcode 0x96)
+// Sets guild map target position if all three shorts are valid.
+//
+// Validates pkt[4..5], pkt[6..7], pkt[8..9] are all != -1, then:
+//   GoldenArcherLuckyNumber = pkt[4..7] (dword, target X)
+//   DAT_00559f5c  = pkt[8..9] (word,  target Y)
+// ============================================================
+void Guild_SetTargetPos(BYTE* pkt)
+{
+    if (*(short*)(pkt + 4) != -1
+        && *(short*)(pkt + 6) != -1
+        && *(short*)(pkt + 8) != -1)
+    {
+        GoldenArcherLuckyNumber = *(DWORD*)(pkt + 4);
+        DAT_00559f5c  = *(WORD*) (pkt + 8);
+    }
+}
+
+
+// ============================================================
+// Guild_JoinToggle  @ 0x004373d0  (opcode 0x99)
+// Server notifies client of guild join accept/decline.
+//
+// pkt[3]==0 → SetErrorMessage(0x90) — show guild join accept UI
+// pkt[3]==1 → SetErrorMessage(0x91) — show guild join decline UI
+// ============================================================
+void Guild_JoinToggle(BYTE* pkt)
+{
+    if (pkt[3] == 0)
+        SetErrorMessage(0x90);
+    else if (pkt[3] == 1)
+        SetErrorMessage(0x91);
+}

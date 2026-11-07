@@ -1,0 +1,679 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{4D97ABAE-C3D2-4A71-8F6E-2A1B3C4D5E6F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>mu97k</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <!-- El cliente se enlaza directo sobre bin\Client\, que es donde viven los
+         assets (Data\) y Config.ini. Así hay un único main.exe: sin carpeta de
+         salida intermedia y sin paso de copia que pueda dejar un exe viejo. -->
+    <OutDir>$(SolutionDir)bin\Client\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <TargetName>main</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\Client\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <TargetName>main</TargetName>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- Disable /RTC (run-time checks). Ghidra decompilations commonly declare
+           locals used as output-params/register-aliases that trip the "used
+           without being initialized" check, even though the binary runs fine. -->
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SDLCheck>false</SDLCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <FixedBaseAddress>true</FixedBaseAddress>
+      <!-- 2026-05-03: enable .map file generation so we can resolve crash addresses
+           to function names in OUR build (the IDA index is for the original binary). -->
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapExports>true</MapExports>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <OmitFramePointers>false</OmitFramePointers>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\Platform\IClientSettings.h" />
+    <ClInclude Include="src\Platform\ClientSettings.h" />
+    <ClInclude Include="src\Platform\IDiagnostics.h" />
+    <ClInclude Include="src\Platform\Diagnostics.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Diagnostics.h" />
+    <ClInclude Include="src\Platform\Posix\PosixDiagnostics.h" />
+    <ClInclude Include="src\Platform\IIdentity.h" />
+    <ClInclude Include="src\Platform\Identity.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Identity.h" />
+    <ClInclude Include="src\Platform\Posix\PosixIdentity.h" />
+    <ClInclude Include="src\Platform\LocalTime.h" />
+    <ClInclude Include="src\Platform\Text.h" />
+    <ClInclude Include="src\Platform\GuardedOperation.h" />
+    <ClInclude Include="src\Scene\ObjectRegistry.h" />
+    <ClInclude Include="src\Scene\SceneObjectCell.h" />
+    <ClInclude Include="src\Platform\PlatformHeaders.h" />
+    <ClInclude Include="src\Platform\DebugHeaders.h" />
+    <ClInclude Include="src\Platform\Posix\WinTypes.h" />
+    <ClInclude Include="src\stdafx.h" />
+    <ClInclude Include="src\functions.h" />
+    <ClInclude Include="src\globals.h" />
+    <ClInclude Include="src\structs.h" />
+    <ClInclude Include="src\ghidra_compat.h" />
+    <ClInclude Include="src\types.h" />
+    <ClInclude Include="src\Config\Config.h" />
+    <ClInclude Include="src\Config\ServerConfig.h" />
+    <ClInclude Include="src\Config\UserSettings.h" />
+    <ClInclude Include="src\UI\UIState.h" />
+    <ClInclude Include="src\UI\ChatTypes.h" />
+    <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\EntityName.h" />
+    <ClInclude Include="src\Render\WorldEffects.h" />
+    <ClInclude Include="src\Render\MaterialVisuals.h" />
+    <ClInclude Include="src\Render\LooseWingVisuals.h" />
+    <ClInclude Include="src\Render\EquipmentVisuals.h" />
+    <ClInclude Include="src\Game\FramePointerSet.h" />
+    <ClInclude Include="src\Game\RenderDerivedState.h" />
+    <ClInclude Include="src\Game\RenderSnapshots.h" />
+    <ClInclude Include="src\Game\RenderInterpolation.h" />
+    <ClInclude Include="src\Game\RenderInterpolationMath.h" />
+    <ClInclude Include="src\Game\RenderFxSnapshots.h" />
+    <ClInclude Include="src\Game\SimulationPreparation.h" />
+    <ClInclude Include="src\Entity\CharacterEffects.h" />
+    <ClInclude Include="src\Entity\CharacterCloth.h" />
+    <ClInclude Include="src\Entity\ClothPresentation.h" />
+    <ClInclude Include="src\Physics\ClothTypes.h" />
+    <ClInclude Include="src\Entity\ObjectPose.h" />
+    <ClInclude Include="src\Entity\ObjectBounds.h" />
+    <ClInclude Include="src\Entity\EntityTypes.h" />
+    <ClInclude Include="src\Game\PathContext.h" />
+    <ClInclude Include="src\Model\ModelTypes.h" />
+    <ClInclude Include="src\Model\SmdImport.h" />
+    <ClInclude Include="src\Core\ResourceLimits.h" />
+    <ClInclude Include="src\Model\BMDFileTypes.h" />
+    <ClInclude Include="src\Entity\CharacterAttributeView.h" />
+    <ClInclude Include="src\Local\ClientText.h" />
+    <ClInclude Include="src\Item\RightClickMove.h" />
+    <ClInclude Include="src\Item\ContentCatalog.h" />
+    <ClInclude Include="src\Item\ItemDefines.h" />
+    <ClInclude Include="src\Item\Item_ServerValue.h" />
+    <ClInclude Include="src\UI\GoldenArcher.h" />
+    <ClInclude Include="src\Core\Window.h" />
+    <ClInclude Include="src\Platform\CompilerCompat.h" />
+    <ClInclude Include="src\Platform\NativeBridge.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLPlatform.h" />
+    <ClInclude Include="src\Platform\IAudio.h" />
+    <ClInclude Include="src\Platform\ITimer.h" />
+    <ClInclude Include="src\Platform\IInput.h" />
+    <ClInclude Include="src\Platform\IWindow.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Window.h" />
+    <ClInclude Include="src\Platform\IFileSystem.h" />
+    <ClInclude Include="src\Platform\ISocket.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Render\GlyphAtlas.h" />
+    <ClInclude Include="src\Render\Gfx.h" />
+    <ClInclude Include="src\Render\ResourceTables.h" />
+    <ClInclude Include="src\Render\Skinning.h" />
+    <ClInclude Include="src\Render\MeshDraw.h" />
+    <ClInclude Include="src\Render\TerrainDraw.h" />
+    <ClInclude Include="src\Render\BMDDevice.h" />
+    <ClInclude Include="src\Render\Materials.h" />
+    <ClInclude Include="src\Render\RenderBackend.h" />
+    <ClInclude Include="src\Render\Backend\Api.h" />
+    <ClInclude Include="src\Render\Backend\GfxDevice.h" />
+    <ClInclude Include="src\Render\MeshTopology.h" />
+    <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
+    <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
+    <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\RenderState.h" />
+    <ClInclude Include="src\Render\ProfileStats.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileUploads.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
+    <ClInclude Include="src\Render\BufferedDraw.h" />
+    <ClInclude Include="src\Render\TransformMath.h" />
+    <ClInclude Include="src\Render\TransformWorkers.h" />
+    <ClInclude Include="src\Platform\IGLContext.h" />
+    <ClInclude Include="src\Platform\GLFunctions.h" />
+    <ClInclude Include="src\Platform\GL\glad.h" />
+    <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
+    <ClInclude Include="src\Core\Font.h" />
+    <ClInclude Include="src\UI\PanelAnchor.h" />
+    <ClInclude Include="src\UI\EventTimer.h" />
+    <ClInclude Include="src\UI\BuffBar.h" />
+    <ClInclude Include="src\UI\ChatHistory.h" />
+    <ClInclude Include="src\Core\DataPrefetch.h" />
+    <ClInclude Include="src\UI\MiniMap.h" />
+    <ClInclude Include="src\Render\Camera3D.h" />
+    <ClInclude Include="src\UI\OptionsMenu.h" />
+    <ClInclude Include="src\UI\MoveList.h" />
+    <ClInclude Include="src\Sound\SoundManager.h" />
+    <ClInclude Include="src\Game\MapManager.h" />
+    <ClInclude Include="src\Game\HeroVitals.h" />
+    <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\Reconnect.h" />
+    <ClInclude Include="src\Net\Ping.h" />
+    <ClInclude Include="src\Net\ServerCharacterStats.h" />
+    <ClInclude Include="src\Item\ChaosMixRates.h" />
+    <ClInclude Include="src\UI\HealthBar.h" />
+    <ClInclude Include="src\Net\Recv\NetRecv.h" />
+    <ClInclude Include="src\Combat\Combat.h" />
+    <ClInclude Include="src\Combat\Skills.h" />
+    <ClInclude Include="src\Game\Game_CharSelectTick.h" />
+    <ClInclude Include="src\Game\Game_EnterWorldTick.h" />
+    <ClInclude Include="src\Game\Game_MainLoop.h" />
+    <ClInclude Include="src\Game\FrameLimiter.h" />
+    <ClInclude Include="src\Game\Game_SceneUpdate.h" />
+    <ClInclude Include="src\Game\Movement.h" />
+    <ClInclude Include="src\Input\Input.h" />
+    <ClInclude Include="src\Item\Item_Equip.h" />
+    <ClInclude Include="src\Monster\Monster.h" />
+    <ClInclude Include="src\Net\Net.h" />
+    <ClInclude Include="src\Net\HWID.h" />
+    <ClInclude Include="src\Net\PacketFrame.h" />
+    <ClInclude Include="src\Net\SecondPassword.h" />
+    <ClInclude Include="src\Party\Party.h" />
+    <ClInclude Include="src\Render\Camera.h" />
+    <ClInclude Include="src\Render\Entity_DrawAt.h" />
+    <ClInclude Include="src\Render\Entity_PrepareRender.h" />
+    <ClInclude Include="src\Render\Entity_Render.h" />
+    <ClInclude Include="src\Render\DamagePointTypes.h" />
+    <ClInclude Include="src\Item\ItemTypes.h" />
+    <ClInclude Include="src\Render\JointTypes.h" />
+    <ClInclude Include="src\Render\Entity_Render_3D.h" />
+    <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />
+    <ClInclude Include="src\Render\HUD_Render.h" />
+    <ClInclude Include="src\Render\ItemDrop_Render.h" />
+    <ClInclude Include="src\Render\Particle_Draw.h" />
+    <ClInclude Include="src\Render\Particle_Render.h" />
+    <ClInclude Include="src\Render\Player_Render.h" />
+    <ClInclude Include="src\Render\Render.h" />
+    <ClInclude Include="src\Render\SkillEffect_Render.h" />
+    <ClInclude Include="src\Render\Sprite_Draw.h" />
+    <ClInclude Include="src\Render\Terrain_Render.h" />
+    <ClInclude Include="src\Render\Texture\ImageCodec.h" />
+    <ClInclude Include="src\Text\TextCore.h" />
+    <ClInclude Include="src\Net\NetText.h" />
+    <ClInclude Include="src\Text\TextShaper.h" />
+    <ClInclude Include="src\Text\TextAtlas.h" />
+    <ClInclude Include="src\Render\Texture\Texture.h" />
+    <ClInclude Include="src\Scene\Scene.h" />
+    <ClInclude Include="src\Scene\Scene_CharSelect.h" />
+    <ClInclude Include="src\Scene\Scene_Dispatch.h" />
+    <ClInclude Include="src\Scene\Scene_Intro.h" />
+    <ClInclude Include="src\Scene\Scene_Loading.h" />
+    <ClInclude Include="src\Scene\Scene_Login.h" />
+    <ClInclude Include="src\Scene\Scene_Login_ServerSelect.h" />
+    <ClInclude Include="src\Sound\Sound.h" />
+    <ClInclude Include="src\Terrain\Terrain.h" />
+    <ClInclude Include="src\Trade\Trade.h" />
+    <ClInclude Include="src\UI\UI.h" />
+    <ClInclude Include="src\Game\GameEnums.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\stdafx.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Platform\ClientEntry.cpp" />
+    <ClCompile Include="src\Platform\GLFunctions.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Local\Text_Data.cpp" />
+    <ClCompile Include="src\Scene\Scene_Dispatch.cpp" />
+    <ClCompile Include="src\Scene\Scene_Intro.cpp" />
+    <ClCompile Include="src\Scene\Scene_Login.cpp" />
+    <ClCompile Include="src\Scene\Scene_Loading.cpp" />
+    <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\MeshTopology.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Gfx.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\GfxDevice.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\Dispatch.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ResourceTables.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\MeshDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ShadowMap.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ShadowLight.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Materials.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\FragmentPipeline.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\RenderProfile.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\RenderState.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\WorldEffects.cpp" />
+    <ClCompile Include="src\Render\MaterialVisuals.cpp" />
+    <ClCompile Include="src\Render\LooseWingVisuals.cpp" />
+    <ClCompile Include="src\Render\EquipmentVisuals.cpp" />
+    <ClCompile Include="src\Game\RenderDerivedState.cpp" />
+    <ClCompile Include="src\Game\RenderSnapshots.cpp" />
+    <ClCompile Include="src\Game\RenderInterpolation.cpp" />
+    <ClCompile Include="src\Game\RenderInterpolationMath.cpp" />
+    <ClCompile Include="src\Game\RenderFxSnapshots.cpp" />
+    <ClCompile Include="src\Game\SimulationPreparation.cpp" />
+    <ClCompile Include="src\Game\Game_MainLoop.cpp" />
+    <ClCompile Include="src\Game\HeroVitals.cpp" />
+    <ClCompile Include="src\Game\Player_InputTick.cpp" />
+    <ClCompile Include="src\Render\Render_Frame.cpp" />
+    <ClCompile Include="src\Net\Net_Process.cpp" />
+    <ClCompile Include="src\Config\Config_Load.cpp" />
+    <ClCompile Include="src\UI\UIState.cpp" />
+    <ClCompile Include="src\Local\ClientText.cpp" />
+    <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32NativeBridge.cpp" />
+    <ClCompile Include="src\Platform\SDL3\SDLWindow.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLInput.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLGLContext.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLTimer.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFileSystem.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLNativeBridge.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Text\TextShaper.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32FileSystem.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Socket.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
+    <ClCompile Include="src\Platform\FontFrontend.cpp" />
+    <ClCompile Include="src\Sound\SoundManager.cpp" />
+    <ClCompile Include="src\Game\MapManager.cpp" />
+    <ClCompile Include="src\Platform\Win32\ClientWndProc.cpp" />
+    <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\Reconnect.cpp" />
+    <ClCompile Include="src\Net\Ping.cpp" />
+    <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
+    <ClCompile Include="src\Item\ChaosMixRates.cpp" />
+    <ClCompile Include="src\UI\HealthBar.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Account.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Character.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Chat.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Combat.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Event.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Guild.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Item.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Party.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Quest.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Trade.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Viewport.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_World.cpp" />
+    <ClCompile Include="src\Input\Input_WndProc.cpp" />
+    <ClCompile Include="src\Config\UserSettings.cpp" />
+    <ClCompile Include="src\Sound\Sound_Queue.cpp" />
+    <ClCompile Include="src\Monster\Monster_Data.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
+    <ClCompile Include="src\Math\Math_3D.cpp" />
+    <ClCompile Include="src\Render\Particle.cpp" />
+    <ClCompile Include="src\Render\Particle_Move.cpp" />
+    <ClCompile Include="src\Render\BMD_Anim.cpp" />
+    <ClCompile Include="src\Render\BMD_DrawMesh.cpp" />
+    <ClCompile Include="src\Render\BMD_Collision.cpp" />
+    <ClCompile Include="src\Render\MoveEffect.cpp" />
+    <ClCompile Include="src\Render\MoveEffect_Helpers.cpp" />
+    <ClCompile Include="src\Render\MoveJoint.cpp" />
+    <ClCompile Include="src\Render\BMD_SetupRender.cpp" />
+    <ClCompile Include="src\Game\PathFinder.cpp" />
+    <ClCompile Include="src\Entity\Entity_Reset.cpp" />
+    <ClCompile Include="src\Entity\Entity_HeadMotion.cpp" />
+    <ClCompile Include="src\Render\GL_State.cpp" />
+    <ClCompile Include="src\Render\Effect_Create.cpp" />
+    <ClCompile Include="src\Render\Effect_Combat.cpp" />
+    <ClCompile Include="src\Render\Joint_Create.cpp" />
+    <ClCompile Include="src\Render\Joint_Render.cpp" />
+    <ClCompile Include="src\Render\Sprite.cpp" />
+    <ClCompile Include="src\Render\Camera.cpp" />
+    <ClCompile Include="src\Render\Camera_Movement.cpp" />
+    <ClCompile Include="src\Render\Entity_Render.cpp" />
+    <ClCompile Include="src\Net\Crypto.cpp" />
+    <ClCompile Include="src\Game\Timer.cpp" />
+    <ClCompile Include="src\Game\FrameLimiter.cpp" />
+    <ClCompile Include="src\Sound\Music.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
+    <ClCompile Include="src\Render\GL_2D.cpp" />
+    <ClCompile Include="src\Render\Effect_Tick.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_Light.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderFace.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderBlocks.cpp" />
+    <ClCompile Include="src\Sound\Sound_DS3D.cpp" />
+    <ClCompile Include="src\Net\Net_Connect.cpp" />
+    <ClCompile Include="src\Net\Net_PacketSession.cpp" />
+    <ClCompile Include="src\Net\MuEmu.cpp" />
+    <ClCompile Include="src\Net\PacketFrame.cpp" />
+    <ClCompile Include="src\Net\Net_Events.cpp" />
+    <ClCompile Include="src\Net\HWID.cpp" />
+    <ClCompile Include="src\Entity\Entity_Init.cpp" />
+    <ClCompile Include="src\Entity\Entity_MoveClient.cpp" />
+    <ClCompile Include="src\Entity\Character_Motion.cpp" />
+    <ClCompile Include="src\Entity\Entity_Spawn.cpp" />
+    <ClCompile Include="src\Render\Scene_CharPreview.cpp" />
+    <ClCompile Include="src\Scene\Scene_Resources.cpp" />
+    <ClCompile Include="src\Scene\Scene_MapTick.cpp" />
+    <ClCompile Include="src\Scene\Scene_ServerSelect_Input.cpp" />
+    <ClCompile Include="src\UI\Chat.cpp" />
+    <ClCompile Include="src\UI\Chat_Bubbles.cpp" />
+    <ClCompile Include="src\UI\Chat_CommandParser.cpp" />
+    <ClCompile Include="src\UI\ChatListBox.cpp" />
+    <ClCompile Include="src\UI\CharMenu_Build.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass1.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass2.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass3.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass4.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass5.cpp" />
+    <ClCompile Include="src\Render\HUD_Pass6.cpp" />
+    <ClCompile Include="src\UI\UI_StatsPanel.cpp" />
+    <ClCompile Include="src\Util\Misc.cpp" />
+    <ClCompile Include="src\Core\Legacy_Runtime.cpp" />
+    <ClCompile Include="src\Entity\EntityName.cpp" />
+    <ClCompile Include="src\Entity\Entity_Lookup.cpp" />
+    <ClCompile Include="src\Net\Net_Disconnect.cpp" />
+    <ClCompile Include="src\Render\Render_MatrixStack.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectTick.cpp" />
+    <ClCompile Include="src\Render\Particle_Legacy.cpp" />
+    <ClCompile Include="src\Render\Camera_Login.cpp" />
+    <ClCompile Include="src\UI\Chat_Log.cpp" />
+    <ClCompile Include="src\UI\EmojiPicker.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
+    <ClCompile Include="src\Platform\Win32\MiniDump.cpp" />
+    <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
+    <ClCompile Include="src\Core\Runtime_Small.cpp" />
+    <ClCompile Include="src\Core\Runtime_Medium.cpp" />
+    <ClCompile Include="src\UI\Quest_Legacy.cpp" />
+    <ClCompile Include="src\Core\System_Legacy.cpp" />
+    <ClCompile Include="src\GameGuard\GameGuard_Packet.cpp" />
+    <ClCompile Include="src\Render\SMD_Legacy.cpp" />
+    <ClCompile Include="src\UI\UI_LegacyWidgets.cpp" />
+    <ClCompile Include="src\Net\Net_LegacyRuntime.cpp" />
+    <ClCompile Include="src\Scene\Scene_CharSelect_Nav.cpp" />
+    <ClCompile Include="src\Item\Item_LegacyHelpers.cpp" />
+    <ClCompile Include="src\UI\UI_DialogInterface.cpp" />
+    <ClCompile Include="src\Item\Item_Durability.cpp" />
+    <ClCompile Include="src\Item\Item_ServerValue.cpp" />
+    <ClCompile Include="src\Render\BMD_LegacyDraw.cpp" />
+    <ClCompile Include="src\Config\Config_TokenParser.cpp" />
+    <ClCompile Include="src\Entity\Entity_BoneEffects.cpp" />
+    <ClCompile Include="src\Core\Runtime_Linker.cpp" />
+    <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
+    <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
+    <ClCompile Include="src\Math\Math_LegacyTransforms.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyLinker.cpp" />
+    <ClCompile Include="src\Scene\Scene_LegacyCleanup.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectLegacy.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_LegacyRender.cpp" />
+    <ClCompile Include="src\UI\UI_LegacyText.cpp" />
+    <ClCompile Include="src\Render\BMD_FilterData.cpp" />
+    <ClCompile Include="src\Item\Quest_UIState.cpp" />
+    <ClCompile Include="src\Physics\Cloth_Simulation.cpp" />
+    <ClCompile Include="src\Render\BMD_LegacyEffects.cpp" />
+    <ClCompile Include="src\Scene\Scene_LegacyHelpers.cpp" />
+    <ClCompile Include="src\Path\Path_Legacy.cpp" />
+    <ClCompile Include="src\Core\Runtime_Externs.cpp" />
+    <ClCompile Include="src\UI\UI_LegacyExterns.cpp" />
+    <ClCompile Include="src\Entity\Entity_ActionLegacy.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyRotatedRect.cpp" />
+    <ClCompile Include="src\UI\UI_GuildLegacy.cpp" />
+    <ClCompile Include="src\Core\String_ResourceLegacy.cpp" />
+    <ClCompile Include="src\Entity\Entity_LegacyEffects.cpp" />
+    <ClCompile Include="src\Combat\Combat_LegacyAnimation.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyTransforms.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyBillboards.cpp" />
+    <ClCompile Include="src\UI\UI_LegacyWidgetSystem.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyTrails.cpp" />
+    <ClCompile Include="src\UI\UI_LegacyGameHelpers.cpp" />
+    <ClCompile Include="src\Net\Net_LegacyAuth.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_LegacyLoad.cpp" />
+    <ClCompile Include="src\Path\Path_LegacyReset.cpp" />
+    <ClCompile Include="src\Render\Font_LegacyFactory.cpp" />
+    <ClCompile Include="src\Render\SMD_Parser.cpp" />
+    <ClCompile Include="src\Entity\CharacterEffects.cpp" />
+    <ClCompile Include="src\Entity\CharacterCloth.cpp" />
+    <ClCompile Include="src\Entity\ClothPresentation.cpp" />
+    <ClCompile Include="src\Entity\ObjectPose.cpp" />
+    <ClCompile Include="src\Render\Entity_AnimationLegacy.cpp" />
+    <ClCompile Include="src\Combat\Combat_LegacyAttackEffects.cpp" />
+    <ClCompile Include="src\Entity\Entity_LegacyPoolCleanup.cpp" />
+    <ClCompile Include="src\Item\Item_LegacyGridInsert.cpp" />
+    <ClCompile Include="src\Item\Item_TypeLegacy.cpp" />
+    <ClCompile Include="src\Entity\Entity_LegacyTeleport.cpp" />
+    <ClCompile Include="src\Combat\Skills_WarriorLegacy.cpp" />
+    <ClCompile Include="src\Render\Render_LegacyDamageNumbers.cpp" />
+    <ClCompile Include="src\Render\GL_LegacyState.cpp" />
+    <ClCompile Include="src\Math\Math_LegacyAngle.cpp" />
+    <ClCompile Include="src\Render\BMD_LegacyLoading.cpp" />
+    <ClCompile Include="src\Input\Cursor_Render.cpp" />
+    <ClCompile Include="src\Input\Input_Timing.cpp" />
+    <ClCompile Include="src\Util\Process_Exit.cpp" />
+    <ClCompile Include="src\Net\Net_Bux.cpp" />
+    <ClCompile Include="src\Scene\Scene_EntityLifecycle.cpp" />
+    <ClCompile Include="src\Scene\Scene_OpenWorld.cpp" />
+    <ClCompile Include="src\Scene\Scene_AssetLoad.cpp" />
+    <ClCompile Include="src\Render\Camera_Unproject.cpp" />
+    <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
+    <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
+    <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
+    <ClCompile Include="src\Render\BMD_Load.cpp" />
+    <ClCompile Include="src\globals.cpp" />
+    <ClCompile Include="src\Model\Model_Items.cpp" />
+    <ClCompile Include="src\Model\Model_Monsters.cpp" />
+    <ClCompile Include="src\Model\Model_Players.cpp" />
+    <ClCompile Include="src\Model\Model_Effects.cpp" />
+    <ClCompile Include="src\Model\Model_Misc.cpp" />
+    <ClCompile Include="src\Model\Model_SkillEffects.cpp" />
+    <ClCompile Include="src\Model\Model_Gates.cpp" />
+    <ClCompile Include="src\Combat\Combat.cpp" />
+    <ClCompile Include="src\Combat\Combat_AttackStage.cpp" />
+    <ClCompile Include="src\Combat\Combat_Projectiles.cpp" />
+    <ClCompile Include="src\Combat\Combat_Targeting.cpp" />
+    <ClCompile Include="src\Combat\Skills.cpp" />
+    <ClCompile Include="src\Combat\Skills_WizardElf.cpp" />
+    <ClCompile Include="src\Game\Game_CharSelectTick.cpp" />
+    <ClCompile Include="src\Game\Game_EnterWorldTick.cpp" />
+    <ClCompile Include="src\Game\Game_SceneUpdate.cpp" />
+    <ClCompile Include="src\Game\Movement.cpp" />
+    <ClCompile Include="src\Game\CheckGate.cpp" />
+    <ClCompile Include="src\Input\Input.cpp" />
+    <ClCompile Include="src\Input\Mouse_Hover.cpp" />
+    <ClCompile Include="src\Item\Item_Equip.cpp" />
+    <ClCompile Include="src\Item\Item_EquipSlots.cpp" />
+    <ClCompile Include="src\Item\Item_Move.cpp" />
+    <ClCompile Include="src\Item\Item_Display.cpp" />
+    <ClCompile Include="src\Item\Item_SpecialOption.cpp" />
+    <ClCompile Include="src\Item\Item_Data.cpp" />
+    <ClCompile Include="src\Item\Item_Inventory.cpp" />
+    <ClCompile Include="src\Item\Item_EquipmentQueries.cpp" />
+    <ClCompile Include="src\Item\Item_EquipmentAutoSwap.cpp" />
+    <ClCompile Include="src\Item\Item_InventoryGrid.cpp" />
+    <ClCompile Include="src\Item\Item_InventoryRender.cpp" />
+    <ClCompile Include="src\Item\Item_ChaosMix.cpp" />
+    <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
+    <ClCompile Include="src\Item\RightClickMove.cpp" />
+    <ClCompile Include="src\Item\ContentCatalog.cpp" />
+    <ClCompile Include="src\Item\Skill_Data.cpp" />
+    <ClCompile Include="src\Item\Gate_Data.cpp" />
+    <ClCompile Include="src\Item\Filter_Data.cpp" />
+    <ClCompile Include="src\Item\Dialog_Data.cpp" />
+    <ClCompile Include="src\Item\Quest_Data.cpp" />
+    <ClCompile Include="src\Item\NPC_Data.cpp" />
+    <ClCompile Include="src\Item\NPC_ModelLoad.cpp" />
+    <ClCompile Include="src\Render\Font_Layout.cpp" />
+    <ClCompile Include="src\Monster\Monster.cpp" />
+    <ClCompile Include="src\Net\SecondPassword.cpp" />
+    <ClCompile Include="src\Party\Party.cpp" />
+    <ClCompile Include="src\Game\Party_NameMatch.cpp" />
+    <ClCompile Include="src\Render\Ambient_Particles.cpp" />
+    <ClCompile Include="src\Render\Entity_DrawByType.cpp" />
+    <ClCompile Include="src\Render\Entity_DrawAt.cpp" />
+    <ClCompile Include="src\Render\Entity_DrawSetup.cpp" />
+    <ClCompile Include="src\Render\Entity_PrepareRender.cpp" />
+    <ClCompile Include="src\Render\Entity_Render_3D.cpp" />
+    <ClCompile Include="src\Render\Entity_RenderAll_3D.cpp" />
+    <ClCompile Include="src\Render\Entity_UpdateRender.cpp" />
+    <ClCompile Include="src\Render\Render_PlayerEquipment.cpp" />
+    <ClCompile Include="src\Render\HUD_Render.cpp" />
+    <ClCompile Include="src\Render\ItemDrop_Render.cpp" />
+    <ClCompile Include="src\Render\ItemDrop_Render2.cpp" />
+    <ClCompile Include="src\Render\Particle_Draw.cpp" />
+    <ClCompile Include="src\Render\Particle_Render.cpp" />
+    <ClCompile Include="src\Render\Particle_Spawn.cpp" />
+    <ClCompile Include="src\Render\Player_Render.cpp" />
+    <ClCompile Include="src\Render\RenderLinkObject.cpp" />
+    <ClCompile Include="src\Render\SkillEffect_Render.cpp" />
+    <ClCompile Include="src\Render\Sprite_Draw.cpp" />
+    <ClCompile Include="src\Render\Render_SpriteHelpers.cpp" />
+    <ClCompile Include="src\Render\Terrain_Render.cpp" />
+    <ClCompile Include="src\Render\Terrain_Water.cpp" />
+    <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\TextCore.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\TextAtlas.cpp" />
+    <ClCompile Include="src\Text\UniBreak.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\Utf8Proc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Texture\Texture.cpp" />
+    <ClCompile Include="src\Render\Trail_Render.cpp" />
+    <ClCompile Include="src\Render\Weather.cpp" />
+    <ClCompile Include="src\Render\Weather_Particles.cpp" />
+    <ClCompile Include="src\Scene\Scene_Login_ServerSelect.cpp" />
+    <ClCompile Include="src\Sound\Sound.cpp" />
+    <ClCompile Include="src\Terrain\Terrain.cpp" />
+    <ClCompile Include="src\Trade\Trade.cpp" />
+    <ClCompile Include="src\UI\UI_InGameMenu.cpp" />
+    <ClCompile Include="src\UI\UI_PanelInput.cpp" />
+    <ClCompile Include="src\UI\UI_IME.cpp" />
+    <ClCompile Include="src\UI\UI_TextBitmap.cpp" />
+    <ClCompile Include="src\UI\UI_Tooltip.cpp" />
+    <ClCompile Include="src\UI\Chat_Gestures.cpp" />
+    <ClCompile Include="src\UI\GoldenArcher.cpp" />
+    <ClCompile Include="src\UI\EventTimer.cpp" />
+    <ClCompile Include="src\UI\BuffBar.cpp" />
+    <ClCompile Include="src\UI\ChatHistory.cpp" />
+    <ClCompile Include="src\Core\DataPrefetch.cpp" />
+    <ClCompile Include="src\UI\MiniMap.cpp" />
+    <ClCompile Include="src\Render\Camera3D.cpp" />
+    <ClCompile Include="src\UI\OptionsMenu.cpp" />
+    <ClCompile Include="src\UI\MoveList.cpp" />
+    <ClCompile Include="src\UI\Chat_InputTick.cpp" />
+    <ClCompile Include="src\UI\Chat_Send.cpp" />
+    <ClCompile Include="src\UI\UI_SkillHotkeys.cpp" />
+    <ClCompile Include="src\UI\UI_GuildMark.cpp" />
+    <ClCompile Include="src\UI\RenderItemInfo.cpp" />
+    <ClCompile Include="src\Scene\Scene_Objects.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectInteraction.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectUpdate.cpp" />
+    <ClCompile Include="src\Render\BMD_SkinUpdate.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\Debug\MiniDump.h" />
+    <ClInclude Include="src\resource.h" />
+    <ClInclude Include="src\Net\Protocol\ProtocolBase.h" />
+    <ClInclude Include="src\Net\Protocol\GameServerProtocol.h" />
+    <ClInclude Include="src\Net\Protocol\ConnectServerProtocol.h" />
+    <ResourceCompile Include="src\resource.rc" />
+  </ItemGroup>
+
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

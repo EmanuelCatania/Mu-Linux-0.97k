@@ -1,0 +1,118 @@
+// Math_LegacyTransforms.cpp — AngleMatrix, VectorIRotate, BMD__TransformPosition y FaceNormalize.
+#include "stdafx.h"
+#include "globals.h"
+#include "functions.h"
+#include "structs.h"
+
+extern "C" DWORD GoldenArcherOpenType;
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y) (0)
+#endif
+#ifndef LODWORD
+#define LODWORD(x) (*((DWORD*)&(x)))
+#define HIDWORD(x) (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x) (*((char*)&(x)))
+#define SLOWORD(x) (*((short*)&(x)))
+#define SLODWORD(x) (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x) (*((unsigned char*)&(x)))
+#define HIBYTE(x) (*(((unsigned char*)&(x))+1))
+#define LOWORD(x) (*((unsigned short*)&(x)))
+#define HIWORD(x) (*(((unsigned short*)&(x))+1))
+#endif
+#define ITEM_SPECIAL_SKILL_OPTION 0
+#define ITEM_SPECIAL_LUCK_OPTION 1
+#define ITEM_OPTION_ADD_PHYSI_DAMAGE_CODE 60
+#define ITEM_OPTION_ADD_MAGIC_DAMAGE_CODE 61
+#define ITEM_OPTION_ADD_DEFENSE_RATE_CODE 62
+#define ITEM_OPTION_ADD_DEFENSE_CODE 63
+#define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
+// AngleMatrix @ 0x004F9DB0 (50 lines) — Build 3x4 rotation matrix from Euler angles
+// Standard Quake/Half-Life convention:
+//   angles[0] = PITCH (rotation around Y)
+//   angles[1] = YAW   (rotation around Z)
+//   angles[2] = ROLL  (rotation around X)
+// Mapeo sP→angles[0], sY→angles[1], sR→angles[2] (verificado contra 0x004F9DB0).
+// Ojo: combinarlos con otra convencion deja rot=(0,0,180) como Rx(180) (modelo
+// patas arriba) en vez de Rz(180).
+void __cdecl AngleMatrix(float *angles, float (*matrix)[4]) {
+    float deg2rad = 0.017453292f; // pi/180 = DAT_00552ce8
+    float sP = sinf(angles[0] * deg2rad), cP = cosf(angles[0] * deg2rad); // pitch
+    float sY = sinf(angles[1] * deg2rad), cY = cosf(angles[1] * deg2rad); // yaw
+    float sR = sinf(angles[2] * deg2rad), cR = cosf(angles[2] * deg2rad); // roll
+
+    matrix[0][0] = cY * cR;
+    matrix[0][1] = sP * sY * cR - cP * sR;
+    matrix[0][2] = sP * sR + cP * sY * cR;
+    matrix[0][3] = 0.0f;
+    matrix[1][0] = cY * sR;
+    matrix[1][1] = cP * cR + sP * sY * sR;
+    matrix[1][2] = cP * sY * sR - sP * cR;
+    matrix[1][3] = 0.0f;
+    matrix[2][0] = -sY;
+    matrix[2][1] = sP * cY;
+    matrix[2][2] = cP * cY;
+    matrix[2][3] = 0.0f;
+}
+
+// VectorIRotate @ 0x004FA110 (20 lines) — Inverse-rotate vector by matrix (transpose multiply)
+// out = M^T * in1 (rotation only, ignores translation column)
+void __cdecl VectorIRotate(float *in1, float (*matrix)[4], float *out) {
+    out[0] = in1[0] * matrix[0][0] + in1[1] * matrix[1][0] + in1[2] * matrix[2][0];
+    out[1] = in1[0] * matrix[0][1] + in1[1] * matrix[1][1] + in1[2] * matrix[2][1];
+    out[2] = in1[0] * matrix[0][2] + in1[1] * matrix[1][2] + in1[2] * matrix[2][2];
+}
+
+// BMD__TransformPosition @ 0x004409A0 (67 lines) — Transform position through bone matrix
+// If Translate: result = scale * (Matrix * Pos) + origin
+// If !Translate: result = Matrix * Pos (direct transform)
+void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float *Pos, float *WorldPos, bool Translate) {
+    // VectorTransform: WorldPos = BoneMatrix * Pos
+    float temp[3];
+    float *dst = Translate ? temp : WorldPos;
+    dst[0] = Pos[0] * BoneMatrix[0][0] + Pos[1] * BoneMatrix[0][1] + Pos[2] * BoneMatrix[0][2] + BoneMatrix[0][3];
+    dst[1] = Pos[0] * BoneMatrix[1][0] + Pos[1] * BoneMatrix[1][1] + Pos[2] * BoneMatrix[1][2] + BoneMatrix[1][3];
+    dst[2] = Pos[0] * BoneMatrix[2][0] + Pos[1] * BoneMatrix[2][1] + Pos[2] * BoneMatrix[2][2] + BoneMatrix[2][3];
+
+    if (Translate) {
+        // Scale by BMD scale factor and add origin
+        const BMD& model = *AsModel(This);
+        float scale = model.BodyScale;
+        const float *origin = model.BodyOrigin;
+        WorldPos[0] = scale * temp[0] + origin[0];
+        WorldPos[1] = scale * temp[1] + origin[1];
+        WorldPos[2] = scale * temp[2] + origin[2];
+    }
+}
+
+
+// IDA: FaceNormalize (0x004FA4D0).  Normal de la cara (v1,v2,v3), normalizada.
+// Si el largo es 0 no toca Normal.
+void __cdecl FaceNormalize(float v1[3], float v2[3], float v3[3], float Normal[3]) {
+    const double ay = v2[1] - v1[1];
+    const double bz = v3[2] - v1[2];
+    const double az = v2[2] - v1[2];
+    const float  by = v3[1] - v1[1];
+    const float  nx = (float)(bz * ay - by * az);
+    const float  bx = v3[0] - v1[0];
+    const float  ax = v2[0] - v1[0];
+    const float  ny = (float)(bx * az - ax * bz);
+    const double nz = ax * by - bx * ay;
+    const double len = sqrt(nz * nz + ny * ny + nx * nx);
+    if (len != 0.0) {
+        Normal[0] = (float)(nx / len);
+        Normal[1] = (float)(ny / len);
+        Normal[2] = (float)(nz / len);
+    }
+}
+
+// CollisionDetectLineToFace (0x00512D40) vive en Terrain/Terrain_RayCollision.cpp.

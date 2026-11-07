@@ -1,0 +1,650 @@
+// Path_Legacy.cpp
+
+#include "stdafx.h"
+#include "Game/PathContext.h"
+#include "Platform/Text.h"
+void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
+void __cdecl    FUN_00408680(void *_this, char flags);
+#include "globals.h"
+#include "functions.h"
+
+// Definidas en Physics/Cloth_Simulation.cpp (Cloth_Integrate) y Net/Crypto.cpp (Cloth_Solve).
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
+
+#include "Net/Net.h"
+
+extern "C" void DbgLogPublic(const char* msg);
+extern "C" BYTE OffsetInventoryItems[];
+extern void __cdecl operator_delete(void* ptr);
+extern void MapFileDecrypt(BYTE* buf, int size);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// ── PF_AStar — sustituto del PATH::FindPath original (0x0043F500) ────────────
+//
+// Criterio de bloqueo del binario: COMPARACIÓN NUMÉRICA contra `iWall`, restando
+// antes el bit 0x20 si está puesto (no una máscara de bits):
+//
+//     uVar5 = TerrainWall[idx];
+//     if ((TerrainWall[idx] & 0x20) == 0x20) uVar5 - 0x20;
+//     if (((visited[idx] & 1) == 0) && ((int)uVar5 < iWall)) { ...expandir vecino... }
+//
+// Ojo: una máscara como `a & 0x0e` coincide con iWall=2 para los attrs comunes,
+// pero deja pasar 0x10, 0x40 y 0x80, que el original bloquea.
+//
+// El chequeo del destino cuando bErrorCheck=true también es del binario, y ahí el
+// attr va CRUDO (sin restar 0x20), exigiendo que el bit 0x20 no esté puesto:
+//     if ((bErrorCheck) && (iWall <= TerrainWall[dst]) &&
+//         ((TerrainWall[dst] & 0x20) != 0x20)) return false;
+//
+// Con bErrorCheck=false el original no falla si no alcanza el destino: se queda con
+// el mejor nodo alcanzado (`local_18`/`local_14`) y devuelve el camino hasta ahí.
+// La métrica de "mejor" es la del propio binario:
+//     dx=|x-xEnd|, dy=|y-yEnd|; m = (dx==1 && dy==1) ? 0 : min(dx,dy);
+//     coste = (|dx-dy| * 0xf + 3 + m * 0x15) >> 2;
+//
+// Si no hay camino, el original falla y deja que PathFinding2 reintente con otro
+// iWall (lo replica Path_FindRoute): no se busca un "walkable más cercano".
+//
+// `fDistance` (el `radius` de PathFinding2) llega a FindPath como `Value` y parte
+// la función en dos ramas bien distintas:
+//     if (_Value == 0.0) { ...un único destino: marca[dst] = 4... }
+//     else               { ...recorre el DISCO de radio Value alrededor del destino
+//                            y marca = 4 toda celda con SQRT(dx*dx+dy*dy) < Value... }
+// y la búsqueda termina al alcanzar CUALQUIER celda marcada con 4. O sea: con
+// fDistance > 0 basta con acercarse al destino, no hace falta pisarlo.
+// El combate llama siempre con `skillRange`: ignorar el parámetro haría que el
+// héroe intentara pisar la casilla exacta del objetivo (la que ocupa el propio
+// mob). El chequeo estricto del destino sólo existe en la rama `_Value == 0.0`.
+static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
+                    unsigned char* path, float fDistance)
+{
+    const unsigned char* attr = (const unsigned char*)&DAT_0838bc70;
+
+    if (sx < 0 || sx >= 256 || sy < 0 || sy >= 256 ||
+        tx < 0 || tx >= 256 || ty < 0 || ty >= 256) return 0;
+    if (sx == tx && sy == ty) return 0;
+
+    // Bloqueo por comparación numérica, igual que el binario.
+    auto walkable = [&](int x, int y) -> bool {
+        if (x < 0 || x >= 256 || y < 0 || y >= 256) return false;
+        unsigned int a = attr[y * 256 + x];
+        if ((a & 0x20) == 0x20) a -= 0x20;
+        return (int)a < iWall;
+    };
+    // Métrica de cercanía al destino del original (para el mejor esfuerzo).
+    // IDA sub_43F500 (L~226-236):
+    //   v56 = |x - tx|; v57 = |y - ty|;
+    //   if (v56 == 1 && v57 == 1) { v57 = 0; v58 = v57; }   // diagonal pegada
+    //   else v58 = min(v56, v57);
+    //   costo = (15 * |v56 - v57| + 21 * v58 + 3) / 4;
+    // El `v57 = 0` se hace ANTES de |v56 - v57|, asi que una celda pegada en
+    // diagonal cuesta 4, igual que una pegada en recto.  Con costo 0 en diagonal,
+    // con el mob pegado en linea recta una celda en diagonal le ganaria al origen
+    // y el heroe caminaria en vez de atacar.
+    auto origCost = [&](int x, int y) -> int {
+        int dx = x > tx ? x - tx : tx - x;
+        int dy = y > ty ? y - ty : ty - y;
+        if (dx == 1 && dy == 1) dy = 0;
+        int m  = dx < dy ? dx : dy;
+        int d  = dx > dy ? dx - dy : dy - dx;
+        return (d * 15 + 21 * m + 3) / 4;
+    };
+
+    // Meta: con fDistance == 0 es la casilla exacta; con fDistance > 0, cualquier
+    // casilla dentro del disco de ese radio (rama `else` de FindPath).
+    const bool bRadius = (fDistance > 0.0f);
+    auto isGoal = [&](int x, int y) -> bool {
+        if (!bRadius) return (x == tx && y == ty);
+        int dx = x - tx, dy = y - ty;
+        return ((float)(dx * dx + dy * dy)) < (fDistance * fDistance);
+    };
+
+    // Chequeo estricto del destino: sólo existe en la rama `_Value == 0.0` del
+    // binario, y ahí el attr va CRUDO (sin restarle 0x20).
+    if (bErrorCheck && !bRadius) {
+        unsigned int aDst = attr[ty * 256 + tx];
+        if ((int)aDst >= iWall && (aDst & 0x20) != 0x20) return 0;
+    }
+
+    static unsigned char  s_cameDir[65536];
+    static unsigned short s_gScore[65536];
+    struct AstarNode { unsigned short f; unsigned short idx; };
+    const int HEAP_CAP = 8192;
+    static AstarNode s_heap[HEAP_CAP];
+    // Tope de iteraciones del binario. FindPath hace:
+    //     iVar10 = (-(uint)(bErrorCheck != false) & 0x1c2) + 0x32;
+    // o sea 0x1c2+0x32 = 500 con bErrorCheck, y 0x32 = 50 sin él.
+    const int MAX_NODES = bErrorCheck ? 500 : 50;
+
+    memset(s_cameDir, 0xFF, sizeof(s_cameDir));
+    for (int i = 0; i < 65536; ++i) s_gScore[i] = 0xFFFF;
+    int heapSize = 0;
+
+    auto heapPush = [&](AstarNode n) {
+        if (heapSize >= HEAP_CAP) return;
+        int i = heapSize++;
+        s_heap[i] = n;
+        while (i > 0) {
+            int p = (i - 1) / 2;
+            if (s_heap[p].f <= s_heap[i].f) break;
+            AstarNode t = s_heap[p]; s_heap[p] = s_heap[i]; s_heap[i] = t;
+            i = p;
+        }
+    };
+    auto heapPop = [&]() -> AstarNode {
+        AstarNode top = s_heap[0];
+        s_heap[0] = s_heap[--heapSize];
+        int i = 0;
+        while (true) {
+            int l = i*2 + 1, r = i*2 + 2, sm = i;
+            if (l < heapSize && s_heap[l].f < s_heap[sm].f) sm = l;
+            if (r < heapSize && s_heap[r].f < s_heap[sm].f) sm = r;
+            if (sm == i) break;
+            AstarNode t = s_heap[sm]; s_heap[sm] = s_heap[i]; s_heap[i] = t;
+            i = sm;
+        }
+        return top;
+    };
+    auto heuristic = [&](int x, int y) -> int {
+        int adx = x > tx ? x - tx : tx - x;
+        int ady = y > ty ? y - ty : ty - y;
+        int dmin = adx < ady ? adx : ady;
+        int dmax = adx < ady ? ady : adx;
+        return 14 * dmin + 10 * (dmax - dmin);
+    };
+
+    int sIdx = sy * 256 + sx;
+    int tIdx = ty * 256 + tx;
+    s_gScore[sIdx] = 0;
+    s_cameDir[sIdx] = 0xFE;               // marca visitado (ni 0..7 ni 0xFF)
+    heapPush(AstarNode{ (unsigned short)heuristic(sx, sy), (unsigned short)sIdx });
+
+    const int DX[8] = { 1, 1, 1, 0, -1, -1, -1,  0 };
+    const int DY[8] = {-1, 0, 1, 1,  1,  0, -1, -1 };
+    const int COST[8] = { 14, 10, 14, 10, 14, 10, 14, 10 };
+
+    int explored = 0;
+    bool found = false;
+    int goalIdx = tIdx;
+    int bestIdx = sIdx, bestCost = origCost(sx, sy);
+    if (isGoal(sx, sy)) return 0;          // ya estamos dentro del radio
+    while (heapSize > 0 && explored < MAX_NODES) {
+        AstarNode cur = heapPop();
+        int cx0 = cur.idx & 0xFF, cy0 = cur.idx >> 8;
+        if (isGoal(cx0, cy0)) { found = true; goalIdx = cur.idx; break; }
+        int cx = cur.idx & 0xFF;
+        int cy = cur.idx >> 8;
+        int curG = s_gScore[cur.idx];
+        ++explored;
+        if (!bErrorCheck) {                // mejor esfuerzo, como el original
+            int c = origCost(cx, cy);
+            if (c < bestCost) { bestCost = c; bestIdx = cur.idx; }
+        }
+        for (int d = 0; d < 8; ++d) {
+            int nx = cx + DX[d];
+            int ny = cy + DY[d];
+            if (!walkable(nx, ny)) continue;
+            if ((d & 1) == 0) {            // no cortar esquinas en diagonal
+                if (!walkable(cx + DX[d], cy) && !walkable(cx, cy + DY[d])) continue;
+            }
+            int newG = curG + COST[d];
+            int nIdx = ny * 256 + nx;
+            if (newG < s_gScore[nIdx]) {
+                s_gScore[nIdx] = (unsigned short)(newG > 0xFFFF ? 0xFFFF : newG);
+                s_cameDir[nIdx] = (unsigned char)d;
+                int f = newG + heuristic(nx, ny);
+                if (f > 0xFFFF) f = 0xFFFF;
+                heapPush(AstarNode{ (unsigned short)f, (unsigned short)nIdx });
+            }
+        }
+    }
+
+    int endIdx;
+    if (found) {
+        endIdx = goalIdx;
+    } else if (!bErrorCheck && bestIdx != sIdx) {
+        endIdx = bestIdx;                  // camino parcial hacia el destino
+    } else {
+        static int s_pflogF = 0;
+        if (s_pflogF++ < 30) {
+            char b[200];
+            Platform::TextFormat(b, "A* FAIL #%d: src=(%d,%d) dst=(%d,%d) iWall=%d rad=%d errChk=%d explored=%d",
+                      s_pflogF, sx, sy, tx, ty, iWall, (int)fDistance, (int)bErrorCheck, explored);
+            DbgLogPublic(b);
+        }
+        // NO tocar `path` al fallar. Ver nota de abajo.
+        return 0;
+    }
+
+    // Backtrack COMPLETO destino → origen; el bucle de emisión de abajo se queda
+    // con los 15 primeros contados desde el origen.
+    static unsigned char wpX[4096], wpY[4096];
+    int wpCount = 0;
+    int curIdx = endIdx;
+    while (curIdx != sIdx && wpCount < 4096) {
+        wpX[wpCount] = (unsigned char)(curIdx & 0xFF);
+        wpY[wpCount] = (unsigned char)(curIdx >> 8);
+        ++wpCount;
+        unsigned char dir = s_cameDir[curIdx];
+        if (dir > 7) break;                // 0xFE (origen) o 0xFF (no visitado)
+        int prevX = (curIdx & 0xFF) - DX[dir];
+        int prevY = (curIdx >> 8)   - DY[dir];
+        if (prevX < 0 || prevX >= 256 || prevY < 0 || prevY >= 256) break;
+        curIdx = prevY * 256 + prevX;
+    }
+
+    // `path` (= entidad+0x354) sólo se escribe si hay éxito: se arma todo en un
+    // temporal.  Ojo: si un fallo dejara path[2] (PATH_t.PathNum) en 0 con
+    // Movement (+0x2EC) = 1, MovePath @ 0x0043EA20 devuelve false
+    // (`PathNum <= CurrentPath`) y MoveHero llama MoveCharacterPosition, que avanza
+    // en línea recta según el Angle sin mirar terreno: deriva infinita a través de
+    // las paredes.  El original (PathFinding2 @ 0x0043F3E0) tampoco toca el buffer
+    // al fallar: `a` sólo se escribe pasado LAB_0043f483, en la rama de éxito.
+    unsigned char tmpX[16], tmpY[16];
+    tmpX[0] = (unsigned char)sx;
+    tmpY[0] = (unsigned char)sy;
+    int validSteps = 1;
+    for (int i = wpCount - 1; i >= 0 && validSteps < 15; --i) {
+        tmpX[validSteps] = wpX[i];
+        tmpY[validSteps] = wpY[i];
+        ++validSteps;
+    }
+    if (validSteps <= 1) return 0;      // sin tocar `path`
+    for (int i = 0; i < validSteps; ++i) {
+        path[3 + i]    = tmpX[i];
+        path[0x12 + i] = tmpY[i];
+    }
+    path[0] = 0;
+    path[1] = 0;
+    path[2] = (unsigned char)validSteps;
+    {
+        static int s_pflog = 0;
+        if (s_pflog++ < 30) {
+        }
+    }
+    return 1;
+}
+
+// IDA: PathFinding2 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
+// Calls A* solver (PATH_FindPath). On fail, checks terrain walk flags at src/dst
+// to decide filter mode (2 or 4) and retries. On success (path_len >= 2),
+// copies waypoints from DAT_05826df4 result buffer into path_buf.
+// path_buf layout: [0]=0, [1]=0, [2]=wp_count, [3..17]=wp_x, [0x12..0x20]=wp_y.
+unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
+                                   unsigned char* path, float radius)
+{
+    int filterMode = 2;
+    // _this es el contexto del pathfinder (DAT_05826df4), como en el wrapper que
+    // documenta Net_Process.cpp:
+    //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
+    PathContext* pfCtx = DAT_05826df4;
+
+    // El contexto lo construye PathContext_Create() (src/Game/PathFinder.cpp,
+    // llamada desde WinMain), que replica el ctor del binario: 0x0043F280..0x0043F2C7,
+    // reserva de 0x424 bytes y vtable de la cola de prioridad en +0x414.  InitPath
+    // (PathFinder_ResetContext, en Path/Path_LegacyReset.cpp) la llama OpenFont
+    // despues del ctor, igual que en el binario.
+    //
+    // El camino original queda detrás de un switch: con PF_USE_ORIGINAL en 1 hay un
+    // AV en la primera llamada, dentro de la portación de PATH_FindPath (el ctor está
+    // bien).  Queda en 0 —nuestro A* sustituto— hasta auditar esa función contra el
+    // decompile.
+    #define PF_USE_ORIGINAL 0
+    bool pfReady = false;
+#if PF_USE_ORIGINAL
+    pfReady = pfCtx != nullptr;
+#endif
+    {
+        static int s_dbg_pf = 0;
+        if (s_dbg_pf++ < 5) {
+        }
+    }
+    if (!pfReady) {
+        // Replica de ZzzAI::PathFinding2 @ 0x0043F3E0, con nuestro A* (PF_AStar)
+        // en lugar de PATH::FindPath (0x0043F500), cuya portación todavía crashea
+        // (ver PF_USE_ORIGINAL arriba).  El original hace:
+        //
+        //   local_4 = 2;
+        //   if (PATH__FindPath(sx,sy,tx,ty, true, 2, ...)) goto ok;
+        //   if ((TerrainWall[src] & 1) == 1 || (TerrainWall[dst] & 1) == 1) {
+        //       iVar3 = 4;
+        //       if ((TerrainWall[dst] & 2) == 2) iVar3 = local_4;   // vuelve a 2
+        //   } else  iVar3 = local_4;                                 // = 2
+        //   if (!PATH__FindPath(sx,sy,tx,ty, false, iVar3, ...)) return false;
+        //
+        // O sea: primer intento estricto (bErrorCheck=true, iWall=2) y, si falla,
+        // segundo intento a mejor esfuerzo (bErrorCheck=false) con iWall=4 SOLO
+        // cuando origen o destino tienen el bit 0 y el destino NO tiene el bit 1.
+        if (!path) return 0;
+
+        if (PF_AStar(sx, sy, tx, ty, 2, true, path, radius)) return 1;
+
+        const unsigned char* tw = (const unsigned char*)&DAT_0838bc70;
+        int iWall2 = 2;
+        if (sx >= 0 && sx < 256 && sy >= 0 && sy < 256 &&
+            tx >= 0 && tx < 256 && ty >= 0 && ty < 256) {
+            unsigned char aSrc = tw[sy * 256 + sx];
+            unsigned char aDst = tw[ty * 256 + tx];
+            if ((aSrc & 1) == 1 || (aDst & 1) == 1) {
+                iWall2 = 4;
+                if ((aDst & 2) == 2) iWall2 = 2;
+            }
+        }
+        return PF_AStar(sx, sy, tx, ty, iWall2, false, path, radius) ? 1 : 0;
+    }
+
+    // First attempt: strict walkable filter
+    unsigned int found = PATH_FindPath(pfCtx, sx, (float)sy, tx, ty, 1, 2, radius);
+    if (found) goto success;
+
+    // Check terrain flags at src and dst
+    {
+        int srcAttr = Terrain_GetTileIndex((unsigned int)sx, (unsigned int)sy);
+        int dstAttr = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
+        // Como en PathFinding2: el filtro sube a 4 cuando origen/destino tienen el
+        // bit 0, y vuelve a 2 sólo si el destino tiene además el bit 1:
+        //     iVar3 = 4;  if ((TerrainWall[dst] & 2) == 2) iVar3 = local_4 /*2*/;
+        // Camino muerto hoy (pfReady siempre false).
+        if ((DAT_0838bc70[srcAttr] & 1) == 1 || (DAT_0838bc70[dstAttr] & 1) == 1) {
+            int dstAttr2 = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
+            filterMode = 4;
+            if ((DAT_0838bc70[dstAttr2] & 2) == 2) {
+                filterMode = 2;
+            }
+        }
+    }
+
+    // Second attempt: relaxed filter
+    found = PATH_FindPath(pfCtx, sx, (float)sy, tx, ty, 0, filterMode, radius);
+    if (!found) return 0;
+
+success:
+    {
+        int pathLen = pfCtx->Length;
+        if (pathLen < 2) return 0;
+        if (pathLen > 0xF) pathLen = 0xF;
+
+        path[2] = (unsigned char)pathLen;
+
+        // Copy waypoints from result buffer into path arrays
+        const int start = 500 - pfCtx->Length;
+        for (int i = 0; i < (int)(unsigned char)path[2]; i++) {
+            path[3 + i]    = pfCtx->PathX[start + i]; // wp_x
+            path[0x12 + i] = pfCtx->PathY[start + i]; // wp_y
+        }
+        path[0] = 0;
+        path[1] = 0;
+        return 1;
+    }
+}
+// IDA: FUN_0043e370 (0x0043E370)
+// Returns signed angular difference between two angles, handling wrap-around at 360.
+// If mode==1, returns absolute value (unsigned distance).
+//
+// Ojo: el `if (v6)` del decompile es un flag FPU x87 (`c0`) sin reconstruir.  El
+// asm hace `fcom a2, a1` ANTES del `fsub`, así que v6 = `a2 > a1`, no el signo
+// del resultado.  Las asignaciones de cada rama (`360 - a2 + a1` y
+// `360 - a1 + a2`) son las del decompile.
+float __cdecl FarAngle(float a1, float a2, char a3)
+{
+  if ( a1 < 0.0f ) a1 += 360.0f;
+  if ( a2 < 0.0f ) a2 += 360.0f;
+
+  float result = a2 - a1;
+  if ( a2 > a1 )
+  {
+    if ( a1 + 180.0f <= a2 ) result = 360.0f - a2 + a1;
+  }
+  else if ( a1 - 180.0f > a2 )
+  {
+    result = 360.0f - a1 + a2;
+  }
+
+  if ( a3 == 1 && result < 0.0f ) return -result;
+  return result;
+}
+
+
+
+// IDA: MovePath @ 0x0043EA20 — Entity_MovePath(entity, flag)
+// Advances entity along its Catmull-Rom waypoint path.
+// path_wp_x/y arrays at entity+0x357/0x366 (grid coords); path_substep 0-3 per segment.
+// Returns 1 when entity arrives at final waypoint; 0 otherwise.
+// Anti-tamper HashTable blocks (MAIN_HASH_CLASS/bd0/bd4) skipped per project policy.
+static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
+{
+    // 0043EA20 without its hash-table obfuscation blocks.  Offsets are decimal
+    // in the original: current=852, subframe=853, count=854, X=855, Y=870.
+    byte current = AsCharacter(ent)->PathCurrent;
+    const byte count = AsCharacter(ent)->PathNum;
+    if (current >= count) return 0;
+
+    if (!AsCharacter(ent)->PathSubstep) {
+        int next = current + 1;
+        if (next > count - 1) next = count - 1;
+        AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + next);
+        AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + next);
+    }
+
+    float x[4], y[4];
+    for (int i = 0; i < 4; ++i) {
+        int point = (int)current - 1 + i;
+        if (point < 0) point = 0;
+        if (point > count - 1) point = count - 1;
+        x[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathX) + point) + 0.5f) * 100.0f;
+        y[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathY) + point) + 0.5f) * 100.0f;
+    }
+
+    float targetX = x[1], targetY = y[1];
+    switch (AsCharacter(ent)->PathSubstep) {
+    case 0: targetX=x[2]*.2265625f-x[3]*.0234375f+x[1]*.8671875f-x[0]*.0703125f;
+            targetY=y[2]*.2265625f-y[3]*.0234375f+y[1]*.8671875f-y[0]*.0703125f; break;
+    case 1: targetX=x[2]*.5625f-x[3]*.0625f+x[1]*.5625f-x[0]*.0625f;
+            targetY=y[2]*.5625f-y[3]*.0625f+y[1]*.5625f-y[0]*.0625f; break;
+    case 2: targetX=x[2]*.8671875f-x[3]*.0703125f+x[1]*.2265625f-x[0]*.0234375f;
+            targetY=y[2]*.8671875f-y[3]*.0703125f+y[1]*.2265625f-y[0]*.0234375f; break;
+    case 3: targetX=x[2]; targetY=y[2]; break;
+    }
+
+    const float dx = AsCharacter(ent)->Object.Position[0] - targetX;
+    const float dy = AsCharacter(ent)->Object.Position[1] - targetY;
+    // IDA L150-166: las tres condiciones (lejos del punto, subpaso <= 3, o
+    // waypoint siguiente sin llegar al final) comparten el mismo cuerpo, que
+    // gira al personaje.  El port no giraba en la tercera.
+    bool stillMoving = sqrtf(dx*dx + dy*dy) > 20.0f || ++AsCharacter(ent)->PathSubstep <= 3;
+    if (!stillMoving) {
+        ++AsCharacter(ent)->PathCurrent;
+        AsCharacter(ent)->PathSubstep = 0;
+        current = AsCharacter(ent)->PathCurrent;
+        stillMoving = current < count - 1;
+    }
+    if (stillMoving) {
+        if (turn) {
+            const float angle = CreateAngle(AsCharacter(ent)->Object.Position[0], AsCharacter(ent)->Object.Position[1], targetX, targetY);
+            const float delta = FarAngle(AsCharacter(ent)->Object.Angle[2], angle, 1);
+            AsCharacter(ent)->Object.Angle[2] = (delta >= 45.0f) ? angle : TurnAngle2(AsCharacter(ent)->Object.Angle[2], angle, delta * 0.5f);
+        }
+        return 0;
+    }
+
+    AsCharacter(ent)->PathCurrent = count - 1;
+    AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + count - 1);
+    AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + count - 1);
+    AsCharacter(ent)->Object.Position[0] = targetX;
+    AsCharacter(ent)->Object.Position[1] = targetY;
+    return 1;
+}
+
+unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
+{
+    char *ent = (char *)entity;
+    return MovePath_IDA_0043EA20(ent, flag);
+
+#if 0
+
+    // 2026-04-30 BUG-FIX: cuando no hay path (wp_count <= cur_wp), DEBE
+    // retornar 1 ("arrived/idle"), NO 0.  El caller hace:
+    //     if (moveOk == 0) MoveCharacterPosition(ent);   // mueve al hero
+    //     else             SetPlayerStop(ent);   // detiene
+    // Si retornábamos 0 cuando no hay path → caller llamaba al mover →
+    // hero caminaba en facing direction sin importar si había path.
+    // Por eso "se movía solo" sin click.
+    if (AsCharacter(ent)->PathNum <= AsCharacter(ent)->PathCurrent)
+        return 1;
+
+    byte cur_wp   = AsCharacter(ent)->PathCurrent;
+    byte wp_count = AsCharacter(ent)->PathNum;
+    byte substep  = AsCharacter(ent)->PathSubstep;
+
+    // path_substep == 0: initialize cached waypoint grid coords
+    if (substep == 0) {
+        int next_wp = (int)cur_wp + 1;
+        int max_wp  = (int)wp_count - 1;
+        if (max_wp < next_wp) next_wp = max_wp;
+        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + EntityOffset(0x357) + next_wp);
+        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + EntityOffset(0x366) + next_wp);
+    }
+
+    // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes
+    // _DAT_00552880..88c daba targets atrás del hero / dirección opuesta y
+    // hacía giros en círculo), ir directamente al siguiente waypoint con
+    // lerp lineal.  Pierde "smoothness" del spline pero hace que el walker
+    // efectivamente avance.
+    int next_wp = (int)cur_wp + 1;
+    if (next_wp >= (int)wp_count) {
+        return 1;   // arrived
+    }
+    float target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+    float target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+
+    // Distance check
+    float dx   = AsCharacter(ent)->Object.Position[0] - target_x;
+    float dy   = AsCharacter(ent)->Object.Position[1] - target_y;
+    float dist = sqrtf(dx * dx + dy * dy);
+
+    // Threshold: ~25 units tight enough to prevent overshoot, generous
+    // enough to consume waypoints quickly. Original used _DAT_005524fc.
+    float threshold = _DAT_005524fc;
+    if (threshold < 25.0f) threshold = 25.0f;
+
+    if (dist <= threshold) {
+        // Arrived at this waypoint — snap to it and advance
+        AsCharacter(ent)->Object.Position[0] = target_x;
+        AsCharacter(ent)->Object.Position[1] = target_y;
+        cur_wp++;
+        AsCharacter(ent)->PathCurrent = cur_wp;
+        AsCharacter(ent)->PathSubstep = 0;
+        if ((int)(wp_count - 1) <= (int)cur_wp) {
+            return 1;   // arrived at final
+        }
+        // Update target for facing calc this frame (so hero turns immediately)
+        next_wp = (int)cur_wp + 1;
+        if (next_wp < (int)wp_count) {
+            target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+            target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+        }
+    }
+
+    // 2026-04-30 BUG-FIX (v3): actualizar facing.  Convención REAL de MU
+    // (verificada con la rotación de matriz en MoveCharacterPosition):
+    //   0°   = NORTH (-Y)
+    //   90°  = EAST  (+X)
+    //   180° = SOUTH (+Y)
+    //   270° = WEST  (-X)
+    //
+    // MoveCharacterPosition hace: vel_local=(0,-speed,0), rotated by facing (Z-axis).
+    // Result: out_x = +speed*sin(θ), out_y = -speed*cos(θ).
+    // → θ=0 ⇒ out=(0,-speed) = north ✓
+    // → θ=90 ⇒ out=(+speed,0)  = east  ✓
+    //
+    // Para que `atan2(...)` devuelva 0° cuando dy<0 (target al norte),
+    // necesitamos `atan2(dx, -dy)`.
+    //
+    // (Versión v2 usaba atan2(dx, dy) que daba ángulo OPUESTO — click
+    //  arriba mandaba al hero hacia abajo y caminaba infinito al sur.)
+    if (flag != '\0') {
+        float ent_x = AsCharacter(ent)->Object.Position[0];
+        float ent_y = AsCharacter(ent)->Object.Position[1];
+        float ddx = target_x - ent_x;
+        float ddy = target_y - ent_y;
+        if (ddx * ddx + ddy * ddy > 0.01f) {
+            float facingDeg = (float)(atan2((double)ddx, -(double)ddy) * 57.29577951);
+            // Normalize to [0..360)
+            if (facingDeg < 0.0f) facingDeg += 360.0f;
+            AsCharacter(ent)->Object.Angle[2] = facingDeg;
+        }
+    }
+    return 0;
+}
+
+#endif // obsolete non-IDA linear MovePath reconstruction
+}
+
+// IDA: CheckWall @ 0x004830B0 — bool __cdecl CheckWall(int sx1, int sy1, int sx2, int sy2)
+// Bresenham desde (sx1,sy1) hasta (sx2,sy2) sobre TerrainWall (DAT_0838bc70);
+// devuelve 1 si la linea esta despejada, 0 si topa con un tile bloqueante.
+// Nombres: tile = v4 · err = v5 · dx = v6 · dy = v7 · xStep = v8 · yStep = v9
+//          major = v10 · minorDelta = y · minorInc = v11 · steps = x
+//
+// Ojo con `major` y `minorDelta` en las dos ramas del if: intercambiados, una
+// linea axial (dy == 0) daria major == 0 y el bucle probaria UN solo tile.
+// La usan Attack (3 sitios, uno de ellos el gate del bucle de manos),
+// Action (2) y Player_InputTick (1).
+char __cdecl Path_IsLineClear(int sx1, int sy1, int sx2, int sy2) {
+    int tile = Terrain_GetTileIndex((unsigned int)sx1, (unsigned int)sy1);   // IDA: v4
+    int err  = 0;                                                    // IDA: v5
+    int dx = sx2 - sx1;                                              // IDA: v6
+    int dy = sy2 - sy1;                                              // IDA: v7
+    int xStep, yStep;                                                // IDA: v8 / v9
+    if (dx >= 0) { xStep = 1; }    else { dx = sx1 - sx2; xStep = -1; }
+    if (dy >= 0) { yStep = 0x100; } else { dy = sy1 - sy2; yStep = -0x100; }
+
+    int major, minorDelta, majorInc, minorInc;
+    if (dx <= dy) {          // IDA L39: eje mayor = Y
+        major      = dy;     // IDA: v10 = v7
+        minorInc   = xStep;  // IDA: v11 = v8
+        minorDelta = dx;     // IDA: y   = v6
+        majorInc   = yStep;  // IDA: v8  = v9
+    } else {                 // IDA L45: eje mayor = X
+        minorDelta = dy;     // IDA: y   = v7
+        major      = dx;     // IDA: v10 = v6
+        minorInc   = yStep;  // IDA: v11 = v9
+        majorInc   = xStep;  // IDA: v8 sin tocar
+    }
+
+    int steps = 0;                                                   // IDA: x
+    do {
+        const byte attr = ((byte*)&DAT_0838bc70)[tile];              // IDA: v12
+        if (attr >= 4 && (attr & 0x20) != 0x20) return 0;            // IDA L58
+        err += minorDelta;
+        if (err > major / 2) { tile += minorInc; err -= major; }
+        tile += majorInc;
+        ++steps;
+    } while (steps <= major);
+    return 1;
+}

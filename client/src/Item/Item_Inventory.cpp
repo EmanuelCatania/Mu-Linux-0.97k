@@ -1,0 +1,421 @@
+// Item_Inventory.cpp — port directo desde MU 0.52 (sub_404830 / sub_425850 / sub_428C30)
+//
+// El código de 0.52 está libre de anti-tamper / hash-table noise. Estructuras
+// y offsets son idénticos a 0.97 (ITEM stride 68 B, grid 8×8 = 64 slots).
+//
+// Diferencias con 0.52 portadas a 0.97:
+//   - 0.52 tenía 12 equipment slots + 64 inventory slots. 0.97 mantiene los 64
+//     slots de inventario en OffsetInventoryItems[], pero las slots de
+//     equipment viven en CharacterMachine (cm[0x10e]=helm, cm[0xfd]=armor, …).
+//   - 0.52 stride per packet item: 4 bytes [type, level, gridX, gridY].
+//     0.97 expande con durabilidad / serial / option byte; el server-emu mu-emu
+//     que usamos manda 12 bytes per item — formato compatible verifica byte 0
+//     antes de leer cells extras.
+//   - Item dims (W×H): 0.52 los lee de byte_7A5999E/F (stride 45). 0.97 los
+//     guarda en ItemAttribute (struct stride 64). Aquí accedemos via
+//     `ItemAttribute[type].Width / .Height`.
+
+#include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "globals.h"
+#include "structs.h"        // ITEM, ITEM_ATTRIBUTE
+#include "functions.h"
+
+extern "C" int __cdecl ConvertItemType(BYTE* Item);
+
+// ── External handles -─────────────────────────────────────────────────────────
+//
+// OffsetInventoryItems[64 * 68] está en HUD_Pass3.cpp como `BYTE` array sized
+// para el grid 8×8.  Cada slot es un ITEM (struct, 68 B).
+extern "C" BYTE OffsetInventoryItems[];
+extern "C" void HeroEquipWatchdog(CHARACTER* c);
+extern int DAT_00559c60;
+extern int DAT_00559c64;
+extern int DAT_00559c68;
+extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
+                                            int Index, BYTE* Item, bool First);
+
+// ItemAttribute base — `(ITEM_ATTRIBUTE*)DAT_07d78068` per HUD_Pass2.cpp:60.
+// La tabla la carga `Item_LoadFromBmd` desde Data\Local\Item.bmd al startup.
+// Si no está cargada (ItemAttribute=0 o type fuera de rango), defaulteamos
+// a 1×1 (worst case visualmente, pero al menos el item aparece).
+extern "C" std::uintptr_t DAT_07d78068;
+
+static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
+{
+    const std::uintptr_t p = ItemAttribute_Base();
+    if (!p) return nullptr;  // tabla sin cargar → no crash
+    if (type < 0 || type >= ITEM_MAX_EX) return nullptr;   // 0.97.20: índice de 13 bits
+    return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];
+}
+
+static int FindFirstInventoryTypeInRange(int typeMin, int typeMax)
+{
+    if (typeMin > typeMax) {
+        int tmp = typeMin;
+        typeMin = typeMax;
+        typeMax = tmp;
+    }
+    ITEM* g = (ITEM*)OffsetInventoryItems;
+    for (int i = 0; i < 64; ++i) {
+        const int kind = ItemBehaviorType(g[i].Type);   // 0.97.20: el hotbar guarda el vanilla
+        if (kind >= typeMin && kind <= typeMax) {
+            return kind;
+        }
+    }
+    return -1;
+}
+
+static int FindFirstInventoryTypeExact(const int* types, int count)
+{
+    ITEM* g = (ITEM*)OffsetInventoryItems;
+    for (int idx = 0; idx < count; ++idx) {
+        int wanted = types[idx];
+        for (int i = 0; i < 64; ++i) {
+            if (ItemBehaviorType(g[i].Type) == wanted) {
+                return wanted;
+            }
+        }
+    }
+    return -1;
+}
+
+extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
+void __cdecl SeedQuickPotionTypesFromInventory()
+{
+    // 97k HUD order in IDA (item group 14):
+    //   slot 0 -> life group (449..451)
+    //   slot 1 -> mana group (452..454)
+    //   slot 2 -> auxiliary group
+    DAT_00559c60 = 449;
+    DAT_00559c64 = 452;
+    DAT_00559c68 = 456;
+
+    int hpType = FindFirstInventoryTypeInRange(451, 449);
+    if (hpType == -1) hpType = FindFirstInventoryTypeInRange(448, 448);
+    if (hpType != -1) DAT_00559c60 = hpType;
+
+    int mpType = FindFirstInventoryTypeInRange(454, 452);
+    if (mpType != -1) DAT_00559c64 = mpType;
+
+    // Keep the auxiliary slot on real consumables only.
+    // Town Portal Scroll (458) is intentionally excluded from the HUD hotbar.
+    static const int kAuxTypes[] = { 468, 457, 456 };
+    int auxType = FindFirstInventoryTypeExact(kAuxTypes, 3);
+    if (auxType != -1) DAT_00559c68 = auxType;
+}
+
+
+
+static inline int Item_GetWidth(int type)
+{
+    ITEM_ATTRIBUTE* a = Item_GetAttribute(type);
+    return (a && a->Width  > 0 && a->Width  <= 8) ? (int)a->Width  : 1;
+}
+
+static inline int Item_GetHeight(int type)
+{
+    ITEM_ATTRIBUTE* a = Item_GetAttribute(type);
+    return (a && a->Height > 0 && a->Height <= 8) ? (int)a->Height : 1;
+}
+
+// ── Item helper: ItemData_FillStats (0.52 sub_42DE30) ─────────────────────────
+//
+// En 0.52 esta función calcula damage/defense del item según su level y tabla
+// base.  Aquí copiamos los stats directamente desde el ItemAttribute table.
+static void ItemData_FillStats(ITEM* slot, int level)
+{
+    if (!slot) return;
+    // Pre-compute durability si tenemos el ItemAttribute.
+    ITEM_ATTRIBUTE* a = Item_GetAttribute(slot->Type);
+    if (a) {
+        slot->Defense       = a->Defense;
+        slot->MagicDefense  = a->MagicDefense;
+        slot->DamageMin     = a->DamageMin;
+        slot->DamageMax     = a->DamageMax;
+        slot->SuccessfulBlocking = a->DefenseRate;
+        slot->WalkSpeed     = a->WalkSpeed;
+        slot->WeaponSpeed   = a->AttackSpeed;
+        // Los Require* quedan sembrados con el valor CRUDO de la tabla; el
+        // requisito real lo calcula `ItemConvert` (0x0047B910) un par de lineas
+        // mas abajo, escalandolo por el nivel del item:
+        //     Require = 3 * attr.Require * (attr.Level + 3*itemLevel) / 100 + 20
+        // Se dejan como fallback por si ItemConvert corta temprano (tabla sin
+        // cargar), pero NO son el numero que debe mostrar el tooltip.
+        slot->RequireLevel  = a->RequireLevel;
+        slot->RequireStrength = a->RequireStrength;
+        slot->RequireDexterity = a->RequireAgility;
+        slot->RequireEnergy = a->RequireEnergy;
+        slot->TwoHand       = a->TwoHand ? 1 : 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AddItemToGrid (port directo de 0.52 sub_425850)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+//   gridBase  — `OffsetInventoryItems` (8×8 grid)  ó  Inventory (otro buffer)
+//   gridW/H   — dims del grid (8/8 para inventario; otros valores para
+//                trade/warehouse)
+//   slotIdx   — celda objetivo:
+//                 < 0          → invalid, skip
+//                 [0..11]      → equipment slot (en 0.97 va a CharacterMachine,
+//                                ver MapEquipmentSlot abajo)
+//                 [12..N+11]   → cell index = slotIdx-12 → gridY*W + gridX
+//   type      — item type (-1 = empty, no escribe nada)
+//   level     — item level
+//   optByte   — option byte (el 0.52 usa 1 valor; 0.97 mete 4 bytes en
+//                Option1+SpecialNum+SpecialValue, aquí tomamos el primero)
+//
+// En 0.52 el equipment se guardaba en el mismo gridBase con índice <12. En
+// nuestro 0.97 los slots de equipment NO viven en gridBase sino en
+// CharacterMachine — los manejamos aparte vía MapEquipmentSlot.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// CharacterMachine equipment layout in the client source is contiguous:
+//   CharacterMachine + 536 + 68 * slot
+// for slot 0..11.  This is the real 97k path used by the client source and
+// matches the render-side helpers in ItemManager.cpp / PrintPlayer.cpp.
+// Slot order:
+//   0 WeaponR, 1 WeaponL, 2 Helm, 3 Armor, 4 Pants, 5 Gloves,
+//   6 Boots, 7 Wing, 8 Helper, 9 Amulet, 10 RingR, 11 RingL.
+static inline int GetEquipSlotByteOffset(int slotIdx)
+{
+    return 536 + (68 * slotIdx);
+}
+
+static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, BYTE durability, BYTE byteHi, BYTE extByte)
+{
+    // Cada slot es un struct ITEM (68 bytes) en CharacterMachine.
+    // Layout real: CharacterMachine + 536 + 68*slot.
+    // Los offsets de campo dentro de ITEM (en bytes desde slot start):
+    //   +0  Type (short)
+    //   +4  Level (int)
+    //   +26 Durability (BYTE)
+    //   +27 Option1 (BYTE)
+    BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
+    if (!cm) return;
+    if (slotIdx < 0 || slotIdx >= 12) return;
+
+    int byteOff = GetEquipSlotByteOffset(slotIdx);
+    BYTE* slot = cm + byteOff;
+
+    if (type < 0) {
+        memset(slot, 0, sizeof(ITEM));
+        AsItem(slot)->Type  = -1;
+        AsItem(slot)->Key = 0;
+        if (SceneFlag == 5 && DAT_07abf5d8) {
+            HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
+        }
+        return;
+    }
+
+    memset(slot, 0, sizeof(ITEM));
+    AsItem(slot)->Type  = (short)type;
+    // Se guarda el byte de Option CRUDO (level<<3 codificado), como en
+    // AddItemToGrid: el render hace `(Level >> 3) & 0xF` para sacar el +N
+    // (sub_4E38B0 / Render_HotbarItems3D → RenderItem3D → RenderObjectScreen).
+    AsItem(slot)->Level    = (int)optByte;
+    AsItem(slot)->Durability  = durability;
+    // Option1 = Attribute2 (byteHi = Item[3]): ahí viven los flags de EXCELLENT.
+    // ItemConvert (0x47B910) hace `iItemExcel = Attribute2 & 63`, y esa es la
+    // MISMA mascara 0x3F que testean CalcMaxDurability (0x4C45C0) y
+    // RenderItemInfo sobre ip->Option1.
+    AsItem(slot)->Option1  = byteHi;
+    AsItem(slot)->Key = durability ? (DWORD)durability : 1u;
+    AsItem(slot)->Unknown  = byteHi;
+    AsItem(slot)->byColorState  = extByte;
+    ItemData_FillStats((ITEM*)slot, level);
+    ((ITEM*)slot)->Level = (int)optByte;
+    ItemConvert(AsItem(slot), (int)optByte, (int)byteHi);
+    // Slot ocupado real del equipo. En la base más nueva esto vive en Number;
+    // en nuestra estructura 97k lo espejamos en Key.
+    ITEM* equip = (ITEM*)slot;
+    equip->Key = (AsItem(slot)->Key > 0) ? 1 : 0;
+    equip->x = (BYTE)slotIdx;
+    equip->y = 0;
+    equip->Color = 0;
+    if (SceneFlag == 5 && DAT_07abf5d8) {
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
+    }
+}
+
+extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
+                                       int slotIdx, int type, int level,
+                                       BYTE optByte, BYTE fillFlag, BYTE durability, BYTE byteHi, BYTE extByte)
+{
+    if (type == 0xFF || type < 0) return;            // empty marker
+    if (!gridBase) return;
+    if (gridW <= 0 || gridH <= 0) return;
+
+    bool isMainInventory = (gridBase == &OffsetInventoryItems[0]);
+
+    // Equipment slot path
+    if (isMainInventory && slotIdx >= 0 && slotIdx < 12) {
+        WriteEquipmentSlot(slotIdx, type, level, optByte, durability, byteHi, extByte);
+        return;
+    }
+
+    // Inventory cell path
+    int cellIdx = isMainInventory ? (slotIdx - 12) : slotIdx;
+    if (cellIdx < 0 || cellIdx >= gridW * gridH) return;
+
+    int gridX = cellIdx % gridW;
+    int gridY = cellIdx / gridW;
+
+    int width  = Item_GetWidth(type);
+    int height = Item_GetHeight(type);
+
+    if (gridX + width  > gridW) width  = gridW - gridX;
+    if (gridY + height > gridH) height = gridH - gridY;
+    if (width <= 0 || height <= 0) return;
+
+    for (int dy = 0; dy < height; ++dy) {
+        for (int dx = 0; dx < width; ++dx) {
+            int cx = gridX + dx;
+            int cy = gridY + dy;
+            ITEM* slot = (ITEM*)(gridBase + (cy * gridW + cx) * sizeof(ITEM));
+
+            memset(slot, 0, sizeof(ITEM));
+            slot->Type       = (short)type;
+            slot->Level      = (int)optByte;
+            // Durability = el byte de durabilidad del packet (no el byte de opciones).
+            slot->Durability = durability;
+            slot->Option1    = byteHi;   // Attribute2 — ver nota en WriteEquipmentSlot
+            slot->Unknown    = byteHi;
+            slot->byColorState = extByte;
+            slot->x          = (BYTE)gridX;
+            slot->y          = (BYTE)gridY;
+            slot->Key        = (dx == 0 && dy == 0) ? 1u : 0u;  // primary cell flag
+            slot->Color      = 0;
+
+            ItemData_FillStats(slot, level);
+            slot->Level      = (int)optByte;
+            ItemConvert(slot, (int)optByte, (int)byteHi);
+
+            // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6
+            // a RenderItem3D → RenderObjectScreen, que extrae el level con
+            // `(param_6 >> 3) & 0xF`. ItemData_FillStats(level) acaba de setear Level
+            // decodificado (0-15): se pisa con el byteOpt CRUDO para preservar el shift.
+        }
+    }
+
+    if (fillFlag) {
+        // Equivalent of 0.52's `sub_434E60(off_46F064)` — char stat recompute.
+        // We don't have a direct port; trigger CharData_RecalcStats if available.
+        // (Función ya existe en UI/UI.cpp como FUN_0042xxxx; safe no-op si falta.)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recv_Inventory — port de 0.52 sub_404830 (opcode F3/10)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Layout 0.52: [C1][len][F3][10][reserved][count]{[type][level][gridX][gridY]}*count
+//   stride por item = 4 bytes.
+//
+// Layout 0.97 (mu-emu / season-1 server):
+//   [C1][len][F3][10][reserved][count]{[slotIdx][itemBytes...]}*count
+//   itemBytes = 12 bytes típicamente:
+//     [0]  = type (low)
+//     [1]  = level | option1
+//     [2]  = durability
+//     [3]  = special bytes / serial
+//     [4-11] = options / set / harmony / excellent
+//
+// Detección híbrida: si len-6 = count*4 → 0.52 layout; si = count*12 → 0.97.
+// Si el server manda otro stride hacemos best-effort skip.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
+{
+    if (!Msg) return;
+
+    // Reset full inventory grid (8×8).
+    {
+        ITEM* g = (ITEM*)OffsetInventoryItems;
+        for (int i = 0; i < 64; ++i) {
+            memset(&g[i], 0, sizeof(ITEM));
+            g[i].Type = -1;
+        }
+    }
+
+    // Reset equipment slots in CharacterMachine.
+    {
+        BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
+        if (cm) {
+            for (int s = 0; s < 12; ++s) {
+                int off = GetEquipSlotByteOffset(s);
+                BYTE* slot = cm + off;
+                memset(slot, 0, sizeof(ITEM));
+                *(short*)slot = -1;
+            }
+        }
+    }
+
+    // Parse header — check both C1 and C2 framing.
+    //
+    // Real layout (verificado vía hex dump del server-emu del user):
+    //   [C1][len][F3][10][count]{[slotIdx][typeLo][levelOpts][durability][typeHi|exc]}*count
+    //   stride = 5 bytes/item, count at Msg[4] (sin byte reserved)
+    //
+    // Encoded item (mu-emu/Webzen 0.97D format):
+    //   byte 0: type & 0xFF              ← low 8 bits del type
+    //   byte 1: (level<<3) | (skill?0x80:0) | (luck?0x04:0) | (options & 0x03)
+    //   byte 2: durability
+    //   byte 3: ((type>>4) & 0xF0) | (excellent & 0x0F)
+    bool isC2 = (Msg[0] == 0xC2);
+    int  hdrLen = isC2 ? 4 : 3;                      // [C1][len][F3] = 3, [C2][len_hi][len_lo][F3] = 4
+    int  totalLen = isC2
+                  ? ((Msg[1] << 8) | Msg[2])
+                  :  Msg[1];
+
+    // Body starts AFTER F3 + sub-opcode byte.
+    int  bodyStart  = hdrLen + 1;                    // skip sub-opcode (0x10) → Msg[4]
+    BYTE count      = Msg[bodyStart];                // count at Msg[4]
+    int  itemsStart = bodyStart + 1;                 // first item byte
+    int  stride     = 1 + ITEM_INFO_SIZE;            // slot + item (7 bytes, 0.97.20)
+
+
+
+    if (count == 0) return;
+
+    for (int i = 0; i < (int)count; ++i) {
+        BYTE* rec = (BYTE*)(Msg + itemsStart + i * stride);
+        int slotIdx = rec[0];
+        BYTE* item = rec + 1;
+        if (item[0] == 0xFF)
+            continue;
+        InsertInventoryItem(OffsetInventoryItems, 8, 8, slotIdx, item, true);
+    }
+
+    SeedQuickPotionTypesFromInventory();
+
+    if (SceneFlag == 5 && DAT_07abf5d8) {
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
+    }
+
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inventory_Open / Inventory_Close — opcodes 0x55 / 0x54 (server-driven)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// En 0.52:
+//   sub_407BD0 (op 0x55): byte_46F378=0; byte_7A51AFE=1; dword_7A51B00=1;
+//                          byte_79CD7AB=1; sub_419DF0(); dword_46F388=8;
+//                          dword_46F37C=0; *(WORD*)(off_46F064+388)=999;
+//   sub_407BA0 (op 0x54): clears every flag, dword_7A51B00=0
+//
+// En 0.97 el flag InventoryOpened está unificado con DAT_07eaa117 (per
+// nuestra refactor).  Estos handlers simplemente lo flippean.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void __cdecl Recv_InventoryOpen(const BYTE* /*Msg*/)
+{
+    DAT_07eaa117 = 1;                               // InventoryOpened = true
+}
+
+extern "C" void __cdecl Recv_InventoryClose(const BYTE* /*Msg*/)
+{
+    DAT_07eaa117 = 0;                               // InventoryOpened = false
+}

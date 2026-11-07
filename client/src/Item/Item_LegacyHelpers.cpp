@@ -1,0 +1,91 @@
+// Item_LegacyHelpers.cpp
+
+#include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "globals.h"
+#include "functions.h"
+
+extern void __cdecl operator_delete(void* ptr);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+// IDA Hex-Rays intrinsic shims.
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// ── New helpers needed by SecondPassword implementations ─────────────────────
+
+// GetItemCount @ 0x00482FF0 — count of inventory items of given type+level
+// IDA-ported: walks the 8×8 inventory grid (base DAT_07EA9328..DAT_07EA9504,
+// 17 ints per row, 136 ints per column) and counts matches.
+// iType == -1: match any; iLevel == -1: match any.
+int __cdecl GetItemCount(int siType, int iLevel) {
+    int result = 0;
+    int columns = 8;
+    int *v3 = (int *)&DAT_07ea9504;
+    do {
+        int *v4 = v3;
+        int v5 = 8;
+        do {
+            if ( ItemBehaviorType(*((short *)v4 - 28)) == siType   // 0.97.20: agregados por comportamiento
+              && (siType == -1 || *v4 > 0)
+              && (iLevel == -1 || ((*(v4 - 13) >> 3) & 0xF) == iLevel) )
+            {
+                ++result;
+            }
+            v4 -= 136;
+            --v5;
+        } while ( v5 );
+        v3 -= 17;
+    } while ( --columns > 0 );
+    return result;
+}
+
+// GetItemSlot @ 0x00482D70 — get inventory slot index for given type+level
+// IDA-ported: same 8×8 inventory grid walk as GetItemCount, returns first
+// matching slot index (0..63) or -1. iLevel == -1 matches any level.
+int __cdecl GetItemSlot(int siType, int iLevel) {
+    int v2 = 7;
+    int *v3 = (int *)&DAT_07ea9504;
+LABEL_2: {
+        int v4 = 7;
+        int result = v2 + 56;
+        int *v6 = v3;
+        while ( ItemBehaviorType(*((short *)v6 - 28)) != siType || *v6 <= 0
+                || (iLevel != -1 && ((*(v6 - 13) >> 3) & 0xF) != iLevel) )
+        {
+            --v4;
+            v6 -= 136;
+            result -= 8;
+            if ( v4 < 0 )
+            {
+                v3 -= 17;
+                --v2;
+                if ( v2 >= 0 )
+                    goto LABEL_2;
+                return -1;
+            }
+        }
+        return result;
+    }
+}

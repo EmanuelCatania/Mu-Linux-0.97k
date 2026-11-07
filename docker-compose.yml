@@ -23,7 +23,7 @@ services:
 
   mu-server:
     build:
-      context: .
+      context: ./server
       dockerfile: Dockerfile
     restart: unless-stopped
     cap_add:

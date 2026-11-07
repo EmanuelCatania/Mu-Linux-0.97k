@@ -1,0 +1,858 @@
+// RenderLinkObject.cpp
+// RenderLinkObject @ 0x00455430  (642 decompiled lines, COMPLETO)
+//
+// Renders an equipped item / weapon model attached to a bone on a parent entity.
+// Called from Player_Render / Entity_Render for each equipped part slot.
+//
+// Signature (Offsets.h canonical):
+//   RenderLinkObject(float x, float y, float z, DWORD c, DWORD f,
+//                    int Type, int Level, int Option1, bool Link,
+//                    bool Translate, int RenderType)
+//
+// Parameters (mapped from Ghidra):
+//   param_1/2/3  = x,y,z   — local offset position (used when Link==0)
+//   param_4      = c        — entity OBJECT* (parent character)
+//   param_5      = f        — PART slot pointer (equipped item desc)
+//   param_6      = Type     — model index (DAT_05828d58 + Type*0xbc)
+//   param_7      = Level
+//   param_8      = Option1
+//   param_9      = Link     — if nonzero: linked-bone path (builds angle matrix);
+//                              if zero: plain bone-to-world transform path
+//   param_10     = Translate — passed to BMD_Transform
+//   param_11     = RenderType — render flags OR'd into RenderPartObjectEffect call
+//
+// Layout del PART (param_5) y del OBJECT (param_4): Entity/EntityTypes.h.
+// Layout del modelo (DAT_05828d58 + Type*0xbc): Model/ModelTypes.h.
+//
+// Key globals:
+//   DAT_05828d58       — Models base pointer (stride 0xBC per BMD)
+//   DAT_06970a9c       — BoneTransform global scratch array (stride 0x30)
+//   DAT_06989c9c       — ParentMatrix scratch (root bone combine output)
+//   WorldTime       — g_AnimTick (boss-head angle spin)
+//   DAT_07abf5c4/c8/cc — Boss-head position offset (x/y/z added to BodyOrigin)
+//   World       — World (wing particle suppression when ==10)
+//   _DAT_00552580      — 0.0f guard constant
+//   _DAT_00552940      — luminosity scale factor (rand%30+70)*factor
+//
+// Hash-table blocks (obfuscation, NOT game logic):
+//   MAIN_HASH_CLASS/bcc/bd0/bd4/bf0 — ref-count hash table on param_4+0x302
+//   DAT_00559050 — XOR key used in ref-count manipulation
+//   CErrorReport_Write — hash-table error reporter ("Hash table full")
+//   operator_new / operator_delete — used only in ref-count alloc/free
+//   This entire block manipulates param_4+0x302 but the net effect on game
+//   behavior is zero (anti-tamper). Faithfully transcribed from decompile.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+#include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
+#include "Item/ContentCatalog.h"
+#include "globals.h"
+#include "functions.h"
+#include <math.h>   // fsin
+
+extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// IDA: RenderLinkObject (0x00455430)
+void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
+                          intptr_t param_4, intptr_t param_5, int param_6,
+                          char param_7, unsigned int param_8, char param_9,
+                          char param_10, unsigned int param_11)
+{
+    // ── local storage ─────────────────────────────────────────────────────────
+    // afStack_264 layout used for various vec3/matrix temps throughout:
+    //   [0..2]  = Light color vec3
+    //   [3..5]  = Angle vec3  (input to Matrix_BuildFromEuler / BMD_TransformPosition)
+    //   [6..8]  = Position vec3 (world pos scratch / BodyOrigin temp)
+    //   [9..11] = extra (matches IDA `Position[3]` at ebp-240h)
+    // Los callees (BMD_TransformPosition, CreateSprite, Joint_Create) leen/escriben
+    // 3 floats desde `afStack_264 + 6`: el array tiene que cubrir [6..8].
+    float afStack_264[12];
+    #define local_248 afStack_264[7]
+    #define local_244 afStack_264[8]
+    // local_240/_23c_f/_238_f son UN array contiguo: BMD__RotationPosition escribe
+    // 3 floats consecutivos a través de (float*)&local_240. local_23c_f/_238_f se
+    // redirigen vía macro al uso "como float"; local_240 mantiene su uso "as void*"
+    // en el bloque hash-table (lee/escribe los 4 bytes como pointer).
+    float local_240_buf[3];  // pos_out: [0]=x, [1]=y, [2]=z (BMD__RotationPosition target)
+    #define local_240 (*(void**)&local_240_buf[0])
+    #define local_23c_f local_240_buf[1]
+    #define local_238_f local_240_buf[2]
+
+    // Matriz completa 3×4: Matrix_BuildFromEuler escribe 12 floats [0..0xb]. Los
+    // accesos legacy local_21c/20c/1fc redirigen vía macro.
+    float local_228[12];     // AngleMatrix output: 3×4 matrix, row-major
+    #define local_21c local_228[3]   // matrix[0][3] — translation X
+    #define local_20c local_228[7]   // matrix[1][3] — translation Y
+    #define local_1fc local_228[11]  // matrix[2][3] — translation Z
+
+    // OBJECT local: `ItemObjectAttribute` escribe hasta offset 0x168 (360 bytes).
+    // Dimensionado al stride del effect-entity pool (0x1bc = 444 bytes) y
+    // `local_1ea` redirigido al offset +2 dentro del buffer (campo Type según IDA
+    // `o[1]`).
+    unsigned char local_1ec[OBJECT_STRIDE];     // local OBJECT — ItemObjectAttribute target
+    #define local_1ea (*(unsigned short*)(local_1ec + 2))
+    // DESVIACION: inicializar el scratch evita que SIM dependa de residuos
+    // de la pila de la pasada de dibujo anterior.
+    float afStack_1dc[3] = {};
+
+    float local_1c8;         // boss-head BoneHead flag
+
+    intptr_t local_22c;         // cached model pointer = DAT_05828d58 + param_6* BMD_STRIDE
+    intptr_t   iVar7;             // model pointer (same as local_22c for most of fn)
+
+    // ── 1. look up model, copy entity fields ──────────────────────────────────
+    // 0.97.20: la pieza guarda el modelo lógico (param_6, que decide la pose y
+    // los efectos por tipo); se dibuja con el modelo propio del catálogo.
+    const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
+    iVar7 = DAT_05828d58 + drawModel * BMD_STRIDE;
+    EquipmentModelContext modelContext((void *)iVar7);
+    AsModel(iVar7)->ContrastEnable = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
+    *(unsigned int *)&AsModel(iVar7)->BodyScale = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
+    AsModel(iVar7)->CurrentAction = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
+    *(unsigned int *)&AsModel(iVar7)->BodyHeight = 0;                                   // BodyHeight = 0
+
+    // Se limpia local_1ec antes de ItemObjectAttribute: no escribe TODOS los
+    // campos del OBJECT, y los bytes sin inicializar cambiarían el comportamiento
+    // de RenderPartObjectEffect / BMD_SetupRenderByType entre frames (flicker).
+    memset(local_1ec, 0, sizeof(local_1ec));
+    local_1ea = (unsigned short)drawModel;  // OBJECT.Type = item type index
+    local_22c = iVar7;
+
+    // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
+    // It sets LightEnable, reads item attributes.
+    ItemObjectAttribute(AsObject(local_1ec));
+
+    AsModel(iVar7)->LightEnable = 0;  // LightEnable = false
+
+    // ── 2. bone position resolution ───────────────────────────────────────────
+    if (param_9 == '\0')
+    {
+        // ── Non-linked path: transform local offset through owner bone ────────
+        // afStack_264[6..8] = {param_1, param_2, param_3} = local offset vec3
+        afStack_264[6] = param_1;
+        local_248      = param_2;
+        local_244      = param_3;
+
+        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices
+        // = BoneTransform base + LinkBone * stride
+        float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
+
+        void* ownerModel = (void*)(DAT_05828d58
+                                   + (int)AsCharacter(param_4)->Object.Type * BMD_STRIDE);
+
+        // BMD__RotationPosition = RotationPosition: transforms pos_in through bone → pos_out
+        BMD__RotationPosition(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
+
+        // BodyOrigin = TransformedPosition + entity world position
+        // IDA usa `Position[0]` directo: reinterpretar los bits de local_240 (Ghidra
+        // lo tipó como void*), no convertir el entero.
+        AsModel(iVar7)->BodyOrigin[0] = *(float*)&local_240 + AsCharacter(param_4)->Object.Position[0];
+        AsModel(iVar7)->BodyOrigin[1] = local_23c_f         + AsCharacter(param_4)->Object.Position[1];
+        AsModel(iVar7)->BodyOrigin[2] = local_238_f         + AsCharacter(param_4)->Object.Position[2];
+
+    }
+    else
+    {
+        // ── Linked path: build angle matrix based on weapon type ──────────────
+        // Check magic-channel / cloaking flag: byte at param_4+0x2eb
+        unsigned char magicFlag = AsCharacter(param_4)->MonsterIndex;
+        bool isMagicChannel = (magicFlag >= 0x84) && (magicFlag <= 0x86);
+
+        if (!isMagicChannel)
+        {
+            // Weapon type range dispatch for angle setup
+            if ((param_6 >= 0x218 && param_6 <= 0x21e) ||
+                (param_6 == 0x220) || (param_6 == 0x222))
+            {
+                // BOW range 0x218-0x21e / 0x220 / 0x222
+                afStack_264[3] = _DAT_00552580;  // 0.0f
+                afStack_264[4] = 20.0f;
+                afStack_264[5] = 180.0f;
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                local_21c = -10.0f;
+                local_20c =   8.0f;
+                local_1fc =  40.0f;
+            }
+            else if (param_6 == 0x239)
+            {
+                // Special case 0x239
+                afStack_264[3] = 110.0f;
+                afStack_264[4] = 180.0f;
+                afStack_264[5] =  90.0f;
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                local_21c = -10.0f;
+                local_20c =   5.0f;
+                local_1fc = -10.0f;
+            }
+            else
+            {
+                // General weapon / staff / shield path
+                afStack_264[4] = _DAT_00552580;  // 0.0f
+                afStack_264[3] = 70.0f;
+                afStack_264[5] = 90.0f;
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+
+                if ((param_6 >= 0x210 && param_6 <= 0x22f) || param_6 == 0x238)
+                {
+                    // BOW sub-range
+                    local_21c = -10.0f;
+                    local_20c =   5.0f;
+                    local_1fc =  10.0f;
+                }
+            else
+            {
+                // ── Tabla de poses de escudo / segundo item ─────────────────
+                // PORT DEL DLL (CWeaponView::SecondWeaponViewFix).
+                // El DLL engancha en 0x0045568B (la rama generica de abajo, que
+                // vanilla resuelve con trans (-20, 5, 40)) y salta de vuelta a
+                // 0x004556AA.  Constantes decodificadas de su bloque _asm:
+                //   0xC20C0000=-35  0x41200000=10   0x41F00000=30  0xC1200000=-10
+                //   0x43070000=135  0x42B40000=90   0xC1A00000=-20 0x42480000=50
+                //   0xC1E00000=-28  0xC1C80000=-25  0xC2DC0000=-110 0x43340000=180
+                //   0x41A00000=20   0x41700000=15   0x42200000=40  0x40A00000=5
+                // Sin esto un escudo cae en la pose generica de arma
+                // (Angle 70,0,90 / trans -20,5,40) y queda flotando por encima
+                // de la cabeza.
+                bool poseSet = false;
+
+                if (param_6 >= 592 && param_6 < 624)     // GET_ITEM_MODEL(6,0)..(7,0)
+                {
+                    poseSet = true;
+                    if (param_6 == 598) {                // Skull Shield
+                        // sin AngleMatrix: conserva el angulo generico (70,0,90)
+                        local_21c = -35.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                    else if (param_6 == 605) {           // Dragon Shield
+                        afStack_264[3] =  30.0f;
+                        afStack_264[4] = -10.0f;
+                        afStack_264[5] = 135.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -10.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                    else if (param_6 == 608) {           // Elemental Shield
+                        afStack_264[3] = 30.0f;
+                        afStack_264[4] =  0.0f;
+                        afStack_264[5] = 90.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -20.0f; local_20c = 0.0f; local_1fc = -20.0f;
+                    }
+                    else if (param_6 == 607 || param_6 == 606) {  // Grand Soul / Legendary
+                        afStack_264[3] = 50.0f;
+                        afStack_264[4] =  0.0f;
+                        afStack_264[5] = 90.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -28.0f; local_20c = 10.0f; local_1fc = -25.0f;
+                    }
+                    else {                               // resto de escudos
+                        local_21c = -10.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                }
+                else if (g_BackItemHand != 0)            // = SecondWeaponFixVal
+                {
+                    poseSet = true;
+                    afStack_264[3] = -110.0f;
+                    afStack_264[4] =  180.0f;
+                    afStack_264[5] =   90.0f;
+                    Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                    local_21c = 20.0f; local_20c = 15.0f; local_1fc = 40.0f;
+                }
+
+                if (!poseSet)
+                {
+                    // Vanilla (0x0045568B): arma en la mano 0.
+                    local_21c = -20.0f;
+                    local_20c =   5.0f;
+                    local_1fc =  40.0f;
+                }
+            }
+            }
+        }
+        else if ((param_6 == 0x23a) || (param_6 == 0x1a3))
+        {
+            // Cloaking/magic channel special types
+            afStack_264[4] = _DAT_00552580;  // 0.0f
+            afStack_264[3] = 90.0f;
+            afStack_264[5] = 90.0f;
+            Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+            local_21c =   0.0f;
+            local_20c =  80.0f;
+            local_1fc = 120.0f;
+        }
+        else if (param_6 == 0x222)
+        {
+            afStack_264[4] = _DAT_00552580;
+            afStack_264[5] = _DAT_00552580;
+            afStack_264[3] = 10.0f;
+            Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+            local_21c =   0.0f;
+            local_20c = 110.0f;
+            local_1fc =  80.0f;
+        }
+        // else: local_228 (and offsets) left uninitialized — matches decompile
+        // (the isMagicChannel path falls through without angle init for other types)
+
+        // Translation column already written via local_21c/20c/1fc macros, which
+        // alias local_228[3]/[7]/[11] (see decl block).
+        // R_ConcatTransforms takes: (bone_mat, angle_mat_12, out_parentmat)
+
+        // BoneTransform for LinkBone
+        float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
+
+        // R_ConcatTransforms: combine bone matrix with local angle matrix → ParentMatrix
+        R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
+
+        // BodyOrigin = entity world position (copy from entity, no local offset added)
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[0] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[0];
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[1] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[1];
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[2] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[2];
+    }
+
+    // ── 3. Boss-head special case (TYPE == 0xea = MODEL_BOSS_HEAD) ────────────
+    local_1c8 = 0.0f;
+    if (param_6 == 0xea)
+    {
+        AsModel(iVar7)->BodyOrigin[0] += _DAT_07abf5c4;
+        AsModel(iVar7)->BodyOrigin[1] += _DAT_07abf5c8;
+        AsModel(iVar7)->BodyOrigin[2] += _DAT_07abf5cc;
+        *(unsigned int *)&AsModel(iVar7)->BoneHead = 0;      // BoneHead = 0
+        local_1c8 = (float)WorldTime;         // spinning angle = g_AnimTick
+    }
+
+    // ── 4. Hash-table ref-count block on param_4+0x302 (anti-tamper) ─────────
+    // This is the obfuscation pattern. It manipulates a reference
+    // count stored at param_4+0x302 via a hash table keyed on the pointer.
+    // The block is transcribed faithfully; net game effect = zero.
+    {
+        unsigned char* pbVar1 = (unsigned char*)&AsCharacter(param_4)->Skill;
+        unsigned int uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+        unsigned int uVar16 = 0;
+        unsigned char* pbStack_26c = nullptr;
+        unsigned char* pbStack_270 = pbVar1;
+        unsigned char* pbVar12 = nullptr; // Visible también desde la salida temprana de GetIndex.
+
+        // -- GetIndex loop --
+        if (DAT_055c9bd4 != 0)
+        {
+            bool found = false;
+            do {
+                // compare pbStack_26c with hash slot key
+                unsigned char* slotKey = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                int cmp = 0;
+                bool eq = true;
+                unsigned char* lhs = (unsigned char*)&pbStack_26c;
+                for (int k = 4; k; --k)
+                {
+                    if (*lhs != *slotKey) { eq = false; cmp = (*lhs < *slotKey) ? -1 : 1; break; }
+                    ++lhs; ++slotKey;
+                }
+                if (cmp == 0) { found = true; break; }
+
+                // compare local_238 slot
+                unsigned char* lhs2 = (unsigned char*)&local_238_f;
+                unsigned char* slotKey2 = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                int cmp2 = 0; bool eq2 = true;
+                for (int k = 4; k; --k)
+                {
+                    if (*lhs2 != *slotKey2) { eq2 = false; cmp2 = (*lhs2 < *slotKey2) ? -1 : 1; break; }
+                    ++lhs2; ++slotKey2;
+                }
+                if (cmp2 == 0)
+                {
+                    if (uVar3 == 0xffffffff) { found = true; break; }
+                    uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+                    pbStack_26c = nullptr;
+                    uVar16 = 0;
+                    if (DAT_055c9bd4 != 0) goto hash_getindex_loop2;
+                    goto hash_getindex_done;
+                }
+                uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+                uVar16++;
+            } while (uVar16 < DAT_055c9bd4);
+            if (!false) // loop exhausted
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+            found = true;
+        }
+
+        // -- Insert ref slot --
+        pbStack_26c = (unsigned char*)operator new(2);
+        pbStack_26c[1] = 1;
+        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+        local_23c_f = 0.0f; // local_23c = null
+        uVar16 = 0;
+
+        if (DAT_055c9bd4 != 0)
+        {
+        hash_getindex_loop2:
+            do {
+                unsigned char* slotKey = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                int cmp = 0; bool eq = true;
+                unsigned char* lhs = (unsigned char*)&pbStack_26c; // &stack0xfffffd8c equiv
+                for (int k = 4; k; --k)
+                {
+                    if (*lhs != *slotKey) { eq = false; cmp = (*lhs < *slotKey) ? -1 : 1; break; }
+                    ++lhs; ++slotKey;
+                }
+                if (cmp == 0)
+                {
+                    // LAB_00455ab1
+                    *(unsigned char**)(DAT_055c9bcc + uVar3 * 4) = pbStack_270;
+                    *(unsigned char**)(DAT_055c9bd0 + uVar3 * 4) = pbVar1;
+                    goto hash_insert_done;
+                }
+                unsigned char* slotKey2 = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                int cmp2 = 0; bool eq2 = true;
+                unsigned char* lhs2 = (unsigned char*)&local_23c_f;
+                for (int k = 4; k; --k)
+                {
+                    if (*lhs2 != *slotKey2) { eq2 = false; cmp2 = (*lhs2 < *slotKey2) ? -1 : 1; break; }
+                    ++lhs2; ++slotKey2;
+                }
+                if (cmp2 == 0)
+                {
+                    *(unsigned char**)(DAT_055c9bcc + uVar3 * 4) = pbStack_270;
+                    *(unsigned char**)(DAT_055c9bd0 + uVar3 * 4) = pbVar1;
+                    goto hash_insert_done;
+                }
+                uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+                uVar16++;
+            } while (uVar16 < DAT_055c9bd4);
+            CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, Insert");
+        }
+
+    hash_insert_done:
+        // Encode value and write back to param_4+0x302
+        {
+            // local_238 = CONCAT (first byte of *pbVar1 | prev local_238 low 3 bytes)
+            // then local_23c = pbVar1
+            // followed by a GetIndex + ref-count increment on local_23c / local_238
+
+            // Simplified: increment ref-count slot [1] and conditionally obfuscate *pbVar1
+            pbVar12 = nullptr;
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+            uVar16 = 0;
+
+            // GetIndex for the newly inserted slot
+            if (DAT_055c9bd4 != 0)
+            {
+                do {
+                    unsigned char* slotKey = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                    // compare pbStack_270 equivalent
+                    int cmp = 0; bool eq = true;
+                    unsigned char* lhs = pbStack_270; // &stack0xfffffd88 equiv
+                    unsigned char* rhs = slotKey;
+                    for (int k = 4; k; --k)
+                    {
+                        if (*lhs != *rhs) { eq = false; cmp = (*lhs < *rhs) ? -1 : 1; break; }
+                        ++lhs; ++rhs;
+                    }
+                    if (cmp == 0)
+                    {
+                        // LAB_00455bc1
+                        goto hash_getindex2_found;
+                    }
+                    unsigned char* slotKey2 = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                    int cmp2 = 0; bool eq2 = true;
+                    unsigned char* lhs2 = (unsigned char*)&local_240;
+                    for (int k = 4; k; --k)
+                    {
+                        if (*lhs2 != *slotKey2) { eq2 = false; cmp2 = (*lhs2 < *slotKey2) ? -1 : 1; break; }
+                        ++lhs2; ++slotKey2;
+                    }
+                    if (cmp2 == 0)
+                    {
+                        if (uVar3 == 0xffffffff) goto hash_getindex2_found;
+                        *(void**)&local_240 = pbVar1;
+                        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+                        uVar16 = 0;
+                        if (DAT_055c9bd4 != 0) goto hash_getindex2_loop;
+                        goto hash_getindex2_exhaust;
+                    }
+                    uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+                    uVar16++;
+                hash_getindex2_loop:;
+                } while (uVar16 < DAT_055c9bd4);
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+            }
+
+        hash_getindex_done:
+        hash_getindex2_exhaust:
+            pbVar12 = nullptr;
+
+        hash_getindex2_found:
+            // Increment ref-count and optionally decode/obfuscate *pbVar1
+            {
+                unsigned char bVar6 = pbVar12 ? pbVar12[1] : 0;
+                if (pbVar12) pbVar12[1] = bVar6 + 1;
+                if (pbVar12 && (unsigned char)(bVar6 + 1) < 2)
+                {
+                    unsigned char* pbVar4 = (unsigned char*)operator new(1);
+                    unsigned char v = *pbVar12;
+                    v = v - 0x23;
+                    v = (v ^ PacketXorKey16[0]) + 0xb9;
+                    *pbVar1 = v;
+                    operator delete(pbVar4);
+                }
+            }
+        }
+
+        // -- Decrement ref-count (matching release) --
+        {
+            unsigned char* pbVar12 = nullptr;
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
+            uVar16 = 0;
+            if (DAT_055c9bd4 != 0)
+            {
+                do {
+                    unsigned char* slotKey = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                    int cmp = 0;
+                    unsigned char* lhs = pbStack_270;
+                    unsigned char* rhs = slotKey;
+                    for (int k = 4; k; --k)
+                    {
+                        if (*lhs != *rhs) { cmp = (*lhs < *rhs) ? -1 : 1; break; }
+                        ++lhs; ++rhs;
+                    }
+                    if (cmp == 0) goto hash_decref_found;
+                    unsigned char* slotKey2 = (unsigned char*)(DAT_055c9bd0 + uVar3 * 4);
+                    int cmp2 = 0;
+                    unsigned char* lhs2 = (unsigned char*)&local_240;
+                    unsigned char* rhs2 = slotKey2;
+                    for (int k = 4; k; --k)
+                    {
+                        if (*lhs2 != *rhs2) { cmp2 = (*lhs2 < *rhs2) ? -1 : 1; break; }
+                        ++lhs2; ++rhs2;
+                    }
+                    if (cmp2 == 0)
+                    {
+                        if (uVar3 == 0xffffffff) goto hash_decref_found;
+                        pbVar12 = *(unsigned char**)(DAT_055c9bcc + uVar3 * 4);
+                        goto hash_decref_action;
+                    }
+                    uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+                    uVar16++;
+                } while (uVar16 < DAT_055c9bd4);
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+            }
+        hash_decref_found:
+            pbVar12 = nullptr;
+        hash_decref_action:
+            if (pbVar12)
+            {
+                unsigned char bVar6 = pbVar12[1];
+                pbVar12[1] = bVar6 - 1;
+                if ((unsigned char)(bVar6 - 1) == 0)
+                {
+                    unsigned char* pbVar4 = (unsigned char*)operator new(1);
+                    unsigned char v = *pbVar1 + 0x47;
+                    v = (v ^ PacketXorKey16[0]) + 0x23;
+                    int rval = rand();
+                    *pbVar1 = (unsigned char)rval;
+                    *pbVar12 = v;
+                    operator delete(pbVar4);
+                }
+            }
+        }
+    } // end hash-table block
+
+    // ── 5. Post-hash: animation-frame override for bow firing (link path) ─────
+    // Check: local_23c high byte == '4' (0x34), entity type == 0x186, anim in range,
+    //        anim frame in [_DAT_00552660 .. _DAT_00552488]
+    // Maps to: if piercing skill active + bow-wielding + attack anim → force frame
+    {
+        // local_23c._3_1_ == '4' check: byte 3 of local_23c_f (the float storage)
+        unsigned char highByte = ((unsigned char*)&local_23c_f)[3];
+        bool cond = (highByte == '4')
+                 && (AsCharacter(param_4)->Object.Type == 0x186)
+                 && (AsCharacter(param_4)->Object.CurrentAction > 0x21)
+                 && (AsCharacter(param_4)->Object.CurrentAction < 0x5c)
+                 && (_DAT_00552660 <= AsCharacter(param_4)->Object.AnimationFrame)
+                 && (AsCharacter(param_4)->Object.AnimationFrame <= _DAT_00552488);
+        if (cond)
+        {
+            // Override PART animation frames: PriorAnimFrame = 2.0, AnimFrame = 3.2
+            *(float*)((intptr_t)param_5 + 0x0c) = 2.0f;   // PriorAnimationFrame
+            *(float*)((intptr_t)param_5 + 0x08) = 3.2f;   // AnimationFrame
+        }
+    }
+
+    // ── 6. Ala 790 en zona segura → CurrentAction = 1 ────────────────────────
+    // IDA: RenderLinkObject (0x00455430).
+    // DESVIACION (fix del DLL, Patchs.cpp 0x00455C19): limitar la animación de zona segura al modelo del ala 790.
+    if (param_6 == 790 && (AsCharacter(param_4)->Wing.Type > 0x315) && (AsCharacter(param_4)->Wing.Type < 0x317)
+        && (*(char *)&AsCharacter(param_4)->SafeZone != '\0'))
+    {
+        *(unsigned char*)((intptr_t)iVar7 + 0xa0 + BMD_FIELD_SHIFT) = 1;
+    }
+
+    // ── 7. Animation tick (BMD_AnimTick) ─────────────────────────────────────
+    // Condition: Link==0 OR Type not in BOW range 0x210..0x22f (excl. 0x238 exception)
+    if ((param_9 == '\0') || (param_6 < 0x210) || (param_6 > 0x22f))
+    {
+        // BMD__PlayAnimation = BMD_AnimTick: advance animation frame
+        // Args: (model, AnimFrame*, PriorAnimFrame*, PriorAction*, PlaySpeed, Position, Angle)
+        BMD__PlayAnimation((void*)iVar7,
+                     (float*)((intptr_t)param_5 + 0x08),  // AnimationFrame
+                     (float*)((intptr_t)param_5 + 0x0c),  // PriorAnimationFrame
+                     (unsigned char*)((intptr_t)param_5 + 0x06),  // PriorAction
+                     *(float*)((intptr_t)param_5 + 0x10)); // PlaySpeed
+    }
+
+    // ── 8. BMD_Animation (bone interpolation) ────────────────────────────────
+    // BMD_Animation: __thiscall (model, BoneTransformArray, AnimFrame, PriorAnimFrame,
+    //               PriorAction, Angle, HeadAngle, Parent=1, Translate=1)
+    void* pModel = (void*)iVar7;
+    BMD_Animation(pModel, reinterpret_cast<float*>(&DAT_06970a9c),
+                 *(float*)((intptr_t)param_5 + 0x08),        // AnimationFrame
+                 *(unsigned int*)((intptr_t)param_5 + 0x0c), // PriorAnimationFrame (as uint)
+                 *(unsigned char*)((intptr_t)param_5 + 0x06), // PriorAction
+                 (unsigned int*)afStack_1dc,             // Angle (reinterpreted)
+                 afStack_1dc, '\x01', '\x01');
+
+    // Se conserva el contexto de esta pieza: los siguientes links reutilizan
+    // el BMD, el scratch de huesos y a veces el PART del ala.
+    const unsigned int flags = AsCharacter(param_4)->MonsterIndex == 67 ? 0x102u : 0x2u;
+    const float attachmentOffset[3]={param_1,param_2,param_3};
+    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + EntityOffset(800)),
+        AsCharacter(param_4)->Object.Alpha, 8u * (unsigned char)param_7,
+        (unsigned char)param_8, flags | param_11, param_10, param_5, param_9, attachmentOffset);
+    if (drawModel == 790) {
+        // El objeto mínimo aporta el ángulo original; el dueño persistente es
+        // el personaje, nunca la dirección de ese temporal de la pila.
+        Equipment_EmitWing790(pModel, (intptr_t)local_1ec, param_4);
+    }
+
+    // ── 11. Per-weapon-type particle effects ─────────────────────────────────
+    int   iVar_rand = rand();
+    void* pModel2 = (void*)iVar7;
+
+    // DESVIACION (0.97.20): efectos del item definidos por el server
+    // (Data/Custom/Items/*.json), sobre los huesos que acaba de animar el
+    // render de la pieza.
+    gContentCatalog.RunEquippedEffects((const void*)(uintptr_t)param_4, drawModel, pModel2);
+    // Luminosity = (float)(rand()%30 + 70) * _DAT_00552940
+    float fLum = (float)(iVar_rand % 0x1e + 0x46) * _DAT_00552940;
+    // `Light[3]` de IDA como array real: los 9 cases del switch de abajo lo pasan
+    // como vec3 a CreateSprite (Ghidra lo había separado en TRES escalares
+    // ebp-270h / -26Ch / -268h).
+    float Light[3] = { 0.0f, 0.0f, 0.0f };
+
+
+    // Casos por modelo: 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
+    // 0x214=532, 0x215=533, 0x216=534, 0x221=545, 0x23a=570, 0x25f=607.
+    // DESVIACION (0.97.32): IDA elige por Type, que en vanilla es el modelo
+    // dibujado. Un item con modelo propio guarda en param_6 el modelo de su
+    // comportamiento, y estos efectos usan huesos y offsets de ese modelo:
+    // sobre otra geometría quedan corridos. Se elige por el modelo dibujado;
+    // los efectos de un modelo propio van en su JSON del catálogo.
+    switch (drawModel)
+    {
+    case 0x1a3:  // MODEL_STAFF+10 equivalent — fire particles on bones 0..9
+    {
+        Light[1] = fLum * _DAT_005528b8;
+        afStack_264[3] = 0.0f;
+        afStack_264[4] = 0.0f;
+        afStack_264[5] = 0.0f;
+        Light[2] = fLum * _DAT_005524f4;
+        // IDA: `while ((int)v43 < (int)flt_6970C4C)` es una direccion ABSOLUTA del
+        // binario fuente; aca se usa el rango real dentro de g_BoneScratch:
+        //   base = flt_6970AFC = g_BoneScratch + 0x60 = hueso 2
+        //   fin  = flt_6970C4C                        = hueso 9
+        //   (0xC4C - 0xAFC) / 0x30 = 7 iteraciones -> huesos 2..8
+        float* pfVar10 = (float*)&DAT_06970afc;
+        Light[0] = fLum;
+        for (int nBone = 0; nBone < 7; ++nBone) {
+            afStack_264[0] = 0.4f;
+            afStack_264[1] = 0.4f;
+            afStack_264[2] = 0.4f;
+            BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
+            int r1 = rand() % 3;
+            if (r1 == 0)
+            {
+                int r2 = rand();
+                Equipment_AddSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                             (float)(r2 % 0x168), r1);
+            }
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            pfVar10 += 0xc;
+        }
+
+        unsigned char bVar6 = AsCharacter(param_4)->Object.CurrentAction;
+        if (((bVar6 < 0x0d) || (bVar6 > 0x21)) && ((bVar6 < 0x38) || (bVar6 > 0x3c)))
+        {
+            afStack_264[3] = 0.0f;
+            afStack_264[4] = 0.0f;
+            afStack_264[5] = 0.0f;
+            rand();
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970b2c, afStack_264 + 3, afStack_264, '\x01');
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970afc, afStack_264 + 3, afStack_264 + 6, '\x01');
+            return;
+        }
+        break;
+    }
+
+    case 0x1af:  // MODEL_BOW+18 equivalent — wing trail particles
+    {
+        if ((*(char *)&AsCharacter(param_4)->Object.CurrentAction == 'P') && (gMapManager.GetCurrentMap() != 10))
+        {
+            unsigned int uv = (unsigned int)rand() & 0x80000001u;
+            bool bEven = (uv == 0);
+            if ((int)uv < 0)
+                bEven = ((uv - 1) | 0xfffffffeu) == 0xffffffffu;
+            if (bEven)
+            {
+                Light[0] = 1.0f; Light[1] = 1.0f; Light[2] = 1.0f;
+                afStack_264[3] = 0.0f;
+                afStack_264[4] = 0.0f;
+                afStack_264[5] = 0.0f;
+                BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+                int r1 = rand();
+                afStack_264[6] += (float)(r1 % 0x1e) - _DAT_00552834;
+                int r2 = rand();
+                int iVar8 = 4;
+                local_248 += (float)(r2 % 0x1e) - _DAT_00552834;
+                local_244 += _DAT_005524fc;
+                do {
+                    int r3 = rand();
+                    afStack_264[1] = 0.0f;
+                    afStack_264[2] = AsCharacter(param_4)->Object.Angle[2];
+                    afStack_264[0] = (float)(r3 % 0x3c + 0x96);
+                    Joint_Create(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
+                    Particle_Spawn(0x497, afStack_264 + 6, afStack_264, Light, 0, 1.0f, 0);
+                    iVar8--;
+                } while (iVar8 != 0);
+            }
+        }
+        break;
+    }
+
+    case 0x1d7:  // blue light pulse on bone
+    {
+        Light[1] = fLum * _DAT_005526e8;
+        Light[2] = 0.0f;
+        afStack_264[3] = 0.0f;
+        afStack_264[4] = 0.0f;
+        afStack_264[5] = 0.0f;
+        Light[0] = fLum;
+        BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+        Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+        Light[0] = 0.5f;
+        Light[1] = 0.5f;
+        float fVar15 = (float)sin((double)((float)WorldTime * _DAT_005528e0));
+        Light[2] = 0.5f;
+        Equipment_AddSprite(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
+        return;
+    }
+
+    case 0x1fa:  // orbit sprite loop
+    {
+        Light[0] = fLum * _DAT_005526e4;
+        afStack_264[3] = 0.0f;
+        afStack_264[4] = 0.0f;
+        afStack_264[5] = 0.0f;
+        // Mismo bound absoluto que arriba, aca desde flt_6970ACC:
+        //   (0xC4C - 0xACC) / 0x30 = 8 iteraciones -> huesos 1..8
+        float* pfVar10 = (float*)&DAT_06970acc;
+        Light[1] = fLum * _DAT_005524f4;
+        Light[2] = fLum * _DAT_00552530;
+        for (int nBone = 0; nBone < 8; ++nBone) {
+            BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
+            pfVar10 += 0xc;
+        }
+        return;
+    }
+
+    case 0x214:  // BOW+4
+    case 0x215:  // BOW+5
+    case 0x216:  // BOW+6
+    case 0x221:  // BOW+17
+    {
+        if (drawModel == 0x216)
+        {
+            Light[0] = fLum * _DAT_00552534;
+            int iVar8 = 0x0d;
+            Light[2] = fLum * _DAT_00552530;
+            Light[1] = fLum;
+            do {
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                iVar8++;
+            } while (iVar8 < 0x13);
+            return;
+        }
+        if (drawModel == 0x221)
+        {
+            Light[0] = fLum * _DAT_00552504;
+            int iVar8 = 0x0d;
+            Light[2] = fLum * _DAT_00552530;
+            Light[1] = Light[0];
+            do {
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                iVar8++;
+            } while (iVar8 < 0x13);
+            iVar8 = 5;
+            do {
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                iVar8++;
+            } while (iVar8 < 9);
+            return;
+        }
+        // cases 0x214 and 0x215
+        Light[1] = fLum * _DAT_00552534;
+        Light[2] = fLum * _DAT_005526e4;
+        Light[0] = fLum;
+        Model_BoneParticle(pModel2, 0x4cf, 2, 1.0f, Light, param_4);
+        Model_BoneParticle(pModel2, 0x4cf, 6, 1.0f, Light, param_4);
+        return;
+    }
+
+    case 0x23a:  // MODEL_STAFF+10 alternate — orbit loop on DAT_06970a9c
+    {
+        Light[1] = fLum * _DAT_005528b8;
+        int iVar7_loc = 0;
+        Light[2] = fLum * _DAT_005524f4;
+        Light[0] = fLum;
+        do {
+            afStack_264[0] = 0.4f;
+            afStack_264[3] = (float)iVar7_loc * _DAT_0055284c - _DAT_005524ec;
+            afStack_264[1] = 0.4f;
+            afStack_264[2] = 0.4f;
+            afStack_264[4] = -40.0f;
+            afStack_264[5] = 0.0f;
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970a9c, afStack_264 + 3, afStack_264 + 6, '\x01');
+            int r1 = rand() % 3;
+            if (r1 == 0)
+            {
+                int r2 = rand();
+                Equipment_AddSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                             (float)(r2 % 0x168), r1);
+            }
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            iVar7_loc++;
+        } while (iVar7_loc < 10);
+        return;
+    }
+
+    case 0x25f:  // electric charge effect
+    {
+        Light[0] = fLum * _DAT_00552534;
+        Light[2] = fLum + fLum;
+        afStack_264[3] = 15.0f;
+        afStack_264[4] = -15.0f;
+        afStack_264[5] = 0.0f;
+        Light[1] = Light[0];
+        BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+        Equipment_AddSprite(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
+        Equipment_AddSprite(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
+        return;
+    }
+
+    default:
+        break;
+    }
+
+    return;
+}

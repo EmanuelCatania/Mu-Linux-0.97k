@@ -1,0 +1,155 @@
+// Render_LegacyDamageNumbers.cpp
+// Números de daño flotantes: RenderNumber (0x005120C0) y RenderPoints (0x00479330).
+
+#include "stdafx.h"
+#include "Game/RenderInterpolation.h"
+#include "Game/RenderSnapshots.h"
+#include "Game/FrameLimiter.h"
+#include "globals.h"
+#include "functions.h"
+#include "Net/Net.h"
+
+extern void __cdecl operator_delete(void* ptr);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)
+//
+// Itera el pool DAT_07c80110[100 × 0x70] de damage popups (poblado por
+// CreatePoint en Net_Process case 0x15 / ReceiveAttackDamage). Para cada
+// slot activo llama a RenderNumber con la posición de mundo, el valor, el
+// color del slot y alpha = lifetime * 0.4.
+//
+// Slot layout (per IDA CreatePoint):
+//   +0x00 byte  active (1 if displayed)
+//   +0x04 int   Value (damage to display; -1 = MISS)
+//   +0x0c float scale (text size — typically 15 normal, 50 special)
+//   +0x10 float pos.x (world)
+//   +0x14 float pos.y (world)
+//   +0x18 float pos.z (world, +140 elevation pre-applied)
+//   +0x1c float color.r
+//   +0x20 float color.g
+//   +0x24 float color.b
+//   +0x38 float frame counter (init 0, MovePoints increments)
+//   +0x48 float lifetime (init 10.0, MovePoints decrements 0.3/tick)
+extern "C" double __cdecl RenderNumber2D(float x, float y, int Num,
+                                          float Width, float Height);
+
+extern void __cdecl Camera_ProjectWorldToScreen(float*, int*, int*);   // World_ToScreen
+extern "C" // ─────────────────────────────────────────────────────────────────────────────
+// RenderNumber  @ 0x005120C0  — dibuja un número de daño en el MUNDO.
+// RenderPoints  @ 0x00479330  — recorre el pool y llama al anterior.
+//
+// El binario no proyecta a mano: `RenderNumber` emite el número como sprites 3D
+// con `RenderSpriteUV` (0x511FB0), que ya transforma por la CameraMatrix. Por
+// eso el call site está dentro del bloque 3D, entre BeginSprite y glPopMatrix.
+// ─────────────────────────────────────────────────────────────────────────────
+// (RenderSpriteUV y GL_DisableDepthTest ya están declarados en functions.h)
+
+extern "C" void __cdecl RenderNumber(float Position[3], int Num,
+                                     float Color[3], float Alpha, float Scale);
+void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
+                          float Alpha, float Scale)
+{
+    float p[3]   = { Position[0], Position[1], Position[2] };
+    float UV[4][2];
+    float Light[3][4];
+
+    // Patrón cíclico de los 3 componentes, tal cual IDA L26-42.
+    Light[0][0] = Color[0]; Light[0][1] = Color[1];
+    Light[0][2] = Color[2]; Light[0][3] = Color[0];
+    Light[1][0] = Color[1]; Light[1][1] = Color[2];
+    Light[1][2] = Color[0]; Light[1][3] = Color[1];
+    Light[2][0] = Color[2]; Light[2][1] = Color[0];
+    Light[2][2] = Color[1]; Light[2][3] = Color[2];
+
+    if (Num == -1) {
+        // MISS: sprite propio, región (0..0.125, 0.53125..1.0), tamaño 45x20.
+        // Constantes leídas de los QWORD del decompile.
+        UV[0][0] = 0.0f;   UV[0][1] = 1.0f;
+        UV[1][0] = 0.125f; UV[1][1] = 1.0f;
+        UV[2][0] = 0.125f; UV[2][1] = 0.53125f;
+        UV[3][0] = 0.0f;   UV[3][1] = 0.53125f;
+        RenderSpriteUV(1, p, 45.0f, 20.0f, UV, Light, Alpha);
+        return;
+    }
+
+    char Text[32];
+    std::sprintf(Text, "%d", Num);
+    const int len = (int)strlen(Text);
+    if (len <= 0) return;
+
+    const float v14 = (float)len * Scale * 0.125f;
+    p[0] = p[0] - (float)len * 5.0f - v14;
+    p[1] = p[1] - v14;
+
+    // DESVIACION (DLL Camera3D.cpp, MyRenderNumber): el binario avanza en
+    // diagonal (+0.5, +0.5) porque la cámara mira siempre a -45 grados; con la
+    // cámara 3D el avance sigue el giro.  Con -45 da exactamente el original.
+    const float yaw = CameraAngle[2] * 0.017453292f;
+    const float spacing = Scale * 0.70710678f;
+    const float stepX = spacing * cosf(yaw);
+    const float stepY = -spacing * sinf(yaw);
+    for (int i = 0; i < len; ++i) {
+        const float u = (float)(Text[i] - '0') * 0.0625f;
+        // V va de 0.5 (abajo) a 0.0 (arriba) — invertida respecto de la
+        // intuición; así lo hace el binario y es lo que deja los dígitos
+        // derechos.
+        UV[0][0] = u;            UV[0][1] = 0.5f;
+        UV[1][0] = u + 0.0625f;  UV[1][1] = 0.5f;
+        UV[2][0] = u + 0.0625f;  UV[2][1] = 0.0f;
+        UV[3][0] = u;            UV[3][1] = 0.0f;
+        RenderSpriteUV(1, p, Scale, Scale, UV, Light, Alpha);
+        p[0] += stepX;
+        p[1] += stepY;
+    }
+}
+
+// RenderPoints — port FIEL de IDA 0x479330. Los 4 args son un artefacto del
+// call site anterior; se ignoran.
+void __cdecl RenderPoints(int, int, int, int)
+{
+    EnableAlphaTest(true);
+    GL_DisableDepthTest();                    // DisableDepthTest
+
+    for (int i = 0; i < static_cast<int>(kDamagePointCount); ++i) {
+        DamagePoint& point = DAT_07c80110[i];
+        if (!point.Active) continue;
+
+        RenderPose pose;
+        memcpy(pose.position, point.Position, sizeof(pose.position));
+        pose.alpha = point.LifeTime * 0.40000001f;
+        pose.scale = point.Scale;
+        // DESVIACION: la misma fase visual que cámara/entidades, sin tocar su tick.
+        if (RenderInterpolation_Alpha()<1) {
+            RenderPosePair pair;
+            if (RenderSnapshots_DamagePoint(i, pair))
+                pose = RenderSnapshots_Interpolate(pair, RenderInterpolation_Alpha());
+        }
+        RenderNumber(pose.position, point.Value, point.Color,
+                     pose.alpha, pose.scale);
+    }
+}

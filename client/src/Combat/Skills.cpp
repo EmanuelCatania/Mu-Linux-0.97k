@@ -1,0 +1,433 @@
+// Skills.cpp
+// PacketHandler_0x19 @ 0x0042bca0  — skill/magic effect dispatch (889 lines)
+// PacketHandler_0x16 @ 0x0042db60  — kill confirm + EXP gain (582 lines)
+//
+// Packet 0x19 format: [C1][len][0x19][skill_type][caster_hi][caster_lo][target_hi][target_lo][damage_hi][damage_lo]
+// Packet 0x16 format: [C1][len][0x16][caster_hi][caster_lo][target_hi][target_lo][exp_bytes...]
+//
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
+//   c->MonsterIndex (+0x2EB) es el tipo de Monster.txt (0xFF para el heroe):
+//   el `!= 77` de mas abajo compara contra un TIPO, no contra la letra 'M'.
+//   c->SkillSuccess (+0x301) es el bit 15 del target del paquete: el server
+//   lo pone con `target[0] |= type * 0x80` (CSkillManager::GCSkillAttackSend)
+//   e IDA 0x42BCA0 hace `Success = TargetKey >> 15`.
+//
+// Helper functions identified:
+//   FUN_004742b0  = CreateTeleportBegin — canonical mapping; the port's `Entity_WeaponHit`
+//                   helper has no verified FUN mapping.
+//   SetPlayerBow (nombre real en IDA; el alias
+//                   `Entity_ResetToWalk` es inventado del port).  Toma el
+//                   PUNTERO a la entidad, no el indice.
+//   SetPlayerMagic  = Entity_SelectTarget_Player — set caster's attack target to player entity
+//   SetPlayerDie (per Entity/Character_Motion.cpp); the port's `Entity_TeleportEnd`
+//                   helper has no verified FUN mapping.
+//   FUN_004792c0  = CreatePoint (per Entity_LegacyTeleport.cpp); the port's `Entity_TeleportAnim`
+//                   helper has no verified FUN mapping.
+//   UIChatLogWindow_AddText  = UI_ShowExpGainOverlay — draws +EXP floating text on screen
+//   FUN_00474310  = CreateTeleportEnd (per Entity_LegacyTeleport.cpp); the port's
+//                   `Entity_MeleeAttackStart` helper has no verified FUN mapping.
+//
+// Skill type table (byte[3] in packet 0x19):
+//   0x01 / 0x11  Arrow / basic ranged  — UI 0x3C, reset walk if mid-attack, select target
+//   0x03         Same as 0x01 with extra anim reset check
+//   0x06         Weapon sparkle only   — Entity_WeaponHit(caster)
+//   0x0F         Melee + ranged hit    — Entity_WeaponHit(caster) + Entity_MeleeAttackStart(caster); UI 0x66
+//   0x10         Magic (generic)       — if MonsterIndex != 77: UI 0x51, Entity_SelectTarget_Player
+//   0x13         Skill anim 0x38       — UI 0x52
+//   0x14         Skill anim 0x39       — UI 0x53
+//   0x15         Skill anim 0x3A       — UI 0x54
+//   0x17         Combo hit             — entity[+0x303]++, anim=0x3C or 0x29, UI 0x55
+//   0x18 / 0x34  Cancel / reset        — Entity_ResetToWalk(caster)
+//   0x1A..0x24   Magic variants        — same as 0x10 (MonsterIndex check)
+//   0x2B         Skill anim 0x43
+//   0x30 (48)    Greater Life (Swell Life) — efecto 1150/sub1 con owner sobre
+//                el objetivo (aura dorada), target[+120]|=0x10, anim=63
+//   0x31         Anim 0x40 or 0x41     — depends on World
+//   0x33         Ice buff on target    — Particle 0xBE×2, target[+0x2BC_byte=0xBB]=0, target[+0x1E]|=0x20
+//   0x37         Lightning buff        — Particle 0x4FA, UI 0x68, target[+0x1E]|=0x40
+//   0x38         Skill anim 0x51       — UI 0x55
+//
+// Common tail (most cases jump here before return):
+//   entity_caster[+0x2F5] = 1   // mark skill as active/landed
+
+#include "stdafx.h"
+#include "../Combat/Skills.h"
+
+
+// Forward declarations for functions identified in decompilation
+extern "C" void __cdecl CreateTeleportBegin(OBJECT* entity); // 0x004742b0
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);   // 0x00474310
+extern void Entity_ResetToWalk(intptr_t entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
+extern void Entity_TeleportEnd(intptr_t entity_idx);             // Legacy helper; no verified FUN mapping.
+extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
+extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
+extern void Entity_MeleeAttackStart(intptr_t entity_idx);        // Legacy helper; no verified FUN mapping.
+extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
+
+// SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
+// the walking variant when a path is active.
+static void SetPlayerBow97k(BYTE* entity)
+{
+    if (!entity) return;
+    const short leftType = AsCharacter(entity)->Weapon[1].Type;
+    if ((leftType >= 528 && leftType < 535) || leftType == 545) {
+        SetAction(AsObject(entity),
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 46 : 48);
+        return;
+    }
+    const short rightType = AsCharacter(entity)->Weapon[0].Type;
+    if ((rightType >= 536 && rightType < 543) || rightType == 544) {
+        SetAction(AsObject(entity),
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 47 : 49);
+    }
+}
+
+// Skills_PacketHandler @ 0042BCA0 LABEL_107/LABEL_98.  A broadcast only
+// animates its remote caster; it does not invoke a target-selection helper and
+// it never replays the local hero's cast animation.
+static void AnimateRemoteSkillCaster97k(BYTE* caster)
+{
+    if (!caster || caster == (BYTE*)DAT_07abf5d8)
+        return;
+    if (*(WORD*)(caster + 2) == 390)
+        SetPlayerMagic(AsCharacter(caster));
+    else
+        SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
+    *(DWORD*)&((OBJECT*)(uintptr_t)(caster))->AnimationFrame = 0;
+}
+
+// External data
+extern BYTE* g_EntityBase;   // DAT_07abf5d0  legacy alias (may be NULL)
+extern BYTE* g_CharData;     // DAT_07cf1ffc
+
+// g_EntityBase is never wired to the actual entity array — the real
+// base lives in DAT_07abf5d0 (set by WinMain).
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
+#define STRIDE       CHARACTER_STRIDE
+
+// ============================================================
+// PacketHandler_0x19  @ 0x0042bca0
+// Server → Client: skill/magic effect
+// Packet: [C1][len][19][skill_type][caster_hi][caster_lo][target_hi][target_lo][dmg_hi][dmg_lo]
+// ============================================================
+// NOTE: Lines 0–360 are the standard XOR handshake / ACK boilerplate shared with
+//       0x1E and 0x12 — identical pattern, omitted here (see Net_Process.cpp).
+//       Real logic begins at decompile offset ~360.
+void PacketHandler_0x19(BYTE* pkt)
+{
+    // --- XOR ACK block (lines 0-360) omitted — see Net_Process.cpp boilerplate ---
+
+    // Decode caster and target IDs
+    int caster_raw  = (pkt[4] << 8) | pkt[5];
+    int target_raw  = (pkt[6] << 8) | pkt[7];
+    int skill_type  = pkt[3];
+
+    int caster_id   = caster_raw & 0x7FFF;
+    int target_id   = target_raw & 0x7FFF;
+    // Bit 15 del target = flag de EXITO del skill (ver la nota de +0x301 arriba).
+    int skill_ok    = (target_raw >> 15) & 1;
+
+    int caster_idx  = Entity_FindById(caster_id);
+    int target_idx  = Entity_FindById(target_id);
+
+    // Trace at the same point as IDA's LABEL_81, before queue state changes.
+    if (skill_type == 3 || skill_type == 7) {
+    }
+
+    if (caster_idx >= 400 || target_idx >= 400)
+        return; // 0042BCA0 only enters its state/animation path with a resolved target.
+
+    BYTE* caster = ENTITY(caster_idx);
+
+    // IDA 0x42BCA0 L115: `AttackPlayer = Index` (el slot del CASTER), justo
+    // tras resolver el target.  Lo lee ReceiveAttackDamage para orientar el
+    // destello de bloqueo.
+    AttackPlayer = caster_idx;
+
+    // 0042BCA0 LABEL_81: before its per-skill animation switch, the original
+    // records the received skill in the character's visual-effect queue.  The
+    // per-frame MoveCharacter dispatcher consumes exactly c+770 once c+757
+    // reaches its attack-frame limit; without this assignment it only sees
+    // stale/zero data and therefore plays the pose without creating the spell
+    // effect.
+    AsCharacter(caster)->Skill = (BYTE)skill_type;
+
+    AsCharacter(caster)->TargetCharacter = (short)target_idx;
+    // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
+    // server MuEmu pone ese bit justamente cuando el skill tuvo exito
+    // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`). Lo consumen el aura
+    // de Greater Defense (MoveCharacter case 27), el buff de Greater Damage
+    // (case 28) y el congelamiento del Ice Arrow (0x33) y de Lightning (0x37).
+    AsCharacter(caster)->SkillSuccess = (BYTE)(skill_ok != 0);
+
+    if (skill_type == 3 || skill_type == 7) {
+    }
+
+    BYTE* target = (target_idx < 400) ? ENTITY(target_idx) : nullptr;
+
+    // IDA: Skills_PacketHandler (0x0042BCA0).
+    // DESVIACION (fix del DLL, Patchs.cpp 0x0042C417): omitir el giro cuando caster y objetivo son el mismo personaje.
+    if (caster != target && target != nullptr &&
+        skill_type != 6 && skill_type != 15 && AsObject(target)->Visible != 0) {
+        AsCharacter(caster)->Object.Angle[2] = CreateAngle(
+            AsCharacter(caster)->Object.Position[0], AsCharacter(caster)->Object.Position[1],
+            AsObject(target)->Position[0], AsObject(target)->Position[1]);
+    }
+
+    // -------------------------------------------------------
+    // Skill type dispatch
+    // -------------------------------------------------------
+    switch (skill_type)
+    {
+    // IDA LABEL_107: these six projectile/magic IDs share the exact
+    // SetPlayerMagic/SetPlayerAttack path before the common active tail.
+    case 0x01:  // 1 Poison
+    case 0x02:  // 2 Meteorite
+    case 0x04:  // 4 Fire Ball
+    case 0x07:  // 7 Ice
+    case 0x0B:  // 11 Power Wave
+    case 0x11:  // 17 Energy Ball
+    {
+        // UI event 0x3C = ranged hit indicator
+        // FUN_00413900(0x3C, caster_idx) — UI dispatch
+        //
+        // No llamar acá a Entity_ResetToWalk: `LABEL_107` (0042BCA0 L178-184) solo
+        // hace `SetPlayerMagic(sc)` para las entidades que no son el heroe; la llama
+        // `SetPlayerBow` en los cases 0x18/0x34/0x33. (Además espera un PUNTERO de
+        // entidad, no el índice.)
+        AnimateRemoteSkillCaster97k(caster);
+        goto common_tail;
+    }
+
+    case 0x03:  // 3 Lightning
+    {
+        // IDA plays sound 60, then interrupts the four hit/recoil actions on
+        // the target before entering LABEL_107 (the shared magic path).
+        PlayBuffer(60, 0, 0);
+        if (target != nullptr) {
+            const BYTE targetAction = AsObject(target)->CurrentAction;
+            if (targetAction == 0x8B || targetAction == 0x8C ||
+                targetAction == 0x85 || targetAction == 0x87) {
+                SetPlayerStop(AsCharacter(target));
+            }
+        }
+        AnimateRemoteSkillCaster97k(caster);
+        goto common_tail;
+    }
+
+    case 0x06:  // 6 Teleport
+    {
+        // Unlike the other cases, IDA returns immediately after the
+        // teleport-begin animation rather than marking the common skill tail.
+        CreateTeleportBegin(AsObject(caster));
+        return;
+    }
+
+    case 0x0F:  // 15 Teleport Party
+    {
+        if (target != nullptr)
+            CreateTeleportBegin(AsObject(target));
+        CreateTeleportEnd(AsObject(caster));
+        // IDA 0x42BCA0 L198-201: `if (sc == Hero) Teleport = 0;`
+        // (Teleport = 0x05826D14 = Teleport).  Faltaba: el flag quedaba
+        // armado despues de terminar el teleport propio.
+        if (caster == (BYTE*)DAT_07abf5d8)
+            Teleport = 0;
+        PlayBuffer(102, AsObject(caster), 0);
+        return;
+    }
+
+    case 0x10:  // 16 Mana Shield
+    {
+        // Case 0x10 enters LABEL_98 directly: remote magic animation, with
+        // no magic-hit sound.  It is deliberately separate from 0x1A..0x24.
+        AnimateRemoteSkillCaster97k(caster);
+        goto common_tail;
+    }
+
+    case 0x1A:  // 26 Heal
+    case 0x1B:  // 27 Greater Defense
+    case 0x1C:  // 28 Greater Damage
+    case 0x1E:  // 30 Summon Goblin
+    case 0x1F:  // 31 Summon Stone Golem
+    case 0x20:  // 32 Summon Assassin
+    case 0x21:  // 33 Summon Elite Yeti
+    case 0x22:  // 34 Summon Dark Knight
+    case 0x23:  // 35 Summon Bali
+    case 0x24:  // 36 Summon Soldier
+    {
+        // 0042BCA0 first plays 81 unless the channel state is 77, then
+        // enters LABEL_98 for the remote caster animation.
+        if (AsCharacter(caster)->MonsterIndex != 77)
+            PlayBuffer(81, 0, 0);
+
+        // LABEL_98 applies this animation to remote casters only.
+        if (caster != (BYTE*)DAT_07abf5d8)
+        {
+            // FUN_00413900(0x51, caster_idx) — UI event 0x51 = magic hit
+            AnimateRemoteSkillCaster97k(caster);
+        }
+        goto common_tail;
+    }
+
+    case 0x13:  // 19 Falling Slash
+    {
+        SetAction(AsObject(caster), skill_type + 37);
+        PlayBuffer(82, 0, 0);
+        goto common_tail;
+    }
+
+    case 0x14:  // 20 Lunge
+    {
+        SetAction(AsObject(caster), skill_type + 37);
+        PlayBuffer(83, 0, 0);
+        goto common_tail;
+    }
+
+    case 0x15:  // 21 Uppercut
+    {
+        SetAction(AsObject(caster), skill_type + 37);
+        PlayBuffer(84, 0, 0);
+        goto common_tail;
+    }
+
+    case 0x16:  // 22 Cyclone
+    {
+        // ReceiveMagic case 0x16: SetAction(sc, 0x16 + 37), then sound 85.
+        SetAction(AsObject(caster), skill_type + 37);
+        PlayBuffer(85, 0, 0);
+        goto common_tail;
+    }
+
+    case 0x17:  // 23 Slash
+    {
+        // The alternating action is controlled by the caster-local counter
+        // at +771, not by the current map/state.
+        SetAction(AsObject(caster),
+                     (caster[EntityOffset(771)] & 1) ? 41 : skill_type + 37);
+        caster[EntityOffset(771)] += 1;
+        PlayBuffer(85, 0, 0);
+        goto common_tail;
+    }
+
+    case 0x18:  // 24 Triple Shot
+    case 0x34:  // 52 Penetration
+    {
+        SetPlayerBow97k(caster);
+        goto common_tail;
+    }
+
+    case 0x2B:  // 43 Death Stab
+    {
+        SetAction(AsObject(caster), 67);
+        if (caster != (BYTE*)DAT_07abf5d8 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
+            *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
+        goto common_tail;
+    }
+
+    case 0x2F:  // 47 Impale
+    {
+        SetAction(AsObject(caster), 66);
+        goto common_tail;
+    }
+
+    case 0x30:  // 48 Greater Life (Swell Life)
+    {
+        if (target != nullptr)
+        {
+            // Solo un buff NUEVO crea el efecto 1150/sub1; si ya estaba
+            // bufado se refresca el flag y se conserva el efecto vivo.
+            // Ese efecto es el que spawnea cada tick las particulas 1150/sub4
+            // que se cuelgan de los huesos del personaje (MoveParticles).
+            if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
+                DeleteEffect(1150, (intptr_t)target, 1);
+                CreateEffect(1150, (float*)(target + 16),
+                             (float*)(target + 28), (float*)(target + 232),
+                             (float*)1, (float*)target, (float*)-1, nullptr, 0);
+            }
+            *(DWORD*)(target + 120) |= 0x10;
+        }
+        SetAction(AsObject(caster), 63);
+        goto common_tail;
+    }
+
+    case 0x31:  // 49 Fire Breath
+    {
+        SetAction(AsObject(caster),
+                     (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
+        goto common_tail;
+    }
+
+    case 0x32:  // 50 Monster Area Attack
+        goto common_tail;
+
+    case 0x33:  // 51 Ice Arrow
+    {
+        SetPlayerBow97k(caster);
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
+        {
+            DeleteEffect(190, (intptr_t)target, 1);
+            float angle[3] = {
+                AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
+            };
+            CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
+                         (float*)1, (float*)target, (float*)-1, nullptr, 0);
+            angle[2] += 180.0f;
+            CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
+                         (float*)2, (float*)target, (float*)-1, nullptr, 0);
+            // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
+            target[EntityOffset(748)] = 0;
+            SetPlayerStop(AsCharacter(target));
+            // Set ice status bit
+            *(DWORD*)(target + 120) |= 0x20;
+        }
+        goto common_tail;
+    }
+
+    case 0x37:  // 55 Fire Slash
+    {
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
+        {
+            DeleteEffect(1274, (intptr_t)target, 0);
+            float light[3] = { 1.0f, 1.0f, 1.0f };
+            CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
+                         nullptr, (float*)target, (float*)-1, nullptr, 0);
+            // Set lightning status bit
+            PlayBuffer(104, AsObject(target), 0);
+            *(DWORD*)(target + 120) |= 0x40;
+        }
+        return;
+    }
+
+    case 0x38:  // 56 Power Slash
+    {
+        SetAction(AsObject(caster), 81);
+        PlayBuffer(85, 0, 0);
+        goto common_tail;
+    }
+
+    default:
+        return;
+    }
+
+common_tail:
+    // Common tail: mark skill as active on caster
+    // Almost all skill_type cases jump here
+    AsCharacter(caster)->SkillStage = 1;
+}
+
+
+// ============================================================
+// PacketHandler_0x16 — CÓDIGO MUERTO, sin callers.
+//
+// No es un port de 0x0042DB60: el raw `0042DB60_ReceiveDieExp.c` es la
+// variante chica del 0x9C (Key/Exp/Damage en +3..+8, SetPlayerDie o esferas
+// de EXP, y el aviso GlobalText[486]); esta función interpretaba el 0x16 como
+// "teleport begin/end + kill confirm", que no existe en el binario.
+// Además escribe `*(BYTE*)(target + 0x2FD) = 1` (dead_flag) sobre un índice
+// sin validar por abajo: no reconectarla.
+//
+// El port fiel vive inline en `Net_Process.cpp`, case 0x16.
+// (MuEmu no manda este opcode: usa el 0x9C / PMSG_REWARD_EXPERIENCE_SEND.)
+// ============================================================

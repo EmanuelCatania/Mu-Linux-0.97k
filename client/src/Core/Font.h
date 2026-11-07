@@ -1,0 +1,96 @@
+#pragma once
+// Font.h — CFont: selección, medición y raster de texto.
+// Win32 conserva GDI; SDL3 usa FreeType en los dos caminos de render.
+//
+// Reúne lo que en el binario son globales sueltas:
+//   IDA: g_hFont (0x055CA00C), g_hFontBold (0x055CA010), g_hFontBig (0x055CA014)
+//   IDA: m_hFontDC (0x055C9FEC) y ppvBits (0x055C9E4C), el DC de memoria y los
+//        bits del DIB donde GDI rasteriza el texto antes de subirlo como textura.
+// Se usan con gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG),
+// gFont.GetTextDC() y gFont.GetTextBits().
+
+#include "Platform/PlatformHeaders.h"
+#include <string>
+#include <vector>
+
+namespace TextEngine { struct ShapedText; }
+namespace GlyphAtlas { struct Bitmap; }
+
+enum eFontTypes {
+    FONT_NORMAL = 0,   // texto común
+    FONT_BOLD,         // títulos y texto destacado
+    FONT_BIG,          // el doble de alto, bold (nombre del modal de trade, timers)
+    MAX_FONT_TYPES
+};
+
+class CFont {
+public:
+    // Crea las tres fuentes. Si Config.ini trae la sección [Font], se usa como
+    // en el DLL (ver CUserSettings); si no, como el binario: Arial con el alto
+    // según el ancho de la ventana (WinMain, paso 15).
+    void Create(DWORD windowWidth);
+
+    // DESVIACION (DLL Font.cpp ReloadFont): recrea las tres fuentes con la
+    // configuración y la resolución actuales.  La superficie de texto no
+    // cambia: su tamaño sale de FontInput.tga.
+    void Reload(DWORD windowWidth);
+
+    // DESVIACION (DLL Font.cpp GetFonts): familias instaladas, ordenadas, para
+    // el menú de opciones.  Se enumeran una vez.
+    int GetFaceCount();
+    const char* GetFaceName(int index);
+    int FindFace(const char* name);
+
+    // Libera las fuentes y la superficie de texto (IDA DestroyWindow 0x4145C0).
+    void Release();
+
+    // IDA sub_50F5F0: DIB de 24 bits (width x height, de arriba hacia abajo) y
+    // DC de memoria compatible con `hdc`, con fondo transparente.
+    void CreateTextSurface(HDC hdc, LONG width, LONG height);
+
+    HFONT GetFont(eFontTypes type) const
+    {
+        return (type >= 0 && type < MAX_FONT_TYPES) ? m_Fonts[type] : nullptr;
+    }
+    int GetHeight() const { return m_Height; }
+    // IDA: RenderBoolean (0x00480E00) limita también el estado compartido.
+    void LimitHeight(int maximum) { if (m_Height > maximum) m_Height = maximum; }
+
+    HDC   GetTextDC()   const { return m_hTextDC; }
+    void* GetTextBits() const { return m_pTextBits; }
+
+    // Adaptadores de la selección legacy; GDI en Win32, FreeType en SDL3.
+    HGDIOBJ SelectFont(HDC dc, HGDIOBJ font);
+    HFONT CurrentFont(HDC dc) const;
+    BOOL MeasureText(HDC dc, LPCSTR text, int count, SIZE* size);
+    BOOL MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size);
+    BOOL TextMetrics(HDC dc, TEXTMETRICA* metrics);
+    BOOL DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count);
+    // Win32: bitmaps de los glifos `first..first+count-1` de la fuente
+    // seleccionada, como los arma wglUseFontBitmaps (GetGlyphOutline GGO_BITMAP).
+    BOOL BuildGlyphs(HDC dc, unsigned first, unsigned count, GlyphAtlas::Bitmap* out);
+    void BeginTextMask();
+    void SetMaskColor(DWORD color);
+    // SDL3: el texto 1252 ya armado por el layout Unicode (orden visual,
+    // respaldo y shaping). Nulo en el build GDI, que usa BuildGlyphs.
+    const TextEngine::ShapedText* Shape(HDC dc, LPCSTR text, int count);
+    unsigned Generation() const { return m_Generation; }
+
+private:
+    void CreatePortableFonts(DWORD windowWidth);
+    int SelectedFont(HDC dc) const;
+    DWORD m_MaskColor = 0xffffff;
+    int m_SelectedFont = FONT_NORMAL;
+    unsigned m_Generation = 0;
+    int m_SurfaceWidth = 0;
+    int m_SurfaceHeight = 0;
+    std::vector<unsigned char> m_Mask;
+    int m_Height = 0; // IDA: FontHeight (0x07D78080)
+    HFONT   m_Fonts[MAX_FONT_TYPES] = {};
+    HDC     m_hTextDC     = NULL;
+    HBITMAP m_hTextBitmap = NULL;
+    void*   m_pTextBits   = nullptr;
+    std::vector<std::string> m_Faces;
+};
+
+extern CFont gFont;

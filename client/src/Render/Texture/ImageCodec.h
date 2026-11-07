@@ -1,0 +1,28 @@
+#pragma once
+#include <cstdio>
+#include <cstddef>
+
+namespace ImageCodec {
+enum class Format { Jpeg, Tga32 };
+struct Image {
+    unsigned char* pixels = nullptr;
+    int width = 0, height = 0, channels = 0;
+    Image() = default;
+    ~Image();
+    Image(const Image&) = delete;
+    Image& operator=(const Image&) = delete;
+};
+// FILE ownership stays with the caller. prefix is relative to the file start.
+// TGA retains the client's raw 32-bit, bottom-up convention, including its
+// rejection of 24-bit assets. Failure leaves the destination unchanged.
+bool Decode(FILE* file, int prefix, Format format, int maxSize, Image& out);
+int PaddedExtent(int size, int maxSize);
+// Igual que Decode, desde memoria. `data` necesita 2 bytes de capacidad libres
+// después de `length` (el JPEG sin marcador final se completa ahí).
+bool DecodeBuffer(unsigned char* data, size_t length, Format format, int maxSize, Image& out);
+bool DecodePngBuffer(const unsigned char* data, size_t length, int channels, int maxSize, Image& out);
+// PNG del pack HD, con `channels` canales (3 o 4), filas tal como están en el archivo.
+bool DecodePng(FILE* file, int channels, int maxSize, Image& out);
+// Framebuffer is RGB, bottom-up. Writes through the caller's filesystem FILE.
+bool WriteJpeg(FILE* file, int width, int height, const void* framebuffer, int quality);
+}

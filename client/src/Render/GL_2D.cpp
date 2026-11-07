@@ -1,0 +1,237 @@
+// GL_2D.cpp
+// 2D overlay rendering via gluOrtho2D + GL_TRIANGLE_FAN (glBegin(6)).
+// NOTA: glBegin(6) es GL_TRIANGLE_FAN, no GL_TRIANGLE_STRIP (confusion previa en comentarios).
+//
+// BeginBitmap @ 0x005123c0 — GL_Begin2D
+// EndBitmap @ 0x005124b0 — GL_End2D
+// RenderColor @ 0x005124c0 — GL_DrawRect
+// FUN_005125a0 @ 0x005125a0 — GL_DrawTexture
+// FUN_00511c10 @ 0x00511c10 — GL_DrawBillboard
+//
+// Globals used:
+//   DAT_0056156c / DAT_00561570 — viewport width / height
+//   DAT_00561554               — perspective FOV angle
+//   DAT_0056154c / DAT_00561550 — near / far clip planes
+
+#include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
+
+
+// FUN_005123C0 @ 0x005123C0 — GL_Begin2D
+// Sets up a 2D orthographic projection over the current viewport.
+// Calls GL_DisableDepthTest to configure GL state for 2D (disable depth, etc.).
+void GL_Begin2D(void)
+{
+  // DAT_00561554/4c/50 son DWORDs que ALMACENAN bits de float (FOV/near/far).
+  // El decompile de Ghidra los castea como (double)DWORD (interpretando como int)
+  // → 45.0f bit-pattern (0x42340000 = 1110704128) daría FOV=1.1e9 → matriz
+  // degenerada (NaN). Leer como float via puntero float*.
+  float fov  = *(float*)&DAT_00561554;
+  float near_ = *(float*)&DAT_0056154c;
+  float far_ = *(float*)&DAT_00561550;
+  // Defensa: si el bloque init no corrió aún, fallback a valores razonables.
+  if (!(fov > 0.0f && fov < 180.0f))   fov   = 45.0f;
+  if (!(near_ > 0.0f))                  near_ = 10.0f;
+  if (!(far_ > near_))                  far_  = 10000.0f;
+  // DESVIACION (Fase 4, pantalla ancha): el viewport es toda la ventana y el
+  // ortho se corre a la izquierda `off` píxeles, así la interfaz (en
+  // coordenadas lógicas desde 0) queda centrada y lo que se dibuje en los
+  // costados (x negativo o pasado el ancho lógico) también se ve.
+  DWORD vw = gWindow.GetRealWidth() ? gWindow.GetRealWidth() : 640;
+  DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
+  const int off = gWindow.GetUiOffsetX();
+
+  // DESVIACION R4h: el productor entrega dimensiones y perspectiva; el
+  // backend aplica la entrada 2D sin imponer blend, niebla ni escritura.
+  if(Materials::BeginOverlay({vw,vh,off,fov,near_,far_}))return;
+
+  // Desviación (como el 5.2, ZzzOpenglUtil.cpp:1117): el 0.97k empuja la 1ª
+  // matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
+  // dejando el balance dependiente del modo actual.  Acá se empuja explícitamente
+  // PROJECTION luego MODELVIEW; junto con GL_End2D balancea exacto
+  // (1 PROJECTION + 1 MODELVIEW).
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
+  Gfx::Viewport(0, 0, vw, vh);
+  Gfx::Perspective((double)fov, (double)vw / (double)vh, (double)near_, (double)far_);
+  Gfx::LoadIdentity();
+  Gfx::Ortho2D(-(double)off, (double)vw - (double)off, 0, (double)vh);
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
+  GL_DisableDepthTest();
+  return;
+}
+
+
+// FUN_005124B0 @ 0x005124B0 — GL_End2D
+// Pops both matrix stacks pushed by GL_Begin2D.
+void GL_End2D(void)
+{
+  if(Materials::EndOverlay())return;
+  // Desviación (5.2 source ZzzOpenglUtil.cpp:1136): el 0.97k original hace
+  // `glPopMatrix(); glPopMatrix();` SIN cambiar de modo → ambos pops caen sobre
+  // MODELVIEW y PROJECTION (que BeginBitmap empujó) nunca se popea → acumula
+  // +1/frame → GL_STACK_OVERFLOW (0x503), y EndOpengl, al popear MODELVIEW de
+  // nuevo, genera GL_STACK_UNDERFLOW (0x504).  Acá se popea explícito
+  // 1 PROJECTION + 1 MODELVIEW, balanceando exacto con BeginBitmap.
+  // NOTA vs 5.2: 5.2 popea MODELVIEW→PROJECTION (queda en modo PROJECTION).
+  // Acá popeamos PROJECTION→MODELVIEW para DEJAR el modo en MODELVIEW, porque
+  // nuestro EndOpengl (0.97k IDA) asume MODELVIEW como modo activo de entrada
+  // (su 1er glPopMatrix es sobre el modo actual).  Balance idéntico (1+1).
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PopMatrix();
+  return;
+}
+
+
+// FUN_005124C0 @ 0x005124C0 — GL_DrawRect
+// Draws a 2D filled rectangle (no texture) using GL_TRIANGLE_FAN (glBegin(6)).
+// Vertices TL, BL, BR, TR forman un abanico (fan) con v0=TL como pivote:
+//   tri1 = (TL, BL, BR), tri2 = (TL, BR, TR).
+// Coordinates are in screen pixels; Y is flipped relative to viewport height.
+// param_1: x,  param_2: y,  param_3: width,  param_4: height
+//
+// El original usa un array contiguo de 8 floats en stack, que Ghidra partió en
+// `local_20[5] + local_c + local_8 + local_4`; el walker
+// `for(i=0;i<4;i++) { glVertex2f(*p, p[1]); p+=2; }` asume contigüidad, así
+// que acá es un float[8] explícito.
+void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4)
+{
+  float verts[8];   // 4 vertices × 2 floats = 8
+
+  GL_SetAlphaTest('\0');
+  float x      = (float)Screen_ToGLX(param_1);
+  float y_off  = (float)Screen_ToGLY(param_2);
+  float w      = (float)Screen_ToGLX(param_3);
+  float h      = (float)Screen_ToGLY(param_4);
+  float y_top    = (float)gWindow.GetHeight() - y_off;
+  float y_bottom = y_top - h;
+
+  verts[0] = x;       verts[1] = y_top;     // TL
+  verts[2] = x;       verts[3] = y_bottom;  // BL
+  verts[4] = x + w;   verts[5] = y_bottom;  // BR
+  verts[6] = x + w;   verts[7] = y_top;     // TR
+
+  BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
+  for (int i = 0; i < 4; ++i) {
+      BufferedDraw::Vertex2f(verts[i*2 + 0], verts[i*2 + 1]);
+  }
+  BufferedDraw::End();
+}
+
+
+// FUN_005125A0 @ 0x005125A0 — GL_DrawTexture
+// Draws a textured 2D quad (GL_TRIANGLE_FAN, glBegin(6)) using GL_BindTextureSlot to bind texture.
+// Vertices: TL, BL, BR, TR — UVs (u0,v0), (u0,v0+dv), (u0+du,v0+dv), (u0+du,v0).
+// param_1:  texture slot index
+// param_2/3: x, y position (screen pixels)
+// param_4/5: width, height (screen pixels)
+// param_6/7: tex U0, V0 (top-left UV)
+// param_8/9: tex dU, dV (UV size)
+// param_10: if non-zero, scale x/y by screen mapping helpers
+// param_11: if non-zero, scale width/height by screen mapping helpers
+void __cdecl
+GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param_5,float param_6,
+            float param_7,float param_8,float param_9,char param_10,char param_11)
+{
+  int iVar1;
+  float10 fVar2;
+  float local_40 [16];
+
+  if (param_11 != '\0') {
+    fVar2 = Screen_ToGLX(param_2);
+    param_2 = (float)fVar2;
+    fVar2 = Screen_ToGLY(param_3);
+    param_3 = (float)fVar2;
+  }
+  if (param_10 != '\0') {
+    fVar2 = Screen_ToGLX(param_4);
+    param_4 = (float)fVar2;
+    fVar2 = Screen_ToGLY(param_5);
+    param_5 = (float)fVar2;
+  }
+  GL_BindTextureSlot(param_1);
+  // DIAG: log first 40 UI quad draws to see what 2D elements appear on screen
+  {
+      static int s_q = 0;
+      if (s_q < 40) {
+      }
+  }
+  local_40[10] = param_2;
+  local_40[9] = (float)gWindow.GetHeight() - param_3;
+  local_40[8] = param_2;
+  local_40[0] = param_6;
+  local_40[1] = param_7;
+  local_40[2] = param_6;
+  local_40[0xb] = local_40[9] - param_5;
+  local_40[0xc] = param_2 + param_4;
+  local_40[4] = param_6 + param_8;
+  local_40[7] = param_7;
+  local_40[3] = param_7 + param_9;
+  local_40[5] = local_40[3];
+  local_40[6] = local_40[4];
+  local_40[0xd] = local_40[0xb];
+  local_40[0xe] = local_40[0xc];
+  local_40[0xf] = local_40[9];
+  // Leer como float via puntero float*: el decompile usa *(undefined4*) =
+  // *(unsigned int*), que al pasar a glTexCoord2f/glVertex2f haría conversión
+  // int→float (0x3f800000 → 1065353216.0f en vez de 1.0f).
+  BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);   // GL_TRIANGLE_FAN
+  iVar1 = 0;
+  do {
+    float *uv  = (float *)((char *)local_40 + iVar1);
+    float *pos = (float *)((char *)local_40 + iVar1 + 0x20);
+    BufferedDraw::TexCoord2f(uv[0], uv[1]);
+    BufferedDraw::Vertex2f(pos[0], pos[1]);
+    iVar1 = iVar1 + 8;
+  } while (iVar1 < 0x20);
+  BufferedDraw::End();
+  return;
+}
+
+
+// FUN_00511C10 @ 0x00511C10 — GL_DrawBillboard
+// Draws a world-space billboard quad of half-extents (param_1, param_2).
+// param_3: view matrix (float[12]) used to transform the 4 corner vertices
+//          via Vector_Transform (Vec3_TransformByMatrix_WithTranslate).
+// Emits GL_QUADS (glBegin(7)) with UV corners (0,1), (1,1), (1,0), (0,0).
+void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
+{
+  // ── Patron de locales contiguos de Ghidra ───────────────────────────────────
+  // IDA `sub_511C10` recorre `in1[0..11]` y `v[0..11]` como 4 vec3 cada uno:
+  //     for (i = 0; i < 12; i += 3) VectorTransform(&in1[i], in2, &v[i]);
+  // Ghidra emitio ese frame como escalares SUELTOS (local_60[4] + local_50,
+  // local_4c, local_48, local_44, local_40, local_3c, local_38, local_34 /
+  // local_30[3] + local_24 + local_18 + local_c). MSVC no garantiza que queden
+  // contiguos, asi que son arrays reales (este es el billboard 3D que usa
+  // SkillEffect_Render en todos los mapas salvo World 2).
+  // Mapeo por offset de frame (ebp):
+  //   in1[0..2]  = -0x60,-0x5c,-0x58   in1[3..5]  = -0x54,-0x50,-0x4c
+  //   in1[6..8]  = -0x48,-0x44,-0x40   in1[9..11] = -0x3c,-0x38,-0x34
+  //   out[0..2]  = -0x30 (v)   [3..5] = -0x24 (v16)
+  //   out[6..8]  = -0x18 (v17) [9..11]= -0x0c (v18)
+  float in1[12], out[12];
+  const float nx = -param_1;
+  const float nz = -param_2;
+  in1[0] = nx;      in1[1]  = nx;      in1[2]  = nz;
+  in1[3] = param_1; in1[4]  = param_1; in1[5]  = nz;
+  in1[6] = param_1; in1[7]  = param_1; in1[8]  = param_2;
+  in1[9] = nx;      in1[10] = nx;      in1[11] = param_2;
+
+  for (int i = 0; i < 12; i += 3) {
+    Vector_Transform(&in1[i], param_3, &out[i]);
+  }
+
+  BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+  BufferedDraw::TexCoord2f(0.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[0]);
+  BufferedDraw::TexCoord2f(1.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[3]);
+  BufferedDraw::TexCoord2f(1.0f, 0.0f);  BufferedDraw::Vertex3fv(&out[6]);
+  BufferedDraw::TexCoord2f(0.0f, 0.0f);  BufferedDraw::Vertex3fv(&out[9]);
+  BufferedDraw::End();
+}

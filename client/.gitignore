@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────────────────────
+#  Artefactos de compilación de Visual Studio
+#
+#  Ojo: bin/Client/ NO se ignora entero — ahí viven los assets
+#  (Data/) y la config, que sí se versionan. Sólo se excluye lo
+#  que produce el compilador, archivo por archivo.
+# ─────────────────────────────────────────────────────────────
+obj/
+.vs/
+
+# Directorios de build de CMake (cmake -B build; "out/" es el default de VS).
+/build/
+/build-*/
+/out/
+
+bin/Client/main.exe
+bin/Client/mu-linux.sh
+bin/Client/main.pdb
+bin/Client/main.map
+bin/Client/main.ilk
+bin/Client/*.log
+# Volcados de crash del cliente (Debug/MiniDump.cpp).
+*.dmp
+
+
+# Herramienta de trazado de OpenGL (se baja aparte, no es del proyecto)
+bin/Client/opengl32.dll.apitrace
+
+# Capturas de pantalla (Impr Pant). El binario las deja en la raiz del
+# cliente; nosotros las mandamos a esta carpeta (desviacion documentada en
+# Game_MainLoop, SCREENSHOT_DIR_DEVIATION).
+bin/Client/Screenshots/
+bin/Client/Screen(*.jpg
+
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.tlog
+*.lastbuildstate
+*.user
+
+# libjpeg: se versiona el source (jpeg-6b/) y el .vcxproj; los builds no.
+lib/libjpeg/Debug/
+lib/libjpeg/Release/
+lib/libjpeg/obj/
+
+# ─────────────────────────────────────────────────────────────
+#  Assets del juego (bin/Client/Data/)
+#
+#  SE VERSIONAN. El repo es privado y sólo se comparte con
+#  colaboradores, así que los assets van adentro para que quien
+#  clone tenga el cliente completo y andando.
+#
+#  Son ~209 MB en ~3.500 archivos, todos por debajo del límite de
+#  100 MB por archivo de GitHub. Copyright de WebZen: este repo
+#  NO puede hacerse público sin sacarlos antes.
+# ─────────────────────────────────────────────────────────────
+
+# server.cfg ya no se usa (la conexión está en src/Config/ServerConfig.h); se
+# sigue ignorando para que una copia vieja con una IP no se suba por error.
+bin/Client/server.cfg
+
+# ─────────────────────────────────────────────────────────────
+#  Logs y volcados de trabajo
+# ─────────────────────────────────────────────────────────────
+*.log
+build*.txt
+debug.log
+debugcrash.log
+effect_tmp.txt
+ghidra_function_list.txt
+_skip.txt
+
+# Backup del volcado crudo de Ghidra: no se compila, es histórico.
+*.ghidra_backup
+
+# ─────────────────────────────────────────────────────────────
+#  Scripts auxiliares del port (herramientas propias, no del cliente)
+# ─────────────────────────────────────────────────────────────
+_b.bat
+_fix_batch12.py
+_test_build.bat
+build_tmp.bat
+compile_check.bat
+compile_globals.bat
+patch_pools.py
+csm_decode.py
+Camera.obj
+Entity_Render.obj
+Game_CharSelectTick.obj
+globals.obj
+lib/libjpeg/jpeg-6b/jdosabcc.obj
+lib/libjpeg/jpeg-6b/jdosamsc.obj
+Player_InputTick.obj
+Scene_CharSelect.obj
+Scene_Dispatch.obj
+stdafx.obj
+stubs.obj
+Terrain_Render.obj
+
+# Notas de trabajo del port (Codex): utiles en local, no van al repo.
+doc-port/
+
+
+# Pack opcional de texturas HD (Data/HD): se distribuye aparte, no va en el repo
+bin/Client/Data/HD/

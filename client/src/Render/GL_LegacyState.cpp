@@ -1,0 +1,134 @@
+// Helpers de estado GL (depth test/mask, cull face, alpha test, viewport,
+// perspectiva), conversores de coordenadas de pantalla (Screen_ToGLX/Y) y
+// WriteJpeg.
+
+#include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Render/Materials.h"
+#include "Render/Texture/ImageCodec.h"
+#include "Platform/IFileSystem.h"
+#include "globals.h"
+#include "functions.h"
+#include "Net/Net.h"
+
+extern void __cdecl operator_delete(void* ptr);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// GL helpers — cached OpenGL state wrappers
+// CORRECCION: 0xb71 es GL_DEPTH_TEST, NO GL_SCISSOR_TEST (que es 0x0c11).
+// EnableDepthTest @ 0x005114D0 — GL_EnableDepthTest
+void __cdecl GL_EnableDepthTest(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::On;Materials::Apply(m);return;}
+    if (DAT_083a411e == '\0') { DAT_083a411e = '\x01'; Gfx::Enable(Gfx::Cap::DepthTest); }
+}
+// DisableDepthTest @ 0x005114F0 — GL_DisableDepthTest
+// DIAG: el AV NVIDIA aparece acá no por el glDisable per se, sino por corrupción previa
+// del contexto GL que aflora al primer comando subsiguiente (driver bufferea cmds).
+// Loggeamos antes/después con glGetError() para localizar el comando ofensivo.
+void __cdecl GL_DisableDepthTest(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::Off;Materials::Apply(m);return;}
+    static int s_call = 0;
+    s_call++;
+    if (DAT_083a411e != '\0') { DAT_083a411e = '\0'; Gfx::Disable(Gfx::Cap::DepthTest); }
+}
+// EnableDepthMask @ 0x00511510 — GL_EnableDepthWrites
+void __cdecl GL_EnableDepthWrites(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::On;Materials::Apply(m);return;}
+    if (DAT_083a42e8 == '\0') { DAT_083a42e8 = '\x01'; Gfx::DepthMask(true); }
+}
+// FUN_00511530 @ 0x00511530 — GL_DisableDepthWrites
+void __cdecl GL_DisableDepthWrites(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::Off;Materials::Apply(m);return;}
+    if (DAT_083a42e8 != '\0') { DAT_083a42e8 = '\0'; Gfx::DepthMask(false); }
+}
+// EnableCullFace @ 0x00511550 — GL_EnableCullFace
+// (Called by 3D blend setters GL_ResetState / GL_EnableLightMap per 5.2 source pattern.)
+void __cdecl GL_EnableCullFace(void) {
+    if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::On;Materials::Apply(m);return;}
+    if (DAT_083a411c == '\0') { DAT_083a411c = '\x01'; Gfx::Enable(Gfx::Cap::CullFace); }
+}
+// DisableCullFace @ 0x00511570 — GL_DisableCullFace
+// (Called by 2D blend setters GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha.)
+void __cdecl GL_DisableCullFace(void) {
+    if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::Off;Materials::Apply(m);return;}
+    if (DAT_083a411c != '\0') { DAT_083a411c = '\0'; Gfx::Disable(Gfx::Cap::CullFace); }
+}
+// FUN_00511590 @ 0x00511590 — GL_SetAlphaTest
+void __cdecl GL_SetAlphaTest(char param_1) {
+    if(Materials::Select(Materials::Preset::Untextured,param_1 == 1))return;
+    GL_EnableDepthWrites();
+    if (param_1 == '\x01') {
+        if (DAT_083a411d == '\0') { DAT_083a411d = '\x01'; Gfx::Enable(Gfx::Cap::AlphaTest); }
+    } else {
+        if (DAT_083a411d != '\0') { DAT_083a411d = '\0'; Gfx::Disable(Gfx::Cap::AlphaTest); }
+    }
+    if (DAT_083a4125 != '\0') { DAT_083a4125 = '\0'; Gfx::Disable(Gfx::Cap::Texture2D); }
+}
+// glViewport2 @ 0x00511910 — GL_SetViewport
+void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) {
+    OpenglWindowWidth = (DWORD)param_3;
+    OpenglWindowX = (DWORD)param_1;
+    OpenglWindowY = (DWORD)param_2;
+    OpenglWindowHeight = (DWORD)param_4;
+    Gfx::Viewport(param_1, (int)(gWindow.GetHeight() - param_2) - param_4, param_3, param_4);
+}
+// gluPerspective2 @ 0x00511220 — GL_SetPerspective
+void __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_clip) {
+    float fovF  = Ff(fov);
+    float nearF = Ff(near_clip);
+    Gfx::Perspective((double)fovF, (double)aspect, (double)nearF, (double)far_clip);
+    double tanHalfFov = tan((double)fovF * (double)_DAT_00552cc4);
+    ViewportCenterX = OpenglWindowWidth / 2 + OpenglWindowX;
+    ViewportCenterY = OpenglWindowHeight / 2 + OpenglWindowY;
+    ScreenCenterYFlip = (float)((int)gWindow.GetWidth() - (int)ViewportCenterY);
+    _DAT_083a42a4 = (float)(tanHalfFov / (double)(OpenglWindowWidth / 2) * (double)aspect);
+    _DAT_083a42a8 = (float)(tanHalfFov / (double)(OpenglWindowHeight / 2)
+                            * ((double)(int)gWindow.GetHeight() / (double)(int)OpenglWindowHeight));
+}
+// FUN_00511950 @ 0x00511950 — Screen_ToGLX
+// FUN_00511980 @ 0x00511980 — Screen_ToGLY
+// Formula: WindowWidth * x * (1/640)   and   WindowHeight * y * (1/480).
+// Used by RenderBitmap, RenderColor, CreateFrustrum2D, SetPositionIME_Wnd, etc.
+long double __cdecl Screen_ToGLX(float v) {
+    return (long double)((float)(int)gWindow.GetWidth() * v * _DAT_0055283c);
+}
+long double __cdecl Screen_ToGLY(float v) {
+    return (long double)((float)(int)gWindow.GetHeight() * v * _DAT_00552838);
+}
+// WriteJpeg @ 0x00529000 — WriteJpeg(path, width, height, pixel_buf, quality)
+// Writes RGB pixel buffer to JPEG file using the pinned stb_image_write encoder.
+// Rows are written bottom-up (flipped) to match OpenGL framebuffer layout.
+// Ghidra: local_1d8=3 (components), local_1d4=2 (JCS_RGB), quality from param_5.
+unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality)
+{
+    FILE* f = Platform::GetFileSystem().Open(path, "wb");
+    if (f == NULL) return 0;
+
+    const bool written = ImageCodec::WriteJpeg(f, width, height, pixelBuf, quality);
+    const int closed = fclose(f);
+    return written && closed == 0 ? 1u : 0u;
+}

@@ -1,0 +1,45 @@
+MIT License
+
+Copyright (c) 2026 Emanuel Catania
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+NOTA SOBRE EL ALCANCE DE ESTA LICENCIA
+
+La licencia MIT de arriba cubre únicamente el código fuente escrito en este
+repositorio (el port bajo src/).
+
+NO cubre:
+
+  - Los assets del juego incluidos en bin/Client/Data/ (modelos .bmd, texturas
+    .ozj/.ozt, mapas, sonidos, música) ni MuPlayer.exe. Copyright (c) WebZen Inc.
+  - El cliente original de Mu Online 0.97k (main.exe) ni ningún binario
+    derivado de el. Copyright (c) WebZen Inc.
+
+Esos archivos estan en el repositorio unicamente porque es PRIVADO y de uso
+interno entre colaboradores. Este repositorio no puede hacerse publico ni
+redistribuirse con ellos adentro.
+
+Dependencia de terceros incluida:
+
+  - lib/libjpeg/jpeg-6b — Independent JPEG Group, release 6b (1998).
+    Licencia propia, permisiva; el texto completo está en
+    lib/libjpeg/jpeg-6b/README, sección "LEGAL ISSUES".

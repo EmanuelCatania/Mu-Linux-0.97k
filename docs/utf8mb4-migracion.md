@@ -36,9 +36,9 @@ docker compose stop mu-server mu-web
 ## 4. Migrar
 
 ```bash
-docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Migrate-utf8mb4.sql
-docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Migrate-0.97.40.sql
-docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Procedures.sql
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < server/MuServer/MySQL/DB/Migrate-utf8mb4.sql
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < server/MuServer/MySQL/DB/Migrate-0.97.40.sql
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < server/MuServer/MySQL/DB/Procedures.sql
 ```
 
 El script verifica primero que ningún nombre de personaje, cuenta o guild se vuelva igual a otro con la collation nueva. Si encuentra alguno, se detiene sin convertir nada y lista los nombres; hay que renombrarlos y volver a ejecutarlo. Al terminar muestra la collation de cada tabla: todas tienen que decir `utf8mb4_0900_as_ci`.

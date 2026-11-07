@@ -1,0 +1,866 @@
+// Render_PlayerEquipment.cpp
+//
+// Port directo del IDA RenderCharacter (sub_456770) líneas 1267-1981 — render
+// de Helper, Wing y Weapons del player, llamado desde Entity_UpdateRender.
+// Incluye:
+//   - Render de Helper (819 = pet hada / 817 = otro)
+//   - Loop principal de armas (v234=0..1) que dibuja Weapon[0] y Weapon[1]
+//   - 30+ weapon-specific particle effects (glows de espadas/staffs/bows)
+//
+// Incluye además el port de `CWeaponView::RenderCharacterBackItem`
+// (DLL, `WeaponView.cpp`) que decide
+// si el arma se renderiza en la ESPALDA (LinkBone 47) o en la mano. Conditions:
+//   - safe-zone (entity+0x34E set por terrain bit 0)
+//   - greeting anim (93..124)
+//   - Atlans swim (World 7, anim 21/29)
+//   - NOT Blood Castle (World 11..16)
+// Cuando bBindBack=true: weapon → bone 47 (espalda), Render_PlayerWeaponLoop
+// se SALTA. Cuando false: Render_PlayerWeaponLoop renderiza en mano (default).
+//
+// Mapping de offsets (entity = c, model = o):
+//   c+0x270 = Weapon[0] slot (24 bytes: model/lvl/opt/bone/action/...)
+//   c+0x288 = Weapon[1] slot
+//   c+0x2A0 = Wing slot
+//   c+0x2B8 = Helper slot
+//   c+0x108 = float AnimationFrame
+//   c+0x105 = byte CurrentAction
+//
+// Models[player_type=390] action table:
+//   Models + 188*390 + 48 = pointer a Actions[]
+//   Actions[N].PlaySpeed @ +4 dentro del struct (16 bytes/action)
+//
+// API mapping IDA → nuestra:
+//   Equipment_AddSprite(type, pos, scale, color, owner, alpha, mode) → CreateSprite
+//   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → Joint_Create
+//   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → Particle_Spawn
+//   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → BMD_TransformPosition
+//   sub_4553C0(model, type, bone, scale, color, owner) → Model_BoneParticle
+//
+// Anti-tamper hash-table operations (líneas IDA 1290-1505) elididas — pure
+// obfuscation, no afectan render.
+
+#include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
+#include "Item/ContentCatalog.h"
+#include "Game/MapManager.h"
+#include "globals.h"
+#include "functions.h"
+
+extern "C" void DbgLogPublic(const char*);
+
+// ── Diagnostico EQUIPWIPE, version dirigida ───────────────────────────────
+//
+// El detector que vive mas abajo (en HeroEquipWatchdog) avisa QUE los 12 wear
+// slots de CharacterMachine pasaron a -1 de golpe, pero no QUIEN lo hizo: corre
+// en el render, frames despues del escritor.  Como los wipes observados caen
+// junto a cambios de mapa, el sospechoso es un handler de red, asi que esto se
+// llama una vez por paquete desde Net_ProcessPacket y nombra el paquete que
+// estaba en curso.
+//
+// Reporta el opcode de la pasada ANTERIOR a proposito: si el wipe lo produce el
+// paquete N, esta funcion lo ve recien en la pasada N+1.
+//
+// Es barato (12 lecturas por paquete) y queda permanente hasta encontrar al
+// escritor.
+extern "C" void EquipWipe_Tick(int op, int sub)
+{
+    static int s_prevOccupied = -1;
+    static int s_prevOp = -1, s_prevSub = -1;
+
+    const BYTE* cm = static_cast<const BYTE*>(DAT_07cf1ffc);
+    if (cm) {
+        int occupied = 0;
+        for (int i = 0; i < 12; ++i) {
+            if (*(short*)(cm + 536 + 68 * i) != -1) ++occupied;
+        }
+        if (s_prevOccupied > 0 && occupied == 0) {
+            char b[192];
+            Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText,
+                "EQUIPWIPE: los 12 wear slots pasaron a -1 durante el paquete "
+                "op=%02X sub=%02X (el siguiente fue op=%02X sub=%02X)",
+                s_prevOp, s_prevSub, op, sub);
+            DbgLogPublic(b);
+        }
+        s_prevOccupied = occupied;
+    }
+    s_prevOp = op; s_prevSub = sub;
+}
+#include <math.h>
+
+extern "C" void DbgLogPublic(const char*);
+
+// EquipmentLevelSet — global escrita por CheckFullSet, leída por la rama
+// case 0x186 del switch en RenderCharacter (sparkles 10=lightning sprite,
+// 11=lightning joint).
+int EquipmentLevelSet = 0;
+
+// g_bAddDefense — global escrita SÓLO por CheckFullSet (IDA L77/L158), leída
+// por sub_47E160 (nuestro Stats_CalcDefenseRate) para el bonus de defensa de set
+// completo (+5% con set +10, +10% con set +11).
+//
+// Semántica IDA (rara pero fiel): se pone en 1 en LABEL_15, al que se llega
+// por TODOS los caminos de salida — tanto el `goto` del set completo como el
+// `break`/fin-de-while que dejan `v26 = 0`. O sea vale 1 por defecto y el
+// único que la baja es el caso Magic Gladiator con set completo cuyo Armor no
+// es 271 ni 276. Es inofensivo que quede en 1 sin set porque el consumidor
+// gatea con EquipmentLevelSet (que estos caminos dejan en 0).
+int g_bAddDefense = 0;
+
+// IDA: CheckFullSet (0x00451B20)
+// Determina si el char tiene un "full set" (5 armaduras del mismo set, todas
+// con level >= 9). Devuelve 1 si full set, 0 si no. Setea EquipmentLevelSet
+// al MIN level de las piezas si match, 0 si no match.
+//
+// Iteración hacia atrás desde Boot (c+600) hasta el body part v1 (1 normal,
+// 2 para MG class==3): si alguna pieza es 0xFFFF antes de llegar a v1 → no full.
+// Si llega: agarra type%16 de Boot como set_id, comprueba que las demás piezas
+// matcheen el set_id Y tengan level >= 9.
+//
+// IDA original tiene 893 bytes — la mitad es hash-table refcount obfuscation
+// que no afecta resultado. Porteado el cómputo y omitida la obfuscación.
+// Cola común de CheckFullSet (IDA LABEL_15). Todos los `return` de la función
+// pasan por acá; ver el comentario de g_bAddDefense arriba.
+static bool CheckFullSet_Tail(uintptr_t c, bool v26) {
+    g_bAddDefense = 1;
+    if (((*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 3) && v26) {   // Magic Gladiator
+        // IDA: v20 = *(_WORD *)(CharacterMachine + 740)  → wear slot 3 (Armor),
+        // 536 + 68*3 = 740. Sólo los armors 271 y 276 conservan el bonus.
+        const uintptr_t cm = (uintptr_t)CharacterAttribute;
+        // La ficha pertenece al bloque de 0x584 bytes creado para CharacterMachine.
+        if (cm && CharacterAttribute == DAT_07cf1ffc) {
+            unsigned short armor = *(unsigned short*)((char*)(uintptr_t)cm + 740);
+            if (armor != 271 && armor != 276) {
+                g_bAddDefense = 0;
+            }
+        }
+    }
+    return v26;
+}
+
+bool __cdecl CheckFullSet(uintptr_t c) {
+    int v1 = ((AsCharacter(c)->Class & 7) == 3) ? 2 : 1;  // MG=2, otros=1
+    int v2 = 5;
+    EquipmentLevelSet = 0;
+
+    // Walk back through body parts (Boot=+600, Glove=+576, Pant=+552, Armor=+528, Helm=+504)
+    short* v3 = (short*)(c + EntityOffset(600));
+    while (*v3 != (short)0xFFFF) {
+        --v2;
+        v3 -= 12;  // -24 bytes (= 12 shorts) — previous body part
+        if (v2 < v1) {
+            // All required parts present; check set match
+            int v4 = (AsCharacter(c)->BodyPart[5].Type - ITEM_MODEL_BASE) % 16;  // Boot set_id
+            int v5 = 5;
+            int v6 = AsCharacter(c)->BodyPart[5].Level & 0xF;  // Boot level
+            short* v7 = (short*)(c + EntityOffset(600));
+            while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - ITEM_MODEL_BASE) % 16) {
+                if (v6 >= ((v7[1]) & 0xF)) {
+                    v6 = (v7[1]) & 0xF;
+                    EquipmentLevelSet = v6;
+                }
+                --v5;
+                v7 -= 12;
+                if (v5 < v1) {
+                    return CheckFullSet_Tail(c, true);  // Full set + matched levels
+                }
+            }
+            // IDA: este camino es un `break` del while EXTERNO, y justo después del
+            // while está `v26 = 0;` — o sea devuelve **false**. El único camino que deja
+            // `v26 = 1` es el `goto LABEL_15` de arriba (set completo Y todos los
+            // niveles >= 9).
+            // Ojo: al sacar la armadura las body-parts NO quedan en 0xFFFF sino en el
+            // modelo por defecto de la clase, así que se llega acá con niveles 0;
+            // devolver true dejaría el glow del set (sección 5 del case 0x186 de
+            // Entity_UpdateRender) pegado.
+            EquipmentLevelSet = 0;
+            return CheckFullSet_Tail(c, false);
+        }
+    }
+    return CheckFullSet_Tail(c, false);  // Some part missing
+}
+
+// ── Helpers para Models[player].Actions[] ─────────────────────────────────────
+// Models + 188*390 + 48 = byte offset 73368 dentro de DAT_05828d58.
+// IDA: *(_DWORD *)(Models + 73368) = player_model->Actions ptr.
+static inline float* GetPlayerActions() {
+    return reinterpret_cast<float*>(AsModel(DAT_05828d58 + BMD_STRIDE * 390)->Actions);
+}
+static inline float GetPlayerActionPlaySpeed(int byteOffset) {
+    float* actions = GetPlayerActions();
+    if (!actions) return 0.0f;
+    return *(float*)((char*)actions + ModelActionByte(byteOffset));
+}
+
+// ── TransformPosition wrapper (IDA TransformPosition = nuestra BMD_TransformPosition) ─
+static inline void TransformPos(void* model, float* boneMat, float* posIn, float* posOut) {
+    BMD_TransformPosition(model, boneMat, posIn, posOut, '\x01');
+}
+// IDA usa bone*48 (= 0x30) que es el stride normal. El indexado bone*16 (caso
+// 0x1D5 etc.) es matriz de 4 floats — distinto layout. Wrappers para ambos.
+static inline float* BoneMat48(void* o, int bone) {
+    return (float*)((char*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(o))->BoneMatrices + 0x30 * bone);
+}
+static inline float* BoneMat16(void* o, int bone) {
+    return (float*)((char*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(o))->BoneMatrices + 16 * (3 * bone));
+}
+
+
+// ── Weapon-specific FX por tipo (IDA case 0x194..0x25E) ───────────────────────
+// param_1 = entity c (int)
+// puVar13 = entity o (int* alias)
+// v121 = weapon slot ptr (c + 624 + 24*hand)
+// targetJ = (rand()%30+70) * 0.01f
+static void RenderWeaponFX(intptr_t c, intptr_t o, intptr_t v121, float Targetj, float* Light)
+{
+    // 'model' = global BMD entry at DAT_05828d58 + 188*entity_type. Pasado a
+    // BMD_TransformPosition/TransformPos como ECX (this_) — usado para leer scale y
+    // calcular bbox. NO confundir con `entity_o` que tiene el bone buffer.
+    void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
+                                     + BMD_STRIDE * (int)*(short*)(o + 2));
+    void* entity_o = (void*)(uintptr_t)o;  // entity pointer with bone buffer at +0x114
+    float WorldPosition[3];
+    float v242[3];
+    float v248[3];
+    float TargetPosition[3];
+    int   bone = *(unsigned char*)(v121 + 4);
+    float* boneMat = BoneMat48(entity_o, bone);
+    // `WorldTime` es un MACRO a WorldTime (structs.h): no declarar un local
+    // con ese nombre (se sombrearía a sí mismo y quedaría con basura).
+    short Type = *(short*)v121;
+
+    switch (Type) {
+        case 0x194: case 0x195: case 0x19D:
+            WorldPosition[0] = 0.0f;
+            WorldPosition[1] = -110.0f;
+            WorldPosition[2] = 5.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            break;
+
+        case 0x197: case 0x19A:
+            WorldPosition[0] = 0.0f;
+            WorldPosition[1] = -110.0f;
+            WorldPosition[2] = 0.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            break;
+
+        case 0x198: case 0x199:
+            WorldPosition[0] = 0.0f;
+            WorldPosition[1] = -110.0f;
+            WorldPosition[2] = -5.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            break;
+
+        case 0x19B: case 0x19E:
+            WorldPosition[0] = 0.0f;
+            WorldPosition[1] = -150.0f;
+            WorldPosition[2] = 0.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            break;
+
+        case 0x19C: {
+            WorldPosition[0] = 0.0f;
+            float L2[3] = { Targetj, Targetj, Targetj };
+            WorldPosition[1] = -160.0f;
+            WorldPosition[2] = 0.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, 1.4f, L2, o, 0.0f, 0);
+            break;
+        }
+
+        case 0x1A1: { // Sword glow with lightning joints
+            float Scalek = (float)(sin(WorldTime * 0.0040000002) * 10.0 + 20.0);
+            // First joint: -20Y/-40Z -> -160Y/-10Z
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -20.0f; WorldPosition[2] = -40.0f;
+            TransformPos(model, boneMat, WorldPosition, v248);
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -160.0f; WorldPosition[2] = -10.0f;
+            TransformPos(model, boneMat, WorldPosition, TargetPosition);
+            Joint_Create(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
+            // Second joint: -10Y/28Z -> -145Y/18Z
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -10.0f; WorldPosition[2] = 28.0f;
+            TransformPos(model, boneMat, WorldPosition, v248);
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 18.0f;
+            TransformPos(model, boneMat, WorldPosition, TargetPosition);
+            Joint_Create(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
+            break;
+        }
+
+        case 0x1A2: { // Staff blue glow
+            float Scalel = (float)((sin(WorldTime * 0.0040000002) + 1.0) * 0.30000001);
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -20.0f; WorldPosition[2] = 15.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            float L2[3] = { Scalel * 0.2f, Scalel * 0.2f, Scalel };
+            float v210 = Scalel + 1.0f;
+            Equipment_AddSprite(1231, v242, v210, L2, o, 0.0f, 0);
+            // Three joint sparkles
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -133.0f; WorldPosition[2] = 7.0f;
+            TransformPos(model, boneMat, WorldPosition, WorldPosition);
+            float Scalem = Scalel * 20.0f + 20.0f;
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            break;
+        }
+
+        case 0x1D5: { // Multi-row sparkle (16 rows along Y)
+            int v172 = 0;
+            float Scaleh = 0.0f;
+            float L2[3] = { Targetj, Targetj * 0.60000002f, Targetj * 0.40000001f };
+            do {
+                if (rand() % 4 < 3) {
+                    WorldPosition[0] = 0.0f;
+                    WorldPosition[1] = (float)Scaleh - 30.0f;
+                    WorldPosition[2] = 0.0f;
+                    float* mat3 = BoneMat16(entity_o, bone);
+                    TransformPos(model, mat3, WorldPosition, v242);
+                    Equipment_AddSprite(1150, v242, 1.0f, L2, o, 0.0f, 0);
+                }
+                v172 -= 20;
+                Scaleh = (float)v172;
+            } while (v172 > -160);
+            break;
+        }
+
+        case 0x1D6: { // Big staff with halo + 5 row sprites + 2 bone particles
+            float Scalei = (float)(sin(WorldTime * 0.0040000002) * 0.30000001 + 0.69999999);
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -84.0f; WorldPosition[2] = 0.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            float L2[3] = { Scalei, Scalei * 0.2f, Scalei * 0.1f };
+            float v211 = Scalei + 1.5f;
+            Equipment_AddSprite(1231, v242, v211, L2, o, 0.0f, 0);
+            int v178 = 0;
+            do {
+                WorldPosition[0] = 0.0f;
+                WorldPosition[1] = (float)v178 * 20.0f - 10.0f;
+                WorldPosition[2] = 0.0f;
+                TransformPos(model, boneMat, WorldPosition, v242);
+                Equipment_AddSprite(1231, v242, 1.0f, L2, o, 0.0f, 0);
+                v178--;
+            } while (v178 > -5);
+            float L3[3] = { Scalei * 0.5f, Scalei * 0.1f, Scalei * 0.050000001f };
+            Model_BoneParticle(model, 1231, 2, 1.0f, L3, o);
+            Model_BoneParticle(model, 1231, 6, 1.0f, L3, o);
+            break;
+        }
+
+        case 0x21D: case 0x21E: { // Bow tracer
+            float L2[3];
+            if (Type == 541) {
+                L2[0] = Targetj * 0.2f;
+                L2[1] = Targetj * 0.40000001f;
+                L2[2] = Targetj * 0.60000002f;
+            } else {
+                L2[0] = Targetj * 0.60000002f;
+                L2[1] = Targetj * 0.40000001f;
+                L2[2] = Targetj * 0.2f;
+            }
+            int v184 = 0;
+            float Scalej = 0.0f;
+            do {
+                WorldPosition[0] = 0.0f;
+                WorldPosition[1] = -20.0f;
+                WorldPosition[2] = Scalej;
+                float* mat3 = BoneMat16(entity_o, bone);
+                TransformPos(model, mat3, WorldPosition, v242);
+                Equipment_AddSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                v184 -= 20;
+                Scalej = (float)v184;
+            } while (v184 > -120);
+            break;
+        }
+
+        case 0x220: { // Crossbow tracer (vertical)
+            int v168 = 0;
+            float Scaleg = 0.0f;
+            float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj };
+            do {
+                WorldPosition[0] = 0.0f;
+                WorldPosition[1] = -10.0f;
+                WorldPosition[2] = Scaleg * 20.0f;
+                float* mat3 = BoneMat16(entity_o, bone);
+                TransformPos(model, mat3, WorldPosition, v242);
+                Equipment_AddSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                Scaleg = (float)(--v168);
+            } while (v168 > -6);
+            break;
+        }
+
+        case 0x234: { // Special weapon — single big sprite at mid-back
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -90.0f; WorldPosition[2] = 0.0f;
+            float L2[3] = { Targetj * 0.40000001f, Targetj * 0.80000001f, Targetj * 0.60000002f };
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1231, v242, 2.0f, L2, o, 0.0f, 0);
+            break;
+        }
+
+        case 0x235: { // Halo + sparks
+            float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj };
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
+            float* mat3 = BoneMat16(entity_o, bone);
+            TransformPos(model, mat3, WorldPosition, v242);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1191, v242, 0.30000001f, L2, o, 0.0f, 0);
+            break;
+        }
+
+        case 0x236: { // Glowing dragon weapon — many sprites + particles
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            float L2[3] = { Targetj, Targetj * 0.60000002f, Targetj * 0.40000001f };
+            Equipment_AddSprite(1175, v242, 3.0f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1232, v242, 1.5f, L2, o, 0.0f, 0);
+            int v160 = 4;
+            do {
+                WorldPosition[0] = (float)(rand() % 20 - 10);
+                WorldPosition[1] = (float)(rand() % 20 - 10) - 90.0f;
+                WorldPosition[2] = (float)(rand() % 20 - 10);
+                TransformPos(model, boneMat, WorldPosition, v242);
+                Particle_Spawn(1175, v242, (float*)((char*)o + 28), L2, 1, 1.0f, 0);
+                v160--;
+            } while (v160);
+            int v164 = 0;
+            float Scalef = 0.0f;
+            float L3[3] = { Targetj, Targetj * 0.2f, Targetj * 0.1f };
+            do {
+                if (rand() % 4 < 3) {
+                    WorldPosition[0] = 0.0f;
+                    WorldPosition[1] = Scalef + 60.0f;
+                    WorldPosition[2] = 0.0f;
+                    TransformPos(model, boneMat, WorldPosition, v242);
+                    Equipment_AddSprite(1150, v242, 1.0f, L3, o, 0.0f, 0);
+                }
+                v164 -= 20;
+                Scalef = (float)v164;
+            } while (v164 > -200);
+            break;
+        }
+
+        case 0x237: { // Multi-bone sparkle (bones 27-37)
+            float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj };
+            Model_BoneParticle(model, 1231, 27, 2.0f, L2, o);
+            for (int j = 28; j <= 37; ++j) {
+                Model_BoneParticle(model, 1150, j, 1.5f, L2, o);
+            }
+            break;
+        }
+
+        case 0x239: { // Staff blue cross-wing
+            float L2[3] = { Targetj * 0.60000002f, Targetj * 0.60000002f, Targetj + Targetj };
+            WorldPosition[0] = 0.0f; WorldPosition[1] = -120.0f; WorldPosition[2] = 5.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            float Scalen = Targetj + 1.0f;
+            Equipment_AddSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
+            WorldPosition[0] = 0.0f; WorldPosition[1] = 100.0f; WorldPosition[2] = 10.0f;
+            TransformPos(model, boneMat, WorldPosition, v242);
+            Equipment_AddSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
+            break;
+        }
+
+        case 0x25E: { // Side-glow off-axis
+            float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj * 1.5f };
+            WorldPosition[0] = 20.0f; WorldPosition[1] = 0.0f; WorldPosition[2] = 0.0f;
+            float* mat3 = BoneMat16(entity_o, bone);
+            TransformPos(model, mat3, WorldPosition, v242);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+
+
+
+extern "C" BYTE OffsetInventoryItems[];
+
+// Llamada por Entity_UpdateRender al inicio del render del hero in-game.
+// Ya no restaura slots: reconstruye el hero (SetCharacterClass) sólo cuando
+// cambia el equipo.
+extern "C" void HeroEquipWatchdog(CHARACTER* c)
+{
+    if (SceneFlag != 5) return;
+    if (!DAT_07abf5d8 || c != AsCharacter(DAT_07abf5d8)) return;
+    unsigned char* be = (unsigned char*)c;
+    static const int kBodyOff[6] = { 0x1e0, 0x1f8, 0x210, 0x228, 0x240, 0x258 };
+    BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
+
+    if (cm) {
+        // En el binario NADA re-siembra CharacterMachine por frame: el equipo lo
+        // escribe sólo el server — F3/10 (ReceiveInventory), el ack del move 0x24 y
+        // los acks de equipar —, y el render (`RenderEquipment3D` 0x4E3100) lo lee
+        // directo. No rellenar wear slots vacíos desde ningún stash.
+        //
+        // Si el equipo se resetea (p.ej. tras F3/03), el diagnóstico de abajo
+        // (EQUIPWIPE) lo registra: es el bug real a arreglar, no a tapar.
+        {
+            static int  s_prevOccupied = -1;
+            int occupied = 0;
+            for (int i = 0; i < 12; ++i) {
+                if (*(short*)(cm + 536 + 68 * i) != -1) ++occupied;
+            }
+            if (s_prevOccupied > 0 && occupied == 0) {
+                DbgLogPublic("EQUIPWIPE: los 12 wear slots de CharacterMachine "
+                             "pasaron a -1 de golpe (buscar el writer)");
+            }
+            s_prevOccupied = occupied;
+        }
+        // No rellenar wear slots desde `OffsetInventoryItems`: ese es el pool del
+        // grid 8×8 y su índice de celda es `slotIdx - 12` (ver AddItemToGrid), o sea
+        // `[0..11]` son CELDAS del grid visible, NO los wear slots. Los wear slots
+        // viven sólo en `CharacterMachine + 536 + 68*slot`.
+        //
+        // IDA/source base path: let SetCharacterClass rebuild the world hero
+        // from CharacterMachine, instead of keeping a partial local mirror.
+        // Sólo cuando CAMBIA el equipo: en IDA `SetCharacterClass` (0x45C130) se
+        // llama desde ReceiveAddPoint / ProtocolCore / char-select, nunca por frame,
+        // y termina cancelando la animación en curso fuera de [0x22, 0x5B]:
+        //     if (!(v11 >= 0x85 && v11 <= 0x8C) && (v11 < 0x22 || v11 > 0x5B))
+        //         SetPlayerStop(c);
+        // Llamada por frame resetearía la caminata (acción 13) en cada tick.
+        // Rebuild sólo si los wear slots (o la entidad del hero) cambiaron respecto
+        // del frame anterior.
+        {
+            unsigned int sig = 0u;
+            for (int i = 0; i < 12; ++i) {
+                const BYTE* s = cm + 536 + 68 * i;
+                sig = sig * 131u + (unsigned int)(unsigned short)*(const short*)s;
+                sig = sig * 131u + *(const unsigned int*)(s + 4);   // Level/options
+            }
+            static unsigned int s_prevSig = 0u;
+            static CHARACTER*   s_prevHero = nullptr;
+            static bool         s_have = false;
+            if (!s_have || sig != s_prevSig || c != s_prevHero) {
+                s_prevSig  = sig;
+                s_prevHero = c;
+                s_have     = true;
+                SetCharacterClass(AsCharacter(c));
+                Character_UpdateEquipSlotAnimations(AsCharacter(c));
+            }
+        }
+        return;
+    }
+
+    // IDA/source-base path rebuilds the visual entity from CharacterMachine via
+    // SetCharacterClass. Do not mirror raw stash item types directly into the
+    // world entity when CharacterMachine is unavailable: that custom fallback
+    // writes inventory/raw types into slots that expect resolved visual models.
+    (void)be;
+    (void)kBodyOff;
+}
+
+// IsBackItem (port del DLL, WeaponView.cpp:265)
+// Clases 0..6 (espadas, hachas, mazas, lanzas, arcos, baculos, escudos) =
+// modelos 400..623.  Los items de esas clases se cuelgan de la espalda.
+static bool IsBackItem(int iType)
+{
+    return (iType >= 400 && iType < 624);
+}
+
+// Mano cuyo item se esta colgando (0 = Weapon[0], 1 = Weapon[1]).  La lee la
+// tabla de poses de RenderLinkObject; equivale al `SecondWeaponFixVal` del DLL.
+extern "C" int g_BackItemHand = 0;
+
+extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
+{
+    // Bind -- IDA RenderCharacter 0x456770, LABEL_265 .. LABEL_308.
+    // Decide si las armas se cuelgan de la espalda (hueso 47) en vez de ir en
+    // la mano.  Esta parte es 1:1 con el binario; lo que SI se tomo del DLL es
+    // el bucle de los dos slots de abajo (ver el comentario ahi).
+    // El caller usa el valor de retorno para saltear Render_PlayerWeaponLoop,
+    // igual que el `if (!Bind)` de LABEL_330.
+    int Bind = 0;
+
+    // DESVIACION DEL PORT: gate por state=5 (in-game).
+    // IDA no lo tiene.  Sin el, char-select dibujaba el arma dos veces.
+    if (SceneFlag != 5)
+        return 0;
+
+    // `World` es macro a World (structs.h:389): usar otro nombre o el
+    // local se sombrearia a si mismo.
+    const int iWorld = (int)gMapManager.GetCurrentMap();
+    const unsigned char anim = *(unsigned char*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
+
+    // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
+    if (AsCharacter(c)->SafeZone != 0)          // c->SafeZone
+        Bind = 1;
+    else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
+        Bind = 1;
+    else if (gMapManager.IsSwimmable(iWorld) && (anim == 21 || anim == 29))   // IDA: World == 7
+        Bind = 1;
+
+    if (iWorld >= 11 && iWorld <= 16)               // InBloodCastle()
+        Bind = 0;
+
+    // IDA LABEL_275: los no-jugadores saltan a LABEL_330 (loop de manos), que
+    // el caller resuelve con el valor de retorno.
+    if (*(short*)(o + 2) != 390)                    // o->Type != MODEL_PLAYER
+        return Bind;
+
+    // ── Que items van a la espalda ──────────────────────────────────────────
+    // PORT DEL DLL (CWeaponView::RenderCharacterBackItem, WeaponView.cpp).
+    // Este main.exe cuelga UN SOLO item: verificado instruccion por
+    // instruccion en 0x458370-0x4584C0 --
+    //     004583bb  LEA   ECX, [EAX+EAX*2+0x4E]      ; 3*Hand + 78
+    //     004583c7  MOVSX EBX, word ptr [EDI+ECX*8]  ; un unico Type
+    //     0045849f  CALL  0x00455430                 ; una unica llamada
+    //     004584c0  ...                              ; cae a LABEL_308, sin salto atras
+    // -- y elegia la mano con un `Hand` que solo pasa a 1 con arco (528..534,
+    // 545) o flechas (535), asi que el escudo no se dibujaba nunca.
+    //
+    // El cliente de referencia SI muestra los dos, y la funcion que lo hace esta
+    // en el DLL de inyeccion: itera los dos slots (igual que MU 5.2, cuyo
+    // RenderLinkObject ademas tiene un parametro `bRightHandItem` que el de
+    // 0.97k no tiene) y parchea 0x0045568B con una tabla de poses por tipo de
+    // escudo mas un offset para el segundo item.  Portado: el bucle aca, la
+    // tabla en RenderLinkObject.
+    //
+    // Weapon[0] = c+624 (0x270), Weapon[1] = c+648 (0x288).
+    bool bBack = false;
+
+    for (int i = 0; i < 2; ++i) {
+        const intptr_t partBase = c + (intptr_t)sizeof(PART_t) * i;
+        int iType    = AsCharacter(partBase)->Weapon[0].Type;
+        int iLevel   = AsCharacter(partBase)->Weapon[0].Level;
+        int iOption1 = AsCharacter(partBase)->Weapon[0].Option1;
+
+        if (iType < 0)
+            continue;
+
+        // Esqueleto NPC de Lorencia (Kind 4, World 0, SubType 206..208): baculo
+        // fijo, una sola vez.  Vanilla usa 537 = GET_ITEM_MODEL(4, 9).
+        const unsigned char Kind = *(unsigned char*)(o + 0x84);
+        const int SubType = *(int*)(o + 4);
+        if (Kind == 4 && iWorld == 0 && SubType >= 206 && SubType <= 208) {
+            if (i == 0) {
+                bBack  = true;
+                iType  = 537;
+                iLevel = 8;
+            }
+        }
+
+        if (IsBackItem(iType))
+            bBack = true;
+
+        // Flechas (535) y bolts (543) quedan en la espalda SIEMPRE; el resto
+        // solo con Bind (zona segura / saludo / nadando en Atlans).
+        if (iType == 535 || iType == 543)
+            bBack = true;
+        else if (!Bind)
+            bBack = false;
+
+        if (!bBack || iType == -1)
+            continue;
+
+        // ── Render en el hueso 47 (espalda), reusando el PART del ala ────────
+        const unsigned int fAnimationFrameBackUp = *(unsigned int *)&AsCharacter(c)->Wing.AnimationFrame;
+        AsCharacter(c)->Wing.LinkBone = 47;                  // w->LinkBone
+        if (anim == 30 || anim == 31)                       // PLAYER_FLY / FLY_CROSSBOW
+            AsCharacter(c)->Wing.PlaySpeed = 1.0f;
+        else
+            AsCharacter(c)->Wing.PlaySpeed = 0.25f;
+
+        // Hex-Rays llama `Scale` a esta local, pero el 9no parametro de
+        // RenderLinkObject es `Link`.  Para armas/escudos (400..623) va 1.
+        char Link = '\0';
+        if (iType >= 400 && iType < 624) {
+            Link = '\x01';
+            // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
+            //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
+            float* actions = GetPlayerActions();
+            if (actions != 0)
+                AsCharacter(c)->Wing.PlaySpeed = ModelActionSpeed(actions, 1);
+        }
+
+        g_BackItemHand = i;      // lo lee la tabla de poses de RenderLinkObject
+        RenderLinkObject(0.0f, 0.0f, 15.0f, c, c + EntityOffset(0x2A0),
+                     iType, (char)iLevel, (unsigned int)iOption1,
+                     Link, '\x01', 0);
+        g_BackItemHand = 0;
+
+        *(unsigned int *)&AsCharacter(c)->Wing.AnimationFrame = fAnimationFrameBackUp;
+    }
+
+    return Bind;
+}
+
+
+// ── Render del Helper (IDA líneas 1267-1288) ─────────────────────────────────
+// Llamado después del Wing render. Helper.Type == 817 dispara la creación de
+// un sprite-glow rojo en la mano del char (LinkBone=34).
+extern "C" void Render_PlayerHelper(intptr_t c, intptr_t o)
+{
+    if (AsCharacter(c)->Helper.Type != 817) return;
+
+    float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
+    unsigned char v101 = AsCharacter(c)->Helper.Level;   // Type@2 = level
+    unsigned char v215 = AsCharacter(c)->Helper.Option1;   // Option1
+    AsCharacter(c)->Helper.LinkBone = 34;                   // LinkBone = 34
+    *(int *)&AsCharacter(c)->Helper.PlaySpeed = 0x3F000000;                     // PlaySpeed = 0.5f
+    RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + EntityOffset(0x2B8),
+                 817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
+
+    // Sprite glow at transformed position (20, 0, 15) in bone[34]
+    unsigned char v102 = AsCharacter(c)->Helper.LinkBone;   // = 34
+    void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
+                                     + BMD_STRIDE * (int)*(short*)(o + 2));
+    void* entity_o = (void*)(uintptr_t)o;
+    float* boneMat = BoneMat48(entity_o, v102);
+    float Pos[3]   = { 20.0f, 0.0f, 15.0f };
+    float WorldPos[3];
+    TransformPos(model, boneMat, Pos, WorldPos);
+    float Light[3] = { Targetj * 0.5f, 0.0f, 0.0f };
+    Equipment_AddSprite(1150, WorldPos, 1.5f, Light, o, 0.0f, 0);
+}
+
+
+// ── Loop principal de armas (IDA `if (!Bind) { do { ... } while (v234 < 2) }`)
+//   Recorre Weapon[0] (v234=0) y Weapon[1] (v234=1). Por cada arma:
+//   - Skip si action 62 + frame<=4 (ataque-animación-mid sin hand swap)
+//   - Setup CurrentAction (v121+5) y PlaySpeed (v121+16) según anim/weapon
+//   - RenderLinkObject(0,0,0, c, weapon_slot, weapon_type, level, opt, 1, 1, 0)
+//   - Glow color RGB derivado del nivel (v121+2)
+//   - Switch por tipo de arma → particle FX (CreateSprite/Joint/Spawn)
+extern "C" void Render_PlayerWeaponLoop(intptr_t c, intptr_t o)
+{
+    // IDA reaches this loop from LABEL_330 for players and monsters alike.
+    if (c == 0 || o == 0) return;
+    if (*(unsigned char*)c == 0) return;       // active flag
+
+    float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
+    unsigned char v118 = AsObject(o)->CurrentAction;   // CurrentAction
+    unsigned char Scalee = AsCharacter(c)->Skill; // anim flag (HashTable result en IDA — usamos byte directo como fallback)
+
+    int v234 = 0;
+    do {
+        // Anim-state skip: action 62 + frame <= 4 + hand 0 cancela
+        if (Scalee == 41) {
+            if ((v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f)
+                || (v118 == 61 && !v234)) {
+                goto label_419;
+            }
+        } else if (v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f) {
+            goto label_419;
+        }
+
+        {
+        int v119  = 3 * v234 + 78;
+        intptr_t v121  = c + EntityOffset(8 * v119);            // weapon slot ptr (c+624 o c+648)
+        short v120 = *(short*)v121;          // weapon Type
+
+        if (v120 == -1 || v120 == 535 || v120 == 543) {
+            goto label_419;  // skip empty/bolts/arrows (rendered separately)
+        }
+
+        // ── Bone+anim setup ─────────────────────────────────────────────────
+        bool went_to_render = false;
+        if (v118 == 46 || v118 == 47 || v118 == 48 || v118 == 49) {
+            // Greeting/wave anims: bone 0, action[46].PlaySpeed
+            *(unsigned char*)(v121 + 5) = 0;
+            *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + ModelActionByte(740));
+        } else if (v120 != 466) {
+            if (v120 == 469) {
+                // Special weapon 469: bone 0, 2x action[1].PlaySpeed
+                *(unsigned char*)(v121 + 5) = 0;
+                float ps = GetPlayerActionPlaySpeed(20);
+                *(float*)(v121 + 16) = ps + ps;
+            } else if (v120 == 566) {
+                // Special weapon 566 (high-tier staff): bone 0, 15x speed
+                *(unsigned char*)(v121 + 5) = 0;
+                *(float*)(v121 + 16) = GetPlayerActionPlaySpeed(20) * 15.0f;
+            } else if (v120 < 400 || v120 >= 432) {
+                // Non-sword: bone 0, no anim
+                *(unsigned char*)(v121 + 5) = 0;
+                *(int*)(v121 + 16) = 0;
+                *(int*)(v121 + 8)  = 0;
+                *(int*)(v121 + 12) = 0;
+            } else {
+                // Sword in tier 1 (400-431): bone 0, action[1].PlaySpeed
+                *(unsigned char*)(v121 + 5) = 0;
+                *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + 20);
+            }
+            went_to_render = true;
+        }
+        if (!went_to_render) {
+            // v120 == 466 path
+            if (v118 >= 0x23u && v118 <= 0x24u) {
+                // Specific anim with weapon 466: bone 2, action[35].PlaySpeed
+                *(unsigned char*)(v121 + 5) = 2;
+                *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + ModelActionByte(564));
+            } else {
+                // Default for 466: bone 1, action[1].PlaySpeed
+                *(unsigned char*)(v121 + 5) = 1;
+                *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + 20);
+            }
+        }
+
+
+        // ── DIAG: log weapon render attempt for char-select ─────────────────
+        if (SceneFlag == 4) {
+            int csSlot = (int)(((uintptr_t)c - (uintptr_t)DAT_07abf5d0) / CHARACTER_STRIDE);
+            if (csSlot >= 0 && csSlot < 5) {
+                static DWORD s_lastWP[5][2] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
+                DWORD now = Platform::GetTimer().Ticks();
+                if (now - s_lastWP[csSlot][v234] > 1000) {
+                    s_lastWP[csSlot][v234] = now;
+                    char b[256];
+                    BYTE linkBone = *(unsigned char*)(v121 + 4);
+                    BYTE curAct   = *(unsigned char*)(v121 + 5);
+                    float ps      = *(float*)(v121 + 16);
+                }
+            }
+        }
+
+        // ── Main weapon render ──────────────────────────────────────────────
+        // Args 7-8 (param_7,param_8) = Level, Option1 (interpretados como
+        // Translate/RenderType en nuestro 9-arg port, pero con los fixes
+        // previos en RenderLinkObject ahora son Level/Option1 reales).
+        // 9th arg ('\0') = Link flag → non-Link path → renderiza al bone.
+        RenderLinkObject(0.0f, 0.0f, 0.0f, c, v121,
+                     v120,
+                     *(unsigned char*)(v121 + 2),
+                     *(unsigned char*)(v121 + 3),
+                     '\0', '\x01', 0);
+
+        // ── Light color from weapon level (v121+2) ──────────────────────────
+        unsigned char v123 = *(unsigned char*)(v121 + 2);
+        float Light[3];
+        if (v123 < 7) {
+            if (v123 < 5) {
+                if (v123 < 3) {
+                    Light[0] = Targetj * 0.30000001f;
+                    Light[1] = Targetj * 0.30000001f;
+                } else {
+                    Light[0] = Targetj * 0.5f;
+                    Light[1] = Targetj * 0.30000001f;
+                }
+                Light[2] = Light[1];
+            } else {
+                Light[0] = Targetj * 0.30000001f;
+                Light[1] = Light[0];
+                Light[2] = Targetj * 0.5f;
+            }
+        } else {
+            Light[0] = Targetj * 0.5f;
+            Light[1] = Targetj * 0.40000001f;
+            Light[2] = Targetj * 0.30000001f;
+        }
+
+        // ── Weapon-specific FX (sólo en world bajo 6 y level != 4) ──────────
+        unsigned char v126 = AsCharacter(c)->PK;
+        if (SceneFlag == 4 || (v126 < 6 && *(short *)&AsCharacter(c)->Level != 4)) {
+            RenderWeaponFX(c, o, v121, Targetj, Light);
+        }
+        }
+
+    label_419:
+        ++v234;
+    } while (v234 < 2);
+}
