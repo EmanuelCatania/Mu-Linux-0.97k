@@ -387,13 +387,34 @@ valores por defecto se ve como el 0.97k. Se cambian desde el mismo submenú, **O
 | `Shadows` | `0` sombra plana del original, `1` suaves, `2` fuertes | Sombras proyectadas con mapa de sombras. |
 | `DepthFog` | `0` / `1` | Niebla por profundidad con la cámara 3D. |
 | `DrawDistance` | `0` a `3` (×1, ×1,5, ×2, ×3) | Alcance de dibujado con la cámara 3D. Lejos sólo se dibuja el terreno. |
-| `HDTextures` | `0` / `1` | Usa el pack de texturas HD de `Data/HD/` si está. No viene en el repo; se aplica al reiniciar. |
+| `HDTextures` | `0` / `1` | Usa el pack HD de `Data/HD/` si está (ver [Pack HD](#pack-hd)). No viene en el repo; se aplica al reiniciar. |
 
 La **cámara 3D** (tecla **F10**, **F11** la vuelve a la normal) es la del DLL de
 inyección. La distancia de dibujado y la niebla por profundidad sólo se aplican
 con ella: la cámara normal ve lo mismo que el original. La niebla de cada mapa
 la define el server (`MapFog.txt`); con la cámara 3D y `DepthFog=1` la
 reemplaza la niebla por profundidad.
+
+### Pack HD
+
+Con `HDTextures=1` el cliente lee `Data/HD/` además de `Data/`, sin reemplazar
+ningún archivo original. Acepta dos tipos de contenido, que se pueden combinar:
+
+- **Texturas ampliadas.** `Data/X/nombre.OZJ` se toma de
+  `Data/HD/X/nombre.ozj.jpg` (o `.ozj.png`) y `Data/X/nombre.OZT` de
+  `Data/HD/X/nombre.ozt.png`, si existen y miden un múltiplo entero del original.
+  Los UV del modelo no cambian.
+- **Archivos con el mismo nombre.** Antes de abrir `Data/X/archivo`, el cliente
+  busca `Data/HD/X/archivo`: un modelo (`Player/ArmorMale04.bmd`) o una textura
+  (`.OZJ`/`.OZT`) en el formato de siempre. Así entra un pack de modelos rehechos
+  con sus propias texturas, copiado tal cual en `Data/HD/` en lugar de pisar
+  `Data/`. Las texturas que pide un modelo se buscan con la misma regla, así que
+  las que sólo trae el pack también se encuentran.
+
+Con la opción apagada `Data/HD` se ignora y se ve el original. Es sólo visual:
+el server no se entera. El [Release 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40) trae un pack de ejemplo
+(`mu97k-0.97.40-pack-hd-ejemplo.zip`), con unas 1.850 texturas ampliadas al
+doble con IA para mostrar cómo funciona; se descomprime en la carpeta del cliente.
 
 ---
 

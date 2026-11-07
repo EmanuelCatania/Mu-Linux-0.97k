@@ -13,6 +13,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Model/BMDFileTypes.h"
+#include "Render/Texture/Texture.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -45,7 +46,10 @@ void __cdecl BMD__Open(BMD* param_1, const char* param_2, const char* param_3, i
         }
     }
 
-    FILE *fp = crt_fopen(local_4c, DAT_005580ac);
+    // DESVIACION (pack HD): con texturas HD, un modelo de Data\HD\<ruta> con el
+    // mismo nombre reemplaza al original. Ver Texture_HDAssetPath.
+    char hdPath[300];
+    FILE *fp = crt_fopen(Texture_HDAssetPath(local_4c, hdPath, sizeof(hdPath)), DAT_005580ac);
     if (!fp) {
         return;
     }

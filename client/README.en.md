@@ -384,12 +384,34 @@ Advanced → Graphics**, and saved under `[Window]`.
 | `Shadows` | `0` the original's flat shadow, `1` soft, `2` strong | Cast shadows with a shadow map. |
 | `DepthFog` | `0` / `1` | Depth fog with the 3D camera. |
 | `DrawDistance` | `0` to `3` (×1, ×1.5, ×2, ×3) | Draw range with the 3D camera. Far away only the terrain is drawn. |
-| `HDTextures` | `0` / `1` | Uses the HD texture pack in `Data/HD/` if present. It is not in the repo; applies on restart. |
+| `HDTextures` | `0` / `1` | Uses the HD pack in `Data/HD/` if present (see [HD pack](#hd-pack)). It is not in the repo; applies on restart. |
 
 The **3D camera** (**F10**, **F11** puts it back to normal) is the injection
 DLL's. Draw distance and depth fog only apply with it: the normal camera sees
 the same as the original. Each map's fog is defined by the server
 (`MapFog.txt`); with the 3D camera and `DepthFog=1` the depth fog replaces it.
+
+### HD pack
+
+With `HDTextures=1` the client reads `Data/HD/` on top of `Data/`, without
+replacing any original file. It accepts two kinds of content, which can be
+combined:
+
+- **Upscaled textures.** `Data/X/name.OZJ` is taken from
+  `Data/HD/X/name.ozj.jpg` (or `.ozj.png`) and `Data/X/name.OZT` from
+  `Data/HD/X/name.ozt.png`, if they exist and measure an integer multiple of the
+  original. The model's UVs do not change.
+- **Files with the same name.** Before opening `Data/X/file`, the client looks
+  for `Data/HD/X/file`: a model (`Player/ArmorMale04.bmd`) or a texture
+  (`.OZJ`/`.OZT`) in the usual format. That is how a pack of remade models with
+  their own textures fits in, copied as-is into `Data/HD/` instead of
+  overwriting `Data/`. The textures a model asks for are looked up with the same
+  rule, so the ones only the pack ships are found too.
+
+With the option off, `Data/HD` is ignored and you see the original. It is
+visual only: the server is not involved. The [0.97.40 Release](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40) ships an
+example pack (`mu97k-0.97.40-pack-hd-ejemplo.zip`), with about 1,850 textures
+upscaled 2x with AI to show how it works; extract it into the client folder.
 
 ---
 

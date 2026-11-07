@@ -382,13 +382,34 @@ Tela → Avançado → Gráficos**, e salvas em `[Window]`.
 | `Shadows` | `0` sombra plana do original, `1` suaves, `2` fortes | Sombras projetadas com mapa de sombras. |
 | `DepthFog` | `0` / `1` | Névoa por profundidade com a câmera 3D. |
 | `DrawDistance` | `0` a `3` (×1, ×1,5, ×2, ×3) | Alcance de desenho com a câmera 3D. Ao longe só o terreno é desenhado. |
-| `HDTextures` | `0` / `1` | Usa o pacote de texturas HD de `Data/HD/`, se existir. Não vem no repo; aplicado ao reiniciar. |
+| `HDTextures` | `0` / `1` | Usa o pacote HD de `Data/HD/`, se existir (veja [Pacote HD](#pacote-hd)). Não vem no repo; aplicado ao reiniciar. |
 
 A **câmera 3D** (tecla **F10**; **F11** a volta ao normal) é a do DLL de
 injeção. A distância de desenho e a névoa por profundidade só valem com ela: a
 câmera normal vê o mesmo que o original. A névoa de cada mapa é definida pelo
 servidor (`MapFog.txt`); com a câmera 3D e `DepthFog=1`, a névoa por
 profundidade a substitui.
+
+### Pacote HD
+
+Com `HDTextures=1` o cliente lê `Data/HD/` além de `Data/`, sem substituir
+nenhum arquivo original. Aceita dois tipos de conteúdo, que podem ser
+combinados:
+
+- **Texturas ampliadas.** `Data/X/nome.OZJ` é lida de `Data/HD/X/nome.ozj.jpg`
+  (ou `.ozj.png`) e `Data/X/nome.OZT` de `Data/HD/X/nome.ozt.png`, se existirem
+  e medirem um múltiplo inteiro do original. Os UV do modelo não mudam.
+- **Arquivos com o mesmo nome.** Antes de abrir `Data/X/arquivo`, o cliente
+  procura `Data/HD/X/arquivo`: um modelo (`Player/ArmorMale04.bmd`) ou uma
+  textura (`.OZJ`/`.OZT`) no formato de sempre. Assim entra um pacote de modelos
+  refeitos com suas próprias texturas, copiado tal como está em `Data/HD/` em
+  vez de sobrescrever `Data/`. As texturas que um modelo pede são procuradas com
+  a mesma regra, então as que só o pacote traz também são encontradas.
+
+Com a opção desligada, `Data/HD` é ignorada e se vê o original. É só visual: o
+servidor não participa. O [Release 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40) traz um pacote de exemplo
+(`mu97k-0.97.40-pack-hd-ejemplo.zip`), com cerca de 1.850 texturas ampliadas ao
+dobro com IA para mostrar como funciona; extraia na pasta do cliente.
 
 ---
 

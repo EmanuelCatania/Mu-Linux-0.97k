@@ -15,6 +15,7 @@ BMD* wantedSlot;uintptr_t DAT_05828d58;char DAT_0055a7c4;unsigned opened,saved,p
 namespace ResourceTables{void EnsureModels(std::size_t n){Require(n<=2);}}
 namespace Platform{struct Window{void ServiceLoadingEvents(int n){Require(n==16);++pumped;}};Window& GetWindow(){static Window window;return window;}}
 FILE* crt_fopen(const char* path,const char* mode){Require(std::strcmp(mode,"rb")==0);++opened;actual=path;return nullptr;}
+const char* Texture_HDAssetPath(const char* p,char*,std::size_t){return p;}  // sin pack HD: la ruta original
 int BMD__Save(int,char* path,char* name){++saved;actual=std::string(path)+name;return 1;}
 '''
 MAIN=r'''
