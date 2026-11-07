@@ -375,6 +375,7 @@ set(MU_SOURCES
     src/UI/GoldenArcher.cpp
     src/UI/EventTimer.cpp
     src/UI/BuffBar.cpp
+    src/Core/DataPrefetch.cpp
     src/UI/MiniMap.cpp
     src/Render/Camera3D.cpp
     src/UI/OptionsMenu.cpp
@@ -495,6 +496,7 @@ set(MU_HEADERS
     src/UI/PanelAnchor.h
     src/UI/EventTimer.h
     src/UI/BuffBar.h
+    src/Core/DataPrefetch.h
     src/UI/MiniMap.h
     src/Render/Camera3D.h
     src/UI/OptionsMenu.h
