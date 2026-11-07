@@ -18,6 +18,7 @@ SERVICES=r'''
 #define crt_sprintf std::sprintf
 char DAT_005580ac[]="rb";unsigned adjCalls,initCalls,finishCalls;int endCursor,endSize;
 FILE* crt_fopen(const char* p,const char* m){return std::fopen(p,m);}
+const char* Texture_HDAssetPath(const char* p,char*,std::size_t){return p;}  // sin pack HD: la ruta original
 void DbgLogPublic(const char*){}
 namespace Platform{constexpr int TruncateText=0;template<std::size_t N,class...A>int TextFormatTruncated(char(&s)[N],std::size_t cap,int,const char* f,A...a){return std::snprintf(s,cap,f,a...);}}
 struct Block{BYTE* raw;std::size_t n;bool live,checked;};std::vector<Block> blocks;std::unordered_map<void*,unsigned> ids;
