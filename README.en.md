@@ -6,7 +6,17 @@
 
 [🇦🇷 Español](README.md) | 🇺🇸 English | [🇧🇷 Português](README.pt-BR.md)
 
-Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and optional editor.
+Mu Online 0.97k server and client in a single repository. The server (Mu-Linux, based on MuEmu 0.97k) runs natively on Linux, with Docker, a web panel and an optional editor; the client is rebuilt from the original binary and runs on Windows and Linux.
+
+| Folder | Contents |
+|---|---|
+| `server/` | Server: sources (`Source/`), data (`server/MuServer/`), CMake and Docker |
+| `client/` | Client: see its [README](client/README.en.md) |
+| `web/`, `editor/` | Web panel and data editor |
+| `pterodactyl/`, `Pterodactyl eggs/` | Pterodactyl runtime and eggs |
+| `docs/` | Migration guides |
+
+Client and server share the version numbers and ship together in each Release. Up to 0.97.40 the client lived in [Mu-97k-Client-Source](https://github.com/EmanuelCatania/Mu-97k-Client-Source), where its earlier Releases remain.
 
 ## What's new in 0.97.40 — Phase 4 completed
 
@@ -80,7 +90,7 @@ files. The database migration is the same.
 The client tells the server its language on connecting (the client's
 `[Language] LangSelection`: `Eng`, `Spn` or `Por`), and the server sends it that
 language's translations along with the content catalog. They live in
-`MuServer/Data/Text/<language>/`:
+`server/MuServer/Data/Text/<language>/`:
 
 | File | What it translates | Index |
 |---|---|---|
@@ -131,37 +141,37 @@ To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm6
 ### Build and run on Windows (without Docker)
 
 1. Requirements: Visual Studio 2022 or 2026 with "Desktop development with C++" (v143 toolset, includes CMake) and MySQL 8.
-2. Build from the repo root:
+2. Build from the `server` folder:
 
    ```
    cmake --preset windows-x64-release
    cmake --build --preset windows-x64-release --parallel 4
    ```
 
-   The executables end up in `Source/MuServer/bin/Release/`.
-3. Copy each executable into its `MuServer/` folder, next to its `.ini`:
-   - `ConnectServer/ConnectServer.exe` → `MuServer/ConnectServer/`
-   - `GameServer/GameServer.exe` → `MuServer/GameServer/` (reads data from `MuServer/Data/`)
-   - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
-   - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
+   The executables end up in `server/Source/MuServer/bin/Release/`.
+3. Copy each executable into its `server/MuServer/` folder, next to its `.ini`:
+   - `ConnectServer/ConnectServer.exe` → `server/MuServer/ConnectServer/`
+   - `GameServer/GameServer.exe` → `server/MuServer/GameServer/` (reads data from `server/MuServer/Data/`)
+   - `MYSQL/JoinServer/JoinServer.exe` → `server/MuServer/MySQL/JoinServer/`
+   - `MYSQL/DataServer/DataServer.exe` → `server/MuServer/MySQL/DataServer/`
 
    No MySQL DLLs need to be copied: the connector is built into JoinServer and DataServer.
-4. Database: run `MuServer/MySQL/DB/CreateDatabase.sql` and then `PoblateDatabase.sql`. The default user is `admin` / `asd123`; if you use another one, change it in `DataServer.ini` and `JoinServer.ini`.
-5. In `MuServer/ConnectServer/ServerList.dat`, set the server IP (`127.0.0.1` to test on the same PC).
+4. Database: run `server/MuServer/MySQL/DB/CreateDatabase.sql` and then `PoblateDatabase.sql`. The default user is `admin` / `asd123`; if you use another one, change it in `DataServer.ini` and `JoinServer.ini`.
+5. In `server/MuServer/ConnectServer/ServerList.dat`, set the server IP (`127.0.0.1` to test on the same PC).
 6. Start them in this order: DataServer, JoinServer, ConnectServer and GameServer.
 
 The `0.97.40` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
 
 #### Windows x86 and dependencies
 
-x64 is the recommended build. x86 (Win32) remains as a historical base: it is the original MuEmu architecture and CI still builds it, but it is no longer the path this guide follows. To build it:
+x64 is the recommended build. x86 (Win32) remains as a historical base: it is the original MuEmu architecture and CI still builds it, but it is no longer the path this guide follows. To build it, also from `server`:
 
 ```powershell
 cmake --preset windows-x86-release
 cmake --build --preset windows-x86-release --parallel 4
 ```
 
-The `windows-x86-debug` and `windows-x64-debug` presets are also available; executables go to the same folder as the x64 ones. JoinServer and DataServer talk to MySQL through the C API (`mysql.h`): CMake downloads the source of **MariaDB Connector/C 3.4.11** (SHA256 pinned in `cmake/MuMySQLPackages.cmake`) and builds it as a static library, with Schannel for TLS. Being a C API, it works the same with MSVC and MinGW. MySQL 8.4 authenticates with `caching_sha2_password`, which requires TLS; the connector requests it without verifying the server's self-signed certificate. On Linux the system `libmysqlclient-dev` (or `libmariadb-dev`) is used. Initial configuration requires access to GitHub. Legacy MSBuild projects build the same connector for `Debug_MySQL` and `Release_MySQL` with the project's toolset and require CMake on PATH.
+The `windows-x86-debug` and `windows-x64-debug` presets are also available; executables go to the same folder as the x64 ones. JoinServer and DataServer talk to MySQL through the C API (`mysql.h`): CMake downloads the source of **MariaDB Connector/C 3.4.11** (SHA256 pinned in `server/cmake/MuMySQLPackages.cmake`) and builds it as a static library, with Schannel for TLS. Being a C API, it works the same with MSVC and MinGW. MySQL 8.4 authenticates with `caching_sha2_password`, which requires TLS; the connector requests it without verifying the server's self-signed certificate. On Linux the system `libmysqlclient-dev` (or `libmariadb-dev`) is used. Initial configuration requires access to GitHub. Legacy MSBuild projects build the same connector for `Debug_MySQL` and `Release_MySQL` with the project's toolset and require CMake on PATH.
 
 CI builds all four services for Windows x86/x64 and Linux x64/ARM64, Debug and Release. ARM64 remains build-only, without gameplay validation. Phase 3 fixes pointer widths in callbacks, IOCP and timers, and provides a 256 KiB pending send buffer for the login catalog; individual packets remain limited to 8 KiB. Local Windows x64 testing covered login, gameplay, reset, buying/selling and Chaos mixing; it was not a load test.
 
@@ -175,11 +185,11 @@ GM level 1 or higher only, through in-game chat:
 | `/bcstart` | Blood Castle, all levels |
 | `/dsstart` | Devil Square, all levels |
 | `/bingostart` | Golden Archer Bingo |
-| `/invasionstart <index>` | Index in `MuServer/Data/Event/InvasionManager.dat` |
+| `/invasionstart <index>` | Index in `server/MuServer/Data/Event/InvasionManager.dat` |
 
 These schedule a single occurrence roughly two minutes later, without editing configured schedules or resetting active events. BC/DS also reject requests while entry is open. Starting an invasion does not reset other invasions. The event must be enabled. New commands record the request and result in `COMMAND_LOG`.
 
-For existing installations, append the four new rows from `MuServer/Data/Command.txt` after `/tamastart` and before `end`, in this order: bcstart, dsstart, bingostart, invasionstart. Row order determines command IDs; preserve other configuration.
+For existing installations, append the four new rows from `server/MuServer/Data/Command.txt` after `/tamastart` and before `end`, in this order: bcstart, dsstart, bingostart, invasionstart. Row order determines command IDs; preserve other configuration.
 
 #### Example: reload shops through Docker
 
@@ -224,7 +234,7 @@ docker compose -f docker-compose.images.yml up -d --no-deps mu-server
 
 The compose file uses `latest`; to pin the version, change only the `mu-server` image to `emapupi/mu-linux-97k:0.97.20`. Images support `linux/amd64` and `linux/arm64`.
 
-**Pulling an image does not update a persistent volume.** From this release's `MuServer/Data`, integrate these files into your `/opt/mu/Data` volume:
+**Pulling an image does not update a persistent volume.** From this release's `server/MuServer/Data`, integrate these files into your `/opt/mu/Data` volume:
 
 - `Custom/Items/`: `03_000.json` (Light Spear pose) and `13_400.json` (Rudolph pose and tooltip).
 - `Custom/Pets/13_400.json`: Rudolph movement and zen pickup.
@@ -286,7 +296,7 @@ Based on Kayito's sources.
 
 ## Client status
 
-The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
+The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client](client/), which lives in this repository. Old files remain available in Git history. The tables in `server/MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
 
 ## Quick start
 
@@ -331,11 +341,11 @@ The optional editor uses `mu-server` internal volumes:
 docker compose -f docker-compose.yml -f docker-compose.editor.yml up -d --build
 ```
 
-It keeps per-file backups and snapshots of `MuServer/Data` and `MuServer/GameServer/DATA`. `mu-web` provides registration, login, rankings and news on external port `8085` (internal `8080`). Initial admin is `admin / 123456` and must change password at first login.
+It keeps per-file backups and snapshots of `server/MuServer/Data` and `server/MuServer/GameServer/DATA`. `mu-web` provides registration, login, rankings and news on external port `8085` (internal `8080`). Initial admin is `admin / 123456` and must change password at first login.
 
 - `MD5Encryption=2` uses binary MD5; recreate the DB with `docker compose down -v` when migrating from plain text.
-- Save server TXT files as UTF-8 without BOM. Since 0.97.40 the server no longer converts to Windows-1252: an ANSI file with accents looks wrong in the client. Shops live in `MuServer/Data/Shop/*.txt`; `-1 -1` auto-places `SlotX SlotY`.
-- Use `docker compose logs -f` for logs. Main folders: `Source/`, `MuServer/`, `docker/`.
+- Save server TXT files as UTF-8 without BOM. Since 0.97.40 the server no longer converts to Windows-1252: an ANSI file with accents looks wrong in the client. Shops live in `server/MuServer/Data/Shop/*.txt`; `-1 -1` auto-places `SlotX SlotY`.
+- Use `docker compose logs -f` for logs. Main folders: `Source/`, `server/MuServer/`, `docker/`.
 
 ## Website and editor 0.97.20
 

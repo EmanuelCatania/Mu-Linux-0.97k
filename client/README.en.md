@@ -64,7 +64,7 @@ music.
   distances defined by the server.
 - **Linux x64** with WebGPU on Vulkan, on X11 and Wayland.
 
-**Compatibility: client 0.97.40 ↔ [server 0.97.40](https://github.com/EmanuelCatania/Mu-Linux-0.97k).**
+**Compatibility: client 0.97.40 ↔ [server 0.97.40](../README.en.md).**
 The protocol changed (40-byte names and 200-byte chat), so client and server
 have to be updated together: an older client no longer gets into a 0.97.40
 server, and vice versa.
@@ -80,7 +80,7 @@ server, and vice versa.
   needs DirectX 12, DirectX 11 or Vulkan; if the device can't be created, the
   client keeps going with OpenGL.
 - **A 0.97.40 server.** The port is validated against
-  [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
+  [MuEmu - Linux](../README.en.md) (season
   0.97k), which is the authoritative source for the packet format. Each client
   Release says which server version it works with. 0.97k servers without the
   0.97.40 changes (for example,
@@ -735,7 +735,7 @@ In the 0.97 line, **Y** is the phase and **Z** the fix or improvement. In the
 following lines, the tags in between mark the progress toward the next Webzen
 version.
 
-The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use
+The client and the [server](../README.en.md) use
 the same numbering, but the server only gets a new tag when it changes. Each
 client Release states which server tag it works with (for example, client
 `0.97.32` works with server `0.97.30`).

@@ -65,7 +65,7 @@ baú, trade, chat, party, guild, combate, skills, efeitos, eventos, som e músic
   com distâncias por mapa definidas no servidor.
 - **Linux x64** com WebGPU sobre Vulkan, em X11 e Wayland.
 
-**Compatibilidade: cliente 0.97.40 ↔ [servidor 0.97.40](https://github.com/EmanuelCatania/Mu-Linux-0.97k).**
+**Compatibilidade: cliente 0.97.40 ↔ [servidor 0.97.40](../README.pt-BR.md).**
 O protocolo mudou (nomes de 40 bytes e chat de 200), então cliente e servidor
 precisam ser atualizados juntos: um cliente anterior não entra mais num
 servidor 0.97.40, e vice-versa.
@@ -81,7 +81,7 @@ servidor 0.97.40, e vice-versa.
   precisa também de DirectX 12, DirectX 11 ou Vulkan; se o dispositivo não
   puder ser criado, o cliente segue com OpenGL.
 - **Um servidor 0.97.40.** O port é validado contra
-  [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
+  [MuEmu - Linux](../README.pt-BR.md) (season
   0.97k), que é a fonte autoritativa para o formato dos pacotes. Cada Release do
   cliente indica com qual versão do servidor funciona. Servidores 0.97k sem as
   mudanças da 0.97.40 (por exemplo,
@@ -732,7 +732,7 @@ As versões são `XX.XX.YZ`, sempre com dois dígitos no final.
 Na linha 0.97, **Y** é a fase e **Z** a correção ou melhoria. Nas linhas
 seguintes, as tags intermediárias marcam o avanço até a próxima versão da Webzen.
 
-O cliente e o [servidor](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam a
+O cliente e o [servidor](../README.pt-BR.md) usam a
 mesma numeração, mas o servidor só recebe uma tag nova quando muda. Cada Release
 do cliente indica com qual tag do servidor funciona (por exemplo, o cliente
 `0.97.32` funciona com o servidor `0.97.30`).
