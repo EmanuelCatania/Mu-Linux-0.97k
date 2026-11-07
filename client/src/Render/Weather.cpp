@@ -414,12 +414,39 @@ LAB_00501064:
                     __light1 = true;
                 } else if (iVar12 == 10) {
                     if (iVar14 < 3) {
-                        // Lightning slots 0-2 in loading state
+                        // Slots 0-2: los dragones que vuelan por debajo de Icarus.
+                        // IDA 0x500E80 (case 10 del switch por mundo): el init completo
+                        // y despues `return` -- el slot recien se tickea el frame que
+                        // sigue.  El port solo ponia el tipo y seguia: con la posicion
+                        // en (0,0,0) el chequeo de distancia (4000 para el 301) lo
+                        // apagaba en el mismo frame y nunca se veia ninguno.
                         *pcVar3 = '\x01';
                         OpenMonsterModel(0x1f);
                         (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0x12d;
-                        // (detailed init same as storm mode above)
-                        goto LAB_0050172b;
+                        const int __rScale = _rand();
+                        (*(unsigned int*)&g_WeatherSlotPool[EntityOffset(0x168) + iVar14 * OBJECT_STRIDE]) = 0x3f800000;
+                        (&DAT_0839be14)[iVar14 * (OBJECT_STRIDE / 4)] = 0x3f800000;
+                        WSF(DAT_0839bcbc, iVar14 * (OBJECT_STRIDE / 4)) = (float)(__rScale % 3 + 6) * 0.050000001f;
+                        WSF(DAT_0839bd7c, iVar14 * (OBJECT_STRIDE / 4)) = (float)(_rand() % 10 + 10) * 0.02f;
+                        const int __rSpeed = _rand();
+                        WSLOT_DW(0x0dc) = 1;
+                        (&DAT_0839be11)[iVar2] = 0;
+                        WSLOT_DW(0x004) = 0;
+                        (&DAT_0839bdb5)[iVar2] = 7;
+                        (&DAT_0839bd08)[iVar14 * (OBJECT_STRIDE / 4)] = 0xffffffff;
+                        (&DAT_0839bd14)[iVar14 * (OBJECT_STRIDE / 4)] = 0xffffffff;
+                        *(float *)(&DAT_0839bd88 + iVar2) = (float)(__rSpeed % 10 + 10) * 0.050000001f;
+                        SetAction(AsObject(pcVar3), 7);
+                        (&DAT_0839bccc)[iVar14 * (OBJECT_STRIDE / 4)] = 0;
+                        (&DAT_0839bcd0)[iVar14 * (OBJECT_STRIDE / 4)] = 0;
+                        WSF(DAT_0839bcd4, iVar14 * (OBJECT_STRIDE / 4)) = (float)(_rand() % 360);
+                        WSF(DAT_0839bcc0, iVar14 * (OBJECT_STRIDE / 4)) =
+                            (float)(_rand() % 4000 - 2000) + *(float *)(DAT_07abf5d8 + 0x10);
+                        WSF(DAT_0839bcc4, iVar14 * (OBJECT_STRIDE / 4)) =
+                            (float)(_rand() % 4000 - 2000) + *(float *)(DAT_07abf5d8 + 0x14);
+                        WSF(DAT_0839bcc8, iVar14 * (OBJECT_STRIDE / 4)) =
+                            *(float *)(DAT_07abf5d8 + 0x18) - 600.0f;
+                        return uVar8;
                     }
                     (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0x10a;  // firefly
                     (&DAT_0839bd7c)[iVar14 * (OBJECT_STRIDE / 4)] = 0x400ccccd;
