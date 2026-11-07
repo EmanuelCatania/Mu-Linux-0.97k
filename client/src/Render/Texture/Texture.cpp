@@ -244,7 +244,8 @@ static int tex_max_size(void)
 // Internal: decode OZJ (JPEG with 24-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 {
-    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
+    char hdPath[300];
+    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(fullPath, hdPath, sizeof(hdPath)), "rb");
     if (!f) return 0;
 
     ImageCodec::Image image;
@@ -287,7 +288,8 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 // Internal: decode OZT (TGA 32-bit with 4-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
 {
-    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
+    char hdPath[300];
+    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(fullPath, hdPath, sizeof(hdPath)), "rb");
     if (!f) return 0;
 
     ImageCodec::Image image;
@@ -480,6 +482,36 @@ bool HDPath(const char* fullPath, const char* format, char* out, size_t size)
     std::snprintf(out, size, "Data\\HD\\%.*s.%s.%s", int(dot - (fullPath + 5)), fullPath + 5, ext, format);
     return true;
 }
+} // namespace
+
+// Reemplazo de archivos enteros por el pack HD: además de las texturas
+// ampliadas (casa.ozj.jpg, arriba), Data\HD puede traer un archivo con el mismo
+// nombre que el original, por ejemplo un modelo rehecho (Player\ArmorMale04.bmd)
+// con texturas propias (Player\KMUA2_tex_mg004.OZJ). Como las texturas que pide
+// un modelo se resuelven con la misma regla, las del pack se encuentran aunque
+// el juego original no las tenga. Con la opción apagada no se mira Data\HD.
+const char* Texture_HDAssetPath(const char* path, char* out, std::size_t size)
+{
+    if (!Gfx::HDTextures() || !path || !out || size == 0) return path;
+    if (tolower((unsigned char)path[0]) != 'd' || tolower((unsigned char)path[1]) != 'a' ||
+        tolower((unsigned char)path[2]) != 't' || tolower((unsigned char)path[3]) != 'a' ||
+        (path[4] != '\\' && path[4] != '/')) return path;
+    // Ya es una ruta del pack (Data\HD\...): no se anida.
+    if (tolower((unsigned char)path[5]) == 'h' && tolower((unsigned char)path[6]) == 'd' &&
+        (path[7] == '\\' || path[7] == '/')) return path;
+    const int written = std::snprintf(out, size, "Data\\HD\\%s", path + 5);
+    if (written <= 0 || size_t(written) >= size) return path;
+    if (!Platform::GetFileSystem().Exists(out)) return path;
+    static unsigned s_used = 0;
+    if (++s_used <= 20 || s_used % 100 == 0) {
+        char line[340];
+        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Pack HD: %s (%u archivos)", out, s_used);
+        DbgLogPublic(line);
+    }
+    return out;
+}
+
+namespace {
 // Decodifica la imagen HD y arma el lienzo; corre en un hilo aparte.
 // Sin transparencia se acepta JPEG (casa.ozj.jpg), que ocupa varias veces
 // menos que PNG; si no hay JPEG se busca el PNG.
@@ -695,7 +727,10 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     }
 
     // --- Open file ---
-    FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
+    // full_path queda con la ruta original: de ahí sale también la textura
+    // ampliada del pack HD (UploadHD).
+    char hdPath[300];
+    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(full_path, hdPath, sizeof(hdPath)), "rb");
     // DIAG: registrar cada intento. Cap general 60 + cap adicional para Logo/Ship
     // (los archivos que nos interesan para diagnosticar el login scene caen
     // después del cap y antes los perdíamos).
@@ -834,7 +869,8 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     }
 
     // ── Open file ─────────────────────────────────────────────────────────────
-    FILE* Stream = (FILE*)Platform::GetFileSystem().Open(local_200, DAT_005580ac);
+    char hdPath[300];
+    FILE* Stream = (FILE*)Platform::GetFileSystem().Open(Texture_HDAssetPath(local_200, hdPath, sizeof(hdPath)), DAT_005580ac);
     // DIAG: log TGA loads + specifically log slots 0xc/0x10/0x11 (Account textures)
     {
         static int s_tga = 0;
