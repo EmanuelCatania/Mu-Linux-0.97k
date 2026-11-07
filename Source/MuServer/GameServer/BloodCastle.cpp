@@ -2260,7 +2260,7 @@ void CBloodCastle::GCBloodCastleScoreSend(BLOOD_CASTLE_LEVEL* lpLevel, int aInde
 
 	pMsg.flag = 0xFF;
 
-	memcpy(pMsg.name, gObj[aIndex].Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, gObj[aIndex].Name);
 
 	pMsg.Score = lpUser->Score;
 
@@ -2292,7 +2292,7 @@ void CBloodCastle::GCBloodCastleDelayScoreSend(BLOOD_CASTLE_LEVEL* lpLevel, int 
 
 	DelayScore.Score.flag = 0xFF;
 
-	memcpy(DelayScore.Score.name, gObj[aIndex].Name, sizeof(DelayScore.Score.name));
+	TextField::Copy(DelayScore.Score.name, gObj[aIndex].Name);
 
 	DelayScore.Score.Score = lpUser->Score;
 

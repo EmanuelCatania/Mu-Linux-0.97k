@@ -563,11 +563,11 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
-	memcpy(name, lpMsg->name, sizeof(lpMsg->name));
+	TextField::Copy(name, lpMsg->name);
 
-	if (strcmp(name, lpObj->Name) != 0)
+	if (!TextName::Equals(name, lpObj->Name))
 	{
 		return;
 	}
@@ -606,7 +606,7 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 
 	pMsg.header.set(0x00, sizeof(pMsg));
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 
@@ -629,7 +629,7 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 		{
 			if (lpMsg->message[1] == '>')
 			{
-				if (strcmp(lpObj->Name, lpObj->Guild->Members[0].Name) == 0)
+				if (TextName::Equals(lpObj->Name, lpObj->Guild->Members[0].Name))
 				{
 					gGuild.GDGuildGlobalNoticeSend(lpObj->Guild->Name, &lpMsg->message[2]);
 				}
@@ -660,9 +660,9 @@ void CGChatWhisperRecv(PMSG_CHAT_WHISPER_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
-	memcpy(name, lpMsg->name, sizeof(lpMsg->name));
+	TextField::Copy(name, lpMsg->name);
 
 	if (lpObj->ChatLimitTime > 0)
 	{
@@ -1285,7 +1285,7 @@ void CGCharacterCreateRecv(PMSG_CHARACTER_CREATE_RECV* lpMsg, int aIndex)
 
 	pMsg.result = 0;
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	if (gServerInfo.m_CharacterCreateSwitch == 0)
 	{
@@ -1308,9 +1308,9 @@ void CGCharacterCreateRecv(PMSG_CHARACTER_CREATE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
-	memcpy(name, lpMsg->name, sizeof(lpMsg->name));
+	TextField::Copy(name, lpMsg->name);
 
 	GDCharacterCreateSend(aIndex, name, lpMsg->Class);
 }
@@ -1349,9 +1349,9 @@ void CGCharacterDeleteRecv(PMSG_CHARACTER_DELETE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
-	memcpy(name, lpMsg->name, sizeof(lpMsg->name));
+	TextField::Copy(name, lpMsg->name);
 
 	GDCharacterDeleteSend(aIndex, name);
 }
@@ -1367,9 +1367,9 @@ void CGCharacterInfoRecv(PMSG_CHARACTER_INFO_RECV* lpMsg, int aIndex)
 
 	lpObj->EnableDelCharacter = 0;
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
-	memcpy(name, lpMsg->name, sizeof(lpMsg->name));
+	TextField::Copy(name, lpMsg->name);
 
 	GDCharacterInfoSend(aIndex, name);
 }
@@ -1491,7 +1491,7 @@ void GCChatWhisperSend(int aIndex, char* name, char* message)
 
 	pMsg.header.set(0x02, (sizeof(pMsg) - (sizeof(pMsg.message) - (size + 1))));
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	memcpy(pMsg.message, message, size);
 

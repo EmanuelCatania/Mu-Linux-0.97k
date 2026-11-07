@@ -9,11 +9,7 @@ void LogAdd(eLogColor color, const char* text, ...);
 
 void ConsoleProtocolLog(int type, BYTE* lpMsg, int size);
 
-bool GetCharacterSlot(char CharacterName[5][11], const char* name, BYTE* slot);
-
-bool CheckTextSyntax(char* text, int size);
-
-bool CheckSpecialText(char* Text);
+bool GetCharacterSlot(char CharacterName[5][CHARACTER_NAME_BUFFER], const char* name, BYTE* slot);
 
 int GetFreeServerIndex();
 
@@ -24,3 +20,5 @@ WORD GetServerCodeByName(char* name);
 CServerManager* FindServerByCode(WORD ServerCode);
 
 extern int gServerCount;
+
+extern int EnableSpecialCharacters;

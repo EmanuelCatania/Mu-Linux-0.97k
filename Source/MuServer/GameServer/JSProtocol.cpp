@@ -77,9 +77,9 @@ void GJConnectAccountSend(int aIndex, char* account, char* password, char* IpAdd
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
-	memcpy(pMsg.password, password, sizeof(pMsg.password));
+	TextField::CopyString(pMsg.password, password);
 
 	memcpy(pMsg.IpAddress, IpAddress, sizeof(pMsg.IpAddress));
 
@@ -134,13 +134,13 @@ void JGConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg)
 
 	gObj[lpMsg->index].Connected = OBJECT_LOGGED;
 
-	memcpy(gObj[lpMsg->index].Account, lpMsg->account, sizeof(gObj[lpMsg->index].Account));
+	TextField::Copy(gObj[lpMsg->index].Account, lpMsg->account);
 
-	memcpy(gObj[lpMsg->index].PersonalCode, lpMsg->PersonalCode, sizeof(gObj[lpMsg->index].PersonalCode));
+	TextField::Copy(gObj[lpMsg->index].PersonalCode, lpMsg->PersonalCode);
 
 	gObj[lpMsg->index].AccountLevel = lpMsg->AccountLevel;
 
-	memcpy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate, sizeof(gObj[lpMsg->index].AccountExpireDate));
+	TextField::Copy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate);
 
 	// El catálogo de contenido va antes de la respuesta: en el mismo stream TCP
 	// llega antes de que el cliente pida la lista de personajes.
@@ -161,7 +161,7 @@ void GJDisconnectAccountSend(int aIndex, char* account, char* IpAddress)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
 	memcpy(pMsg.IpAddress, IpAddress, sizeof(pMsg.IpAddress));
 
@@ -184,7 +184,7 @@ void GJAccountLevelSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	gJoinServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -211,13 +211,13 @@ void JGAccountLevelRecv(SDHP_ACCOUNT_LEVEL_RECV* lpMsg)
 	{
 		gObj[lpMsg->index].AccountLevel = lpMsg->AccountLevel;
 
-		memcpy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate, sizeof(gObj[lpMsg->index].AccountExpireDate));
+		TextField::Copy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate);
 	}
 	else
 	{
 		gObj[lpMsg->index].AccountLevel = lpMsg->AccountLevel;
 
-		memcpy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate, sizeof(gObj[lpMsg->index].AccountExpireDate));
+		TextField::Copy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate);
 
 		gNotice.GCNoticeSend(lpMsg->index, 1, gMessage.GetTextMessage((36 + gObj[lpMsg->index].AccountLevel), gObj[lpMsg->index].Lang), gObj[lpMsg->index].AccountExpireDate);
 	}
@@ -231,7 +231,7 @@ void GJAccountLevelSaveSend(int aIndex, int AccountLevel, int AccountExpireTime)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	pMsg.AccountLevel = AccountLevel;
 

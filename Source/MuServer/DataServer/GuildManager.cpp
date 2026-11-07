@@ -76,7 +76,7 @@ void CGuildManager::Init()
 		while (gQueryManager.Fetch() != false)
 	#endif
 		{
-			char GuildName[9] = { 0 };
+			char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 			GUILD_MEMBER_INFO GuildMemberInfo;
 
@@ -92,7 +92,7 @@ void CGuildManager::Init()
 
 			if (lpGuildInfo != 0)
 			{
-				if (_stricmp(lpGuildInfo->szMaster, GuildMemberInfo.szGuildMember) == 0)
+				if (TextName::Equals(lpGuildInfo->szMaster, GuildMemberInfo.szGuildMember))
 				{
 					lpGuildInfo->arGuildMember[0] = GuildMemberInfo;
 				}
@@ -121,7 +121,7 @@ GUILD_INFO* CGuildManager::GetGuildInfo(char* szName)
 	{
 		if ((*it)->szName[0] == szName[0])
 		{
-			if (_stricmp((*it)->szName, szName) == 0)
+			if (TextName::Equals((*it)->szName, szName))
 			{
 				return (*it);
 			}
@@ -152,7 +152,7 @@ GUILD_INFO* CGuildManager::GetMemberGuildInfo(char* szGuildMember)
 		{
 			if ((*it)->arGuildMember[n].szGuildMember[0] == szGuildMember[0])
 			{
-				if (_stricmp((*it)->arGuildMember[n].szGuildMember, szGuildMember) == 0)
+				if (TextName::Equals((*it)->arGuildMember[n].szGuildMember, szGuildMember))
 				{
 					return (*it);
 				}
@@ -171,7 +171,7 @@ GUILD_MEMBER_INFO* CGuildManager::GetGuildMemberInfo(char* szGuildMember)
 		{
 			if ((*it)->arGuildMember[n].szGuildMember[0] == szGuildMember[0])
 			{
-				if (_stricmp((*it)->arGuildMember[n].szGuildMember, szGuildMember) == 0)
+				if (TextName::Equals((*it)->arGuildMember[n].szGuildMember, szGuildMember))
 				{
 					return &(*it)->arGuildMember[n];
 				}
@@ -211,7 +211,7 @@ BYTE CGuildManager::AddGuild(int index, char* szGuildName, char* szMasterName, B
 		return 0;
 	}
 
-	if (CheckTextSyntax(szGuildName, strlen(szGuildName)) == 0 || CheckSpecialText(szGuildName) == false)
+	if (TextName::IsValid(szGuildName, strlen(szGuildName), GUILD_NAME_CLUSTERS, EnableSpecialCharacters != 0) == false)
 	{
 		return 5;
 	}
@@ -286,13 +286,13 @@ BYTE CGuildManager::AddGuild(int index, char* szGuildName, char* szMasterName, B
 
 			gQueryManager.Close();
 
-			memcpy(GuildInfo->szName, szGuildName, sizeof(GuildInfo->szName));
+			TextField::CopyString(GuildInfo->szName, szGuildName);
 
-			memcpy(GuildInfo->szMaster, szMasterName, sizeof(GuildInfo->szMaster));
+			TextField::CopyString(GuildInfo->szMaster, szMasterName);
 
 			memcpy(GuildInfo->arMark, lpMark, sizeof(GuildInfo->arMark));
 
-			memcpy(GuildInfo->arGuildMember[0].szGuildMember, szMasterName, sizeof(GuildInfo->arGuildMember[0].szGuildMember));
+			TextField::CopyString(GuildInfo->arGuildMember[0].szGuildMember, szMasterName);
 
 			GuildInfo->arGuildMember[0].btStatus = 0x80;
 
@@ -385,7 +385,7 @@ BYTE CGuildManager::AddGuildMember(int index, char* szGuildName, char* szGuildMe
 
 		GuildMemberInfo.Clear();
 
-		memcpy(GuildMemberInfo.szGuildMember, szGuildMember, sizeof(GuildMemberInfo.szGuildMember));
+		TextField::CopyString(GuildMemberInfo.szGuildMember, szGuildMember);
 
 		GuildMemberInfo.btStatus = btStatus;
 
@@ -491,7 +491,7 @@ BYTE CGuildManager::SetGuildNotice(char* szGuildName, char* szNotice)
 	{
 		gQueryManager.Close();
 
-		memcpy(lpGuildInfo->szNotice, szNotice, sizeof(lpGuildInfo->szNotice));
+		TextField::CopyString(lpGuildInfo->szNotice, szNotice);
 
 		return 1;
 	}

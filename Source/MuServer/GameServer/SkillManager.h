@@ -214,6 +214,8 @@ public:
 
 	int GetSkillEffect(int index);
 
+	int GetEffectSkill(int effect);
+
 	int GetSkillAngle(int x, int y, int tx, int ty);
 
 	int GetSkillFrustrum(int* SkillFrustrumX, int* SkillFrustrumY, BYTE angle, int x, int y, float sx, float sy);

@@ -31,9 +31,9 @@ void CGuild::GDGuildCreateRecv(SDHP_GUILD_CREATE_RECV* lpMsg, int aIndex)
 
 	pMsg.GuildNumber = 0;
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	memcpy(pMsg.Mark, lpMsg->Mark, sizeof(pMsg.Mark));
 
@@ -76,9 +76,9 @@ void CGuild::DGGuildMemberInfoSend(char* GuildName, char* Name, BYTE status, WOR
 
 	pMsg.header.set(0x07, 0x05, sizeof(pMsg));
 
-	memcpy(pMsg.GuildName, GuildName, sizeof(pMsg.GuildName));
+	TextField::CopyString(pMsg.GuildName, GuildName);
 
-	memcpy(pMsg.Name, Name, sizeof(pMsg.Name));
+	TextField::CopyString(pMsg.Name, Name);
 
 	pMsg.status = status;
 
@@ -112,13 +112,13 @@ void CGuild::DGGuildInfoSend(DWORD GuildNumber)
 
 	pMsg.GuildNumber = lpGuildInfo->dwNumber;
 
-	memcpy(pMsg.GuildName, lpGuildInfo->szName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpGuildInfo->szName);
 
-	memcpy(pMsg.GuildMaster, lpGuildInfo->szMaster, sizeof(pMsg.GuildMaster));
+	TextField::Copy(pMsg.GuildMaster, lpGuildInfo->szMaster);
 
 	memcpy(pMsg.Mark, lpGuildInfo->arMark, sizeof(pMsg.Mark));
 
-	memcpy(pMsg.Notice, lpGuildInfo->szNotice, sizeof(pMsg.Notice));
+	TextField::Copy(pMsg.Notice, lpGuildInfo->szNotice);
 
 	pMsg.score = lpGuildInfo->dwScore;
 
@@ -132,7 +132,7 @@ void CGuild::DGGuildInfoSend(DWORD GuildNumber)
 
 		if (lpGuildMemberInfo->IsEmpty() == false)
 		{
-			memcpy(info.Name, lpGuildMemberInfo->szGuildMember, sizeof(info.Name));
+			TextField::Copy(info.Name, lpGuildMemberInfo->szGuildMember);
 
 			info.status = lpGuildMemberInfo->btStatus;
 
@@ -173,9 +173,9 @@ void CGuild::GDGuildDeleteRecv(SDHP_GUILD_DELETE_RECV* lpMsg, int aIndex)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	if ((pMsg.result = gGuildManager.DelGuild(aIndex, lpMsg->GuildName)) != 1)
 	{
@@ -201,9 +201,9 @@ void CGuild::GDGuildMemberDisconnectRecv(SDHP_GUILD_MEMBER_DISCONNECT_RECV* lpMs
 
 	pMsg.header.set(0x07, 0x02, sizeof(pMsg));
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	gGuildManager.DisconnectMember(lpMsg->Name);
 
@@ -228,9 +228,9 @@ void CGuild::GDGuildMemberJoinRecv(SDHP_GUILD_MEMBER_JOIN_RECV* lpMsg, int aInde
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	pMsg.server = GetServerCodeByName(lpMsg->Name);
 
@@ -264,9 +264,9 @@ void CGuild::GDGuildMemberDeleteRecv(SDHP_GUILD_MEMBER_DELETE_RECV* lpMsg, int a
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	if ((pMsg.result = gGuildManager.DelGuildMember(aIndex, lpMsg->Name)) != 1)
 	{
@@ -312,7 +312,7 @@ void CGuild::GDGuildScoreUpdateRecv(SDHP_GUILD_SCORE_UPDATE_RECV* lpMsg)
 
 		pMsg.header.set(0x07, 0x06, sizeof(pMsg));
 
-		memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+		TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
 		pMsg.score = lpMsg->score;
 
@@ -332,9 +332,9 @@ void CGuild::GDGuildGlobalChatRecv(SDHP_GUILD_GLOBAL_CHAT_RECV* lpMsg)
 
 	pMsg.header.set(0x07, 0x07, sizeof(pMsg));
 
-	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+	TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
-	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+	TextField::Copy(pMsg.Name, lpMsg->Name);
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 
@@ -355,7 +355,7 @@ void CGuild::GDGuildGlobalNoticeRecv(SDHP_GUILD_GLOBAL_NOTICE_RECV* lpMsg)
 
 		pMsg.header.set(0x07, 0x08, sizeof(pMsg));
 
-		memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+		TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
 		memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 

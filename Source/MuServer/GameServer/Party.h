@@ -47,14 +47,14 @@ struct PMSG_PARTY_RESULT_SEND
 
 struct PMSG_PARTY_LIST_SEND
 {
-	PBMSG_HEAD header; // C1:42
+	PWMSG_HEAD header; // C2:42
 	BYTE result;
 	BYTE count;
 };
 
 struct PMSG_PARTY_LIST
 {
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE number;
 	BYTE map;
 	BYTE x;

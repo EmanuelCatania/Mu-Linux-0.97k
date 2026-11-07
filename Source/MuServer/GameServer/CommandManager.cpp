@@ -607,11 +607,11 @@ void CCommandManager::GDGlobalPostSend(BYTE type, char* name, char* message)
 
 	pMsg.type = type;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	memcpy(pMsg.message, message, sizeof(pMsg.message));
 
-	memcpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName));
+	TextField::Copy(pMsg.serverName, gServerInfo.m_ServerName);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
@@ -649,7 +649,7 @@ void CCommandManager::GCPostMessageGold(char* name, char* serverName, int messag
 
 	PMSG_CHAT_WHISPER_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -678,7 +678,7 @@ void CCommandManager::GCPostMessageBlue(char* name, char* serverName, int messag
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -707,7 +707,7 @@ void CCommandManager::GCPostMessageGreen(char* name, char* serverName, int messa
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -974,9 +974,9 @@ void CCommandManager::CommandReset(LPOBJ lpObj, char* arg)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1070,9 +1070,9 @@ void CCommandManager::CommandResetAutoProc(LPOBJ lpObj)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1351,9 +1351,9 @@ void CCommandManager::CommandGrandReset(LPOBJ lpObj, char* arg)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1682,7 +1682,7 @@ void CCommandManager::JGCommandOnlinesRecv(SDHP_COUNT_ONLINE_USER_RECV* lpMsg)
 
 void CCommandManager::CommandGuildWar(LPOBJ lpObj, char* arg)
 {
-	char GuildName[9] = { 0 };
+	char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, GuildName, sizeof(GuildName), 0);
 
@@ -1694,7 +1694,7 @@ void CCommandManager::CommandGuildWar(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandBattleSoccer(LPOBJ lpObj, char* arg)
 {
-	char GuildName[9] = { 0 };
+	char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, GuildName, sizeof(GuildName), 0);
 
@@ -1763,7 +1763,7 @@ void CCommandManager::CommandGMGlobal(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMMove(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1811,7 +1811,7 @@ void CCommandManager::CommandGMMoveAll(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMChase(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1831,7 +1831,7 @@ void CCommandManager::CommandGMChase(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMBring(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1851,7 +1851,7 @@ void CCommandManager::CommandGMBring(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMDisconnect(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1991,7 +1991,7 @@ void CCommandManager::CommandGMClearInv(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMSkin(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 

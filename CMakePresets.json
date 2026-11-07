@@ -62,7 +62,7 @@
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "toolset": "v143",
-      "description": "Connector/C++ 8.0.33 x64 descargado por CMake con SHA256 fijo."
+      "description": "MariaDB Connector/C 3.4.11 compilado por CMake (estático, SHA256 fijo)."
     },
     {
       "name": "windows-x64-release",
@@ -73,7 +73,7 @@
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "toolset": "v143",
-      "description": "Connector/C++ 8.0.33 x64 descargado por CMake con SHA256 fijo."
+      "description": "MariaDB Connector/C 3.4.11 compilado por CMake (estático, SHA256 fijo)."
     }
   ],
   "buildPresets": [

@@ -5,6 +5,7 @@
 #include "ItemManager.h"
 #include "MonsterManager.h"
 #include "ReadScript.h"
+#include "TextName.h"
 #include "Util.h"
 #include "JsonLite.h"
 #include <algorithm>
@@ -20,10 +21,11 @@ CContentCatalog gContentCatalog;
 static_assert(sizeof(PMSG_CATALOG_HEAD) == 14, "catalog head");
 static_assert(sizeof(CATALOG_ITEM) == 264, "catalog item");
 static_assert(sizeof(CATALOG_MONSTER) == 96, "catalog monster");
-static_assert(sizeof(CATALOG_MAP_FOG) == 8, "catalog map fog");
+static_assert(sizeof(CATALOG_MAP_FOG) == 12, "catalog map fog");
 static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "catalog end");
 static_assert(sizeof(CATALOG_EFFECT) == 132, "catalog effect");
 static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
+static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
 
 bool IsSafeModelPath(const char* path);
 
@@ -333,7 +335,38 @@ void CContentCatalog::LoadLegacyItems(const char* folder)
 					fog.NightRGB[n] = ClampByte(lpReadScript->GetAsNumber());
 				}
 
+				fog.Start = 2000;
+
+				fog.End = 2700;
+
 				this->m_MapFog.push_back(fog);
+			}
+
+			// Segundo bloque opcional: Mapa Inicio Fin (distancias de la niebla).
+			while (true)
+			{
+				eTokenResult token = lpReadScript->GetToken();
+
+				if (token == TOKEN_END || token == TOKEN_END_SECTION)
+				{
+					break;
+				}
+
+				int map = lpReadScript->GetNumber();
+
+				int start = lpReadScript->GetAsNumber();
+
+				int end = lpReadScript->GetAsNumber();
+
+				for (CATALOG_MAP_FOG& fog : this->m_MapFog)
+				{
+					if (fog.Map == map && start > 0 && end > start && end <= 0xFFFF)
+					{
+						fog.Start = (WORD)start;
+
+						fog.End = (WORD)end;
+					}
+				}
 			}
 		}
 		catch (...)
@@ -663,6 +696,20 @@ void CContentCatalog::Build()
 
 	this->BuildSection(0xEE, pets.empty() ? 0 : (const BYTE*)&pets[0], sizeof(CATALOG_PET), (int)pets.size(), this->m_Packets);
 
+	// Los textos dependen del idioma de cada cliente: van aparte y no entran
+	// en el hash, que identifica el contenido compartido.
+	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
+	{
+		this->m_TextPackets[lang].clear();
+
+		const std::vector<CATALOG_TEXT>& texts = this->m_Texts[lang];
+
+		if (!texts.empty())
+		{
+			this->BuildSection(0xF0, (const BYTE*)&texts[0], sizeof(CATALOG_TEXT), (int)texts.size(), this->m_TextPackets[lang]);
+		}
+	}
+
 	DWORD hash = 2166136261u;
 
 	for (size_t n = 0; n < this->m_Packets.size(); n++)
@@ -698,10 +745,151 @@ void CContentCatalog::Send(int aIndex)
 		this->Build();
 	}
 
-	for (size_t n = 0; n < this->m_Packets.size(); n++)
+	// El fin (F3:EA) va último: el cliente publica todo lo recibido al verlo.
+	const size_t last = this->m_Packets.size() - 1;
+
+	for (size_t n = 0; n < last; n++)
 	{
 		DataSend(aIndex, &this->m_Packets[n][0], (DWORD)this->m_Packets[n].size());
 	}
+
+	const int lang = gObj[aIndex].Lang;
+
+	if (lang >= 0 && lang < MAX_LANGUAGE)
+	{
+		for (const std::vector<BYTE>& packet : this->m_TextPackets[lang])
+		{
+			DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+		}
+	}
+
+	DataSend(aIndex, &this->m_Packets[last][0], (DWORD)this->m_Packets[last].size());
+}
+
+namespace
+{
+	// Un archivo de textos: "índice "texto"" (o "sección índice "texto"" para
+	// los items) por línea, hasta "end".  No existir no es un error.
+	void LoadTextFile(const std::string& path, BYTE table, std::vector<CATALOG_TEXT>& out)
+	{
+		if (!std::filesystem::exists(path))
+		{
+			return;
+		}
+
+		CReadScript* lpReadScript = new CReadScript;
+
+		if (!lpReadScript->Load(path.c_str()))
+		{
+			ErrorMessageBox(READ_SCRIPT_FILE_ERROR, path.c_str());
+
+			delete lpReadScript;
+
+			return;
+		}
+
+		int loaded = 0, rejected = 0;
+
+		try
+		{
+			while (true)
+			{
+				eTokenResult token = lpReadScript->GetToken();
+
+				if (token == TOKEN_END || token == TOKEN_END_SECTION)
+				{
+					break;
+				}
+
+				int index = lpReadScript->GetNumber();
+
+				// Los tooltips llevan además el número de línea: "sección índice línea "texto"".
+				int line = 0;
+
+				if (table == CATALOG_TEXT_ITEM || table == CATALOG_TEXT_TOOLTIP)
+				{
+					const int section = index;
+
+					const int sub = lpReadScript->GetAsNumber();
+
+					index = (section >= 0 && section < MAX_ITEM_SECTION && sub >= 0 && sub < MAX_ITEM_TYPE + MAX_ITEM_EX_PER_SECTION) ? GET_ITEM(section, sub) : -1;
+
+					if (table == CATALOG_TEXT_TOOLTIP)
+					{
+						line = lpReadScript->GetAsNumber();
+					}
+				}
+
+				const char* raw = lpReadScript->GetAsString();
+
+				const std::string text = TextName::ToDisplay(raw, strlen(raw));
+
+				CATALOG_TEXT entry;
+
+				memset(&entry, 0, sizeof(entry));
+
+				// Una línea de tooltip entra en el Text[60] de CATALOG_TOOLTIP (59 bytes y el 0).
+				const size_t maxText = (table == CATALOG_TEXT_TOOLTIP) ? sizeof(CATALOG_TOOLTIP::Text) : sizeof(entry.Text);
+
+				const bool badLine = (table == CATALOG_TEXT_TOOLTIP && (line < 0 || line >= CATALOG_TOOLTIP_MAX_LINES));
+
+				if (index < 0 || index > 0xFFFF || badLine || text.empty() || text.size() >= maxText)
+				{
+					LogAdd(LOG_RED, "[ContentCatalog] %s: texto descartado (índice %d, línea %d, %d bytes; máximo %d)", path.c_str(), index, line, (int)strlen(raw), (int)maxText - 1);
+
+					rejected++;
+
+					continue;
+				}
+
+				entry.Table = table;
+
+				entry.Reserved = (BYTE)line;
+
+				entry.Index = (WORD)index;
+
+				memcpy(entry.Text, text.data(), text.size());
+
+				out.push_back(entry);
+
+				loaded++;
+			}
+		}
+		catch (...)
+		{
+			ErrorMessageBox(lpReadScript->GetError());
+		}
+
+		delete lpReadScript;
+
+		LogAdd(LOG_BLUE, "[ContentCatalog] %s: %d textos (%d descartados)", path.c_str(), loaded, rejected);
+	}
+}
+
+void CContentCatalog::LoadTexts(const char* folder)
+{
+	static const char* languages[MAX_LANGUAGE] = { "Eng", "Spn", "Por" };
+
+	static const struct { const char* file; BYTE table; } files[] =
+	{
+		{ "Item.txt", CATALOG_TEXT_ITEM },
+		{ "Monster.txt", CATALOG_TEXT_MONSTER },
+		{ "Skill.txt", CATALOG_TEXT_SKILL },
+		{ "Client.txt", CATALOG_TEXT_CLIENT },
+		{ "Tooltip.txt", CATALOG_TEXT_TOOLTIP },
+	};
+
+	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
+	{
+		this->m_Texts[lang].clear();
+
+		for (const auto& file : files)
+		{
+			LoadTextFile(std::string(folder) + languages[lang] + "/" + file.file, file.table, this->m_Texts[lang]);
+		}
+	}
+
+	this->m_Built = false;
 }
 
 namespace
@@ -913,46 +1101,17 @@ namespace
 
 namespace
 {
-	// UTF-8 (el JSON) a Latin-1 (lo que dibuja el cliente).  Lo que no entra
-	// en Latin-1 queda como '?'.
-	bool Utf8ToLatin1(const std::string& in, char* out, size_t size)
+	// El JSON y el cliente están en UTF-8 (0.97.40): se copia si entra entero.
+	bool CopyTooltipText(const std::string& in, char* out, size_t size)
 	{
-		size_t n = 0;
-
-		for (size_t i = 0; i < in.size(); )
+		if (in.size() >= size)
 		{
-			unsigned char c = (unsigned char)in[i];
-
-			unsigned int code;
-
-			if (c < 0x80)
-			{
-				code = c;
-
-				i += 1;
-			}
-			else if ((c & 0xE0) == 0xC0 && i + 1 < in.size())
-			{
-				code = ((c & 0x1F) << 6) | ((unsigned char)in[i + 1] & 0x3F);
-
-				i += 2;
-			}
-			else
-			{
-				code = '?';
-
-				i += ((c & 0xF0) == 0xE0) ? 3 : (((c & 0xF8) == 0xF0) ? 4 : 1);
-			}
-
-			if (n + 1 >= size)
-			{
-				return false;
-			}
-
-			out[n++] = (char)((code < 256) ? code : '?');
+			return false;
 		}
 
-		out[n] = 0;
+		memcpy(out, in.data(), in.size());
+
+		out[in.size()] = 0;
 
 		return true;
 	}
@@ -980,9 +1139,9 @@ namespace
 
 			std::string color = line.IsString() ? "white" : line.GetString("color", "white");
 
-			if (text.empty() || !Utf8ToLatin1(text, entry.Text, sizeof(entry.Text)))
+			if (text.empty() || !CopyTooltipText(text, entry.Text, sizeof(entry.Text)))
 			{
-				error = "cada línea necesita un texto de hasta " + std::to_string(sizeof(entry.Text) - 1) + " caracteres";
+				error = "cada línea necesita un texto de hasta " + std::to_string(sizeof(entry.Text) - 1) + " bytes";
 
 				return false;
 			}

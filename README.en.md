@@ -1,11 +1,107 @@
 # Mu Linux 97K
 
-[![Project website](https://img.shields.io/badge/project%20website-mu--linux.com-0ea5e9?logo=googlechrome&logoColor=white)](https://mu-linux.com/es/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k?label=server&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-web?label=web&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-web) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mu-editor?label=editor&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mu-editor) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mysql?label=mysql&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mysql)
+[![Website](https://img.shields.io/badge/website-mu--linux.com-0ea5e9?logo=googlechrome&logoColor=white)](https://mu-linux.com/en/) [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/EmanuelCatania/badge.svg)](https://hub.xerj.org/contributors/EmanuelCatania)
 
-[🇪🇸 Español](README.md) | 🇺🇸 English | [🇧🇷 Português](README.pt-BR.md)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k?label=server&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-web?label=web&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-web) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mu-editor?label=editor&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mu-editor) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mysql?label=mysql&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mysql) 
+
+[🇦🇷 Español](README.md) | 🇺🇸 English | [🇧🇷 Português](README.pt-BR.md)
 
 Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and optional editor.
+
+## What's new in 0.97.40 — Phase 4 completed
+
+- **UTF-8 text end to end.** The server no longer converts to Windows-1252:
+  what the player types is what gets stored and what others see. Character and
+  guild names in any script (10 and 8 characters, validated and normalized to
+  NFC), and chat, whispers, guild notices and `/post` up to 200 bytes. The
+  database moves to `utf8mb4`.
+- **0.97.40 protocol.** 40-byte character names, 32-byte guild names and
+  200-byte chat. Packets that go over 255 bytes with those lengths (character
+  list, party, Devil Square ranking) use a C2 header.
+- **Translated texts sent by the server.** On entering, each client receives in
+  its language the item, monster and skill names, the tooltip lines of custom
+  items and the client's own texts. See [Texts and languages](#texts-and-languages).
+- **Web panel:** translation editor (`Data/Text`) and custom item editor
+  (effects, pose, tooltip and pets in `Data/Custom/Items` and
+  `Data/Custom/Pets`), both with the same validation as the server; password
+  change, Turnstile and account sorting in the admin panel.
+- **Client buff bar:** the server sends each player the time left on each
+  effect, its values and who cast it (F3:F1).
+- **Per-map fog:** besides the colors, `MapFog.txt` accepts the start and end
+  distance of each map's fog (F3:E9).
+- **MySQL through the C API.** JoinServer and DataServer use `mysql.h`: on
+  Linux, `libmysqlclient`; on Windows, MariaDB Connector/C built statically. No
+  MySQL DLL is left next to the servers.
+- Fixes: the Blood Castle ranking score arrived two bytes off; the recall packet
+  (C3:B0) had the wrong layout with GCC; Rena and Stone stack (`ItemStack.txt`).
+
+**Compatibility: server 0.97.40 ↔ [client 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40).**
+Update both together: the 0.97.30 client reads the packets with the old lengths
+and can't get into a 0.97.40 server, and vice versa.
+
+### How to upgrade from 0.97.30
+
+This version **changes the database**. Back it up before starting.
+
+1. **Database.** Follow the [utf8mb4 migration guide](docs/utf8mb4-migracion.md)
+   (in Spanish): back up, stop `mu-server` and `mu-web`, and run
+   `Migrate-utf8mb4.sql`, `Migrate-0.97.40.sql` and `Procedures.sql`. If your
+   database was already `utf8mb4`, the last two are enough. The script stops
+   without touching anything if two names would become equal under the new
+   collation.
+2. **Images.** With the published-images compose:
+
+   ```bash
+   docker compose -f docker-compose.images.yml pull mu-server mu-web mu-editor
+   docker compose -f docker-compose.images.yml up -d
+   ```
+
+   To pin the version, use the images tagged `0.97.40`.
+3. **Volumes.** Pulling does not update a persistent volume. From this
+   version's files, merge into yours:
+   - `GameServer/Data/GameServerInfo - StartUp.dat`: set `ServerVersion` to
+     `0.97.40`. **Without it, the new client can't get in** (*"wrong version"*).
+   - `Data/Text/`: the whole folder (`Eng`, `Spn`, `Por`). Everything works
+     without it, just without translations.
+   - `Data/Message_Spn.txt` and `Data/Message_Por.txt`: they are now UTF-8. If
+     you modified them, convert your copy from Windows-1252 to UTF-8.
+   - `Data/Item/ItemStack.txt`: the `14,021` row (Rena and Stone).
+   - `Data/Custom/Encoder/MapFog.txt`: optional, the new distance block.
+     Without it, each map uses 2000 to 2700 as before.
+
+**Pterodactyl:** select `0.97.40` in `MU_RELEASE_TAG` and also update the
+runtime image, which now installs `libmysqlclient21`. With the server stopped,
+extract the archive for your architecture into a temporary folder, replace the
+four binaries and `start.sh`, and merge the Data files above, keeping your INI
+files. The database migration is the same.
+
+### Texts and languages
+
+The client tells the server its language on connecting (the client's
+`[Language] LangSelection`: `Eng`, `Spn` or `Por`), and the server sends it that
+language's translations along with the content catalog. They live in
+`MuServer/Data/Text/<language>/`:
+
+| File | What it translates | Index |
+|---|---|---|
+| `Item.txt` | item names | section and index from `Item/Item.txt` |
+| `Monster.txt` | monster and NPC names | index from `Monster/Monster.txt` |
+| `Skill.txt` | skill names | index from `Skill/Skill.txt` |
+| `Tooltip.txt` | tooltip lines of custom items | item and line number of the `Custom/Items` JSON |
+| `Client.txt` | the client's own texts (options, event panel, buff bar, window title) | each text's number; the comment above says which one it is |
+
+Anything not translated is resolved by the client from its own files, so an
+empty file breaks nothing. Rules, which the server and the editor check:
+
+- UTF-8 without BOM, one line per text, no quotes or line breaks inside.
+- Up to 63 bytes per name (the client cuts item names to 29 and skill names to
+  31) and 59 per tooltip line.
+- In `Client.txt`, each line's `%d`/`%s`/`%u` must be the same as the English
+  ones and in the same order: otherwise the client discards the line.
+
+They can be edited by hand or from the web panel's **translation editor**,
+which shows the current name next to the translation and reloads the server on
+save.
 
 ## What's new in 0.97.30 — Phase 3 completed
 
@@ -49,12 +145,12 @@ To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm6
    - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
    - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
 
-   Also copy the DLLs, `plugin` directory and `LICENSE-MySQL.txt` that CMake places next to JoinServer and DataServer. Their architecture and configuration must match the executables.
+   No MySQL DLLs need to be copied: the connector is built into JoinServer and DataServer.
 4. Database: run `MuServer/MySQL/DB/CreateDatabase.sql` and then `PoblateDatabase.sql`. The default user is `admin` / `asd123`; if you use another one, change it in `DataServer.ini` and `JoinServer.ini`.
 5. In `MuServer/ConnectServer/ServerList.dat`, set the server IP (`127.0.0.1` to test on the same PC).
 6. Start them in this order: DataServer, JoinServer, ConnectServer and GameServer.
 
-The `0.97.30` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
+The `0.97.40` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
 
 #### Windows x64 and Phase 3 dependencies
 
@@ -65,7 +161,7 @@ cmake --preset windows-x64-release
 cmake --build --preset windows-x64-release --parallel 4
 ```
 
-The `windows-x86-release`, `windows-x86-debug` and `windows-x64-debug` presets are also available. CMake downloads MySQL Connector/C++ **8.0.33**, with pinned SHA256 hashes for x86/x64 and Debug/Release; its binaries are no longer checked in. Initial configuration requires access to the official MySQL archives. Legacy MSBuild projects use the same mechanism for `Debug_MySQL` and `Release_MySQL` and require CMake on PATH.
+The `windows-x86-release`, `windows-x86-debug` and `windows-x64-debug` presets are also available. JoinServer and DataServer talk to MySQL through the C API (`mysql.h`): CMake downloads the source of **MariaDB Connector/C 3.4.11** (SHA256 pinned in `cmake/MuMySQLPackages.cmake`) and builds it as a static library, with Schannel for TLS. Being a C API, it works the same with MSVC and MinGW. MySQL 8.4 authenticates with `caching_sha2_password`, which requires TLS; the connector requests it without verifying the server's self-signed certificate. On Linux the system `libmysqlclient-dev` (or `libmariadb-dev`) is used. Initial configuration requires access to GitHub. Legacy MSBuild projects build the same connector for `Debug_MySQL` and `Release_MySQL` with the project's toolset and require CMake on PATH.
 
 CI builds all four services for Windows x86/x64 and Linux x64/ARM64, Debug and Release. ARM64 remains build-only, without gameplay validation. Phase 3 fixes pointer widths in callbacks, IOCP and timers, and provides a 256 KiB pending send buffer for the login catalog; individual packets remain limited to 8 KiB. Local Windows x64 testing covered login, gameplay, reset, buying/selling and Chaos mixing; it was not a load test.
 
@@ -190,7 +286,7 @@ Based on Kayito's sources.
 
 ## Client status
 
-The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
+The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
 
 ## Quick start
 
@@ -238,7 +334,7 @@ docker compose -f docker-compose.yml -f docker-compose.editor.yml up -d --build
 It keeps per-file backups and snapshots of `MuServer/Data` and `MuServer/GameServer/DATA`. `mu-web` provides registration, login, rankings and news on external port `8085` (internal `8080`). Initial admin is `admin / 123456` and must change password at first login.
 
 - `MD5Encryption=2` uses binary MD5; recreate the DB with `docker compose down -v` when migrating from plain text.
-- Save server TXT files as ANSI / Windows-1252 without BOM. Shops live in `MuServer/Data/Shop/*.txt`; `-1 -1` auto-places `SlotX SlotY`.
+- Save server TXT files as UTF-8 without BOM. Since 0.97.40 the server no longer converts to Windows-1252: an ANSI file with accents looks wrong in the client. Shops live in `MuServer/Data/Shop/*.txt`; `-1 -1` auto-places `SlotX SlotY`.
 - Use `docker compose logs -f` for logs. Main folders: `Source/`, `MuServer/`, `docker/`.
 
 ## Website and editor 0.97.20

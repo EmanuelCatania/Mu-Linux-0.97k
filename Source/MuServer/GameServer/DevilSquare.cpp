@@ -1507,7 +1507,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 			continue;
 		}
 
-		BYTE send[256];
+		BYTE send[2048];
 
 		PMSG_DEVIL_SQUARE_SCORE_SEND pMsg;
 
@@ -1521,7 +1521,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 
 		PMSG_DEVIL_SQUARE_SCORE info;
 
-		memcpy(info.name, gObj[lpUser->Index].Name, sizeof(info.name));
+		TextField::Copy(info.name, gObj[lpUser->Index].Name);
 
 		info.score = lpUser->Score;
 
@@ -1551,7 +1551,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 					continue;
 				}
 
-				memcpy(info.name, gObj[lpLevel->User[i].Index].Name, sizeof(info.name));
+				TextField::Copy(info.name, gObj[lpLevel->User[i].Index].Name);
 
 				info.score = lpLevel->User[i].Score;
 
@@ -1569,7 +1569,9 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 			}
 		}
 
-		pMsg.header.size = size;
+		pMsg.header.size[0] = SET_NUMBERHB(size);
+
+		pMsg.header.size[1] = SET_NUMBERLB(size);
 
 		memcpy(send, &pMsg, sizeof(pMsg));
 

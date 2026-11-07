@@ -235,7 +235,7 @@ bool gObjSetMonster(int aIndex, int MonsterClass)
 		return 0;
 	}
 
-	memcpy(lpObj->Name, lpInfo->Name, sizeof(lpObj->Name));
+	TextField::Copy(lpObj->Name, lpInfo->Name);
 
 	if (lpInfo->Type == 0 || lpObj->ShopNumber != -1)
 	{

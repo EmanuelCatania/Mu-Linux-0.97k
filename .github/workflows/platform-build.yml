@@ -20,9 +20,9 @@ jobs:
     runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v5
-      - name: Instalar Connector de Linux
+      - name: Instalar la API en C de MySQL
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libmysqlcppconn-dev
+        run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev
       - name: Configurar
         run: cmake --preset ${{ matrix.target.preset }}-${{ matrix.config }}
       - name: Compilar

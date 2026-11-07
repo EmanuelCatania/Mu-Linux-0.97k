@@ -1,0 +1,7 @@
+//Líneas del tooltip de los items custom traducidas al español (0.97.40). Reemplazan el
+//texto de la línea que define Data\Custom\Items\<sección>_<índice>.json; el color y el
+//orden son los del JSON. Lo que no esté acá sale tal cual del JSON.
+//UTF-8 sin BOM. Hasta 59 bytes por línea. La línea se cuenta desde 0.
+//Sección	Índice	Línea	Texto
+13	400	0	"Recolector de zen"
+end

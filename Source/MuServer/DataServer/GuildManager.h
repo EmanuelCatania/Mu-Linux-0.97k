@@ -18,7 +18,7 @@ struct GUILD_MEMBER_INFO
 		return ((this->szGuildMember[0] == 0) ? 1 : 0);
 	}
 
-	char szGuildMember[11];
+	char szGuildMember[CHARACTER_NAME_BUFFER];
 	BYTE btStatus;
 	WORD btServer;
 };
@@ -67,9 +67,9 @@ struct GUILD_INFO
 
 	DWORD dwNumber;
 	DWORD dwScore;
-	char szName[9];
-	char szMaster[11];
-	char szNotice[60];
+	char szName[GUILD_NAME_BUFFER];
+	char szMaster[CHARACTER_NAME_BUFFER];
+	char szNotice[CHAT_MESSAGE_SIZE];
 	BYTE arMark[32];
 	GUILD_MEMBER_INFO arGuildMember[MAX_GUILD_MEMBER];
 };

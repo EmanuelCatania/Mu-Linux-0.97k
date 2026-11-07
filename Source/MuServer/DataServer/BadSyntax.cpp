@@ -69,7 +69,7 @@ bool CBadSyntax::CheckSyntax(char* text)
 {
 	for (std::vector<BAD_SYNTAX_INFO>::iterator it = this->m_BadSyntaxInfo.begin(); it != this->m_BadSyntaxInfo.end(); it++)
 	{
-		if (strstr(text, it->syntax) != 0)
+		if (TextName::Contains(text, it->syntax))
 		{
 			return false;
 		}

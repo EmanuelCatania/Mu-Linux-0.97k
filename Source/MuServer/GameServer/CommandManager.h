@@ -48,10 +48,10 @@ enum eCommandNumber
 
 struct SDHP_GLOBAL_POST_RECV
 {
-	PSBMSG_HEAD header; // C1:05:03
+	PSWMSG_HEAD header; // C2:05:03
 	BYTE type;
-	char name[11];
-	char message[60];
+	char name[CHARACTER_NAME_BUFFER];
+	char message[CHAT_MESSAGE_SIZE];
 	char serverName[60];
 };
 
@@ -60,7 +60,7 @@ struct SDHP_COMMAND_RESET_RECV
 	PSBMSG_HEAD header; // C1:05:04 | C1:05:05
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	UINT ResetDay;
 	UINT ResetWek;
 	UINT ResetMon;
@@ -72,10 +72,10 @@ struct SDHP_COMMAND_RESET_RECV
 
 struct SDHP_GLOBAL_POST_SEND
 {
-	PSBMSG_HEAD header; // C1:05:03
+	PSWMSG_HEAD header; // C2:05:03
 	BYTE type;
-	char name[11];
-	char message[60];
+	char name[CHARACTER_NAME_BUFFER];
+	char message[CHAT_MESSAGE_SIZE];
 	char serverName[60];
 };
 
@@ -84,7 +84,7 @@ struct SDHP_COMMAND_RESET_SEND
 	PSBMSG_HEAD header; // C1:05:04 | C1:05:05
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 };
 
 //**********************************************//

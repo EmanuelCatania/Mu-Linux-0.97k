@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  MariaDB Connector/C estático para las configuraciones Debug_MySQL / Release_MySQL
+  de los proyectos MSBuild. Lo descarga y compila cmake/mysql (el mismo
+  MuMySQLPackages.cmake que usa el build de CMake); no deja DLL que copiar.
+-->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MuMySQLProject>$(MSBuildThisFileDirectory)mysql</MuMySQLProject>
-    <MuMySQLBuildRoot Condition="'$(MuMySQLBuildRoot)'==''">$(MSBuildThisFileDirectory)..\out\mysql-win32\$(MSBuildProjectName)</MuMySQLBuildRoot>
-    <MuMySQLSource>$(MuMySQLBuildRoot)\_deps\mu_mysql_release-src</MuMySQLSource>
-    <MuMySQLSource Condition="'$(Configuration)'=='Debug_MySQL'">$(MuMySQLBuildRoot)\_deps\mu_mysql_debug-src</MuMySQLSource>
-    <MuMySQLDebugDir Condition="'$(Configuration)'=='Debug_MySQL'">\debug</MuMySQLDebugDir>
+    <MuMySQLBuildRoot Condition="'$(MuMySQLBuildRoot)'==''">$(MSBuildThisFileDirectory)..\out\mysql-win32\$(PlatformToolset)\$(MSBuildProjectName)</MuMySQLBuildRoot>
+    <MuMySQLConfig>Release</MuMySQLConfig>
+    <MuMySQLConfig Condition="'$(Configuration)'=='Debug_MySQL'">Debug</MuMySQLConfig>
+    <MuMySQLInclude>$(MuMySQLBuildRoot)\_deps\mu_mariadb-src\include;$(MuMySQLBuildRoot)\_deps\mu_mariadb-build\include</MuMySQLInclude>
+    <MuMySQLLibDir>$(MuMySQLBuildRoot)\_deps\mu_mariadb-build\libmariadb\$(MuMySQLConfig)</MuMySQLLibDir>
+    <MuMySQLLibs>mariadbclient.lib;ws2_32.lib;advapi32.lib;shlwapi.lib;crypt32.lib;bcrypt.lib;secur32.lib</MuMySQLLibs>
   </PropertyGroup>
-  <Target Name="MuFetchMySQL" BeforeTargets="PrepareForBuild" Condition="'$(Configuration)'=='Debug_MySQL' or '$(Configuration)'=='Release_MySQL'">
-    <Exec Command="cmake -S &quot;$(MuMySQLProject)&quot; -B &quot;$(MuMySQLBuildRoot)&quot; -G &quot;Visual Studio 17 2022&quot; -A Win32" />
-  </Target>
-  <Target Name="MuCopyMySQLRuntime" AfterTargets="Build" Condition="'$(Configuration)'=='Debug_MySQL' or '$(Configuration)'=='Release_MySQL'">
-    <ItemGroup>
-      <MuMySQLRuntime Include="$(MuMySQLSource)\lib$(MuMySQLDebugDir)\mysqlcppconn-9-vs14.dll;$(MuMySQLSource)\lib\libcrypto-1_1.dll;$(MuMySQLSource)\lib\libssl-1_1.dll;$(MuMySQLBuildRoot)\_deps\mu_mysql_release-src\bin\*.dll" />
-      <MuMySQLPlugin Include="$(MuMySQLSource)\lib\plugin\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(MuMySQLRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(MuMySQLPlugin)" DestinationFiles="@(MuMySQLPlugin->'$(OutDir)plugin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(MuMySQLSource)\LICENSE.txt" DestinationFiles="$(OutDir)LICENSE-MySQL.txt" SkipUnchangedFiles="true" />
+  <Target Name="MuBuildMySQL" BeforeTargets="PrepareForBuild" Condition="'$(Configuration)'=='Debug_MySQL' or '$(Configuration)'=='Release_MySQL'">
+    <Exec Command="cmake -S &quot;$(MuMySQLProject)&quot; -B &quot;$(MuMySQLBuildRoot)&quot; -G &quot;Visual Studio 17 2022&quot; -A Win32 -T $(PlatformToolset)" />
+    <Exec Command="cmake --build &quot;$(MuMySQLBuildRoot)&quot; --config $(MuMySQLConfig) --target mu_mysql_legacy" />
   </Target>
 </Project>

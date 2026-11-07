@@ -45,7 +45,7 @@ struct PMSG_VIEWPORT_PLAYER
 	BYTE y;
 	BYTE CharSet[11];
 	WORD ViewSkillState;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE tx;
 	BYTE ty;
 	BYTE DirAndPkLevel;
@@ -73,7 +73,7 @@ struct PMSG_VIEWPORT_SUMMON
 	BYTE tx;
 	BYTE ty;
 	BYTE DirAndPkLevel;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 };
 
 struct PMSG_VIEWPORT_ITEM
@@ -91,7 +91,7 @@ struct PMSG_VIEWPORT_CHANGE
 	BYTE y;
 	BYTE skin;
 	WORD ViewSkillState;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE tx;
 	BYTE ty;
 	BYTE DirAndPkLevel;
@@ -101,7 +101,7 @@ struct PMSG_VIEWPORT_CHANGE
 struct PMSG_VIEWPORT_GUILD_INFO
 {
 	BYTE index[2];
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 	BYTE Mark[32];
 };
 
