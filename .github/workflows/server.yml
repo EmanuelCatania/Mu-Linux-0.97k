@@ -1,7 +1,10 @@
 name: Server
 on:
   pull_request:
+  # Las ramas de tema compilan por su PR; un push a esas ramas no duplica la
+  # ejecución.
   push:
+    branches: [ "main", "fase/*" ]
   workflow_dispatch:
 concurrency:
   group: server-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}

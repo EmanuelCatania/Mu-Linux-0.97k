@@ -8,6 +8,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Un commit nuevo en la misma rama o PR cancela la ejecución anterior.
+concurrency:
+  group: client-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 # El cliente vive en client/: todos los comandos corren ahí. Las rutas de
 # upload-artifact y hashFiles no siguen este default y llevan el prefijo.
 defaults:
