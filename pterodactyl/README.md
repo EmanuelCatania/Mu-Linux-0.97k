@@ -6,7 +6,7 @@ The eggs in [`../Pterodactyl eggs`](../Pterodactyl%20eggs) use Pterodactyl's exp
 
 Every release using these eggs includes:
 
-- `Pterodactyl-eggs-v0.2.0.zip`
+- `Pterodactyl-eggs-0.97.40.zip`
 - `mu-linux-97k-server-amd64.tar.gz`
 - `mu-linux-97k-server-arm64.tar.gz`
 - `mu-linux-97k-web.tar.gz`

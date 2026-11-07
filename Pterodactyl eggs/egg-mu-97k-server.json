@@ -6,7 +6,7 @@
   "author": "support@mu-linux.com",
   "description": "MU Online 0.97k services. The installer downloads the selected release into the server volume; the runtime image contains only dependencies and the Pterodactyl entrypoint.",
   "features": null,
-  "docker_images": { "MU Linux runtime 0.2.0 (AMD64 + ARM64)": "emapupi/mu-linux-97k-pterodactyl:0.2.0" },
+  "docker_images": { "MU Linux runtime 0.97.40 (AMD64 + ARM64)": "emapupi/mu-linux-97k-pterodactyl:0.97.40" },
   "file_denylist": [],
   "startup": "./start.sh",
   "config": { "files": "{}", "startup": "{\"done\":\"GameServer started\"}", "logs": "{}", "stop": "^C" },
@@ -18,7 +18,7 @@
     }
   },
   "variables": [
-    { "name": "Release tag", "description": "GitHub release to install. Reinstall after changing it.", "env_variable": "MU_RELEASE_TAG", "default_value": "0.97.30", "user_viewable": true, "user_editable": true, "rules": "required|string|regex:/^v?[0-9]+\\.[0-9]+\\.[0-9]+$/" },
+    { "name": "Release tag", "description": "GitHub release to install. Reinstall after changing it.", "env_variable": "MU_RELEASE_TAG", "default_value": "0.97.40", "user_viewable": true, "user_editable": true, "rules": "required|string|regex:/^v?[0-9]+\\.[0-9]+\\.[0-9]+$/" },
     { "name": "Database host", "description": "MySQL hostname or IP address.", "env_variable": "DB_HOST", "default_value": "{{server.build.default.database.host}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database port", "description": "MySQL port.", "env_variable": "DB_PORT", "default_value": "{{server.build.default.database.port}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database user", "description": "MySQL user.", "env_variable": "DB_USER", "default_value": "{{server.build.default.database.username}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
