@@ -328,27 +328,37 @@ void CQueryManager::ConvertBinaryToString(BYTE* InBuff, int InSize, char* OutBuf
 
 #include "Log.h"
 
-#pragma comment(lib,"mysqlcppconn.lib")
+// mysql.h define el tipo `MYSQL`, que choca con la macro MYSQL de esta rama:
+// se la saca mientras se incluye y en el código se usan los nombres de struct
+// (st_mysql, st_mysql_res...), iguales en libmysqlclient y en MariaDB.
+#pragma push_macro("MYSQL")
+#undef MYSQL
+#include <mysql.h>
+#pragma pop_macro("MYSQL")
+
+#include <cstdlib>
+#include <cstring>
+
+namespace
+{
+	enum ParamType { PARAM_INTEGER, PARAM_REAL, PARAM_STRING, PARAM_BINARY };
+}
 
 CQueryManager gQueryManager;
 
 CQueryManager::CQueryManager()
 {
-	this->driver = NULL;
+	this->m_Connection = NULL;
 
-	this->con = NULL;
+	this->m_Result = NULL;
 
-	this->connection_properties.clear();
+	this->m_Statement = NULL;
 
-	this->stmt = NULL;
+	this->m_Row = NULL;
 
-	this->pstmt = NULL;
+	this->m_Lengths = NULL;
 
-	this->res = NULL;
-
-	this->m_StringBuffs.clear();
-
-	this->m_BinaryBuffs.clear();
+	this->m_HostPort = 0;
 }
 
 CQueryManager::~CQueryManager()
@@ -358,33 +368,57 @@ CQueryManager::~CQueryManager()
 
 bool CQueryManager::Init(std::string HostName, WORD HostPort, std::string Username, std::string Password, std::string SchemaName)
 {
-	this->connection_properties["hostName"] = HostName;
+	// Los .ini traen el host con el formato de URL de Connector/C++
+	// ("tcp://127.0.0.1"); la API en C espera sólo el nombre.
+	if (HostName.compare(0, 6, "tcp://") == 0)
+	{
+		HostName.erase(0, 6);
+	}
 
-	this->connection_properties["port"] = HostPort;
+	this->m_HostName = HostName;
 
-	this->connection_properties["userName"] = Username;
+	this->m_HostPort = HostPort;
 
-	this->connection_properties["password"] = Password;
+	this->m_Username = Username;
 
-	this->connection_properties["schema"] = SchemaName;
+	this->m_Password = Password;
 
-	// La base y el texto del server son UTF-8 (0.97.40).
-	this->connection_properties["OPT_CHARSET_NAME"] = "utf8mb4";
+	this->m_SchemaName = SchemaName;
 
 	return this->Connect();
 }
 
 bool CQueryManager::Connect()
 {
-	try
-	{
-		this->driver = get_driver_instance();
+	this->Close();
 
-		this->con = this->driver->connect(this->connection_properties);
-	}
-	catch (sql::SQLException e)
+	if (this->m_Connection)
 	{
-		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: %s", e.what());
+		mysql_close(this->m_Connection);
+
+		this->m_Connection = NULL;
+	}
+
+	this->m_Connection = mysql_init(NULL);
+
+	if (this->m_Connection == NULL)
+	{
+		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: mysql_init");
+
+		return false;
+	}
+
+	// La base y el texto del server son UTF-8 (0.97.40).
+	mysql_options(this->m_Connection, MYSQL_SET_CHARSET_NAME, "utf8mb4");
+
+	// CLIENT_MULTI_RESULTS: los CALL a procedimientos devuelven más de un resultado.
+	if (mysql_real_connect(this->m_Connection, this->m_HostName.c_str(), this->m_Username.c_str(), this->m_Password.c_str(), this->m_SchemaName.c_str(), this->m_HostPort, NULL, CLIENT_MULTI_RESULTS) == NULL)
+	{
+		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: %s", mysql_error(this->m_Connection));
+
+		mysql_close(this->m_Connection);
+
+		this->m_Connection = NULL;
 
 		return false;
 	}
@@ -394,18 +428,14 @@ bool CQueryManager::Connect()
 
 void CQueryManager::Disconnect()
 {
-	this->driver = NULL;
-
-	if (this->con)
-	{
-		delete this->con;
-
-		this->con = NULL;
-	}
-
-	this->connection_properties.clear();
-
 	this->Close();
+
+	if (this->m_Connection)
+	{
+		mysql_close(this->m_Connection);
+
+		this->m_Connection = NULL;
+	}
 }
 
 void CQueryManager::PrepareQuery(std::string query, ...)
@@ -420,68 +450,104 @@ void CQueryManager::PrepareQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = buff;
+	this->FreeResults();
 
-	this->pstmt = this->con->prepareStatement(sql);
+	this->CloseStatement();
+
+	this->m_Params.clear();
+
+	if (this->m_Connection == NULL)
+	{
+		LogAdd(LOG_RED, "[PrepareQuery] No connection to DataBase");
+
+		return;
+	}
+
+	this->m_Statement = mysql_stmt_init(this->m_Connection);
+
+	if (this->m_Statement == NULL || mysql_stmt_prepare(this->m_Statement, buff, (unsigned long)strlen(buff)) != 0)
+	{
+		LogAdd(LOG_BLUE, "%s", buff);
+
+		this->DiagnosticStatement();
+
+		this->CloseStatement();
+
+		return;
+	}
 
 	gLog.Output(LOG_QUERY, "[PrepareQuery] Query prepared: %s", buff);
 }
 
 bool CQueryManager::ExecPreparedUpdateQuery()
 {
-	try
+	if (this->m_Statement == NULL)
 	{
-		int Quant = this->pstmt->executeUpdate();
-
-		gLog.Output(LOG_QUERY, "[ExecPreparedUpdateQuery] %d rows updated", Quant);
-	}
-	catch (sql::SQLException& e)
-	{
-		this->Diagnostic(e);
+		LogAdd(LOG_RED, "[ExecPreparedUpdateQuery] No prepared query");
 
 		return false;
 	}
-	catch (...)
+
+	const unsigned long count = mysql_stmt_param_count(this->m_Statement);
+
+	std::vector<MYSQL_BIND> binds(count);
+
+	std::vector<unsigned long> lengths(count);
+
+	memset(binds.data(), 0, sizeof(MYSQL_BIND) * count);
+
+	for (unsigned long n = 0; n < count; n++)
 	{
-		LogAdd(LOG_RED, "[ExecPreparedUpdateQuery] Exception thrown");
+		std::map<int, Param>::iterator it = this->m_Params.find((int)n + 1);
+
+		if (it == this->m_Params.end())
+		{
+			binds[n].buffer_type = MYSQL_TYPE_NULL;
+
+			continue;
+		}
+
+		Param& param = it->second;
+
+		switch (param.type)
+		{
+			case PARAM_INTEGER:
+				binds[n].buffer_type = MYSQL_TYPE_LONGLONG;
+				binds[n].buffer = &param.integer;
+				break;
+			case PARAM_REAL:
+				binds[n].buffer_type = MYSQL_TYPE_DOUBLE;
+				binds[n].buffer = &param.real;
+				break;
+			default:
+				binds[n].buffer_type = (param.type == PARAM_STRING) ? MYSQL_TYPE_STRING : MYSQL_TYPE_BLOB;
+				binds[n].buffer = (void*)param.bytes.data();
+				binds[n].buffer_length = (unsigned long)param.bytes.size();
+				lengths[n] = (unsigned long)param.bytes.size();
+				binds[n].length = &lengths[n];
+				break;
+		}
+	}
+
+	if ((count > 0 && mysql_stmt_bind_param(this->m_Statement, binds.data()) != 0) || mysql_stmt_execute(this->m_Statement) != 0)
+	{
+		this->DiagnosticStatement();
 
 		return false;
 	}
+
+	gLog.Output(LOG_QUERY, "[ExecPreparedUpdateQuery] %d rows updated", (int)mysql_stmt_affected_rows(this->m_Statement));
 
 	return true;
 }
 
 bool CQueryManager::ExecPreparedResultQuery()
 {
-	try
-	{
-		if (this->pstmt->execute())
-		{
-			this->res = this->pstmt->getResultSet();
+	// Ningún llamador lee filas de una consulta preparada; leerlas con la API
+	// en C exige enlazar cada columna, así que no se implementa.
+	LogAdd(LOG_RED, "[ExecPreparedResultQuery] Not supported");
 
-			gLog.Output(LOG_QUERY, "[ExecPreparedResultQuery] Query with results.");
-		}
-		else
-		{
-			gLog.Output(LOG_QUERY, "[ExecPreparedResultQuery] No results available.");
-
-			return false;
-		}
-	}
-	catch (sql::SQLException& e)
-	{
-		this->Diagnostic(e);
-
-		return false;
-	}
-	catch (...)
-	{
-		LogAdd(LOG_RED, "[ExecPreparedResultQuery] Exception thrown");
-
-		return false;
-	}
-
-	return true;
+	return false;
 }
 
 bool CQueryManager::ExecUpdateQuery(std::string query, ...)
@@ -496,28 +562,14 @@ bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = buff;
+	bool HasResult = false;
 
-	try
+	if (this->RunQuery(buff, HasResult) == false)
 	{
-		this->stmt = this->con->createStatement();
-
-		int Quant = this->stmt->executeUpdate(sql);
-
-		gLog.Output(LOG_QUERY, "[ExecUpdateQuery] %d rows updated. Query: %s", Quant, buff);
-	}
-	catch (sql::SQLException& e)
-	{
-		this->Diagnostic(e, buff);
-
 		return false;
 	}
-	catch (...)
-	{
-		LogAdd(LOG_RED, "[ExecUpdateQuery] Exception thrown");
 
-		return false;
-	}
+	gLog.Output(LOG_QUERY, "[ExecUpdateQuery] %d rows updated. Query: %s", (int)mysql_affected_rows(this->m_Connection), buff);
 
 	return true;
 }
@@ -534,37 +586,21 @@ bool CQueryManager::ExecResultQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = buff;
+	bool HasResult = false;
 
-	try
+	if (this->RunQuery(buff, HasResult) == false)
 	{
-		this->stmt = this->con->createStatement();
-
-		if (this->stmt->execute(sql))
-		{
-			this->res = this->stmt->getResultSet();
-
-			gLog.Output(LOG_QUERY, "[ExecResultQuery] Query with results. Query: %s", buff);
-		}
-		else
-		{
-			gLog.Output(LOG_QUERY, "[ExecResultQuery] No results available. Query: %s", buff);
-
-			return false;
-		}
+		return false;
 	}
-	catch (sql::SQLException& e)
+
+	if (HasResult == false)
 	{
-		this->Diagnostic(e, buff);
+		gLog.Output(LOG_QUERY, "[ExecResultQuery] No results available. Query: %s", buff);
 
 		return false;
 	}
-	catch (...)
-	{
-		LogAdd(LOG_RED, "[ExecResultQuery] Exception thrown");
 
-		return false;
-	}
+	gLog.Output(LOG_QUERY, "[ExecResultQuery] Query with results. Query: %s", buff);
 
 	return true;
 }
@@ -581,53 +617,145 @@ bool CQueryManager::ExecQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = buff;
+	bool HasResult = false;
 
-	try
+	if (this->RunQuery(buff, HasResult) == false)
 	{
-		this->stmt = this->con->createStatement();
-
-		if (this->stmt->execute(sql))
-		{
-			this->res = this->stmt->getResultSet();
-
-			gLog.Output(LOG_QUERY, "[ExecQuery] Query with results. Query: %s", buff);
-		}
-		else
-		{
-			__int64 Quant = this->stmt->getUpdateCount();
-
-			gLog.Output(LOG_QUERY, "[ExecQuery] %d rows updated. Query: %s", Quant, buff);
-
-			return (Quant > 0);
-		}
-	}
-	catch (sql::SQLException& e)
-	{
-		this->Diagnostic(e, buff);
-
 		return false;
 	}
-	catch (...)
-	{
-		LogAdd(LOG_RED, "[ExecQuery] Exception thrown");
 
-		return false;
+	if (HasResult == false)
+	{
+		__int64 Quant = (__int64)mysql_affected_rows(this->m_Connection);
+
+		gLog.Output(LOG_QUERY, "[ExecQuery] %d rows updated. Query: %s", (int)Quant, buff);
+
+		return (Quant > 0);
 	}
+
+	gLog.Output(LOG_QUERY, "[ExecQuery] Query with results. Query: %s", buff);
 
 	return true;
 }
 
-void CQueryManager::Diagnostic(sql::SQLException& e, char* Query)
+bool CQueryManager::RunQuery(const char* query, bool& HasResult)
+{
+	HasResult = false;
+
+	// Lo que haya quedado de la consulta anterior (filas sin leer o los
+	// resultados extra de un CALL) bloquea la conexión hasta descartarlo.
+	this->FreeResults();
+
+	if (this->m_Connection == NULL && this->Connect() == false)
+	{
+		return false;
+	}
+
+	if (mysql_real_query(this->m_Connection, query, (unsigned long)strlen(query)) != 0)
+	{
+		this->Diagnostic((char*)query);
+
+		return false;
+	}
+
+	this->m_Result = mysql_store_result(this->m_Connection);
+
+	if (this->m_Result == NULL)
+	{
+		if (mysql_field_count(this->m_Connection) != 0)
+		{
+			this->Diagnostic((char*)query);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	const unsigned int fields = mysql_num_fields(this->m_Result);
+
+	MYSQL_FIELD* field = mysql_fetch_fields(this->m_Result);
+
+	for (unsigned int n = 0; n < fields; n++)
+	{
+		this->m_Columns.push_back(field[n].name ? field[n].name : "");
+	}
+
+	HasResult = true;
+
+	return true;
+}
+
+void CQueryManager::FreeResults()
+{
+	if (this->m_Result)
+	{
+		mysql_free_result(this->m_Result);
+
+		this->m_Result = NULL;
+	}
+
+	this->m_Row = NULL;
+
+	this->m_Lengths = NULL;
+
+	this->m_Columns.clear();
+
+	if (this->m_Connection == NULL)
+	{
+		return;
+	}
+
+	while (mysql_more_results(this->m_Connection) && mysql_next_result(this->m_Connection) == 0)
+	{
+		st_mysql_res* extra = mysql_store_result(this->m_Connection);
+
+		if (extra)
+		{
+			mysql_free_result(extra);
+		}
+	}
+}
+
+void CQueryManager::CloseStatement()
+{
+	if (this->m_Statement)
+	{
+		mysql_stmt_close(this->m_Statement);
+
+		this->m_Statement = NULL;
+	}
+}
+
+void CQueryManager::Diagnostic(char* Query)
 {
 	if (Query)
 	{
 		LogAdd(LOG_BLUE, "%s", Query);
 	}
 
-	std::string SqlState = e.getSQLState();
+	std::string SqlState = mysql_sqlstate(this->m_Connection);
 
-	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), e.what());
+	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_error(this->m_Connection));
+
+	if (SqlState.compare("HY000") == 0)
+	{
+		this->Connect();
+	}
+}
+
+void CQueryManager::DiagnosticStatement()
+{
+	if (this->m_Statement == NULL)
+	{
+		this->Diagnostic();
+
+		return;
+	}
+
+	std::string SqlState = mysql_stmt_sqlstate(this->m_Statement);
+
+	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_stmt_error(this->m_Statement));
 
 	if (SqlState.compare("HY000") == 0)
 	{
@@ -637,125 +765,174 @@ void CQueryManager::Diagnostic(sql::SQLException& e, char* Query)
 
 void CQueryManager::Close()
 {
-	if (this->res)
-	{
-		delete this->res;
+	this->FreeResults();
 
-		this->res = NULL;
-	}
+	this->CloseStatement();
 
-	if (this->stmt)
-	{
-		while (this->stmt->getMoreResults());
-
-		delete this->stmt;
-
-		this->stmt = NULL;
-	}
-
-	if (this->pstmt)
-	{
-		while (this->pstmt->getMoreResults());
-
-		delete this->pstmt;
-
-		this->pstmt = NULL;
-	}
-
-	this->m_StringBuffs.clear();
-
-	for (std::map<int, std::stringstream*>::iterator itr = this->m_BinaryBuffs.begin(); itr != this->m_BinaryBuffs.end(); itr++)
-	{
-		delete itr->second;
-	}
-
-	this->m_BinaryBuffs.clear();
+	this->m_Params.clear();
 }
 
 bool CQueryManager::Fetch()
 {
-	return this->res->next();
+	if (this->m_Result == NULL)
+	{
+		return false;
+	}
+
+	this->m_Row = mysql_fetch_row(this->m_Result);
+
+	if (this->m_Row == NULL)
+	{
+		this->m_Lengths = NULL;
+
+		return false;
+	}
+
+	this->m_Lengths = mysql_fetch_lengths(this->m_Result);
+
+	return true;
 }
 
 void CQueryManager::SetAsInteger(int position, int value)
 {
-	this->pstmt->setInt(position, value);
+	Param& param = this->m_Params[position];
+
+	param.type = PARAM_INTEGER;
+
+	param.integer = value;
 }
 
 void CQueryManager::SetAsFloat(int position, float value)
 {
-	this->pstmt->setDouble(position, (double)value);
+	Param& param = this->m_Params[position];
+
+	param.type = PARAM_REAL;
+
+	param.real = (double)value;
 }
 
 void CQueryManager::SetAsInteger64(int position, __int64 value)
 {
-	this->pstmt->setInt64(position, value);
+	Param& param = this->m_Params[position];
+
+	param.type = PARAM_INTEGER;
+
+	param.integer = value;
 }
 
 void CQueryManager::SetAsString(int position, char* InBuffer, int InBufferSize)
 {
-	this->m_StringBuffs[position].assign(InBuffer, TextField::Length(InBuffer, InBufferSize));
+	Param& param = this->m_Params[position];
 
-	this->pstmt->setString(position, this->m_StringBuffs[position]);
+	param.type = PARAM_STRING;
+
+	param.bytes.assign(InBuffer, TextField::Length(InBuffer, InBufferSize));
 }
 
 void CQueryManager::SetAsBinary(int position, unsigned char* InBuffer, int InBufferSize)
 {
-	std::stringstream* buff = new std::stringstream;
+	Param& param = this->m_Params[position];
 
-	buff->write((const char*)InBuffer, InBufferSize);
+	param.type = PARAM_BINARY;
 
-	this->m_BinaryBuffs[position] = buff;
+	param.bytes.assign((const char*)InBuffer, InBufferSize);
+}
 
-	this->pstmt->setBlob(position, this->m_BinaryBuffs[position]);
+const char* CQueryManager::Column(const std::string& ColName, unsigned long* Length)
+{
+	if (Length)
+	{
+		*Length = 0;
+	}
+
+	if (this->m_Row == NULL)
+	{
+		return NULL;
+	}
+
+	// Connector/C++ buscaba la columna sin distinguir mayúsculas.
+	for (size_t n = 0; n < this->m_Columns.size(); n++)
+	{
+		if (_stricmp(this->m_Columns[n].c_str(), ColName.c_str()) == 0)
+		{
+			if (Length && this->m_Lengths)
+			{
+				*Length = this->m_Lengths[n];
+			}
+
+			return this->m_Row[n];
+		}
+	}
+
+	LogAdd(LOG_RED, "[QueryManager] Unknown column: %s", ColName.c_str());
+
+	return NULL;
 }
 
 int CQueryManager::GetAsInteger(std::string ColName)
 {
-	return this->res->getInt(ColName);
+	const char* value = this->Column(ColName);
+
+	return value ? (int)strtoll(value, NULL, 10) : 0;
 }
 
 float CQueryManager::GetAsFloat(std::string ColName)
 {
-	return (float)this->res->getDouble(ColName);
+	const char* value = this->Column(ColName);
+
+	return value ? (float)strtod(value, NULL) : 0.0f;
 }
 
 __int64 CQueryManager::GetAsInteger64(std::string ColName)
 {
-	return this->res->getInt64(ColName);
+	const char* value = this->Column(ColName);
+
+	return value ? (__int64)strtoll(value, NULL, 10) : 0;
 }
 
 void CQueryManager::GetAsString(std::string ColName, char* OutBuffer, int OutBufferSize)
 {
-	const std::string text = this->res->getString(ColName);
+	unsigned long Length = 0;
+
+	const char* value = this->Column(ColName, &Length);
+
+	std::size_t length = value ? Length : 0;
 
 	// Si no entra, se corta en un borde de codepoint para no dejar UTF-8 roto.
-	std::size_t length = text.length();
-
 	if (length > (std::size_t)(OutBufferSize - 1))
 	{
 		length = OutBufferSize - 1;
 
-		while (length > 0 && ((unsigned char)text[length] & 0xC0) == 0x80)
+		while (length > 0 && ((unsigned char)value[length] & 0xC0) == 0x80)
 		{
 			length--;
 		}
 	}
 
-	memcpy(OutBuffer, text.data(), length);
+	if (length > 0)
+	{
+		memcpy(OutBuffer, value, length);
+	}
 
 	OutBuffer[length] = 0;
 }
 
 void CQueryManager::GetAsBinary(std::string ColName, unsigned char* OutBuffer, int OutBufferSize)
 {
-	char* result = new char[OutBufferSize];
+	unsigned long Length = 0;
 
-	this->res->getBlob(ColName)->read(result, OutBufferSize);
+	const char* value = this->Column(ColName, &Length);
 
-	memcpy(OutBuffer, result, OutBufferSize);
+	// Lo que falte (blob más corto o NULL) queda en cero; Connector/C++ dejaba
+	// esos bytes sin inicializar.
+	const unsigned long size = (value == NULL) ? 0 : (Length < (unsigned long)OutBufferSize ? Length : (unsigned long)OutBufferSize);
 
-	delete[] result;
+	memset(OutBuffer, 0, OutBufferSize);
+
+	if (size > 0)
+	{
+		memcpy(OutBuffer, value, size);
+	}
 }
 
 void CQueryManager::ConvertStringToBinary(char* InBuff, int InSize, unsigned char* OutBuff, int OutSize)

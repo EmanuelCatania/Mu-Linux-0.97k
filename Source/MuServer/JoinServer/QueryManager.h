@@ -77,23 +77,19 @@ extern CQueryManager gQueryManager;
 
 #else
 
-#include "mysql_connection.h"
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/prepared_statement.h>
 #include <map>
-#include <sstream>
+#include <string>
+#include <vector>
+
+// API en C de MySQL (libmysqlclient o MariaDB Connector/C). Sus tipos se
+// declaran adelantados: mysql.h define un tipo `MYSQL` que choca con la macro
+// MYSQL que elige esta rama, así que sólo lo incluye QueryManager.cpp.
+struct st_mysql;
+struct st_mysql_res;
+struct st_mysql_stmt;
 
 class CQueryManager
 {
-	struct membuf : std::streambuf
-	{
-		membuf(char* begin, char* end)
-		{
-			this->setg(begin, begin, end);
-		}
-	};
-
 public:
 
 	CQueryManager();
@@ -144,7 +140,25 @@ public:
 
 private:
 
-	void Diagnostic(sql::SQLException& e, char* Query = NULL);
+	struct Param
+	{
+		int type;
+		__int64 integer;
+		double real;
+		std::string bytes;
+	};
+
+	bool RunQuery(const char* query, bool& HasResult);
+
+	void FreeResults();
+
+	void CloseStatement();
+
+	const char* Column(const std::string& ColName, unsigned long* Length = NULL);
+
+	void Diagnostic(char* Query = NULL);
+
+	void DiagnosticStatement();
 
 	void ConvertStringToBinary(char* InBuff, int InSize, unsigned char* OutBuff, int OutSize);
 
@@ -152,17 +166,21 @@ private:
 
 private:
 
-	sql::Driver* driver;
+	st_mysql* m_Connection;
+	st_mysql_res* m_Result;
+	st_mysql_stmt* m_Statement;
 
-	sql::ConnectOptionsMap connection_properties;
+	char** m_Row;
+	unsigned long* m_Lengths;
+	std::vector<std::string> m_Columns;
 
-	sql::Connection* con;
-	sql::Statement* stmt;
-	sql::PreparedStatement* pstmt;
-	sql::ResultSet* res;
+	std::map<int, Param> m_Params;
 
-	std::map<int, std::stringstream*> m_BinaryBuffs;
-	std::map<int, std::string> m_StringBuffs;
+	std::string m_HostName;
+	WORD m_HostPort;
+	std::string m_Username;
+	std::string m_Password;
+	std::string m_SchemaName;
 };
 
 extern CQueryManager gQueryManager;
