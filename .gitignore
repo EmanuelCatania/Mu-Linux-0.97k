@@ -5,3 +5,6 @@ node_modules/
 
 /server/out/
 /server/Source/MuServer/bin/
+
+# Ajustes locales de cada instalación (puertos, proxy); Compose los carga solo.
+docker-compose.override.yml

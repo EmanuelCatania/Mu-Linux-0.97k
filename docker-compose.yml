@@ -12,9 +12,9 @@ services:
       SEED_TEST_DATA: ${SEED_TEST_DATA}
     volumes:
       - mu_mysql:/var/lib/mysql
-      - ./MuServer/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
-      - ./docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
-      - ./MuServer/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
+      - ./server/MuServer/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
+      - ./server/docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
+      - ./server/MuServer/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
