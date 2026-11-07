@@ -361,7 +361,7 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
 }
 
 // Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
-// documented as SetPlayerDie in Net/SecondPassword.cpp, so the old address label was misleading.
+// documented as SetPlayerDie in Entity/Character_Motion.cpp, so the old address label was misleading.
 // Handles landing after a teleport:
 //   If local player (param_1 == DAT_07abf5d8): clears teleport-state flag at DAT_07cf1ff4+0x1c.
 //   Spawns landing visual effects per class:

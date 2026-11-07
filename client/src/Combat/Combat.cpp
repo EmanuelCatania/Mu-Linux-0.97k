@@ -2028,7 +2028,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         // que es simplemente: 1 para esos tres tipos, 0 para el resto.
         // 243 = Craftsman, 246 = Weapon Merchant, 251 = Blacksmith (Monster.txt):
         // los tres NPC que reparan.  Este byte es el gate del checkbox de
-        // reparacion (lo leen SecondPassword_Screen4 y Chat_InputTick), asi que sin este
+        // reparacion (lo leen Inventory_HitTest y Chat_InputTick), asi que sin este
         // write el panel del herrero salia sin poder tildar nada.
         DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
 

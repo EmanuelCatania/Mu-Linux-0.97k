@@ -79,7 +79,7 @@ std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
   bool onWindow=Inside(x,y,origin,0,190,433);
   if(flags&(1|2|4|16))onWindow=onWindow||Inside(x,y,240,40,190,433);
   if(flags&8)onWindow=onWindow||Inside(x,y,240,40,190,433);
-  events.clear();hashSlot=panelCalls=0;SecondPassword_Screen4();Check();
+  events.clear();hashSlot=panelCalls=0;Inventory_HitTest();Check();
   Require(events==expectedEvents && hashSlot==12 && panelCalls==2);
   Require(DAT_07d78094==(onWindow?1u:0x55u) && DAT_07eaa138==unsigned(repair) && DAT_07eaa164==0);
   const bool closed=buttons&&backHit&&click;
@@ -114,8 +114,8 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/SecondPassword.cpp',revision)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'SecondPassword_Screen4')+MAIN
+    source=read_source('src/UI/UI_PanelInput.cpp',revision)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'Inventory_HitTest')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

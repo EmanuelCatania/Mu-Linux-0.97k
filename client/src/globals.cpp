@@ -2351,7 +2351,7 @@ int     DAT_0055a3f8  = 0;   // auth mode param A
 int     DAT_0055a3fc  = 0;   // auth mode param B
 
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
-DWORD   DAT_07eaa120  = 0;   // SecondPassword_Screen5 mode
+DWORD   DAT_07eaa120  = 0;   // EventEntrance_HitTest mode
 char    DAT_07eaa0dc  = 0;   // SecondPassword selected grid index
 // Buffers del editor de creacion de GUILD (no "PIN entry"); el codigo los recorre
 // como arrays:

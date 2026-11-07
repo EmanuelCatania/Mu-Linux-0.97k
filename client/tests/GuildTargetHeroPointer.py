@@ -70,7 +70,7 @@ def condition(source):
     return found[0]
 
 def harness(revision=None):
-    source=read_source('src/Net/SecondPassword.cpp',revision);guild=read_source('src/Net/Recv/Recv_Guild.cpp',revision)
+    source=read_source('src/Entity/Character_Motion.cpp',revision);guild=read_source('src/Net/Recv/Recv_Guild.cpp',revision)
     header=read_source('src/Net/Recv/NetRecv.h',revision);protocol=read_source('src/Net/Protocol/ProtocolBase.h',revision)
     count=re.search(r'constexpr int kGuildMarkRecordCount\s*=\s*\d+;',header).group(0)
     width=re.search(r'constexpr std::size_t kGuildNameSize\s*=\s*(\d+);',protocol)[1]

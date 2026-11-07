@@ -6,7 +6,7 @@
 // items** del cliente: render del grid + hit-test + click handlers para
 // pickup / drop / sell / right-click-use / hotkey-assign / pet-renaming.
 //
-// La llaman los paneles de SecondPassword.cpp (4-7 sitios) en cada tick:
+// La llaman los paneles de UI/UI_PanelInput.cpp (4-7 sitios) en cada tick:
 //   - Main inventory: `FUN_004d23b0(InventoryStartX+15, InventoryStartY+200,
 //     OffsetInventoryItems, 8, 8, 0)`
 //   - Trade slots (own/peer): grids 8x4
@@ -1202,7 +1202,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             // IDA 004DF410 case 2 (L402-431): este dialogo es SOLO la
             // confirmacion del Chaos Mix -- lo abre el boton OK de la Chaos
-            // Machine (SecondPassword_Screen8, unico writer de dword_7EAA13C = 2).  El
+            // Machine (ChaosMix_HitTest, unico writer de dword_7EAA13C = 2).  El
             // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
             // se agrega el tipo de receta reconocido localmente.
             DAT_07eaa140 = 1;
