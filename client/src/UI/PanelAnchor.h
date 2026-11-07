@@ -47,6 +47,9 @@ inline constexpr Panel Menu { Anchor::Centro, 120 };
 inline constexpr Panel WindowLeft { Anchor::Izquierda, 0 };
 inline constexpr Panel WindowRight { Anchor::Derecha, 0 };
 constexpr int ClassicChatX(int margin) { return WindowLeft.Origin(margin) - 10; }
+// DESVIACION (Fase 4): el chat clásico va debajo de la zona de avisos del
+// sistema (6 líneas de 13 desde y=0), no en y=81 encima de ella.
+constexpr int ClassicChatY = 81 + 6 * 13;
 
 struct HorizontalViewport { int x, width; };
 // Sólo un viewport que toca exactamente el borde del 4:3 se extiende.

@@ -493,8 +493,10 @@ static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, intptr_t 
 static void __fastcall ChatLB_renderScroll(DWORD* self)
 {
     // El chat clásico sigue el borde incluso al cambiar resolución en Opciones.
-    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0)
+    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0) {
         self[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift());
+        self[12] = (DWORD)Ui::ClassicChatY;
+    }
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef int  (__fastcall *FnRow )(DWORD*, int /*edx*/, int row);
 
@@ -526,8 +528,10 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
 // vtable methods 24/28/32/36 and walks focus state machine.
 static int __fastcall ChatLB_tick(DWORD* self, int, int v)
 {
-    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0)
+    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0) {
         self[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift());
+        self[12] = (DWORD)Ui::ClassicChatY;
+    }
     if (self == (DWORD*)(uintptr_t)DAT_055c9ff4 && GuildOpened)
         self[11] = (DWORD)(gWindow.PanelOrigin(Ui::Guild) + 10);
     typedef int  (__fastcall *FnInt)(DWORD*);
@@ -1295,10 +1299,18 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         if (row + 1 >= (int)self[35]) return (int)g_bUseChatListBox;
     }
     if (!DAT_00559bf1 && *(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind) == 3) return 0;
-    if (g_bUseChatListBox) {
-        DWORD t = *(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind);
-        if (t == 1 || t == 2) return 0;
-    } else {
+    // DESVIACION (Fase 4): los avisos del sistema (tipos 1 y 2, y todo mensaje
+    // sin remitente) van sólo a la zona de arriba (UI_RenderChatLogOverlay) y
+    // este recuadro queda para el chat: normal, susurro, party y guild. El
+    // original los separaba así sólo con el recuadro activo; en modo clásico
+    // mezclaba todo. Las líneas vacías siguen ocupando fila para que el chat
+    // se desplace con el tiempo como siempre.
+    {
+        const char* node = (const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor);
+        DWORD t = *(const DWORD*)(node + kChatNodeKind);
+        if (t == 1 || t == 2 || (!node[kChatNodeName] && node[kChatNodeText])) return 0;
+    }
+    if (!g_bUseChatListBox) {
         int extra = *(int*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeLines);
         if (extra && !self[34]) {
             if ((int)self[35] - extra - v5 - 1 < 0) return v5 - (int)self[35];
