@@ -77,23 +77,13 @@ extern CQueryManager gQueryManager;
 
 #else
 
-#include "mysql_connection.h"
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/prepared_statement.h>
 #include <map>
-#include <sstream>
+#include <string>
+#include <vector>
+
 
 class CQueryManager
 {
-	struct membuf : std::streambuf
-	{
-		membuf(char* begin, char* end)
-		{
-			this->setg(begin, begin, end);
-		}
-	};
-
 public:
 
 	CQueryManager();
@@ -144,7 +134,25 @@ public:
 
 private:
 
-	void Diagnostic(sql::SQLException& e, char* Query = NULL);
+	struct Param
+	{
+		int type;
+		__int64 integer;
+		double real;
+		std::string bytes;
+	};
+
+	bool RunQuery(const char* query, bool& HasResult);
+
+	void FreeResults();
+
+	void CloseStatement();
+
+	const char* Column(const std::string& ColName, unsigned long* Length = NULL);
+
+	void Diagnostic(char* Query = NULL);
+
+	void DiagnosticStatement();
 
 	void ConvertStringToBinary(char* InBuff, int InSize, unsigned char* OutBuff, int OutSize);
 
@@ -152,17 +160,26 @@ private:
 
 private:
 
-	sql::Driver* driver;
+	// API en C de MySQL (libmysqlclient o MariaDB Connector/C). Los punteros
+	// son opacos: mysql.h define un tipo `MYSQL` que choca con la macro MYSQL
+	// que elige esta rama, y los nombres de struct no son los mismos en las dos
+	// bibliotecas (st_mysql en MariaDB, MYSQL en la de Oracle). Sólo
+	// QueryManager.cpp incluye mysql.h y les da el tipo.
+	void* m_Connection;  // MYSQL*
+	void* m_Result;      // MYSQL_RES*
+	void* m_Statement;   // MYSQL_STMT*
 
-	sql::ConnectOptionsMap connection_properties;
+	char** m_Row;
+	unsigned long* m_Lengths;
+	std::vector<std::string> m_Columns;
 
-	sql::Connection* con;
-	sql::Statement* stmt;
-	sql::PreparedStatement* pstmt;
-	sql::ResultSet* res;
+	std::map<int, Param> m_Params;
 
-	std::map<int, std::stringstream*> m_BinaryBuffs;
-	std::map<int, std::string> m_StringBuffs;
+	std::string m_HostName;
+	WORD m_HostPort;
+	std::string m_Username;
+	std::string m_Password;
+	std::string m_SchemaName;
 };
 
 extern CQueryManager gQueryManager;

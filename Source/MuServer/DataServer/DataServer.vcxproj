@@ -123,14 +123,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;MYSQL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MuMySQLSource)\include\jdbc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MuMySQLInclude);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <MapFileName>$(OutDir)$(TargetName).map</MapFileName>
-      <AdditionalDependencies>User32.lib;Gdi32.lib;odbc32.lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MuMySQLSource)\lib\vs14$(MuMySQLDebugDir);</AdditionalLibraryDirectories>
+      <AdditionalDependencies>User32.lib;Gdi32.lib;odbc32.lib;$(MuMySQLLibs);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MuMySQLLibDir);</AdditionalLibraryDirectories>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
@@ -167,7 +167,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;MYSQL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MuMySQLSource)\include\jdbc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MuMySQLInclude);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -175,9 +175,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <MapFileName>$(OutDir)$(TargetName).map</MapFileName>
-      <AdditionalDependencies>User32.lib;Gdi32.lib;odbc32.lib;</AdditionalDependencies>
+      <AdditionalDependencies>User32.lib;Gdi32.lib;odbc32.lib;$(MuMySQLLibs);</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>$(MuMySQLSource)\lib\vs14$(MuMySQLDebugDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MuMySQLLibDir);</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -229,6 +229,13 @@
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />
+    <ClCompile Include="..\Common\TextName.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\utf8proc\utf8proc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>UTF8PROC_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_MySQL|Win32'">Create</PrecompiledHeader>
