@@ -450,7 +450,9 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             for (int k = 0; k < 3; ++k) { const float d = v0[i * 3 + k] - flashCenter[k]; d2 += d * d; }
             if (d2 > flashRadius) flashRadius = d2;
         }
-        flashRadius = sqrtf(flashRadius);
+        // Se normaliza por el semilado (la esquina queda a ~1.41x), asi el
+        // borde entero -- no solo las esquinas -- llega a cero.
+        flashRadius = sqrtf(flashRadius) * 0.70710678f;
     }
     if (!thunderFlash && MeshDraw::Draw(meshInput)) {
         BMDDevice::Select({BMDDevice::Pass::Exit});
