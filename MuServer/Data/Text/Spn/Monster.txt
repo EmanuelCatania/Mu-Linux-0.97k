@@ -1,0 +1,8 @@
+//Nombres traducidos al español (0.97.40). Se mandan a los clientes con ese
+//idioma; lo que no esté acá sale de los .bmd del cliente.
+//Índices: los de Monster\Monster.txt (índice del monstruo o NPC).
+//UTF-8 sin BOM. Hasta 63 bytes por nombre; el cliente lo corta a lo
+//que entra en su tabla (items 29 bytes, skills 31; monstruos sin corte).
+//Índice	Nombre
+//0	"Bull Fighter"
+end

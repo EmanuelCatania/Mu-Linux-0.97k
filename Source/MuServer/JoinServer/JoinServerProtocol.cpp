@@ -92,7 +92,7 @@ void GJConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 	pMsg.result = 1;
 
@@ -306,7 +306,7 @@ void GJDisconnectAccountRecv(SDHP_DISCONNECT_ACCOUNT_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 	pMsg.result = 1;
 
@@ -369,7 +369,7 @@ void GJAccountLevelRecv(SDHP_ACCOUNT_LEVEL_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 #ifndef MYSQL
 	if (gQueryManager.ExecQuery("EXEC WZ_GetAccountLevel '%s'", lpMsg->account) == false || gQueryManager.Fetch() == SQL_NO_DATA)
@@ -432,7 +432,7 @@ void JGAccountAlreadyConnectedSend(int GameServerCode, int UserIndex, char* acco
 
 	pMsg.index = UserIndex;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
 	gSocketManager.DataSend(lpServerManager->m_index, (BYTE*)&pMsg, pMsg.header.size);
 }

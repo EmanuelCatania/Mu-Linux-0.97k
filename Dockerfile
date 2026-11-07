@@ -4,7 +4,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
-        libmysqlcppconn-dev \
+        libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
@@ -25,8 +25,7 @@ LABEL org.opencontainers.image.version="0.97.30" \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         netcat-openbsd \
-    && (apt-get install -y --no-install-recommends libmysqlcppconn7v5 \
-        || apt-get install -y --no-install-recommends libmysqlcppconn8-2) \
+        libmysqlclient21 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/mu

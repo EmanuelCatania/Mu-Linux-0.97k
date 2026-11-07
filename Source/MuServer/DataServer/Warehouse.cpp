@@ -23,7 +23,7 @@ void CWarehouse::GDWarehouseItemRecv(SDHP_WAREHOUSE_ITEM_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 	if (lpMsg->WarehouseNumber == 0)
 	{
@@ -249,7 +249,7 @@ void CWarehouse::DGWarehouseFreeSend(int ServerIndex, WORD index, char* account)
 
 	pMsg.index = index;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
 	gSocketManager.DataSend(ServerIndex, (BYTE*)&pMsg, pMsg.header.size);
 }

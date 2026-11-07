@@ -9,5 +9,6 @@
 14,005		*		255		*		//Mana Potion
 14,006		*		255		*		//Large Mana Potion
 14,008		*		255		*		//Antidote
+14,021		*		255		*		//Rena y Stone (Golden Archer)
 
 end

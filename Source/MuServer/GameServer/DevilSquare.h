@@ -48,14 +48,14 @@ struct PMSG_DEVIL_SQUARE_ENTER_SEND
 
 struct PMSG_DEVIL_SQUARE_SCORE_SEND
 {
-	PBMSG_HEAD header; // C1:93
+	PWMSG_HEAD header; // C2:93
 	BYTE rank;
 	BYTE count;
 };
 
 struct PMSG_DEVIL_SQUARE_SCORE
 {
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	DWORD score;
 	DWORD RewardExperience;
 	DWORD RewardMoney;

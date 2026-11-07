@@ -120,6 +120,10 @@ struct CATALOG_MAP_FOG
 	BYTE DayRGB[3];
 	BYTE NightRGB[3];
 	BYTE Reserved;
+	// Distancias de la niebla lineal (unidades del mundo). Los clientes que
+	// leen 8 bytes las ignoran; los nuevos usan 2000/2700 si no llegan.
+	WORD Start;
+	WORD End;
 };
 
 struct CATALOG_EFFECT
@@ -151,7 +155,7 @@ struct CATALOG_TOOLTIP
 	WORD Item;
 	BYTE Color;         // 0 blanco 1 azul 2 rojo 3 amarillo 4 verde 5 rojo oscuro 6 violeta 7 azul oscuro 8 amarillo oscuro
 	BYTE Reserved;
-	char Text[60];      // Latin-1, como el resto del texto del cliente
+	char Text[60];      // UTF-8
 };
 
 struct CATALOG_PET
@@ -167,6 +171,24 @@ struct CATALOG_PET
 	BYTE Flags;         // CATALOG_PET_FLAG_*
 	BYTE CollectRange;  // en casillas: hasta dónde va a buscar el zen
 	BYTE Reserved;
+};
+
+// Textos traducidos (0.97.40): Data/Text/<Eng|Spn|Por>/*.txt.  El server
+// manda sólo los del idioma que pidió el cliente con el F1:04; lo que no esté
+// traducido sigue saliendo de los .bmd del cliente (o del Name de E7/E8 para
+// los items y monstruos agregados).
+#define CATALOG_TEXT_ITEM    1
+#define CATALOG_TEXT_MONSTER 2
+#define CATALOG_TEXT_SKILL   3
+#define CATALOG_TEXT_CLIENT  4   // textos propios del cliente (ClientTextId)
+#define CATALOG_TEXT_TOOLTIP 5   // línea del tooltip de un item: Index = item, Reserved = línea (0 a 5)
+
+struct CATALOG_TEXT
+{
+	BYTE Table;         // CATALOG_TEXT_*
+	BYTE Reserved;      // en los tooltips, el número de línea
+	WORD Index;         // item (sección * 512 + índice), monstruo, skill o ClientTextId
+	char Text[64];      // UTF-8 en NFC
 };
 
 struct PMSG_CATALOG_END_SEND
@@ -208,6 +230,9 @@ public:
 	// Efectos y demás datos por item en JSON (Data/Custom/Items/*.json).
 	void LoadItemJson(const char* folder);
 
+	// Textos traducidos: folder\<Eng|Spn|Por>\{Item,Monster,Skill}.txt.
+	void LoadTexts(const char* folder);
+
 	void Invalidate() { this->m_Built = false; }
 
 	void Send(int aIndex);
@@ -231,6 +256,10 @@ private:
 	std::vector<CATALOG_TOOLTIP> m_Tooltips;
 
 	std::vector<std::vector<BYTE>> m_Packets;
+
+	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
+
+	std::vector<std::vector<BYTE>> m_TextPackets[MAX_LANGUAGE];
 };
 
 extern CContentCatalog gContentCatalog;

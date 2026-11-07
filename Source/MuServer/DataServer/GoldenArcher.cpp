@@ -27,7 +27,7 @@ void CGoldenArcher::GDGoldenArcherGetValuesRecv(SDHP_GOLDEN_ARCHER_GET_VALUES_RE
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 #ifndef MYSQL
 	if (gQueryManager.ExecQuery("SELECT * FROM GoldenArcherCoin WHERE AccountID = '%s'", lpMsg->account) == false || gQueryManager.Fetch() == SQL_NO_DATA)
@@ -159,7 +159,7 @@ void CGoldenArcher::GDGoldenArcherRegisterLuckyNumberRecv(SDHP_GOLDEN_ARCHER_SAV
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 #ifndef MYSQL
 	if (gQueryManager.ExecQuery("INSERT INTO GoldenArcherLuckyNumbers (AccountID, LuckyNumber) VALUES ('%s', '%s')", lpMsg->account, lpMsg->LuckyNumber) == false)

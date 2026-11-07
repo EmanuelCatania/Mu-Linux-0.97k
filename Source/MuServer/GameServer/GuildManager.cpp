@@ -27,7 +27,7 @@ GUILD_INFO* CGuildManager::SearchGuild(char* GuildName)
 {
 	for (std::vector<GUILD_INFO*>::iterator it = this->vGuildList.begin(); it != this->vGuildList.end(); it++)
 	{
-		if (strcmp((*it)->Name, GuildName) == 0)
+		if (TextName::Equals((*it)->Name, GuildName))
 		{
 			return (*it);
 		}
@@ -81,7 +81,7 @@ bool CGuildManager::DeleteGuild(char* GuildName)
 {
 	for (std::vector<GUILD_INFO*>::iterator it = this->vGuildList.begin(); it != this->vGuildList.end();)
 	{
-		if (strcmp((*it)->Name, GuildName) == 0)
+		if (TextName::Equals((*it)->Name, GuildName))
 		{
 			delete (*it);
 
@@ -107,7 +107,7 @@ GUILD_INFO* CGuildManager::AddMember(GUILD_INFO* lpGuild, char* Name, int aIndex
 		return 0;
 	}
 
-	if (strcmp(Name, lpGuild->Members[0].Name) == 0)
+	if (TextName::Equals(Name, lpGuild->Members[0].Name))
 	{
 		blank = 0;
 	}
@@ -117,7 +117,7 @@ GUILD_INFO* CGuildManager::AddMember(GUILD_INFO* lpGuild, char* Name, int aIndex
 		{
 			if (lpGuild->Members[i].Use != false)
 			{
-				if (strcmp(lpGuild->Members[i].Name, Name) == 0)
+				if (TextName::Equals(lpGuild->Members[i].Name, Name))
 				{
 					if (aIndex != -1)
 					{
@@ -172,7 +172,7 @@ GUILD_INFO* CGuildManager::AddMember(char* GuildName, char* Name, int aIndex, in
 		return 0;
 	}
 
-	if (strcmp(Name, pNode->Members[0].Name) == 0)
+	if (TextName::Equals(Name, pNode->Members[0].Name))
 	{
 		blank = 0;
 	}
@@ -182,7 +182,7 @@ GUILD_INFO* CGuildManager::AddMember(char* GuildName, char* Name, int aIndex, in
 		{
 			if (pNode->Members[i].Use != false)
 			{
-				if (strcmp(pNode->Members[i].Name, Name) == 0)
+				if (TextName::Equals(pNode->Members[i].Name, Name))
 				{
 					if (aIndex != -1)
 					{
@@ -241,7 +241,7 @@ bool CGuildManager::DelMember(char* GuildName, char* Name)
 	{
 		if (lpGuild->Members[n].Use != false)
 		{
-			if (strcmp(lpGuild->Members[n].Name, Name) == 0)
+			if (TextName::Equals(lpGuild->Members[n].Name, Name))
 			{
 				lpGuild->Members[n].Clear();
 
@@ -260,7 +260,7 @@ bool CGuildManager::ConnectUser(GUILD_INFO* lpGuild, char* GuildName, char* Name
 		return 0;
 	}
 
-	if (strcmp(GuildName, lpGuild->Name) != 0)
+	if (!TextName::Equals(GuildName, lpGuild->Name))
 	{
 		return 0;
 	}
@@ -269,7 +269,7 @@ bool CGuildManager::ConnectUser(GUILD_INFO* lpGuild, char* GuildName, char* Name
 	{
 		if (lpGuild->Members[n].Use != false)
 		{
-			if (strcmp(lpGuild->Members[n].Name, Name) == 0)
+			if (TextName::Equals(lpGuild->Members[n].Name, Name))
 			{
 				lpGuild->Members[n].Index = aIndex;
 
@@ -307,7 +307,7 @@ bool CGuildManager::CloseMember(char* GuildName, char* Name)
 	{
 		if (lpGuild->Members[n].Use != false)
 		{
-			if (strcmp(lpGuild->Members[n].Name, Name) == 0)
+			if (TextName::Equals(lpGuild->Members[n].Name, Name))
 			{
 				lpGuild->Members[n].Index = -1;
 
@@ -334,7 +334,7 @@ bool CGuildManager::SetServer(char* GuildName, char* Name, int server)
 	{
 		if (lpGuild->Members[n].Use != false)
 		{
-			if (strcmp(lpGuild->Members[n].Name, Name) == 0)
+			if (TextName::Equals(lpGuild->Members[n].Name, Name))
 			{
 				lpGuild->Members[n].Server = server;
 

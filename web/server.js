@@ -12,6 +12,10 @@ const { ensureSettings, readSettings, registerSettings } = require('./lib/site-s
 const { translator, locales, registerCatalogs, resolveLanguage } = require('./lib/i18n');
 const { getCountryInfo, isPrivateIp, displayGameIp, isGeoEnabled } = require('./lib/geo');
 const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-master');
+const translations = require('./lib/translations');
+const customItems = require('./lib/custom-items');
+const itemRows = require('./lib/item-rows');
+const noticeLimits = require('./lib/notices');
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -79,7 +83,9 @@ const pool = mysql.createPool({
   database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  // Los nombres y textos son utf8mb4 (0.97.40).
+  charset: 'utf8mb4'
 });
 
 const sessionStore = new MySQLStore({}, pool);
@@ -94,7 +100,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// Versión de la hoja de estilos: cambia con el archivo, así un cambio de CSS no se
+// queda en la caché del navegador ni del proxy.
+let cssVersion = String(Date.now());
+try {
+  cssVersion = String(Math.floor(fs.statSync(path.join(__dirname, 'public', 'css', 'app.css')).mtimeMs));
+} catch (err) {
+  // Sin el archivo se usa la hora de arranque.
+}
+
 app.use((req, res, next) => {
+  res.locals.cssVersion = cssVersion;
   res.locals.editorEnabled = editorEnabled;
   res.locals.editorApiUrl = EDITOR_API_URL;
   res.locals.editorMaxBackups = editorMaxBackups;
@@ -1705,6 +1721,14 @@ app.get('/admin/server-editor/notices', requireAdmin, requireAdminPasswordChange
   res.render('admin_notice_editor');
 });
 
+app.get('/admin/server-editor/texts', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_texts_editor');
+});
+
+app.get('/admin/server-editor/customitems', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_custom_items_editor');
+});
+
 app.get('/admin/server-editor/blacklist', requireAdmin, requireAdminPasswordChange, (req, res) => {
   res.render('admin_blacklist_editor');
 });
@@ -2153,10 +2177,297 @@ app.post('/admin/server-editor/api/notices', requireAdmin, requireAdminPasswordC
   }
   try {
     const content = String(req.body?.content ?? '');
+    // Un aviso de más de 127 bytes hace fallar la carga del archivo en el server.
+    const errors = noticeLimits.validateNoticeContent(content);
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors.join('. ') });
+    }
     const data = await editorRequest('POST', '/api/file', {
       path: 'Data/Util/Notice.txt',
       content
     });
+    return res.json({ ok: true, backups: data.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// ── Traducciones del server (Data/Text/<idioma>/*.txt) ───────────────────────
+// Los nombres de referencia salen de los datos del server; la traducción es
+// opcional y pisa al nombre que trae el cliente. Las reglas de validación están en
+// lib/translations.js.
+const TEXT_REFERENCE_FILES = {
+  items: 'Data/Item/Item.txt',
+  monsters: 'Data/Monster/Monster.txt',
+  skills: 'Data/Skill/Skill.txt',
+  client: 'Data/Text/Eng/Client.txt'
+};
+
+async function readTextBundle(lang, table) {
+  // Un archivo de traducciones que todavía no existe se trata como vacío: se crea al guardar.
+  let current = { content: '' };
+  try {
+    current = await editorRequest('GET', `/api/file?path=${encodeURIComponent(translations.pathFor(lang, table))}`);
+  } catch (err) {
+    if (!/ENOENT/.test(String(err.message))) throw err;
+  }
+  return {
+    parsed: translations.parseTranslations(current.content, table),
+    reference: table === 'tooltips' ? await readTooltipReference() : await readFileReference(table)
+  };
+}
+
+async function readFileReference(table) {
+  const reference = await editorRequest('GET', `/api/file?path=${encodeURIComponent(TEXT_REFERENCE_FILES[table])}`);
+  return translations.parseReference(reference.content, table);
+}
+
+// Las líneas de tooltip originales salen de los JSON de Data/Custom/Items: una entrada
+// por línea, con el nombre del item para reconocerla.
+async function readTooltipReference() {
+  const [names, items] = await Promise.all([editorFileNames(customItems.KINDS.items), readItemList()]);
+  const nameOf = new Map(items.map((item) => [item.key.join(','), item.name]));
+  const out = [];
+  for (const file of names.sort()) {
+    const key = customItems.keyFromFileName(file);
+    if (!key) continue;
+    let parsed;
+    try {
+      const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(customItems.pathFor('items', key))}`);
+      parsed = customItems.parseJsonFile(data.content);
+    } catch (err) {
+      continue;
+    }
+    const lines = Array.isArray(parsed?.data?.tooltip) ? parsed.data.tooltip : [];
+    lines.slice(0, customItems.MAX_TOOLTIP_LINES).forEach((line, n) => {
+      const text = typeof line === 'string' ? line : line?.text;
+      if (typeof text === 'string' && text !== '') out.push({ key: [key[0], key[1], n], name: text, label: nameOf.get(key.join(',')) || '' });
+    });
+  }
+  return out;
+}
+
+app.get('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const lang = String(req.query.lang || '');
+  const table = String(req.query.table || '');
+  if (!translations.isLang(lang) || !translations.isTable(table)) {
+    return res.status(400).json({ error: 'Idioma o tabla inválidos' });
+  }
+  try {
+    const { parsed, reference } = await readTextBundle(lang, table);
+    return res.json({
+      lang,
+      table,
+      maxBytes: translations.maxBytesFor(table),
+      reference,
+      translations: parsed.entries.map((entry) => ({ key: entry.key, name: entry.name })),
+      errors: parsed.errors
+    });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const lang = String(req.body?.lang || '');
+  const table = String(req.body?.table || '');
+  const edits = req.body?.edits;
+  if (!translations.isLang(lang) || !translations.isTable(table) || !Array.isArray(edits) || edits.length > 5000) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { parsed, reference } = await readTextBundle(lang, table);
+    // En Client.txt los %d/%s tienen que ser los del inglés. El inglés mismo no
+    // tiene contra qué compararse acá: su referencia es el propio archivo.
+    const byKey = new Map(reference.map((entry) => [entry.key.join('	'), entry.name]));
+    const referenceFor = table === 'client' && lang !== 'Eng' ? (key) => byKey.get(key.join('	')) : undefined;
+    const result = translations.applyEdits(parsed, edits, table, { referenceFor });
+    if (result.errors) {
+      return res.status(400).json({ error: 'Hay textos inválidos', errors: result.errors });
+    }
+    const content = translations.serializeTranslations(parsed, result.entries, { table, lang });
+    const data = await editorRequest('POST', '/api/file', { path: translations.pathFor(lang, table), content });
+    return res.json({ ok: true, count: result.entries.length, backups: data.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// ── Items custom (Data/Custom/Items y Data/Custom/Pets) ──────────────────────
+// Un JSON por item, con efectos, pose de inventario y tooltip (items) o con el
+// movimiento y las habilidades (pets). Las reglas están en lib/custom-items.js.
+async function editorFileNames(directory) {
+  try {
+    const data = await editorRequest('GET', `/api/list?path=${encodeURIComponent(directory)}`);
+    return (data.entries || []).filter((entry) => entry.type === 'file').map((entry) => entry.name);
+  } catch (err) {
+    // Una carpeta que todavía no existe es una lista vacía.
+    if (/ENOENT|no such file|Not a directory/i.test(String(err.message))) return [];
+    throw err;
+  }
+}
+
+async function readItemList() {
+  const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Item/Item.txt')}`);
+  return customItems.parseItemList(data.content);
+}
+
+function customKey(value) {
+  const key = String(value || '').split(',').map((n) => Number(n));
+  return customItems.validKey(key) ? key : null;
+}
+
+app.get('/admin/server-editor/api/custom-items', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const [items, itemFiles, petFiles] = await Promise.all([
+      readItemList(),
+      editorFileNames(customItems.KINDS.items),
+      editorFileNames(customItems.KINDS.pets)
+    ]);
+    const keys = (names) => names.map(customItems.keyFromFileName).filter(Boolean);
+    return res.json({
+      items,
+      files: { items: keys(itemFiles), pets: keys(petFiles) },
+      colors: customItems.TOOLTIP_COLORS,
+      maxTooltipLines: customItems.MAX_TOOLTIP_LINES,
+      layouts: Array.from({ length: 16 }, (_, section) => itemRows.statColumns(section)),
+      prefix: itemRows.PREFIX,
+      maxNameBytes: itemRows.MAX_NAME_BYTES
+    });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.get('/admin/server-editor/api/custom-items/file', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const kind = String(req.query.kind || '');
+  const key = customKey(req.query.key);
+  if (!customItems.isKind(kind) || !key) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    let content;
+    try {
+      content = (await editorRequest('GET', `/api/file?path=${encodeURIComponent(customItems.pathFor(kind, key))}`)).content;
+    } catch (err) {
+      if (/ENOENT|no such file/i.test(String(err.message))) return res.json({ exists: false });
+      throw err;
+    }
+    const parsed = customItems.parseJsonFile(content);
+    if (parsed.error) {
+      return res.json({ exists: true, error: parsed.error, raw: content });
+    }
+    return res.json({ exists: true, header: parsed.header, data: parsed.data, hasInnerComments: parsed.hasInnerComments });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/custom-items/file', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const kind = String(req.body?.kind || '');
+  const key = customKey(req.body?.key);
+  const data = req.body?.data;
+  if (!customItems.isKind(kind) || !key || data === null || typeof data !== 'object' || Array.isArray(data)) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    // El archivo se llama como su item: la clave "item" no puede discrepar del nombre.
+    const body = { ...data, item: `${key[0]},${key[1]}` };
+    let errors;
+    if (kind === 'pets') {
+      const item = (await readItemList()).find((entry) => entry.key[0] === key[0] && entry.key[1] === key[1]);
+      if (!item) return res.status(400).json({ error: 'El item no existe en Item.txt' });
+      errors = customItems.validatePetJson(body, { itemSlot: item.slot });
+    } else {
+      errors = customItems.validateItemJson(body);
+    }
+    if (errors.length > 0) {
+      return res.status(400).json({ error: 'El archivo tiene errores', errors });
+    }
+    const header = Array.isArray(req.body?.header) ? req.body.header.map(String) : [];
+    const saved = await editorRequest('POST', '/api/file', {
+      path: customItems.pathFor(kind, key),
+      content: customItems.serializeJsonFile(header, body)
+    });
+    return res.json({ ok: true, backups: saved.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// Fila de Item.txt: los datos del item y sus columnas custom (comportamiento, carpeta,
+// modelo, brillo, modelo puesto y gate).
+async function readItemFile() {
+  const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Item/Item.txt')}`);
+  return { content: data.content, file: itemRows.parseItemFile(data.content) };
+}
+
+app.get('/admin/server-editor/api/custom-items/row', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const key = customKey(req.query.key);
+  if (!key) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { file } = await readItemFile();
+    const row = itemRows.findRow(file, key);
+    if (!row) return res.status(404).json({ error: 'El item no existe en Item.txt' });
+    return res.json({ row: itemRows.rowModel(key[0], row), nextFree: itemRows.nextFreeIndex(file, key[0]) });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/custom-items/row', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const mode = String(req.body?.mode || '');
+  const row = req.body?.row;
+  if ((mode !== 'add' && mode !== 'edit') || row === null || typeof row !== 'object') {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { content } = await readItemFile();
+    const result = mode === 'add' ? itemRows.addRow(content, row) : itemRows.replaceRow(content, row);
+    if (result.errors) {
+      return res.status(400).json({ error: 'La fila tiene errores', errors: result.errors });
+    }
+    const saved = await editorRequest('POST', '/api/file', { path: 'Data/Item/Item.txt', content: result.content });
+    return res.json({ ok: true, backups: saved.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/custom-items/delete', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const kind = String(req.body?.kind || '');
+  const key = customKey(req.body?.key);
+  if (!customItems.isKind(kind) || !key) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const data = await editorRequest('POST', '/api/delete', { path: customItems.pathFor(kind, key) });
     return res.json({ ok: true, backups: data.backups || [] });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });

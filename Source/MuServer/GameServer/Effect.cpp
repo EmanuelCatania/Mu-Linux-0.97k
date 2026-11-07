@@ -34,6 +34,8 @@ void CEffect::Clear()
 	this->m_value[2] = 0;
 
 	this->m_value[3] = 0;
+
+	memset(this->m_caster, 0, sizeof(this->m_caster));
 }
 
 bool CEffect::IsEffect()

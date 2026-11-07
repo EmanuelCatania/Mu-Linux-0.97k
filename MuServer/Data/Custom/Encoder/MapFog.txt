@@ -40,3 +40,32 @@
 16		127		178		255		0		0		0		// Blood Castle 6
 
 end
+
+//********************************************************************************************************//
+//******** DISTANCIAS (opcional): MapNumber Start End
+//******** Start -> distancia (unidades del mundo, 100 = una casilla) donde empieza la niebla
+//******** End   -> distancia donde la niebla es total. Sin este bloque: 2000 2700.
+//******** Con la camara 3D del cliente las distancias se estiran con su alcance.
+//********************************************************************************************************//
+
+// MapNumber	Start	End	Comment
+
+0		2400	3200	// Lorencia
+1		2400	3200	// Dungeon
+2		2400	3200	// Devias
+3		2400	3200	// Noria
+4		2400	3200	// LostTower
+5		2400	3200	// Dare Devil
+6		2400	3200	// Stadium
+7		2400	3200	// Atlans
+8		2400	3200	// Tarkan
+9		2400	3200	// Devil Square
+10		2400	3200	// Icarus
+11		2400	3200	// Blood Castle 1
+12		2400	3200	// Blood Castle 2
+13		2400	3200	// Blood Castle 3
+14		2400	3200	// Blood Castle 4
+15		2400	3200	// Blood Castle 5
+16		2400	3200	// Blood Castle 6
+
+end

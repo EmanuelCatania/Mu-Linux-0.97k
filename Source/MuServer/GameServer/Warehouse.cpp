@@ -469,7 +469,7 @@ void CWarehouse::GDWarehouseItemSend(int aIndex, char* account)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
 	pMsg.WarehouseNumber = gObj[aIndex].WarehouseNumber;
 
@@ -491,7 +491,7 @@ void CWarehouse::GDWarehouseItemSaveSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
 	for (int n = 0; n < WAREHOUSE_SIZE; n++)
 	{

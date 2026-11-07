@@ -31,4 +31,7 @@ public:
 	DWORD m_count;
 
 	WORD m_value[4];
+
+	// Nombre del personaje que lanzó el efecto (vacío si no vino de un skill).
+	char m_caster[11];
 };
