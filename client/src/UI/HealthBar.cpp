@@ -68,7 +68,8 @@ void DrawBar(int x, int y, float width, float height, BYTE percent, bool selecte
     Gfx::Color4f(0.0f, 0.0f, 0.0f, selected ? 1.0f : 0.5f);
     GL_DrawRect((float)x, (float)y, width, height);
     Gfx::Color4f(selected ? 0.5f : 0.8f, 0.0f, 0.0f, 1.0f);
-    GL_DrawRect((float)x + 2, (float)y + 2, (width - 4) * percent / 100.0f, height - 4);
+    const float pad = height >= 6.0f ? 2.0f : 1.0f;
+    GL_DrawRect((float)x + pad, (float)y + pad, (width - 2 * pad) * percent / 100.0f, height - 2 * pad);
     Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();
 }
@@ -107,10 +108,21 @@ void CHealthBar::DrawViewport() const
         float position[3] = { view.X(), view.Y(), view.Z() + view.Height() + HealthBarLayout::WorldOffset };
         int x, y;
         Camera_ProjectWorldToScreen(position, &x, &y);
-        x -= HealthBarLayout::Width / 2;
-        if (MouseX >= x && MouseX < x + HealthBarLayout::Width && MouseY >= y && MouseY < y + HealthBarLayout::Height)
-            DrawLabel(entity, bar->rateHP, x + HealthBarLayout::Width / 2, y - HealthBarLayout::LabelOffset, 0x80000000u);
-        DrawBar(x, y, (float)HealthBarLayout::Width, (float)HealthBarLayout::Height, bar->rateHP, false);
+        // DESVIACION: el tamaño sigue a la distancia de la cámara (el DLL lo
+        // dejaba fijo y con la cámara 3D alejada las barras quedaban enormes).
+        // 100 unidades verticales miden ~31 px con la cámara normal.
+        float above[3] = { position[0], position[1], position[2] + 100.0f };
+        int ax, ay;
+        Camera_ProjectWorldToScreen(above, &ax, &ay);
+        const float span = sqrtf(float((ax - x) * (ax - x) + (ay - y) * (ay - y)));
+        float scale = span / 31.0f;
+        scale = scale < 0.4f ? 0.4f : scale > 1.0f ? 1.0f : scale;
+        const int width = int(HealthBarLayout::Width * scale + 0.5f);
+        const int height = int(HealthBarLayout::Height * scale + 0.5f) < 3 ? 3 : int(HealthBarLayout::Height * scale + 0.5f);
+        x -= width / 2;
+        if (MouseX >= x && MouseX < x + width && MouseY >= y && MouseY < y + height)
+            DrawLabel(entity, bar->rateHP, x + width / 2, y - HealthBarLayout::LabelOffset, 0x80000000u);
+        DrawBar(x, y, (float)width, (float)height, bar->rateHP, false);
     }
 }
 

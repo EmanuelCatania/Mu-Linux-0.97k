@@ -209,6 +209,9 @@
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\PanelAnchor.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
+    <ClInclude Include="src\UI\BuffBar.h" />
+    <ClInclude Include="src\UI\ChatHistory.h" />
+    <ClInclude Include="src\Core\DataPrefetch.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\Render\Camera3D.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
@@ -315,6 +318,8 @@
     <ClCompile Include="src\Render\Backend\GL\MeshDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ShadowMap.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\ShadowLight.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Materials.cpp" />
@@ -642,6 +647,9 @@
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
+    <ClCompile Include="src\UI\BuffBar.cpp" />
+    <ClCompile Include="src\UI\ChatHistory.cpp" />
+    <ClCompile Include="src\Core\DataPrefetch.cpp" />
     <ClCompile Include="src\UI\MiniMap.cpp" />
     <ClCompile Include="src\Render\Camera3D.cpp" />
     <ClCompile Include="src\UI\OptionsMenu.cpp" />

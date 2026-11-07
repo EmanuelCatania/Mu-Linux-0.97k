@@ -14,7 +14,9 @@
           "features": [
             { "name": "d3d11", "platform": "windows" },
             { "name": "d3d12", "platform": "windows" },
-            { "name": "vulkan", "platform": "windows | (linux & x64)" }
+            { "name": "vulkan", "platform": "windows | (linux & x64)" },
+            { "name": "wayland", "platform": "linux & x64" },
+            { "name": "x11", "platform": "linux & x64" }
           ]
         }
       ]

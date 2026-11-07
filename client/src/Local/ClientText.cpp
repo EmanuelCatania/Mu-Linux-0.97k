@@ -60,7 +60,12 @@ const char* const English[] = {
     "Antialiasing: %s",
     "Advanced",
     "Graphics",
-    "HD textures"
+    "HD textures",
+    "Shadows: %s",
+    "Depth fog",
+    "Draw distance: %s",
+    "Time left: %s", "Cast by: %s", "Damage +%d", "Defense +%d",
+    "Damage taken -%d%%", "Max HP +%d%%"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -87,6 +92,15 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::OptionsAdvanced, "Avanzado", "Avançado" },
         { ClientTextId::OptionsGraphics, "Gráficos", "Gráficos" },
         { ClientTextId::HDTextures, "Texturas HD", "Texturas HD" },
+        { ClientTextId::Shadows, "Sombras: %s", "Sombras: %s" },
+        { ClientTextId::DepthFog, "Niebla de profundidad", "N\xC3\xA9voa de profundidade" },
+        { ClientTextId::DrawDistance, "Distancia: %s", "Dist\xC3\xA2ncia: %s" },
+        { ClientTextId::BuffTimeLeft, "Tiempo restante: %s", "Tempo restante: %s" },
+        { ClientTextId::BuffCaster, "Lanzado por: %s", "Lan\xC3\xA7" "ado por: %s" },
+        { ClientTextId::BuffDamage, "Da\xC3\xB1" "o +%d", "Dano +%d" },
+        { ClientTextId::BuffDefense, "Defensa +%d", "Defesa +%d" },
+        { ClientTextId::BuffDamageReduction, "Da\xC3\xB1" "o recibido -%d%%", "Dano recebido -%d%%" },
+        { ClientTextId::BuffMaxLife, "Vida m\xC3\xA1" "xima +%d%%", "Vida m\xC3\xA1" "xima +%d%%" },
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },

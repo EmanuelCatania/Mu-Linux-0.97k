@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/BuffBar.h"
 #include "UI/ChatListBox.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
@@ -1305,6 +1306,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xEE: gContentCatalog.ReceivePets((const BYTE*)Msg, Size); break;
         case 0xEF: gContentCatalog.ReceiveTooltips((const BYTE*)Msg, Size); break;
         case 0xF0: gContentCatalog.ReceiveTexts((const BYTE*)Msg, Size); break;
+        // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
+        case 0xF1: gBuffBar.Receive((const BYTE*)Msg, Size); break;
         case 0xED: {
             void Recv_CharacterListCustom(const BYTE* Msg, int Size);
             Recv_CharacterListCustom((const BYTE*)Msg, Size);
@@ -1376,7 +1379,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 DWORD* cobj = (DWORD*)DAT_055c9ff0;
                 if (g_bUseChatListBox) { cobj[11] = 186;          cobj[12] = 420; }
                 // Pantalla ancha: pegada al borde izquierdo de la ventana.
-                else              { cobj[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift()); cobj[12] = 81;  }
+                else              { cobj[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift()); cobj[12] = Ui::ClassicChatY;  }
             }
 
             NetLog("NET:    F3/30 opt=%02X Q=%d W=%d E=%d chatWin=%02X lines=%d transp=%d listbox=%d",

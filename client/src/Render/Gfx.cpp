@@ -181,6 +181,33 @@ bool TextureBicubic() { return bicubic; }
 namespace { int multisample = 0; }
 void SetMultisample(int samples) { multisample = samples; }
 int Multisample() { return multisample; }
+namespace { bool shadowMaps = false, depthFog = false; float shadowStrength = 0.5f; bool shadowScene = false; }
+void SetShadowMaps(bool enabled, float strength) { shadowMaps = enabled; shadowStrength = strength; }
+bool ShadowMaps() { return shadowMaps && GfxDevice::SupportsShadowMaps(); }
+void SetDepthFog(bool enabled) { depthFog = enabled; }
+bool DepthFog() { return depthFog && GfxDevice::SupportsShadowMaps(); }
+void BeginShadowScene(const float focus[3]) {
+    if ((!ShadowMaps() && !DepthFog()) || shadowScene) return;
+    BufferedDraw::Flush();
+    shadowScene = true;
+    // Sin sombras la escena sólo sirve para la niebla: intensidad 0.
+    GfxDevice::ShadowScene(true, focus, ShadowMaps() ? shadowStrength : 0.0f);
+}
+void Atmosphere(int mode, const float color[3], float density, float start) {
+    if (!shadowScene) return;
+    GfxDevice::Atmosphere(DepthFog() ? mode : 0, color, density, start);
+}
+void SetShadowCasting(bool enabled) {
+    if (!shadowScene) return;
+    BufferedDraw::Flush();
+    GfxDevice::ShadowCasting(enabled);
+}
+void EndShadowScene() {
+    if (!shadowScene) return;
+    BufferedDraw::Flush();
+    shadowScene = false;
+    GfxDevice::ShadowScene(false, nullptr, 0.0f);
+}
 namespace { bool hdTextures = false; }
 void SetHDTextures(bool enabled) { hdTextures = enabled; }
 bool HDTextures() { return hdTextures; }

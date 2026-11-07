@@ -20,6 +20,7 @@
 #include "Render/MeshDraw.h"
 #include "Render/GlyphAtlas.h"
 #include "Render/Gfx.h"
+#include "Render/Texture/Texture.h"
 #include "Render/RenderBackend.h"
 #ifdef MU_RENDER_WEBGPU
 #include "Render/Backend/WebGPU/Device.h"
@@ -137,6 +138,8 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
     Gfx::SetTextureQuality(gUserSettings.GetTextureQuality() >= 1, gUserSettings.GetTextureQuality() >= 2);
     Gfx::SetMultisample(gUserSettings.Multisample());
     Gfx::SetHDTextures(gUserSettings.GetHDTextures());
+    Gfx::SetShadowMaps(gUserSettings.GetShadows() > 0, gUserSettings.ShadowStrength());
+    Gfx::SetDepthFog(gUserSettings.GetDepthFog());
 #ifdef MU_RENDER_WEBGPU
     // DESVIACION: backend de render elegido en Config.ini ([Window] RenderBackend).
     RenderBackend::active = gUserSettings.GetRenderBackend() == RenderBackendPreference::OpenGL
@@ -221,6 +224,7 @@ void CWindow::ReleaseOpenGL()
 
 void CWindow::Present()
 {
+    Texture_PumpHD();
     BufferedDraw::Suspend();
 #ifdef MU_RENDER_WEBGPU
     if (RenderBackend::IsWebGPU()) { WebGPU::SubmitFrame(); return; }

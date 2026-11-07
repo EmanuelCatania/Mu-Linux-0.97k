@@ -27,7 +27,10 @@
 #include "Render/BufferedDraw.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Materials.h"
+#include "Render/DrawDistance.h"
+#include <map>
 #include <optional>
+#include <vector>
 
 
 // ── Aliases locales que mapean los nombres IDA a nuestros globals ────────────
@@ -63,6 +66,39 @@ static void SelectTerrainMaterial(Materials::Preset preset,int slot) {
     else if(preset==Materials::Preset::Alpha)GL_SetBlendSrcOver('\x01');
     else GL_SetBlendAdditive();
     GL_BindTextureSlot(slot);
+}
+// DESVIACION: agrupar los quads del terreno por capa y textura. El 0.97k
+// cambia de textura en casi cada tile y cada cambio corta el lote: con la
+// distancia de dibujado ampliada eran ~19.000 envíos por cuadro. Las capas son
+// coplanares (depth LEQUAL), así que dibujar todas las bases, después todas
+// las capas con alfa y después el agua da la misma imagen. Modo 3: el pasto
+// (sólo liga la textura; la mezcla la fija el caller).
+namespace {
+struct TerrainBatch {
+    bool active=false;
+    std::map<std::pair<int,int>,std::vector<BufferedDraw::Vertex>> buckets;   // (modo, slot)
+} batch;
+bool Batched(int mode,int slot,const BufferedDraw::Vertex* corners) {
+    if(!batch.active)return false;
+    auto& quads=batch.buckets[{mode,slot}];
+    quads.insert(quads.end(),corners,corners+4);
+    return true;
+}
+}
+void Terrain_BeginBatch() {
+    batch.active=true;
+    for(auto& entry:batch.buckets)entry.second.clear();
+}
+void Terrain_EndBatch() {
+    if(!batch.active)return;
+    batch.active=false;
+    for(auto& [key,quads]:batch.buckets) {
+        if(quads.empty())continue;
+        const int mode=key.first,slot=key.second;
+        if(mode==3)GL_BindTextureSlot(slot);
+        else SelectTerrainMaterial(mode==0?Materials::Preset::Opaque:mode==1?Materials::Preset::Alpha:Materials::Preset::Add,slot);
+        for(std::size_t i=0;i+3<quads.size();i+=4)BufferedDraw::Quad(&quads[i],mode!=3);
+    }
 }
 static void ReplayTerrain(const TerrainDraw::Tile& tile,const TerrainDraw::FrameData& f,bool draw) {
     const auto pass=[&](int mode) {
@@ -125,7 +161,7 @@ void __cdecl FaceTexture(int Texture, float xf, float yf, char Water, char Scale
 // ── RenderFace (FUN_004F7A90) — quad opaco (base) ────────────────────────────
 void __cdecl RenderFace(int Texture)
 {
-    SelectTerrainMaterial(Materials::Preset::Opaque,Texture + 35);
+    if(!batch.active)SelectTerrainMaterial(Materials::Preset::Opaque,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -138,13 +174,13 @@ void __cdecl RenderFace(int Texture)
         corners[i]={{v[i][0],v[i][1],v[i][2]},
             {L[index][0],L[index][1],L[index][2],1},{tc[i][0],tc[i][1],0,1}};
     }
-    BufferedDraw::Quad(corners,true);
+    if(!Batched(0,Texture + 35,corners))BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderFaceAlpha (FUN_004F7B80) — overlay capa2 con alpha por vértice ──────
 void __cdecl RenderFaceAlpha(int Texture)
 {
-    SelectTerrainMaterial(Materials::Preset::Alpha,Texture + 35);
+    if(!batch.active)SelectTerrainMaterial(Materials::Preset::Alpha,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -157,13 +193,13 @@ void __cdecl RenderFaceAlpha(int Texture)
         corners[i]={{v[i][0],v[i][1],v[i][2]},
             {L[index][0],L[index][1],L[index][2],TER_ALPHA[index]},{tc[i][0],tc[i][1],0,1}};
     }
-    BufferedDraw::Quad(corners,true);
+    if(!Batched(1,Texture + 35,corners))BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderFaceBlend (FUN_004F7CE0) — overlay de agua (modula por alpha gris) ──
 void __cdecl RenderFaceBlend(int Texture)
 {
-    SelectTerrainMaterial(Materials::Preset::Add,Texture + 35);
+    if(!batch.active)SelectTerrainMaterial(Materials::Preset::Add,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -175,7 +211,7 @@ void __cdecl RenderFaceBlend(int Texture)
         const float a=TER_ALPHA[index];
         corners[i]={{v[i][0],v[i][1],v[i][2]},{a,a,a,1},{tc[i][0],tc[i][1],0,1}};
     }
-    BufferedDraw::Quad(corners,true);
+    if(!Batched(2,Texture + 35,corners))BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderTerrainFace (FUN_004F7FB0) — dispatcher de capas/overlays ──────────
@@ -193,8 +229,9 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         {
             int slot = (int)(unsigned char)TER_L1[TER_IDX1] + 50;
             BITMAP_t* bmp = &Bitmaps[slot];
-            if (bmp->Buffer) {
-                GL_BindTextureSlot(slot);                      // BindTexture
+            // DESVIACION: distancia de dibujado; lejos no va el pasto.
+            if (bmp->Buffer && DrawDistance::Detailed((xi + 0.5f) * _DAT_005524f0, (yi + 0.5f) * _DAT_005524f0)) {
+                if(!batch.active)GL_BindTextureSlot(slot);     // BindTexture
                 float yfa = bmp->Height + bmp->Height;
                 float u = xf * 0.25f + DAT_0810b2cc[(unsigned char)yi]; // TerrainGrassTexture[(yi&0xFF)+1]
                 float (*tc)[2] = TER_TEX;
@@ -221,7 +258,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
                     corners[i]={{v[i][0],v[i][1],v[i][2]},
                         {L[index][0],L[index][1],L[index][2],1},{tc[i][0],tc[i][1],0,1}};
                 }
-                BufferedDraw::Quad(corners,false);
+                if(!Batched(3,slot,corners))BufferedDraw::Quad(corners,false);
             }
         }
         return;

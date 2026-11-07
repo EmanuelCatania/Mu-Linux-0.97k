@@ -53,6 +53,8 @@ public:
 private:
     struct Impl;
     bool Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error);
+    bool OpenBitmapColor(std::unique_ptr<Impl> next, int height, std::string& error);
+    FontGlyph RasterizeBitmapColor(uint32_t glyph) const;
     std::unique_ptr<Impl> impl;
 };
 }

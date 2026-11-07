@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Gfx.h"
 #include "Render/BMDDevice.h"
 #include "Render/MeshDraw.h"
 #include "Config/UserSettings.h"
@@ -86,6 +87,8 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
 {
     // DESVIACION (DLL Antilag, 0x00441F0D): sin sombras.
     if (gUserSettings.GetAntilag(ANTILAG_SHADOWS)) return;
+    // DESVIACION: con las sombras proyectadas activas, la plana sobra.
+    if (Gfx::ShadowMaps()) return;
     const auto* bmd = AsModel(model);
     if (bmd->NumMeshs == 0) return;
 

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,7 +30,7 @@ struct Directory {
 };
 std::unordered_map<std::string, Directory> directories;
 // Sólo se resuelven los nombres: fread/fseek y los headers OZJ/OZT no cambian.
-fs::path Resolve(const char* input, bool newLeaf = false) {
+fs::path ResolveUnlocked(const char* input, bool newLeaf) {
     if (!input || !*input) return {};
     std::string normalized(input);
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
@@ -71,6 +72,13 @@ fs::path Resolve(const char* input, bool newLeaf = false) {
         resolved /= found->second;
     }
     return resolved;
+}
+// La caché de directorios se comparte con la carga de texturas HD, que lee
+// desde otros hilos.
+std::mutex resolveMutex;
+fs::path Resolve(const char* input, bool newLeaf = false) {
+    std::lock_guard<std::mutex> lock(resolveMutex);
+    return ResolveUnlocked(input, newLeaf);
 }
 uint32_t Copy(const std::string& value, char* output, uint32_t capacity) {
     if (!capacity || !output) return 0;

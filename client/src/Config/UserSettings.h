@@ -105,6 +105,8 @@ public:
     RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
     // Nombre para mostrar ("OpenGL", "DirectX 12"...).
     static const char* RenderBackendName(RenderBackendPreference preference);
+    // DirectX sólo existe en Windows; en Linux WebGPU va sobre Vulkan.
+    static bool IsRenderBackendAvailable(RenderBackendPreference preference);
     // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
     static const char* RenderBackendKey(RenderBackendPreference preference);
     // Guarda la preferencia; se usa en el próximo arranque.
@@ -128,6 +130,20 @@ public:
     // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
     bool GetHDTextures() const { return m_HDTextures; }
     void SetHDTextures(bool enabled);
+    // DESVIACION: sombras proyectadas ([Window] Shadows): 0 apagadas (sombra
+    // plana del original), 1 suaves, 2 fuertes. Se aplica en caliente.
+    int GetShadows() const { return m_Shadows; }
+    float ShadowStrength() const { static const float strength[3] = { 0.0f, 0.35f, 0.55f }; return strength[m_Shadows]; }
+    void SetShadows(int level);
+    // DESVIACION: niebla por profundidad ([Window] DepthFog); en caliente.
+    bool GetDepthFog() const { return m_DepthFog; }
+    void SetDepthFog(bool enabled);
+    // DESVIACION: distancia de dibujado ([Window] DrawDistance): con la cámara
+    // 3D (F10) multiplica su alcance (y con él el terreno que se dibuja); con
+    // la cámara normal no se aplica.
+    int GetDrawDistance() const { return m_DrawDistance; }
+    float DrawDistanceScale() const { static const float scale[4] = { 1.0f, 1.5f, 2.0f, 3.0f }; return scale[m_DrawDistance]; }
+    void SetDrawDistance(int level);
     // true si alguna opción guardada se aplica recién al reiniciar.
     bool RestartPending() const;
     int GetEnableSound() const { return m_EnableSound; }
@@ -192,6 +208,9 @@ private:
     int m_Sharpness = 0;
     int m_Antialiasing = 0, m_StartupAntialiasing = 0;
     bool m_HDTextures = false, m_StartupHDTextures = false;
+    int m_Shadows = 0;
+    bool m_DepthFog = false;
+    int m_DrawDistance = 0;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

@@ -213,6 +213,7 @@
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
+#include "Render/Camera3D.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
@@ -548,7 +549,9 @@ void Render_Scene3D(void)
     DAT_083a42ea = 0;   // FogEnable = false
     // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
     // el server se prende (el DLL parcheaba este 0 por un 1).
-    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
+    // Con la cámara 3D y la niebla por profundidad, ésta reemplaza a la del
+    // server: bruma hacia el color de fondo propio del mapa, sin teñir el fondo.
+    if (gContentCatalog.HasMapFog() && !(gCamera3D.IsEnabled() && Gfx::DepthFog())) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     // Cámara autoritativa preparada al finalizar el paso de simulación.
@@ -603,6 +606,9 @@ void Render_Scene3D(void)
     int vpHeight = (topView || noInterface || gWindow.IsWide()) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
+    // DESVIACION: sombras proyectadas (opción). Lo que se dibuja hasta
+    // EndShadowScene proyecta y recibe sombra; centradas en el héroe.
+    Gfx::BeginShadowScene(camPos);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
     // RenderTerrain dibuja la malla de tiles del terreno.
@@ -638,6 +644,31 @@ void Render_Scene3D(void)
     Player_Render();                             // Player_Render
     Trail_RenderAll();
     CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
+    // DESVIACION: niebla por profundidad (opción). Atlans bajo el agua; el resto,
+    // una bruma suave hacia el color de fondo (el de la niebla del server, si hay).
+    // Se ata al alcance de la cámara: empieza a la mitad y llega casi al máximo
+    // en el borde de lo dibujado, que así no se ve.
+    // Sólo con la cámara 3D (F10): con la normal no hay borde lejano que tapar.
+    if (gCamera3D.IsEnabled()) {
+        // Empieza a la mitad del alcance normal y llega al borde del ampliado
+        // (distancia de dibujado), donde ya sólo queda el terreno.
+        // El frustum del culling llega al 90 % del alcance (_DAT_005526e8):
+        // la niebla tiene que completarse antes.
+        const float end = CameraViewFar * 0.85f;
+        const float scale = gCamera3D.IsEnabled() ? gUserSettings.DrawDistanceScale() : 1.0f;
+        const float start = CameraViewFar / scale * 0.5f;
+        if (worldId == 7) {
+            const float water[3] = {0.02f, 0.16f, 0.24f};
+            // Azul (el que menos se absorbe, x1.2) al 10 % en el borde.
+            Gfx::Atmosphere(2, water, 1.9f / (end - 300.0f), 300.0f);
+        } else {
+            // El color de fondo del mapa (la niebla del server no está activa acá).
+            const float background[3] = {cr, cg, cb};
+            // exp(-x^2): x = 2 (2 %) en el borde.
+            Gfx::Atmosphere(1, background, 2.0f / (end - start), start);
+        }
+    }
+    Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {

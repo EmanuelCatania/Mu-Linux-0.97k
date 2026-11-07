@@ -678,8 +678,11 @@ struct CATALOG_MAP_FOG
     std::uint8_t DayRGB[3];
     std::uint8_t NightRGB[3];
     std::uint8_t Reserved;
+    // Distancias de la niebla lineal; un server viejo manda 8 bytes y quedan en 0.
+    std::uint16_t Start;
+    std::uint16_t End;
 };
-static_assert(sizeof(CATALOG_MAP_FOG) == 8, "F3:E9 entrada");
+static_assert(sizeof(CATALOG_MAP_FOG) == 12, "F3:E9 entrada");
 
 // F3:EC — efectos de un item (Data/Custom/Items/*.json del server).
 const std::uint8_t CATALOG_EFFECT_ON_EQUIPPED = 0x01;
@@ -757,6 +760,22 @@ struct CATALOG_TEXT
     char Text[64];          // UTF-8 en NFC
 };
 static_assert(sizeof(CATALOG_TEXT) == 68, "F3:F0 entrada");
+
+// Detalle de un efecto propio (barra de buffs). Server: EffectManager.h.
+struct PMSG_EFFECT_INFO_SEND
+{
+    PSBMSG_HEAD header;     // C1:F3:F1
+    std::uint8_t state;     // 1 = activo, 0 = terminó
+    std::uint8_t effect;
+    std::uint16_t skill;    // skill del ícono (0 = ninguno)
+    std::uint32_t time;     // segundos que le quedan (0 = sin límite)
+    std::uint16_t value[4];
+    char caster[10];
+    char name[32];
+};
+static_assert(sizeof(PMSG_EFFECT_INFO_SEND) == 64, "F3:F1");
+static_assert(offsetof(PMSG_EFFECT_INFO_SEND, time) == 8, "F3:F1 time");
+static_assert(offsetof(PMSG_EFFECT_INFO_SEND, caster) == 20, "F3:F1 caster");
 
 struct PMSG_CATALOG_END_SEND
 {

@@ -105,14 +105,25 @@ bool IsEmoji(char32_t cp)
     return (cp >= 0x1F000 && cp <= 0x1FAFF) || (cp >= 0x2600 && cp <= 0x27BF) ||
            cp == 0x2B50 || cp == 0x2B55 || cp == 0x231A || cp == 0x231B;
 }
-// Fuente de emoji en color del sistema (COLR); en Linux la habitual es
-// Noto Color Emoji, que es un mapa de bits y todavía no se usa.
+// Fuente de emoji en color del sistema: Segoe UI Emoji (COLR) en Windows y
+// Noto Color Emoji (mapa de bits CBDT) en Linux.
 std::string ColorEmojiPath()
 {
 #ifdef _WIN32
     const char* windows = std::getenv("WINDIR");
     return (std::filesystem::path(windows && *windows ? windows : "C:\\Windows") / "Fonts" / "seguiemj.ttf").string();
 #else
+    std::vector<std::filesystem::path> candidates = {
+        "/usr/share/fonts/noto/NotoColorEmoji.ttf",
+        "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+        "/usr/share/fonts/google-noto-emoji/NotoColorEmoji.ttf",
+        "/usr/share/fonts/noto-emoji/NotoColorEmoji.ttf",
+    };
+    if (const char* home = std::getenv("HOME"); home && *home)
+        candidates.push_back(std::filesystem::path(home) / ".local/share/fonts/NotoColorEmoji.ttf");
+    std::error_code error;
+    for (const auto& path : candidates)
+        if (std::filesystem::is_regular_file(path, error)) return path.string();
     return std::string();
 #endif
 }

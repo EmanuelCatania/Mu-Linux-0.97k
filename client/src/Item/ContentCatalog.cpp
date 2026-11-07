@@ -106,7 +106,7 @@ void InitEntityParts()
 
 std::vector<ItemExtraData> s_Items(ITEM_MAX_EX);
 CatalogMonster s_Monsters[MAX_CATALOG_MONSTER] = {};
-struct FogEntry { bool Present; float Day[3]; float Night[3]; };
+struct FogEntry { bool Present; float Day[3]; float Night[3]; float Start, End; };
 FogEntry s_Fog[MAX_CATALOG_MAP] = {};
 std::map<std::string, int> s_LoadedModels;   // ruta -> slot
 std::map<int, int> s_DynamicModelItem;        // slot dinámico -> primer item que lo usa
@@ -444,6 +444,10 @@ void CContentCatalog::Publish()
             fog.Day[c] = row.DayRGB[c] / 255.0f;
             fog.Night[c] = row.NightRGB[c] / 255.0f;
         }
+        // Sin distancias (server viejo), las fijas del DLL.
+        const bool range = row.Start > 0 && row.End > row.Start;
+        fog.Start = range ? row.Start : 2000.0f;
+        fog.End = range ? row.End : 2700.0f;
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
@@ -758,6 +762,13 @@ bool CContentCatalog::GetMapFog(int map, float day[3], float night[3]) const
     memcpy(day, s_Fog[map].Day, sizeof(float) * 3);
     memcpy(night, s_Fog[map].Night, sizeof(float) * 3);
     return true;
+}
+
+void CContentCatalog::GetFogRange(int map, float& start, float& end) const
+{
+    start = 2000.0f; end = 2700.0f;   // MapFog.h del DLL
+    if (map < 0 || map >= MAX_CATALOG_MAP || !s_Fog[map].Present) return;
+    start = s_Fog[map].Start; end = s_Fog[map].End;
 }
 
 void CContentCatalog::GetFogColor(int map, float rgba[4])

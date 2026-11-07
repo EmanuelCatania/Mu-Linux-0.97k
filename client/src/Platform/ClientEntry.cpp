@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Core/DataPrefetch.h"
 #include "Render/ResourceTables.h"
 #include "Platform/Diagnostics.h"
 #include "Platform/Text.h"
@@ -519,6 +520,7 @@ int main(int, char**)
     BOOL okDec = CSimpleModulus_LoadDecryptionKey(g_SimpleModulusSC, "Data\\Dec2.dat");
 
     if (!Config_Load()) { DbgLog("Config_Load FAILED"); return 0; }
+    StartDataPrefetch("Data");   // DESVIACION: precarga de Data/ (Core/DataPrefetch.cpp)
 
     // 10b: localized string pool — Data/Local/Text.bmd → GlobalText[1000][300].
     // El WinMain original llama OpenTextData() antes del chequeo de versión/integridad.

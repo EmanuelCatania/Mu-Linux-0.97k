@@ -106,6 +106,24 @@ void SetMultisample(int samples);
 void SetHDTextures(bool enabled);
 bool HDTextures();
 int Multisample();
+// DESVIACION: sombras proyectadas con mapa de sombras (opción del jugador). El
+// mundo 3D del cuadro va entre BeginShadowScene y EndShadowScene: lo que se
+// dibuja adentro proyecta y recibe sombra. focus es el centro (el héroe).
+// ShadowMaps() es verdadero si la opción está activa y el backend la soporta.
+void SetShadowMaps(bool enabled, float strength);
+bool ShadowMaps();
+void BeginShadowScene(const float focus[3]);
+void EndShadowScene();
+// Dentro de la escena, lo dibujado con casting en false recibe sombra pero no
+// la proyecta (p. ej. el pasto). Cada escena empieza con casting en true.
+void SetShadowCasting(bool enabled);
+// DESVIACION: niebla por profundidad (opción). Con la opción activa la escena
+// se marca aunque no haya sombras. Atmosphere se fija por cuadro, antes de
+// EndShadowScene: mode 0 nada, 1 bruma de distancia, 2 bajo el agua (absorbe
+// primero el rojo); start = distancia desde la que empieza.
+void SetDepthFog(bool enabled);
+bool DepthFog();
+void Atmosphere(int mode, const float color[3], float density, float start);
 
 // Niebla
 void SetFogMode(FogMode mode);

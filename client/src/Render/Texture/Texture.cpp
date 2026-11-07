@@ -78,9 +78,15 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+#include <chrono>
 #include "Render/Gfx.h"
 #include "Render/ResourceTables.h"
 #include "Render/BufferedDraw.h"
+#include "Render/RenderState.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
@@ -474,43 +480,174 @@ bool HDPath(const char* fullPath, const char* format, char* out, size_t size)
     std::snprintf(out, size, "Data\\HD\\%.*s.%s.%s", int(dot - (fullPath + 5)), fullPath + 5, ext, format);
     return true;
 }
-// Sube la imagen HD de la textura ligada; false si no hay o no corresponde.
+// Decodifica la imagen HD y arma el lienzo; corre en un hilo aparte.
 // Sin transparencia se acepta JPEG (casa.ozj.jpg), que ocupa varias veces
 // menos que PNG; si no hay JPEG se busca el PNG.
-bool UploadHD(const char* fullPath, int width, int height, int paddedWidth, int paddedHeight, int channels)
+struct HDJob {
+    int id = 0; unsigned handle = 0; unsigned generation = 0;
+    std::vector<unsigned char> bytes; bool jpeg = false;
+    int width = 0, height = 0, paddedWidth = 0, paddedHeight = 0, channels = 0, maxSize = 0;
+    int k = 0, canvasWidth = 0, canvasHeight = 0;
+    std::vector<unsigned char> canvas;
+    char path[300]{};
+    char pngPath[300]{};
+};
+// Lee el archivo HD (JPEG si hay, si no PNG). Corre en el hilo de carga: en
+// disco mecánico una lectura en frío tarda 10-50 ms y frenaba el juego.
+bool ReadHD(HDJob& job)
 {
-    if (!Gfx::HDTextures()) return false;
-    char path[300];
-    ImageCodec::Image hd;
-    bool decoded = false;
-    FILE* f = nullptr;
-    if (channels == 3 && HDPath(fullPath, "jpg", path, sizeof(path)) &&
-        (f = Platform::GetFileSystem().Open(path, "rb"))) {
-        decoded = ImageCodec::Decode(f, 0, ImageCodec::Format::Jpeg, tex_max_size(), hd) && hd.channels == 3;
+    FILE* file = nullptr;
+    if (job.path[0] && (file = Platform::GetFileSystem().Open(job.path, "rb"))) {
+        job.jpeg = true;
     } else {
-        if (!HDPath(fullPath, "png", path, sizeof(path))) return false;
-        f = Platform::GetFileSystem().Open(path, "rb");
-        if (!f) return false;
-        decoded = ImageCodec::DecodePng(f, channels, tex_max_size(), hd);
+        file = Platform::GetFileSystem().Open(job.pngPath, "rb");
+        if (!file) return false;
+        memcpy(job.path, job.pngPath, sizeof(job.path));
     }
-    fclose(f);
-    if (!decoded || hd.width % width || hd.height % height) return false;
-    const int k = hd.width / width;
-    if (k < 2 || k > 8 || hd.height / height != k) return false;
-    const long long pw = (long long)paddedWidth * k, ph = (long long)paddedHeight * k;
-    if (pw > tex_max_size() || ph > tex_max_size()) return false;
-    std::vector<unsigned char> canvas(size_t(pw * ph * channels), 0);
+    long size = -1;
+    if (fseek(file, 0, SEEK_END) == 0) size = ftell(file);
+    if (size > 0 && fseek(file, 0, SEEK_SET) == 0) {
+        job.bytes.resize(size_t(size));
+        if (fread(job.bytes.data(), 1, size_t(size), file) != size_t(size)) job.bytes.clear();
+    }
+    fclose(file);
+    return !job.bytes.empty();
+}
+bool BuildHD(HDJob& job)
+{
+    if (!ReadHD(job)) return false;
+    ImageCodec::Image hd;
+    const size_t length = job.bytes.size();
+    job.bytes.resize(length + 2);   // espacio para el marcador final del JPEG
+    const bool decoded = job.jpeg
+        ? ImageCodec::DecodeBuffer(job.bytes.data(), length, ImageCodec::Format::Jpeg, job.maxSize, hd) && hd.channels == 3
+        : ImageCodec::DecodePngBuffer(job.bytes.data(), length, job.channels, job.maxSize, hd);
+    std::vector<unsigned char>().swap(job.bytes);
+    if (!decoded || hd.width % job.width || hd.height % job.height) return false;
+    const int k = hd.width / job.width;
+    if (k < 2 || k > 8 || hd.height / job.height != k) return false;
+    const long long pw = (long long)job.paddedWidth * k, ph = (long long)job.paddedHeight * k;
+    if (pw > job.maxSize || ph > job.maxSize) return false;
+    const int c = job.channels;
+    job.canvas.assign(size_t(pw * ph * c), 0);
     for (int y = 0; y < hd.height; ++y)
-        memcpy(canvas.data() + size_t(y) * size_t(pw) * channels, hd.pixels + size_t(y) * hd.width * channels, size_t(hd.width) * channels);
-    Gfx::TexImage2D(channels, int(pw), int(ph), channels == 4 ? Gfx::Format::RGBA : Gfx::Format::RGB, canvas.data());
-    static unsigned loaded = 0;
-    if (++loaded == 1 || loaded % 100 == 0) {
-        char line[340];
-        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Texturas HD: %u cargadas (ultima %s, x%d)", loaded, path, k);
-        DbgLogPublic(line);
-    }
+        memcpy(job.canvas.data() + size_t(y) * size_t(pw) * c, hd.pixels + size_t(y) * hd.width * c, size_t(hd.width) * c);
+    job.k = k; job.canvasWidth = int(pw); job.canvasHeight = int(ph);
     return true;
 }
+
+// DESVIACION: decodificar una HD frena entre 30 y 70 ms, y los modelos de
+// NPC y monstruos se cargan recién cuando aparecen en pantalla, así que el
+// juego se trababa en el medio del mapa. La textura original se sube en el
+// momento y la HD la reemplaza unos frames después, cuando el hilo terminó.
+class HDLoader {
+public:
+    ~HDLoader()
+    {
+        { std::lock_guard<std::mutex> lock(m_mutex); m_stop = true; }
+        m_wake.notify_all();
+        for (std::thread& t : m_threads) if (t.joinable()) t.join();
+    }
+    void Push(HDJob&& job)
+    {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_threads.empty()) {
+                const unsigned cores = std::thread::hardware_concurrency();
+                const unsigned count = cores > 4 ? 3 : cores > 2 ? 2 : 1;
+                for (unsigned i = 0; i < count; ++i) m_threads.emplace_back([this] { Work(); });
+            }
+            m_pending.push_back(std::move(job));
+        }
+        m_wake.notify_all();
+    }
+    // Pasa a la GPU lo que ya terminó, con un tope de tiempo por frame.
+    template <class Apply> void Drain(Apply apply)
+    {
+        const auto start = std::chrono::steady_clock::now();
+        for (;;) {
+            HDJob job;
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (m_done.empty()) break;
+                job = std::move(m_done.front());
+                m_done.pop_front();
+            }
+            m_wake.notify_one();
+            apply(job);
+            if (std::chrono::steady_clock::now() - start > std::chrono::milliseconds(4)) break;
+        }
+    }
+private:
+    void Work()
+    {
+        for (;;) {
+            HDJob job;
+            {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                // Mientras se carga un mapa no hay frames que suban lo
+                // terminado: sin este tope los lienzos se apilaban en memoria
+                // (cientos de MB) y todo el cliente se volvía lento.
+                m_wake.wait(lock, [this] { return m_stop || (!m_pending.empty() && m_done.size() < MaxDone); });
+                if (m_stop) return;
+                job = std::move(m_pending.front());
+                m_pending.pop_front();
+            }
+            if (!BuildHD(job)) continue;
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_done.push_back(std::move(job));
+        }
+    }
+    static constexpr size_t MaxDone = 8;
+    std::mutex m_mutex;
+    std::condition_variable m_wake;
+    std::deque<HDJob> m_pending, m_done;
+    std::vector<std::thread> m_threads;
+    bool m_stop = false;
+};
+HDLoader& Loader() { static HDLoader loader; return loader; }
+// Una carga nueva en el mismo slot invalida la HD que estaba en camino.
+std::vector<unsigned> s_hdGeneration;
+
+// Encola la HD de la textura recién creada. El llamador sube la original
+// igual: la HD la reemplaza cuando esté lista (Texture_PumpHD).
+void UploadHD(int id, unsigned handle, const char* fullPath, int width, int height, int paddedWidth, int paddedHeight, int channels)
+{
+    if (id < 0) return;
+    if (s_hdGeneration.size() <= size_t(id)) s_hdGeneration.resize(size_t(id) + 1, 0);
+    ++s_hdGeneration[size_t(id)];
+    if (!Gfx::HDTextures()) return;
+    HDJob job;
+    // El archivo lo abre y lo lee el hilo de carga (ReadHD), que lo cierra
+    // enseguida: los trabajos en cola no tienen archivos abiertos (el CRT tiene
+    // un tope de ~512 y al agotarse fallaba la apertura de Item.bmd).
+    if (!HDPath(fullPath, "png", job.pngPath, sizeof(job.pngPath))) return;
+    if (channels == 3) HDPath(fullPath, "jpg", job.path, sizeof(job.path));
+    job.id = id; job.handle = handle; job.generation = s_hdGeneration[size_t(id)];
+    job.width = width; job.height = height; job.paddedWidth = paddedWidth; job.paddedHeight = paddedHeight;
+    job.channels = channels; job.maxSize = tex_max_size();
+    Loader().Push(std::move(job));
+}
+}
+
+void Texture_PumpHD()
+{
+    Loader().Drain([](HDJob& job) {
+        // Si el slot se liberó o se recargó mientras tanto, la HD ya no corresponde.
+        if (size_t(job.id) >= s_hdGeneration.size() || s_hdGeneration[size_t(job.id)] != job.generation) return;
+        if (!Bitmaps[job.id].Buffer || Bitmaps[job.id].TextureNumber != job.handle) return;
+        const unsigned previous = RenderState::Get().texture;
+        Gfx::BindTexture(job.handle);
+        Gfx::TexImage2D(job.channels, job.canvasWidth, job.canvasHeight,
+                        job.channels == 4 ? Gfx::Format::RGBA : Gfx::Format::RGB, job.canvas.data());
+        Gfx::BindTexture(previous);
+        static unsigned loaded = 0;
+        if (++loaded == 1 || loaded % 100 == 0) {
+            char line[340];
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Texturas HD: %u cargadas (ultima %s, x%d)", loaded, job.path, job.k);
+            DbgLogPublic(line);
+        }
+    });
 }
 
 // ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
@@ -627,8 +764,8 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     // --- GL upload ---
     slot->TextureNumber = Gfx::CreateTexture();
     Gfx::BindTexture(slot->TextureNumber);
-    if (!UploadHD(full_path, img_w, img_h, pow2_w, pow2_h, 3))
-        Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
+    UploadHD(id, slot->TextureNumber, full_path, img_w, img_h, pow2_w, pow2_h, 3);
+    Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
     Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(filter));
     Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(filter));
     Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
@@ -764,8 +901,8 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         UINT glHandle = Gfx::CreateTexture();
         texGL[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = glHandle;
         Gfx::BindTexture(glHandle);
-        if (!UploadHD(local_200, width, height, pw, ph, 4))
-            Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
+        UploadHD(uiTextureIndex, glHandle, local_200, width, height, pw, ph, 4);
+        Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
         // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
         // válido para GL_TEXTURE_ENV_MODE → GL_INVALID_ENUM, que el driver NVIDIA
         // acumula y puede convertir en AV en una llamada GL siguiente.

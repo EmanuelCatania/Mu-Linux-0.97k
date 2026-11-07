@@ -8,6 +8,7 @@
 #include "Entity/ObjectPose.h"
 #include "Render/WorldEffects.h"
 #include "Game/RenderDerivedState.h"
+#include "Render/DrawDistance.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -79,6 +80,8 @@ static void Terrain_ProcessObjects(bool simulation)
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
                         vis = TestFrustrum2D(ex, ey, ez);
+                        // DESVIACION: distancia de dibujado; lejos, sólo el terreno.
+                        if (vis && !DrawDistance::Detailed(*(float*)(entity + 0x10), *(float*)(entity + 0x14))) vis = 0;
                         if (simulation) entity[EntityOffset(0x160)] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')

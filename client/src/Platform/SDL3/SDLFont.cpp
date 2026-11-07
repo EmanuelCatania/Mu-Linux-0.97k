@@ -6,9 +6,12 @@
 #include <freetype/ftcolor.h>
 #include <hb-ft.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <unordered_map>
 #include "Platform/IFileSystem.h"
+#include "Render/Texture/ImageCodec.h"
+#include FT_TRUETYPE_TAGS_H
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <cstdlib>
@@ -64,6 +67,90 @@ bool SelectVDMX(FT_Face face, int height, int& ppem, FontMetrics& metrics)
 }
 
 namespace { bool g_antialias = false; }
+
+namespace {
+uint16_t Be16(const std::vector<uint8_t>& t, size_t o) { return o + 2 <= t.size() ? uint16_t(t[o] << 8 | t[o + 1]) : 0; }
+uint32_t Be32(const std::vector<uint8_t>& t, size_t o)
+{
+    return o + 4 <= t.size() ? uint32_t(t[o]) << 24 | uint32_t(t[o + 1]) << 16 | uint32_t(t[o + 2]) << 8 | t[o + 3] : 0;
+}
+bool LoadSfnt(FT_Face face, FT_ULong tag, std::vector<uint8_t>& out)
+{
+    FT_ULong length = 0;
+    if (FT_Load_Sfnt_Table(face, tag, 0, nullptr, &length) || !length) return false;
+    out.resize(length);
+    return !FT_Load_Sfnt_Table(face, tag, 0, out.data(), &length);
+}
+// Ubica un glifo en CBDT a partir del strike de CBLC.  Devuelve el offset de
+// la imagen, su formato y, para los formatos 2/5 (métricas en el índice), el
+// offset de esas bigGlyphMetrics dentro de CBLC.
+bool FindCbdtGlyph(const std::vector<uint8_t>& cblc, size_t strike, uint32_t glyph,
+                   uint32_t& offset, uint32_t& length, uint16_t& imageFormat, size_t& indexMetrics)
+{
+    const size_t size = 8 + strike * 48;
+    const uint32_t arrayOffset = Be32(cblc, size), subtables = Be32(cblc, size + 8);
+    for (uint32_t i = 0; i < subtables; ++i) {
+        const size_t entry = arrayOffset + i * 8;
+        const uint16_t first = Be16(cblc, entry), last = Be16(cblc, entry + 2);
+        if (glyph < first || glyph > last) continue;
+        const size_t header = arrayOffset + Be32(cblc, entry + 4);
+        const uint16_t indexFormat = Be16(cblc, header);
+        imageFormat = Be16(cblc, header + 2);
+        const uint32_t base = Be32(cblc, header + 4);
+        const size_t body = header + 8;
+        const uint32_t n = glyph - first;
+        indexMetrics = 0;
+        switch (indexFormat) {
+        case 1: offset = base + Be32(cblc, body + n * 4); length = Be32(cblc, body + n * 4 + 4) - Be32(cblc, body + n * 4); return length > 0;
+        case 3: offset = base + Be16(cblc, body + n * 2); length = Be16(cblc, body + n * 2 + 2) - Be16(cblc, body + n * 2); return length > 0;
+        case 2: length = Be32(cblc, body); offset = base + n * length; indexMetrics = body + 4; return length > 0;
+        case 4: case 5: {
+            const bool five = indexFormat == 5;
+            const uint32_t count = Be32(cblc, five ? body + 12 : body);
+            const size_t ids = five ? body + 16 : body + 4;
+            for (uint32_t k = 0; k < count; ++k) {
+                if (five) {
+                    if (Be16(cblc, ids + k * 2) != glyph) continue;
+                    length = Be32(cblc, body); offset = base + k * length; indexMetrics = body + 4;
+                    return length > 0;
+                }
+                if (Be16(cblc, ids + k * 4) != glyph) continue;
+                offset = base + Be16(cblc, ids + k * 4 + 2);
+                length = Be16(cblc, ids + k * 4 + 6) - Be16(cblc, ids + k * 4 + 2);
+                return length > 0;
+            }
+            return false;
+        }
+        default: return false;
+        }
+    }
+    return false;
+}
+// Promedio por área: reduce el PNG del strike (109 px en Noto) al alto pedido.
+void ScaleRgba(const unsigned char* src, int sw, int sh, int dw, int dh, std::vector<uint8_t>& dst)
+{
+    dst.assign(size_t(dw) * dh * 4, 0);
+    const float fx = float(sw) / dw, fy = float(sh) / dh;
+    for (int y = 0; y < dh; ++y)
+        for (int x = 0; x < dw; ++x) {
+            const int x0 = int(x * fx), x1 = std::max(x0 + 1, std::min(sw, int((x + 1) * fx + 0.999f)));
+            const int y0 = int(y * fy), y1 = std::max(y0 + 1, std::min(sh, int((y + 1) * fy + 0.999f)));
+            float acc[4] = {};
+            for (int yy = y0; yy < y1; ++yy)
+                for (int xx = x0; xx < x1; ++xx) {
+                    const unsigned char* p = src + (size_t(yy) * sw + xx) * 4;
+                    const float a = p[3] / 255.0f;   // premultiplicado: sin halo oscuro
+                    acc[0] += p[0] * a; acc[1] += p[1] * a; acc[2] += p[2] * a; acc[3] += a;
+                }
+            const float count = float((x1 - x0) * (y1 - y0));
+            uint8_t* out = &dst[(size_t(y) * dw + x) * 4];
+            const float alpha = acc[3] / count;
+            out[3] = uint8_t(alpha * 255.0f + 0.5f);
+            if (acc[3] > 0.0f)
+                for (int c = 0; c < 3; ++c) out[c] = uint8_t(std::min(255.0f, acc[c] / acc[3] + 0.5f));
+        }
+}
+}
 void SDLFont::SetAntialias(bool enabled) { g_antialias = enabled; }
 
 struct SDLFont::Impl {
@@ -77,6 +164,12 @@ struct SDLFont::Impl {
     std::unordered_map<uint32_t, FontGlyph> glyphs;
     std::unordered_map<uint32_t, FontGlyph> glyphIds;
     hb_font_t* shaping = nullptr;
+    // Emoji en mapa de bits (CBDT/CBLC, Noto Color Emoji): la FreeType
+    // embebida va sin PNG, así que las tablas se leen a mano.  cbdtScale > 0
+    // marca este modo; es la relación entre el alto pedido y el del strike.
+    std::vector<uint8_t> cblc, cbdt;
+    size_t cbdtStrike = 0;
+    float cbdtScale = 0.0f;
     ~Impl() {
         if (shaping) hb_font_destroy(shaping);
         if (face) FT_Done_Face(face);
@@ -118,10 +211,13 @@ bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std
     const FT_Error opened = path
         ? FT_New_Face(next->library, path, 0, &next->face)
         : FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face);
-    if (opened || !FT_IS_SCALABLE(next->face) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
+    const bool bitmapColor = !opened && !FT_IS_SCALABLE(next->face) && FT_HAS_FIXED_SIZES(next->face) &&
+                             LoadSfnt(next->face, TTAG_CBLC, next->cblc) && LoadSfnt(next->face, TTAG_CBDT, next->cbdt);
+    if (opened || (!FT_IS_SCALABLE(next->face) && !bitmapColor) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
         error = "La fuente no es escalable o no tiene mapa Unicode"; return false;
     }
     auto face = next->face;
+    if (bitmapColor) return OpenBitmapColor(std::move(next), height, error);
     const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
     const int span = os2 ? os2->usWinAscent + os2->usWinDescent : face->ascender - face->descender;
     if (span <= 0 || face->units_per_EM == 0) { error = "Métricas de fuente inválidas"; return false; }
@@ -250,11 +346,71 @@ FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics
 }
 }
 
+bool SDLFont::OpenBitmapColor(std::unique_ptr<Impl> next, int height, std::string& error)
+{
+    auto face = next->face;
+    const uint32_t strikes = Be32(next->cblc, 4);
+    int best = -1, bestPpem = 0;
+    for (uint32_t i = 0; i < strikes; ++i) {
+        const int ppem = next->cblc.size() > 8 + i * 48 + 45 ? next->cblc[8 + i * 48 + 45] : 0;
+        if (ppem > bestPpem) { best = int(i); bestPpem = ppem; }
+    }
+    const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
+    const int span = os2 ? os2->usWinAscent + os2->usWinDescent : face->ascender - face->descender;
+    // En una fuente sólo de mapas de bits FreeType deja units_per_EM en 0.
+    const auto head = static_cast<TT_Header*>(FT_Get_Sfnt_Table(face, ft_sfnt_head));
+    const int unitsPerEm = head ? head->Units_Per_EM : face->units_per_EM;
+    if (best < 0 || span <= 0 || unitsPerEm <= 0) { error = "Fuente de emoji sin strikes"; return false; }
+    if (best < face->num_fixed_sizes) FT_Select_Size(face, best);
+    const int ppem = std::max(1, (height * unitsPerEm + span / 2) / span);
+    const int ascent = os2 ? os2->usWinAscent : face->ascender;
+    next->metrics = { (ascent * height + span / 2) / span, height };
+    next->cbdtStrike = size_t(best);
+    next->cbdtScale = float(ppem) / float(bestPpem);
+    impl.swap(next);
+    return true;
+}
+
+FontGlyph SDLFont::RasterizeBitmapColor(uint32_t glyph) const
+{
+    FontGlyph out;
+    uint32_t offset = 0, length = 0;
+    uint16_t format = 0;
+    size_t indexMetrics = 0;
+    const auto& data = impl->cbdt;
+    if (!FindCbdtGlyph(impl->cblc, impl->cbdtStrike, glyph, offset, length, format, indexMetrics) ||
+        size_t(offset) + length > data.size()) return out;
+    // smallGlyphMetrics (17) o bigGlyphMetrics (18, y 19 desde el índice):
+    // alto, ancho, bearingX, bearingY, avance.
+    const uint8_t* metrics = nullptr;
+    size_t png = offset;
+    if (format == 17) { metrics = &data[offset]; png = offset + 5; }
+    else if (format == 18) { metrics = &data[offset]; png = offset + 8; }
+    else if (format == 19 && indexMetrics + 5 <= impl->cblc.size()) metrics = &impl->cblc[indexMetrics];
+    else return out;
+    const uint32_t pngLength = Be32(data, png);
+    png += 4;
+    if (png + pngLength > data.size()) return out;
+    ImageCodec::Image image;
+    if (!ImageCodec::DecodePngBuffer(&data[png], pngLength, 4, 1024, image)) return out;
+    const float s = impl->cbdtScale;
+    out.width = std::max(1, int(image.width * s + 0.5f));
+    out.height = std::max(1, int(image.height * s + 0.5f));
+    out.left = int(std::lround(int8_t(metrics[2]) * s));
+    out.top = int(std::lround(int8_t(metrics[3]) * s));
+    out.advance = int(std::lround(metrics[4] * s));
+    ScaleRgba(image.pixels, image.width, image.height, out.width, out.height, out.rgba);
+    out.coverage.resize(size_t(out.width) * out.height);
+    for (size_t i = 0; i < out.coverage.size(); ++i) out.coverage[i] = out.rgba[i * 4 + 3];
+    return out;
+}
+
 const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
 {
     const auto existing = impl->glyphs.find(codepoint);
     if (existing != impl->glyphs.end()) return existing->second;
     const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
+    if (impl->cbdtScale > 0.0f) return impl->glyphs.emplace(codepoint, RasterizeBitmapColor(index)).first->second;
     return impl->glyphs.emplace(codepoint,
         Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }
@@ -262,6 +418,7 @@ const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
 {
     const auto existing = impl->glyphIds.find(glyph);
     if (existing != impl->glyphIds.end()) return existing->second;
+    if (impl->cbdtScale > 0.0f) return impl->glyphIds.emplace(glyph, RasterizeBitmapColor(glyph)).first->second;
     return impl->glyphIds.emplace(glyph,
         Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }

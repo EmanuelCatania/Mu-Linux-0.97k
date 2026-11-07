@@ -26,6 +26,21 @@
       "description": "Cliente completo para Linux x86 con SDL3. Requiere PKG_CONFIG_LIBDIR apuntando a las bibliotecas de 32 bits (ver README)."
     },
     {
+      "name": "linux-x64-release",
+      "binaryDir": "${sourceDir}/build/linux-x64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "MU_PLATFORM_ONLY": "OFF",
+        "MU_RENDER_WEBGPU": "ON",
+        "VCPKG_MANIFEST_FEATURES": "webgpu",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      },
+      "generator": "Ninja",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "description": "Cliente completo para Linux x64 con SDL3, OpenGL y WebGPU (Dawn estático por vcpkg sobre Vulkan; requiere VCPKG_ROOT)."
+    },
+    {
       "name": "windows-webgpu-base",
       "hidden": true,
       "description": "Windows x64 con WebGPU: Dawn estático por vcpkg (requiere la variable de entorno VCPKG_ROOT).",
@@ -80,6 +95,11 @@
     {
       "name": "linux-x86-release",
       "configurePreset": "linux-x86-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-x64-release",
+      "configurePreset": "linux-x64-release",
       "configuration": "Release"
     },
     {

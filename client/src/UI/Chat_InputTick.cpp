@@ -25,6 +25,7 @@
 
 #include "stdafx.h"
 #include "UI/ChatListBox.h"
+#include "UI/ChatHistory.h"
 #include "Text/TextCore.h"
 #include "Party/Party.h"
 #include "Entity/EntityName.h"
@@ -445,6 +446,13 @@ void __cdecl Chat_InputTick(void)
         }
         if (edge != 0) continue;
         edge = 1;
+        // DESVIACION (Fase 4): con el chat abierto y el foco en el campo del
+        // mensaje, las flechas recorren los últimos mensajes enviados. Con el
+        // foco en el nombre (Tab) siguen con los nombres de susurro.
+        if (DAT_00559c84 && DAT_07e11d78 == 0) {
+            if (ChatHistory::Browse(dir == 0)) PlayBuffer(0x19, 0, 0);
+            continue;
+        }
         int idx = (int)DAT_00559cc4;
         if (dir == 0 ? idx <= 0 : idx >= 4) continue;
         // Guardar lo tipeado en history[idx] y cargar history[idx -/+ 1].

@@ -575,6 +575,18 @@ bool COptionsMenu::UpdateAdvanced()
     return true;
 }
 
+#ifdef MU_RENDER_WEBGPU
+namespace {
+// Siguiente backend disponible en la dirección `step` (+1/-1); -1 si no hay.
+int NextRenderBackend(int from, int step)
+{
+    for (int i = from + step; i >= 0 && i < static_cast<int>(RenderBackendPreference::Count); i += step)
+        if (CUserSettings::IsRenderBackendAvailable(static_cast<RenderBackendPreference>(i))) return i;
+    return -1;
+}
+}
+#endif
+
 // ── Gráficos ────────────────────────────────────────────────────────────────
 // DESVIACION: backend de render, calidad de texturas, nitidez, antialiasing y
 // desacople del render. Lo que se aplica al reiniciar lo avisa la última fila.
@@ -587,8 +599,8 @@ void COptionsMenu::RenderGraphics()
     // Backend de render (OpenGL o WebGPU sobre D3D12/D3D11/Vulkan).
     const auto backend = gUserSettings.GetRenderBackend();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::RenderBackend), CUserSettings::RenderBackendName(backend));
-    RenderSelector((float)RowY(row++), text, backend != RenderBackendPreference::OpenGL,
-        static_cast<int>(backend) + 1 < static_cast<int>(RenderBackendPreference::Count));
+    RenderSelector((float)RowY(row++), text, NextRenderBackend(static_cast<int>(backend), -1) >= 0,
+        NextRenderBackend(static_cast<int>(backend), 1) >= 0);
 #endif
     // Calidad de texturas (mipmaps y filtrado bicúbico).
     static const char* const textureNames[3] = { "Original", "Mipmaps", "Mipmaps + bicubic" };
@@ -606,6 +618,17 @@ void COptionsMenu::RenderGraphics()
     const int antialiasing = gUserSettings.GetAntialiasingLevel();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Antialiasing), antialiasingNames[antialiasing]);
     RenderSelector((float)RowY(row++), text, antialiasing > 0, antialiasing < 3);
+    // DESVIACION: sombras proyectadas (sólo WebGPU por ahora).
+    static const char* const shadowNames[3] = { "Off", "1", "2" };
+    const int shadows = gUserSettings.GetShadows();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::Shadows), shadowNames[shadows]);
+    RenderSelector((float)RowY(row++), text, shadows > 0, shadows < 2);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::DepthFog), gUserSettings.GetDepthFog());
+    // DESVIACION: distancia de dibujado.
+    static const char* const distanceNames[4] = { "Normal", "x1.5", "x2", "x3" };
+    const int distance = gUserSettings.GetDrawDistance();
+    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::DrawDistance), distanceNames[distance]);
+    RenderSelector((float)RowY(row++), text, distance > 0, distance < 3);
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     if (gUserSettings.RestartPending())
         RenderButton((float)RowY(row++), gClientText.Get(ClientTextId::RenderBackendRestart), true);
@@ -657,10 +680,10 @@ bool COptionsMenu::UpdateGraphics()
     bool clicked;
 #ifdef MU_RENDER_WEBGPU
     const int backend = static_cast<int>(gUserSettings.GetRenderBackend());
-    const int backendCount = static_cast<int>(RenderBackendPreference::Count);
-    const int backendStep = UpdateSelector(RowY(row++), backend > 0, backend + 1 < backendCount);
+    const int backendStep = UpdateSelector(RowY(row++), NextRenderBackend(backend, -1) >= 0, NextRenderBackend(backend, 1) >= 0);
     if (backendStep != INT_MIN) {
-        if (backendStep) gUserSettings.SetRenderBackend(static_cast<RenderBackendPreference>(backend + (backendStep > 0 ? 1 : -1)));
+        const int next = backendStep ? NextRenderBackend(backend, backendStep > 0 ? 1 : -1) : -1;
+        if (next >= 0) gUserSettings.SetRenderBackend(static_cast<RenderBackendPreference>(next));
         return true;
     }
 #endif
@@ -684,6 +707,22 @@ bool COptionsMenu::UpdateGraphics()
     const int antialiasingStep = UpdateSelector(RowY(row++), antialiasing > 0, antialiasing < 3);
     if (antialiasingStep != INT_MIN) {
         if (antialiasingStep) gUserSettings.SetAntialiasingLevel(antialiasing + (antialiasingStep > 0 ? 1 : -1));
+        return true;
+    }
+    const int shadows = gUserSettings.GetShadows();
+    const int shadowStep = UpdateSelector(RowY(row++), shadows > 0, shadows < 2);
+    if (shadowStep != INT_MIN) {
+        if (shadowStep) gUserSettings.SetShadows(shadows + (shadowStep > 0 ? 1 : -1));
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetDepthFog(!gUserSettings.GetDepthFog());
+        return true;
+    }
+    const int distance = gUserSettings.GetDrawDistance();
+    const int distanceStep = UpdateSelector(RowY(row++), distance > 0, distance < 3);
+    if (distanceStep != INT_MIN) {
+        if (distanceStep) gUserSettings.SetDrawDistance(distance + (distanceStep > 0 ? 1 : -1));
         return true;
     }
     if (UpdateToggle(RowY(row++),clicked)) {

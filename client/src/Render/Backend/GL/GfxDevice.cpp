@@ -221,6 +221,7 @@ void Run(const Program& p, float amount, int x, int y, int w, int h) {
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 }
+// Sombras proyectadas: Render/Backend/GL/ShadowMap.cpp.
 void PostProcess(bool antialias, float sharpen) {
     const bool doFxaa = antialias && Post::Ensure(Post::fxaa, Post::Fxaa);
     const bool doSharpen = sharpen > 0.0f && Post::Ensure(Post::sharpen, Post::Sharpen);

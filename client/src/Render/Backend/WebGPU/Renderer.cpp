@@ -13,10 +13,13 @@
 #include "Render/MeshTopology.h"
 #include "Render/RenderState.h"
 #include "Render/Skinning.h"
+#include "Render/ShadowLight.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -37,17 +40,27 @@ struct Uniforms {
     flags: vec4i,     // textured, texEnv, alphaFunction, fog
     params: vec4f,    // alphaReference, fogStart, fogEnd, fogDensity
     fogColor: vec4f,
-    extra: vec4i,     // bicúbico
+    extra: vec4i,     // bicúbico, recibe sombra
 };
 @group(0) @binding(0) var<uniform> u: Uniforms;
 @group(1) @binding(0) var tex: texture_2d<f32>;
 @group(1) @binding(1) var smp: sampler;
+// Sombras proyectadas: params = activa, intensidad, tamaño del texel, sesgo.
+struct Shadow { lightViewProj: mat4x4f, inverseView: mat4x4f, params: vec4f };
+@group(2) @binding(0) var<uniform> shadow: Shadow;
+@group(2) @binding(1) var shadowMap: texture_depth_2d;
+@group(2) @binding(2) var shadowSampler: sampler_comparison;
 struct VertexOut {
     @builtin(position) position: vec4f,
     @location(0) color: vec4f,
     @location(1) uv: vec4f,
     @location(2) fogDistance: f32,
+    @location(3) world: vec3f,
 };
+// Posición en el mundo: la cámara de la escena deshace la vista del dibujo.
+fn worldOf(position: vec4f) -> vec3f {
+    return (shadow.inverseView * (u.modelView * position)).xyz;
+}
 @vertex fn vs(@location(0) p: vec3f, @location(1) color: vec4f, @location(2) uv: vec4f) -> VertexOut {
     var out: VertexOut;
     let position = vec4f(p, 1.0);
@@ -58,6 +71,7 @@ struct VertexOut {
     out.color = clamp(color, vec4f(0.0), vec4f(1.0));
     out.uv = u.textureMatrix * uv;
     out.fogDistance = abs((u.modelView * position).z);
+    out.world = worldOf(position);
     return out;
 }
 // Mallas residentes: posición y normal en el espacio del hueso; la paleta
@@ -73,13 +87,15 @@ fn rotateBone(p: vec3f, b: i32) -> vec3f {
     let r = skin.paletteBase + b * 3;
     return vec3f(dot(palette[r].xyz, p), dot(palette[r + 1].xyz, p), dot(palette[r + 2].xyz, p));
 }
-@vertex fn vs_skin(@location(0) p0: vec3f, @location(1) bone: f32, @location(2) normal: vec4f, @location(3) uv2: vec2f) -> VertexOut {
-    var out: VertexOut;
-    let b = i32(bone);
+fn skinPosition(p0: vec3f, b: i32) -> vec3f {
     let r = skin.paletteBase + b * 3;
     var p = rotateBone(p0, b) * skin.scales.x;
     p = p + vec3f(palette[r].w, palette[r + 1].w, palette[r + 2].w);
-    p = p * skin.scales.y + skin.origin.xyz;
+    return p * skin.scales.y + skin.origin.xyz;
+}
+@vertex fn vs_skin(@location(0) p0: vec3f, @location(1) bone: f32, @location(2) normal: vec4f, @location(3) uv2: vec2f) -> VertexOut {
+    var out: VertexOut;
+    var p = skinPosition(p0, i32(bone));
     if ((skin.flags & 2u) != 0u) {
         // Sombra proyectada de BMD__RenderBodyShadow.
         let l = p - skin.shadowOrigin.xyz;
@@ -100,7 +116,54 @@ fn rotateBone(p: vec3f, b: i32) -> vec3f {
     out.color = clamp(color, vec4f(0.0), vec4f(1.0));
     out.uv = u.textureMatrix * (uv + vec4f(skin.uvOffset.xy, 0.0, 0.0));
     out.fogDistance = abs((u.modelView * position).z);
+    out.world = worldOf(position);
     return out;
+}
+// Pase de sombras: los mismos dibujos vistos desde la luz, sólo profundidad.
+struct CasterOut {
+    @builtin(position) position: vec4f,
+    @location(0) color: vec4f,
+    @location(1) uv: vec4f,
+};
+@vertex fn vs_caster(@location(0) p: vec3f, @location(1) color: vec4f, @location(2) uv: vec4f) -> CasterOut {
+    var out: CasterOut;
+    out.position = shadow.lightViewProj * vec4f(worldOf(vec4f(p, 1.0)), 1.0);
+    out.color = clamp(color, vec4f(0.0), vec4f(1.0));
+    out.uv = u.textureMatrix * uv;
+    return out;
+}
+@vertex fn vs_skin_caster(@location(0) p0: vec3f, @location(1) bone: f32, @location(2) normal: vec4f, @location(3) uv2: vec2f) -> CasterOut {
+    var out: CasterOut;
+    let p = skinPosition(p0, i32(bone));
+    out.position = shadow.lightViewProj * vec4f(worldOf(vec4f(p, 1.0)), 1.0);
+    out.color = clamp(skin.color, vec4f(0.0), vec4f(1.0));
+    var uvs = skin.uv;
+    if ((skin.flags & 4u) != 0u) { uvs = vec4f(uv2, 0.0, 1.0); }
+    out.uv = u.textureMatrix * (uvs + vec4f(skin.uvOffset.xy, 0.0, 0.0));
+    return out;
+}
+// No proyecta lo que se dibuja semitransparente por su color (un techo que
+// se desvanece al entrar a un edificio, un objeto que aparece) ni lo
+// transparente de la textura (hojas, rejas).
+@fragment fn fs_caster(in: CasterOut) {
+    let t = textureSample(tex, smp, in.uv.xy / in.uv.w);
+    if (in.color.a < 0.99) { discard; }
+    if (u.flags.x != 0 && t.a < 0.25) { discard; }
+}
+// Fracción iluminada (PCF 3x3), con borde suave al final del mapa.
+fn shadowFactor(world: vec3f) -> f32 {
+    let lp = shadow.lightViewProj * vec4f(world, 1.0);
+    let uv = vec2f(lp.x * 0.5 + 0.5, 0.5 - lp.y * 0.5);
+    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0)) || lp.z > 1.0) { return 1.0; }
+    var lit = 0.0;
+    for (var y = -1; y <= 1; y++) {
+        for (var x = -1; x <= 1; x++) {
+            lit += textureSampleCompareLevel(shadowMap, shadowSampler, uv + vec2f(f32(x), f32(y)) * shadow.params.z, lp.z - shadow.params.w);
+        }
+    }
+    lit = lit / 9.0;
+    let edge = smoothstep(0.0, 0.1, min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y)));
+    return mix(1.0, mix(1.0 - shadow.params.y, 1.0, lit), edge);
 }
 // Catmull-Rom con los 16 texels del nivel 0 (textureLoad: el 0.97k usa casi
 // siempre filtro nearest, así que el sampler no sirve para interpolar).
@@ -165,6 +228,10 @@ fn catmullRom(uv: vec2f, size: vec2f) -> vec4f {
         else if (f == 7) { passed = a >= r; }
         if (!passed) { discard; }
     }
+    // DESVIACION: sombras proyectadas (opción), antes de la niebla.
+    if (u.extra.y != 0 && shadow.params.x > 0.5) {
+        c = vec4f(c.rgb * shadowFactor(in.world), c.a);
+    }
     let fog = u.flags.w;
     if (fog != 0) {
         let d = in.fogDistance;
@@ -192,6 +259,11 @@ struct Skin {
     int32_t paletteBase; uint32_t flags; int32_t pad[2];
     float scales[4], origin[4], direction[4], coefficients[4], bodyLight[4], uvOffset[4], shadowOrigin[4], color[4], uv[4];
 };
+struct ShadowUniform {
+    float lightViewProj[16], inverseView[16];
+    float params[4];   // activa, intensidad, tamaño del texel, sesgo
+};
+constexpr uint32_t ShadowSize = ShadowLight::Size;
 constexpr uint64_t UniformStride = 256;
 static_assert(sizeof(Skin) <= UniformStride, "Skin no entra en su tramo");
 static_assert(sizeof(Uniforms) <= UniformStride, "Uniforms no entra en su tramo");
@@ -235,6 +307,8 @@ struct Draw {
     uint32_t uniformOffset, skinOffset;
     uint32_t firstVertex, vertexCount;
     bool quads;
+    bool caster;   // dentro de la escena de sombras: se dibuja también desde la luz
+    uint8_t topology;   // WGPUPrimitiveTopology del dibujo inmediato
     int viewport[4];
     // Malla residente: sus propios buffers (nulos en el dibujo inmediato).
     WGPUBuffer vertexBuffer, indexBuffer;
@@ -252,6 +326,7 @@ struct Pass {
     float sharpen = 0.0f;
     int postViewport[4]{};
     bool Post() const { return antialias || sharpen > 0.0f; }
+    bool atmosphere = false;   // niebla por profundidad antes de los dibujos de la pasada
     float color[4]{};
     std::vector<Draw> draws;
 };
@@ -291,6 +366,7 @@ struct State {
     int32_t paletteBase = 0;
     uint64_t matrixRevision = ~0ull, materialRevision = ~0ull;
     uint32_t lastUniform = 0;
+    bool lastReceiver = false;
     uint64_t frame = 1;
     // Recursos que siguen en uso por el cuadro grabado y se liberan al enviarlo.
     std::vector<WGPUTexture> retiredTextures;
@@ -312,6 +388,34 @@ struct State {
     unsigned postWidth = 0, postHeight = 0;
     WGPUTextureFormat postFormat = WGPUTextureFormat_Undefined;
     unsigned errors = 0;
+    // Sombras proyectadas: escena en grabación y recursos.
+    bool shadowScene = false, shadowFrame = false, shadowCasting = true;
+    float shadowStrength = 0.5f;
+    ShadowUniform shadow{};
+    WGPUTexture shadowMap = nullptr;
+    WGPUTextureView shadowView = nullptr;
+    WGPUSampler shadowSampler = nullptr;
+    WGPUBuffer shadowBuffer = nullptr;
+    WGPUBindGroupLayout shadowLayout = nullptr, casterLayout = nullptr;
+    WGPUBindGroup shadowGroup = nullptr, casterGroup = nullptr;
+    WGPUPipelineLayout casterPipelineLayout = nullptr;
+    std::unordered_map<uint8_t, WGPURenderPipeline> casterPipelines;
+    // Niebla por profundidad: uniform del cuadro y recursos.
+    struct Atmosphere {
+        float inverseViewProj[16];
+        float camera[4];     // posición de la cámara en el mundo
+        float color[4];
+        float params[4];     // modo, densidad, distancia inicial
+        float viewport[4];   // x, y (desde arriba), ancho, alto en píxeles
+    } atmosphere{};
+    int atmosphereViewport[4]{};
+    WGPUShaderModule atmosphereModule = nullptr;
+    WGPUBindGroupLayout atmosphereLayout = nullptr;
+    WGPUPipelineLayout atmospherePipelineLayout = nullptr;
+    WGPURenderPipeline atmosphereMultiply = nullptr, atmosphereAdd = nullptr;
+    WGPUBuffer atmosphereBuffer = nullptr;
+    WGPUTextureFormat atmosphereFormat = WGPUTextureFormat_Undefined;
+    uint32_t atmosphereSamples = 0;
 } g;
 
 uint32_t Samples() { return Gfx::Multisample() > 1 ? 4u : 1u; }   // WebGPU garantiza 1 y 4
@@ -580,10 +684,62 @@ WGPURenderPipeline Pipeline(const PipelineKey& key) {
     return pipeline;
 }
 
+// Pipeline del pase de sombras: sólo profundidad desde la luz, sin culling.
+WGPURenderPipeline CasterPipeline(uint8_t topology) {
+    auto it = g.casterPipelines.find(topology);
+    if (it != g.casterPipelines.end()) return it->second;
+    const bool resident = (topology >> 4) == Resident;
+    static const WGPUVertexAttribute attributes[3] = {
+        {nullptr, WGPUVertexFormat_Float32x3, offsetof(Vertex, position), 0},
+        {nullptr, WGPUVertexFormat_Float32x4, offsetof(Vertex, color), 1},
+        {nullptr, WGPUVertexFormat_Float32x4, offsetof(Vertex, uv), 2},
+    };
+    using Static = Skinning::StaticVertex;
+    static const WGPUVertexAttribute residentAttributes[4] = {
+        {nullptr, WGPUVertexFormat_Float32x3, offsetof(Static, position), 0},
+        {nullptr, WGPUVertexFormat_Float32, offsetof(Static, bone), 1},
+        {nullptr, WGPUVertexFormat_Float32x4, offsetof(Static, normal), 2},
+        {nullptr, WGPUVertexFormat_Float32x2, offsetof(Static, uv), 3},
+    };
+    WGPUVertexBufferLayout buffer = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+    buffer.stepMode = WGPUVertexStepMode_Vertex;
+    buffer.arrayStride = resident ? sizeof(Static) : sizeof(Vertex);
+    buffer.attributeCount = resident ? 4 : 3;
+    buffer.attributes = resident ? residentAttributes : attributes;
+    WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+    fragment.module = g.module;
+    fragment.entryPoint = View("fs_caster");
+    fragment.targetCount = 0;
+    WGPUDepthStencilState depth = WGPU_DEPTH_STENCIL_STATE_INIT;
+    depth.format = WGPUTextureFormat_Depth32Float;
+    depth.depthWriteEnabled = WGPUOptionalBool_True;
+    depth.depthCompare = WGPUCompareFunction_Less;
+    // Sesgo por pendiente: evita que las superficies se sombreen a sí mismas.
+    depth.depthBias = 4;
+    depth.depthBiasSlopeScale = 2.0f;
+    WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    d.layout = g.casterPipelineLayout;
+    d.vertex.module = g.module;
+    d.vertex.entryPoint = View(resident ? "vs_skin_caster" : "vs_caster");
+    d.vertex.bufferCount = 1;
+    d.vertex.buffers = &buffer;
+    d.primitive.topology = WGPUPrimitiveTopology(topology & 0xF);
+    d.primitive.cullMode = WGPUCullMode_None;
+    d.depthStencil = &depth;
+    d.fragment = &fragment;
+    WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(GetDevice(), &d);
+    g.casterPipelines.emplace(topology, pipeline);
+    return pipeline;
+}
+
 // Uniforms del lote: se reutiliza el tramo anterior si no cambió nada.
 uint32_t UniformOffset() {
     const uint64_t matrices = RenderState::MatrixRevision(), material = RenderState::MaterialRevision();
-    if (!g.uniforms.empty() && matrices == g.matrixRevision && material == g.materialRevision) return g.lastUniform;
+    const auto& state = RenderState::Get();
+    const bool additive = state.caps[RenderState::CapIndex(Cap::Blend)] && state.blendDestination == Gfx::Factor::One;
+    const bool receiver = g.shadowScene && g.shadowFrame && state.caps[RenderState::CapIndex(Cap::DepthTest)] && !additive;
+    if (!g.uniforms.empty() && matrices == g.matrixRevision && material == g.materialRevision &&
+        receiver == g.lastReceiver) return g.lastUniform;
     Uniforms u{};
     std::memcpy(u.mvp, RenderState::ModelViewProjection(), sizeof(u.mvp));
     std::memcpy(u.modelView, RenderState::Top(Gfx::Matrix::ModelView), sizeof(u.modelView));
@@ -598,10 +754,11 @@ uint32_t UniformOffset() {
     // Bicúbico sólo en lo 3D (depth test); bits 1 y 2: repetir en S y en T.
     const bool bicubic = Gfx::TextureBicubic() && s.caps[RenderState::CapIndex(Cap::DepthTest)];
     u.extra[0] = bicubic ? 1 | (s.textureRepeat[0] ? 2 : 0) | (s.textureRepeat[1] ? 4 : 0) : 0;
+    u.extra[1] = receiver ? 1 : 0;
     const uint32_t offset = uint32_t(g.uniforms.size());
     g.uniforms.resize(g.uniforms.size() + UniformStride);
     std::memcpy(&g.uniforms[offset], &u, sizeof(u));
-    g.matrixRevision = matrices; g.materialRevision = material; g.lastUniform = offset;
+    g.matrixRevision = matrices; g.materialRevision = material; g.lastUniform = offset; g.lastReceiver = receiver;
     return offset;
 }
 
@@ -616,6 +773,14 @@ PipelineKey StateKey(uint8_t topology) {
     key.depthWrite = s.depthWrite;
     key.cull = s.caps[RenderState::CapIndex(Cap::CullFace)];
     return key;
+}
+// Proyecta sombra: dentro de la escena, opaco o con alpha test (escribe
+// profundidad) y no aditivo; sólo triángulos.
+bool Caster(const PipelineKey& key) {
+    const uint8_t topology = key.topology & 0xF;
+    return g.shadowScene && g.shadowFrame && g.shadowCasting && key.depthTest && key.depthWrite &&
+           !(key.blend && Gfx::Factor(key.dst) == Gfx::Factor::One) &&
+           (topology == WGPUPrimitiveTopology_TriangleList || topology == WGPUPrimitiveTopology_TriangleStrip);
 }
 // La textura ligada si el texturizado está activo; la blanca si no.
 TextureSlot& BoundSlot() {
@@ -662,7 +827,8 @@ void EnsureDepth(unsigned width, unsigned height) {
     WGPUTextureDescriptor d = WGPU_TEXTURE_DESCRIPTOR_INIT;
     d.size = {width, height, 1};
     d.format = WGPUTextureFormat_Depth24Plus;
-    d.usage = WGPUTextureUsage_RenderAttachment;
+    // Se lee en la niebla por profundidad.
+    d.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
     d.sampleCount = Samples();
     g.depth = wgpuDeviceCreateTexture(GetDevice(), &d);
     g.depthView = wgpuTextureCreateView(g.depth, nullptr);
@@ -705,6 +871,7 @@ void ResetFrame() {
     g.vertices.clear(); g.uniforms.clear(); g.passes.clear();
     g.skins.clear(); g.palette.clear(); g.paletteRevision = ~0ull;
     g.matrixRevision = g.materialRevision = ~0ull;
+    g.shadowFrame = false;
     ++g.frame;
 }
 
@@ -745,17 +912,62 @@ bool CreateObjects() {
     td.entryCount = 2; td.entries = textureEntries;
     g.textureLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &td);
 
-    WGPUBindGroupLayout layouts[2] = {g.uniformLayout, g.textureLayout};
+    // Grupo 2: sombras. El pipeline normal lee el mapa; el del pase de
+    // sombras sólo el uniform (el mapa es su destino).
+    WGPUBindGroupLayoutEntry shadowEntries[3] = {WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT};
+    shadowEntries[0].binding = 0;
+    shadowEntries[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    shadowEntries[0].buffer.type = WGPUBufferBindingType_Uniform;
+    shadowEntries[0].buffer.minBindingSize = sizeof(ShadowUniform);
+    shadowEntries[1].binding = 1;
+    shadowEntries[1].visibility = WGPUShaderStage_Fragment;
+    shadowEntries[1].texture.sampleType = WGPUTextureSampleType_Depth;
+    shadowEntries[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+    shadowEntries[2].binding = 2;
+    shadowEntries[2].visibility = WGPUShaderStage_Fragment;
+    shadowEntries[2].sampler.type = WGPUSamplerBindingType_Comparison;
+    WGPUBindGroupLayoutDescriptor sd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+    sd.entryCount = 3; sd.entries = shadowEntries;
+    g.shadowLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &sd);
+    sd.entryCount = 1;
+    g.casterLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &sd);
+
+    WGPUBindGroupLayout layouts[3] = {g.uniformLayout, g.textureLayout, g.shadowLayout};
     WGPUPipelineLayoutDescriptor pd = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
-    pd.bindGroupLayoutCount = 2; pd.bindGroupLayouts = layouts;
+    pd.bindGroupLayoutCount = 3; pd.bindGroupLayouts = layouts;
     g.pipelineLayout = wgpuDeviceCreatePipelineLayout(GetDevice(), &pd);
+    layouts[2] = g.casterLayout;
+    g.casterPipelineLayout = wgpuDeviceCreatePipelineLayout(GetDevice(), &pd);
+
+    WGPUTextureDescriptor mapd = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    mapd.size = {ShadowSize, ShadowSize, 1};
+    mapd.format = WGPUTextureFormat_Depth32Float;
+    mapd.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+    g.shadowMap = wgpuDeviceCreateTexture(GetDevice(), &mapd);
+    g.shadowView = wgpuTextureCreateView(g.shadowMap, nullptr);
+    WGPUSamplerDescriptor smp = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    smp.magFilter = WGPUFilterMode_Linear;
+    smp.minFilter = WGPUFilterMode_Linear;
+    smp.compare = WGPUCompareFunction_LessEqual;
+    g.shadowSampler = wgpuDeviceCreateSampler(GetDevice(), &smp);
+    g.shadowBuffer = CreateBuffer(sizeof(ShadowUniform), WGPUBufferUsage_Uniform);
+    WGPUBindGroupEntry shadowGroup[3] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
+    shadowGroup[0].binding = 0; shadowGroup[0].buffer = g.shadowBuffer; shadowGroup[0].size = sizeof(ShadowUniform);
+    shadowGroup[1].binding = 1; shadowGroup[1].textureView = g.shadowView;
+    shadowGroup[2].binding = 2; shadowGroup[2].sampler = g.shadowSampler;
+    WGPUBindGroupDescriptor gd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+    gd.layout = g.shadowLayout; gd.entryCount = 3; gd.entries = shadowGroup;
+    g.shadowGroup = wgpuDeviceCreateBindGroup(GetDevice(), &gd);
+    gd.layout = g.casterLayout; gd.entryCount = 1;
+    g.casterGroup = wgpuDeviceCreateBindGroup(GetDevice(), &gd);
 
     // Textura blanca 1x1 para los lotes sin textura (el shader muestrea siempre).
     g.white.texture = NewTexture(1, 1);
     g.white.view = wgpuTextureCreateView(g.white.texture, nullptr);
     g.white.width = g.white.height = 1;
     Write(g.white.texture, 0, 0, 1, 1, std::vector<uint8_t>(4, 255));
-    return g.module && g.uniformLayout && g.textureLayout && g.pipelineLayout && g.white.view;
+    return g.module && g.uniformLayout && g.textureLayout && g.pipelineLayout && g.white.view &&
+           g.shadowGroup && g.casterGroup && g.casterPipelineLayout;
 }
 
 void ReleaseObjects() {
@@ -764,6 +976,22 @@ void ReleaseObjects() {
     for (auto& [handle, slot] : g.textures) Destroy(slot);
     Destroy(g.white);
     for (auto& [key, pipeline] : g.pipelines) wgpuRenderPipelineRelease(pipeline);
+    for (auto& [key, pipeline] : g.casterPipelines) wgpuRenderPipelineRelease(pipeline);
+    if (g.atmosphereMultiply) wgpuRenderPipelineRelease(g.atmosphereMultiply);
+    if (g.atmosphereAdd) wgpuRenderPipelineRelease(g.atmosphereAdd);
+    if (g.atmospherePipelineLayout) wgpuPipelineLayoutRelease(g.atmospherePipelineLayout);
+    if (g.atmosphereLayout) wgpuBindGroupLayoutRelease(g.atmosphereLayout);
+    if (g.atmosphereModule) wgpuShaderModuleRelease(g.atmosphereModule);
+    if (g.atmosphereBuffer) wgpuBufferRelease(g.atmosphereBuffer);
+    if (g.shadowGroup) wgpuBindGroupRelease(g.shadowGroup);
+    if (g.casterGroup) wgpuBindGroupRelease(g.casterGroup);
+    if (g.shadowBuffer) wgpuBufferRelease(g.shadowBuffer);
+    if (g.shadowSampler) wgpuSamplerRelease(g.shadowSampler);
+    if (g.shadowView) wgpuTextureViewRelease(g.shadowView);
+    if (g.shadowMap) wgpuTextureRelease(g.shadowMap);
+    if (g.casterPipelineLayout) wgpuPipelineLayoutRelease(g.casterPipelineLayout);
+    if (g.casterLayout) wgpuBindGroupLayoutRelease(g.casterLayout);
+    if (g.shadowLayout) wgpuBindGroupLayoutRelease(g.shadowLayout);
     for (auto& [key, sampler] : g.samplers) wgpuSamplerRelease(sampler);
     for (auto& [key, mesh] : g.meshes) {
         if (mesh.indices) wgpuBufferRelease(mesh.indices);
@@ -856,7 +1084,9 @@ bool DrawResidentMesh(const void* key, MeshTopology::Mesh& topology, const Skinn
 
     TextureSlot& slot = BoundSlot();
     Draw draw{};
-    draw.pipeline = Pipeline(StateKey(uint8_t(WGPUPrimitiveTopology_TriangleList | (Resident << 4))));
+    const PipelineKey residentKey = StateKey(uint8_t(WGPUPrimitiveTopology_TriangleList | (Resident << 4)));
+    draw.pipeline = Pipeline(residentKey);
+    draw.caster = Caster(residentKey) && !d.shadow;   // la sombra plana no proyecta
     draw.textureGroup = TextureGroup(slot);
     slot.usedFrame = g.frame;
     draw.uniformOffset = UniformOffset();
@@ -1049,6 +1279,192 @@ void EncodePost(WGPUCommandEncoder encoder, const Pass& pass, unsigned width, un
     if (pass.sharpen > 0.0f) run(g.postPipeline);
 }
 
+// ── Niebla por profundidad ──────────────────────────────────────────────────
+// Reconstruye cada píxel desde la profundidad y mezcla con el color de la
+// niebla en dos pasadas (multiplicar por la transmitancia y sumar el color),
+// sin copiar la imagen.
+const char* const AtmosphereShader = R"WGSL(
+struct Atmosphere { inverseViewProj: mat4x4f, camera: vec4f, color: vec4f, params: vec4f, viewport: vec4f };
+@group(0) @binding(0) var depth: DEPTH_TYPE;
+@group(0) @binding(1) var<uniform> a: Atmosphere;
+@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
+    let p = vec2f(select(-1.0, 3.0, i == 1u), select(-1.0, 3.0, i == 2u));
+    return vec4f(p, 0.0, 1.0);
+}
+// Transmitancia por canal: 1 = sin niebla.
+fn transmittance(position: vec4f) -> vec3f {
+    let d = textureLoad(depth, vec2i(position.xy), 0);
+    if (d >= 1.0) { return vec3f(0.0); }   // fondo: todo niebla
+    let ndc = vec2f((position.x - a.viewport.x) / a.viewport.z * 2.0 - 1.0,
+                    1.0 - (position.y - a.viewport.y) / a.viewport.w * 2.0);
+    var w = a.inverseViewProj * vec4f(ndc, d * 2.0 - 1.0, 1.0);
+    let world = w.xyz / w.w;
+    let distance = max(length(world - a.camera.xyz) - a.params.z, 0.0);
+    // El borde del mapa (256 tiles de 100) se cierra con niebla: el fondo
+    // tiene su color, así el final del mapa no se ve.
+    // Sólo las últimas 3 casillas y lejos del personaje: en los mapas que se
+    // juegan pegados al borde no tiene que verse.
+    let border = min(min(world.x, world.y), min(25600.0 - world.x, 25600.0 - world.y));
+    let edge = 1.0 - (1.0 - smoothstep(0.0, 300.0, border)) * smoothstep(0.0, 1000.0, distance);
+    if (a.params.x > 1.5) {
+        // Bajo el agua: el rojo se absorbe primero.
+        return exp(-a.params.y * vec3f(3.0, 1.8, 1.2) * distance) * edge;
+    }
+    let x = distance * a.params.y;
+    return vec3f(exp(-x * x)) * edge;
+}
+@fragment fn fs_multiply(@builtin(position) position: vec4f) -> @location(0) vec4f {
+    return vec4f(transmittance(position), 1.0);
+}
+@fragment fn fs_add(@builtin(position) position: vec4f) -> @location(0) vec4f {
+    return vec4f(a.color.rgb * (vec3f(1.0) - transmittance(position)), 0.0);
+}
+)WGSL";
+bool EnsureAtmosphere() {
+    const WGPUTextureFormat format = SurfaceFormat();
+    const uint32_t samples = Samples();
+    if (g.atmosphereMultiply && g.atmosphereFormat == format && g.atmosphereSamples == samples) return true;
+    if (g.atmosphereMultiply) wgpuRenderPipelineRelease(g.atmosphereMultiply);
+    if (g.atmosphereAdd) wgpuRenderPipelineRelease(g.atmosphereAdd);
+    if (g.atmospherePipelineLayout) wgpuPipelineLayoutRelease(g.atmospherePipelineLayout);
+    if (g.atmosphereLayout) wgpuBindGroupLayoutRelease(g.atmosphereLayout);
+    if (g.atmosphereModule) wgpuShaderModuleRelease(g.atmosphereModule);
+    g.atmosphereMultiply = g.atmosphereAdd = nullptr;
+    std::string code = AtmosphereShader;
+    const char* type = samples > 1 ? "texture_depth_multisampled_2d" : "texture_depth_2d";
+    code.replace(code.find("DEPTH_TYPE"), 10, type);
+    WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
+    wgsl.code = WGPUStringView{code.c_str(), code.size()};
+    WGPUShaderModuleDescriptor md = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
+    md.nextInChain = &wgsl.chain;
+    g.atmosphereModule = wgpuDeviceCreateShaderModule(GetDevice(), &md);
+    WGPUBindGroupLayoutEntry entries[2] = {WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT, WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT};
+    entries[0].binding = 0;
+    entries[0].visibility = WGPUShaderStage_Fragment;
+    entries[0].texture.sampleType = WGPUTextureSampleType_Depth;
+    entries[0].texture.viewDimension = WGPUTextureViewDimension_2D;
+    entries[0].texture.multisampled = samples > 1;
+    entries[1].binding = 1;
+    entries[1].visibility = WGPUShaderStage_Fragment;
+    entries[1].buffer.type = WGPUBufferBindingType_Uniform;
+    entries[1].buffer.minBindingSize = sizeof(State::Atmosphere);
+    WGPUBindGroupLayoutDescriptor ld = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+    ld.entryCount = 2; ld.entries = entries;
+    g.atmosphereLayout = wgpuDeviceCreateBindGroupLayout(GetDevice(), &ld);
+    WGPUPipelineLayoutDescriptor pd = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+    pd.bindGroupLayoutCount = 1; pd.bindGroupLayouts = &g.atmosphereLayout;
+    g.atmospherePipelineLayout = wgpuDeviceCreatePipelineLayout(GetDevice(), &pd);
+    if (!g.atmosphereBuffer) g.atmosphereBuffer = CreateBuffer(sizeof(State::Atmosphere), WGPUBufferUsage_Uniform);
+    auto pipeline = [&](const char* entry, WGPUBlendFactor src, WGPUBlendFactor dst) {
+        WGPUBlendState blend{};
+        blend.color = {WGPUBlendOperation_Add, src, dst};
+        blend.alpha = {WGPUBlendOperation_Add, WGPUBlendFactor_Zero, WGPUBlendFactor_One};
+        WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+        target.format = format;
+        target.blend = &blend;
+        target.writeMask = WGPUColorWriteMask_All;
+        WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+        fragment.module = g.atmosphereModule;
+        fragment.entryPoint = View(entry);
+        fragment.targetCount = 1;
+        fragment.targets = &target;
+        WGPURenderPipelineDescriptor d = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        d.layout = g.atmospherePipelineLayout;
+        d.multisample.count = samples;
+        d.vertex.module = g.atmosphereModule;
+        d.vertex.entryPoint = View("vs");
+        d.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        d.fragment = &fragment;
+        return wgpuDeviceCreateRenderPipeline(GetDevice(), &d);
+    };
+    g.atmosphereMultiply = pipeline("fs_multiply", WGPUBlendFactor_Zero, WGPUBlendFactor_Src);
+    g.atmosphereAdd = pipeline("fs_add", WGPUBlendFactor_One, WGPUBlendFactor_One);
+    g.atmosphereFormat = format; g.atmosphereSamples = samples;
+    return g.atmosphereMultiply && g.atmosphereAdd && g.atmosphereBuffer;
+}
+void EncodeAtmosphere(WGPUCommandEncoder encoder, unsigned width, unsigned height) {
+    if (!g.depthView || !EnsureAtmosphere()) return;
+    // Viewport de OpenGL (origen abajo) a píxeles desde arriba, dentro del cuadro.
+    const int* v = g.atmosphereViewport;
+    const float x = float(std::max(0, v[0]));
+    const float w = std::min(float(v[2]), float(width) - x);
+    const float top = float(int(height) - v[1] - v[3]);
+    const float y = std::max(0.0f, top);
+    const float h = std::min(float(v[3]) - (y - top), float(height) - y);
+    if (w <= 0 || h <= 0) return;
+    g.atmosphere.viewport[0] = float(v[0]); g.atmosphere.viewport[1] = top;
+    g.atmosphere.viewport[2] = float(v[2]); g.atmosphere.viewport[3] = float(v[3]);
+    wgpuQueueWriteBuffer(GetQueue(), g.atmosphereBuffer, 0, &g.atmosphere, sizeof(g.atmosphere));
+    WGPUBindGroupEntry entries[2] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
+    entries[0].binding = 0; entries[0].textureView = g.depthView;
+    entries[1].binding = 1; entries[1].buffer = g.atmosphereBuffer; entries[1].size = sizeof(State::Atmosphere);
+    WGPUBindGroupDescriptor bd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+    bd.layout = g.atmosphereLayout; bd.entryCount = 2; bd.entries = entries;
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(GetDevice(), &bd);
+    WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    ColorTarget(color);
+    color.loadOp = WGPULoadOp_Load;
+    color.storeOp = WGPUStoreOp_Store;
+    WGPURenderPassDescriptor rp = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    rp.colorAttachmentCount = 1;
+    rp.colorAttachments = &color;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
+    wgpuRenderPassEncoderSetViewport(pass, x, y, w, h, 0, 1);
+    wgpuRenderPassEncoderSetBindGroup(pass, 0, group, 0, nullptr);
+    wgpuRenderPassEncoderSetPipeline(pass, g.atmosphereMultiply);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderSetPipeline(pass, g.atmosphereAdd);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    g.retiredGroups.push_back(group);
+}
+
+// Pase de sombras: los dibujos marcados como proyectores, vistos desde la luz.
+void EncodeShadows(WGPUCommandEncoder encoder) {
+    WGPURenderPassDepthStencilAttachment depth = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+    depth.view = g.shadowView;
+    depth.depthLoadOp = WGPULoadOp_Clear;
+    depth.depthStoreOp = WGPUStoreOp_Store;
+    depth.depthClearValue = 1.0f;
+    WGPURenderPassDescriptor rp = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    rp.colorAttachmentCount = 0;
+    rp.depthStencilAttachment = &depth;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
+    wgpuRenderPassEncoderSetBindGroup(pass, 2, g.casterGroup, 0, nullptr);
+    WGPURenderPipeline lastPipeline = nullptr;
+    WGPUBindGroup lastTexture = nullptr;
+    WGPUBuffer lastVertices = nullptr, lastIndices = nullptr;
+    uint32_t lastUniform = ~0u, lastSkin = ~0u;
+    for (const auto& recorded : g.passes) {
+        for (const auto& draw : recorded.draws) {
+            if (!draw.caster) continue;
+            const uint8_t topology = draw.vertexBuffer ? uint8_t(WGPUPrimitiveTopology_TriangleList | (Resident << 4))
+                                   : uint8_t(draw.quads ? WGPUPrimitiveTopology_TriangleList : draw.topology);
+            const WGPURenderPipeline pipeline = CasterPipeline(topology);
+            if (pipeline != lastPipeline) { wgpuRenderPassEncoderSetPipeline(pass, pipeline); lastPipeline = pipeline; }
+            if (draw.uniformOffset != lastUniform || draw.skinOffset != lastSkin) {
+                const uint32_t offsets[2] = {draw.uniformOffset, draw.skinOffset};
+                wgpuRenderPassEncoderSetBindGroup(pass, 0, g.uniformGroup, 2, offsets);
+                lastUniform = draw.uniformOffset; lastSkin = draw.skinOffset;
+            }
+            const WGPUBuffer vertices = draw.vertexBuffer ? draw.vertexBuffer : g.vertexBuffer;
+            if (vertices != lastVertices) { wgpuRenderPassEncoderSetVertexBuffer(pass, 0, vertices, 0, WGPU_WHOLE_SIZE); lastVertices = vertices; }
+            const WGPUBuffer indices = draw.vertexBuffer ? draw.indexBuffer : draw.quads ? g.indexBuffer : nullptr;
+            if (indices && indices != lastIndices) {
+                wgpuRenderPassEncoderSetIndexBuffer(pass, indices, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+                lastIndices = indices;
+            }
+            if (draw.textureGroup != lastTexture) { wgpuRenderPassEncoderSetBindGroup(pass, 1, draw.textureGroup, 0, nullptr); lastTexture = draw.textureGroup; }
+            if (draw.vertexBuffer) wgpuRenderPassEncoderDrawIndexed(pass, draw.indexCount, 1, 0, 0, 0);
+            else if (draw.quads) wgpuRenderPassEncoderDrawIndexed(pass, draw.vertexCount / 4 * 6, 1, 0, int32_t(draw.firstVertex), 0);
+            else wgpuRenderPassEncoderDraw(pass, draw.vertexCount, 1, draw.firstVertex, 0);
+        }
+    }
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+}
+
 // Codifica y envía lo grabado hasta ahora sobre la textura del cuadro. La
 // grabación sigue después sobre la misma textura (lo usa la captura).
 void EncodePasses() {
@@ -1085,8 +1501,14 @@ void EncodePasses() {
         for (const auto& draw : pass.draws) if (draw.quads) quads = std::max<uint64_t>(quads, draw.vertexCount / 4);
     if (quads) ReserveQuadIndices(quads);
 
+    // Sombras: el uniform va siempre (el grupo 2 está en todos los pipelines);
+    // sin escena en el cuadro, los receptores no leen el mapa.
+    g.shadow.params[0] = g.shadowFrame ? 1.0f : 0.0f;
+    wgpuQueueWriteBuffer(GetQueue(), g.shadowBuffer, 0, &g.shadow, sizeof(g.shadow));
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(GetDevice(), nullptr);
+    if (g.shadowFrame && g.uniformGroup) EncodeShadows(encoder);
     for (const auto& pass : g.passes) {
+        if (pass.atmosphere) EncodeAtmosphere(encoder, width, height);
         if (pass.Post()) EncodePost(encoder, pass, width, height);
         WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
         ColorTarget(color);
@@ -1103,6 +1525,7 @@ void EncodePasses() {
         rp.colorAttachments = &color;
         rp.depthStencilAttachment = &depth;
         WGPURenderPassEncoder encoderPass = wgpuCommandEncoderBeginRenderPass(encoder, &rp);
+        wgpuRenderPassEncoderSetBindGroup(encoderPass, 2, g.shadowGroup, 0, nullptr);
         // Dawn valida cada comando: sólo se emite el estado que cambia.
         WGPURenderPipeline lastPipeline = nullptr;
         WGPUBindGroup lastTexture = nullptr;
@@ -1255,6 +1678,48 @@ void Clear(unsigned clearMask) {
 }
 void Flush() {}
 void ClearErrors() {}
+bool SupportsShadowMaps() { return g.ready; }
+// Abre o cierra la escena de sombras del cuadro. Al abrirla, la vista activa
+// es la de la cámara: con su inversa cada dibujo recupera su posición en el
+// mundo, cualquiera sea su modelView.
+void ShadowScene(bool begin, const float* focus, float strength) {
+    if (!g.ready) return;
+    g.matrixRevision = ~0ull;   // los uniforms siguientes cambian el flag de receptor
+    if (!begin) {
+        // Niebla: una pasada nueva que se aplica antes de lo que siga.
+        if (g.shadowScene && g.atmosphere.params[0] > 0.5f) {
+            g.passes.emplace_back();
+            g.passes.back().atmosphere = true;
+        }
+        g.shadowScene = false;
+        return;
+    }
+    g.shadowScene = focus != nullptr;
+    g.shadowCasting = true;
+    g.atmosphere.params[0] = 0.0f;
+    if (!g.shadowScene) return;
+    if (!ShadowLight::Invert(RenderState::Top(Gfx::Matrix::ModelView), g.shadow.inverseView)) { g.shadowScene = false; return; }
+    // Para la niebla: inversa de proyección x vista, cámara y viewport.
+    float viewProj[16];
+    ShadowLight::Multiply(RenderState::Top(Gfx::Matrix::Projection), RenderState::Top(Gfx::Matrix::ModelView), viewProj);
+    if (!ShadowLight::Invert(viewProj, g.atmosphere.inverseViewProj)) { g.shadowScene = false; return; }
+    std::memcpy(g.atmosphere.camera, &g.shadow.inverseView[12], 3 * sizeof(float));
+    std::memcpy(g.atmosphereViewport, RenderState::Get().viewport, sizeof(g.atmosphereViewport));
+    if (strength <= 0.0f) return;   // escena sólo para la niebla
+    ShadowLight::ViewProj(focus, g.shadow.lightViewProj);
+    g.shadow.params[1] = strength;
+    g.shadow.params[2] = 1.0f / float(::WebGPU::ShadowSize);
+    g.shadow.params[3] = ShadowLight::Bias;
+    g.shadowFrame = true;
+}
+void Atmosphere(int mode, const float* color, float density, float start) {
+    if (!g.ready || !g.shadowScene) return;
+    g.atmosphere.params[0] = float(mode);
+    g.atmosphere.params[1] = density;
+    g.atmosphere.params[2] = start;
+    if (color) std::memcpy(g.atmosphere.color, color, 3 * sizeof(float));
+}
+void ShadowCasting(bool enabled) { g.shadowCasting = enabled; }
 // El posproceso abre una pasada: al codificarla se aplica antes de sus dibujos.
 void PostProcess(bool antialias, float sharpen) {
     if (!g.ready) return;
@@ -1359,6 +1824,8 @@ void Submit(unsigned mode, const Vertex* vertices, std::size_t count) {
     draw.uniformOffset = ::WebGPU::UniformOffset();
     draw.firstVertex = uint32_t(g.vertices.size());
     draw.quads = quads;
+    draw.caster = ::WebGPU::Caster(key);
+    draw.topology = uint8_t(topology);
     std::memcpy(draw.viewport, s.viewport, sizeof(draw.viewport));
     g.vertices.insert(g.vertices.end(), vertices, vertices + count);
     if (mode == ::WebGPU::LineLoop) g.vertices.push_back(vertices[0]);   // cerrar el lazo
@@ -1370,7 +1837,7 @@ void Submit(unsigned mode, const Vertex* vertices, std::size_t count) {
     if (list && !draws.empty()) {
         auto& last = draws.back();
         if (!last.vertexBuffer && last.pipeline == draw.pipeline && last.textureGroup == draw.textureGroup &&
-            last.uniformOffset == draw.uniformOffset && last.quads == draw.quads &&
+            last.uniformOffset == draw.uniformOffset && last.quads == draw.quads && last.caster == draw.caster &&
             last.firstVertex + last.vertexCount == draw.firstVertex &&
             !std::memcmp(last.viewport, draw.viewport, sizeof(draw.viewport))) {
             last.vertexCount += draw.vertexCount;

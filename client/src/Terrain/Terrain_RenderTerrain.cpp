@@ -9,7 +9,10 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Gfx.h"
 void Terrain_BeginBufferedPass();
+void Terrain_BeginBatch();
+void Terrain_EndBatch();
 #include "Render/BufferedDraw.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Entity/ObjectBounds.h"
@@ -21,6 +24,7 @@ void Terrain_BeginBufferedPass();
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
+#include "Render/Camera3D.h"
 #include "Game/MapManager.h"
 #include "structs.h"
 #include "globals.h"
@@ -114,7 +118,9 @@ void __cdecl RenderTerrain(char EditFlag) {
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
     const bool modern=!EditFlag && TerrainDraw::Requested() && !DAT_0839bc86;
     if(modern)Terrain_BeginBufferedPass();
+    else if(!EditFlag)Terrain_BeginBatch();
     RenderTerrainFrustrum(EditFlag != 0);
+    Terrain_EndBatch();
     if(modern && !TerrainDraw::End())RenderTerrainFrustrum(false);
 
     if (EditFlag) {
@@ -128,7 +134,12 @@ void __cdecl RenderTerrain(char EditFlag) {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && gMapManager.GetCurrentMap() != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
+            // DESVIACION: el pasto (billboards) recibe sombra pero no la proyecta.
+            Gfx::SetShadowCasting(false);
+            Terrain_BeginBatch();
             RenderTerrainFrustrum(false);
+            Terrain_EndBatch();
+            Gfx::SetShadowCasting(true);
         }
         Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest
@@ -312,8 +323,51 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // tolerancia de bloques y objetos con el producto cruz sin normalizar, así
 // que con un cuadro más grande esa tolerancia se achica y los bloques de
 // 16x16 cerca del borde quedaban afuera (objetos que no aparecían).
+// DESVIACION: con la cámara 3D o la distancia de dibujado ampliada, el corte
+// del frustum con el plano del suelo queda más chico que lo que se ve (cámara
+// alta e inclinada, terreno con relieve) y los costados quedaban sin tiles.
+// Acá el cuadro es el rectángulo que encierra la cámara y las cuatro esquinas
+// del frustum llevadas hasta donde dibuja la proyección (están al 90 % del
+// alcance, _DAT_005526e8, y la proyección llega al 140 %, _DAT_00552d34), más
+// 800 de margen. Cubre todo lo visible con cualquier inclinación.
+static void CreateFrustrum2D_Footprint()
+{
+    const float ax = FrustrumVertex, ay = DAT_07eab1b4;
+    const float cx[4] = { DAT_07eab1bc, DAT_07eab1c8, DAT_07eab1d4, DAT_07eab1e0 };
+    const float cy[4] = { DAT_07eab1c0, DAT_07eab1cc, DAT_07eab1d8, DAT_07eab1e4 };
+    const float k = _DAT_00552d34 / _DAT_005526e8;
+    float minX = ax, maxX = ax, minY = ay, maxY = ay;
+    for (int i = 0; i < 4; ++i) {
+        const float x = ax + (cx[i] - ax) * k, y = ay + (cy[i] - ay) * k;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+    minX = (minX - 800.0f) * _DAT_005524f8; maxX = (maxX + 800.0f) * _DAT_005524f8;
+    minY = (minY - 800.0f) * _DAT_005524f8; maxY = (maxY + 800.0f) * _DAT_005524f8;
+    // Sentido horario: TestFrustrum2D exige producto cruz positivo en cada lado.
+    FrustrumX[0] = minX; FrustrumY[0] = maxY;
+    FrustrumX[1] = maxX; FrustrumY[1] = maxY;
+    FrustrumX[2] = maxX; FrustrumY[2] = minY;
+    FrustrumX[3] = minX; FrustrumY[3] = minY;
+    // El rectángulo de tiles que se recorre tiene que abarcar el cuadro entero.
+    // Mismo redondeo a bloques de 4 y límites que Camera_SetupFrustum.
+    auto bound = [](float tile, int extra) {
+        int t = (int)floorf(tile);
+        t = ((t + (t >> 31 & 3)) >> 2) * 4 + extra;
+        return (DWORD)(t < 0 ? 0 : t > 0xfb ? 0xfb : t);
+    };
+    FrustrumBoundMinX_1 = bound(minX, -4); FrustrumBoundMaxX_1 = bound(maxX, 4);
+    FrustrumBoundMinY_1 = bound(minY, -4); FrustrumBoundMaxY_1 = bound(maxY, 4);
+}
+
 static bool CreateFrustrum2D_FromFrustum(const float *ground)
 {
+    if (gCamera3D.IsEnabled()) {
+        CreateFrustrum2D_Footprint();
+        return true;
+    }
     const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
     const float corner[4][3] = {
         { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
