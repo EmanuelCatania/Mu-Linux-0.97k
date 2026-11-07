@@ -229,6 +229,13 @@
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />
+    <ClCompile Include="..\Common\TextName.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\utf8proc\utf8proc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>UTF8PROC_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_MySQL|Win32'">Create</PrecompiledHeader>
