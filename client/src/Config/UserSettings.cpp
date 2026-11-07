@@ -98,6 +98,9 @@ void CUserSettings::Load(const char* iniPath)
     for (int i = 0; i < static_cast<int>(RenderBackendPreference::Count); ++i)
         if (!Platform::TextCompareIgnoreCase(backend, RenderBackendKey(static_cast<RenderBackendPreference>(i))))
             m_RenderBackend = static_cast<RenderBackendPreference>(i);
+    // Config.ini se comparte con Windows: un d3d12/d3d11 guardado allá se lee
+    // acá como WebGPU automático, sin reescribir el archivo.
+    if (!IsRenderBackendAvailable(m_RenderBackend)) m_RenderBackend = RenderBackendPreference::Auto;
     m_StartupRenderBackend = m_RenderBackend;
     m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
     m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
@@ -221,6 +224,16 @@ const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
     case RenderBackendPreference::Vulkan: return "vulkan";
     default: return "opengl";
     }
+}
+
+bool CUserSettings::IsRenderBackendAvailable(RenderBackendPreference preference)
+{
+#ifdef _WIN32
+    return preference < RenderBackendPreference::Count;
+#else
+    return preference < RenderBackendPreference::Count &&
+           preference != RenderBackendPreference::D3D12 && preference != RenderBackendPreference::D3D11;
+#endif
 }
 
 const char* CUserSettings::RenderBackendName(RenderBackendPreference preference)

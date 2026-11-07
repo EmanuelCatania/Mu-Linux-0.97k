@@ -105,6 +105,8 @@ public:
     RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
     // Nombre para mostrar ("OpenGL", "DirectX 12"...).
     static const char* RenderBackendName(RenderBackendPreference preference);
+    // DirectX sólo existe en Windows; en Linux WebGPU va sobre Vulkan.
+    static bool IsRenderBackendAvailable(RenderBackendPreference preference);
     // Nombre en Config.ini ("opengl", "auto", "d3d12", "d3d11", "vulkan").
     static const char* RenderBackendKey(RenderBackendPreference preference);
     // Guarda la preferencia; se usa en el próximo arranque.
