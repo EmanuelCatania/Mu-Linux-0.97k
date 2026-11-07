@@ -8,6 +8,103 @@
 
 Proyecto para operar MuEmu 0.97k en Linux de forma nativa, con Docker, web y editor opcional.
 
+## Novedades de 0.97.40 — cierre de la Fase 4
+
+- **Texto en UTF-8 de punta a punta.** El server deja de convertir a
+  Windows-1252: lo que el jugador escribe es lo que se guarda y lo que ven los
+  demás. Nombres de personaje y guild en cualquier escritura (10 y 8
+  caracteres, validados y normalizados a NFC), y chat, susurros, avisos de guild
+  y `/post` de hasta 200 bytes. La base pasa a `utf8mb4`.
+- **Protocolo 0.97.40.** Nombres de personaje de 40 bytes y de guild de 32, y
+  chat de 200. Los paquetes que con esos largos pasan de 255 bytes (lista de
+  personajes, party, ranking de Devil Square) van con header C2.
+- **Textos traducidos que manda el server.** Al entrar, cada cliente recibe en
+  su idioma los nombres de items, monstruos y skills, las líneas de tooltip de
+  los items custom y los textos propios del cliente. Ver
+  [Textos e idiomas](#textos-e-idiomas).
+- **Panel web:** editor de traducciones (`Data/Text`) y editor de items custom
+  (efectos, pose, tooltip y pets de `Data/Custom/Items` y `Data/Custom/Pets`),
+  los dos con la misma validación que el server; cambio de contraseña, Turnstile
+  y orden de cuentas en el panel de administración.
+- **Barra de buffs del cliente:** el server le manda a cada jugador el tiempo
+  que le queda a cada efecto, sus valores y quién lo lanzó (F3:F1).
+- **Niebla por mapa:** `MapFog.txt` acepta, además de los colores, la distancia
+  de inicio y fin de la niebla de cada mapa (F3:E9).
+- **MySQL con la API en C.** JoinServer y DataServer usan `mysql.h`: en Linux,
+  `libmysqlclient`; en Windows, MariaDB Connector/C compilado estático. Ya no
+  queda ninguna DLL de MySQL junto a los servers.
+- Correcciones: el puntaje del ranking de Blood Castle llegaba corrido dos
+  bytes; el paquete de recall (C3:B0) tenía el layout equivocado con GCC; Rena y
+  Stone se apilan (`ItemStack.txt`).
+
+**Compatibilidad: server 0.97.40 ↔ [cliente 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40).**
+Actualizá los dos juntos: el cliente 0.97.30 lee los paquetes con los largos
+viejos y no entra a un server 0.97.40, y al revés.
+
+### Cómo actualizar desde 0.97.30
+
+Esta versión **cambia la base de datos**. Hacé un backup antes de empezar.
+
+1. **Base de datos.** Seguí la [guía de migración a utf8mb4](docs/utf8mb4-migracion.md):
+   backup, detener `mu-server` y `mu-web`, y correr `Migrate-utf8mb4.sql`,
+   `Migrate-0.97.40.sql` y `Procedures.sql`. Si tu base ya estaba en `utf8mb4`,
+   alcanza con los dos últimos. El script se detiene sin tocar nada si dos
+   nombres pasarían a ser iguales con la collation nueva.
+2. **Imágenes.** Con el compose de imágenes publicadas:
+
+   ```bash
+   docker compose -f docker-compose.images.yml pull mu-server mu-web mu-editor
+   docker compose -f docker-compose.images.yml up -d
+   ```
+
+   Para fijar la versión, usá las imágenes con tag `0.97.40`.
+3. **Volúmenes.** Un volumen persistente no se actualiza con el pull. Integrá
+   en el tuyo, desde los archivos de esta versión:
+   - `GameServer/Data/GameServerInfo - StartUp.dat`: cambiá `ServerVersion` a
+     `0.97.40`. **Sin esto, el cliente nuevo no entra** (*"versión incorrecta"*).
+   - `Data/Text/`: la carpeta completa (`Eng`, `Spn`, `Por`). Sin ella todo
+     funciona, pero sin traducciones.
+   - `Data/Message_Spn.txt` y `Data/Message_Por.txt`: ahora están en UTF-8. Si
+     los modificaste, convertí tu copia de Windows-1252 a UTF-8.
+   - `Data/Item/ItemStack.txt`: la fila `14,021` (Rena y Stone).
+   - `Data/Custom/Encoder/MapFog.txt`: opcional, el bloque nuevo de
+     distancias. Sin él, cada mapa usa 2000 a 2700 como antes.
+
+**Pterodactyl:** seleccioná `0.97.40` en `MU_RELEASE_TAG` y actualizá también la
+imagen de runtime, que ahora instala `libmysqlclient21`. Con el servidor
+detenido, extraé el archivo de tu arquitectura en una carpeta temporal,
+reemplazá los cuatro binarios y `start.sh`, e integrá los archivos de Data de
+arriba conservando tus INI. La migración de la base es la misma.
+
+### Textos e idiomas
+
+El cliente le dice al server su idioma al conectarse (`[Language]
+LangSelection` del cliente: `Eng`, `Spn` o `Por`), y el server le manda las
+traducciones de ese idioma junto con el catálogo de contenido. Están en
+`MuServer/Data/Text/<idioma>/`:
+
+| Archivo | Qué traduce | Índice |
+|---|---|---|
+| `Item.txt` | nombres de items | sección e índice de `Item/Item.txt` |
+| `Monster.txt` | nombres de monstruos y NPCs | índice de `Monster/Monster.txt` |
+| `Skill.txt` | nombres de skills | índice de `Skill/Skill.txt` |
+| `Tooltip.txt` | líneas del tooltip de los items custom | item y número de línea del JSON de `Custom/Items` |
+| `Client.txt` | textos propios del cliente (opciones, panel de eventos, barra de buffs, título de la ventana) | el número de cada texto; el comentario de arriba dice cuál es |
+
+Lo que no está traducido lo resuelve el cliente con sus propios archivos, así
+que un archivo vacío no rompe nada. Reglas, que el server y el editor
+verifican:
+
+- UTF-8 sin BOM, una línea por texto, sin comillas ni saltos de línea adentro.
+- Hasta 63 bytes por nombre (el cliente corta los de items a 29 y los de skills
+  a 31) y 59 por línea de tooltip.
+- En `Client.txt`, los `%d`/`%s`/`%u` de cada línea tienen que ser los mismos que
+  los del inglés y en el mismo orden: si no, el cliente descarta la línea.
+
+Se pueden editar a mano o desde el **editor de traducciones** del panel web,
+que muestra el nombre actual al lado de la traducción y recarga el server al
+guardar.
+
 ## Novedades de 0.97.30 — cierre de la Fase 3
 
 - El server compila con CMake en Windows x86 y x64, además de Linux x64 y ARM64. El CI cubre las cuatro combinaciones en Debug y Release.
@@ -55,7 +152,7 @@ Para fijar la versión, usá la imagen `emapupi/mu-linux-97k:0.97.30` (amd64 y a
 5. En `MuServer/ConnectServer/ServerList.dat`, poner la IP del server (`127.0.0.1` para probar en la misma PC).
 6. Arrancar en este orden: DataServer, JoinServer, ConnectServer y GameServer.
 
-El cliente `0.97.30` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
+El cliente `0.97.40` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
 
 #### Windows x64 y dependencias de Fase 3
 
@@ -197,7 +294,7 @@ Basado en las sources de Kayito.
 
 ## Estado del cliente
 
-El cliente basado en inyección de DLL está completamente deprecado y fue retirado de este repositorio junto con sus fuentes y el Encoder ejecutable. Usá el [cliente basado en sources 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Los archivos antiguos siguen disponibles en la historia de Git. Las tablas de `MuServer/Data/Custom/Encoder/` se conservan porque las consume el catálogo del servidor.
+El cliente basado en inyección de DLL está completamente deprecado y fue retirado de este repositorio junto con sus fuentes y el Encoder ejecutable. Usá el [cliente basado en sources 0.97.40](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40). Los archivos antiguos siguen disponibles en la historia de Git. Las tablas de `MuServer/Data/Custom/Encoder/` se conservan porque las consume el catálogo del servidor.
 
 ## Inicio rápido
 
@@ -248,7 +345,7 @@ Mantiene backups por archivo y snapshots de `MuServer/Data` y `MuServer/GameServ
 ## Datos, seguridad y logs
 
 - `MD5Encryption=2` usa MD5 binario. Al migrar desde texto plano, recreá la DB con `docker compose down -v`.
-- Guardá TXT del servidor en ANSI / Windows-1252 sin BOM; UTF-8 puede romper acentos del cliente.
+- Guardá los TXT del servidor en UTF-8 sin BOM. Desde 0.97.40 el server ya no convierte a Windows-1252: un archivo en ANSI con acentos se ve mal en el cliente.
 - Shops: `MuServer/Data/Shop/*.txt`; `SlotX SlotY` en `-1 -1` autoubica el ítem.
 - Mensajes: `MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y `MuServer/Data/Util/Notice.txt`.
 - Logs: `docker compose logs -f`.
