@@ -1,9 +1,9 @@
 name: Server
+# Sin filtro de rutas: la regla de main exige estos checks, y con filtro un PR
+# que no toque server/ nunca los recibiría y quedaría bloqueado.
 on:
   pull_request:
-    paths: ['server/**', '.github/workflows/server.yml']
   push:
-    paths: ['server/**', '.github/workflows/server.yml']
   workflow_dispatch:
 concurrency:
   group: server-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
