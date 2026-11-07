@@ -806,7 +806,8 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
 
     # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
     add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
-        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c)
+        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c
+        src/Render/Texture/ImageCodec.cpp)
     target_include_directories(mu_text_shaper_test PRIVATE src)
     target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
     target_compile_definitions(mu_text_shaper_test PRIVATE

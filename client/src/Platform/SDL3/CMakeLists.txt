@@ -24,5 +24,6 @@ endif()
 
 # El cliente completo ya compila el cargador en MU_SOURCES.
 if(MU_PLATFORM_ONLY)
-    target_sources(mu_platform_sdl PRIVATE ../GLFunctions.cpp ../../Text/TextCore.cpp ../../Text/Utf8Proc.c)
+    target_sources(mu_platform_sdl PRIVATE ../GLFunctions.cpp ../../Text/TextCore.cpp ../../Text/Utf8Proc.c
+        ../../Render/Texture/ImageCodec.cpp)
 endif()
