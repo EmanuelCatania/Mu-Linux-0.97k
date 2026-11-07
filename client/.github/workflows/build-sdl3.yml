@@ -627,7 +627,7 @@ jobs:
       - name: Dependencias de sistema
         run: |
           sudo apt-get update
-          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl-dev libasound2-dev libpulse-dev libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols libvulkan-dev ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri
+          sudo apt-get install -y libx11-dev libx11-xcb-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl-dev libasound2-dev libpulse-dev libwayland-dev libxkbcommon-dev libdecor-0-dev wayland-protocols libvulkan-dev ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri
       - name: Preparar vcpkg
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
