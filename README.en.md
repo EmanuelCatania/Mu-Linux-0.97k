@@ -134,8 +134,8 @@ To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm6
 2. Build from the repo root:
 
    ```
-   cmake -S . -B out/win-x86 -A Win32 -T v143
-   cmake --build out/win-x86 --config Release
+   cmake --preset windows-x64-release
+   cmake --build --preset windows-x64-release --parallel 4
    ```
 
    The executables end up in `Source/MuServer/bin/Release/`.
@@ -152,16 +152,16 @@ To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm6
 
 The `0.97.40` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
 
-#### Windows x64 and Phase 3 dependencies
+#### Windows x86 and dependencies
 
-For x64, from the repository root:
+x64 is the recommended build. x86 (Win32) remains as a historical base: it is the original MuEmu architecture and CI still builds it, but it is no longer the path this guide follows. To build it:
 
 ```powershell
-cmake --preset windows-x64-release
-cmake --build --preset windows-x64-release --parallel 4
+cmake --preset windows-x86-release
+cmake --build --preset windows-x86-release --parallel 4
 ```
 
-The `windows-x86-release`, `windows-x86-debug` and `windows-x64-debug` presets are also available. JoinServer and DataServer talk to MySQL through the C API (`mysql.h`): CMake downloads the source of **MariaDB Connector/C 3.4.11** (SHA256 pinned in `cmake/MuMySQLPackages.cmake`) and builds it as a static library, with Schannel for TLS. Being a C API, it works the same with MSVC and MinGW. MySQL 8.4 authenticates with `caching_sha2_password`, which requires TLS; the connector requests it without verifying the server's self-signed certificate. On Linux the system `libmysqlclient-dev` (or `libmariadb-dev`) is used. Initial configuration requires access to GitHub. Legacy MSBuild projects build the same connector for `Debug_MySQL` and `Release_MySQL` with the project's toolset and require CMake on PATH.
+The `windows-x86-debug` and `windows-x64-debug` presets are also available; executables go to the same folder as the x64 ones. JoinServer and DataServer talk to MySQL through the C API (`mysql.h`): CMake downloads the source of **MariaDB Connector/C 3.4.11** (SHA256 pinned in `cmake/MuMySQLPackages.cmake`) and builds it as a static library, with Schannel for TLS. Being a C API, it works the same with MSVC and MinGW. MySQL 8.4 authenticates with `caching_sha2_password`, which requires TLS; the connector requests it without verifying the server's self-signed certificate. On Linux the system `libmysqlclient-dev` (or `libmariadb-dev`) is used. Initial configuration requires access to GitHub. Legacy MSBuild projects build the same connector for `Debug_MySQL` and `Release_MySQL` with the project's toolset and require CMake on PATH.
 
 CI builds all four services for Windows x86/x64 and Linux x64/ARM64, Debug and Release. ARM64 remains build-only, without gameplay validation. Phase 3 fixes pointer widths in callbacks, IOCP and timers, and provides a 256 KiB pending send buffer for the login catalog; individual packets remain limited to 8 KiB. Local Windows x64 testing covered login, gameplay, reset, buying/selling and Chaos mixing; it was not a load test.
 
