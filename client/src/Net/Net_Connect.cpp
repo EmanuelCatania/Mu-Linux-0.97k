@@ -1,0 +1,293 @@
+// Net_Connect.cpp
+// Network connection setup and packet hash-table bootstrap.
+//
+// CreateSocket @ 0x00423920 — Net_Connect_Server
+//
+// Called from login flow to establish TCP connection to game/login server.
+// Initialises the packet hash table for session key tracking.
+
+#include "stdafx.h"
+#include "Platform/IWindow.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
+#include "Net/Network.h"
+#include "Net/Reconnect.h"
+#include "Net/Net.h"
+
+extern "C" void DbgLogPublic(const char* msg);
+
+// CreateSocket — Net_Connect_Server
+// Connects to server at param_1 (IP string) on port param_2.
+// On failure: logs error, calls CErrorReport_WriteCurrentTime(1) (IDA: FUN_004055A0), plays music 0x71.
+// On success: bootstraps the send/recv hash table entries for the session key
+// bytes at DAT_05826ceb/cec (encrypt + decrypt key registration via
+// Packet_DecryptByte/Packet_EncryptByte).
+// Returns unaff_EBP (register spill — result from lower-level connect call).
+// IDA: CreateSocket (0x00423920)
+// DESVIACION (DLL Reconnect.cpp): CreateSocketNoExit no cierra el cliente si
+// la conexión falla (la usa la reconexión, que reintenta).
+static bool s_NonFatalConnect = false;
+static bool s_LastConnectOk = false;
+
+bool CreateSocketNoExit(const char* ip, unsigned int port)
+{
+    s_NonFatalConnect = true;
+    CreateSocket(ip, port);
+    s_NonFatalConnect = false;
+    return s_LastConnectOk;
+}
+
+void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
+{
+  int iVar2;
+  if (First == '\0') {
+    First = '\x01';
+    CWsctlc_Startup(reinterpret_cast<uintptr_t>(SocketClient));
+  }
+  CWsctlc_Create(&SocketClient,(int)(uintptr_t)gWindow.GetHwnd());
+  iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
+  {
+    char dbg[64];
+    Platform::TextFormat(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
+    DbgLogPublic(dbg);
+  }
+  s_LastConnectOk = iVar2 != 0;
+  // DESVIACION (DLL Reconnect.cpp ReconnectCreateConnection): recordar el
+  // GameServer para poder reconectar.
+  if (iVar2 != 0 && !gNetwork.IsConnectServerMode())
+    gReconnect.OnGameServerConnect(param_1, (WORD)param_2);
+  if (iVar2 == 0 && s_NonFatalConnect) {
+    DbgLogPublic("NET: CreateSocket falló (reconexión: se reintenta)");
+    return;
+  }
+  if (iVar2 == 0) {
+    DbgLogPublic("NET: CreateSocket CONNECT FAILED → abort/SetErrorMessage(0x71)");
+    CErrorReport_Write(&DAT_055c9bf0,s_Failed_to_connect__00559688);
+    CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
+    SetErrorMessage(0x71);
+    // Original-client behaviour: the server can't be reached (no listener,
+    // wrong IP/port, firewall) → pop a modal dialog and terminate.  Previous
+    // build silently carried on and the player saw nothing.  Same rationale
+    // as the FD_CLOSE handler in WinMain.cpp:765 — MessageBoxA is modal, then
+    // PostQuitMessage exits the game-loop cleanly.  Guard against re-entry
+    // in case the login retry logic fires Net_Connect a second time.
+    static bool s_ConnFailHandled = false;
+    if (!s_ConnFailHandled) {
+        s_ConnFailHandled = true;
+        Platform::GetWindow().ShowError("No se puede conectar con el servidor.", "Mu Online", true, true);
+        Platform::GetWindow().QuitLoop();
+    }
+    // Skip the hash-table bootstrap below — it operates on a live session key
+    // and there is no session if connect failed.  Returning here also avoids
+    // touching DAT_05826ceb/cec on a half-initialised ctx.
+    return;
+  }
+  gNetwork.InitializePacketSerials();
+}
+
+
+// IDA: CreateSocket (0x00423920). Conserva los registros de la HashTable
+// heredada; sus claves apuntan a los mismos miembros durante toda la sesión.
+void CNetwork::InitializePacketSerials()
+{
+    const char* param_1 = nullptr;
+  byte bVar1;
+  int iVar2;
+  uint uVar3;
+  void *pvVar4;
+  byte *pbVar5;
+  uint uVar6;
+  int iVar7;
+  const byte *ppcVar8;
+  byte *pbVar9;
+  byte *pbVar10;
+  bool bVar11;
+  bool bVar12;
+  byte local_4 [4];
+
+  local_4[0] = 1;
+  local_4[1] = 0;
+  local_4[2] = 0;
+  local_4[3] = 0;
+  // Lo que sigue es ofuscación HashTable inlined sobre m_SendSerial/cec
+  // (ref-count de session-key bytes). Neutralizado vía fake vtable en
+  // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
+  param_1 = &m_SendSerial;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
+  uVar6 = 0;
+  param_1 = (char *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar11 = false;
+      iVar7 = 0;
+      bVar12 = true;
+      pbVar5 = (byte *)(DAT_055c9bd0 + uVar3 * 4);
+      iVar2 = 4;
+      ppcVar8 = reinterpret_cast<const byte*>(&param_1);
+      pbVar9 = pbVar5;
+      do {
+        if (iVar2 == 0) break;
+        iVar2 = iVar2 + -1;
+        bVar11 = *ppcVar8 < *pbVar9;
+        bVar12 = *ppcVar8 == *pbVar9;
+        ++ppcVar8;
+        pbVar9 = pbVar9 + 1;
+      } while (bVar12);
+      if (!bVar12) {
+        iVar7 = (1 - (uint)bVar11) - (uint)(bVar11 != 0);
+      }
+      if (iVar7 == 0) goto LAB_00423a34;
+      iVar2 = 4;
+      bVar11 = false;
+      iVar7 = 0;
+      bVar12 = true;
+      pbVar9 = (byte *)local_4;
+      do {
+        if (iVar2 == 0) break;
+        iVar2 = iVar2 + -1;
+        bVar11 = *pbVar9 < *pbVar5;
+        bVar12 = *pbVar9 == *pbVar5;
+        pbVar9 = pbVar9 + 1;
+        pbVar5 = pbVar5 + 1;
+      } while (bVar12);
+      if (!bVar12) {
+        iVar7 = (1 - (uint)bVar11) - (uint)(bVar11 != 0);
+      }
+      if (iVar7 == 0) {
+        if (uVar3 == 0xffffffff) goto LAB_00423a34;
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
+        bVar1 = pbVar5[1];
+        pbVar5[1] = bVar1 + 1;
+        if ((byte)(bVar1 + 1) < 2) {
+          Packet_DecryptByte(&m_SendSerial,pbVar5);
+        }
+        goto LAB_00423a52;
+      }
+      uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+      uVar6 = uVar6 + 1;
+    } while (uVar6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00423a34:
+  pvVar4 = AntiTamper_HashNode();
+  static_cast<BYTE*>(pvVar4)[1] = 1;
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_SendSerial);
+LAB_00423a52:
+  m_SendSerial = 0;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
+  uVar6 = 0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      iVar2 = 4;
+      bVar11 = false;
+      iVar7 = 0;
+      bVar12 = true;
+      pbVar5 = (byte *)(DAT_055c9bd0 + uVar3 * 4);
+      pbVar9 = (byte *)local_4;
+      pbVar10 = pbVar5;
+      do {
+        if (iVar2 == 0) break;
+        iVar2 = iVar2 + -1;
+        bVar11 = *pbVar9 < *pbVar10;
+        bVar12 = *pbVar9 == *pbVar10;
+        pbVar9 = pbVar9 + 1;
+        pbVar10 = pbVar10 + 1;
+      } while (bVar12);
+      if (!bVar12) {
+        iVar7 = (1 - (uint)bVar11) - (uint)(bVar11 != 0);
+      }
+      if (iVar7 == 0) goto LAB_00423b59;
+      iVar2 = 4;
+      bVar11 = false;
+      iVar7 = 0;
+      bVar12 = true;
+      pbVar9 = local_4;
+      do {
+        if (iVar2 == 0) break;
+        iVar2 = iVar2 + -1;
+        bVar11 = *pbVar9 < *pbVar5;
+        bVar12 = *pbVar9 == *pbVar5;
+        pbVar9 = pbVar9 + 1;
+        pbVar5 = pbVar5 + 1;
+      } while (bVar12);
+      if (!bVar12) {
+        iVar7 = (1 - (uint)bVar11) - (uint)(bVar11 != 0);
+      }
+      if (iVar7 == 0) {
+        if (uVar3 != 0xffffffff) {
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
+          bVar1 = pbVar5[1];
+          pbVar5[1] = bVar1 - 1;
+          if ((byte)(bVar1 - 1) == 0) {
+            Packet_EncryptByte(pbVar5,&m_SendSerial);
+          }
+        }
+        goto LAB_00423b59;
+      }
+      uVar3 = (uVar3 + 1) % DAT_055c9bd4;
+      uVar6 = uVar6 + 1;
+    } while (uVar6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00423b59:
+  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&m_ReceiveSerial);
+  if (uVar3 == 0xffffffff) {
+    pvVar4 = AntiTamper_HashNode();
+    static_cast<BYTE*>(pvVar4)[1] = 1;
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_ReceiveSerial);
+  }
+  m_ReceiveSerial = 0;
+  return;
+}
+
+// =============================================================================
+// IDA: CWsctlc::Connect (0x0043DCD0)
+// (251 bytes).
+//
+// Lower-level TCP connect helper used by CWsctlc socket sessions. The `This`
+// pointer is a CWsctlc instance with layout:
+//   This[+0]  HWND  hWnd  (the window that will receive WSAAsyncSelect events)
+//   This[+8]  SOCKET socket descriptor (created earlier by Net_Connect_Server)
+//
+// Behavior:
+//   1. Validate hWnd != 0; otherwise show error MessageBox + return 0.
+//   2. Resolve ip_addr: try inet_addr first, fall back to gethostbyname.
+//   3. Call connect(); accept either success or WSAEWOULDBLOCK (10035).
+//   4. Register WSAAsyncSelect for FD_READ|FD_WRITE|FD_CONNECT|FD_CLOSE
+//      (= 0x23 = bit pattern from IDA constant).
+//
+// Returns:
+//   1 = connect ok (or pending non-blocking)
+//   2 = host name resolution failure
+//   0 = hWnd null OR connect failed -> closesocket
+//
+// Net_Connect_Server (CreateSocket) hace el connect de alto nivel, incluido el
+// bootstrap de la hash-table; CWsctlc::Connect es el helper interno de
+// connect+select.  Hoy ningún llamador del build lo usa directamente; el
+// símbolo queda exportado.
+// =============================================================================
+// IDA: CWsctlc::Connect (0x0043DCD0)
+extern "C" int __cdecl CWsctlc_Connect(intptr_t This, const char* ip_addr,
+                                       unsigned short port, DWORD WinMsgNum)
+{
+    if (!This || !*(DWORD*)This) {
+        Platform::GetWindow().ShowError("Window handle missing", "CWsctlc::Connect error", false, false);
+        return 0;
+    }
+
+    uint32_t address;
+    if (!Platform::GetSocket().ResolveIPv4(ip_addr, address)) return 2;
+
+    SOCKET sock = (SOCKET)*(DWORD*)(This + 8);
+    int conn = Platform::GetSocket().ConnectIPv4(sock, address, port);
+    if (conn != -1 || Platform::GetSocket().LastError() == Platform::SocketWouldBlock) {
+        // Async select: FD_READ|FD_WRITE|FD_CONNECT|FD_CLOSE = 0x23
+        // (per IDA constant — matches FD_READ(1) | FD_CONNECT(0x10) |
+        //  FD_CLOSE(0x20) — the binary uses 0x35 in some calls, 0x23 here.)
+        if (Platform::GetSocket().NotifyWindow(sock, *(HWND*)This, WinMsgNum, 0x23) != -1) {
+            return 1;
+        }
+    }
+    Platform::GetSocket().Close(sock);
+    return 0;
+}

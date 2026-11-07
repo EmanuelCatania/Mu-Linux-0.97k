@@ -1,0 +1,726 @@
+// Game_EnterWorldTick.cpp
+// Game_EnterWorldTick @ 0x00521D80
+//
+// Character-select scene tick. Called every frame while SceneFlag==4.
+// Drives the character list display, selection, and world-entry sequence.
+//
+// Entry guard: if DAT_05826cb0 < 0x33 → return (not ready yet).
+//
+// Sub-states (DAT_083a7c14):
+//   0x14  — show char list (no free slot)
+//   0x15  — show char list (free slot available)
+//   0x16  — slide out (char chosen) → transition
+//   0x17  — camera slide (equip view) → left
+//   0x18  — slide out → send char-select 0xC1/0xF3 packet
+//   0x19  — slide in → enter world (SceneFlag = 3)
+//   0x1a  — camera slide right
+//   0x1b  — slide in to Y=0xd
+//   0x1c  — slide out to transition / back to char list
+//
+// Globals:
+//   CharSelectSceneInitialized (IDA: DAT_083a7c4b) — one-time init guard
+//   DAT_083a7c4a   — clear before Loading transition
+//   DAT_005616ac   — selected character slot (-1 = none)
+//   DAT_005616b0   — selected char confirmation (-1 = pending)
+//   DAT_005616a4   — animated dialog Y (lerped each frame)
+//   DAT_005616a8   — animated camera X offset (lerped each frame)
+//   DAT_07abf050   — character state struct for slot 0
+//   DAT_07abf20c   — character page/slot counter
+//   DAT_07cf1ffc   — character data pointer
+//   DAT_07cf1ff4   — character name buffer
+//   DAT_07eaa114..  — anti-tamper counters
+//   DAT_05826cb0   — server response code
+//     0x33 = char list received
+//     0x34 = char-select request sent
+//     0x35-0x37 = char create/delete responses
+//     0x39 = delete confirm
+//     0x3a = enter world confirm
+//   DAT_055ca038   — "select" button confirm flag
+
+#include "stdafx.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
+#include "Text/TextCore.h"
+#include "Platform/Text.h"
+#include "Game/Game_EnterWorldTick.h"
+#include "Net/Net.h"
+#include "Net/MuEmu.h"
+
+extern "C" void DbgLogPublic(const char*);
+
+// ── CLICK-FLAG WATCHDOG ─────────────────────────────────────────────────────
+// DAT_083a4124 (MouseLButtonPush) only toma valores {0,1} en el código fuente
+// (WndProc lo settea a 1 en LBUTTONDOWN, todos los handlers lo limpian a 0).
+// El runtime mostraba clk=1133983066 (0x4397355A) cada frame en char-select →
+// phantom slot-clicks → state oscilando 0x18↔0x17.  La causa es algún stomp
+// (probablemente buffer overflow en un struct adyacente).  Esta macro loggea
+// cuándo aparece el valor wild para bisectar el corrupter, y la función
+// IsClickPushed() filtra valores != 1 para suprimir phantom clicks mientras
+// tanto.
+static void Clk_Watch(const char* label)
+{
+    DWORD v = DAT_083a4124;
+    if (v != 0 && v != 1) {
+        static unsigned s_count = 0;
+        if (s_count < 60) {
+            s_count++;
+            char dbg[160];
+            Platform::TextFormat(dbg, "CLK-CORRUPT @ %s: 0x%08X (decimal %u)", label, v, v);
+            DbgLogPublic(dbg);
+        }
+        DAT_083a4124 = 0;  // clamp — only WndProc-set value 1 is trusted
+    }
+}
+#define CLK_WATCH(LABEL) Clk_Watch(LABEL)
+// IsClickPushed() ahora vive en globals.h para que todo módulo lo use.
+
+
+// Paquete ya enmarcado (chain-XOR aplicado): lo manda CNetwork.
+static void Pkt_Send(const BYTE* pkt_in, int len)
+{
+    gNetwork.SendRaw((const char*)pkt_in, len);
+}
+
+// Send the character-enter-world packet:
+// [0xC1][len][0xF3] + username(10B, XOR) + padding(zeros, XOR) + slot_byte(XOR)
+//
+// El buffer arranca en 0 y el XOR encadena con el byte ANTERIOR ya codificado
+// (`pkt[i] ^= pkt[i-1] ^ key[i]`), que es como lo descifra el server (XorData,
+// recorriendo hacia atrás). Mismo patrón que gNetwork.Send.
+static void Send_CharSelectPacket(void)
+{
+    // C1 LL F3 03 + name[40] + slot (0.97.40).
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0xC1;
+    pkt[1] = (BYTE)LEN;
+    pkt[2] = 0xF3;
+    pkt[3] = 0x03;
+
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);
+
+    // Char slot byte: DAT_07abf20c low nibble * 0x10 + high nibble
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+
+    // Forward chain XOR using PREVIOUS byte (matches server's reverse XorData).
+    for (int i = 3; i < LEN; i++) {
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
+    }
+
+    // Pkt_Send aplica MuEmu byte-XOR + send (C1 path, no SerialModulus).
+    Pkt_Send(pkt, LEN);
+}
+
+// Send the character-CREATE packet:
+//   [0xC1][45][0xF3][0x01][name(40)][Class] — server PMSG_CHARACTER_CREATE_RECV.
+// Class = page*16 (DB_CLASS_DW=0, DK=16, FE=32, MG=48) — la fórmula
+// `page*0x10 + byte1` del IDA da ese valor.
+static void Send_CharCreatePacket(void)
+{
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
+    memset(pkt, 0, sizeof(pkt));
+    pkt[0] = 0xC1;
+    pkt[1] = (BYTE)LEN;
+    pkt[2] = 0xF3;
+    pkt[3] = 0x01;      // sub 0x01 = CREATE
+
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);   // typed char name (InputText[0])
+
+    // Class byte: page*0x10 + byte1 → 0/16/32/48 = DW/DK/FE/MG.
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+
+    for (int i = 3; i < LEN; i++) {
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
+    }
+    Pkt_Send(pkt, LEN);
+}
+
+void Game_EnterWorldTick(void)
+{
+    // ── ENTRY GUARD ───────────────────────────────────────────────────────────
+    if (DAT_05826cb0 < 0x33) return;
+
+    // Count free entity slots (first 5 entries in entity array)
+    bool hasFreeSlot = false;
+    {
+        char* e = (char*)DAT_07abf5d0;
+        for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
+            if (*e == '\0') { hasFreeSlot = true; break; }
+        }
+    }
+
+    // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
+    if (CharSelectSceneInitialized == '\0') {
+        CharSelectSceneInitialized = 1;
+
+        // Limpia flags de click heredados de la escena anterior: un doble click en
+        // login/server-select deja DAT_083a4299=1 y en char-select dispararía la
+        // entrada al mundo sin elegir slot. También se limpia DAT_083a4124.
+        DAT_083a4299 = 0;   // double-click flag
+        DAT_083a4124 = 0;   // single-click flag
+        Clk_Watch("scene-init");
+
+        Scene_LoadCharSelectResources(); // OpenCharacterSceneData (IDA)
+        Clk_Watch("after-OpenCharacterSceneData");
+
+        // Spawn background object 0xA4 at origin
+        float pos3[3] = {0,0,0}, rot3[3] = {0,0,0};
+        CreateObject(0xa4, pos3, rot3, 1.0f);
+
+        CreateCharacterPointer((unsigned char*)&DAT_07abf050, 0xab, 0, 0, 0.0f);
+        DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | 1;
+        DAT_07abf0d4  = 0;
+
+        DAT_005616ac  = -1;
+        DAT_005616b0  = -1;
+        DAT_005615e0  = -1;
+        DAT_07d78094  = 0;
+        DAT_083a7c18  = 0;
+        DAT_005616a4  = -100;
+
+        if (!hasFreeSlot) {
+            DAT_083a7c14 = 0x14;  // no free slot: char list only
+        } else {
+            DAT_083a7c14 = 0x15;  // free slot: can create char
+            PlayBuffer(0x1b, 0, 0);
+        }
+
+        ClearInventory();
+
+        // Anti-tamper: register DAT_07cf1ffc in hash table
+        {
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
+            if (idx == 0xffffffff) {
+                void* node = AntiTamper_HashNode();
+                *((BYTE*)node + 0x584) = 1;
+                HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
+            }
+        }
+
+        // Clear char data buffers
+        {
+            char* p = (char*)DAT_07cf1ff4;
+            for (int i = 0x56; i <= 0x6a; i++) p[i] = '\0';
+            int* q = (int*)((char*)DAT_07cf1ffc + 0x87 * 4);
+            for (int i = 7; i >= 0; i--, q += 0x11) *q = 0;
+        }
+
+        // Re-register new entry
+        {
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
+            if (idx == 0xffffffff) {
+                void* node = AntiTamper_HashNode();
+                *((BYTE*)node + 0x584) = 1;
+                HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
+            }
+        }
+
+        // Clear anti-tamper counters
+        DAT_07eaa114 = 0; DAT_07eaa115 = 0;
+        DAT_07eaa116 = 0; DAT_07eaa117 = 0;
+        DAT_07eaa118 = 0; DAT_07eaa119 = 0;
+        DAT_07eaa11b = 0;
+        DAT_07eaa124 = 0; DAT_07eaa144 = 0;
+        DAT_07eaa14c = 0;
+
+        GuildInputEnable = 0; DAT_07e11d71 = 0; GoldInputEnable = 0;
+        DAT_00559c84 = 1;
+        ClearInput(1);
+        DAT_07e11d78 = 0;
+        DAT_00559c8c = 0x5a;
+        InputNumber = 1;
+
+        // 120× widget draw
+        for (int i = 0x78; i > 0; i--)
+            UIChatLogWindow_AddText((const char*)&DAT_083a7c88, (const char*)&DAT_083a7c84, 0);
+
+        // Clear entity local player ptr if null
+        if (DAT_07abf5d8 == 0) {
+            _DAT_00000010 = 0; _DAT_00000014 = 0; _DAT_00000018 = 0;
+            _DAT_0000001c = 0; _DAT_00000020 = 0; _DAT_00000024 = 0;
+        }
+
+        // Set camera to char-select world position (slot 5 of CameraWalk).
+        // DAT_00561664..0056167b son aliases DWORD& sobre el storage float de
+        // CameraWalk_005615ec[30..35]: se leen como float para no convertir int→float.
+        DAT_083a7ad0  = *(float*)&DAT_00561670;
+        DAT_083a7ad4  = *(float*)&DAT_00561674;
+        DAT_083a7ad8  = *(float*)&DAT_00561678;
+        DAT_083a7c38 = 0;
+        DAT_083a7c3c = 5;
+        DAT_005615e8 = 0;
+        DAT_083a432c  = DAT_00561664;     // DWORD&=DWORD ok
+        DAT_083a4330  = DAT_00561668;     // DWORD&=DWORD ok
+        _DAT_083a4334 = *(float*)&DAT_0056166c;
+
+        CErrorReport_Write(&DAT_055c9bf0, "> Character scene init success");
+    }
+
+    // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
+    // Recargar sólo el fondo cuando cambia el aspecto, antes de simularlo.
+    Scene_RefreshCharSelectBackdrop();
+    CLK_WATCH("frame-start");
+    // Este es el tick de char-select (Game_MainLoop state 4 → esta fn, pese al
+    // nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá, primero:
+    // fade-in del alpha de las entidades "bug" y posición/animación de las
+    // MONTURAS (Uniria bug=195 / Dinorant bug=267).
+    { extern void __stdcall MoveBugs(void); MoveBugs(); }
+    CLK_WATCH("after-MoveBugs");
+    Object_MoveUpdate();         CLK_WATCH("after-Object_MoveUpdate");
+    // MoveParticles decrementa el lifetime de cada particle del pool DAT_07abf5f0.
+    // MEJORA DEL DLL (no esta en IDA): el binario solo llama MoveParticles en
+    // 0x005223EE; el DLL (Patchs.cpp MoveParticles_MoveCharacterScene) agrega
+    // MoveEffects + MoveJoints para que el efecto de las alas se vea en
+    // char-select.  Sin el tick de joints los de vida 0 no morian nunca aca.
+    Effect_TickAll();            // MoveEffects (0x0046B790)
+    Joint_TickAll();             // MoveJoints  (0x004736E0)
+    MoveParticles();        CLK_WATCH("after-MoveParticles");
+    MoveCharacterClient((float*)&DAT_07abf050); CLK_WATCH("after-MoveCharacterClient");
+
+    // ── Per-character animation tick ──────────────────────────────────────────
+    // En el binario original MoveCharactersClient (0x00455010) itera todas las
+    // entidades y por cada slot activo llama MoveCharacterClient (0x00454FC0) →
+    //   TestFrustrum2D + MoveMonsterClient + MoveCharacter + MoveCharacterVisual
+    // donde MoveCharacter (0x00449900, 2773 lines) llama CharacterAnimation
+    // (0x00448600) que avanza entity[+0x108] vía sub_440AA0.
+    //
+    // En nuestro port MoveCharacter es un stub vacío y MoveCharacter está sin
+    // portar (es enorme, 90% es lógica de combate/mov in-game irrelevante para
+    // char-select). Pero los chars en char-select necesitan que su frame de
+    // animación avance cada tick para que la idle se vea animada.
+    //
+    // Solución mínima: aquí, por slot 0..7, llamar MoveCharacterVisual (escribe
+    // model.action desde entity[+0x105]) seguido de CharacterAnimation (avanza
+    // el frame). Sin MoveCharacterVisual el modelo lee acción 0 y todos los
+    // chars correrían la misma anim.
+    {
+        for (int s = 0; s < 8; ++s) {
+            intptr_t e = (intptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
+            if (*(char*)e != '\0') {
+                MoveCharacterVisual(e);            // MoveCharacterVisual: model.action ← entity.action
+                CharacterAnimation(e, e);   // advance entity[+0x108] (anim frame)
+            }
+        }
+    } CLK_WATCH("after-CharAnim");
+    Login_CameraUpdate();        CLK_WATCH("after-Login_CameraUpdate");
+    // MoveCamera @ 0x0051E4E0 — actualiza CameraPosition/CameraAngle desde
+    // CurrentCameraPosition/CurrentCameraAngle (lerp hacia wp5 = char-select).
+    // Sin esta llamada la cámara queda anclada donde la dejó el login (~0,-1100,500)
+    // y char-select se ve sin pitch correcto, los 5 personajes fuera de cuadro.
+    // En IDA Game_EnterWorldTick (00521D80) llama MoveCamera() después de MoveParticles().
+    MoveCamera();           CLK_WATCH("after-MoveCamera");
+
+    // Delete entity if server confirmed (0x39 = delete ack)
+    if (DAT_05826cb0 == 0x39) {
+        ((char*)DAT_07abf5d0)[DAT_005615e0 * CHARACTER_STRIDE] = '\0';
+    }
+
+    int mouseX = DAT_083a427c;
+
+    // ── CHARACTER SELECTION (no char selected yet) ────────────────────────────
+    if (DAT_005616b0 == -1) {
+        GL_ResetState();  // render char list
+        CLK_WATCH("after-GL_ResetState");
+
+        int dialogY = DAT_005616a4;
+
+        // Click arrow → select char (0x11d-0x164, Y in [dialogY+0x4b, dialogY+0x64])
+        if (hasFreeSlot &&
+            mouseX > 0x11d && mouseX < 0x164 &&
+            DAT_083a4278 >= dialogY + 0x4b &&
+            DAT_083a4278 < dialogY + 0x64 &&
+            IsClickPushed())
+        {
+            DAT_083a4124 = '\0';
+            DAT_083a7c24 = DAT_083a7c28;
+            DAT_083a7c28 = 0;
+
+            // Find first free entity slot
+            int slotFound = DAT_005616b0;
+            char* e = (char*)DAT_07abf5d0;
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
+                if (*e == '\0') { slotFound = i; break; }
+                slotFound = DAT_005616b0;
+            }
+            DAT_005616b0 = slotFound;
+            PlayBuffer(0x19, 0, 0);
+            DAT_083a7c14 = 0x16;
+            DAT_083a7c18 = 0x1b;
+            PlayBuffer(0x1b, 0, 0);
+            ClearInput(1);
+            DAT_00559c84 = 1;
+            InputNumber = 1;
+            Input_SetLimit(0, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
+        }
+
+        // Update free slot flag after possible change
+        hasFreeSlot = (DAT_005616ac != -1);
+
+        // Click equip/select button (DAT_005616a8+0x80..0xc6, Y 0x93-0xa7)
+        if (hasFreeSlot &&
+            mouseX >= (int)DAT_005616a8 + 0x80 - gWindow.GetRightShift() &&
+            mouseX < (int)DAT_005616a8 + 0xc6 - gWindow.GetRightShift() &&
+            DAT_083a4278 > 0x93 && DAT_083a4278 < 0xa7 &&
+            IsClickPushed())
+        {
+            DAT_083a4124 = '\0';
+            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
+
+            if (lvl < 40) {
+                // Level too low error
+                if (flags & 0x12) {
+                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x19; else DAT_083a7c28 = 0x19;
+                } else {
+                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x72; else DAT_083a7c28 = 0x72;
+                    ClearInput(1);
+                    DAT_00559c84 = 1; InputNumber = 1;
+                    InputTextMax = DAT_083a7acc;
+                    DAT_07e113d8[0] = 1;
+                }
+            } else {
+                if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x84; else DAT_083a7c28 = 0x84;
+            }
+            PlayBuffer(0x19, 0, 0);
+        }
+
+        // Las flechas de cambio de clase van en el bloque `else if (DAT_005616b0 != -1)`
+        // (create/name view): en IDA el input del create-panel (flechas de clase,
+        // OK/Cancel, nombre) corre cuando `dword_5616B0 >= 0`, no en la lista.
+
+        // El bloque "back/delete/Enter" va en el `else if (DAT_005616b0 != -1)` más
+        // abajo (rama name-input), como en IDA (00521D80), no en la rama lista.
+
+        // Entity slot click detection (5 slots)
+        {
+            int slotY = dialogY + 0x32;
+            bool confirmed = false;
+            int  selSlot   = DAT_005616ac;
+            int  pendingB  = DAT_083a7c28;
+
+            for (int i = 0; i < 5; i++, slotY += 0x14) {
+                if (i == SelectedCharacter) {
+                    if (DAT_083a4299 != '\0') {
+                        DAT_083a4299 = '\0';
+                        DAT_083a7c28 = 0;
+                        confirmed = true;
+                        selSlot   = i;
+                        pendingB  = 0;
+                        DAT_005616ac = i;
+                        DAT_083a7c24 = pendingB;
+                    } else if (IsClickPushed()) {
+                        // ── DIAGNOSTIC: capture state at slot-click trigger ──
+                        DAT_083a4124 = '\0';
+                        DAT_083a7c28 = 0;
+                        DAT_005616ac = i;
+                        DAT_083a7c24 = pendingB;
+                        PlayBuffer(0x19, 0, 0);
+                        if (DAT_083a7c14 != 0x17 && DAT_083a7c14 != 0x15)
+                            PlayBuffer(0x1b, 0, 0);
+                        DAT_083a7c14 = 0x18;
+                        DAT_083a7c18 = 0x17;
+                        selSlot = DAT_005616ac;
+                        pendingB = DAT_083a7c28;
+                    }
+                }
+                pendingB = DAT_083a7c28;
+            }
+
+            // IDA original (00521D80) gates the dword_83A7C14 = 25 path with:
+            //   if (!v103) goto LABEL_117;     // v103 = (SelectedHero != -1)
+            //   if (!ErrorMessage && byte_55CA038) v40 = 1;
+            //   if (selectButtonClicked) { ... fall through to flag check }
+            //   else { LABEL_117: if (!v40) goto LABEL_124; }
+            //   // flag check → state = 25
+
+            bool selectClicked = false;
+            if (DAT_005616ac != -1) {
+                // v40 = 1 path (line 545 IDA): confirm flag from button trigger
+                if (hasFreeSlot && !confirmed) {
+                    if (DAT_083a7c24 == 0 && DAT_055ca038 != '\0') {
+                        DAT_055ca038 = '\0';
+                        DAT_083a7c28 = 0;
+                        confirmed = true;
+                        DAT_083a7c24 = pendingB;
+                        PlayBuffer(0x19, 0, 0);
+                    }
+                }
+
+                // Boton OK / entrar al juego (IDA 0x521D80 L556):
+                //   MouseX >= 441 - dword_5616A8 && MouseX < 441 - dword_5616A8 + 70
+                //   && MouseY >= 148 && MouseY < 167
+                if (mouseX >= 441 - (int)DAT_005616a8 + gWindow.GetRightShift() &&
+                    mouseX < 441 - (int)DAT_005616a8 + gWindow.GetRightShift() + 70 &&
+                    DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
+                    IsClickPushed())
+                {
+                    DAT_083a4124 = '\0';
+                    DAT_083a7c28 = 0;
+                    DAT_083a7c24 = pendingB;
+                    PlayBuffer(0x19, 0, 0);
+                    selectClicked = true;
+                }
+            }
+
+            // Flag check ONLY si v103 (char válido) Y (selectClick OR v40):
+            // corresponde a IDA `if (!v40) goto LABEL_124` y precondición
+            // SelectedHero != -1.  Sin esto, cada frame disparaba state=0x19.
+            if (DAT_005616ac != -1 && (selectClicked || confirmed)) {
+                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
+                // Precedence-fix: IDA `(flags & 1) == 0`, no `!flags & 1`.
+                if ((flags & 1) == 0) {
+                    DAT_083a7c14 = 0x19;
+                    PlayBuffer(0x1b, 0, 0);
+                } else {
+                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x85; else DAT_083a7c28 = 0x85;
+                }
+            }
+        }
+    }
+    // ── NAME-INPUT VIEW (slot reservado para nuevo char): b0 != -1 ────────────
+    // IDA: `if (-1 < DAT_005616b0)`. Aquí Enter (DAT_055ca038) y los botones
+    // back (mouseX 0xea..0x133) / OK (mouseX 0x14f..0x196) operan sobre el
+    // diálogo de nombre del nuevo personaje.
+    else if ((int)DAT_005616b0 != -1) {
+        int dialogY = DAT_005616a4;
+
+        // ── Class rotate arrows (create-panel) — IDA: corre con dword_5616B0 >= 0.
+        // Fila superior (dialogY+196..215 = 0xc4..0xd7): flecha izq [0x16b,0x17f)=clase--,
+        // flecha der [0x180,0x194)=clase++. Re-crea el preview char (tipo = clase+170).
+        if (mouseX > 0x16a && mouseX < 0x17f &&
+            DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
+            IsClickPushed())
+        {
+            DAT_083a4124 = '\0';
+            if ((char)DAT_07abf20c == '\0') {
+                PlayBuffer(0x1a, 0, 0);
+            } else {
+                BYTE b = (BYTE)((char)DAT_07abf20c - 1);
+                DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
+                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                DAT_07abf0d4 = 0;
+                PlayBuffer(0x19, 0, 0);
+            }
+        }
+        unsigned maxPage = 2;   // rotate limit: 3 si algún char >= lvl 220
+        {
+            char* e = (char*)DAT_07abf5d0;
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
+                if (*e != '\0' && *(ushort*)&((CHARACTER*)(uintptr_t)(e))->Level > 0xdb) { maxPage = 3; break; }
+        }
+        if (mouseX > 0x17f && mouseX < 0x194 &&
+            DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
+            IsClickPushed())
+        {
+            DAT_083a4124 = '\0';
+            if ((DAT_07abf20c & 0xff) >= maxPage) {
+                // Tope de rotacion: sonido de "bloqueado". Faltaba — IDA
+                // Game_EnterWorldTick L635-638 tiene las dos ramas.
+                PlayBuffer(0x1a, 0, 0);   // PlayBuffer(26)
+            } else {
+                BYTE b = (BYTE)((char)DAT_07abf20c + 1);
+                DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
+                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                DAT_07abf0d4 = 0;
+                PlayBuffer(0x19, 0, 0);
+            }
+        }
+
+        bool backClick = (mouseX > 0xea && mouseX < 0x133 &&
+                          DAT_083a4278 >= dialogY + 0x15d &&
+                          DAT_083a4278 < dialogY + 0x172 &&
+                          IsClickPushed());
+        bool clearBtn = (DAT_055ca038 != '\0');
+        if (clearBtn) DAT_055ca038 = '\0';
+
+        // "Back" path — pure cancel back to slot list (IDA path A)
+        if (backClick) {
+            DAT_083a4124 = '\0';
+            DAT_005616b0 = -1;
+            PlayBuffer(0x19, 0, 0);
+            DAT_083a7c14 = 0x1c;
+            DAT_083a7c18 = 0x15;
+            PlayBuffer(0x1b, 0, 0);
+        }
+        else {
+            // "OK button" hit-test (0x14f..0x196)
+            bool okClick = (mouseX >= 0x14f && mouseX <= 0x196 &&
+                            DAT_083a4278 >= dialogY + 0x15d &&
+                            DAT_083a4278 < dialogY + 0x172 &&
+                            IsClickPushed());
+            if (okClick || clearBtn) {
+                if (okClick) DAT_083a4124 = '\0';
+                DAT_005616b0 = -1;
+                PlayBuffer(0x19, 0, 0);
+                DAT_083a7c14 = 0x1c;
+                DAT_083a7c18 = 0x15;
+                PlayBuffer(0x1b, 0, 0);
+
+                // Validate username length
+                int ulen = (int)strlen((char*)DAT_07db8710);
+                if (ulen < 4) {
+                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x7a; else DAT_083a7c28 = 0x7a;
+                } else {
+                    if (Chat_ValidateInputCommand() == '\0' && !CheckSpecialText((const BYTE*)DAT_07db8710)) { // IDA: FUN_00406B30
+                        DAT_083a7c18 = 0x1c;
+                        DAT_083a7c24 = DAT_083a7c28;
+                        DAT_083a7c28 = 0;
+                        DAT_05826cb0 = 0x34;
+                        Send_CharCreatePacket();   // F3/01 crear (no F3/03 select)
+                    } else {
+                        if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x73; else DAT_083a7c28 = 0x73;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── DIAGNOSTIC: log substate transitions (only when state changes) ───────
+    {
+        static int s_lastSubState = -1;
+        static int s_lastDialogY  = -999999;
+        static int s_lastCamX     = -999999;
+        if ((int)DAT_083a7c14 != s_lastSubState) {
+            s_lastSubState = (int)DAT_083a7c14;
+        }
+        // Also log dialog Y / camera X every ~32 frames if state is steady so we
+        // can see if positions are bouncing without a state change.
+        static int s_frameCtr = 0;
+        if ((++s_frameCtr & 0x1f) == 0) {
+            if ((int)DAT_005616a4 != s_lastDialogY || (int)DAT_005616a8 != s_lastCamX) {
+                s_lastDialogY = (int)DAT_005616a4;
+                s_lastCamX    = (int)DAT_005616a8;
+            }
+        }
+    }
+
+    // ── ANIMATION STATE MACHINE ───────────────────────────────────────────────
+    switch (DAT_083a7c14) {
+    case 0x15:  // Ease dialog Y to 6
+        DAT_005616a4 += (6 - DAT_005616a4) / 3;
+        break;
+
+    case 0x16:  // Slide dialog off screen (down)
+        DAT_005616a4 -= (DAT_005616a4 + 0x102) / 2;
+        if (DAT_005616a4 < -0xff) {
+            DAT_083a7c14 = DAT_083a7c18;
+            PlayBuffer(0x1b, 0, 0);
+        }
+        break;
+
+    case 0x17:  // Camera slide left
+    case 0x1a:  // Camera slide right
+        {
+            int d = (int)((unsigned long long)((long long)DAT_005616a8 * 0x55555555LL) >> 32) - DAT_005616a8;
+            DAT_005616a8 += (d >> 1) - (d >> 31);
+        }
+        break;
+
+    case 0x18:  // Slide panel off, send char-select
+        DAT_005616a8 -= (DAT_005616a8 + 0xca) / 2;
+        if (DAT_005616a8 < -199) {
+            DAT_083a7c14 = DAT_083a7c18;
+            PlayBuffer(0x1b, 0, 0);
+            if (DAT_05826cb0 == 0x3a) {
+                int code = DAT_05826cb0;
+                if (DAT_083a7c24 == 0) { DAT_083a7c24 = 0x3a; DAT_05826cb0 = 0x33; }
+                else                   { DAT_083a7c28 = 0x3a; DAT_05826cb0 = 0x33; }
+            }
+        }
+        break;
+
+    case 0x19:  // Slide off; on reach: copiar datos del personaje y pasar a Loading
+        DAT_005616a8 -= (DAT_005616a8 + 0xca) / 2;
+        if (DAT_005616a8 < -200) {
+            int code = DAT_05826cb0;
+            bool validCode = (code == 0x33 || code == 0x35 || code == 0x36 ||
+                              code == 0x37 || code == 0x39 || code == 0x3a);
+            if (validCode) {
+                // Build and send world-enter packet with username + anti-tamper data
+                {
+                    // Copy char name from selected slot
+                    // 0.97.40: CharacterMachine guarda 10 bytes; el nombre completo
+                    // queda en EntityName::Selected().
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
+                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
+                }
+                // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
+                // datos del personaje y pasa a Loading. Lo manda el init de
+                // Game_CharSelectTick (IDA 0x524E30 L80-219).
+
+                // Handle specific response codes
+                if (code == 0x36 || code == 0x37) {
+                    int r = code;
+                    if (DAT_083a7c24 == 0) { DAT_083a7c24 = r; }
+                    else { DAT_083a7c28 = r; }
+                }
+
+                // ── WORLD ENTRY: copy char data → transition to Loading ──────
+                // Va DENTRO de case 25, tras el Pkt_Send y el check de validCode (IDA
+                // 0x00521D80:1150); fuera del switch correría cada frame.
+                {
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
+                    char* charData = (char*)DAT_07cf1ff4;
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated(charData, 11, charName);
+                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
+                }
+
+                SceneFlag  = 3;  // SceneFlag = Loading
+                DAT_083a7c4a  = 0;  // reset Scene_Loading init guard
+                ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0) — world loading kickoff
+                Sound_StopBuffer(5);
+            }
+        }
+        break;
+
+    case 0x1b:  // Ease dialog to Y=0xd
+        DAT_005616a4 += (0xd - DAT_005616a4) / 3;
+        break;
+
+    case 0x1c:  // Slide off; transition to char list or create
+        DAT_005616a4 -= (DAT_005616a4 + 0x192) / 2;
+        if (DAT_005616a4 < -399) {
+            int code = DAT_05826cb0;
+            if (code == 0x35 || code == 0x36 || code == 0x37) {
+                // Check if any slot is free
+                bool anyFree = false;
+                char* e = (char*)DAT_07abf5d0;
+                for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
+                    if (*e == '\0') { anyFree = true; break; }
+
+                if (anyFree) {
+                    DAT_083a7c14 = 0x15;
+                    PlayBuffer(0x1b, 0, 0);
+                } else {
+                    DAT_083a7c14 = 0x14;
+                }
+
+                // Propagate response code
+                if (code == 0x36 || code == 0x37) {
+                    int r = code;
+                    if (DAT_05826cb0 == 0) { DAT_083a7c28 = r; DAT_083a7c24 = DAT_083a7c28; }
+                    else if (DAT_083a7c24 == 0) { DAT_083a7c24 = r; }
+                    else { DAT_083a7c28 = r; }
+                }
+            } else if (DAT_083a7c18 == 0x15) {
+                DAT_083a7c14 = 0x15;
+            }
+        }
+        break;
+
+    default:
+        // Fall through — default animation stop
+        break;
+    }
+}

@@ -1,0 +1,195 @@
+// Misc.cpp
+// Miscellaneous utility and validation functions.
+//
+// Packet_IsValidSockType @ 0x00406b10 — Packet_IsValidSockType
+// CheckSpecialText @ 0x00406B30 (IDA: FUN_00406B30; name from 5.2).
+// CPhysicsManager::Move @ 0x00409C40 (IDA: FUN_00409C40).
+// CPhysicsManager::Render @ 0x00409CF0 (IDA: FUN_00409CF0).
+// Object_SetRectFields @ 0x0040c690 — Object_SetRectFields
+// Object_ClearMembers @ 0x0040e590 — Object_ClearMembers
+// Packet_ParseReceived @ 0x00402fd0 — Packet_ParseReceived
+// MoveItems @ 0x00503760 — Entity_UpdateGravity
+
+#include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Net/NetText.h"
+
+
+// Packet_IsValidSockType — Packet_IsValidSockType
+// Returns 1 if param_2 is socket type 1 (TCP) or 0xf (UDP-compatible),
+// otherwise returns 0.
+int __cdecl Packet_IsValidSockType(int param_1,int param_2)
+{
+  if ((param_2 != 1) && (param_2 != 0xf)) {
+    return 0;
+  }
+  return 1;
+}
+
+
+// CheckSpecialText — devuelve true si el nombre tiene un carácter no permitido.
+//
+// IDA (0x00406B30) acepta ASCII alfanumérico y los pares DBCS del coreano.
+// DESVIACION (0.97.40, nombres UTF-8): se valida con la misma regla que el
+// server (TextEngine::IsNameText), así que pasan letras y dígitos de cualquier
+// escritura. Lo usa sólo la creación de personaje.
+bool __cdecl CheckSpecialText(const byte *param_1)
+{
+  return !TextEngine::IsNameText((const char*)param_1, NetText::CharacterNameClusters);
+}
+
+// CPhysicsManager::Move — advances every registered physics object.
+// Updates the floating-point random key _DAT_00590af0 with a random delta
+// in ±0.1 range, clamped to [-0.2, 1.0].
+// Then iterates a linked list from *(param_1+8)+8, calling Sound_UpdateChannel3D_Tick
+// on each node until sentinel *(param_1+0xc) is reached.
+void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
+{
+  const intptr_t param_1 = (intptr_t)physics_manager;
+  undefined4 *puVar1;
+  int iVar2;
+
+  iVar2 = _rand();
+  _DAT_00590af0 = _DAT_00590af0 + (float)(iVar2 % 200 + -100) * _DAT_00552500;
+  if (_DAT_00590af0 < _DAT_00552570) {
+    _DAT_00590af0 = -0.2;
+  }
+  else if (_DAT_0055256c <= _DAT_00590af0) {
+    _DAT_00590af0 = 1.0;
+  }
+  if (sizeof(void*) != 4) return;   // Lista siempre vacia; sus nodos son de 32 bits.
+  puVar1 = *(undefined4 **)(*(int *)(param_1 + 8) + 8);
+  if (puVar1 != *(undefined4 **)(param_1 + 0xc)) {
+    do {
+      if (puVar1 == (undefined4 *)0x0) {
+        return;
+      }
+      Sound_UpdateChannel3D_Tick((int *)*puVar1, fTime);
+      puVar1 = (undefined4 *)puVar1[2];
+    } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
+  }
+  return;
+}
+
+
+// CPhysicsManager::Render — renders every registered physics object.
+void __cdecl CPhysicsManager_Render(void* physics_manager)
+{
+  const intptr_t param_1 = (intptr_t)physics_manager;
+  undefined4 *puVar1;
+
+  if (sizeof(void*) != 4) return;   // Lista siempre vacia; sus nodos son de 32 bits.
+  puVar1 = *(undefined4 **)(*(int *)(param_1 + 8) + 8);
+  if (puVar1 != *(undefined4 **)(param_1 + 0xc)) {
+    do {
+      if (puVar1 == (undefined4 *)0x0) {
+        return;
+      }
+      // IDA: vtable[3](*i, 0) -- thiscall; se llama como __fastcall(ecx, edx).
+      void* obj = (void*)(uintptr_t)*puVar1;
+      (*(void (__fastcall **)(void*, void*, int))(*(int *)obj + 0xc))(obj, nullptr, 0);
+      puVar1 = (undefined4 *)puVar1[2];
+    } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
+  }
+  return;
+}
+
+
+// Object_SetRectFields — Object_SetRectFields
+// Sets two consecutive fields at this+0x2c and this+0x30.
+void __cdecl Object_SetRectFields(void *this_,undefined4 param_1,undefined4 param_2)
+{
+  BYTE* object = static_cast<BYTE*>(this_);
+  *(undefined4 *)(object + 0x2c) = param_1;
+  *(undefined4 *)(object + 0x30) = param_2;
+  return;
+}
+
+
+// Object_ClearMembers — Object_ClearMembers
+// Zeroes 0x140 dwords (1280 bytes) starting at param_1 + 200 (0xc8).
+void __cdecl Object_ClearMembers(void* param_1)
+{
+  int iVar1;
+  undefined4 *puVar2;
+
+  puVar2 = reinterpret_cast<undefined4*>(static_cast<BYTE*>(param_1) + 200);
+  for (iVar1 = 0x140; iVar1 != 0; iVar1 = iVar1 + -1) {
+    *puVar2 = 0;
+    puVar2 = puVar2 + 1;
+  }
+  return;
+}
+
+
+// Packet_ParseReceived — Packet_ParseReceived
+// Dispatches an incoming packet from param_1 based on the sub-type byte
+// at param_1+0x1c87f. Type 1: CSQuest_ProceedButton. Type 2: Packet_ParseType2.
+// Returns 1 (non-zero) on both paths.
+undefined4 __cdecl Packet_ParseReceived(void *param_1)
+{
+  const byte* quest = static_cast<const byte*>(param_1);
+  int iVar1;
+  undefined4 uVar2;
+
+  if (*(quest + 0x1c87f) == 1) {
+    iVar1 = CSQuest_ProceedButton(param_1);
+    (void)iVar1;
+  }
+  else {
+    iVar1 = *(quest + 0x1c87f) - 2;
+    if (iVar1 == 0) {
+      uVar2 = Packet_ParseType2(param_1);
+      (void)uVar2;
+      return 1;
+    }
+  }
+  return 1;
+}
+
+
+// IDA: MoveItems (0x00503760)
+// Recorre el pool de items en el suelo DAT_07e12840 (1000 slots, stride 0x204).
+// Per active slot: advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
+// height via RequestTerrainHeight; if entity is above terrain + offset, adjusts Y or
+// Z velocity. Calls ItemAngle and Entity_UpdateSparkleEffect (FUN_00503650).
+void MoveItems(void)
+{
+  // IDA MoveItems (0x503760) trabaja sobre `v0 = &Items[0][96]` (la Z).  En nuestro
+  // build DAT_07e12840 ES la base del item (como asumen Net_Process y
+  // Entity_Render), así que los offsets equivalentes desde la base son:
+  //   ip+72  active   ·  ip+74  modelo  ·  ip+88/92  X,Y  ·  ip+96  Z
+  //   ip+100/104  Angle[0]/Angle[1]     ·  ip+288  velocidad Z
+  for (int slotIdx = 0; slotIdx < 1000; ++slotIdx) {
+    unsigned char *ip = (unsigned char *)DAT_07e12840 + slotIdx * GROUND_ITEM_STRIDE;
+    if (ip[72] == 0) continue;
+
+    float *pZ  = (float *)(ip + 96);
+    float *pVz = (float *)(ip + 288);
+
+    *pZ  = *pVz + *pZ;
+    *pVz = *pVz - _DAT_005527d0;
+
+    float10 fVar3 = (float10)RequestTerrainHeight(*(float *)(ip + 88), *(float *)(ip + 92));
+    short  sVar1  = *(short *)(ip + 74);
+    fVar3 = fVar3 + (float10)_DAT_0055284c;
+    if ((399 < sVar1) && (sVar1 < 0x250)) {
+      fVar3 = fVar3 + (float10)_DAT_005528e4;
+    }
+    if (fVar3 < (float10)*pZ) {
+      // Todavía en el aire: gira mientras cae.
+      if ((sVar1 < 0x250) || (0x26f < sVar1)) {
+        *(float *)(ip + 100) = *pVz * _DAT_00552a28;
+      }
+      else {
+        *(float *)(ip + 104) = *pVz * _DAT_00552a28;
+      }
+    }
+    else {
+      // Tocó el suelo: se apoya sobre el terreno.
+      *pZ = (float)fVar3;
+      ItemAngle(AsObject(ip + 72));
+    }
+    Entity_UpdateSparkleEffect(AsObject(ip + 72));
+  }
+}

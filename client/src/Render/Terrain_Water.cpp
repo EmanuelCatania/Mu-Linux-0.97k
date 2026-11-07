@@ -1,0 +1,121 @@
+// Terrain_Water.cpp
+// IDA: Terrain_Water (0x004F95E0)
+//
+// World-tick / terrain water wave animation.
+// Two responsibilities:
+//   1) Copy per-tile lighting data from the "shadow" buffer (DAT_0828b608) to
+//      the live buffer (DAT_081cb608) for the current viewport rectangle.
+//      Viewport: columns [FrustrumBoundMinX_1 .. FrustrumBoundMaxX_1+3],
+//                rows    [FrustrumBoundMinY_1 .. FrustrumBoundMaxY_1+3]
+//      Each tile entry is 12 bytes (3 × float), layout:
+//        DAT_081cb608[tile*3+0] = DAT_0828b608[tile*3+0]  (R or X)
+//        DAT_081cb608[tile*3+1] = DAT_0828b60c[tile*3+0]  (G or Y)
+//        DAT_081cb608[tile*3+2] = DAT_0828b610[tile*3+0]  (B or Z)
+//
+//   2) Compute sine-wave height offsets into DAT_07eab200 (float table, row*256+col)
+//      for each tile in the same viewport rectangle.
+//      If DAT_083a3ff0 == 0: fast ocean waves (period 720000 sub-ticks, scale _DAT_005528e0)
+//      If DAT_083a3ff0 != 0: slow terrain waves (period 36000, scale _DAT_005524f8)
+//      Per-tile wave: sin(col * waveFreq + timePhase) * _DAT_00552488
+//      waveFreq = _DAT_00552660 (normal) or _DAT_00552598 (game state 8 = CharSelectInit)
+//      col step = _DAT_0055256c
+//
+// Globals:
+//   FrustrumBoundMinX_1/94  — viewport top-left (col, row)
+//   FrustrumBoundMaxX_1/778 — viewport extents (+3 gives inclusive max)
+//   DAT_083a3ff0     — 0=ocean wave mode, else terrain mode
+//   World     — World
+//   DAT_07eab200     — water height table [row][col] floats
+//   DAT_081cb608     — live per-tile lighting buffer (3 floats/tile)
+//   DAT_0828b608/0c/10 — shadow/pre-computed lighting buffers
+
+#include "stdafx.h"
+#include <vector>
+#include <cstring>
+
+int __cdecl Terrain_Water(void)
+{
+    int   iVar4;
+    float fVar1;
+    int   iVar2, iVar3;
+    uint  uVar5, uVar7, uVar8;
+    float *pfVar6;
+    float10 fVar11;
+    float10 fVar12, fVar13;
+    long long uVar14;
+
+    // ── 1) Copy lighting data into live buffer for viewport rect ──────────────
+    int rowMax = FrustrumBoundMaxY_1 + 3;
+    uVar8 = FrustrumBoundMinY_1;  // viewport start row
+    if ((int)FrustrumBoundMinY_1 <= rowMax) {
+        int colMax = FrustrumBoundMaxX_1 + 3;
+        uVar7 = FrustrumBoundMinY_1;
+        do {
+            if ((int)FrustrumBoundMinX_1 <= colMax) {
+                uVar5 = FrustrumBoundMinX_1;
+                do {
+                    // tile index = col + row*256 (0x100)
+                    iVar2 = (uVar5 & 0xff) + (uVar7 & 0xff) * 0x100;
+                    iVar3 = iVar2 * 0xc;  // byte offset (3 floats × 4 bytes)
+                    uVar5++;
+                    // DAT_081cb608 está declarado DWORD: castear a char* para que la suma sea
+                    // aritmética de bytes (stride real 12 bytes = 3 floats; disasm @
+                    // 0x004f9620-23 confirma byte-offset = iVar2*3*4).
+                    // IDA copia el float (PrimaryTerrainLight[i][0]=BackTerrainLight[i][0]):
+                    // bit-cast del source para preservarlo, igual que G/B.
+                    *(unsigned int *)((char*)&DAT_081cb608 + iVar3) = *(unsigned int*)&DAT_0828b608[iVar2 * 3];
+                    *(unsigned int *)((char*)&DAT_081cb60c + iVar3) = (&DAT_0828b60c)[iVar2 * 3];
+                    *(unsigned int *)((char*)&DAT_081cb610 + iVar3) = (&DAT_0828b610)[iVar2 * 3];
+                    uVar8 = FrustrumBoundMinY_1;
+                } while ((int)uVar5 <= colMax);
+            }
+            uVar7++;
+        } while ((int)uVar7 <= rowMax);
+    }
+
+    // IDA: Terrain_Water (0x004F95E0): la fase usa WorldTime, no otra lectura del reloj.
+    // DESVIACION: mantener 64 bits hasta el módulo evita truncar el uptime a 32 bits.
+    if (DAT_083a3ff0 == 0) {
+        // Ocean / water mode: long period (720000 units)
+        uVar14 = (long long)WorldTime;
+        iVar4  = (int)((long long)uVar14 / 720000);
+        fVar11 = (float10)(int)((long long)uVar14 % 720000) * (float10)_DAT_005528e0;
+    } else {
+        // Terrain wave mode: short period (36000 units)
+        uVar14 = (long long)WorldTime;
+        iVar4  = (int)((long long)uVar14 / 36000);
+        fVar11 = (float10)(int)((long long)uVar14 % 36000) * (float10)_DAT_005524f8;
+    }
+
+    int iVar2b = gMapManager.GetCurrentMap();
+
+    // ── 3) Fill water height table with sine wave ─────────────────────────────
+    if ((int)uVar8 <= rowMax) {
+        int iVar9 = (int)uVar8 << 8;   // row * 256
+        int colMax2 = FrustrumBoundMaxX_1 + 3;
+        int rowCount = (rowMax - (int)uVar8) + 1;
+        if ((int)FrustrumBoundMinX_1 <= colMax2) {
+            // DESVIACION: la onda depende de columna y tiempo, no de fila.
+            // Calcular una vez con la misma aritmética y copiar el resultado
+            // preserva también el orden de escritura si las filas se solapan.
+            const int columns=(colMax2-FrustrumBoundMinX_1)+1;
+            static std::vector<float> waveColumns;
+            waveColumns.resize(columns);
+            fVar12=(float10)(int)FrustrumBoundMinX_1;
+            for(int column=0;column<columns;++column) {
+                fVar1=iVar2b==8 ? _DAT_00552598 : _DAT_00552660;
+                fVar13=(float10)fsin(fVar12*(float10)fVar1+fVar11);
+                waveColumns[column]=(float)(fVar13*(float10)_DAT_00552488);
+                fVar12+=(float10)_DAT_0055256c;
+            }
+            do {
+                pfVar6=(float*)((char*)&DAT_07eab200+(iVar9+FrustrumBoundMinX_1)*4);
+                std::memcpy(pfVar6,waveColumns.data(),waveColumns.size()*sizeof(float));
+                iVar9+=0x100;
+            } while(--rowCount!=0);
+            iVar4=0; // el contador de columnas original termina en cero.
+        }
+    }
+
+    return iVar4;
+}

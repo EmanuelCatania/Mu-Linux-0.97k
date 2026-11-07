@@ -1,0 +1,101 @@
+// MiniDump.cpp — volcado de crash (.dmp).  Ver la nota larga en MiniDump.h:
+// esto NO esta en el binario original, se agrega tomando el enfoque de
+// Source/MuServer/ConnectServer/MiniDump.cpp.
+
+#include "stdafx.h"
+#include "Platform/ITimer.h"
+#include "Platform/Text.h"
+#include "Debug/MiniDump.h"
+
+#include <dbghelp.h>
+
+// Firma de MiniDumpWriteDump, para resolverla por GetProcAddress y no tener que
+// enlazar dbghelp.lib (ver la nota del header).
+typedef BOOL(WINAPI* PFN_MiniDumpWriteDump)(
+    HANDLE hProcess,
+    DWORD ProcessId,
+    HANDLE hFile,
+    MINIDUMP_TYPE DumpType,
+    PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+    PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+    PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
+
+// Resueltos en el arranque por Preload(): ver el porque en MiniDump.h.
+static HMODULE               s_hDbgHelp  = nullptr;
+static PFN_MiniDumpWriteDump s_pWriteDump = nullptr;
+
+// Reserva que se libera al entrar al filtro, para que MiniDumpWriteDump tenga
+// heap con el que trabajar aunque el crash haya sido por quedarse sin memoria.
+static void*                 s_emergency = nullptr;
+
+void CMiniDump::Preload()
+{
+    if (!s_hDbgHelp) {
+        s_hDbgHelp = LoadLibraryA("dbghelp.dll");
+        if (s_hDbgHelp) {
+            s_pWriteDump = (PFN_MiniDumpWriteDump)
+                GetProcAddress(s_hDbgHelp, "MiniDumpWriteDump");
+        }
+    }
+    if (!s_emergency) s_emergency = malloc(4 * 1024 * 1024);
+}
+
+bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int outPathSize)
+{
+    if (outPath && outPathSize) outPath[0] = '\0';
+
+    // Liberar la reserva de emergencia ANTES de nada: si llegamos aca por un
+    // bad_alloc, MiniDumpWriteDump necesita algo de heap para sus buffers.
+    if (s_emergency) { free(s_emergency); s_emergency = nullptr; }
+
+    // Preferimos lo precargado en el arranque.  Con el espacio de direcciones
+    // agotado LoadLibrary falla, asi que este fallback casi nunca sirve en el
+    // caso que importa -- pero no cuesta nada dejarlo por si Preload no corrio.
+    PFN_MiniDumpWriteDump pWrite = s_pWriteDump;
+    if (!pWrite) {
+        HMODULE h = LoadLibraryA("dbghelp.dll");
+        if (!h) return false;
+        pWrite = (PFN_MiniDumpWriteDump)GetProcAddress(h, "MiniDumpWriteDump");
+        if (!pWrite) return false;
+        s_hDbgHelp = h;
+    }
+
+    // Nombre con fecha y hora, como los del server.  Se le antepone "MuClient_"
+    // para poder distinguirlos de los del GameServer cuando se juntan los dos
+    // en la misma carpeta al reportar un problema.
+    const auto st = Platform::GetTimer().LocalTime();
+
+    char path[MAX_PATH];
+    Platform::TextFormat(path, "MuClient_%04d-%02d-%02d_%02dh%02dm%02ds.dmp",
+              st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+
+    HANDLE hFile = CreateFileA(path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+                               CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+
+    MINIDUMP_EXCEPTION_INFORMATION mdei;
+    mdei.ThreadId          = GetCurrentThreadId();
+    mdei.ExceptionPointers = (PEXCEPTION_POINTERS)info;
+    mdei.ClientPointers    = FALSE;
+
+    // Mismos flags que el server: con MiniDumpScanMemory el stack se puede
+    // recorrer, y MiniDumpWithIndirectlyReferencedMemory trae la memoria a la
+    // que apuntan sus variables — que es lo que hace falta para ver el
+    // contenido de los pools y structs del juego en el momento del crash.
+    const MINIDUMP_TYPE type = (MINIDUMP_TYPE)(
+        MiniDumpScanMemory | MiniDumpWithIndirectlyReferencedMemory);
+
+    BOOL ok = pWrite(GetCurrentProcess(), GetCurrentProcessId(), hFile,
+                     type, info ? &mdei : NULL, NULL, NULL);
+
+    CloseHandle(hFile);
+
+    if (!ok) {
+        // Sin dump util: no dejar un archivo vacio dando vueltas.
+        DeleteFileA(path);
+        return false;
+    }
+
+    if (outPath && outPathSize) Platform::TextCopy(outPath, path, (int)outPathSize);
+    return true;
+}

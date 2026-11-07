@@ -1,0 +1,121 @@
+// Contrato del núcleo de texto. Las cadenas usan escapes \u para no depender
+// de la página de códigos con la que el compilador lee el fuente.
+#include "Text/TextCore.h"
+#include <cstdio>
+#include <string>
+
+namespace {
+int failures = 0;
+void Check(bool ok, const char* what)
+{
+    if (!ok) { std::printf("FALLA: %s\n", what); ++failures; }
+}
+std::string U8(const char* text) { return text; }
+}
+
+int main()
+{
+    using namespace TextEngine;
+    // ── Windows-1252 ida y vuelta ──
+    std::string all1252;
+    for (int b = 1; b < 256; ++b) all1252.push_back(static_cast<char>(b));
+    Check(ToWindows1252(FromWindows1252(all1252)) == all1252, "1252 ida y vuelta de los 255 bytes");
+    Check(FromWindows1252("\x80") == U8(u8"€"), "0x80 es el euro");
+    Check(FromWindows1252("A\xF1" "a") == U8(u8"Aña"), "acento de un byte pasa a dos");
+    Check(ToWindows1252(U8(u8"你好")) == "??", "CJK sin equivalente da un reemplazo por cluster");
+    Check(ToWindows1252(U8(u8"ñ")) == "\xF1", "n + tilde combinada se compone a 0xF1");
+    Check(ToWindows1252(U8(u8"\U0001F468‍\U0001F469‍\U0001F467")) == "?", "familia ZWJ es un solo reemplazo");
+
+    // ── Validación ──
+    Check(IsValid(U8(u8"ñ你\U0001F44D")), "UTF-8 válido");
+    Check(!IsValid("\xC3"), "secuencia cortada");
+    Check(!IsValid("\xC0\x80"), "sobrelarga");
+    Check(!IsValid("\xED\xA0\x80"), "surrogate");
+    Check(!IsValid("\xF4\x90\x80\x80"), "mayor a U+10FFFF");
+    Check(Sanitize("a\xFF" "b") == U8(u8"a�b"), "inválido se reemplaza, no se descarta");
+    Check(IsValid(U8(u8"�")), "U+FFFD escrito es válido");
+
+    // ── Conteo ──
+    const std::string family = U8(u8"\U0001F468‍\U0001F469‍\U0001F467");
+    const std::string thumbs = U8(u8"\U0001F44D\U0001F3FD");
+    Check(CodepointCount(family) == 5 && ClusterCount(family) == 1, "familia: 5 code points, 1 cluster");
+    Check(ClusterCount(thumbs) == 1, "pulgar con tono de piel es un cluster");
+    Check(ClusterCount(U8(u8"안녕하세요")) == 5, "coreano: 5 sílabas");
+    Check(ClusterCount(U8(u8"각")) == 1, "jamo conjunto es una sílaba");
+    Check(ClusterCount(U8(u8"नमस्ते")) == 3, "devanagari namaste: 3 clusters");
+    Check(ClusterCount("\r\n") == 1, "CR LF es un cluster");
+    Check(ClusterCount("") == 0, "vacío");
+
+    // ── Cursor y cortes ──
+    const std::string mixed = "a" + family + "b";
+    Check(NextCluster(mixed, 1) == 1 + family.size(), "el cursor salta la familia entera");
+    Check(PreviousCluster(mixed, 1 + family.size()) == 1, "el borrado se lleva la familia entera");
+    Check(PreviousCluster(mixed, 3) == 1, "desde el medio de un cluster vuelve a su inicio");
+    Check(FitBytes(mixed, 5) == 1, "no parte la familia por bytes");
+    Check(FitBytes(mixed, mixed.size()) == mixed.size(), "entra completo");
+    Check(FitClusters(mixed, 2) == 1 + family.size(), "dos clusters");
+    char buffer[4];
+    Check(CopyTruncated(buffer, sizeof(buffer), U8(u8"ññ")) == 2 && buffer[2] == 0, "copia sin partir la segunda ñ");
+
+    // ── Normalización y mayúsculas ──
+    Check(NormalizeNFC(U8(u8"ã")) == U8(u8"ã"), "NFC compone");
+    Check(CompareIgnoreCase(U8(u8"Añañe"), U8(u8"aÑAñE")) == 0, "Añañe == aÑAñE");
+    Check(CompareIgnoreCase(U8(u8"añañe"), "anane") != 0, "añañe != anane");
+    Check(CompareIgnoreCase(U8(u8"Привет"), U8(u8"пРИВЕТ")) == 0, "cirílico sin mayúsculas");
+    Check(CompareIgnoreCase(U8(u8"Straße"), "STRASSE") == 0, "ß se pliega a ss");
+    Check(CaseFoldKey(U8(u8"ñ")) == CaseFoldKey(U8(u8"Ñ")), "forma descompuesta == compuesta");
+
+    // ── Cortes de línea (UAX #14) ──
+    Check(FitLineBreak("hola mundo", 7) == 5, "corta despues del espacio");
+    Check(FitLineBreak("holamundo", 5) == 0, "palabra sin corte posible");
+    Check(FitLineBreak(U8(u8"你好世界"), 7) == 6, "CJK corta entre ideogramas sin partir");
+    Check(FitLineBreak(U8(u8"你好。世界"), 9) == 9, "el punto CJK queda con lo anterior");
+    Check(FitLineBreak(U8(u8"你好。世界"), 8) == 3, "no empieza linea con 。");
+    Check(FitLineBreak("uno\ndos tres", 12) == 4, "salto obligatorio");
+    Check(FitLineBreak("corto", 10) == 5, "entra entero");
+
+    // ── Formatos de los textos del cliente ──
+    Check(SameFormatSpecifiers("Zoom: %d", "Zoom: %d"), "mismo formato");
+    Check(SameFormatSpecifiers("Opacidad: %d%%", "Alpha: %d%%"), "el %% no cuenta");
+    Check(SameFormatSpecifiers("%.10s || %s: %u", "%.10s - %s: %u"), "varios especificadores");
+    Check(!SameFormatSpecifiers("Zoom: %d", "Zoom: %s"), "distinto tipo");
+    Check(!SameFormatSpecifiers("Zoom: %d", "Zoom"), "falta uno");
+    Check(!SameFormatSpecifiers("%s %d", "%d %s"), "distinto orden");
+    Check(SameFormatSpecifiers("sin formato", "sin nada"), "sin especificadores");
+
+    // ── Emoticonos ──
+    Check(ExpandEmoticons("hola :D") == U8(u8"hola \U0001F600"), "emoticono suelto");
+    Check(ExpandEmoticons("<3") == U8(u8"\u2764\uFE0F"), "corazon");
+    Check(ExpandEmoticons("http://sitio.com :) ok") == U8(u8"http://sitio.com \U0001F642 ok"), "la URL no se toca");
+    Check(ExpandEmoticons("a:D") == "a:D", "dentro de una palabra no");
+    Check(ExpandEmoticons("mira :fire: eso") == U8(u8"mira \U0001F525 eso"), "codigo");
+    Check(ExpandEmoticons("10:30:15") == "10:30:15", "un horario no es un codigo");
+    Check(ExpandEmoticons(":nada:") == ":nada:", "codigo desconocido");
+    Check(ExpandEmoticons("sin cambios") == "sin cambios", "sin emoticonos");
+
+    // ── Nombres (misma regla que TextName::IsValid del server) ──
+    Check(IsNameText(U8(u8"Añañe"), 10), "nombre latino");
+    Check(IsNameText(U8(u8"Владимир"), 10), "nombre cirílico");
+    Check(IsNameText(U8(u8"李小龍"), 10), "nombre chino");
+    Check(IsNameText("abcdefghij", 10) && !IsNameText("abcdefghijk", 10), "tope de 10 clusters");
+    Check(!IsNameText("Pe nas", 10) && !IsNameText("Pe_nas", 10), "sin espacios ni símbolos");
+    Check(!IsNameText(U8(u8"Peña😀"), 10), "sin emojis");
+    Check(!IsNameText(U8(u8"Peñas"), 10), "sólo NFC");
+    Check(!IsNameText(U8(u8"̃abc"), 10), "sin marca al principio");
+
+    // ── Conversión en el lugar (recursos y paquetes en 1252) ──
+    char field[8] = "A\xF1o";
+    Check(ConvertWindows1252InPlace(field, sizeof(field)) == 4 && std::string(field) == "A\xC3\xB1o", "campo 1252 a UTF-8");
+    char tight[4] = "\xF1\xF1\xF1";
+    Check(ConvertWindows1252InPlace(tight, sizeof(tight)) == 2 && std::string(tight) == "\xC3\xB1", "corta sin partir la letra");
+    char ascii[6] = "hola";
+    Check(ConvertWindows1252InPlace(ascii, sizeof(ascii)) == 4 && std::string(ascii) == "hola", "ASCII no cambia");
+    char utf8File[8] = "\xC3\xB1" "a";
+    Check(NormalizeTextFileInPlace(utf8File, sizeof(utf8File)) == 3 && std::string(utf8File) == "\xC3\xB1" "a", "archivo ya UTF-8 se respeta");
+    char legacyFile[8] = "\xF1" "a";
+    Check(NormalizeTextFileInPlace(legacyFile, sizeof(legacyFile)) == 3 && std::string(legacyFile) == "\xC3\xB1" "a", "archivo 1252 se convierte");
+
+    if (failures) { std::printf("%d fallas\n", failures); return 1; }
+    std::puts("TextCore: 1252, validación, clusters, cortes, NFC y case folding correctos");
+    return 0;
+}

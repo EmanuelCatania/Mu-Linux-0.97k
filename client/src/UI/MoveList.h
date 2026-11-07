@@ -1,0 +1,31 @@
+#pragma once
+#include "Net/Protocol/GameServerProtocol.h"
+
+// Menú M del DLL (MoveList.cpp). La lista y los requisitos llegan por F3/E5.
+class CMoveList {
+public:
+    bool Receive(const BYTE* packet, int size);
+    void Clear();
+    void Toggle();
+    bool IsOpen() const { return m_Open; }
+    void Close() { m_Open = false; }
+    void UpdateMouse();
+    void Render();
+    int Count() const { return m_Count; }
+    const Proto::MOVE_LIST_INFO* Get(int index) const;
+    void SetResets(DWORD resets) { m_Resets = resets; }
+    DWORD Resets() const { return m_Resets; }
+
+private:
+    bool Blocked() const;
+    int VisibleRows() const;
+    bool CheckMove(const Proto::MOVE_LIST_INFO& map) const;
+    Proto::MOVE_LIST_INFO m_Maps[255] = {};
+    int m_Count = 0;
+    int m_Page = 0;
+    bool m_Open = false;
+    bool m_Received = false;
+    BYTE m_PKLimitFree = 0;
+    DWORD m_Resets = 0;
+};
+extern CMoveList gMoveList;

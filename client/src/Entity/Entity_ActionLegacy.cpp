@@ -1,0 +1,77 @@
+// Entity_ActionLegacy.cpp
+
+#include "stdafx.h"
+void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
+void __cdecl    FUN_00408680(void *_this, char flags);
+#include "globals.h"
+#include "functions.h"
+
+// Definidas en Physics/Cloth_Simulation.cpp (Cloth_Integrate) y Net/Crypto.cpp (Cloth_Solve).
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
+
+#include "Net/Net.h"
+
+extern "C" BYTE OffsetInventoryItems[];
+extern void __cdecl operator_delete(void* ptr);
+extern void MapFileDecrypt(BYTE* buf, int size);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+
+// SetAction @ 0x0043E820 — SetAction(object_ptr, action)
+// Sets animation action on an OBJECT. Checks action < Models[type].numActions,
+// with exceptions for actions 77 and 76. If action changes, saves prior state.
+//
+// Models base = DAT_05828d58 (already a pointer, no extra indirection).
+// Per disasm @ 0x0043e830-0x0043e836:
+//   ECX = [0x05828d58]                       ; table base
+//   slot offset = type * 47 * 4 = type*0xBC
+//   numLimit = *(short*)(ECX + slot_off + 0x26)
+// El offset 0x26 en el slot BMD es nBones (no nActions); el original valida
+// el action_id contra ese campo igualmente — replicamos sin reinterpretar.
+//
+// IDA: SetAction (0x0043E820)
+void* __cdecl SetAction(OBJECT* entity_ptr, int anim_id)
+{
+    if (entity_ptr == 0) return NULL;
+    if (DAT_05828d58 == 0) return NULL;           // tabla aún no inicializada
+    short objType = AsObject(entity_ptr)->Type; // OBJECT.Type
+    short numActions = *(short*)(DAT_05828d58 + (int)objType * BMD_STRIDE + 0x26);
+
+    // Allow action if < numActions, or if it's 77 (0x4D) or 76 (0x4C)
+    if (anim_id >= numActions && anim_id != 77 && anim_id != 76)
+        return NULL;
+
+    BYTE curAction = AsObject(entity_ptr)->CurrentAction; // OBJECT.CurrentAction
+    if ((int)(unsigned int)curAction != anim_id) {
+        AsObject(entity_ptr)->PriorAction = curAction;             // PriorAction
+        AsObject(entity_ptr)->PriorAnimationFrame = AsObject(entity_ptr)->AnimationFrame; // PriorAnimationFrame = AnimationFrame
+        AsObject(entity_ptr)->CurrentAction = (BYTE)anim_id;         // CurrentAction
+        AsObject(entity_ptr)->AnimationFrame = 0.0f;                 // AnimationFrame = 0
+    }
+    return (void*)entity_ptr;
+}

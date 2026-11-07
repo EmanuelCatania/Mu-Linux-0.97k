@@ -1,0 +1,4197 @@
+// CreateEffect.cpp
+// CreateEffect @ 0x00460dc0
+//
+// CreateEffect -- spawns a visual effect by type ID.
+
+#include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
+#include "Game/RenderDerivedState.h"
+#include "Render/Particle_Render.h"
+
+
+namespace {
+// IDA: CreateEffect (0x00460DC0), fragmentos 260..263.
+struct EffectDebrisPreset { int SpeedBase; short BoostedType; };
+constexpr EffectDebrisPreset EffectDebrisPresets[] = { { 32, 261 }, { 64, 262 } };
+constexpr int EffectLifetimeIndex = 0x18; // DWORD, no float.
+constexpr int EffectBlendMeshIndex = 0x19; // Índice con signo, no float.
+// IDA: CreateEffect (0x00460DC0), flechas 216..224.
+// 217/221 conservan BlendMesh; sólo 223/224 escriben gravedad.
+struct EffectArrowPreset {
+    int BlendMesh;
+    bool SetBlendMesh;
+    float Scale;
+    float ForwardSpeed;
+    bool HasGravity;
+    int Lifetime;
+};
+constexpr EffectArrowPreset EffectArrowPresets[] = {
+    { 1, true, 0.8f, -70.0f, false, 30 },
+    { 0, false, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, false, 0.8f, -70.0f, false, 30 },
+    { -2, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 1.0f, -30.0f, true, 40 },
+    { 0, true, 1.8f, -50.0f, true, 30 },
+};
+} // namespace
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+// Tamachan -- IDA 0.98j CreateEffect (sub_46C290) case 183.
+// Desviacion: en el 0.97k el tipo 183 lo usan los peces de Atlans, asi que
+// va en el 193 (0xC1), libre en los dos binarios.  Arranca en la accion 1
+// (flotando), y nace a 150..300 de su punto de aparicion (+52) en un angulo
+// al azar de 120 a 240 grados; ese punto queda tambien como destino (+368).
+static void Tamachan_Create(char *o)
+{
+    *(int *)(o + 96) = rand() % 50 + 50;           // lifetime
+    o[EntityOffset(260)] = 1;                                    // estado: flotando
+    *(float *)(o + 216) = -30.0f;                  // 0xC1F00000
+    SetAction(AsObject(o), (unsigned char)o[EntityOffset(260)]);   // SetAction
+    *(float *)(o + 192) = 0.0f;                    // velocidad
+    *(float *)(o + 196) = 0.0f;
+    *(float *)(o + 200) = 0.0f;
+    *(float *)(o + 232) = 1.0f;                    // Light
+    *(float *)(o + 236) = 1.0f;
+    *(float *)(o + 240) = 1.0f;
+    for (int i = 0; i < 3; ++i) {
+        ((float *)(o + EntityOffset(368)))[i] = ((float *)(o + 16))[i];
+        ((float *)(o + 52))[i]  = ((float *)(o + 16))[i];
+    }
+    float offset[3], angle[3], matrix[12], rotated[3];
+    int r = rand();
+    offset[0] = 0.0f;
+    offset[1] = (float)(-150.0 - (double)(r % 150));
+    offset[2] = 0.0f;
+    angle[0] = 0.0f;
+    angle[1] = 0.0f;
+    angle[2] = (float)((double)(rand() % 120) + 180.0 - 60.0);
+    Matrix_BuildFromEuler(angle, matrix);          // AngleMatrix
+    Vector_Rotate(offset, matrix, rotated);        // VectorRotate
+    for (int i = 0; i < 3; ++i) {
+        ((float *)(o + EntityOffset(368)))[i] = rotated[i] + ((float *)(o + 52))[i];
+        ((float *)(o + 16))[i]  = ((float *)(o + EntityOffset(368)))[i];
+    }
+}
+
+// IDA: CreateEffect (0x00460DC0)
+float * __cdecl
+CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *param_5,float *param_6,
+            float *param_7,float *param_8,byte param_9)
+
+{
+  byte bVar1;
+  float fVar2;
+  float *pfVar3;
+  float *pfVar4;
+  char cVar5;
+  byte bVar6;
+  void *pvVar7;
+  float *pfVar8;
+  intptr_t iVar9;
+  intptr_t uVar10;
+  undefined4 *puVar11;
+  float *pfVar12;
+  byte *pbVar13;
+  float *pfVar14;
+  float *_param_9;
+  int iVar15;
+  uint uVar16;
+  float *pfVar17;
+  float **ppfVar18;
+  undefined4 *puVar19;
+  undefined4 *puVar20;
+  byte *pbVar21;
+  bool bVar22;
+  bool bVar23;
+  float10 fVar24;
+  float10 fVar25;
+  float10 fVar26;
+  undefined4 *unaff_retaddr;
+  float fVar27;
+  short sVar28;
+  // Estos "locales" sueltos son en realidad un bloque CONTIGUO del frame
+  // original (ebp-0x6C .. ebp), y el código depende de esa contigüidad — MSVC
+  // no la garantiza (mismo patrón que MoveJoint):
+  //   Vector_Rotate(&local_6c, local_3c + 3, &local_60)
+  //     → entrada  = {local_6c, local_68, local_64}
+  //     → salida   = {local_60, local_5c, local_58}
+  //   Vector_Rotate(&local_6c, local_3c + 3, &local_48)
+  //     → salida   = {local_48, local_44, local_40}
+  // Además `Matrix_BuildFromEuler(ang, local_3c + 3)` escribe una matriz 3x4 (12 floats)
+  // en local_3c[3..14], o sea un float FUERA del `float local_3c[14]` original.
+  // Mapeo por offset de frame: -0x6C=[0] … -0x3C=[12]; a local_3c se le dan 16
+  // slots para que la matriz entre completa.
+  float __frame[28] = {0};
+  float &local_6c = __frame[0];
+  float &local_68 = __frame[1];
+  float &local_64 = __frame[2];
+  float &local_60 = __frame[3];
+  float &local_5c = __frame[4];
+  float &local_58 = __frame[5];
+  float &local_54 = __frame[6];
+  float &local_50 = __frame[7];
+  float &local_4c = __frame[8];
+  float &local_48 = __frame[9];
+  float &local_44 = __frame[10];
+  float &local_40 = __frame[11];
+  float *const local_3c = &__frame[12];
+  undefined4 *puStack_4;
+
+  pfVar12 = param_3;
+LAB_00460dd8:
+  pfVar8 = (float *)0x0;
+  pfVar17 = (float *)&DAT_07b11670[0];
+  // El original corta con `if (0x7b2714f < (int)pfVar17)`, una dirección absoluta
+  // del binario. El pool DAT_07b11670 es de 200 × 0x1bc bytes: se recorre por
+  // cantidad de iteraciones.
+  {
+    bool found_slot = false;
+    for (int i = 0; i < 200; ++i, pfVar17 = pfVar17 + OBJECT_STRIDE / 4) {
+      if (*(char *)pfVar17 == '\0') { found_slot = true; break; }
+    }
+    if (!found_slot) return (float *)0x0;
+  }
+  RenderFxSnapshots_New(pfVar17);
+  RenderDerivedState_Forget(pfVar17);
+  Particle_InvalidateRender(pfVar17);
+  *(undefined1 *)pfVar17 = 1;
+  AsObject(pfVar17)->Type = (short)param_1;
+  // 00460DC0 writes SubType and Owner as raw DWORD fields.  The reconstructed
+  // prototype still carries them as float pointers, so numeric casts corrupt
+  // every non-zero subtype/owner (notably all skill effects) instead of
+  // preserving the original bit pattern.
+  *(DWORD *)&AsObject(pfVar17)->SubType = (intptr_t)param_5;
+  AsObject(pfVar17)->LightEnable = 1;
+  AsObject(pfVar17)->HiddenMesh = -1;
+  *(int*)&pfVar17[EffectBlendMeshIndex] = -1;
+  AsObject(pfVar17)->BlendMeshLight = 1.0;
+  AsObject(pfVar17)->BlendMeshTexCoordU = 0.0;
+  AsObject(pfVar17)->BlendMeshTexCoordV = 0.0;
+  AsObject(pfVar17)->AnimationFrame = 0.0;
+  AsObject(pfVar17)->AlphaEnable = 0;
+  AsObject(pfVar17)->Alpha = 1.0;
+  AsObject(pfVar17)->PriorAnimationFrame = 0.0;
+  AsObject(pfVar17)->Scale = 0.9;
+  AsObject(pfVar17)->Owner = (OBJECT*)(intptr_t)param_6;
+  AsObject(pfVar17)->Velocity = 0.3;
+  AsObject(pfVar17)->PKKey = (short)(uintptr_t)param_7;
+  AsObject(pfVar17)->Kind = param_9;
+  fVar27 = *param_4;
+  // CreateEffect's eighth argument is SkillIndex (an integer), not a pointer.
+  // IDA writes its low byte directly to effect+0x85.
+  AsObject(pfVar17)->Skill = (byte)(uintptr_t)param_8;
+  _param_9 = pfVar17 + 0x3a;
+  AsObject(pfVar17)->RenderType = 0;
+  *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
+  *_param_9 = fVar27;
+  fVar27 = param_4[2];
+  AsObject(pfVar17)->Light[1] = param_4[1];
+  AsObject(pfVar17)->Light[2] = fVar27;
+  pfVar14 = pfVar17 + 4;
+  AsObject(pfVar17)->Angle[0] = *pfVar12;
+  AsObject(pfVar17)->Angle[1] = pfVar12[1];
+  AsObject(pfVar17)->Angle[2] = pfVar12[2];
+  *pfVar14 = *param_2;
+  AsObject(pfVar17)->Position[1] = param_2[1];
+  AsObject(pfVar17)->Position[2] = param_2[2];
+  AsObject(pfVar17)->Direction[0] = 0.0;
+  AsObject(pfVar17)->Direction[1] = 0.0;
+  AsObject(pfVar17)->Direction[2] = 0.0;
+  if (param_1 == 0xc1) {                     // Tamachan (0.98j case 183)
+    Tamachan_Create((char *)pfVar17);
+    return pfVar8;
+  }
+  pfVar4 = (float*)DAT_07cf1ffc;
+  pfVar3 = (float*)DAT_07abf5d8;
+  iVar9 = MAIN_HASH_CLASS;
+  fVar27 = _DAT_00552580;
+  if (0xf6 < param_1) {
+    if (param_1 < 0x1f1) {
+      if (param_1 == 0x1f0) goto LAB_00464ed8;
+      switch(param_1) {
+      case 0xf7: case 0xfa:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
+        AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+        return (float *)(int)(short)(uintptr_t)param_7;
+      case 0xf8: case 0xfb:
+        *(int*)&pfVar17[EffectLifetimeIndex] = param_1 == 0xf8 ? 35 : 40;
+        AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+        return pfVar8;
+      case 0xf9: case 0xfc:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+        fVar27 = (float)(int)(short)(uintptr_t)param_7;
+        break;
+      case 0xfd:
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+        AsObject(pfVar17)->BlendMeshLight = 1.5;
+        AsObject(pfVar17)->Scale = 0.5;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 15;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] - _DAT_00552834;
+        goto LAB_004658be;
+      case 0xfe:
+        *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 6;
+        AsObject(pfVar17)->Scale = 1.0;
+        AsObject(pfVar17)->Gravity = 80.0;
+        AsObject(pfVar17)->Light[0] = 0.5;
+        AsObject(pfVar17)->Light[1] = 0.5;
+        AsObject(pfVar17)->Light[2] = 0.5;
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[2] = 45.0;
+        return pfVar8;
+      case 0xff:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 100;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
+        AsObject(pfVar17)->Gravity = 0.0;
+        if (param_5 == (float *)0x0) {
+          AsObject(pfVar17)->Scale = 12.0;
+          AsObject(pfVar17)->StartPosition[0] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x10);
+          AsObject(pfVar17)->StartPosition[1] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x14);
+          AsObject(pfVar17)->StartPosition[2] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x18);
+        }
+        else if (param_5 == (float *)0x1) {
+          *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
+          AsObject(pfVar17)->Scale = 24.0;
+        }
+        pfVar12 = pfVar17 + 7;
+        pfVar8 = pfVar17 + 4;
+        bVar6 = (byte)(uintptr_t)param_5;
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,3,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        pfVar12 = (float *)PlayBuffer(0x5c,0,0);
+        AsObject(pfVar17)->Scale = 1.0;
+        return pfVar12;
+      case 0x100:
+        goto switchD_00460f25_caseD_100;
+      default:
+        return (float *)0x0;
+      case 0x103:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
+        return pfVar8;
+      case 0x104:
+      case 0x105:
+      case 0x106:
+      case 0x107: {
+        const auto& debris = EffectDebrisPresets[param_1 < 0x106 ? 0 : 1];
+        local_6c = 0.0;
+        uVar10 = _rand() % 128;
+        param_8 = (float *)(uVar10 + debris.SpeedBase);
+        local_64 = 0.0;
+        local_68 = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
+        uVar10 = _rand() % 16;
+        AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
+        uVar10 = _rand() % 4;
+        param_8 = (float *)(uVar10 + 8);
+        AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 0x168);
+        AsObject(pfVar17)->Angle[2] = (float)(intptr_t)param_8;
+        Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+        Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 5 + 2);
+        AsObject(pfVar17)->Gravity = (float)(intptr_t)param_8;
+        if ((AsObject(pfVar17)->Type == debris.BoostedType) && (*(float *)&AsObject(pfVar17)->SubType == 0.0)) {
+          *(float *)&AsObject(pfVar17)->SubType = 1.4013e-45;
+          iVar9 = _rand();
+          param_8 = (float *)(iVar9 % 5);
+          AsObject(pfVar17)->Gravity = (float)(intptr_t)param_8 + AsObject(pfVar17)->Gravity;
+        }
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 0x168);
+        AsObject(pfVar17)->Angle[0] = (float)(intptr_t)param_8;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 0x168);
+        AsObject(pfVar17)->Angle[1] = (float)(intptr_t)param_8;
+        iVar9 = _rand();
+        AsObject(pfVar17)->Angle[2] = (float)(iVar9 % 0x168);
+        return (float *)(iVar9 / 0x168);
+      }
+      case 0x109:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+        return pfVar8;
+      case 0x10a:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        AsObject(pfVar17)->Scale = 1.5;
+        fVar24 = (float10)fsin((float10)AsObject(pfVar17)->Angle[2] * (float10)_DAT_0055253c);
+        AsObject(pfVar17)->Direction[0] = (float)(fVar24 * (float10)_DAT_00552660);
+        fVar24 = (float10)fcos((float10)AsObject(pfVar17)->Angle[2] * (float10)_DAT_0055253c);
+        AsObject(pfVar17)->Direction[1] = (float)(fVar24 * (float10)_DAT_00552828);
+        return pfVar8;
+      case 0x10c:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
+        AsObject(pfVar17)->Scale = 5.0;
+        return pfVar8;
+      }
+LAB_004649e0:
+      AsObject(pfVar17)->Scale = fVar27 * _DAT_00552594;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+      if (param_5 != (float *)0x1) {
+        return param_5;
+      }
+      AsObject(pfVar17)->RenderType = 0x80;
+      return (float *)0x1;
+    }
+    if (0x4b0 < param_1) {
+      switch(param_1) {
+      case 0x4ba:
+      case 0x4bb:
+      case 0x4bc:
+        goto switchD_00465549_caseD_4ba;
+      default:
+        return (float *)0x0;
+      case 0x4df:
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 1.0;
+        AsObject(pfVar17)->Light[2] = 1.0;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 9 + -4);
+        AsObject(pfVar17)->Direction[0] = (float)(intptr_t)param_8;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 9 + -4);
+        AsObject(pfVar17)->Direction[1] = (float)(intptr_t)param_8;
+        AsObject(pfVar17)->Direction[2] = 26.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 12;
+        pfVar12 = (float *)PlayBuffer(0x44, AsObject(pfVar17),0);
+        return pfVar12;
+      case 0x4e0:
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[2] = 0.0;
+        AsObject(pfVar17)->Position[2] = 100.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 75;
+        return pfVar8;
+      case 0x4f0:
+      case 0x4f1:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        // IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un DWORD. Leerlo como float
+        // y convertir (`(int)*(float *)&AsObject(pfVar17)->SubType`) daría 0 para cualquier SubType chico.
+        if (AsObject(pfVar17)->SubType != 4) {
+          return (float*)(uintptr_t)AsObject(pfVar17)->SubType;
+        }
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+        iVar9 = _rand();
+        AsObject(pfVar17)->Scale = (float)(iVar9 % 0x32 + 0x32) * _DAT_0055295c;
+        return (float *)(iVar9 / 0x32);
+      case 0x4f3:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+        if (*(float *)&AsObject(pfVar17)->SubType == 0.0) {
+          local_6c = 0.0;
+          local_68 = -100.0;
+          local_64 = 0.0;
+          Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+          pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+          AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+          AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+          AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2] + _DAT_0055297c;
+          return pfVar12;
+        }
+        if (AsObject(pfVar17)->SubType != 1) {
+          return (float *)0x0;
+        }
+        pfVar12 = (float*)(uintptr_t)(int)param_2[1];
+        fVar27 = param_2[2];
+        AsObject(pfVar17)->StartPosition[0] = *param_2;
+        // 00460DC0 case 1267/subtype 1 copies Position[1] as a float.
+        // It is not a pointer-as-float field.
+        AsObject(pfVar17)->StartPosition[1] = param_2[1];
+        AsObject(pfVar17)->StartPosition[2] = fVar27;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        return pfVar12;
+      case 0x4f7:
+        iVar9 = _rand();
+        AsObject(pfVar17)->LifeTime = (int)(iVar9 % 0xf + 0xf);   // lifetime: DWORD, no float
+        AsObject(pfVar17)->Gravity = -20.0;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 0x168);
+        AsObject(pfVar17)->Velocity = (float)(intptr_t)param_8;
+        AsObject(pfVar17)->Light[0] = 0.0;
+        AsObject(pfVar17)->Light[1] = 0.0;
+        AsObject(pfVar17)->Light[2] = 0.0;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 200);
+        AsObject(pfVar17)->Position[0] = ((float)(intptr_t)param_8 + AsObject(pfVar17)->Position[0]) - _DAT_005524f0;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 200);
+        AsObject(pfVar17)->Position[1] = ((float)(intptr_t)param_8 + AsObject(pfVar17)->Position[1]) - _DAT_005524f0;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005528e8;
+        fVar27 = AsObject(pfVar17)->Position[0] + _DAT_005524f0;
+        AsObject(pfVar17)->Position[0] = fVar27;
+        AsObject(pfVar17)->StartPosition[0] = fVar27;
+        AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+        pfVar12 = (float *)PlayBuffer(0x2e,0,0);
+        return pfVar12;
+      case 0x4fa:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
+        pfVar12 = (float*)(uintptr_t)AsObject(pfVar17)->SubType;   // SubType (DWORD)
+        if (pfVar12 == (float *)0x1) {
+          *(int*)&pfVar17[EffectLifetimeIndex] = 940;
+          return pfVar12;
+        }
+        if (pfVar12 != (float *)0x2) {
+          return pfVar12;
+        }
+        *(int*)&pfVar17[EffectLifetimeIndex] = 8;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_0055297c;
+        return pfVar12;
+      case 0x566:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+        AsObject(pfVar17)->Velocity = 1.0;
+        pfVar12 = pfVar17 + 7;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -30.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        Matrix_BuildFromEuler(pfVar12,local_3c + 3);
+        local_6c = 0.0;
+        local_68 = -20.0;
+        local_64 = 50.0;
+        Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+        AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+        local_6c = -20.0;
+        local_68 = -20.0;
+        local_64 = 60.0;
+        AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+        Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+        local_48 = local_60 + *param_2;
+        local_54 = *pfVar12;
+        local_50 = AsObject(pfVar17)->Angle[1];
+        local_4c = AsObject(pfVar17)->Angle[2];
+        local_44 = local_5c + param_2[1];
+        param_8 = (float *)0x0;
+        local_40 = local_58 + param_2[2];
+        do {
+          pfVar8 = param_8;
+          iVar9 = _rand();
+          _param_9 = (float *)(iVar9 % 0x14);
+          local_54 = (float)(int)(intptr_t)_param_9 + *pfVar12 + _DAT_00552660;
+          local_50 = (float)(int)(intptr_t)param_8 + local_50;
+          Joint_Create(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
+          param_8 = (float *)((intptr_t)pfVar8 + 0x12);
+        } while ((intptr_t)param_8 < 0x168);
+        local_3c[0] = 30.0;
+        local_3c[1] = -20.0;
+        local_3c[2] = 60.0;
+        Vector_Rotate(local_3c,local_3c + 3,&local_60);
+        local_48 = local_60 + *param_2;
+        local_54 = *pfVar12;
+        local_50 = AsObject(pfVar17)->Angle[1];
+        local_4c = AsObject(pfVar17)->Angle[2];
+        local_44 = local_5c + param_2[1];
+        local_40 = local_58 + param_2[2];
+        param_8 = (float *)0x0;
+        do {
+          pfVar8 = param_8;
+          iVar9 = _rand();
+          _param_9 = (float *)(iVar9 % 0x14);
+          local_54 = (float)(int)(intptr_t)_param_9 + *pfVar12 + _DAT_00552660;
+          local_50 = (float)(int)(intptr_t)param_8 + local_50;
+          pfVar17 = (float *)Joint_Create(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
+          param_8 = (float *)((intptr_t)pfVar8 + 0x12);
+        } while ((intptr_t)param_8 < 0x168);
+        return pfVar17;
+      case 0x596:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+        AsObject(pfVar17)->Scale = 1.0;
+LAB_004658be:
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 1.0;
+        AsObject(pfVar17)->Light[2] = 1.0;
+        return (float *)0x3f800000;
+      }
+    }
+    if (param_1 == 0x4b0) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      param_5 = pfVar4;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+      param_8 = (float *)0x0;
+      param_7 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_00465082;
+      goto LAB_00465011;
+    }
+    if (0x498 < param_1) {
+      switch(param_1) {
+      case 0x49c:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -60.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005524f0;
+        // IDA 0x460DC0 L2881-2885: `if (SubType == 1) Scale = 1.5; break;`.
+        // El port devolvia NULL para cualquier otro subtipo; Energy Ball lo crea
+        // con subtipo 0 (MoveCharacter, skill 17).
+        if (AsObject(pfVar17)->SubType == 1)
+          AsObject(pfVar17)->Scale = 1.5;
+        return pfVar8;
+      default:
+        return (float *)0x0;
+      case 0x4a7:        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+        AsObject(pfVar17)->Scale = 1.5;
+        return pfVar8;
+      case 0x4ab:
+        goto switchD_00464efe_caseD_4ab;
+      case 0x4ac:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+        Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+        local_6c = 0.0;
+        local_68 = -60.0;
+        local_64 = 0.0;
+        pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+        AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+        AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2] + _DAT_00552980;
+        return pfVar12;
+      }
+    }
+    if (param_1 == 0x498) {
+LAB_00464ed8:
+      *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+      return pfVar8;
+    }
+    if (param_1 < 0x47f) {
+      if (param_1 == 0x47e) {
+        if (*(float *)&AsObject(pfVar17)->SubType == 0.0) {
+          AsObject(pfVar17)->Light[0] = 0.3;
+          AsObject(pfVar17)->Light[1] = 0.3;
+          AsObject(pfVar17)->Light[2] = 0.3;
+          iVar9 = _rand();
+          fVar24 = (float10)(iVar9 % 5 + 9) * (float10)_DAT_00552504;
+          fVar25 = (float10)fcos((float10)_DAT_00552968);
+          fVar26 = (float10)fsin((float10)_DAT_00552960);
+          AsObject(pfVar17)->Direction[0] = (float)(fVar26 * fVar25 * fVar24);
+          fVar26 = (float10)fcos((float10)_DAT_00552960);
+          AsObject(pfVar17)->Direction[1] = (float)(fVar26 * fVar25 * fVar24);
+          fVar25 = (float10)fsin((float10)_DAT_00552968);
+          AsObject(pfVar17)->Direction[2] = (float)(fVar25 * fVar24);
+          AsObject(pfVar17)->Scale = 3.0;
+          *(int*)&pfVar17[EffectLifetimeIndex] = 400;
+          return (float *)(iVar9 / 5);
+        }
+        if (AsObject(pfVar17)->SubType != 1) {
+          return (float *)0x0;
+        }
+switchD_00464efe_caseD_4ab:
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
+        return pfVar8;
+      }
+      if (param_1 == 0x1f1) {
+        AsObject(pfVar17)->Angle[2] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 5;
+        return pfVar8;
+      }
+      if (param_1 != 0x238) {
+        return (float *)0x0;
+      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+      AsObject(pfVar17)->Scale = 1.0;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552970;
+      AsObject(pfVar17)->Angle[0] = AsObject(pfVar17)->Angle[0] + _DAT_005524fc;
+      AsObject(pfVar17)->Direction[0] = 0.0;
+      AsObject(pfVar17)->Direction[1] = -80.0;
+      AsObject(pfVar17)->Direction[2] = -10.0;
+      return pfVar8;
+    }
+    if (param_1 != 0x490) {
+      return (float *)0x0;
+    }
+    fVar27 = pfVar12[2] + _DAT_00552844;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    AsObject(pfVar17)->Light[0] = 0.8;
+    AsObject(pfVar17)->Light[1] = 0.8;
+    AsObject(pfVar17)->Light[2] = 0.8;
+    AsObject(pfVar17)->HeadAngle[0] = 0.0;
+    AsObject(pfVar17)->HeadAngle[1] = 0.0;
+    AsObject(pfVar17)->HeadAngle[2] = fVar27;
+    goto LAB_00463e3d;
+  }
+  if (param_1 == 0xf6) {
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    fVar27 = (float)(int)(short)(uintptr_t)param_7;
+    goto LAB_004649e0;
+  }
+  switch(param_1) {
+  case 0xb6:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 2;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    AsObject(pfVar17)->Scale = 10.0;
+    AsObject(pfVar17)->Position[1] = AsObject(pfVar17)->Position[1] + _DAT_0055285c;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] - _DAT_00552974;
+    AsObject(pfVar17)->LightEnable = 0;
+    return pfVar8;
+  default:
+    goto switchD_00460f25_caseD_101;
+  case 0xb9:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 1;
+    AsObject(pfVar17)->Alpha = 0.5;
+    AsObject(pfVar17)->Scale = 1.5;
+    return pfVar8;
+  case 0xbe:
+    fVar27 = *(float *)&AsObject(pfVar17)->SubType;
+    if (fVar27 == 0.0) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 50;
+      AsObject(pfVar17)->Scale = 0.8;
+      AsObject(pfVar17)->Velocity = 1.0;
+      AsObject(pfVar17)->Angle[0] = 0.0;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+      return pfVar8;
+    }
+    // SubType viaja en los BITS del float (IDA: *((_DWORD *)i + 1)).  Con
+    // (int)fVar27 un 1 denormal daba 0 y los subtipos 1/2 del Ice Arrow
+    // salian por aca con el slot ya activo y sin inicializar.
+    if (*(int *)&fVar27 < 1) {
+      return (float *)0x0;
+    }
+    if (2 < *(int *)&fVar27) {
+      return (float *)0x0;
+    }
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    AsObject(pfVar17)->Scale = 0.8;
+    AsObject(pfVar17)->Angle[0] = -20.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    AsObject(pfVar17)->BlendMeshLight = 0.5;
+    AsObject(pfVar17)->Gravity = 5.0;
+    AsObject(pfVar17)->HeadAngle[0] = 0.0;
+    AsObject(pfVar17)->HeadAngle[1] = 0.0;
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 0x168);
+    iVar9 = 3;
+    AsObject(pfVar17)->HeadAngle[2] = (float)(intptr_t)param_8;
+    do {
+      uVar10 = _rand() % 64;
+      param_8 = (float *)(uVar10 - 0x20);
+      local_48 = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[0];
+      uVar10 = _rand() % 64;
+      param_8 = (float *)(uVar10 - 0x20);
+      local_44 = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[1];
+      uVar10 = _rand() % 128;
+      param_8 = (float *)(uVar10 + 0x20);
+      local_40 = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[2];
+      Particle_Spawn(0x4c4,&local_48,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,0,1.0,0);
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    fVar27 = AsObject(pfVar17)->Position[0];
+    *param_4 = 0.4;
+    param_4[1] = 0.3;
+    param_4[2] = 0.2;
+    AddTerrainLight(fVar27,AsObject(pfVar17)->Position[1], (float*)param_4,2, (float*)&DAT_081cb608[0]);
+LAB_00463e3d:
+    AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+    return (float*)(uintptr_t)(int)AsObject(pfVar17)->Position[1];
+  case 0xbf:
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
+    fVar27 = *(float *)&AsObject(pfVar17)->SubType;
+    if (fVar27 == 0.0) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      uVar10 = _rand() % 8;
+      param_8 = (float *)(uVar10 + 10);
+      AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+      uVar10 = _rand() % 32;
+    }
+    else {
+      if (*(int*)&fVar27 == 2) {
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+        uVar10 = _rand() % 8;
+        AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 10) * _DAT_005524f4;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = 0.0;
+        AsObject(pfVar17)->Direction[2] = -50.0;
+        return (float *)0x0;
+      }
+      if (*(int*)&fVar27 == 3) {
+        *(int*)&pfVar17[EffectLifetimeIndex] = 80;
+        AsObject(pfVar17)->Scale = 0.3;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -12.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        return pfVar8;
+      }
+      if (*(int*)&fVar27 == 4) {
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 10 + 0xf);
+        AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+        uVar10 = _rand();
+        param_8 = (float*)(uVar10 % 32);
+        AsObject(pfVar17)->Position[0] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552850;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        iVar9 = _rand();
+        param_8 = (float *)(iVar9 % 0x14);
+        AsObject(pfVar17)->Direction[1] = -((float)(intptr_t)param_8 + _DAT_00552488);
+        iVar9 = _rand();
+        AsObject(pfVar17)->Direction[2] = -((float)(iVar9 % 10) + _DAT_005524fc);
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 20.0;
+        AsObject(pfVar17)->Angle[2] = 0.0;
+        return (float *)(iVar9 / 10);
+      }
+      if (*(int*)&fVar27 == 5) {
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+        AsObject(pfVar17)->Gravity = 5.0;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -30.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        return pfVar8;
+      }
+      if (*(int*)&fVar27 != 6) {
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+        uVar10 = _rand() % 4;
+        AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552908;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -50.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        return (float *)0x0;
+      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      uVar10 = _rand() % 8;
+      param_8 = (float *)(uVar10 + 0xf);
+      AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+      uVar10 = _rand() % 32;
+    }
+    AsObject(pfVar17)->Position[0] = (float)(int)uVar10 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552850;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = 0.0;
+    AsObject(pfVar17)->Direction[2] = -50.0;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 20.0;
+    AsObject(pfVar17)->Angle[2] = 0.0;
+    return (float *)0x0;
+  case 0xc0:
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+    AsObject(pfVar17)->Scale = 1.0;
+    return pfVar8;
+  case 0xc2:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 50;
+    AsObject(pfVar17)->Scale = 0.7;
+    if (param_5 != (float *)0x0) {
+      *(int*)&pfVar17[EffectBlendMeshIndex] = -4;
+      AsObject(pfVar17)->Angle[0] = 0.0;
+      AsObject(pfVar17)->Angle[1] = 0.0;
+      AsObject(pfVar17)->Angle[2] = 45.0;
+      return pfVar8;
+    }
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -3;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 0.0;
+    AsObject(pfVar17)->Angle[2] = 45.0;
+    return pfVar8;
+  case 0xc4:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    return pfVar8;
+  case 0xc5:
+  case 0xc6:
+  case 0xd5:
+  case 0xd6:
+    if (AsObject(pfVar17)->SubType == 5) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+      uVar10 = _rand() % 4;
+      AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+      return (float *)(uVar10 + 8);
+    }
+  case 199:
+  case 0xe7:
+  case 0xe8:
+    goto switchD_00461001_caseD_c7;
+  case 200:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 45;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    if ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner != pfVar3) {
+      return (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
+    }
+    pfVar12 = (float*)DAT_07cf1ffc;
+    cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
+    *(char *)(pfVar17 + 0x22) = cVar5;
+    *((char *)pfVar12 + 0x160) = cVar5 + '\x01';
+    sVar28 = AsObject(pfVar17)->PKKey;
+    bVar6 = *(byte *)(pfVar17 + 0x22);
+    fVar27 = 300.0;
+    goto LAB_00463ca2;
+  case 0xc9:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    if (param_5 != (float *)0x1) {
+      return (float *)0x0;
+    }
+    AsObject(pfVar17)->RenderType = 0x80;
+    return pfVar8;
+  case 0xca:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    return pfVar8;
+  case 0xcb:
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -60.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    if (AsObject(pfVar17)->SubType != 2) {                      // SubType (DWORD)
+      return (float*)(uintptr_t)AsObject(pfVar17)->SubType;
+    }
+    break;
+  case 0xcc:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 59;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -10.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    // Se pasa (xf, yf) explícito — effect pos en AsObject(pfVar17)->Position[0]/[5]
+    fVar24 = (float10)RequestTerrainHeight(AsObject(pfVar17)->Position[0], AsObject(pfVar17)->Position[1]);
+    AsObject(pfVar17)->Position[2] = (float)fVar24;
+    break;
+  case 0xcd:
+    if ((*(float *)&AsObject(pfVar17)->SubType == 0.0) || (AsObject(pfVar17)->SubType == 3)) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 1;
+    }
+    else {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_0055297c;
+      AsObject(pfVar17)->Direction[0] = 0.0;
+      AsObject(pfVar17)->Direction[1] = -80.0;
+      AsObject(pfVar17)->Direction[2] = 0.0;
+      AsObject(pfVar17)->Light[0] = 1.0;
+      AsObject(pfVar17)->Light[1] = 0.0;
+      AsObject(pfVar17)->Light[2] = 0.0;
+    }
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    AsObject(pfVar17)->BlendMeshLight = AsObject(pfVar17)->Light[0];
+    AsObject(pfVar17)->Scale = 1.3;
+    AsObject(pfVar17)->RenderType = 0x80;
+    return pfVar8;
+  case 0xd1:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    local_6c = 0.0;
+    local_68 = -60.0;
+    local_64 = 0.0;
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
+    return pfVar12;
+  case 0xd2:
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
+  case 0xd3:
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005524f0;
+switchD_00461001_caseD_e2:
+    if (AsObject(pfVar17)->SubType == 5) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+      uVar10 = _rand() % 4;
+      AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+      AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+      AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+      AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+      AsObject(pfVar17)->Position[0] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x10);
+      AsObject(pfVar17)->Position[1] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x14);
+      AsObject(pfVar17)->Position[2] = ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner)[6];
+      return (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
+    }
+switchD_00461001_caseD_c7:
+    if ((AsObject(pfVar17)->Type == 0xe2) || (AsObject(pfVar17)->Type == 0xe3)) {
+      uVar10 = _rand() % 128;
+      param_8 = (float *)(uVar10 - 0x40);
+      local_6c = (float)(int)(intptr_t)param_8;
+      uVar10 = _rand() % 128;
+      param_8 = (float *)(uVar10 - 0x40);
+      local_68 = (float)(int)(intptr_t)param_8;
+      iVar9 = _rand();
+      param_8 = (float *)(iVar9 % 0xb4);
+      local_64 = (float)(int)(intptr_t)param_8;
+      AsObject(pfVar17)->Position[0] = local_6c + AsObject(pfVar17)->Position[0];
+      AsObject(pfVar17)->Position[1] = local_68 + AsObject(pfVar17)->Position[1];
+      AsObject(pfVar17)->Position[2] = local_64 + AsObject(pfVar17)->Position[2];
+    }
+    if (param_1 == 199) {
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+      AsObject(pfVar17)->BlendMeshLight = 0.3;
+      local_6c = 0.0;
+      uVar10 = _rand() % 256;
+      param_8 = (float *)(uVar10 + 0x40);
+      local_68 = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
+    }
+    else {
+      local_6c = 0.0;
+      if (AsObject(pfVar17)->SubType == 1) {
+        local_68 = 0.0;
+      }
+      else {
+        uVar10 = _rand() % 256;
+        param_8 = (float *)(uVar10 + 0x40);
+        local_68 = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+      }
+    }
+    local_64 = 0.0;
+    uVar10 = _rand() % 16;
+    AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
+    uVar10 = _rand() % 4;
+    param_8 = (float *)(uVar10 + 8);
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 0x168);
+    AsObject(pfVar17)->Angle[2] = (float)(intptr_t)param_8;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
+    uVar10 = _rand() % 16;
+    AsObject(pfVar17)->Gravity = (float)(int)(uVar10 + 8);
+    return (float *)(uVar10 + 8);
+  case 0xd4:
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    local_6c = 0.0;
+    local_68 = -40.0;
+    local_64 = 150.0;
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Direction[1] = -40.0;
+    AsObject(pfVar17)->Direction[2] = 10.0;    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    AsObject(pfVar17)->Scale = 1.2;
+    return pfVar12;
+  case 0xd7:
+    uVar10 = _rand() % 16;
+    AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
+    uVar10 = _rand() % 8;
+    param_8 = (float *)(uVar10 + 6);
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+    uVar10 = _rand();
+    param_8 = (float*)(uVar10 % 4);
+    AsObject(pfVar17)->Gravity = -(float)(intptr_t)param_8;
+    uVar10 = _rand() % 64;
+    param_8 = (float *)(uVar10 - 0x20);
+    local_6c = (float)(int)(intptr_t)param_8;
+    uVar10 = _rand() % 32;
+    param_8 = (float *)(uVar10 + 0x32);
+    local_68 = -(float)(int)(intptr_t)param_8;
+    uVar10 = _rand() % 128;
+    param_8 = (float *)(uVar10 + 200);
+    local_64 = (float)(int)(intptr_t)param_8;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+    return pfVar12;
+  case 0xd8:
+  case 0xd9:
+  case 0xda:
+  case 0xdb:
+  case 0xdc:
+  case 0xdd:
+  case 0xde:
+  case 0xdf:
+  case 0xe0: {
+    const auto& arrow = EffectArrowPresets[param_1 - 0xd8];
+    if (arrow.SetBlendMesh)
+      *(int*)&pfVar17[EffectBlendMeshIndex] = arrow.BlendMesh;
+    pfVar12 = pfVar17 + 7;
+    AsObject(pfVar17)->Velocity = 1.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    Matrix_BuildFromEuler(pfVar12,local_3c + 3);
+    local_6c = -10.0;
+    local_68 = -60.0;
+    local_64 = 135.0;
+    Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Scale = arrow.Scale;
+    AsObject(pfVar17)->Direction[1] = arrow.ForwardSpeed;
+    if (arrow.HasGravity) AsObject(pfVar17)->Gravity = -10.0f;
+    if (arrow.Lifetime != 30) *(int*)&pfVar17[EffectLifetimeIndex] = arrow.Lifetime;
+    // IDA CreateEffect L685-693 (cases 216-224):
+    //     if ( *((_DWORD *)i + 1) == 2 )        // SubType == 2 (flecha de Penetration)
+    //     {
+    //         if ( Type != 223 ) CreateEffect(255, ...);
+    //         *((_DWORD *)i + 61) = 0;
+     //        i[132] = 1;
+    //     }
+    // Este es el bloque que hace que la flecha de Penetration entre por el path A
+    // de sub_466440 (que exige `Target + 132 != 0`) y por lo tanto reporte sus
+    // blancos al server con el 0x1D.  El original compara el campo como DWORD;
+    // el port lo hacia contra el denormal 2.8026e-45, o sea leyendo el slot como
+    // float.  Se lee por BITS, igual que ya se hace en la linea 386 de este mismo
+    // archivo (`AsObject(pfVar17)->SubType != 4`).
+    if (AsObject(pfVar17)->SubType == 2) {
+      if (param_1 != 0xdf) {
+        CreateEffect(0xff,AsObject(pfVar17)->Position,pfVar12,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,
+                     (float *)0xffffffff,(float *)0x0,0);
+      }
+      *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
+      AsObject(pfVar17)->Kind = 1;
+    }
+    pfVar8 = (float*)DAT_07abf5d8;
+    if ((param_1 == 0xd8) && (AsObject(pfVar17)->SubType == 3)) {
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      fVar27 = pfVar8[5];
+      AsObject(pfVar17)->StartPosition[0] = pfVar8[4];
+      fVar2 = pfVar8[6];
+      AsObject(pfVar17)->StartPosition[1] = fVar27;
+      AsObject(pfVar17)->StartPosition[2] = fVar2;
+      iVar9 = _rand();
+      param_8 = (float *)(iVar9 % 0x1e);
+      AsObject(pfVar17)->Direction[1] = -((float)(intptr_t)param_8 + _DAT_0055284c);
+      iVar9 = _rand();
+      param_8 = (float *)(iVar9 % 0x14);
+      *pfVar12 = -((float)(int)(intptr_t)param_8 + _DAT_00552844);
+    }
+    pfVar12 = (float*)DAT_07cf1ffc;
+    param_5 = (float*)DAT_07cf1ffc;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(DAT_07cf1ffc);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_00462bfb;
+    goto LAB_00462b8a;
+  }
+  case 0xe1:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10000;
+    AsObject(pfVar17)->Velocity = 0.3;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    return pfVar8;
+  case 0xe2:
+  case 0xe3:
+    goto switchD_00461001_caseD_e2;
+  case 0xe4:
+  case 0xe5:
+  case 0xe6:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 100;
+    iVar9 = _rand();
+    AsObject(pfVar17)->Scale = (float)(iVar9 % 10 + 4) * _DAT_005524f4;
+    fVar27 = _DAT_00552988;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = fVar27 / AsObject(pfVar17)->Scale;
+    AsObject(pfVar17)->Direction[2] = _DAT_00552984 / AsObject(pfVar17)->Scale;
+    *(float *)&AsObject(pfVar17)->SubType = 1.4013e-45;
+    return (float *)(iVar9 / 10);
+  case 0xe9:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    AsObject(pfVar17)->Scale = 0.7;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+    if (AsObject(pfVar17)->SubType != 1) {
+      AsObject(pfVar17)->Velocity = 0.1;
+      return pfVar8;
+    }
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    AsObject(pfVar17)->Velocity = 0.1;
+    *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
+    return pfVar8;
+  case 0xed:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 50;
+    AsObject(pfVar17)->Scale = 0.8;
+    AsObject(pfVar17)->Velocity = 1.0;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    AsObject(pfVar17)->Direction[1] = -50.0;
+    AsObject(pfVar17)->Gravity = -10.0;
+    return pfVar8;
+  case 0xee:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 5;
+    param_8 = pfVar4;
+    param_7 = pfVar4;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+    pfVar12 = (float *)0x0;
+    param_8 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_0046320b;
+    goto LAB_004631b2;
+  case 0xef:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 25;
+    param_5 = pfVar4;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_0046371e;
+    goto LAB_004636ad;
+  case 0xf0:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    uVar10 = _rand() % 8;
+    param_8 = (float *)(uVar10 + 10);
+    pfVar12 = pfVar17 + 4;
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 100 + 200);
+    *pfVar12 = (float)(int)(intptr_t)param_8 + *pfVar12;
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 100 + -0x32);
+    AsObject(pfVar17)->Position[1] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[1];
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 500 + 300);
+    AsObject(pfVar17)->Position[2] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = 0.0;
+    iVar9 = _rand();
+    param_8 = (float *)(iVar9 % 0x32);
+    AsObject(pfVar17)->Direction[2] = _DAT_0055298c - (float)(intptr_t)param_8;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 20.0;
+    AsObject(pfVar17)->Angle[2] = 0.0;
+    pfVar17[0x10] = *pfVar12;
+    pfVar17[0x11] = AsObject(pfVar17)->Position[1];
+    pfVar17[0x12] = AsObject(pfVar17)->Position[2];
+    Joint_Create(0x4ea,pfVar12,pfVar12,AsObject(pfVar17)->Angle,5,(intptr_t)pfVar17,100.0,-1,0);
+    pfVar12 = (float*)DAT_07cf1ffc;
+    param_5 = (float*)DAT_07cf1ffc;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(DAT_07cf1ffc);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_004611cb;
+    goto LAB_0046115a;
+  case 0xf1:
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+    AsObject(pfVar17)->Scale = 0.9;
+    AsObject(pfVar17)->Velocity = 0.5;
+    // SubType es un DWORD: leer los BITS, no convertir el float (daba 0 siempre).
+    switch(AsObject(pfVar17)->SubType) {
+    case 0:
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 15;
+      break;
+    case 1:
+      AsObject(pfVar17)->Light[0] = 1.0;
+      AsObject(pfVar17)->Light[1] = 0.5;
+      AsObject(pfVar17)->Light[2] = 0.2;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 35;
+      break;
+    case 2:
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 12;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
+      AsObject(pfVar17)->Scale = 0.5;
+      break;
+    case 3:
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 4;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 1.4013e-45;
+      AsObject(pfVar17)->Scale = 0.02;
+      AsObject(pfVar17)->Velocity = 1.0;
+      AsObject(pfVar17)->Angle[0] = 90.0;
+      AsObject(pfVar17)->Angle[1] = 0.0;
+      AsObject(pfVar17)->Angle[2] = 0.0;
+      break;
+    case 4:
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 35;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 1.4013e-45;
+      AsObject(pfVar17)->Scale = 0.1;
+      AsObject(pfVar17)->Gravity = 0.0;
+    }
+    pfVar8 = (float*)DAT_07cf1ffc;
+    // *(float *)&AsObject(pfVar17)->Owner (= slot+252) es el PUNTERO al owner: hay que reinterpretar
+    // los bits, no convertir el float (eso destruia el puntero y la comparacion
+    // con Hero nunca daba true).
+    pfVar12 = (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
+    if (pfVar12 != (float*)DAT_07abf5d8) {
+      return pfVar12;
+    }
+    if (1 < AsObject(pfVar17)->SubType) {                      // SubType (DWORD)
+      return pfVar12;
+    }
+    param_5 = (float*)DAT_07cf1ffc;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(DAT_07cf1ffc);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_00461843;
+    goto LAB_004617d3;
+  case 0xf2:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+    AsObject(pfVar17)->Scale = 1.0;
+    pfVar12 = pfVar17 + 4;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -70.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    pfVar17[0x10] = *pfVar12;
+    pfVar17[0x11] = AsObject(pfVar17)->Position[1];
+    pfVar17[0x12] = AsObject(pfVar17)->Position[2];
+    Joint_Create(0x4ea,pfVar12,pfVar12,AsObject(pfVar17)->Angle,5,(intptr_t)pfVar17,100.0,-1,0);
+    if (*(float *)&AsObject(pfVar17)->SubType != 0.0) {
+      CreateEffect(0xff,pfVar12,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,(float *)0xffffffff,
+                   (float *)0x0,0);
+      *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
+      AsObject(pfVar17)->Kind = 1;
+    }
+    pfVar12 = (float*)DAT_07cf1ffc;
+    param_5 = (float*)DAT_07cf1ffc;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(DAT_07cf1ffc);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 == 0) goto LAB_00461f5f;
+    goto LAB_00461eee;
+  case 0xf3:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+    AsObject(pfVar17)->Scale = 1.0;
+    iVar9 = 0;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -30.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    local_6c = -10.0;
+    local_68 = -100.0;
+    local_64 = 15.0;
+    Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+    pfVar8 = AsObject(pfVar17)->StartPosition;
+    *pfVar8 = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+    fVar27 = *pfVar8;
+    *pfVar12 = 0.0;
+    pfVar12[1] = 0.0;
+    *pfVar8 = local_60 + fVar27;
+    AsObject(pfVar17)->StartPosition[1] = local_5c + AsObject(pfVar17)->StartPosition[1];
+    AsObject(pfVar17)->StartPosition[2] = local_58 + AsObject(pfVar17)->StartPosition[2];
+    pfVar12[2] = AsObject(pfVar17)->Angle[2];
+    do {
+      Joint_Create(0x4e1,pfVar8,pfVar8,pfVar12,0xb,(intptr_t)pfVar17,50.0,-1,iVar9 == 1);
+      pfVar14 = (float*)DAT_07cf1ffc;
+      iVar9 = iVar9 + 1;
+    } while (iVar9 < 4);
+    param_5 = (float*)DAT_07cf1ffc;
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(DAT_07cf1ffc);
+    param_8 = (float *)0x0;
+    param_7 = (float *)0x0;
+    if (DAT_055c9bd4 != 0) {
+      do {
+        bVar22 = false;
+        iVar15 = 0;
+        bVar23 = true;
+        param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+        iVar9 = 4;
+        ppfVar18 = &param_8;
+        pfVar12 = param_6;
+        do {
+          if (iVar9 == 0) break;
+          iVar9 = iVar9 + -1;
+          bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+          bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+          ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+          pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+        } while (bVar23);
+        if (!bVar23) {
+          iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+        }
+        if (iVar15 == 0) goto LAB_004625aa;
+        iVar9 = 4;
+        bVar22 = false;
+        iVar15 = 0;
+        bVar23 = true;
+        ppfVar18 = &param_4;
+        pfVar12 = param_6;
+        do {
+          if (iVar9 == 0) break;
+          iVar9 = iVar9 + -1;
+          bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+          bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+          ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+          pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+        } while (bVar23);
+        if (!bVar23) {
+          iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+        }
+        if (iVar15 == 0) {
+          if (uVar10 == 0xffffffff) goto LAB_004625aa;
+          param_6 = pfVar14;
+          uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar14);
+          param_8 = (float *)0x0;
+          param_7 = (float *)0x0;
+          if (DAT_055c9bd4 == 0) goto LAB_00462722;
+          goto LAB_004626bb;
+        }
+        uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+        param_7 = (float *)((intptr_t)param_7 + 1);
+        if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+      } while( true );
+    }
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_004625aa:
+    pvVar7 = AntiTamper_HashNode();
+    *(undefined1 *)((intptr_t)pvVar7 + 0x584) = 1;
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar14);
+    goto LAB_004625ca;
+  case 0xf4:
+    AsObject(pfVar17)->HeadAngle[0] = AsObject(pfVar17)->Angle[0];
+    AsObject(pfVar17)->HeadAngle[1] = AsObject(pfVar17)->Angle[1];
+    AsObject(pfVar17)->HeadAngle[2] = AsObject(pfVar17)->Angle[2];
+    AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    iVar9 = _rand();
+    // IDA: `*((_DWORD *)i + 1) = rand() % 100;` -- el SubType es un DWORD.
+    // Guardarlo con una conversion a float dejaba los BITS del float en el
+    // campo, y MoveEffect lo lee por bits: el angulo de las grietas del
+    // suelo (IDA L2095) salia ~1.1e9 en vez de 0..99.
+    *(DWORD *)&AsObject(pfVar17)->SubType = (DWORD)(iVar9 % 100);
+    AsObject(pfVar17)->Angle[2] = AsObject(pfVar17)->Angle[2] + _DAT_00552978;
+    AsObject(pfVar17)->HeadAngle[0] = AsObject(pfVar17)->HeadAngle[0] + _DAT_00552878;
+    AsObject(pfVar17)->HeadAngle[2] = AsObject(pfVar17)->HeadAngle[2] + _DAT_005524ec;
+    AsObject(pfVar17)->Gravity = 50.0;
+    break;
+  case 0xf5:
+    *(int*)&pfVar17[EffectLifetimeIndex] = 35;
+    AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    return pfVar8;
+  }
+  pfVar12 = (float*)DAT_07cf1ffc;
+  cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
+  *(char *)(pfVar17 + 0x22) = cVar5;
+  *((char *)pfVar12 + 0x160) = cVar5 + '\x01';
+  pfVar12 = (float *)STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
+  return pfVar12;
+switchD_00460f25_caseD_100:
+  pfVar12 = pfVar17 + 7;
+  AsObject(pfVar17)->Velocity = 1.0;
+  *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+  Matrix_BuildFromEuler(pfVar12,local_3c + 3);
+  local_6c = -10.0;
+  local_68 = -60.0;
+  local_64 = 135.0;
+  Vector_Rotate(&local_6c,local_3c + 3,&local_60);
+  param_4 = _param_9;
+  param_9 = 0;
+  param_8 = (float *)(uintptr_t)((uint)(uintptr_t)param_8 & 0xffffff00);
+  param_7 = (float *)0xffffffff;
+  *pfVar14 = local_60 + *pfVar14;
+  param_1 = 0xff;
+  AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+  AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+  AsObject(pfVar17)->Scale = 0.8;
+  AsObject(pfVar17)->Direction[1] = -70.0;
+  param_2 = pfVar14;
+  param_6 = pfVar17;
+  goto LAB_00460dd8;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_00465011:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pfVar12 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00465094;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar12 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00465094;
+      param_6 = pfVar4;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+      param_7 = (float *)0x0;
+      param_6 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_004651f7;
+      goto LAB_00465190;
+    }  }
+LAB_00465082:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00465094:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = pfVar4;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+  param_5 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_004652b0:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = pfVar4;
+        goto LAB_004652dd;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_004652b0;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_6 = (float *)((intptr_t)param_6 + 1);
+    } while ((uint)(uintptr_t)param_6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_004652dd:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_5 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar9 = 4;
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = pfVar12;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+        param_5 = (float *)0x0;
+        param_4 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00465448;
+        goto LAB_004653e2;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_5 = (float *)((intptr_t)param_5 + 1);
+    } while ((uint)(uintptr_t)param_5 < DAT_055c9bd4);
+  }
+  goto LAB_00465388;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_6 = (float *)((intptr_t)param_6 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_6) break;
+LAB_00465190:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00465209;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00465209;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_0046520b;
+    }
+  }
+LAB_004651f7:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00465209:
+  puVar19 = (undefined4 *)0x0;
+LAB_0046520b:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)((intptr_t)puVar11 + uVar10) =
+             *(byte *)((intptr_t)puVar11 + uVar10) ^ *(byte *)((intptr_t)puVar11 + uVar10 + 1);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)((intptr_t)puVar11 + uVar10) =
+           (PacketXorKey16[uVar16] ^ *(char *)((intptr_t)puVar11 + uVar10) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puStack_4 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puStack_4 = puStack_4 + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+  goto LAB_004652dd;
+LAB_004653e2:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_0046545a;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_0046545a;
+    param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_0046546c;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) {
+LAB_00465448:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_0046545a:
+    param_4 = (float *)0x0;
+LAB_0046546c:
+    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    *(char *)(param_4 + 0x161) = cVar5;
+    if (cVar5 != '\0') {
+      return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    }
+    pfVar14 = (float*)operator_new(0x584);
+    pfVar8 = pfVar12;
+    pfVar17 = pfVar14;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar17 = *pfVar8;
+      pfVar8 = pfVar8 + 1;
+      pfVar17 = pfVar17 + 1;
+    }
+    uVar10 = 0;
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {
+        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+      }
+      iVar9 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar14;
+    pfVar8 = param_4;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+    return pfVar12;
+  }
+  goto LAB_004653e2;
+LAB_004626bb:
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  iVar9 = 4;
+  ppfVar18 = &param_8;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00462734;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_6;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar13;
+    bVar23 = *(byte *)ppfVar18 == *pbVar13;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar13 = pbVar13 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_00462734;
+    puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_00462736;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_7 = (float *)((intptr_t)param_7 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) goto LAB_00462722;
+  goto LAB_004626bb;
+LAB_00462722:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00462734:
+  puVar19 = (undefined4 *)0x0;
+LAB_00462736:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)((intptr_t)puVar11 + uVar10) =
+             *(byte *)((intptr_t)puVar11 + uVar10) ^ *(byte *)((intptr_t)puVar11 + uVar10 + 1);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)((intptr_t)puVar11 + uVar10) =
+           (PacketXorKey16[uVar16] ^ *(char *)((intptr_t)puVar11 + uVar10) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    unaff_retaddr = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *unaff_retaddr = *puVar19;
+      puVar19 = puVar19 + 1;
+      unaff_retaddr = unaff_retaddr + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+LAB_004625ca:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_6 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 == 0) goto LAB_00465388;
+  do {
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    ppfVar18 = &param_6;
+    pfVar17 = pfVar8;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      return pfVar8;
+    }
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar17 = pfVar8;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) {
+        return pfVar8;
+      }
+      param_4 = pfVar12;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+      param_5 = (float *)0x0;
+      param_4 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_00462884;
+      break;
+    }
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_5 = (float *)((intptr_t)param_5 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_5) goto LAB_00465388;
+  } while( true );
+LAB_0046281e:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00462896;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 != 0xffffffff) {
+      param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_004628a8;
+    }
+    goto LAB_00462896;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) goto LAB_00462884;
+  goto LAB_0046281e;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_00461eee:
+    bVar22 = false;
+    iVar15 = 0;    bVar23 = true;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00461f71;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00461f71;
+      param_6 = pfVar12;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+      param_7 = (float *)0x0;
+      param_6 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_004620d4;
+      goto LAB_0046206d;
+    }
+  }
+LAB_00461f5f:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00461f71:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_5 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_0046218d:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = pfVar12;
+        goto LAB_004621ba;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_0046218d;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_6 = (float *)((intptr_t)param_6 + 1);
+    } while ((uint)(uintptr_t)param_6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_004621ba:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_5 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar9 = 4;
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = pfVar12;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+        param_5 = (float *)0x0;
+        param_4 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00462314;
+        goto LAB_004622ae;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_5 = (float *)((intptr_t)param_5 + 1);
+    } while ((uint)(uintptr_t)param_5 < DAT_055c9bd4);
+  }
+  goto LAB_00465388;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_6 = (float *)((intptr_t)param_6 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_6) break;
+LAB_0046206d:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_004620e6;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_004620e6;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_004620e8;
+    }
+  }
+LAB_004620d4:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_004620e6:
+  puVar19 = (undefined4 *)0x0;
+LAB_004620e8:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)(uVar10 + (intptr_t)puVar11) =
+             *(byte *)(uVar10 + (intptr_t)puVar11) ^ *(byte *)(uVar10 + 1 + (intptr_t)puVar11);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)(uVar10 + (intptr_t)puVar11) =
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (intptr_t)puVar11) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puStack_4 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puStack_4 = puStack_4 + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+  goto LAB_004621ba;
+LAB_004622ae:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00462326;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_00462326;
+    param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_00462338;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) {
+LAB_00462314:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_00462326:
+    param_4 = (float *)0x0;
+LAB_00462338:
+    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    *(char *)(param_4 + 0x161) = cVar5;
+    if (cVar5 != '\0') {
+      return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    }
+    pfVar14 = (float*)operator_new(0x584);
+    pfVar8 = pfVar12;
+    pfVar17 = pfVar14;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar17 = *pfVar8;
+      pfVar8 = pfVar8 + 1;
+      pfVar17 = pfVar17 + 1;
+    }
+    uVar10 = 0;
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {
+        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+      }
+      iVar9 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar14;
+    pfVar8 = param_4;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+    return pfVar12;
+  }
+  goto LAB_004622ae;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_6 = (float *)((intptr_t)param_6 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_6) break;
+LAB_00461951:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_004619ca;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_004619ca;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_004619cc;
+    }
+  }
+LAB_004619b8:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_004619ca:
+  puVar19 = (undefined4 *)0x0;
+LAB_004619cc:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)(uVar10 + (intptr_t)puVar11) =
+             *(byte *)(uVar10 + (intptr_t)puVar11) ^ *(byte *)(uVar10 + 1 + (intptr_t)puVar11);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)(uVar10 + (intptr_t)puVar11) =
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (intptr_t)puVar11) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puStack_4 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puStack_4 = puStack_4 + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+  goto LAB_00461a9e;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    _param_9 = (float *)((intptr_t)_param_9 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)_param_9) break;
+LAB_00461ba9:
+    iVar15 = 4;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    bVar22 = false;
+    iVar9 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar15 == 0) break;
+      iVar15 = iVar15 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar9 == 0) goto LAB_00461c23;
+    iVar15 = 4;
+    bVar22 = false;
+    iVar9 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar15 == 0) break;
+      iVar15 = iVar15 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar9 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00461c23;
+      _param_9 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_00461c25;
+    }
+  }
+LAB_00461c11:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00461c23:
+  _param_9 = (float *)0x0;
+LAB_00461c25:
+  cVar5 = *(char *)(_param_9 + 0x161);
+  *(char *)(_param_9 + 0x161) = cVar5 + -1;
+  if ((char)(cVar5 + -1) == '\0') {
+    pfVar14 = (float*)operator_new(0x584);
+    pfVar12 = param_8;
+    pfVar8 = pfVar14;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    uVar10 = 0;
+    param_8 = (float *)((intptr_t)param_8 - (intptr_t)pfVar14);
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+      }
+      iVar9 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[(intptr_t)param_8] = (byte)iVar9;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar14;
+    pfVar8 = _param_9;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar14);
+  }
+  goto LAB_00461ce3;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_0046115a:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_004611dd;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_004611dd;
+      param_6 = pfVar12;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+      param_7 = (float *)0x0;
+      param_6 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_00461340;
+      goto LAB_004612d9;
+    }
+  }
+LAB_004611cb:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_004611dd:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_5 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_004613f9:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = pfVar12;
+        goto LAB_00461426;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_004613f9;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_6 = (float *)((intptr_t)param_6 + 1);
+    } while ((uint)(uintptr_t)param_6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_00461426:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_5 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar9 = 4;
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = pfVar12;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+        param_5 = (float *)0x0;
+        param_4 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00461580;
+        goto LAB_0046151a;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_5 = (float *)((intptr_t)param_5 + 1);
+    } while ((uint)(uintptr_t)param_5 < DAT_055c9bd4);
+  }
+  goto LAB_00465388;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_6 = (float *)((intptr_t)param_6 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_6) break;
+LAB_004612d9:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00461352;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00461352;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_00461354;
+    }
+  }
+LAB_00461340:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00461352:
+  puVar19 = (undefined4 *)0x0;
+LAB_00461354:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)(uVar10 + (intptr_t)puVar11) =
+             *(byte *)(uVar10 + (intptr_t)puVar11) ^ *(byte *)(uVar10 + 1 + (intptr_t)puVar11);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)(uVar10 + (intptr_t)puVar11) =
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (intptr_t)puVar11) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puStack_4 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puStack_4 = puStack_4 + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+  goto LAB_00461426;
+LAB_0046151a:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00461592;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_00461592;
+    param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_004615a4;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) {
+LAB_00461580:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_00461592:
+    param_4 = (float *)0x0;
+LAB_004615a4:
+    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    *(char *)(param_4 + 0x161) = cVar5;
+    if (cVar5 != '\0') {
+      return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    }
+    pfVar14 = (float*)operator_new(0x584);
+    pfVar8 = pfVar12;
+    pfVar17 = pfVar14;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar17 = *pfVar8;
+      pfVar8 = pfVar8 + 1;
+      pfVar17 = pfVar17 + 1;
+    }
+    uVar10 = 0;
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {
+        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+      }
+      iVar9 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar14;
+    pfVar8 = param_4;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+    return pfVar12;
+  }
+  goto LAB_0046151a;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_004636ad:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pfVar12 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00463730;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar12 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00463730;
+      param_6 = pfVar4;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
+      param_8 = (float *)0x0;
+      param_7 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_004638a8;
+      goto LAB_00463841;
+    }
+  }
+LAB_0046371e:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00463730:
+  pvVar7 = AntiTamper_HashNode();
+  *(undefined1 *)((intptr_t)pvVar7 + 0x584) = 1;
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar4);
+  goto LAB_00463750;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_00463841:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_004638ba;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_004638ba;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_004638bc;
+    }
+  }
+LAB_004638a8:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_004638ba:
+  puVar19 = (undefined4 *)0x0;
+LAB_004638bc:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)(uVar10 + (intptr_t)puVar11) =
+             *(byte *)(uVar10 + (intptr_t)puVar11) ^ *(byte *)(uVar10 + 1 + (intptr_t)puVar11);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)(uVar10 + (intptr_t)puVar11) =
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (intptr_t)puVar11) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+    // ESCRITURA SALVAJE (2026-10-02, issue #75): mismo caso que los otros 7
+    // sitios -- destino sin asignar, 1412 bytes a direccion arbitraria.
+    unaff_retaddr = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {      *unaff_retaddr = *puVar19;
+      puVar19 = puVar19 + 1;
+      unaff_retaddr = unaff_retaddr + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+LAB_00463750:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_6 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = pfVar12;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+        param_5 = (float *)0x0;
+        param_4 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00463a0a;
+        goto LAB_004639a4;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_5 = (float *)((intptr_t)param_5 + 1);
+    } while ((uint)(uintptr_t)param_5 < DAT_055c9bd4);
+  }
+  goto LAB_00465388;
+LAB_004639a4:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00463a1c;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_00463a1c;
+    param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_00463a2e;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) {
+LAB_00463a0a:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_00463a1c:
+    param_4 = (float *)0x0;
+LAB_00463a2e:
+    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    *(char *)(param_4 + 0x161) = cVar5;
+    if (cVar5 != '\0') {
+      return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    }
+    pfVar14 = (float*)operator_new(0x584);
+    pfVar8 = pfVar12;
+    pfVar17 = pfVar14;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar17 = *pfVar8;
+      pfVar8 = pfVar8 + 1;
+      pfVar17 = pfVar17 + 1;
+    }
+    uVar10 = 0;
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {
+        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+      }
+      iVar9 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar14;
+    pfVar8 = param_4;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+    return pfVar12;
+  }
+  goto LAB_004639a4;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)pfVar12) break;
+LAB_004631b2:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_0046321d;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_0046321d;
+      param_6 = param_7;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(param_7);
+      pfVar12 = (float *)0x0;
+      param_7 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_00463363;
+      goto LAB_0046330a;
+    }
+  }
+LAB_0046320b:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_0046321d:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = param_7;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(param_7);
+  pfVar12 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar21 = pbVar13;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar21;
+        bVar23 = *(byte *)ppfVar18 == *pbVar21;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar21 = pbVar21 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_0046341d:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = param_6;
+        goto LAB_00463451;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_0046341d;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while ((uint)(uintptr_t)pfVar12 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_00463451:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  param_6 = (float*)DAT_07cf1ffc;
+  param_5 = (float*)DAT_07cf1ffc;
+  *(char *)((char*)DAT_07cf1ffc + 0x160) = *(char *)((char*)DAT_07cf1ffc + 0x160) + '\x01';
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  pfVar12 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = param_5;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(param_5);
+        pfVar12 = (float *)0x0;
+        param_5 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_0046358c;
+        goto LAB_00463534;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while ((uint)(uintptr_t)pfVar12 < DAT_055c9bd4);
+  }
+  goto LAB_00465388;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)pfVar12) break;
+LAB_0046330a:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00463375;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00463375;
+      pfVar12 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_00463377;
+    }
+  }
+LAB_00463363:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00463375:
+  pfVar12 = (float *)0x0;
+LAB_00463377:
+  cVar5 = *(char *)(pfVar12 + 0x161);
+  *(byte *)(pfVar12 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    pfVar17 = (float*)operator_new(0x584);
+    pfVar8 = pfVar17;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)(uVar10 + (intptr_t)pfVar17) =
+             *(byte *)(uVar10 + (intptr_t)pfVar17) ^ *(byte *)(uVar10 + 1 + (intptr_t)pfVar17);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)(uVar10 + (intptr_t)pfVar17) =
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (intptr_t)pfVar17) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    pfVar12 = pfVar17;
+    pfVar8 = param_6;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar17);
+  }
+  goto LAB_00463451;
+LAB_00463534:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_0046359e;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_0046359e;
+    param_5 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_004635a0;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)pfVar12) {
+LAB_0046358c:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_0046359e:
+    param_5 = (float *)0x0;
+LAB_004635a0:
+    cVar5 = *(char *)(param_5 + 0x161) + -1;
+    *(char *)(param_5 + 0x161) = cVar5;
+    if (cVar5 != '\0') {
+      return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    }
+    pfVar17 = (float*)operator_new(0x584);
+    pfVar12 = param_4;
+    pfVar8 = pfVar17;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    uVar10 = 0;
+    iVar9 = (intptr_t)param_4 - (intptr_t)pfVar17;
+    do {
+      pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar17);
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      *pbVar13 = bVar6;
+      if (uVar10 < 0x583) {
+        *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar17) ^ bVar6;
+      }
+      iVar15 = _rand();
+      uVar10 = uVar10 + 1;
+      pbVar13[iVar9] = (byte)iVar15;
+    } while (uVar10 < 0x584);
+    pfVar12 = pfVar17;
+    pfVar8 = param_5;    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *pfVar8 = *pfVar12;
+      pfVar12 = pfVar12 + 1;
+      pfVar8 = pfVar8 + 1;
+    }
+    operator_delete((undefined *)pfVar17); pfVar12 = NULL;
+    return pfVar12;
+  }
+  goto LAB_00463534;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_6 = (float *)((intptr_t)param_6 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_6) break;
+LAB_00462d09:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_7;
+    pbVar21 = pbVar13;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar21;
+      bVar23 = *(byte *)ppfVar18 == *pbVar21;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar21 = pbVar21 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00462d82;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_5;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *pbVar13;
+      bVar23 = *(byte *)ppfVar18 == *pbVar13;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pbVar13 = pbVar13 + 1;
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00462d82;
+      puVar19 = *(undefined4 **)(DAT_055c9bcc + uVar10 * 4);
+      goto LAB_00462d84;
+    }
+  }
+LAB_00462d70:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00462d82:
+  puVar19 = (undefined4 *)0x0;
+LAB_00462d84:
+  cVar5 = *(char *)(puVar19 + 0x161);
+  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  if ((byte)(cVar5 + 1U) < 2) {
+    puVar11 = (undefined4*)operator_new(0x584);
+    puVar20 = puVar11;
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puVar20 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puVar20 = puVar20 + 1;
+    }
+    uVar10 = 0x583;
+    iVar9 = 0x584;
+    do {
+      if (uVar10 < 0x583) {
+        *(byte *)((intptr_t)puVar11 + uVar10) =
+             *(byte *)((intptr_t)puVar11 + uVar10) ^ *(byte *)((intptr_t)puVar11 + uVar10 + 1);
+      }
+      uVar16 = uVar10 & 0x8000000f;
+      if ((int)uVar16 < 0) {
+        uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+      }
+      *(byte *)((intptr_t)puVar11 + uVar10) =
+           (PacketXorKey16[uVar16] ^ *(char *)((intptr_t)puVar11 + uVar10) - 0x23U) + 0xb9;
+      uVar10 = uVar10 - 1;
+      iVar9 = iVar9 + -1;
+    } while (iVar9 != 0);
+    puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
+    for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+      *puStack_4 = *puVar19;
+      puVar19 = puVar19 + 1;
+      puStack_4 = puStack_4 + 1;
+    }
+    operator_delete((undefined *)puVar11);
+  }
+  goto LAB_00462e56;
+LAB_00462f4a:
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+  ppfVar18 = &param_5;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) goto LAB_00462fc2;
+  iVar9 = 4;
+  bVar22 = false;
+  iVar15 = 0;
+  bVar23 = true;
+  ppfVar18 = &param_3;
+  pbVar21 = pbVar13;
+  do {
+    if (iVar9 == 0) break;
+    iVar9 = iVar9 + -1;
+    bVar22 = *(byte *)ppfVar18 < *pbVar21;
+    bVar23 = *(byte *)ppfVar18 == *pbVar21;
+    ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+    pbVar21 = pbVar21 + 1;
+  } while (bVar23);
+  if (!bVar23) {
+    iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+  }
+  if (iVar15 == 0) {
+    if (uVar10 == 0xffffffff) goto LAB_00462fc2;
+    param_4 = *(float **)(DAT_055c9bcc + uVar10 * 4);
+    goto LAB_00462fd4;
+  }
+  uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+  param_4 = (float *)((intptr_t)param_4 + 1);
+  if (DAT_055c9bd4 <= (uint)(uintptr_t)param_4) {
+LAB_00462fb0:
+    CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_00462fc2:
+    param_4 = (float *)0x0;
+LAB_00462fd4:
+    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    pfVar8 = (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+    *(char *)(param_4 + 0x161) = cVar5;
+    if (cVar5 == '\0') {
+      pfVar14 = (float*)operator_new(0x584);
+      pfVar8 = pfVar12;
+      pfVar17 = pfVar14;
+      for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+        *pfVar17 = *pfVar8;
+        pfVar8 = pfVar8 + 1;
+        pfVar17 = pfVar17 + 1;
+      }
+      uVar10 = 0;
+      do {
+        pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+        uVar16 = uVar10 & 0x8000000f;
+        if ((int)uVar16 < 0) {
+          uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+        }
+        bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+        *pbVar13 = bVar6;
+        if (uVar10 < 0x583) {
+          *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+        }
+        iVar9 = _rand();
+        uVar10 = uVar10 + 1;
+        pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+      } while (uVar10 < 0x584);
+      pfVar12 = pfVar14;
+      pfVar8 = param_4;
+      for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+        *pfVar8 = *pfVar12;
+        pfVar12 = pfVar12 + 1;
+        pfVar8 = pfVar8 + 1;
+      }
+      operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+      return pfVar12;
+    }
+switchD_00460f25_caseD_101:
+    return pfVar8;
+  }
+  goto LAB_00462f4a;
+switchD_00465549_caseD_4ba:
+  // El vector de avance de la estela de los tipos 1210/1211/1212 sale de
+  // `VectorRotate(in1, in2, (float *)i + 48)` con IDA poniendo `in1 = (0, -50, 0)`
+  // (o `(0, -15, 0)` para el 1212): X y Z en 0, no un valor sobrante de otra rama.
+  // El campo +0xC0 es el paso que `RenderEffects` usa para los 30 sprites 1176
+  // de la estela.
+  *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+  if (param_1 == 0x4ba) {
+    AsObject(pfVar17)->Light[0] = 0.5;
+    AsObject(pfVar17)->Light[1] = 0.7;
+    AsObject(pfVar17)->Light[2] = 1.0;
+  }
+  else {
+    if (param_1 != 0x4bb) {
+      if (param_1 == 0x4bc) {
+        local_6c = 0.0f;   // IDA: in1[0] = 0.0
+        local_64 = 0.0f;   // IDA: in1[2] = 0.0
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 0.4;
+        AsObject(pfVar17)->Light[2] = 0.2;
+        local_68 = -15.0;
+        AsObject(pfVar17)->Scale = 5.0;
+      }
+      goto LAB_00465641;
+    }
+    AsObject(pfVar17)->Light[0] = 1.0;
+    AsObject(pfVar17)->Light[1] = 0.4;
+    AsObject(pfVar17)->Light[2] = 0.2;
+  }
+  local_6c = 0.0f;   // IDA: in1[0] = 0.0
+  local_64 = 0.0f;   // IDA: in1[2] = 0.0
+  local_68 = -50.0;
+  AsObject(pfVar17)->Scale = 16.0;
+LAB_00465641:
+  Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+  Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
+  if ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner != (float*)DAT_07abf5d8) {
+    return (float*)DAT_07abf5d8;
+  }
+  fVar27 = AsObject(pfVar17)->Position[1];
+  fVar2 = AsObject(pfVar17)->Position[2];
+  *param_2 = AsObject(pfVar17)->Position[0];
+  param_2[1] = fVar27;
+  param_2[2] = fVar2;
+  local_6c = 0.0;
+  local_68 = -150.0;
+  local_64 = 0.0;
+  Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+  Vector_Rotate(&local_6c,local_3c + 3,&local_48);
+  iVar9 = 4;
+  do {
+    sVar28 = AsObject(pfVar17)->PKKey;
+    bVar6 = *(byte *)(pfVar17 + 0x22);
+    bVar1 = AsObject(pfVar17)->Skill;
+    *param_2 = local_48 + *param_2;
+    param_2[1] = local_44 + param_2[1];
+    param_2[2] = local_40 + param_2[2];
+    pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)bVar1,param_2,150.0,bVar6,sVar28);
+    iVar9 = iVar9 + -1;
+  } while (iVar9 != 0);
+  return pfVar12;
+LAB_00462884:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pbVar13 = NULL;
+LAB_00462896:
+  param_4 = (float *)0x0;
+LAB_004628a8:
+  cVar5 = *(char *)(param_4 + 0x161) + -1;
+  *(char *)(param_4 + 0x161) = cVar5;
+  if (cVar5 != '\0') {
+    return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
+  }
+  pfVar14 = (float*)operator_new(0x584);
+  pfVar8 = pfVar12;
+  pfVar17 = pfVar14;
+  for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+    *pfVar17 = *pfVar8;
+    pfVar8 = pfVar8 + 1;
+    pfVar17 = pfVar17 + 1;
+  }
+  uVar10 = 0;
+  do {
+    pbVar13 = (byte *)(uVar10 + (intptr_t)pfVar14);
+    uVar16 = uVar10 & 0x8000000f;
+    if ((int)uVar16 < 0) {
+      uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
+    }
+    bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+    *pbVar13 = bVar6;
+    if (uVar10 < 0x583) {
+      *pbVar13 = *(byte *)(uVar10 + 1 + (intptr_t)pfVar14) ^ bVar6;
+    }
+    iVar9 = _rand();
+    uVar10 = uVar10 + 1;
+    pbVar13[(intptr_t)pfVar12 - (intptr_t)pfVar14] = (byte)iVar9;
+  } while (uVar10 < 0x584);
+  pfVar12 = pfVar14;
+  pfVar8 = param_4;
+  for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
+    *pfVar8 = *pfVar12;
+    pfVar12 = pfVar12 + 1;
+    pfVar8 = pfVar8 + 1;
+  }
+  operator_delete((undefined *)pfVar14); pfVar12 = NULL;
+  return pfVar12;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_004617d3:
+    iVar15 = 4;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    bVar22 = false;
+    iVar9 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_8;
+    pfVar12 = param_6;
+    do {
+      if (iVar15 == 0) break;
+      iVar15 = iVar15 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar9 == 0) goto LAB_00461855;
+    iVar15 = 4;
+    bVar22 = false;
+    iVar9 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar12 = param_6;
+    do {
+      if (iVar15 == 0) break;
+      iVar15 = iVar15 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar12;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar12;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar12 = (float *)((intptr_t)pfVar12 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar9 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00461855;
+      param_6 = pfVar8;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar8);
+      param_7 = (float *)0x0;
+      param_6 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_004619b8;
+      goto LAB_00461951;
+    }
+  }
+LAB_00461843:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00461855:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = pfVar8;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar8);
+  param_5 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_00461a71:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = pfVar8;
+        goto LAB_00461a9e;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_00461a71;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_6 = (float *)((intptr_t)param_6 + 1);
+    } while ((uint)(uintptr_t)param_6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_00461a9e:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  param_6 = (float*)DAT_07cf1ffc;
+  param_3 = (float*)DAT_07cf1ffc;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_7 = (float *)0x0;
+  _param_9 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar9 = 0;
+      bVar23 = true;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar15 = 4;
+      ppfVar18 = &param_7;
+      pbVar21 = pbVar13;
+      do {
+        if (iVar15 == 0) break;
+        iVar15 = iVar15 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar21;
+        bVar23 = *(byte *)ppfVar18 == *pbVar21;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar21 = pbVar21 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar9 == 0) goto LAB_00461ce3;
+      iVar15 = 4;
+      bVar22 = false;
+      iVar9 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      do {
+        if (iVar15 == 0) break;
+        iVar15 = iVar15 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar9 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar9 == 0) {
+        if (uVar10 == 0xffffffff) goto LAB_00461ce3;
+        param_5 = param_8;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(param_8);
+        param_7 = (float *)0x0;
+        _param_9 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00461c11;
+        goto LAB_00461ba9;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      _param_9 = (float *)((intptr_t)_param_9 + 1);
+    } while ((uint)(uintptr_t)_param_9 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00461ce3:
+  sVar28 = AsObject(pfVar17)->PKKey;
+  bVar6 = *(byte *)(pfVar17 + 0x22);
+  fVar27 = 400.0;
+LAB_00463ca2:
+  pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)AsObject(pfVar17)->Skill,AsObject(pfVar17)->Position,fVar27,bVar6,
+                                  sVar28);
+  return pfVar12;
+  while( true ) {
+    uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+    param_7 = (float *)((intptr_t)param_7 + 1);
+    if (DAT_055c9bd4 <= (uint)(uintptr_t)param_7) break;
+LAB_00462b8a:
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    param_6 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+    iVar9 = 4;
+    ppfVar18 = &param_8;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);
+    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) goto LAB_00462c0d;
+    iVar9 = 4;
+    bVar22 = false;
+    iVar15 = 0;
+    bVar23 = true;
+    ppfVar18 = &param_4;
+    pfVar8 = param_6;
+    do {
+      if (iVar9 == 0) break;
+      iVar9 = iVar9 + -1;
+      bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar8;
+      bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar8;
+      ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+      pfVar8 = (float *)((intptr_t)pfVar8 + 1);
+    } while (bVar23);    if (!bVar23) {
+      iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+    }
+    if (iVar15 == 0) {
+      if (uVar10 == 0xffffffff) goto LAB_00462c0d;
+      param_6 = pfVar12;
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+      param_7 = (float *)0x0;
+      param_6 = (float *)0x0;
+      if (DAT_055c9bd4 == 0) goto LAB_00462d70;
+      goto LAB_00462d09;
+    }
+  }
+LAB_00462bfb:
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+LAB_00462c0d:
+  param_4 = (float*)AntiTamper_HashNode();
+  *(undefined1 *)(param_4 + 0x161) = 1;
+  param_8 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_5 = (float *)0x0;
+  param_6 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      iVar9 = 4;
+      ppfVar18 = &param_7;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+LAB_00462e29:
+        *(float **)(DAT_055c9bcc + uVar10 * 4) = param_3;
+        *(float **)(DAT_055c9bd0 + uVar10 * 4) = pfVar12;
+        goto LAB_00462e56;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_5;
+      pbVar13 = (byte *)(DAT_055c9bd0 + uVar10 * 4);
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *pbVar13;
+        bVar23 = *(byte *)ppfVar18 == *pbVar13;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pbVar13 = pbVar13 + 1;
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) goto LAB_00462e29;
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_6 = (float *)((intptr_t)param_6 + 1);
+    } while ((uint)(uintptr_t)param_6 < DAT_055c9bd4);
+  }
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+LAB_00462e56:
+  pfVar12 = (float*)DAT_07cf1ffc;
+  iVar9 = MAIN_HASH_CLASS;
+  *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
+  param_5 = pfVar12;
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+  param_6 = (float *)0x0;
+  param_5 = (float *)0x0;
+  if (DAT_055c9bd4 != 0) {
+    do {
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      pfVar8 = (float *)(DAT_055c9bd0 + uVar10 * 4);
+      iVar9 = 4;
+      ppfVar18 = &param_6;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        return pfVar8;
+      }
+      iVar9 = 4;
+      bVar22 = false;
+      iVar15 = 0;
+      bVar23 = true;
+      ppfVar18 = &param_4;
+      pfVar17 = pfVar8;
+      do {
+        if (iVar9 == 0) break;
+        iVar9 = iVar9 + -1;
+        bVar22 = *(byte *)ppfVar18 < *(byte *)pfVar17;
+        bVar23 = *(byte *)ppfVar18 == *(byte *)pfVar17;
+        ppfVar18 = (float **)((intptr_t)ppfVar18 + 1);
+        pfVar17 = (float *)((intptr_t)pfVar17 + 1);
+      } while (bVar23);
+      if (!bVar23) {
+        iVar15 = (1 - (uint)bVar22) - (uint)(bVar22 != 0);
+      }
+      if (iVar15 == 0) {
+        if (uVar10 == 0xffffffff) {
+          return pfVar8;
+        }
+        param_4 = pfVar12;
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
+        param_5 = (float *)0x0;
+        param_4 = (float *)0x0;
+        if (DAT_055c9bd4 == 0) goto LAB_00462fb0;
+        goto LAB_00462f4a;
+      }
+      uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
+      param_5 = (float *)((intptr_t)param_5 + 1);
+    } while ((uint)(uintptr_t)param_5 < DAT_055c9bd4);
+  }
+LAB_00465388:
+  param_6 = (float *)0x0;
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pfVar12 = NULL;
+  return pfVar12;
+}
+
+// ── Tamachan: control por red (opcode 0x0B, tipo de evento 2) ────────────────
+// IDA 0.98j sub_46C220: apaga todo Tamachan vivo.
+void __cdecl Tamachan_Clear(void)
+{
+  for (int i = 0; i < 200; ++i) {
+    char *o = &DAT_07b11670[i * OBJECT_STRIDE];
+    if (*o && *(short *)(o + 2) == 0xc1) {
+      *o = 0;
+      *(int *)(o + 96) = -1;
+    }
+  }
+}
+
+// IDA 0.98j sub_46C190: lo hace aparecer en el puente de Lorencia (tile
+// 162,120), mirando al heroe.  El 0.98j pasa el mismo vector como Angle y
+// como Light; CreateEffect pisa la luz con (1,1,1) igual.
+void __cdecl Tamachan_Spawn(void)
+{
+  float pos[3];
+  float angle[3];
+  pos[0] = 16284.0f;
+  pos[1] = 12031.0f;
+  pos[2] = RequestTerrainHeight(16284.0f, 12031.0f);
+  angle[0] = 0.0f;
+  angle[1] = 0.0f;
+  angle[2] = 0.0f;
+  if (DAT_07abf5d8)   // guard del port: el binario asume Hero
+    angle[2] = CreateAngle(16284.0f, 12031.0f,
+                            *(float *)((char *)DAT_07abf5d8 + 16),
+                            *(float *)((char *)DAT_07abf5d8 + 20));
+  CreateEffect(0xc1, pos, angle, angle, (float *)0, (float *)0, (float *)-1,
+                (float *)0, 0);
+}
+
+// IDA 0.98j sub_46C250: fin del evento -- cada Tamachan pasa al estado 3
+// (se hunde) y le quedan 10 frames.
+void __cdecl Tamachan_Dismiss(void)
+{
+  for (int i = 0; i < 200; ++i) {
+    char *o = &DAT_07b11670[i * OBJECT_STRIDE];
+    if (*o && *(short *)(o + 2) == 0xc1) {
+      *(int *)(o + 96) = 10;
+      o[EntityOffset(260)] = 3;
+    }
+  }
+}

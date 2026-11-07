@@ -1,0 +1,150 @@
+// SkillEffect_Render.cpp
+// SkillEffect_Render @ 0x0046CB70  (44 lines, decompile completo)
+//
+// Renderiza todos los efectos de habilidades activos. Soporta dos modos:
+// en-mundo 2D (World == 2) y billboard 3D para otras escenas.
+//
+// ── POOL DE EFECTOS ───────────────────────────────────────────────────────────
+//
+//   Base:   DAT_07c5ab3c  (inicio de iteración, pfVar1[-3] = flag activo)
+//   Stride: 0x1c * 4 = 0x70 bytes por efecto (pfVar1 += 0x1c por iteración)
+//   Límite: pfVar1 < 0x7c602bc
+//   Entradas: (0x7c602bc - 0x07c5ab3c) / 0x70 = 0x5780/112 = 200 efectos
+//
+//   Struct de efecto (relativo a pfVar1):
+//     pfVar1[-3]    — char: active flag
+//     pfVar1[-2]    — int/float: tipo de efecto (texture ID)
+//                     0 (1.42932e-43 = 0x00000001 float): tipo especial grande (20×1)
+//                     otros: tipo normal (3×3)
+//     pfVar1[+0]    — float: escala / intensidad
+//     pfVar1[+1..3] — float[3]: posición XYZ
+//     pfVar1[+4..6] — float[3]: rotación XYZ (Euler angles)
+//     pfVar1[+7..N] — datos adicionales (pasados a RenderSprite_0)
+//
+// ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
+//
+//   void FUN_0046cb70(void)
+//   {
+//     // Modo: update timing vs GL state
+//     if (World == 2 || World == 7 || World == 10)
+//       GL_SetBlendAdditive();           → Frame_UpdateTimer()
+//     else
+//       GL_SetBlendSrcOver('\x01');     → GL_SetMode(1) — 2D ortho setup para otras escenas
+//
+//     glColor3f(1.0, 1.0, 1.0);  // color blanco (textura sin tinte)
+//
+//     pfVar1 = &DAT_07c5ab3c;
+//     do {
+//       if (pfVar1[-3] != '\0') {             // efecto activo
+//         BindTexture(*((_DWORD *)v0 - 2));    ← DWORD, no float
+//
+//         if (World == 2) {
+//           // Modo en-mundo: draw 2D en espacio mundo
+//           RenderSprite_0((int)pfVar1[-2], pfVar1+1, *pfVar1, *pfVar1,
+//                        pfVar1+7, 0.0, 0.0, 0.0, 1.0, 1.0);
+//                        → SkillEffect_Draw2D(type, pos[3], r, g, scale, 0,0,0, 1, 1)
+//         }
+//         else {
+//           // Modo billboard: draw 3D con matriz de rotación
+//           glPushMatrix();
+//           glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);  // trasladar a posición efecto
+//           Matrix_BuildFromEuler(pfVar1+4, local_30);               → Matrix_FromEuler(rot[3], mat)
+//           if (pfVar1[-2] == 1.42932e-43) {    // tipo 1 (1 en float = tipo especial)
+//             fVar3 = 20.0; fVar2 = 1.0;        // billboard grande y delgado
+//           } else {
+//             fVar3 = 3.0; fVar2 = 3.0;         // billboard cuadrado estándar
+//           }
+//           GL_DrawBillboard(fVar2, fVar3, local_30); → SkillEffect_DrawBillboard(w, h, rot_mat)
+//           glPopMatrix();
+//         }
+//       }
+//       pfVar1 += 0x1c;   // siguiente efecto
+//     } while (pfVar1 < 0x7c602bc);
+//   }
+//
+// ── NOTA ──────────────────────────────────────────────────────────────────────
+//
+//   Esta función se llama dos veces en Game_RenderTick:
+//   1. Siempre (línea 106) — para todas las escenas
+//   2. Solo si World == 2 && DAT_07e118e8 not in {3, >=10} (línea 121)
+//      → segunda pasada solo en modo in-world normal
+//
+// ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
+//
+//   GL_SetBlendAdditive  → Frame_UpdateTimer()
+//   GL_SetBlendSrcOver  → GL_SetMode(mode)
+//   GL_BindTextureSlot  → Particle_SetTexture(type) — glBindTexture
+//   RenderSprite_0  → SkillEffect_Draw2D(type, pos, r, g, scale, ...)
+//   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
+//   GL_DrawBillboard  → SkillEffect_DrawBillboard(width, height, rot_mat)
+
+#include "stdafx.h"
+#include "Render/Gfx.h"
+#include "Render/SkillEffect_Render.h"
+#include "globals.h"
+#include "functions.h"
+
+// SkillEffect_Render @ 0x0046CB70 (44 lines)
+// Renders all active skill effects. In sub-states 2/7/10 uses timer-driven mode;
+// otherwise sets GL blend mode. Each effect: bind texture, then draw 2D or billboard.
+// Pool DAT_07c5ab3c: array
+// de 200 × 0x70 bytes en globals.cpp. Loop bound count-based.
+//
+// Pool layout per slot (start at +0x0c offset from pfVar1, so pfVar1[-3] = +0):
+//   +0x00 char  active flag
+//   +0x04 int   type / texture id
+//   +0x0c float scale / intensity   (= pfVar1[0])
+//   +0x10..0x18 float[3] position   (= pfVar1[1..3])
+//   +0x1c..0x24 float[3] euler rot  (= pfVar1[4..6])
+//   +0x28..    additional data passed to RenderSprite_0
+void SkillEffect_Render(void)
+{
+    // IDA: World 2/7/10 → EnableAlphaBlend(); resto → EnableAlphaTest(1).
+    if ((gMapManager.GetCurrentMap() == 2) || (gMapManager.GetCurrentMap() == 7) || (gMapManager.GetCurrentMap() == 10))
+        GL_SetBlendAdditive();       // EnableAlphaBlend (0x511710) — NO es un timer
+    else
+        // IDA llama `EnableAlphaTest(1)` = **0x00511680** (GL_SetBlendSrcOver). No
+        // confundir con `GL_SetAlphaTest` = **DisableTexture(bool)** (0x00511590),
+        // que termina con `glDisable(GL_TEXTURE_2D)` incondicional: cada quad se
+        // pinta con el `glColor3f(1,1,1)` de abajo (cuadrado blanco) y el estado GL,
+        // que es global, contamina todo lo que se dibuja después.
+        // Ojo con esta familia:
+        //   0x00511590 DisableTexture   0x00511680 EnableAlphaTest
+        //   0x00511710 EnableAlphaBlend 0x00511790 EnableAlphaBlendMinus
+        GL_SetBlendSrcOver('\x01');
+
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+
+    // Iterate 200 slots × 0x70 bytes; pfVar1 lands at +0x0c per slot.
+    for (int slot = 0; slot < 200; ++slot) {
+        float *pfVar1 = (float*)(DAT_07c5ab3c + slot * 0x70 + 0x0c);
+        if (*(char *)(pfVar1 + -3) == '\0') continue;   // not active
+
+        // IDA lee este campo como **DWORD**: `BindTexture(*((_DWORD *)v0 - 2))`.
+        // Guarda un entero (el id de textura): leerlo como float y convertirlo
+        // numéricamente da 0 → slot 0 (sin textura) → sprite blanco.
+        const int texId = *(int*)(pfVar1 - 2);
+        GL_BindTextureSlot(texId);             // BindTexture
+
+        if (gMapManager.GetCurrentMap() == 2) {
+            // In-world: flat 2D billboard
+            RenderSprite_0(texId, pfVar1 + 1, *pfVar1, *pfVar1,
+                         pfVar1 + 7, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+        } else {
+            // Other states: 3D billboard via Euler matrix
+            float local_30[12];
+            Gfx::PushMatrix();
+            Gfx::Translate(pfVar1[1], pfVar1[2], pfVar1[3]);
+            Matrix_BuildFromEuler(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
+
+            float fVar2, fVar3;
+            if (*(int *)(pfVar1 - 2) == 102) {    // IDA: integer texture type 102
+                fVar3 = 20.0f; fVar2 = 1.0f;
+            } else {
+                fVar3 = 3.0f;  fVar2 = 3.0f;
+            }
+            GL_DrawBillboard(fVar2, fVar3, local_30);
+            Gfx::PopMatrix();
+        }
+    }
+}

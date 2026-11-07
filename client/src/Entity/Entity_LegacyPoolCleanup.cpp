@@ -1,0 +1,96 @@
+// Entity_LegacyPoolCleanup.cpp — DeleteCharacter y DeleteEffect.
+
+#include "stdafx.h"
+#include "UI/HealthBar.h"
+#include "globals.h"
+#include "functions.h"
+#include "Net/Net.h"
+#include "Party/Party.h"
+
+extern void __cdecl operator_delete(void* ptr);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// IDA: DeleteCharacter (0x0045AC20)
+// Linear-scans CharactersClient (400 slots × 0x394) for entity_id (+0x1DC).
+// On match, marks slot inactive (+0 = 0), kills any butterfly that owned this
+// character (Butterfles[+0xFC] == slot_ptr → +0 = 0), then calls DeleteCloth.
+
+extern "C" void __cdecl DeleteCharacter(int Key)
+{
+    gHealthBar.Remove((WORD)Key);
+    uintptr_t v1 = DAT_07abf5d0;
+    int v2 = 0;
+    while (!*(BYTE*)v1 || *(short*)&((CHARACTER*)(uintptr_t)(v1))->Key != (short)Key) {
+        ++v2;
+        v1 += CHARACTER_STRIDE;  // 0x394
+        if (v2 >= 400) return;
+    }
+    *(BYTE*)v1 = 0;
+
+    // Walk Butterfles pool: each entry 0x1BC bytes (= 111 dwords = 444b),
+    // entry layout has Owner at +0xFC (= dword[63]).
+    DWORD* v3 = (DWORD*)&DAT_083a1218;
+    DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 10 * OBJECT_STRIDE);
+    while (v3 < end) {
+        if (*(BYTE*)v3 != 0 && AsObject(v3)->Owner == AsObject(v1)) {
+            *(BYTE*)v3 = 0;
+        }
+        v3 += OBJECT_STRIDE / 4;  // stride 444 bytes = 0x1BC
+    }
+
+    DeleteCloth(AsCharacter(static_cast<uintptr_t>(v1)), AsObject(static_cast<uintptr_t>(v1)), nullptr);
+
+    // The reconstructed Party table is separate storage, so re-arm the
+    // original runtime sentinels at the entity-destruction boundary instead
+    // of retaining a destroyed/reused CharactersClient index.
+    Party_RefreshViewportLinks();
+}
+
+// FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, intptr_t Owner, int iSubType)
+// (69 bytes) — walks Effects pool DAT_07b11670 (200 × 0x1BC), zeroes any slot
+// whose Type/Owner/SubType match. Active flag at slot+0; Type at slot+2 (short);
+// SubType at slot+4 (dword); Owner at slot+248 (= dword[62]).
+//
+// Slot anchor: original IDA points `o` at slot+4 (so `o[-4]` = active flag,
+// `o[-2]` (short) = Type, o[0] = SubType, o[62] = Owner). Stride is 111 dwords.
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType)
+{
+    DWORD* o = (DWORD*)((char*)&DAT_07b11670[0] + 4);
+    // El pool de efectos tiene 200 slots (IDA acota con `&unk_7B27154`:
+    // (0x07B27154 - 0x07B11674) / 0x1BC = 200): se recorre el array entero.
+    DWORD* end = (DWORD*)((char*)&DAT_07b11670[0] + sizeof(DAT_07b11670) + 4);
+    while (o < end) {
+        if (*((BYTE*)o - 4) != 0 &&
+            *((short*)o - 1) == (short)Type &&
+            (iSubType == -1 || (int)*o == iSubType) &&
+            (intptr_t)AsObject((char*)o - 4)->Owner == Owner)
+        {
+            *((BYTE*)o - 4) = 0;
+        }
+        o += OBJECT_STRIDE / 4;  // stride 0x1BC
+    }
+}

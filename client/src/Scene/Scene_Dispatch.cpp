@@ -1,0 +1,195 @@
+// Scene_Dispatch.cpp
+// Scene_Dispatch @ 0x005274A8
+//
+// Main per-frame dispatcher. Called from the PeekMessage loop in WinMain.
+// Dispatches to the active scene via SceneFlag, then handles keepalive
+// re-authentication and anti-tamper obfuscation (HashTable ref-count).
+//
+// Signature: void __cdecl Scene_Dispatch(HDC param_1)
+//
+// Globals:
+//   SceneFlag  — SceneFlag (dispatch switch)
+//   WorldTime  — frame time accumulator
+//   DAT_083a45d4  — login background animation angle
+//   g_iNoMouseTime  — keepalive counter (> 0x1f → send re-auth)
+//   SocketClientSocket  — socket handle
+//   SocketClientSendBuffer  — send buffer (WSAEWOULDBLOCK queue, max 0x2001)
+//   SocketClientSendBufferLength  — send buffer byte count
+//   DAT_055ca038  — post-send flag (cleared at end of function)
+//   DAT_05826ceb  — packet sequence counter
+//   DAT_00559050  — 16-byte XOR key for keepalive re-randomization
+
+#include "stdafx.h"
+#include "Platform/ISocket.h"
+#include "Scene/Scene_Dispatch.h"
+#include "Scene/Scene_Intro.h"
+#include "Scene/Scene_Loading.h"
+#include "Game/Game_MainLoop.h"
+#include "Net/Net.h"
+#include <stdlib.h>   // for rand()
+// (_rand ya está definido como `_rand() rand()` en stdafx.h)
+// OpenGL_Release: declared static in WinMain.cpp; forward-declare here
+extern void OpenGL_Release(void);
+
+// Same 32-byte XOR key used in login packets
+
+void __cdecl Scene_Dispatch(HDC param_1)
+{
+    // ── FRAME ANGLE ANIMATION ─────────────────────────────────────────────────
+    // Original stored WorldTime * _DAT_005524bc into local_41c (unused after);
+    // omitted here — same effect, no observable side effect.
+    {
+        // 0.97k @ 005274A8: the item-level glow pulse is driven directly from
+        // WorldTime.  The former intermediary is an unported stub returning 0,
+        // which froze DAT_083a45d4 and therefore all +3..+6 item glow colours.
+        const float phase = (float)WorldTime * 0.0040000002f;
+        DAT_083a45d4 = sinf(phase) * 0.15000001f + 0.60000002f;
+    }
+
+    // ── SCENE DISPATCH ────────────────────────────────────────────────────────
+    switch (SceneFlag) {
+    case 1: Scene_Intro(param_1);    break;
+    case 2:
+    case 4:
+    case 5: Game_MainLoop(param_1);  break;
+    case 3: Scene_Loading(param_1);  break;
+    }
+
+    // ── KEEPALIVE COUNTER: HASH TABLE REF-COUNT TRACKING ─────────────────────
+    // (anti-tamper obfuscation — tracks g_iNoMouseTime via a reference-count table)
+    {
+        unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &g_iNoMouseTime);
+        if (idx == 0xffffffff) {
+            void* node = AntiTamper_HashNode();
+            *((BYTE*)node + 4) = 1;
+            HashTable_Insert(&MAIN_HASH_CLASS, node, &g_iNoMouseTime);
+        }
+    }
+
+    // ── RE-AUTH PACKET SEND (when keepalive counter > 0x1f) ──────────────────
+    //
+    // Desactivado para MuEmu: el 0.97 original manda un re-auth [C3][len][crc
+    // payload] crudo por send() (sin el cifrado MuEmu) cuando g_iNoMouseTime
+    // pasa de 0x1f (es un ping de GameGuard); MuEmu no lo espera, no lo puede
+    // decodificar y cierra el socket. El bookkeeping de hash-table de abajo sigue
+    // corriendo (ref-count anti-tamper, inofensivo).
+    #if 0
+    if (g_iNoMouseTime > 0x1f) {
+        // Build a 6-byte re-auth packet: [0xC1, len, 0xF1, b3, b2, b0]
+        // Each byte after the header is XOR-encrypted with CNetwork::XorKey.
+        BYTE pkt[8];
+        pkt[0] = 0xC1;
+        pkt[1] = 6;      // packet length
+        pkt[2] = 0xF1;   // opcode
+        pkt[3] = 3;      // field 3
+        pkt[4] = 2;      // field 4
+        pkt[5] = 0;      // field 5
+
+        // XOR-encrypt fields 3..5
+        for (int i = 3; i < 6; i++) {
+            int ki = i & 0x1f;
+            pkt[i] ^= CNetwork::XorKey[ki] ^ pkt[i - 1];
+        }
+
+        // Append random byte
+        pkt[6] = (BYTE)_rand();
+
+        // Sequence counter tracking (anti-tamper)
+        {
+            unsigned idx2 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_05826ceb);
+            if (idx2 == 0xffffffff) {
+                void* node = AntiTamper_HashNode();
+                *((BYTE*)node + 1) = 1;
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_05826ceb);
+            } else {
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_05826ceb);
+                node[1]++;
+                if (node[1] < 2)
+                    Packet_DecryptByte((BYTE*)&DAT_05826ceb, node);
+            }
+        }
+
+        // Place seq byte, advance counter
+        int seqOff = 1; // ((pkt[0] != 0xC1) ? 1 : 0) + 2 - 1 = 1
+        pkt[seqOff] = DAT_05826ceb;
+        DAT_05826ceb++;
+
+        // Decrement next seq slot ref-count
+        {
+            unsigned idx3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_05826ceb);
+            if (idx3 != 0xffffffff) {
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_05826ceb);
+                node[1]--;
+                if (node[1] == 0)
+                    Packet_EncryptByte(node, &DAT_05826ceb);
+            }
+        }
+
+        // Compute CRC and send
+        int payStart = seqOff;
+        int payLen   = 6 - seqOff;
+        int crc = CSimpleModulus_Encode(0, pkt + payStart, payLen);
+
+        if (crc < 0x100) {
+            // Small packet: [0xC3][total_len][payload...]
+            char sbuf[260];
+            int  total = crc + 2;
+            sbuf[0] = (char)0xC3;
+            sbuf[1] = (char)total;
+            CSimpleModulus_Encode(reinterpret_cast<BYTE*>(sbuf + 2), pkt + payStart, payLen);
+            int sent = 0, rem = total;
+            if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+                do {
+                    int n = send(SocketClientSocket, sbuf + sent, rem - sent, 0);
+                    if (n == -1) {
+                        int err = Platform::GetSocket().LastError();
+                        if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
+                            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, sbuf, total);
+                            SocketClientSendBufferLength += total;
+                        } else {
+                            Net_Disconnect(SocketClient);
+                        }
+                        goto send_done;
+                    }
+                    if (n == 0) break;
+                    if (SocketClientLogPrint) FUN_0043de60();
+                    sent += n; rem -= n;
+                } while (rem > 0);
+            }
+        } else {
+            // Large packet: [0xC4][len_hi][len_lo][payload...]
+            char lbuf[1028];
+            int  total = crc + 3;
+            lbuf[0] = (char)0xC4;
+            lbuf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
+            lbuf[2] = (char)total;
+            CSimpleModulus_Encode(reinterpret_cast<BYTE*>(lbuf + 3), pkt + payStart, payLen);
+            int sent = 0, rem = total;
+            if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+                do {
+                    int n = send(SocketClientSocket, lbuf + sent, rem - sent, 0);
+                    if (n == -1) {
+                        int err = Platform::GetSocket().LastError();
+                        if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
+                            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, lbuf, total);
+                            SocketClientSendBufferLength += total;
+                        } else {
+                            Net_Disconnect(SocketClient);
+                        }
+                        goto send_done;
+                    }
+                    if (n == 0) break;
+                    if (SocketClientLogPrint) FUN_0043de60();
+                    sent += n; rem -= n;
+                } while (rem > 0);
+            }
+        }
+send_done:
+        OpenGL_Release();
+    }
+    #endif  // re-auth packet block disabled for MuEmu
+
+    // DESVIACION: en escenas jugables Enter vive hasta el próximo paso SIM;
+    // un render sin paso no debe consumir la confirmación de login/selección.
+    if (SceneFlag!=2 && SceneFlag!=4 && SceneFlag!=5) DAT_055ca038 = 0;
+}
