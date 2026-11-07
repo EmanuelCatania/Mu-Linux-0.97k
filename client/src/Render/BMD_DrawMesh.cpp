@@ -77,6 +77,7 @@
 #include "Render/BMDDevice.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
+#include "Game/MapManager.h"
 #include "../globals.h"
 #include "../functions.h"
 
@@ -424,7 +425,34 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         bmd->BodyLight,bmd_obj,&attributes,
         reinterpret_cast<const unsigned char*>(mesh->Vertices),reinterpret_cast<const unsigned char*>(mesh->Normals)
     };
-    if (MeshDraw::Draw(meshInput)) {
+    // DESVIACION: el destello del trueno de Icarus (efecto 182 = modelo 182,
+    // `Object11/cloud.bmd`) es un plano de 5x5 vertices a escala 10 que
+    // `MoveHeavenThunder` (0x4FED90) pone bajo el heroe y se dibuja aditivo.
+    // En el original se ve como una placa cuadrada de tinte verdoso; en el
+    // cliente de referencia la tapa la niebla del DLL.  Aca se atenua el color
+    // de cada vertice segun su distancia al centro, para que el borde aporte
+    // cero y quede un resplandor redondo.  Las UV repiten la textura, por eso
+    // no sirve una vineta sobre la textura.
+    const bool thunderFlash = model == 182 && gMapManager.GetCurrentMap() == 10 &&
+                              renderMode == MODE_TEXTURE && param_2_b0 == '\0' &&
+                              mesh->VertexCount > 0;
+    float flashColor[3] = {0.0f, 0.0f, 0.0f};
+    float flashCenter[3] = {0.0f, 0.0f, 0.0f};
+    float flashRadius = 0.0f;
+    if (thunderFlash) {
+        for (int k = 0; k < 3; ++k) flashColor[k] = blendLight * bmd->BodyLight[k];  // = color de la rama Blend
+        const float* v0 = reinterpret_cast<const float*>(&DAT_0584621c) + meshIndex * 15000 * 3;
+        for (int i = 0; i < mesh->VertexCount; ++i)
+            for (int k = 0; k < 3; ++k) flashCenter[k] += v0[i * 3 + k];
+        for (int k = 0; k < 3; ++k) flashCenter[k] /= (float)mesh->VertexCount;
+        for (int i = 0; i < mesh->VertexCount; ++i) {
+            float d2 = 0.0f;
+            for (int k = 0; k < 3; ++k) { const float d = v0[i * 3 + k] - flashCenter[k]; d2 += d * d; }
+            if (d2 > flashRadius) flashRadius = d2;
+        }
+        flashRadius = sqrtf(flashRadius);
+    }
+    if (!thunderFlash && MeshDraw::Draw(meshInput)) {
         BMDDevice::Select({BMDDevice::Pass::Exit});
         return;
     }
@@ -488,6 +516,13 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                     // Emit vertex from BoneVertex buffer
                     {
                         const float *_v = (const float*)(&DAT_0584621c + ((int)sVar3 + meshIndex * 15000) * 3);
+                        if (thunderFlash) {
+                            float d2 = 0.0f;
+                            for (int k = 0; k < 3; ++k) { const float d = _v[k] - flashCenter[k]; d2 += d * d; }
+                            float f = flashRadius > 0.0f ? 1.0f - sqrtf(d2) / flashRadius : 1.0f;
+                            if (f < 0.0f) f = 0.0f;
+                            BufferedDraw::Color3f(flashColor[0] * f, flashColor[1] * f, flashColor[2] * f);
+                        }
                         BufferedDraw::Vertex3fv((const float *)_v);
                     }
 
