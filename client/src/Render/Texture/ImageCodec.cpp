@@ -35,7 +35,12 @@ bool Decode(FILE* file, int prefix, Format format, int maxSize, Image& out)
     std::unique_ptr<unsigned char, decltype(&free)> bytes(
         static_cast<unsigned char*>(malloc(length + 2)), &free);
     if (!bytes || fread(bytes.get(), 1, length, file) != length) return false;
-    unsigned char* data = bytes.get();
+    return DecodeBuffer(bytes.get(), length, format, maxSize, out);
+}
+
+bool DecodeBuffer(unsigned char* data, size_t length, Format format, int maxSize, Image& out)
+{
+    if (!data || maxSize <= 0) return false;
     const int channels = format == Format::Jpeg ? 3 : 4;
     if (format == Format::Jpeg) {
         if (length < 2 || data[0] != 0xff || data[1] != 0xd8) return false;
@@ -78,12 +83,19 @@ bool DecodePng(FILE* file, int channels, int maxSize, Image& out)
     if (end <= 8 || end > INT_MAX || fseek(file, 0, SEEK_SET)) return false;
     std::unique_ptr<unsigned char, decltype(&free)> bytes(static_cast<unsigned char*>(malloc(size_t(end))), &free);
     if (!bytes || fread(bytes.get(), 1, size_t(end), file) != size_t(end)) return false;
+    return DecodePngBuffer(bytes.get(), size_t(end), channels, maxSize, out);
+}
+
+bool DecodePngBuffer(const unsigned char* data, size_t length, int channels, int maxSize, Image& out)
+{
+    if (!data || length <= 8 || length > INT_MAX || (channels != 3 && channels != 4) || maxSize <= 0) return false;
+    const int end = int(length);
     static const unsigned char signature[8] = { 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
-    if (memcmp(bytes.get(), signature, 8)) return false;
+    if (memcmp(data, signature, 8)) return false;
     int width = 0, height = 0, sourceChannels = 0;
-    if (!stbi_info_from_memory(bytes.get(), int(end), &width, &height, &sourceChannels) ||
+    if (!stbi_info_from_memory(data, int(end), &width, &height, &sourceChannels) ||
         width <= 0 || height <= 0 || width > maxSize || height > maxSize) return false;
-    unsigned char* pixels = stbi_load_from_memory(bytes.get(), int(end), &width, &height, &sourceChannels, channels);
+    unsigned char* pixels = stbi_load_from_memory(data, int(end), &width, &height, &sourceChannels, channels);
     if (!pixels) return false;
     stbi_image_free(out.pixels);
     out.pixels = pixels;
