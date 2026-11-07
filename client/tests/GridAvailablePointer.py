@@ -13,7 +13,7 @@ using uint=unsigned;
 using WORD=std::uint16_t;
 #endif
 FUNCTION
-unsigned Check(BYTE* grid,int width,int height,int windowWidth,int windowHeight){return SecondPassword_GridSlotAvail(ARG,width,height,windowWidth,windowHeight);}
+unsigned Check(BYTE* grid,int width,int height,int windowWidth,int windowHeight){return Inventory_HasFreeSpace(ARG,width,height,windowWidth,windowHeight);}
 std::uint64_t Run(BYTE* memory){
     std::uint64_t digest=14695981039346656037ull;unsigned cases=0;
     for(int width=1;width<=8;++width)for(int height=1;height<=8;++height)for(int ww=0;ww<=9;++ww)for(int wh=0;wh<=9;++wh)for(unsigned profile=0;profile<8;++profile){
@@ -39,7 +39,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    code=function(read_source('src/Net/SecondPassword.cpp',revision),'SecondPassword_GridSlotAvail')
+    code=function(read_source('src/UI/UI_PanelInput.cpp',revision),'Inventory_HasFreeSpace')
     arg='reinterpret_cast<uintptr_t>(grid)' if 'uintptr_t a1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(grid))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+MAIN.replace('FUNCTION',code).replace('ARG',arg)
 

@@ -52,8 +52,8 @@ void ClearInventory(void)
 // IDA: UpdateWindowsMouse (0x004ECB00)
 // Processes queued incoming network packets for the current scene.
 // Guards against map 0x6e. Calls sub-scene packet handlers in sequence:
-//   SecondPassword_Screen1, Party_MemberClickHandler, SecondPassword_Screen3 (always)
-//   SecondPassword_Screen4..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
+//   GuildCreator_HitTest, Party_MemberClickHandler, CharacterInfo_HitTest (always)
+//   Inventory_HitTest..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
 //   Inventory_DropDispatch (if DAT_07eaa164 == 0 — not in special mode)
 //   CheckGoldenArcherWindow, ServerTransfer_HitTest (always)
 void UpdateWindowsMouse(void)
@@ -82,16 +82,16 @@ void UpdateWindowsMouse(void)
     }
     DAT_055c9b7c = 0;
   }
-  SecondPassword_Screen1();
+  GuildCreator_HitTest();
   Party_MemberClickHandler();
-  SecondPassword_Screen3();
+  CharacterInfo_HitTest();
   uVar1 = extraout_ECX;
   uVar2 = extraout_EDX;
   if (DAT_07eaa117 != '\0') {
-    SecondPassword_Screen4();
-    SecondPassword_Screen5();
-    SecondPassword_Screen8();
-    SecondPassword_Screen9();
+    Inventory_HitTest();
+    EventEntrance_HitTest();
+    ChaosMix_HitTest();
+    Warehouse_HitTest();
     FUN_004eb7f0();
     FUN_004ec330();
     uVar1 = extraout_ECX_00;

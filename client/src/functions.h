@@ -787,21 +787,21 @@ void  __cdecl crt_fprintf(void*, void*);  // fprintf-like helper
 
 // ── Net_PacketSession helpers ─────────────────────────────────────────────────
 void  __cdecl Inventory_DropDispatch(undefined4, uint);  // packet handler with ECX/EDX args
-void  __cdecl SecondPassword_Screen1(void);
+void  __cdecl GuildCreator_HitTest(void);
 void  __cdecl Party_MemberClickHandler(void);
-void  __cdecl SecondPassword_Screen3(void);
-void  __cdecl SecondPassword_Screen4(void);
-void  __cdecl SecondPassword_Screen5(void);
+void  __cdecl CharacterInfo_HitTest(void);
+void  __cdecl Inventory_HitTest(void);
+void  __cdecl EventEntrance_HitTest(void);
 void  __cdecl CheckGoldenArcherWindow(void); // IDA: CheckGoldenArcherWindow (0x004E7AC0)
 void  __cdecl ServerTransfer_HitTest(void);
-void  __cdecl SecondPassword_Screen8(void);
-void  __cdecl SecondPassword_Screen9(void);
+void  __cdecl ChaosMix_HitTest(void);
+void  __cdecl Warehouse_HitTest(void);
 void  __cdecl FUN_004eb7f0(void);
 void  __cdecl FUN_004ec330(void);
 // SecondPassword UI helper calls
 void  __cdecl ShowCheckBox(int num, int index, int message);  // IDA: ShowCheckBox (0x0051E240)
-uint  __cdecl SecondPassword_GridSlotAvail(uintptr_t ctx, int p1, int p2, int p3, int p4);   // SecondPassword_AuthSend — returns non-zero on success
-undefined4 __cdecl SecondPassword_CancelReturn(void);        // SecondPassword_CancelReturn (nav back, clear state)
+uint  __cdecl Inventory_HasFreeSpace(uintptr_t ctx, int p1, int p2, int p3, int p4);   // IDA: sub_4E3DB0 — 1 si hay espacio libre en la grilla
+undefined4 __cdecl ChaosMix_Close(void);        // IDA: sub_4F6850 — cierra el Chaos Mix
 uint  __cdecl Net_Disconnect_Clean(void);             // Net_Disconnect_Clean (sends disconnect + returns)
 void  __cdecl FUN_004d1fc0(void);             // SecondPassword_RenderGrid_Empty
 // Firma real per IDA sub_4D23B0 (Inventory grid render + click dispatcher).

@@ -190,7 +190,7 @@ def harness(revision=None):
         declarations += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     declarations += re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}", header, re.M | re.S).group()
     terrain = function(read_source("src/Terrain/Terrain_Utils.cpp", revision), "Terrain_GetTileIndex").replace("Terrain_GetTileIndex(", "TileIndexReal(", 1)
-    stop = function(read_source("src/Net/SecondPassword.cpp", revision), "SetPlayerStop").replace("rand()", "NextRandom()")
+    stop = function(read_source("src/Entity/Character_Motion.cpp", revision), "SetPlayerStop").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* c" in stop else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + declarations + terrain + SERVICES + stop + MAIN.replace("CALL_STOP", f"SetPlayerStop({arg})")
 

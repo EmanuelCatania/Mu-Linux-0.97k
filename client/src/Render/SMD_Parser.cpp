@@ -869,8 +869,8 @@ unsigned int __cdecl CheckAttack(void) {
     return targetPkLevel;
 }
 // GetScreenWidth @ 0x004CB520 vive en src/Render/HUD_Pass2.cpp.
-// SecondPassword screens (SecondPassword_Handler / 004df410 / 004e4760-004ec330)
-// viven en src/Net/SecondPassword.cpp.
+// SecondPassword_Handler vive en src/Net/SecondPassword.cpp y los hit-tests de
+// los paneles (004e4760-004ec330) en src/UI/UI_PanelInput.cpp.
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.
 // ctx layout:  +0x00 = HWND (msg target)   +0x08 = SOCKET

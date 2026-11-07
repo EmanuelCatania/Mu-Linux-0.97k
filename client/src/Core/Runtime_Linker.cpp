@@ -37,7 +37,7 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// SetPlayerStop @ 0x004430C0: el port real está en Net/SecondPassword.cpp.
+// SetPlayerStop @ 0x004430C0: el port real está en Entity/Character_Motion.cpp.
 // No agregar un stub acá: entity+0x1BC es el byte de CLASE/skin, no move flags.
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Conserva el formato heredado; el destino de este logger sigue sin conectar.

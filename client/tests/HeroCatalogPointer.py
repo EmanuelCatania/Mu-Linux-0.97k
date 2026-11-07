@@ -70,7 +70,7 @@ int main() {
 
 def harness(revision=None):
     prefix = class_harness(revision).split("void CallClass(CHARACTER* character)", 1)[0]
-    hero = function(read_source("src/Net/SecondPassword.cpp", revision), "Hero_ApplyCatalogEquipment")
+    hero = function(read_source("src/Entity/Character_Motion.cpp", revision), "Hero_ApplyCatalogEquipment")
     arg = "character" if "CHARACTER* character" in hero else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + hero + MAIN.replace("CALL_HERO", f"Hero_ApplyCatalogEquipment({arg})")
 

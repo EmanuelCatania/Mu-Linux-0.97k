@@ -91,7 +91,7 @@ def harness(revision=None):
     globals_source = read_source("src/globals.cpp", revision)
     for name in ("_DAT_00552848", "_DAT_0055284c", "_DAT_00552934"):
         prefix += re.search(rf"^float\s+{name}\s*=[^;]+;", globals_source, re.M).group() + "\n"
-    position = function(read_source("src/Net/SecondPassword.cpp", revision), "MoveCharacterPosition")
+    position = function(read_source("src/Entity/Character_Motion.cpp", revision), "MoveCharacterPosition")
     arg = "character" if "CHARACTER* character" in position else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + SERVICES + position + MAIN.replace("CALL_POSITION", f"MoveCharacterPosition({arg})")
 

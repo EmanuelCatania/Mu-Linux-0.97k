@@ -131,7 +131,7 @@ def harness(revision=None):
     prefix = prefix.replace("CHARACTER* activeCharacter;", "std::vector<int> events;\nCHARACTER* activeCharacter;", 1)
     prefix = prefix.replace("requestedAction = action;", "requestedAction = action; events.push_back(20000 + action);", 1)
     prefix = prefix.replace("soundEvents.push_back(slot);", "soundEvents.push_back(slot); events.push_back(10000 + slot);", 1)
-    source = read_source("src/Net/SecondPassword.cpp", revision)
+    source = read_source("src/Entity/Character_Motion.cpp", revision)
     die = function(source, "SetPlayerDie")
     wrapper = function(source, "mc_SetPlayerDie")
     main = MAIN

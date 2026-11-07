@@ -227,7 +227,7 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 // CÓDIGO MUERTO: esta función NO se llama. Es una decompilación errónea
 // que asume corners en DAT_07eab1bc..1e8 (que ya están en world coords post
 // Camera_SetupFrustum). La verdadera FUN_004F8EB0 (CreateFrustrum2D) vive en
-// src/Net/SecondPassword.cpp — usa 4 corners hardcoded escalados por
+// src/Terrain/Terrain_RenderTerrain.cpp — usa 4 corners hardcoded escalados por
 // GetScreenWidth(), rotados Z=45°, trasladados por cam_pos. Se mantiene por la
 // declaración en Camera.h pero no debe llamarse.
 void __cdecl Camera_SetMatrix(float *cam_pos)

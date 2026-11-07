@@ -136,6 +136,7 @@ set(MU_SOURCES
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
+    src/Terrain/Terrain_RenderTerrain.cpp
     src/Math/Math_3D.cpp
     src/Render/Particle.cpp
     src/Render/Particle_Move.cpp
@@ -177,6 +178,7 @@ set(MU_SOURCES
     src/Net/HWID.cpp
     src/Entity/Entity_Init.cpp
     src/Entity/Entity_MoveClient.cpp
+    src/Entity/Character_Motion.cpp
     src/Entity/Entity_Spawn.cpp
     src/Render/Scene_CharPreview.cpp
     src/Scene/Scene_Resources.cpp
@@ -302,9 +304,11 @@ set(MU_SOURCES
     src/Game/Game_EnterWorldTick.cpp
     src/Game/Game_SceneUpdate.cpp
     src/Game/Movement.cpp
+    src/Game/CheckGate.cpp
     src/Input/Input.cpp
     src/Input/Mouse_Hover.cpp
     src/Item/Item_Equip.cpp
+    src/Item/Item_EquipSlots.cpp
     src/Item/Item_Move.cpp
     src/Item/Item_Display.cpp
     src/Item/Item_SpecialOption.cpp
@@ -366,6 +370,7 @@ set(MU_SOURCES
     src/Terrain/Terrain.cpp
     src/Trade/Trade.cpp
     src/UI/UI_InGameMenu.cpp
+    src/UI/UI_PanelInput.cpp
     src/UI/UI_IME.cpp
     src/UI/UI_TextBitmap.cpp
     src/UI/UI_Tooltip.cpp

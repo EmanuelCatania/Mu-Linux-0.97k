@@ -152,7 +152,7 @@ def harness(revision=None):
     catalog = read_source("src/Item/ContentCatalog.h", revision)
     for name in ("ItemModel", "ItemBehaviorType", "ItemEntityModel"):
         prefix += function(catalog, name)
-    character = function(read_source("src/Net/SecondPassword.cpp", revision), "SetCharacterClass")
+    character = function(read_source("src/Entity/Character_Motion.cpp", revision), "SetCharacterClass")
     arg = "character" if "CHARACTER* character" in character else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + character + MAIN.replace("CALL_CLASS", f"SetCharacterClass({arg})")
 
