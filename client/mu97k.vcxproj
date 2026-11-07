@@ -393,6 +393,7 @@
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
     <ClCompile Include="src\Math\Math_3D.cpp" />
     <ClCompile Include="src\Render\Particle.cpp" />
     <ClCompile Include="src\Render\Particle_Move.cpp" />
@@ -434,6 +435,7 @@
     <ClCompile Include="src\Net\HWID.cpp" />
     <ClCompile Include="src\Entity\Entity_Init.cpp" />
     <ClCompile Include="src\Entity\Entity_MoveClient.cpp" />
+    <ClCompile Include="src\Entity\Character_Motion.cpp" />
     <ClCompile Include="src\Entity\Entity_Spawn.cpp" />
     <ClCompile Include="src\Render\Scene_CharPreview.cpp" />
     <ClCompile Include="src\Scene\Scene_Resources.cpp" />
@@ -559,9 +561,11 @@
     <ClCompile Include="src\Game\Game_EnterWorldTick.cpp" />
     <ClCompile Include="src\Game\Game_SceneUpdate.cpp" />
     <ClCompile Include="src\Game\Movement.cpp" />
+    <ClCompile Include="src\Game\CheckGate.cpp" />
     <ClCompile Include="src\Input\Input.cpp" />
     <ClCompile Include="src\Input\Mouse_Hover.cpp" />
     <ClCompile Include="src\Item\Item_Equip.cpp" />
+    <ClCompile Include="src\Item\Item_EquipSlots.cpp" />
     <ClCompile Include="src\Item\Item_Move.cpp" />
     <ClCompile Include="src\Item\Item_Display.cpp" />
     <ClCompile Include="src\Item\Item_SpecialOption.cpp" />
@@ -631,6 +635,7 @@
     <ClCompile Include="src\Terrain\Terrain.cpp" />
     <ClCompile Include="src\Trade\Trade.cpp" />
     <ClCompile Include="src\UI\UI_InGameMenu.cpp" />
+    <ClCompile Include="src\UI\UI_PanelInput.cpp" />
     <ClCompile Include="src\UI\UI_IME.cpp" />
     <ClCompile Include="src\UI\UI_TextBitmap.cpp" />
     <ClCompile Include="src\UI\UI_Tooltip.cpp" />
