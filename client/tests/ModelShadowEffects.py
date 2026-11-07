@@ -26,6 +26,8 @@ unsigned randomCalls;const int randomValues[]={0,1,2,10,12,24,50,100,32767,13,37
 int Random(unsigned n){return randomValues[n%12];}
 int _rand(){int v=Random(randomCalls++);Event(2,{unsigned(v)});return v;}
 float* CreateEffect(int type,float* pos,float* angle,float* light,float* p4,float* p5,float* p6,float* p7,byte flag){Require(!p4&&!p5&&uintptr_t(p6)==0xffffffffu&&!p7&&!flag);Require(reinterpret_cast<BYTE*>(pos)>=worldData&&reinterpret_cast<BYTE*>(pos)+12<=worldData+540128);auto offset=unsigned((reinterpret_cast<BYTE*>(pos)-worldData)/12);Event(3,{unsigned(type),offset});Vec(pos,3);Vec(angle,3);Vec(light,3);return nullptr;}
+// Con el mapa de sombras apagado BMD__RenderBodyShadow sigue por la sombra proyectada de siempre.
+namespace Gfx{bool ShadowMaps(){return false;}}
 namespace BMDDevice{
 void Select(const PassState& s){Event(4,{unsigned(s.pass),s.flags,unsigned(s.textureSlot),unsigned(s.alpha)});}
 void BeginModel(){Event(5);}void EndModel(){Event(6);}
