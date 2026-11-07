@@ -81,12 +81,6 @@ extern CQueryManager gQueryManager;
 #include <string>
 #include <vector>
 
-// API en C de MySQL (libmysqlclient o MariaDB Connector/C). Sus tipos se
-// declaran adelantados: mysql.h define un tipo `MYSQL` que choca con la macro
-// MYSQL que elige esta rama, así que sólo lo incluye QueryManager.cpp.
-struct st_mysql;
-struct st_mysql_res;
-struct st_mysql_stmt;
 
 class CQueryManager
 {
@@ -166,9 +160,14 @@ private:
 
 private:
 
-	st_mysql* m_Connection;
-	st_mysql_res* m_Result;
-	st_mysql_stmt* m_Statement;
+	// API en C de MySQL (libmysqlclient o MariaDB Connector/C). Los punteros
+	// son opacos: mysql.h define un tipo `MYSQL` que choca con la macro MYSQL
+	// que elige esta rama, y los nombres de struct no son los mismos en las dos
+	// bibliotecas (st_mysql en MariaDB, MYSQL en la de Oracle). Sólo
+	// QueryManager.cpp incluye mysql.h y les da el tipo.
+	void* m_Connection;  // MYSQL*
+	void* m_Result;      // MYSQL_RES*
+	void* m_Statement;   // MYSQL_STMT*
 
 	char** m_Row;
 	unsigned long* m_Lengths;

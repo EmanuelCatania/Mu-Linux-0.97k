@@ -329,12 +329,17 @@ void CQueryManager::ConvertBinaryToString(BYTE* InBuff, int InSize, char* OutBuf
 #include "Log.h"
 
 // mysql.h define el tipo `MYSQL`, que choca con la macro MYSQL de esta rama:
-// se la saca mientras se incluye y en el código se usan los nombres de struct
-// (st_mysql, st_mysql_res...), iguales en libmysqlclient y en MariaDB.
+// se la saca mientras se incluye y se le pone otro nombre al tipo.
 #pragma push_macro("MYSQL")
 #undef MYSQL
 #include <mysql.h>
+typedef MYSQL MuSqlConnection;
 #pragma pop_macro("MYSQL")
+
+// Los miembros son punteros opacos (ver QueryManager.h).
+#define QM_CONN ((MuSqlConnection*)this->m_Connection)
+#define QM_RES ((MYSQL_RES*)this->m_Result)
+#define QM_STMT ((MYSQL_STMT*)this->m_Statement)
 
 #include <cstdlib>
 #include <cstring>
@@ -392,16 +397,16 @@ bool CQueryManager::Connect()
 {
 	this->Close();
 
-	if (this->m_Connection)
+	if (QM_CONN)
 	{
-		mysql_close(this->m_Connection);
+		mysql_close(QM_CONN);
 
 		this->m_Connection = NULL;
 	}
 
 	this->m_Connection = mysql_init(NULL);
 
-	if (this->m_Connection == NULL)
+	if (QM_CONN == NULL)
 	{
 		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: mysql_init");
 
@@ -409,24 +414,24 @@ bool CQueryManager::Connect()
 	}
 
 	// La base y el texto del server son UTF-8 (0.97.40).
-	mysql_options(this->m_Connection, MYSQL_SET_CHARSET_NAME, "utf8mb4");
+	mysql_options(QM_CONN, MYSQL_SET_CHARSET_NAME, "utf8mb4");
 
 #if defined(MARIADB_PACKAGE_VERSION_ID)
 	// MySQL 8.4 autentica con caching_sha2_password, que fuera del caché del
 	// server exige TLS. La biblioteca de Oracle ya lo intenta por defecto
 	// (PREFERRED); la de MariaDB no, así que se pide acá. El certificado que
 	// genera MySQL es autofirmado: no se verifica (igual que PREFERRED).
-	mysql_ssl_set(this->m_Connection, NULL, NULL, NULL, NULL, NULL);
+	mysql_ssl_set(QM_CONN, NULL, NULL, NULL, NULL, NULL);
 	my_bool verify = 0;
-	mysql_options(this->m_Connection, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &verify);
+	mysql_options(QM_CONN, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &verify);
 #endif
 
 	// CLIENT_MULTI_RESULTS: los CALL a procedimientos devuelven más de un resultado.
-	if (mysql_real_connect(this->m_Connection, this->m_HostName.c_str(), this->m_Username.c_str(), this->m_Password.c_str(), this->m_SchemaName.c_str(), this->m_HostPort, NULL, CLIENT_MULTI_RESULTS) == NULL)
+	if (mysql_real_connect(QM_CONN, this->m_HostName.c_str(), this->m_Username.c_str(), this->m_Password.c_str(), this->m_SchemaName.c_str(), this->m_HostPort, NULL, CLIENT_MULTI_RESULTS) == NULL)
 	{
-		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: %s", mysql_error(this->m_Connection));
+		LogAdd(LOG_RED, "[QueryManager] Connection to DataBase failed: %s", mysql_error(QM_CONN));
 
-		mysql_close(this->m_Connection);
+		mysql_close(QM_CONN);
 
 		this->m_Connection = NULL;
 
@@ -440,9 +445,9 @@ void CQueryManager::Disconnect()
 {
 	this->Close();
 
-	if (this->m_Connection)
+	if (QM_CONN)
 	{
-		mysql_close(this->m_Connection);
+		mysql_close(QM_CONN);
 
 		this->m_Connection = NULL;
 	}
@@ -466,16 +471,16 @@ void CQueryManager::PrepareQuery(std::string query, ...)
 
 	this->m_Params.clear();
 
-	if (this->m_Connection == NULL)
+	if (QM_CONN == NULL)
 	{
 		LogAdd(LOG_RED, "[PrepareQuery] No connection to DataBase");
 
 		return;
 	}
 
-	this->m_Statement = mysql_stmt_init(this->m_Connection);
+	this->m_Statement = mysql_stmt_init(QM_CONN);
 
-	if (this->m_Statement == NULL || mysql_stmt_prepare(this->m_Statement, buff, (unsigned long)strlen(buff)) != 0)
+	if (QM_STMT == NULL || mysql_stmt_prepare(QM_STMT, buff, (unsigned long)strlen(buff)) != 0)
 	{
 		LogAdd(LOG_BLUE, "%s", buff);
 
@@ -491,14 +496,14 @@ void CQueryManager::PrepareQuery(std::string query, ...)
 
 bool CQueryManager::ExecPreparedUpdateQuery()
 {
-	if (this->m_Statement == NULL)
+	if (QM_STMT == NULL)
 	{
 		LogAdd(LOG_RED, "[ExecPreparedUpdateQuery] No prepared query");
 
 		return false;
 	}
 
-	const unsigned long count = mysql_stmt_param_count(this->m_Statement);
+	const unsigned long count = mysql_stmt_param_count(QM_STMT);
 
 	std::vector<MYSQL_BIND> binds(count);
 
@@ -539,14 +544,14 @@ bool CQueryManager::ExecPreparedUpdateQuery()
 		}
 	}
 
-	if ((count > 0 && mysql_stmt_bind_param(this->m_Statement, binds.data()) != 0) || mysql_stmt_execute(this->m_Statement) != 0)
+	if ((count > 0 && mysql_stmt_bind_param(QM_STMT, binds.data()) != 0) || mysql_stmt_execute(QM_STMT) != 0)
 	{
 		this->DiagnosticStatement();
 
 		return false;
 	}
 
-	gLog.Output(LOG_QUERY, "[ExecPreparedUpdateQuery] %d rows updated", (int)mysql_stmt_affected_rows(this->m_Statement));
+	gLog.Output(LOG_QUERY, "[ExecPreparedUpdateQuery] %d rows updated", (int)mysql_stmt_affected_rows(QM_STMT));
 
 	return true;
 }
@@ -579,7 +584,7 @@ bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 		return false;
 	}
 
-	gLog.Output(LOG_QUERY, "[ExecUpdateQuery] %d rows updated. Query: %s", (int)mysql_affected_rows(this->m_Connection), buff);
+	gLog.Output(LOG_QUERY, "[ExecUpdateQuery] %d rows updated. Query: %s", (int)mysql_affected_rows(QM_CONN), buff);
 
 	return true;
 }
@@ -636,7 +641,7 @@ bool CQueryManager::ExecQuery(std::string query, ...)
 
 	if (HasResult == false)
 	{
-		__int64 Quant = (__int64)mysql_affected_rows(this->m_Connection);
+		__int64 Quant = (__int64)mysql_affected_rows(QM_CONN);
 
 		gLog.Output(LOG_QUERY, "[ExecQuery] %d rows updated. Query: %s", (int)Quant, buff);
 
@@ -656,23 +661,23 @@ bool CQueryManager::RunQuery(const char* query, bool& HasResult)
 	// resultados extra de un CALL) bloquea la conexión hasta descartarlo.
 	this->FreeResults();
 
-	if (this->m_Connection == NULL && this->Connect() == false)
+	if (QM_CONN == NULL && this->Connect() == false)
 	{
 		return false;
 	}
 
-	if (mysql_real_query(this->m_Connection, query, (unsigned long)strlen(query)) != 0)
+	if (mysql_real_query(QM_CONN, query, (unsigned long)strlen(query)) != 0)
 	{
 		this->Diagnostic((char*)query);
 
 		return false;
 	}
 
-	this->m_Result = mysql_store_result(this->m_Connection);
+	this->m_Result = mysql_store_result(QM_CONN);
 
-	if (this->m_Result == NULL)
+	if (QM_RES == NULL)
 	{
-		if (mysql_field_count(this->m_Connection) != 0)
+		if (mysql_field_count(QM_CONN) != 0)
 		{
 			this->Diagnostic((char*)query);
 
@@ -682,9 +687,9 @@ bool CQueryManager::RunQuery(const char* query, bool& HasResult)
 		return true;
 	}
 
-	const unsigned int fields = mysql_num_fields(this->m_Result);
+	const unsigned int fields = mysql_num_fields(QM_RES);
 
-	MYSQL_FIELD* field = mysql_fetch_fields(this->m_Result);
+	MYSQL_FIELD* field = mysql_fetch_fields(QM_RES);
 
 	for (unsigned int n = 0; n < fields; n++)
 	{
@@ -698,9 +703,9 @@ bool CQueryManager::RunQuery(const char* query, bool& HasResult)
 
 void CQueryManager::FreeResults()
 {
-	if (this->m_Result)
+	if (QM_RES)
 	{
-		mysql_free_result(this->m_Result);
+		mysql_free_result(QM_RES);
 
 		this->m_Result = NULL;
 	}
@@ -711,14 +716,14 @@ void CQueryManager::FreeResults()
 
 	this->m_Columns.clear();
 
-	if (this->m_Connection == NULL)
+	if (QM_CONN == NULL)
 	{
 		return;
 	}
 
-	while (mysql_more_results(this->m_Connection) && mysql_next_result(this->m_Connection) == 0)
+	while (mysql_more_results(QM_CONN) && mysql_next_result(QM_CONN) == 0)
 	{
-		st_mysql_res* extra = mysql_store_result(this->m_Connection);
+		MYSQL_RES* extra = mysql_store_result(QM_CONN);
 
 		if (extra)
 		{
@@ -729,9 +734,9 @@ void CQueryManager::FreeResults()
 
 void CQueryManager::CloseStatement()
 {
-	if (this->m_Statement)
+	if (QM_STMT)
 	{
-		mysql_stmt_close(this->m_Statement);
+		mysql_stmt_close(QM_STMT);
 
 		this->m_Statement = NULL;
 	}
@@ -744,9 +749,9 @@ void CQueryManager::Diagnostic(char* Query)
 		LogAdd(LOG_BLUE, "%s", Query);
 	}
 
-	std::string SqlState = mysql_sqlstate(this->m_Connection);
+	std::string SqlState = mysql_sqlstate(QM_CONN);
 
-	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_error(this->m_Connection));
+	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_error(QM_CONN));
 
 	if (SqlState.compare("HY000") == 0)
 	{
@@ -756,16 +761,16 @@ void CQueryManager::Diagnostic(char* Query)
 
 void CQueryManager::DiagnosticStatement()
 {
-	if (this->m_Statement == NULL)
+	if (QM_STMT == NULL)
 	{
 		this->Diagnostic();
 
 		return;
 	}
 
-	std::string SqlState = mysql_stmt_sqlstate(this->m_Statement);
+	std::string SqlState = mysql_stmt_sqlstate(QM_STMT);
 
-	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_stmt_error(this->m_Statement));
+	LogAdd(LOG_RED, "[QueryManager] State (%s), Diagnostic: %s", SqlState.c_str(), mysql_stmt_error(QM_STMT));
 
 	if (SqlState.compare("HY000") == 0)
 	{
@@ -784,12 +789,12 @@ void CQueryManager::Close()
 
 bool CQueryManager::Fetch()
 {
-	if (this->m_Result == NULL)
+	if (QM_RES == NULL)
 	{
 		return false;
 	}
 
-	this->m_Row = mysql_fetch_row(this->m_Result);
+	this->m_Row = mysql_fetch_row(QM_RES);
 
 	if (this->m_Row == NULL)
 	{
@@ -798,7 +803,7 @@ bool CQueryManager::Fetch()
 		return false;
 	}
 
-	this->m_Lengths = mysql_fetch_lengths(this->m_Result);
+	this->m_Lengths = mysql_fetch_lengths(QM_RES);
 
 	return true;
 }
