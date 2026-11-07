@@ -411,6 +411,16 @@ bool CQueryManager::Connect()
 	// La base y el texto del server son UTF-8 (0.97.40).
 	mysql_options(this->m_Connection, MYSQL_SET_CHARSET_NAME, "utf8mb4");
 
+#if defined(MARIADB_PACKAGE_VERSION_ID)
+	// MySQL 8.4 autentica con caching_sha2_password, que fuera del caché del
+	// server exige TLS. La biblioteca de Oracle ya lo intenta por defecto
+	// (PREFERRED); la de MariaDB no, así que se pide acá. El certificado que
+	// genera MySQL es autofirmado: no se verifica (igual que PREFERRED).
+	mysql_ssl_set(this->m_Connection, NULL, NULL, NULL, NULL, NULL);
+	my_bool verify = 0;
+	mysql_options(this->m_Connection, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &verify);
+#endif
+
 	// CLIENT_MULTI_RESULTS: los CALL a procedimientos devuelven más de un resultado.
 	if (mysql_real_connect(this->m_Connection, this->m_HostName.c_str(), this->m_Username.c_str(), this->m_Password.c_str(), this->m_SchemaName.c_str(), this->m_HostPort, NULL, CLIENT_MULTI_RESULTS) == NULL)
 	{
