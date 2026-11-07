@@ -1,13 +1,20 @@
-name: build-sdl3
+name: Client
 on:
   push:
     branches: [ "fase/*", "platform/**", "main" ]
     tags: [ "*" ]
+    paths: [ "client/**", ".github/workflows/client.yml" ]
   pull_request:
     branches: [ "fase/*", "main" ]
+    paths: [ "client/**", ".github/workflows/client.yml" ]
   workflow_dispatch:
 permissions:
   contents: read
+# El cliente vive en client/: todos los comandos corren ahí. Las rutas de
+# upload-artifact y hashFiles no siguen este default y llevan el prefijo.
+defaults:
+  run:
+    working-directory: client
 jobs:
   backend:
     name: SDL3 (${{ matrix.target.name }}, ${{ matrix.config }})
@@ -560,17 +567,17 @@ jobs:
         with:
           name: mu97k-linux-release
           path: |
-            dist/*
-            build/symbols.txt
-            build/ldd.txt
+            client/dist/*
+            client/build/symbols.txt
+            client/build/ldd.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: sdl3-${{ matrix.target.name }}-${{ matrix.config }}
           path: |
-            bin/Client/main.exe
-            build/bin/main
-            build/Testing/Temporary/LastTest.log
+            client/bin/Client/main.exe
+            client/build/bin/main
+            client/build/Testing/Temporary/LastTest.log
           if-no-files-found: error
 
   # Windows x64 con el render WebGPU: Dawn estático por vcpkg (manifiesto del
@@ -594,7 +601,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/vcpkg-cache
-          key: vcpkg-x64-windows-mu-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'cmake/triplets/x64-windows-mu.cmake') }}
+          key: vcpkg-x64-windows-mu-${{ hashFiles('client/vcpkg.json', 'client/vcpkg-configuration.json', 'client/cmake/triplets/x64-windows-mu.cmake') }}
           restore-keys: vcpkg-x64-windows-mu-
       - name: Configurar
         run: cmake --preset windows-sdl3-x64-release
@@ -609,7 +616,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: webgpu-windows-x64-Release
-          path: bin/Client/main.exe
+          path: client/bin/Client/main.exe
           if-no-files-found: error
 
   # Linux x64 (la plataforma principal en Linux): SDL3 con OpenGL y WebGPU.
@@ -637,7 +644,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/vcpkg-cache
-          key: vcpkg-x64-linux-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          key: vcpkg-x64-linux-${{ hashFiles('client/vcpkg.json', 'client/vcpkg-configuration.json') }}
           restore-keys: vcpkg-x64-linux-
       - name: Configurar
         run: cmake --preset linux-x64-release
@@ -662,7 +669,7 @@ jobs:
         with:
           name: mu97k-linux-x64-release
           path: |
-            dist/*
-            build/linux-x64-release/symbols.txt
-            build/linux-x64-release/ldd.txt
+            client/dist/*
+            client/build/linux-x64-release/symbols.txt
+            client/build/linux-x64-release/ldd.txt
           if-no-files-found: error
