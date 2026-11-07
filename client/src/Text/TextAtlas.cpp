@@ -144,7 +144,11 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
         if (any) BufferedDraw::End();
     }
     };
-    if (gUserSettings.GetTextOutline()) {
+    // El contorno y la sombra son negros: sobre texto oscuro (el negro de los
+    // mensajes de susurro, party y guild) lo engrosan hasta que no se lee.
+    const bool dark = r * 299 + g * 587 + b * 114 < 80 * 1000;
+    if (dark) {
+    } else if (gUserSettings.GetTextOutline()) {
         for (int oy = -1; oy <= 1; ++oy)
             for (int ox = -1; ox <= 1; ++ox)
                 if (ox || oy) pass(float(ox), float(oy), 0, 0, 0);
