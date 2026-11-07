@@ -19,6 +19,7 @@ familia y el resto el estilo (`Regular`, `Bold`).
 `Noto-LICENSE.txt` es el texto de la SIL Open Font License 1.1, que cubre
 todas las fuentes Noto de esta carpeta.
 
-Los emojis salen en blanco y negro porque el texto se rasteriza a 1 bit,
-como lo hacía GDI; los emojis a color quedan para cuando el atlas de texto
-tenga color.
+Los emojis en color salen de la fuente del sistema (Segoe UI Emoji en Windows,
+Noto Color Emoji en Linux). `NotoEmoji-Regular.ttf` es el respaldo en blanco y
+negro: se usa si el sistema no tiene una fuente de emoji en color o con
+`[Font] ColorEmoji=0` en `Config.ini`.
