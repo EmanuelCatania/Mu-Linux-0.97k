@@ -440,7 +440,9 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     float flashCenter[3] = {0.0f, 0.0f, 0.0f};
     float flashRadius = 0.0f;
     if (thunderFlash) {
-        for (int k = 0; k < 3; ++k) flashColor[k] = blendLight * bmd->BodyLight[k];  // = color de la rama Blend
+        // Color de la rama Blend (~0.1), triplicado: con la atenuacion el
+        // original apenas se ve.  Desviacion respecto de IDA.
+        for (int k = 0; k < 3; ++k) flashColor[k] = 3.0f * blendLight * bmd->BodyLight[k];
         const float* v0 = reinterpret_cast<const float*>(&DAT_0584621c) + meshIndex * 15000 * 3;
         for (int i = 0; i < mesh->VertexCount; ++i)
             for (int k = 0; k < 3; ++k) flashCenter[k] += v0[i * 3 + k];
