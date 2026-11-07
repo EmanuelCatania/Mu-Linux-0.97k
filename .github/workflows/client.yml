@@ -3,10 +3,8 @@ on:
   push:
     branches: [ "fase/*", "platform/**", "main" ]
     tags: [ "*" ]
-    paths: [ "client/**", ".github/workflows/client.yml" ]
   pull_request:
     branches: [ "fase/*", "main" ]
-    paths: [ "client/**", ".github/workflows/client.yml" ]
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,7 +14,29 @@ defaults:
   run:
     working-directory: client
 jobs:
+  # Qué carpetas tocó el cambio. Los jobs de compilación se saltean si no hace
+  # falta; el job de resultado del final es el que exige la regla de main.
+  changes:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      # Un tag o una ejecución manual siempre compilan (artefactos de Release).
+      client: ${{ steps.filter.outputs.client == 'true' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            client:
+              - 'client/**'
+              - '.github/workflows/client.yml'
+
   backend:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     name: SDL3 (${{ matrix.target.name }}, ${{ matrix.config }})
     runs-on: ${{ matrix.target.os }}
     strategy:
@@ -584,6 +604,8 @@ jobs:
   # repo, triplet cmake/triplets/x64-windows-mu). Los binarios de vcpkg se
   # guardan en la caché de Actions; sólo la primera vez se compila Dawn.
   webgpu:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     name: WebGPU (windows-x64, Release)
     runs-on: windows-2022
     env:
@@ -624,6 +646,8 @@ jobs:
   # la caché de Actions y sólo la primera vez se compila Dawn. x86 queda como
   # base histórica sólo con OpenGL (job backend).
   linux-x64:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     name: Linux x64 (SDL3 + WebGPU, Release)
     runs-on: ubuntu-24.04
     env:
@@ -673,3 +697,20 @@ jobs:
             client/build/linux-x64-release/symbols.txt
             client/build/linux-x64-release/ldd.txt
           if-no-files-found: error
+
+  # Resultado del workflow: OK si compiló bien o si no hacía falta compilar.
+  # Es el check que exige la regla de main (una matriz salteada no reporta sus
+  # checks con nombre propio).
+  result:
+    name: Client
+    if: always()
+    needs: [changes, backend, webgpu, linux-x64]
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Verificar resultado
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then exit 1; fi

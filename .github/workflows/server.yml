@@ -1,6 +1,4 @@
 name: Server
-# Sin filtro de rutas: la regla de main exige estos checks, y con filtro un PR
-# que no toque server/ nunca los recibiría y quedaría bloqueado.
 on:
   pull_request:
   push:
@@ -9,7 +7,25 @@ concurrency:
   group: server-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
+  # Qué carpetas tocó el cambio. Los jobs de compilación se saltean si no hace
+  # falta; el job de resultado del final es el que exige la regla de main.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/server.yml'
+
   build:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -35,3 +51,20 @@ jobs:
       - name: Verificar paquete de mass teleport
         if: matrix.config == 'release'
         run: python -B tests/recall_packet_layout.py --architecture ${{ matrix.target.preset == 'windows-x64' && 'x64' || 'Win32' }}
+
+  # Resultado del workflow: OK si compiló bien o si no hacía falta compilar.
+  # Es el check que exige la regla de main (una matriz salteada no reporta sus
+  # checks con nombre propio).
+  result:
+    name: Server
+    if: always()
+    needs: [changes, build]
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Verificar resultado
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then exit 1; fi
