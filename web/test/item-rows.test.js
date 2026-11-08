@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const rows = require('../lib/item-rows');
 
-const ITEM_TXT = fs.readFileSync(path.join(__dirname, '..', '..', 'MuServer', 'Data', 'Item', 'Item.txt'), 'utf8');
+const ITEM_TXT = fs.readFileSync(path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data', 'Item', 'Item.txt'), 'utf8');
 
 const sample = [
   '//Index\tSlot',
