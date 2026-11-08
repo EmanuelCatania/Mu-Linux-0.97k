@@ -18,7 +18,7 @@ RUN cmake -S . -B /build -DCMAKE_BUILD_TYPE=Release \
 FROM ubuntu:22.04
 
 LABEL org.opencontainers.image.version="0.97.40" \
-      org.opencontainers.image.source="https://github.com/EmanuelCatania/Mu-Linux-0.97k" \
+      org.opencontainers.image.source="https://github.com/EmanuelCatania/Mu-Linux" \
       org.opencontainers.image.description="Servidor MU Online 0.97k para Linux; texto UTF-8, traducciones por idioma y MySQL por la API en C (Fase 4)" \
       mu-linux.client-release="https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.40"
 
