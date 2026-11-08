@@ -2,6 +2,7 @@
 """Empaqueta el ejecutable Linux (x64 o x86) y únicamente los assets versionados, sin preferencias locales."""
 import argparse
 import hashlib
+import os
 from pathlib import Path
 import re
 import shutil
@@ -14,12 +15,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("build", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--version", help="por defecto, ClientVersion de src/Config/ServerConfig.h")
+    parser.add_argument("--version", help="por defecto, el tag de la Release o ClientVersion de src/Config/ServerConfig.h")
     parser.add_argument("--arch", choices=("x64", "x86"), default="x86")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
+    if args.version is None and os.environ.get("GITHUB_REF_TYPE") == "tag":
+        # En el CI de un tag, la versión publicada es la del tag: ClientVersion
+        # es la del protocolo y no cambia en las Releases que no lo tocan
+        # (0.97.41 sigue hablando 0.97.40 con el server).
+        args.version = os.environ.get("GITHUB_REF_NAME")
     if args.version is None:
-        # La versión publicada es la que el cliente le manda al server: así el
+        # Fuera de un tag, la versión que el cliente le manda al server: así el
         # nombre del paquete no queda atrasado respecto del protocolo.
         config = (repo / "src/Config/ServerConfig.h").read_text(encoding="utf-8")
         found = re.search(r'ClientVersion\[\]\s*=\s*"([^"]+)"', config)
