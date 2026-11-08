@@ -190,7 +190,7 @@ test('el Tooltip.txt del repo se lee sin errores', () => {
   const fs = require('node:fs');
   const path = require('node:path');
   for (const lang of ['Eng', 'Spn', 'Por']) {
-    const content = fs.readFileSync(path.join(__dirname, '..', '..', 'MuServer', 'Data', 'Text', lang, 'Tooltip.txt'), 'utf8');
+    const content = fs.readFileSync(path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data', 'Text', lang, 'Tooltip.txt'), 'utf8');
     const parsed = parseTranslations(content, 'tooltips');
     assert.equal(parsed.errors.length, 0, lang);
     for (const entry of parsed.entries) assert.equal(validateName(entry.name, { maxBytes: 59 }).error, undefined, lang);

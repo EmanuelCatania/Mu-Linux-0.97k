@@ -16,10 +16,18 @@
     "express-rate-limit": "^7.4.0",
     "express-session": "^1.18.0",
     "helmet": "^7.1.0",
-    "mysql2": "^3.11.0",
-    "sanitize-html": "^2.13.0"
+    "mysql2": "^3.24.6",
+    "sanitize-html": "^2.18.1"
   },
   "optionalDependencies": {
     "geoip-lite": "^1.4.10"
+  },
+  "overrides": {
+    "express-mysql-session": {
+      "mysql2": "$mysql2"
+    },
+    "geoip-lite": {
+      "ip-address": "^10.7.4"
+    }
   }
 }

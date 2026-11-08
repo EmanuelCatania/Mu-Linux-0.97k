@@ -16,7 +16,7 @@ const {
   parseItemList
 } = require('../lib/custom-items');
 
-const DATA = path.join(__dirname, '..', '..', 'MuServer', 'Data');
+const DATA = path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data');
 const read = (relative) => fs.readFileSync(path.join(DATA, relative), 'utf8');
 
 test('claves: acepta "12,32", "12,032" y [12, 32]; rechaza lo demás', () => {
