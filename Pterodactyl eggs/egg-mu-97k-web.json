@@ -6,7 +6,7 @@
   "author": "support@mu-linux.com",
   "description": "MU Linux web panel. The installer downloads web files into the server volume and installs production Node.js dependencies there.",
   "features": null,
-  "docker_images": { "Node.js 20 (AMD64 + ARM64)": "ghcr.io/ptero-eggs/yolks:nodejs_20" },
+  "docker_images": { "Node.js 24 (AMD64 + ARM64)": "ghcr.io/ptero-eggs/yolks:nodejs_24" },
   "file_denylist": [],
   "startup": "npm start",
   "config": { "files": "{}", "startup": "{\"done\":\"listening\"}", "logs": "{}", "stop": "^C" },

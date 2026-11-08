@@ -33,7 +33,7 @@ test('el server lee hasta 100 avisos', () => {
 });
 
 test('el Notice.txt del repo cumple los límites', () => {
-  const content = fs.readFileSync(path.join(__dirname, '..', '..', 'MuServer', 'Data', 'Util', 'Notice.txt'), 'utf8');
+  const content = fs.readFileSync(path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data', 'Util', 'Notice.txt'), 'utf8');
   assert.deepEqual(validateNoticeContent(content), []);
   assert.ok(MAX_NOTICE_BYTES === 127);
 });
