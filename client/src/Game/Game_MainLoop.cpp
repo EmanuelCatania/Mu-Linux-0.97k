@@ -58,6 +58,7 @@ void ItemNames_TickInput();
 #include "Input/Input.h"
 #include "Net/Ping.h"
 #include "Game/MapManager.h"
+#include "Debug/Benchmark.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/SimulationPreparation.h"
 #include "Game/RenderSnapshots.h"
@@ -198,6 +199,10 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // DESVIACION: F12 alterna el contador FPS una vez por pulsación.
         if (PressKey(VK_F12)) ToggleFpsCounter();
+#if defined(MU_BENCHMARK)
+        // DESVIACION: modo benchmark (Debug/Benchmark.h), sólo en el mundo.
+        if (SceneFlag == 5) Benchmark::Tick();
+#endif
 
         // Print Screen conserva su captura independiente.
         if (PressKey(0x2c) & 0xff)

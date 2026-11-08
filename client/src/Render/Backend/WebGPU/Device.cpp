@@ -85,16 +85,35 @@ void OnDevice(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView 
     else Log("WebGPU: no se pudo crear el dispositivo: %s", Text(message));
 }
 
-void OnUncapturedError(WGPUDevice const*, WGPUErrorType, WGPUStringView message, void*, void*) {
+// Códigos fijos para buscar en debug.log:
+//   [WGPU-E1] validación  [WGPU-E2] sin memoria  [WGPU-E3] interno  [WGPU-E9] otro
+//   [WGPU-L1] dispositivo perdido (driver)  [WGPU-L2] no se pudo crear
+// Sin validación (Release por defecto) los E1 no aparecen: un uso inválido se
+// ve como un dibujo roto o termina en L1. Con [Window] GraphicsValidation=1 en
+// Config.ini, Dawn vuelve a validar y el E1 nombra el comando y el recurso.
+void OnUncapturedError(WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
     // Un error que se repite cada cuadro llenaría el log: sólo los primeros.
     static unsigned count = 0;
-    if (++count <= 100) Log("WebGPU: error: %s", Text(message));
-    else if (count == 101) DbgLogPublic("WebGPU: demasiados errores, no se registran más");
+    if (++count > 100) {
+        if (count == 101) DbgLogPublic("[WGPU-E0] demasiados errores, no se registran más");
+        return;
+    }
+    const char* code = type == WGPUErrorType_Validation ? "[WGPU-E1] validación"
+                     : type == WGPUErrorType_OutOfMemory ? "[WGPU-E2] sin memoria"
+                     : type == WGPUErrorType_Internal ? "[WGPU-E3] interno" : "[WGPU-E9] otro";
+    char line[1024];
+    std::snprintf(line, sizeof line, "%s: %s", code, Text(message).c_str());
+    DbgLogPublic(line);
 }
 
 void OnDeviceLost(WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
     if (reason == WGPUDeviceLostReason_Destroyed || reason == WGPUDeviceLostReason_CallbackCancelled) return;
-    Log("WebGPU: dispositivo perdido: %s", Text(message));
+    char line[1024];
+    std::snprintf(line, sizeof line, "%s: %s",
+                  reason == WGPUDeviceLostReason_FailedCreation ? "[WGPU-L2] no se pudo crear el dispositivo"
+                                                                : "[WGPU-L1] dispositivo perdido",
+                  Text(message).c_str());
+    DbgLogPublic(line);
 }
 
 bool CreateSurface(const Surface& source) {
@@ -155,11 +174,24 @@ bool RequestAdapter(Api api) {
     return true;
 }
 
-bool RequestDevice() {
+bool RequestDevice(bool validation) {
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.uncapturedErrorCallbackInfo.callback = OnUncapturedError;
     descriptor.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
     descriptor.deviceLostCallbackInfo.callback = OnDeviceLost;
+    // En Release Dawn no valida cada comando: con cientos de personajes la
+    // validación de cada dibujo y de cada bind group pesaba ~8% del frame. En
+    // Debug queda activa, que es donde se cazan los usos inválidos de la API;
+    // en Release se reactiva con [Window] GraphicsValidation=1.
+#ifndef NDEBUG
+    validation = true;
+#endif
+    static const char* const skip[] = { "skip_validation" };
+    WGPUDawnTogglesDescriptor toggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
+    toggles.enabledToggleCount = 1;
+    toggles.enabledToggles = skip;
+    if (!validation) descriptor.nextInChain = &toggles.chain;
+    DbgLogPublic(validation ? "WebGPU: validación de Dawn activa" : "WebGPU: validación de Dawn desactivada");
     DeviceResult result;
     WGPURequestDeviceCallbackInfo callback = WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT;
     callback.mode = WGPUCallbackMode_WaitAnyOnly;
@@ -197,7 +229,7 @@ void DropFrame() {
 
 } // namespace
 
-bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height, bool vsync) {
+bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height, bool vsync, bool validation) {
     if (g.device) return true;
     WGPUInstanceFeatureName features[] = { WGPUInstanceFeatureName_TimedWaitAny };
     WGPUInstanceDescriptor descriptor = WGPU_INSTANCE_DESCRIPTOR_INIT;
@@ -213,7 +245,7 @@ bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height
 #else
     ok = ok && RequestAdapter(api);
 #endif
-    ok = ok && RequestDevice();
+    ok = ok && RequestDevice(validation);
     if (!ok) { Release(); return false; }
     ReadCapabilities();
     Log("WebGPU: %s", g.description);

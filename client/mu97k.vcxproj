@@ -59,7 +59,7 @@
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;MU_BENCHMARK;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <!-- Disable /RTC (run-time checks). Ghidra decompilations commonly declare
            locals used as output-params/register-aliases that trip the "used
@@ -663,10 +663,12 @@
     <ClCompile Include="src\Scene\Scene_ObjectInteraction.cpp" />
     <ClCompile Include="src\Scene\Scene_ObjectUpdate.cpp" />
     <ClCompile Include="src\Render\BMD_SkinUpdate.cpp" />
+    <ClCompile Include="src\Debug\Benchmark.cpp" />
   </ItemGroup>
 
   <ItemGroup>
     <ClInclude Include="src\Debug\MiniDump.h" />
+    <ClInclude Include="src\Debug\Benchmark.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Net\Protocol\ProtocolBase.h" />
     <ClInclude Include="src\Net\Protocol\GameServerProtocol.h" />

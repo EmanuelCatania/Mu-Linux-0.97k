@@ -53,28 +53,38 @@ bool Draw(const Input& input) {
     if(input.faceCount<=0 || input.positionCount<=0 || !input.faces || !input.positions) return false;
     const bool lit=input.mode==2 && input.light;
     const bool chrome=input.mode==4,texture=input.mode==2;
-    if(chrome) return false;
+    // Chrome sólo con las filas de UV y la tabla de la CPU (contrato de la
+    // última esquina); si no, la ruta de referencia.
+    if(chrome && (!input.chromeMap || !input.chromeUV || input.normalCount<=0 || !input.bodyLight)) return false;
     if(lit && (input.normalCount<=0 || !input.colors)) return false;
     if(texture && (input.uvCount<=0 || !input.uv)) return false;
     MeshTopology::Mesh* found=MeshTopology::Get(input);if(!found) return false;
     const auto& mesh=*found;
     if(mesh.minimum.position<0 || mesh.maximum.position>=input.positionCount ||
-       (lit && (mesh.minimum.normal<0 || mesh.maximum.normal>=input.normalCount)) ||
+       ((lit || chrome) && (mesh.minimum.normal<0 || mesh.maximum.normal>=input.normalCount)) ||
        (texture && (mesh.minimum.uv<0 || mesh.maximum.uv>=input.uvCount))) return false;
     if(!MeshTopology::Resident(*found,input)) return false;
-    const auto captured=input.attributes?*input.attributes:BufferedDraw::CaptureAttributes(!lit,!texture);
+    const auto captured=input.attributes?*input.attributes:BufferedDraw::CaptureAttributes(!lit&&!chrome,!texture&&!chrome);
     float color[4],uv[4];std::copy(captured.color,captured.color+4,color);std::copy(captured.uv,captured.uv+4,uv);
-    if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
+    // La ruta CPU de chrome manda BodyLight con el alpha si es < 0.99
+    // (Color4f) y alpha 1 si no (Color3fv).
+    if(chrome) { std::copy(input.bodyLight,input.bodyLight+3,color);color[3]=input.alpha<0.99f?input.alpha:1.f; }
+    else if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
     const bool offset=texture && input.offset;
-    const Skinning::ResidentDraw draw{input.model,input.key,0,mesh.indices.size(),mesh.maxBone,
+    Skinning::ResidentDraw draw{input.model,input.key,0,mesh.indices.size(),mesh.maxBone,
         input.positions,input.positionCount,input.colors,input.normalCount,lit,texture,input.bodyLight,color,uv,
         offset?input.u:0.f,offset?input.v:0.f};
+    if(chrome) draw.chromeMap=input.chromeMap;
     if(!::WebGPU::DrawResidentMesh(input.key,*found,draw)) return false;
     // Mismo contrato que la ruta CPU: el color y la UV actuales quedan en los
     // de la última esquina emitida.
     const auto& c=mesh.corners[mesh.indices.back()];
     float lastColor[4],lastUV[4];std::copy(color,color+4,lastColor);std::copy(uv,uv+4,lastUV);
     if(lit) std::memcpy(lastColor,input.colors+c.normal*3,sizeof(float)*3);
+    if(chrome) {
+        lastUV[0]=input.chromeUV[c.normal*2];lastUV[1]=input.chromeUV[c.normal*2+1];
+        lastUV[2]=0;lastUV[3]=1;
+    }
     if(texture) {
         lastUV[0]=input.uv[c.uv*2]+(offset?input.u:0.f);lastUV[1]=input.uv[c.uv*2+1]+(offset?input.v:0.f);
         lastUV[2]=0;lastUV[3]=1;

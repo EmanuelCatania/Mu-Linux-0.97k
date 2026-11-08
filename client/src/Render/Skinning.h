@@ -25,6 +25,9 @@ struct ResidentDraw {
     // Sombra proyectada de BMD__RenderBodyShadow: misma fórmula sobre la pose
     // de la GPU, con el origen del modelo (+0x6c).
     bool shadow=false;const float* shadowOrigin=nullptr;
+    // Pasadas chrome: UV = (dot(U.xyz,n)+U.w, dot(V.xyz,n)+V.w) con la normal
+    // rotada por el hueso. Ver MeshDraw::Input::chromeMap.
+    const float* chromeMap=nullptr;
 };
 void Invalidate();
 void Capture(const void* model,const float* bones,int boneCount,float rotationScale,float bodyScale,

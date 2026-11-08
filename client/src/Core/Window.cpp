@@ -165,7 +165,8 @@ WebGPU::Api WebGPUApi(RenderBackendPreference preference)
 bool InitWebGPU(DWORD width, DWORD height, bool windowMode, bool borderless)
 {
     const WebGPU::Surface surface{Platform::NativeWindow(), Platform::NativeInstance()};
-    if (WebGPU::Initialize(WebGPUApi(gUserSettings.GetRenderBackend()), surface, width, height, gUserSettings.GetVSync()))
+    if (WebGPU::Initialize(WebGPUApi(gUserSettings.GetRenderBackend()), surface, width, height, gUserSettings.GetVSync(),
+                           gUserSettings.GetGraphicsValidation()))
         return true;
     CErrorReport_Write(&DAT_055c9bf0, "> WebGPU no disponible: se usa OpenGL");
     RenderBackend::active = RenderBackend::Kind::OpenGL;

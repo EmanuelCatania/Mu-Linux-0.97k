@@ -74,6 +74,7 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
+#include <cstring>
 #include "Render/BMDDevice.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
@@ -142,6 +143,8 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // v47 del decompile: modo de emision de coordenadas/color del bucle de vertices.
     enum { MODE_NONE = 0, MODE_COLOR = 1, MODE_TEXTURE = 2, MODE_CHROME = 4, MODE_METAL = 64 };
     int renderMode = MODE_NONE;
+    float chromeMap[8] = {};
+    bool hasChromeMap = false;
     uVar6 = flags;
 
 
@@ -283,6 +286,24 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             iVar12 = 0;
             fVar11 = (float)(int)(worldTime % 5000) * _DAT_005528c0 - _DAT_005528b4;
 
+            // DESVIACION: las mismas fórmulas del bucle de abajo como filas
+            // lineales en la normal rotada (x, y, z, constante) para que la
+            // malla residente calcule la UV en la GPU.
+            if ((uVar6 & 0x200) == 0x200) {
+                const float m[8] = {_DAT_00552530, 0.0f, _DAT_00552530, fVar11 + fVar11,
+                                    1.0f, 1.0f, 0.0f, fVar11 * _DAT_00552540};
+                std::memcpy(chromeMap, m, sizeof(chromeMap));
+            } else if (uVar7 == 4) {
+                const float m[8] = {0.0f, 0.0f, _DAT_00552504, fVar16,
+                                    0.0f, _DAT_00552504, 0.0f, fVar16 + fVar16};
+                std::memcpy(chromeMap, m, sizeof(chromeMap));
+            } else {
+                const float m[8] = {0.0f, 0.0f, _DAT_00552504, _DAT_005526e4,
+                                    0.0f, _DAT_00552504, 0.0f, _DAT_0055256c * _DAT_00552504};
+                std::memcpy(chromeMap, m, sizeof(chromeMap));
+            }
+            hasChromeMap = true;
+
             if (0 < mesh->NormalCount) {
                 // Ojo: Ghidra decompiló mal la base.
                 // Disasm @ 0x00441194:  MOV ECX,0x5828d60   (NO 0x5828d58)
@@ -423,7 +444,8 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         reinterpret_cast<const float*>(mesh->TexCoords),&DAT_05828d5c,
         renderMode,param_2_b0!='\0',bVar5!=0,alpha,uvU,uvV,
         bmd->BodyLight,bmd_obj,&attributes,
-        reinterpret_cast<const unsigned char*>(mesh->Vertices),reinterpret_cast<const unsigned char*>(mesh->Normals)
+        reinterpret_cast<const unsigned char*>(mesh->Vertices),reinterpret_cast<const unsigned char*>(mesh->Normals),
+        hasChromeMap?chromeMap:nullptr
     };
     // DESVIACION: el destello del trueno de Icarus (efecto 182 = modelo 182,
     // `Object11/cloud.bmd`) es un plano de 5x5 vertices a escala 10 que
