@@ -1,6 +1,6 @@
 {
   "_comment": "MU Linux 0.97k Pterodactyl egg. Import in a PTDL_v2 Panel.",
-  "meta": { "version": "PTDL_v2", "update_url": "https://github.com/EmanuelCatania/Mu-Linux-0.97k" },
+  "meta": { "version": "PTDL_v2", "update_url": "https://github.com/EmanuelCatania/Mu-Linux" },
   "exported_at": "2026-09-24T00:00:00+00:00",
   "name": "MU Linux 0.97k Server",
   "author": "support@mu-linux.com",
@@ -12,7 +12,7 @@
   "config": { "files": "{}", "startup": "{\"done\":\"GameServer started\"}", "logs": "{}", "stop": "^C" },
   "scripts": {
     "installation": {
-      "script": "#!/bin/bash\nset -euo pipefail\nARCH=$(uname -m)\ncase \"${ARCH}\" in\n  x86_64) ASSET_ARCH=amd64 ;;\n  aarch64|arm64) ASSET_ARCH=arm64 ;;\n  *) echo \"Unsupported architecture: ${ARCH}\" >&2; exit 1 ;;\nesac\nREPOSITORY=EmanuelCatania/Mu-Linux-0.97k\nASSET=mu-linux-97k-server-${ASSET_ARCH}.tar.gz\nURL=https://github.com/${REPOSITORY}/releases/download/${MU_RELEASE_TAG}/${ASSET}\nmkdir -p /mnt/server\necho \"Downloading ${ASSET} from ${MU_RELEASE_TAG}...\"\ncurl --fail --location --retry 3 \"${URL}\" -o /tmp/mu-server.tar.gz\ntar -xzf /tmp/mu-server.tar.gz -C /mnt/server\nrm /tmp/mu-server.tar.gz\nchmod +x /mnt/server/start.sh /mnt/server/ConnectServer/ConnectServer /mnt/server/JoinServer/JoinServer /mnt/server/DataServer/DataServer /mnt/server/GameServer/GameServer\necho \"MU Linux 0.97k server installed.\"\n",
+      "script": "#!/bin/bash\nset -euo pipefail\nARCH=$(uname -m)\ncase \"${ARCH}\" in\n  x86_64) ASSET_ARCH=amd64 ;;\n  aarch64|arm64) ASSET_ARCH=arm64 ;;\n  *) echo \"Unsupported architecture: ${ARCH}\" >&2; exit 1 ;;\nesac\nREPOSITORY=EmanuelCatania/Mu-Linux\nASSET=mu-linux-97k-server-${ASSET_ARCH}.tar.gz\nURL=https://github.com/${REPOSITORY}/releases/download/${MU_RELEASE_TAG}/${ASSET}\nmkdir -p /mnt/server\necho \"Downloading ${ASSET} from ${MU_RELEASE_TAG}...\"\ncurl --fail --location --retry 3 \"${URL}\" -o /tmp/mu-server.tar.gz\ntar -xzf /tmp/mu-server.tar.gz -C /mnt/server\nrm /tmp/mu-server.tar.gz\nchmod +x /mnt/server/start.sh /mnt/server/ConnectServer/ConnectServer /mnt/server/JoinServer/JoinServer /mnt/server/DataServer/DataServer /mnt/server/GameServer/GameServer\necho \"MU Linux 0.97k server installed.\"\n",
       "container": "ghcr.io/ptero-eggs/installers:debian",
       "entrypoint": "bash"
     }

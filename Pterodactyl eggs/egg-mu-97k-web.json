@@ -1,6 +1,6 @@
 {
   "_comment": "MU Linux 0.97k Web Pterodactyl egg. Import in a PTDL_v2 Panel.",
-  "meta": { "version": "PTDL_v2", "update_url": "https://github.com/EmanuelCatania/Mu-Linux-0.97k" },
+  "meta": { "version": "PTDL_v2", "update_url": "https://github.com/EmanuelCatania/Mu-Linux" },
   "exported_at": "2026-09-24T00:00:00+00:00",
   "name": "MU Linux 0.97k Web",
   "author": "support@mu-linux.com",
@@ -12,8 +12,8 @@
   "config": { "files": "{}", "startup": "{\"done\":\"listening\"}", "logs": "{}", "stop": "^C" },
   "scripts": {
     "installation": {
-      "script": "#!/bin/bash\nset -euo pipefail\nREPOSITORY=EmanuelCatania/Mu-Linux-0.97k\nASSET=mu-linux-97k-web.tar.gz\nURL=https://github.com/${REPOSITORY}/releases/download/${MU_RELEASE_TAG}/${ASSET}\napt-get update\napt-get install -y --no-install-recommends ca-certificates curl nodejs npm\nmkdir -p /mnt/server\necho \"Downloading ${ASSET} from ${MU_RELEASE_TAG}...\"\ncurl --fail --location --retry 3 \"${URL}\" -o /tmp/mu-web.tar.gz\ntar -xzf /tmp/mu-web.tar.gz -C /mnt/server\nrm /tmp/mu-web.tar.gz\ncd /mnt/server\nnpm ci --omit=dev\necho \"MU Linux 0.97k web panel installed.\"\n",
-      "container": "ghcr.io/ptero-eggs/installers:debian",
+      "script": "#!/bin/bash\nset -euo pipefail\nREPOSITORY=EmanuelCatania/Mu-Linux\nASSET=mu-linux-97k-web.tar.gz\nURL=https://github.com/${REPOSITORY}/releases/download/${MU_RELEASE_TAG}/${ASSET}\napt-get update\napt-get install -y --no-install-recommends ca-certificates curl\nmkdir -p /mnt/server\necho \"Downloading ${ASSET} from ${MU_RELEASE_TAG}...\"\ncurl --fail --location --retry 3 \"${URL}\" -o /tmp/mu-web.tar.gz\ntar -xzf /tmp/mu-web.tar.gz -C /mnt/server\nrm /tmp/mu-web.tar.gz\ncd /mnt/server\nnpm ci --omit=dev\necho \"MU Linux 0.97k web panel installed.\"\n",
+      "container": "node:24-bookworm-slim",
       "entrypoint": "bash"
     }
   },
