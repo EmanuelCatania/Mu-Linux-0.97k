@@ -395,6 +395,7 @@ set(MU_SOURCES
     src/Scene/Scene_ObjectInteraction.cpp
     src/Scene/Scene_ObjectUpdate.cpp
     src/Render/BMD_SkinUpdate.cpp
+    src/Debug/Benchmark.cpp
 )
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
@@ -571,6 +572,7 @@ set(MU_HEADERS
     src/UI/UI.h
     src/Game/GameEnums.h
     src/Debug/MiniDump.h
+    src/Debug/Benchmark.h
     src/resource.h
     src/Net/Protocol/ProtocolBase.h
     src/Net/Protocol/GameServerProtocol.h
@@ -629,6 +631,10 @@ target_include_directories(mu97k PRIVATE
     ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
+# Modo benchmark (src/Debug/Benchmark.h): siempre en Debug; en Release sólo si
+# se configura con -DMU_BENCHMARK=ON.  Las Releases publicadas no lo traen.
+option(MU_BENCHMARK "Incluir el modo benchmark tambien en Release" OFF)
+
 if(MSVC)
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
 # Van como opciones /D y no con target_compile_definitions porque el
@@ -647,6 +653,10 @@ set(MU_DEFINES
 target_compile_options(mu97k PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${MU_DEFINES}>"
 )
+
+# Modo benchmark: ver la opcion MU_BENCHMARK arriba.
+target_compile_options(mu97k PRIVATE
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<BOOL:${MU_BENCHMARK}>,$<CONFIG:Debug>>>:/DMU_BENCHMARK>")
 
 # BasicRuntimeChecks=Default y SDLCheck=false en Debug: sin /RTC, con /sdl-.
 target_compile_options(mu97k PRIVATE
@@ -670,7 +680,8 @@ set_source_files_properties(src/stdafx.cpp PROPERTIES
 
 else()
     target_compile_options(mu97k PRIVATE ${MU_COMMON_COMPILE_OPTIONS})
-    target_compile_definitions(mu97k PRIVATE $<$<CONFIG:Debug>:_DEBUG>)
+    target_compile_definitions(mu97k PRIVATE $<$<CONFIG:Debug>:_DEBUG>
+        $<$<OR:$<BOOL:${MU_BENCHMARK}>,$<CONFIG:Debug>>:MU_BENCHMARK>)
     # Mantener los artefactos Linux separados del cliente Windows de prueba.
     set_target_properties(mu97k PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin"

@@ -12,6 +12,7 @@
 #include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
+#include "Debug/Benchmark.h"
 
 namespace { bool showFps=false; }
 void ToggleFpsCounter() {
@@ -57,6 +58,9 @@ void __cdecl UI_UpdateFpsCounter(void) {
         char bmd[64];Platform::TextFormatSecure(bmd,"%s",BMDDevice::Status());
         RenderText(4,76,bmd,(int)(620*gWindow.GetWidth()/640),1,nullptr);
     }
+#if defined(MU_BENCHMARK)
+    if(Benchmark::Active()){char bench[128];Platform::TextFormatSecure(bench,"%s",Benchmark::Status());RenderText(4,88,bench,(int)(620*gWindow.GetWidth()/640),1,nullptr);}
+#endif
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
         _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();

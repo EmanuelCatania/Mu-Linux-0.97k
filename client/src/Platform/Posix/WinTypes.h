@@ -110,6 +110,7 @@ static_assert(offsetof(TEXTMETRICA, tmFirstChar) == 44);
 #define VK_UP 0x26
 #define VK_RIGHT 0x27
 #define VK_DOWN 0x28
+#define VK_F9 0x78
 #define VK_F10 0x79
 #define VK_F11 0x7a
 #define VK_F12 0x7b
