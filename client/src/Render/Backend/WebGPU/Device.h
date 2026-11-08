@@ -15,7 +15,10 @@ struct Surface {
     void* instance = nullptr;  // HINSTANCE en Windows; sin uso en Linux
 };
 
-bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height, bool vsync);
+// validation: en Release Dawn no valida los comandos salvo que se pida (en
+// Debug valida siempre). Los errores van al log con un código [WGPU-xx].
+bool Initialize(Api api, const Surface& surface, unsigned width, unsigned height, bool vsync,
+                bool validation = false);
 void Release();
 bool IsReady();
 // Reconfigura el swapchain (cambio de resolución o de vsync).

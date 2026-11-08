@@ -100,6 +100,9 @@ public:
     int GetFpsLimit() const { return m_FpsLimit; }
     bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
+    // [Window] GraphicsValidation=1: Dawn valida cada comando también en
+    // Release (para diagnosticar errores de render). Sólo se lee del archivo.
+    bool GetGraphicsValidation() const { return m_GraphicsValidation; }
     RenderBackendPreference GetRenderBackend() const { return m_RenderBackend; }
     // La preferencia con la que arrancó el cliente (el backend en uso).
     RenderBackendPreference GetStartupRenderBackend() const { return m_StartupRenderBackend; }
@@ -202,6 +205,7 @@ private:
     bool m_RenderDecoupled = true;
     int  m_FpsLimit = 60;
     bool m_VSync = false;
+    bool m_GraphicsValidation = false;
     RenderBackendPreference m_RenderBackend = RenderBackendPreference::OpenGL;
     RenderBackendPreference m_StartupRenderBackend = RenderBackendPreference::OpenGL;
     int m_TextureQuality = 0, m_StartupTextureQuality = 0;
