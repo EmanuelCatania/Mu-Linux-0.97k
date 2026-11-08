@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -345,6 +346,16 @@ struct GpuMesh {
     WGPUBuffer indices = nullptr, vertices = nullptr;
     uint64_t revision = 0, residentRevision = 0, usedFrame = 0;
 };
+// Buffer de staging mapeable que se reusa entre cuadros. Las subidas grandes de
+// cada cuadro (vértices, uniforms, skins, paleta, tabla de dibujos) se escriben
+// en él y se copian a los buffers de la GPU dentro del mismo encoder. Con
+// wgpuQueueWriteBuffer, Dawn creaba y destruía un staging propio por subida.
+struct Staging {
+    WGPUBuffer buffer = nullptr;
+    uint64_t size = 0;
+    uint8_t* mapped = nullptr;   // no nulo: mapeado y libre para el cuadro
+    bool orphan = false;         // el renderer se liberó con el mapeo pendiente
+};
 struct Pass {
     bool clearColor = false, clearDepth = false;
     // Posproceso sobre postViewport antes de la pasada: FXAA y nitidez (> 0).
@@ -400,6 +411,7 @@ struct State {
     std::vector<WGPUTextureView> retiredViews;
     std::vector<WGPUBindGroup> retiredGroups;
     std::vector<WGPUBuffer> retiredBuffers;
+    std::vector<std::unique_ptr<Staging>> staging;
     float clearColor[4]{};
     int unpackAlignment = 4;
     // Nitidez (CAS): copia del cuadro y su pipeline.
@@ -1025,6 +1037,14 @@ void ReleaseObjects() {
     if (g.casterPipelineLayout) wgpuPipelineLayoutRelease(g.casterPipelineLayout);
     if (g.casterLayout) wgpuBindGroupLayoutRelease(g.casterLayout);
     if (g.shadowLayout) wgpuBindGroupLayoutRelease(g.shadowLayout);
+    for (auto& staging : g.staging) {
+        wgpuBufferRelease(staging->buffer);
+        if (staging->mapped) continue;
+        // Con el mapeo en curso, el callback todavía apunta al objeto: queda
+        // huérfano y lo borra el callback (que llega con el estado de abortado).
+        staging->orphan = true;
+        (void)staging.release();
+    }
     for (auto& [key, sampler] : g.samplers) wgpuSamplerRelease(sampler);
     for (auto& [key, mesh] : g.meshes) {
         if (mesh.indices) wgpuBufferRelease(mesh.indices);
@@ -1495,6 +1515,56 @@ void EncodeShadows(WGPUCommandEncoder encoder) {
     wgpuRenderPassEncoderRelease(pass);
 }
 
+// Toma un staging mapeado de al menos `size` bytes; si no hay libre, crea uno
+// mapeado de entrada. Los que están en uso vuelven al terminar su remapeo.
+Staging* AcquireStaging(uint64_t size) {
+    Staging* best = nullptr;
+    for (auto& staging : g.staging)
+        if (staging->mapped && staging->size >= size && (!best || staging->size < best->size)) best = staging.get();
+    if (best) return best;
+    // Si hay uno libre pero chico, se reemplaza por uno más grande.
+    for (auto it = g.staging.begin(); it != g.staging.end(); ++it)
+        if ((*it)->mapped) {
+            wgpuBufferUnmap((*it)->buffer);
+            wgpuBufferRelease((*it)->buffer);
+            g.staging.erase(it);
+            break;
+        }
+    uint64_t capacity = 1u << 20;
+    while (capacity < size) capacity *= 2;
+    WGPUBufferDescriptor d = WGPU_BUFFER_DESCRIPTOR_INIT;
+    d.size = capacity;
+    d.usage = WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc;
+    d.mappedAtCreation = true;
+    auto staging = std::make_unique<Staging>();
+    staging->buffer = wgpuDeviceCreateBuffer(GetDevice(), &d);
+    if (!staging->buffer) return nullptr;
+    staging->size = capacity;
+    staging->mapped = static_cast<uint8_t*>(wgpuBufferGetMappedRange(staging->buffer, 0, size_t(capacity)));
+    if (!staging->mapped) { wgpuBufferRelease(staging->buffer); return nullptr; }
+    g.staging.push_back(std::move(staging));
+    return g.staging.back().get();
+}
+// Tras el envío se vuelve a mapear: el callback llega en wgpuInstanceProcessEvents
+// (lo llama Present) cuando la GPU ya terminó la copia.
+void RemapStaging(Staging& staging) {
+    WGPUBufferMapCallbackInfo callback = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+    callback.mode = WGPUCallbackMode_AllowProcessEvents;
+    callback.callback = [](WGPUMapAsyncStatus status, WGPUStringView, void* user, void*) {
+        auto* staging = static_cast<Staging*>(user);
+        if (staging->orphan) { delete staging; return; }
+        if (status != WGPUMapAsyncStatus_Success) {
+            // No se pudo mapear: se descarta y la próxima subida crea otro.
+            for (auto it = g.staging.begin(); it != g.staging.end(); ++it)
+                if (it->get() == staging) { wgpuBufferRelease(staging->buffer); g.staging.erase(it); break; }
+            return;
+        }
+        staging->mapped = static_cast<uint8_t*>(wgpuBufferGetMappedRange(staging->buffer, 0, size_t(staging->size)));
+    };
+    callback.userdata1 = &staging;
+    wgpuBufferMapAsync(staging.buffer, WGPUMapMode_Write, 0, size_t(staging.size), callback);
+}
+
 // Codifica y envía lo grabado hasta ahora sobre la textura del cuadro. La
 // grabación sigue después sobre la misma textura (lo usa la captura).
 void EncodePasses() {
@@ -1502,9 +1572,12 @@ void EncodePasses() {
     const unsigned width = Width(), height = Height();
     EnsureDepth(width, height);
     EnsureMsaa(width, height);
+    struct Upload { WGPUBuffer buffer; const void* data; uint64_t size; };
+    Upload uploads[5]{};
+    int uploadCount = 0;
     if (!g.vertices.empty()) {
         Reserve(g.vertexBuffer, g.vertexCapacity, g.vertices.size() * sizeof(Vertex), WGPUBufferUsage_Vertex);
-        wgpuQueueWriteBuffer(GetQueue(), g.vertexBuffer, 0, g.vertices.data(), g.vertices.size() * sizeof(Vertex));
+        uploads[uploadCount++] = {g.vertexBuffer, g.vertices.data(), g.vertices.size() * sizeof(Vertex)};
     }
     if (!g.uniforms.empty()) {
         // El grupo 0 siempre lleva skin y paleta, aunque el cuadro no tenga mallas.
@@ -1523,10 +1596,10 @@ void EncodePasses() {
         if (g.drawTable.empty()) g.drawTable.assign(2, 0);
         Reserve(g.drawBuffer, g.drawCapacity, g.drawTable.size() * sizeof(uint32_t), WGPUBufferUsage_Storage);
         Reserve(g.paletteBuffer, g.paletteCapacity, g.palette.size() * sizeof(float), WGPUBufferUsage_Storage);
-        wgpuQueueWriteBuffer(GetQueue(), g.uniformBuffer, 0, g.uniforms.data(), g.uniforms.size());
-        wgpuQueueWriteBuffer(GetQueue(), g.skinBuffer, 0, g.skins.data(), g.skins.size());
-        wgpuQueueWriteBuffer(GetQueue(), g.paletteBuffer, 0, g.palette.data(), g.palette.size() * sizeof(float));
-        wgpuQueueWriteBuffer(GetQueue(), g.drawBuffer, 0, g.drawTable.data(), g.drawTable.size() * sizeof(uint32_t));
+        uploads[uploadCount++] = {g.uniformBuffer, g.uniforms.data(), g.uniforms.size()};
+        uploads[uploadCount++] = {g.skinBuffer, g.skins.data(), g.skins.size()};
+        uploads[uploadCount++] = {g.paletteBuffer, g.palette.data(), g.palette.size() * sizeof(float)};
+        uploads[uploadCount++] = {g.drawBuffer, g.drawTable.data(), g.drawTable.size() * sizeof(uint32_t)};
         if (!g.uniformGroup) {
             WGPUBindGroupEntry entries[4] = {WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT,
                                              WGPU_BIND_GROUP_ENTRY_INIT, WGPU_BIND_GROUP_ENTRY_INIT};
@@ -1549,6 +1622,19 @@ void EncodePasses() {
     g.shadow.params[0] = g.shadowFrame ? 1.0f : 0.0f;
     wgpuQueueWriteBuffer(GetQueue(), g.shadowBuffer, 0, &g.shadow, sizeof(g.shadow));
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(GetDevice(), nullptr);
+    // Las subidas van antes de las pasadas: la copia queda ordenada en el encoder.
+    // Todos los tamaños son múltiplos de 4 (vértices, filas de 256, floats, u32).
+    uint64_t uploadBytes = 0;
+    for (int i = 0; i < uploadCount; ++i) uploadBytes += (uploads[i].size + 3) & ~uint64_t(3);
+    Staging* staging = uploadBytes ? AcquireStaging(uploadBytes) : nullptr;
+    uint64_t at = 0;
+    for (int i = 0; i < uploadCount; ++i) {
+        if (!staging) { wgpuQueueWriteBuffer(GetQueue(), uploads[i].buffer, 0, uploads[i].data, uploads[i].size); continue; }
+        std::memcpy(staging->mapped + at, uploads[i].data, size_t(uploads[i].size));
+        wgpuCommandEncoderCopyBufferToBuffer(encoder, staging->buffer, at, uploads[i].buffer, 0, uploads[i].size);
+        at += (uploads[i].size + 3) & ~uint64_t(3);
+    }
+    if (staging) { staging->mapped = nullptr; wgpuBufferUnmap(staging->buffer); }
     if (g.shadowFrame && g.uniformGroup) EncodeShadows(encoder);
     for (const auto& pass : g.passes) {
         if (pass.atmosphere) EncodeAtmosphere(encoder, width, height);
@@ -1613,6 +1699,7 @@ void EncodePasses() {
     wgpuQueueSubmit(GetQueue(), 1, &commands);
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);
+    if (staging) RemapStaging(*staging);
     ResetFrame();
     ReleaseRetired();
 }
