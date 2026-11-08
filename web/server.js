@@ -90,13 +90,39 @@ const pool = mysql.createPool({
 
 const sessionStore = new MySQLStore({}, pool);
 
+// CSP: los scripts inline y los onclick de las vistas obligan a 'unsafe-inline'.
+// Las noticias pueden traer imágenes de cualquier origen y videos de YouTube/Vimeo
+// (los mismos hosts que permite sanitizeHtml), y el captcha es Turnstile. Sin
+// upgrade-insecure-requests: el panel también corre por HTTP (LAN, Pterodactyl).
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://challenges.cloudflare.com'],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+      imgSrc: ["'self'", 'data:', 'https:', 'http:'],
+      fontSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://challenges.cloudflare.com'],
+      frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://www.youtube.com', 'https://youtube.com', 'https://youtu.be', 'https://player.vimeo.com'],
+      upgradeInsecureRequests: null
+    }
+  }
 }));
 app.set('trust proxy', trustProxyEnabled ? 1 : false);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Tope general por IP para todo lo dinámico (los estáticos quedan afuera).
+// Detrás de un proxy hace falta TRUST_PROXY: si no, todos comparten la IP del proxy.
+const WEB_RATE_LIMIT = Math.max(1, Number.parseInt(process.env.WEB_RATE_LIMIT_PER_MINUTE || '600', 10) || 600);
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: WEB_RATE_LIMIT,
+  standardHeaders: true,
+  legacyHeaders: false
+}));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
@@ -127,6 +153,9 @@ app.use(session({
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
+    // 'auto': Secure cuando la petición llega por HTTPS (con TRUST_PROXY, también
+    // detrás de un proxy); por HTTP plano la sesión sigue funcionando.
+    secure: 'auto',
     maxAge: 1000 * 60 * 60 * 6
   }
 }));
