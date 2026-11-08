@@ -1,4 +1,5 @@
 ﻿const express = require('express');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -36,9 +37,11 @@ function execTar(args) {
 }
 
 function sanitizeLabel(label) {
-  const raw = String(label || '').trim();
+  // Se recorta antes de las regex: una etiqueta enorme de guiones hacía
+  // cuadrática la limpieza de los extremos.
+  const raw = String(label || '').trim().slice(0, 200);
   if (!raw) return '';
-  return raw.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  return raw.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+/, '').replace(/-+$/, '').slice(0, 40);
 }
 
 function normalizeRelativePath(input) {
@@ -194,6 +197,14 @@ async function restoreSnapshot(name) {
 }
 
 app.use(express.json({ limit: '5mb' }));
+
+// Sólo lo llama el panel web (una única IP), así que el tope es amplio.
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 1200,
+  standardHeaders: true,
+  legacyHeaders: false
+}));
 
 app.get('/health', (req, res) => {
   res.json({

@@ -331,7 +331,7 @@ En ARM con 1 GB de RAM o menos, habilitá 2 GB de swap antes del primer build. `
 
 - MySQL: `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
 - Servidor: `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `PUBLIC_IP`.
-- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` y `ACQUISITION_TRACKING` quedan en `0`: las banderas de país y el origen del registro no se activan hasta configurarlos. `GEOIP_ENABLED` necesita el paquete opcional `geoip-lite` (`INSTALL_GEOIP=1` al construir la imagen). `GEOIP_HIDDEN_COUNTRIES` es una lista vacía de códigos ISO. `RANKINGS_RESETS_FIRST=1` ordena las listas de nivel y clase por resets antes que por nivel.
+- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` y `ACQUISITION_TRACKING` quedan en `0`: las banderas de país y el origen del registro no se activan hasta configurarlos. `GEOIP_ENABLED` necesita el paquete opcional `geoip-lite` (`INSTALL_GEOIP=1` al construir la imagen). `GEOIP_HIDDEN_COUNTRIES` es una lista vacía de códigos ISO. `RANKINGS_RESETS_FIRST=1` ordena las listas de nivel y clase por resets antes que por nivel. `WEB_RATE_LIMIT_PER_MINUTE` (600 por defecto) es el tope de peticiones por minuto y por IP; detrás de un proxy necesita `TRUST_PROXY=1`, o todos los visitantes comparten la IP del proxy.
 - Datos de prueba: `SEED_TEST_DATA` (`1` carga cuentas, `0` deja DB limpia).
 - Editor: `EDITOR_ENABLED`, `EDITOR_PORT`, `EDITOR_API_URL`, `EDITOR_MAX_BACKUPS`, `EDITOR_MAX_SNAPSHOTS`.
 

@@ -323,7 +323,7 @@ On ARM with 1 GB RAM or less, enable 2 GB swap before the first build. `uname -m
 
 - MySQL: `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
 - Server: `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `PUBLIC_IP`.
-- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` and `ACQUISITION_TRACKING` stay `0`: country flags and registration source stay off until configured. `GEOIP_ENABLED` needs the optional `geoip-lite` package (`INSTALL_GEOIP=1` when building the image). `GEOIP_HIDDEN_COUNTRIES` is an empty list of ISO codes. `RANKINGS_RESETS_FIRST=1` sorts the level and class lists by resets before level.
+- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` and `ACQUISITION_TRACKING` stay `0`: country flags and registration source stay off until configured. `GEOIP_ENABLED` needs the optional `geoip-lite` package (`INSTALL_GEOIP=1` when building the image). `GEOIP_HIDDEN_COUNTRIES` is an empty list of ISO codes. `RANKINGS_RESETS_FIRST=1` sorts the level and class lists by resets before level. `WEB_RATE_LIMIT_PER_MINUTE` (600 by default) caps requests per minute per IP; behind a proxy it needs `TRUST_PROXY=1`, or every visitor shares the proxy's IP.
 - Test data: `SEED_TEST_DATA`; editor: `EDITOR_ENABLED`, `EDITOR_PORT`, `EDITOR_API_URL`, `EDITOR_MAX_BACKUPS`, `EDITOR_MAX_SNAPSHOTS`.
 
 After changing MySQL credentials, recreate the volume:
