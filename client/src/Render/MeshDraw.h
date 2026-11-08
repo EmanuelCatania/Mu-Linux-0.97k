@@ -57,6 +57,10 @@ struct Input {
     // residente en la GPU. Sin ellos se usa la ruta que arma vértices en CPU.
     const unsigned char* rawVertices=nullptr;
     const unsigned char* rawNormals=nullptr;
+    // Pasadas chrome/oil/obj: la UV es lineal en la normal rotada. Dos filas
+    // (nx,ny,nz,constante) para U y V; con esto la malla residente calcula la
+    // UV en la GPU en lugar de leer chromeUV.
+    const float* chromeMap=nullptr;
 };
 // Sombra proyectada de una malla con la pose capturada (BMD__RenderBodyShadow).
 // mesh es el registro de malla del BMD (stride 0x28); world, sus posiciones

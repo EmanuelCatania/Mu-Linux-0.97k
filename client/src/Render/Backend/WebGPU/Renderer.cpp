@@ -80,12 +80,19 @@ struct Skin {
     paletteBase: i32, flags: u32, pad0: i32, pad1: i32,   // flags: luz, sombra, textura
     scales: vec4f, origin: vec4f, direction: vec4f, coefficients: vec4f,
     bodyLight: vec4f, uvOffset: vec4f, shadowOrigin: vec4f, color: vec4f, uv: vec4f,
+    chromeU: vec4f, chromeV: vec4f,   // flags & 8: UV chrome lineal en la normal rotada
 };
 @group(0) @binding(1) var<uniform> skin: Skin;
 @group(0) @binding(2) var<storage, read> palette: array<vec4f>;
 fn rotateBone(p: vec3f, b: i32) -> vec3f {
     let r = skin.paletteBase + b * 3;
     return vec3f(dot(palette[r].xyz, p), dot(palette[r + 1].xyz, p), dot(palette[r + 2].xyz, p));
+}
+// UV de las pasadas chrome/oil/obj (BMD__RenderMesh): lineal en la normal
+// rotada por el hueso, la misma que usa la ruta CPU.
+fn chromeUV(normal: vec4f) -> vec4f {
+    let n = rotateBone(normal.xyz, i32(normal.w));
+    return vec4f(dot(skin.chromeU.xyz, n) + skin.chromeU.w, dot(skin.chromeV.xyz, n) + skin.chromeV.w, 0.0, 1.0);
 }
 fn skinPosition(p0: vec3f, b: i32) -> vec3f {
     let r = skin.paletteBase + b * 3;
@@ -113,6 +120,7 @@ fn skinPosition(p0: vec3f, b: i32) -> vec3f {
     }
     var uv = skin.uv;
     if ((skin.flags & 4u) != 0u) { uv = vec4f(uv2, 0.0, 1.0); }
+    if ((skin.flags & 8u) != 0u) { uv = chromeUV(normal); }
     out.color = clamp(color, vec4f(0.0), vec4f(1.0));
     out.uv = u.textureMatrix * (uv + vec4f(skin.uvOffset.xy, 0.0, 0.0));
     out.fogDistance = abs((u.modelView * position).z);
@@ -139,6 +147,7 @@ struct CasterOut {
     out.color = clamp(skin.color, vec4f(0.0), vec4f(1.0));
     var uvs = skin.uv;
     if ((skin.flags & 4u) != 0u) { uvs = vec4f(uv2, 0.0, 1.0); }
+    if ((skin.flags & 8u) != 0u) { uvs = chromeUV(normal); }
     out.uv = u.textureMatrix * (uvs + vec4f(skin.uvOffset.xy, 0.0, 0.0));
     return out;
 }
@@ -258,6 +267,7 @@ struct Uniforms {
 struct Skin {
     int32_t paletteBase; uint32_t flags; int32_t pad[2];
     float scales[4], origin[4], direction[4], coefficients[4], bodyLight[4], uvOffset[4], shadowOrigin[4], color[4], uv[4];
+    float chromeU[4], chromeV[4];
 };
 struct ShadowUniform {
     float lightViewProj[16], inverseView[16];
@@ -1068,7 +1078,8 @@ bool DrawResidentMesh(const void* key, MeshTopology::Mesh& topology, const Skinn
     }
     Skin skin{};
     skin.paletteBase = g.paletteBase;
-    skin.flags = (d.lit ? 1u : 0u) | (d.shadow ? 2u : 0u) | (d.textured ? 4u : 0u);
+    skin.flags = (d.lit ? 1u : 0u) | (d.shadow ? 2u : 0u) | (d.textured ? 4u : 0u) | (d.chromeMap ? 8u : 0u);
+    if (d.chromeMap) { std::memcpy(skin.chromeU, d.chromeMap, 4 * sizeof(float)); std::memcpy(skin.chromeV, d.chromeMap + 4, 4 * sizeof(float)); }
     skin.scales[0] = Skinning::Pose::RotationScale(); skin.scales[1] = Skinning::Pose::BodyScale();
     std::memcpy(skin.origin, Skinning::Pose::Origin(), 3 * sizeof(float));
     std::memcpy(skin.direction, Skinning::Pose::Direction(), 3 * sizeof(float));
