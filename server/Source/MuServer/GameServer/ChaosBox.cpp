@@ -163,6 +163,13 @@ void CChaosBox::CGChaosMixRecv(PMSG_CHAOS_MIX_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	// Sólo con la ventana del chaos box abierta (se abre hablando con el NPC).
+	// Sin esto se mezclaba desde cualquier lado, también durante un trade.
+	if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX)
+	{
+		return;
+	}
+
 	if (lpObj->ChaosLock != false)
 	{
 		return;
