@@ -544,6 +544,18 @@ void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* objec
     if ((*(unsigned char*)(param_2 + 0x78) & 0x20) == 0x20)
         return;
 
+    // Desviación: con items en la Chaos Machine el héroe no camina. El original
+    // muestra GlobalText[593] ("Cierre el inventario luego de mover sus items al
+    // inventario", ver SendMove_CloseWindows97k) pero camina igual, y el server
+    // lo devuelve a su lugar (la ventana sigue abierta del lado server). Con la
+    // ruta local ya activa, el cliente seguía caminando hasta el destino.
+    if ((char*)param_1 == (char*)DAT_07abf5d8 && ChaosMixOpened &&
+        (!Connection_Check(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0)) {
+        UIChatLogWindow_AddText("", GlobalText[593], 2);
+        AsCharacter(param_1)->PathNum = 0;
+        return;
+    }
+
     unsigned char wpCount = AsCharacter(param_1)->PathNum;
     if (wpCount < 3)
         DAT_00559bec = 0;
