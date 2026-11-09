@@ -268,6 +268,20 @@ void CGuild::GDGuildMemberDeleteRecv(SDHP_GUILD_MEMBER_DELETE_RECV* lpMsg, int a
 
 	TextField::Copy(pMsg.Name, lpMsg->Name);
 
+	// El nombre lo eligió el cliente: sólo se expulsa a un miembro del guild que
+	// pide la expulsión. DelGuildMember busca en todos los guilds, así que sin esto
+	// un master podía sacar a cualquiera de cualquier guild. 3 = no es miembro.
+	GUILD_INFO* lpMemberGuild = gGuildManager.GetMemberGuildInfo(lpMsg->Name);
+
+	if (lpMemberGuild == 0 || TextName::Equals(lpMemberGuild->szName, lpMsg->GuildName) == false)
+	{
+		pMsg.result = 3;
+
+		gSocketManager.DataSend(aIndex, (BYTE*)&pMsg, sizeof(pMsg));
+
+		return;
+	}
+
 	if ((pMsg.result = gGuildManager.DelGuildMember(aIndex, lpMsg->Name)) != 1)
 	{
 		gSocketManager.DataSend(aIndex, (BYTE*)&pMsg, sizeof(pMsg));

@@ -2761,7 +2761,9 @@ void CItemManager::CGItemMoveRecv(PMSG_ITEM_MOVE_RECV* lpMsg, int aIndex)
 		}
 	}
 
-	if (lpMsg->SourceFlag == 3 || (lpMsg->SourceFlag >= 6 && lpMsg->SourceFlag <= 20) || lpMsg->TargetFlag == 3 || (lpMsg->TargetFlag >= 6 && lpMsg->TargetFlag <= 20)) // Chaos Box
+	// Mismo rango que las ramas de abajo (3 y 5..20): con 6..20 acá, el flag 5
+	// movía items al chaos box sin la ventana del NPC abierta.
+	if (lpMsg->SourceFlag == 3 || (lpMsg->SourceFlag >= 5 && lpMsg->SourceFlag <= 20) || lpMsg->TargetFlag == 3 || (lpMsg->TargetFlag >= 5 && lpMsg->TargetFlag <= 20)) // Chaos Box
 	{
 		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX || lpObj->ChaosLock != 0)
 		{

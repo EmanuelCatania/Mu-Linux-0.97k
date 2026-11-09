@@ -770,6 +770,27 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 	lpObj->ConnectTickCount = GetTickCount();
 }
 
+// Con items en el chaos box el jugador no camina (ver CGMoveRecv). Con la caja
+// vacía sí: el cliente manda el movimiento y recién después el cierre (0x87), y
+// rechazar ese primer paso lo empujaba hacia atrás.
+static bool ChaosBoxBlocksMove(LPOBJ lpObj)
+{
+	if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX)
+	{
+		return false;
+	}
+
+	for (int n = 0; n < CHAOS_BOX_SIZE; n++)
+	{
+		if (lpObj->ChaosBox[n].IsItem() != 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 {
 	LPOBJ lpObj = &gObj[aIndex];
@@ -785,6 +806,14 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 	}
 
 	if (gObjCheckMapTile(lpObj, 2) != 0)
+	{
+		return;
+	}
+
+	// Mismo criterio que CGMoveRecv: con el chaos box abierto no hay movimiento.
+	// La posición actual sí pasa: es la corrección que manda gObjSetPosition
+	// para devolver al jugador a su lugar.
+	if (ChaosBoxBlocksMove(lpObj) && (lpMsg->x != lpObj->X || lpMsg->y != lpObj->Y))
 	{
 		return;
 	}
@@ -1004,6 +1033,17 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 
 	if (gEffectManager.CheckImmobilizeEffect(lpObj) != 0)
 	{
+		return;
+	}
+
+	// Con items en el chaos box no se camina. El cliente cierra la
+	// ventana antes de moverse (0x87) sólo si la caja está vacía; con items avisa
+	// pero manda el movimiento igual, y el jugador terminaba mezclando lejos del
+	// NPC. Se lo devuelve a su lugar.
+	if (ChaosBoxBlocksMove(lpObj))
+	{
+		gObjSetPosition(lpObj->Index, lpObj->X, lpObj->Y);
+
 		return;
 	}
 
