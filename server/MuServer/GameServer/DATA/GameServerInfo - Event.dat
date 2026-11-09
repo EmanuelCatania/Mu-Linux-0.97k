@@ -35,6 +35,11 @@ DevilSquareAllowPK=1
 ; Enable Invasions (0 = No / 1 = Yes)
 InvasionManagerSwitch=1
 
+; Avisar a todos cada monstruo de invasion que muere, con la cuenta de los de
+; su clase: "'Jugador' derroto a 'Golden Titan' (1/5)" (0 = No / 1 = Si).
+; Los jefes siguen con su propio mensaje (BossMessage de InvasionManager.dat).
+InvasionKillNotice=1
+
 ; Enable Invasion Flying Dragons Effect (0 = No / 1 = Yes)
 FlyingDragonsSwitch=1
 

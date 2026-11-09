@@ -504,6 +504,31 @@ static_assert(sizeof(PMSG_EVENT_TIME) == 40, "F3:E6 entrada");
 static_assert(offsetof(PMSG_EVENT_TIME, status) == 32, "F3:E6 status");
 static_assert(offsetof(PMSG_EVENT_TIME, time) == 36, "F3:E6 time");          // padding en +33
 
+// ── C2:F3:F2 ─ invasiones en curso, vivos por mapa ── Protocol.h (server) ──
+// Consumido por UI/EventTimer.cpp (tooltip de la fila de la invasión).
+struct PMSG_INVASION_DETAIL_SEND
+{
+    PSWMSG_HEAD header;     // C2:F3:F2
+    std::uint8_t count;
+};
+static_assert(sizeof(PMSG_INVASION_DETAIL_SEND) == 6, "F3:F2");
+
+struct PMSG_INVASION_DETAIL
+{
+    char name[32];          // el mismo nombre que su fila del F3:E6
+    std::uint8_t maps;      // PMSG_INVASION_DETAIL_MAP que siguen
+};
+static_assert(sizeof(PMSG_INVASION_DETAIL) == 33, "F3:F2 invasion");
+
+struct PMSG_INVASION_DETAIL_MAP
+{
+    std::uint8_t map;
+    std::uint16_t alive;    // padding en +1
+    std::uint16_t total;
+};
+static_assert(sizeof(PMSG_INVASION_DETAIL_MAP) == 6, "F3:F2 mapa");
+static_assert(offsetof(PMSG_INVASION_DETAIL_MAP, alive) == 2, "F3:F2 alive");
+
 // GoldenArcher.h del server: PMSG_NPC_GOLDEN_ARCHER_SEND (C1:94).
 struct PMSG_NPC_GOLDEN_ARCHER_SEND
 {

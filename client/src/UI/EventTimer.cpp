@@ -117,9 +117,73 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
     return true;
 }
 
+// DESVIACION (Fase 5): el server manda, después del F3/E6, cuántos monstruos
+// de cada invasión en curso quedan vivos en cada mapa. Se empareja con la fila
+// por el nombre.
+bool CEventTimer::ReceiveInvasions(const BYTE* packet, int size)
+{
+    const int header = sizeof(Proto::PMSG_INVASION_DETAIL_SEND);
+    if (!packet || size < header || packet[0] != 0xC2 ||
+        packet[3] != 0xF3 || packet[4] != 0xF2 ||
+        ((packet[1] << 8) | packet[2]) != size) return false;
+    InvasionDetail parsed[32] = {};
+    int count = 0, offset = header;
+    for (int i = 0; i < packet[5]; ++i) {
+        if (offset + (int)sizeof(Proto::PMSG_INVASION_DETAIL) > size) return false;
+        Proto::PMSG_INVASION_DETAIL info;
+        memcpy(&info, packet + offset, sizeof(info));
+        offset += sizeof(info);
+        const int bytes = info.maps * (int)sizeof(Proto::PMSG_INVASION_DETAIL_MAP);
+        if (!memchr(info.name, 0, sizeof(info.name)) || offset + bytes > size) return false;
+        if (count < 32) {
+            InvasionDetail& d = parsed[count++];
+            NetText::FromServer(d.name, sizeof(d.name), (const BYTE*)info.name, sizeof(info.name));
+            d.maps = info.maps < 32 ? info.maps : 32;
+            memcpy(d.map, packet + offset, d.maps * sizeof(Proto::PMSG_INVASION_DETAIL_MAP));
+        }
+        offset += bytes;
+    }
+    if (offset != size) return false;
+    memcpy(m_Invasions, parsed, sizeof(parsed));
+    m_InvasionCount = count;
+    return true;
+}
+
+// Una línea por mapa: "Atlans: 3 de 5 vivos". Sólo para las invasiones en curso.
+void CEventTimer::RenderInvasionTooltip(const Proto::PMSG_EVENT_TIME& event, int y) const
+{
+    if (event.status != Start) return;
+    const InvasionDetail* detail = nullptr;
+    for (int i = 0; i < m_InvasionCount && !detail; ++i)
+        if (strcmp(m_Invasions[i].name, event.name) == 0) detail = &m_Invasions[i];
+    if (!detail || !detail->maps) return;
+    char* line = lpString_07e90798;
+    int count = 0;
+    auto add = [&](int color, int bold, const char* text) {
+        Platform::TextFormatSecure(line + count * 100, 100, "%s", text);
+        DAT_07e91708[count] = color;
+        DAT_07ea7b10[count] = bold;
+        ++count;
+    };
+    add(1, 1, event.name);
+    for (int i = 0; i < detail->maps && count < 25; ++i) {
+        const Proto::PMSG_INVASION_DETAIL_MAP& m = detail->map[i];
+        const char* map = GetMapName(m.map);
+        char text[100];
+        Platform::TextFormatSecure(text, sizeof(text), gClientText.Get(ClientTextId::InvasionAlive),
+                                   map ? map : "?", (int)m.alive, (int)m.total);
+        // En rojo los mapas donde ya no queda ninguno (paleta de 7 colores de
+        // DrawItemInfoBox: 0 blanco, 2 rojo).
+        add(m.alive ? 0 : 2, 0, text);
+    }
+    // A la izquierda de la columna de paneles, a la altura de la fila.
+    CharMenu_RenderTextList(Layout::X() - 80, y, count, 0, 1, 1);
+}
+
 void CEventTimer::Clear()
 {
     m_Count = 0;
+    m_InvasionCount = 0;
     m_Open = false;
     m_Received = false;
     m_Page = 0;
@@ -291,9 +355,16 @@ void CEventTimer::RenderPanel()
     if (m_Count) {
         if (m_Page >= PageCount()) m_Page = PageCount() - 1;   // cambio de resolución
         const int perPage = Layout::RowsPerPage(), first = m_Page * perPage;
-        for (int row = 0; row < perPage && first + row < m_Count; ++row)
-            DrawRow(m_Events[first + row], Layout::RowY + row * Layout::RowStep());
+        int hovered = -1;
+        for (int row = 0; row < perPage && first + row < m_Count; ++row) {
+            const int rowY = Layout::RowY + row * Layout::RowStep();
+            DrawRow(m_Events[first + row], rowY);
+            if (Inside(Layout::RowX(), rowY, Layout::RowWidth, Layout::RowHeight())) hovered = row;
+        }
         DrawPager();
+        // Al final, para que quede por encima de las filas.
+        if (hovered >= 0)
+            RenderInvasionTooltip(m_Events[first + hovered], Layout::RowY + hovered * Layout::RowStep());
     } else {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Map.h"
 #include "User.h"
 
 #define MAX_INVASION 30
@@ -118,6 +119,10 @@ public:
 	void SetMonster(INVASION_INFO* lpInfo, INVASION_RESPWAN_INFO* lpRespawnInfo, INVASION_MONSTER_INFO* lpMonsterInfo);
 
 	void MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget);
+
+	// Monstruos de una invasión en curso: vivos y total por mapa. Devuelve
+	// false si la invasión no está en curso o no tiene monstruos.
+	bool GetMapStatus(int index, int alive[MAX_MAP], int total[MAX_MAP]);
 
 	bool StartInvasion(int InvasionIndex);
 

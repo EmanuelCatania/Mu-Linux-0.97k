@@ -185,5 +185,6 @@
 110	"Tu inventario está lleno."
 111	"Has alcanzado el máximo zen."
 112	"No tienes suficiente zen."
+113	"'%s' derrotó a '%s' (%d/%d)"
 end
 

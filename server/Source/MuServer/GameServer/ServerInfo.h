@@ -179,6 +179,7 @@ public:
 	int m_DevilSquareMaxUser;
 	int m_DevilSquareAllowPK;
 	int m_InvasionManagerSwitch;
+	int m_InvasionKillNotice;
 	int m_FlyingDragonsSwitch;
 	int m_FlyingDragonsOnlyBossMapSpawn;
 	int m_FlyingDragonsKillBossDisappear;

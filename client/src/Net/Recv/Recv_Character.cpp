@@ -1297,6 +1297,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             gEventTimer.Receive(Msg, Size);
             break;
         }
+        // DESVIACION (Fase 5): invasiones en curso, vivos por mapa.
+        case 0xF2: gEventTimer.ReceiveInvasions((const BYTE*)Msg, Size); break;
         // DESVIACION (0.97.20): catálogo de contenido del server.
         case 0xE7: gContentCatalog.ReceiveItems((const BYTE*)Msg, Size); break;
         case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;

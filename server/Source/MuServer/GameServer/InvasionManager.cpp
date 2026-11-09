@@ -938,6 +938,35 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 			continue;
 		}
 
+		// Aviso con la cuenta de su clase: "(muertos/total)". Los jefes tienen
+		// su propio mensaje (BossMessage), más abajo.
+		if (gServerInfo.m_InvasionKillNotice != 0 && lpObj->Class != lpInfo->BossIndex)
+		{
+			int total = 0;
+
+			int alive = 0;
+
+			for (int i = 0; i < MAX_INVASION_MONSTER; i++)
+			{
+				int index = lpInfo->MonsterIndex[i];
+
+				if (OBJECT_RANGE(index) == 0 || gObj[index].Class != lpObj->Class)
+				{
+					continue;
+				}
+
+				total++;
+
+				// El que acaba de morir todavía tiene Live: se lo cuenta por la vida.
+				if (gObj[index].Live != 0 && gObj[index].Life > 0)
+				{
+					alive++;
+				}
+			}
+
+			gNotice.GCNoticeSendToAll(1, 113, lpTarget->Name, lpObj->Name, total - alive, total);
+		}
+
 		if (lpObj->Class == lpInfo->BossIndex)
 		{
 			if (gServerInfo.m_FlyingDragonsKillBossDisappear != 0)
@@ -951,6 +980,46 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 			}
 		}
 	}
+}
+
+bool CInvasionManager::GetMapStatus(int index, int alive[MAX_MAP], int total[MAX_MAP])
+{
+	if (index < 0 || index >= MAX_INVASION || this->GetState(index) != INVASION_STATE_START)
+	{
+		return false;
+	}
+
+	INVASION_INFO* lpInfo = &this->m_InvasionInfo[index];
+
+	bool any = false;
+
+	for (int n = 0; n < MAX_MAP; n++)
+	{
+		alive[n] = 0;
+
+		total[n] = 0;
+	}
+
+	for (int n = 0; n < MAX_INVASION_MONSTER; n++)
+	{
+		int aIndex = lpInfo->MonsterIndex[n];
+
+		if (OBJECT_RANGE(aIndex) == 0 || MAP_RANGE(gObj[aIndex].Map) == 0)
+		{
+			continue;
+		}
+
+		total[gObj[aIndex].Map]++;
+
+		if (gObj[aIndex].Live != 0 && gObj[aIndex].Life > 0)
+		{
+			alive[gObj[aIndex].Map]++;
+		}
+
+		any = true;
+	}
+
+	return any;
 }
 
 bool CInvasionManager::StartInvasion(int InvasionIndex)

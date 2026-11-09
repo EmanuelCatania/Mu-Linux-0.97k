@@ -128,4 +128,6 @@
 62	"Daño recibido -%d%%"
 //BuffMaxLife
 63	"Vida máxima +%d%%"
+//InvasionAlive
+64	"%s: %d de %d vivos"
 end
