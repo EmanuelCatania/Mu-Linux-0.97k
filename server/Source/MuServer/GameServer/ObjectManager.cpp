@@ -227,6 +227,18 @@ void CObjectManager::ObjectSetStateProc()
 				continue;
 			}
 
+			// Los mobs de /makemob no tienen punto de spawn (PosNum = -1), así que
+			// gObjMonsterRegen falla y quedaban muertos hasta MonsterDeleteTime (30 min)
+			// ocupando un lugar en el VpPlayer2 de cada jugador cercano. Con la lista
+			// llena (MAX_VIEWPORT) los mobs nuevos no entraban, y los skills que el server
+			// resuelve con esa lista (Twisting Slash, Power Slash...) no les pegaban.
+			if (lpObj->MonsterDeleteTime != 0)
+			{
+				gObjDel(lpObj->Index);
+
+				continue;
+			}
+
 			if (lpObj->Attribute == 62 && (GetTickCount() - lpObj->LastCheckTick) > 600000)
 			{
 				gObjDel(lpObj->Index);
