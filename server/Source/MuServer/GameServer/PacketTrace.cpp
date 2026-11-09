@@ -19,6 +19,7 @@ void PacketTraceDecisionImpl(int, int, int, const char*, ...) {}
 #include "Guild.h"
 #include "Protocol.h"
 #include "User.h"
+#include "Util.h"
 #include "Warehouse.h"
 
 #include <cstdarg>
