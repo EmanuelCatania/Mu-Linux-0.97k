@@ -958,6 +958,11 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
                                (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L1827
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L1828
+                // DESVIACION (Fase 5): avisarle al server del camino. El original
+                // camina hasta quedar en rango sin mandar el movimiento (mismo bug
+                // que el DLL arregla en sub_483780, Patchs.cpp 0x00483AC5), y el
+                // server, que ahora valida el inicio de cada camino, lo devolvia.
+                Combat_SendMovePathPacket(AsCharacter(entity), AsObject(entity));
             }
         }
         return AF_RETURN;                                     // IDA L1834/1844
@@ -1216,6 +1221,11 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
                                    (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                     *(char *)&AsCharacter(entity)->Movement = 1;                          // IDA L7205
                     *(char *)&AsCharacter(entity)->MovementType = 5;                          // IDA L7206
+                    // DESVIACION (Fase 5): avisarle al server del camino. El original
+                    // camina hasta quedar en rango sin mandar el movimiento (mismo bug
+                    // que el DLL arregla en sub_483780, Patchs.cpp 0x00483AC5), y el
+                    // server, que ahora valida el inicio de cada camino, lo devolvia.
+                    Combat_SendMovePathPacket(AsCharacter(entity), AsObject(entity));
                 }
             }
             return;                                           // IDA L7212
@@ -1244,6 +1254,11 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
                                (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L7864
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L7865
+                // DESVIACION (Fase 5): avisarle al server del camino. El original
+                // camina hasta quedar en rango sin mandar el movimiento (mismo bug
+                // que el DLL arregla en sub_483780, Patchs.cpp 0x00483AC5), y el
+                // server, que ahora valida el inicio de cada camino, lo devolvia.
+                Combat_SendMovePathPacket(AsCharacter(entity), AsObject(entity));
             }
         }
         return;                                               // IDA L7871
