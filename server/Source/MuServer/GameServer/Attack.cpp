@@ -12,6 +12,8 @@
 #include "ServerInfo.h"
 #include "SkillManager.h"
 #include "Util.h"
+#include "Log.h"
+#include "PacketTrace.h"
 
 CAttack gAttack;
 
@@ -1372,6 +1374,35 @@ void CAttack::CGAttackRecv(PMSG_ATTACK_RECV* lpMsg, int aIndex)
 	if (lpObj->Type == OBJECT_USER && sqrt(pow(((float)lpObj->X - (float)lpTarget->X), 2) + pow(((float)lpObj->Y - (float)lpTarget->Y), 2)) > ((lpObj->Class == CLASS_FE) ? 6 : 3))
 	{
 		return;
+	}
+
+	// Fase 5: cadencia del ataque normal. Antes no había ninguna: el cliente
+	// podía mandar ataques tan seguido como quisiera (LastAttackTime existía y
+	// nadie lo usaba). Por ahora es un intervalo mínimo fijo; el plan es que
+	// dependa de la velocidad de ataque cuando haya mediciones (TRACE_NOTE).
+	if (lpObj->Type == OBJECT_USER && gServerInfo.m_AttackCheck != 0)
+	{
+		DWORD gap = GetTickCount() - lpObj->LastAttackTime;
+
+		TRACE_NOTE(aIndex, PROTOCOL_CODE2, -1, "ataque: %u ms desde el anterior, PhysiSpeed=%d", gap, lpObj->PhysiSpeed);
+
+		if (gap < (DWORD)gServerInfo.m_AttackCheckMinInterval)
+		{
+			const char* mode = (gServerInfo.m_AttackCheck == 2) ? "" : " [observado]";
+
+			gLog.Output(LOG_HACK, "[%s][%s] Ataque: %u ms desde el anterior (minimo %d)%s", lpObj->Account, lpObj->Name, gap, gServerInfo.m_AttackCheckMinInterval, mode);
+
+			TRACE_REJECT(aIndex, PROTOCOL_CODE2, -1, "ataque: %u ms desde el anterior (minimo %d)%s", gap, gServerInfo.m_AttackCheckMinInterval, mode);
+
+			// Rechazado no actualiza LastAttackTime: el siguiente ataque legítimo
+			// se mide contra el último que sí pasó.
+			if (gServerInfo.m_AttackCheck == 2)
+			{
+				return;
+			}
+		}
+
+		lpObj->LastAttackTime = GetTickCount();
 	}
 
 	lpObj->Dir = lpMsg->dir;

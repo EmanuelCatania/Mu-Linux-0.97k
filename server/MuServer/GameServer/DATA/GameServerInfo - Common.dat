@@ -17,6 +17,18 @@ CheckAutoPotionHack=0
 ; The tolerance for consuming potions when CheckAutoPotionHack=1
 CheckAutoPotionHackTolerance=0
 
+; Validacion del camino que manda el cliente: el inicio tiene que estar cerca
+; de la posicion que calcula el server y ningun paso puede pisar una pared.
+; 0 = apagada, 1 = observar (solo registra en el log de hack), 2 = aplicar
+MoveCheck=1
+; Tiles que el inicio del camino puede alejarse de la posicion del server
+MoveCheckTolerance=4
+
+; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
+AttackCheck=1
+; Intervalo minimo entre dos ataques normales, en milisegundos
+AttackCheckMinInterval=200
+
 ;==================================================
 ; Common Settings
 ;==================================================
