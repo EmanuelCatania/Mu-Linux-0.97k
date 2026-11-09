@@ -311,7 +311,18 @@ void CServerInfo::ReadMonsterInfo()
 
 	gContentCatalog.LoadLegacyMonsters(gPath.GetFullPath("Custom\\Encoder\\"));
 
-	gMonsterSetBase.Load(gPath.GetFullPath("Monster\\MonsterSetBase.txt"));
+	// Fase 5: si hay spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml)
+	// mandan ellos; si no, MonsterSetBase.txt como siempre.
+	std::string maps = gPath.GetFullPath("Maps");
+
+	if (MapSpawns_HasData(maps))
+	{
+		gMonsterSetBase.LoadMaps(maps.c_str());
+	}
+	else
+	{
+		gMonsterSetBase.Load(gPath.GetFullPath("Monster\\MonsterSetBase.txt"));
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Monster loaded successfully");
 }

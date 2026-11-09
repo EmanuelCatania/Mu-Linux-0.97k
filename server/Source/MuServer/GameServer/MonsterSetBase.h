@@ -26,6 +26,14 @@ public:
 
 	void Load(const char* path);
 
+	// Spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml). Arma la
+	// misma tabla que Load con MonsterSetBase.txt.
+	bool LoadMaps(const char* path);
+
+	// Una línea de MonsterSetBase.txt: aplica el azar de `spot` y de la
+	// dirección, y repite `count` veces las secciones con rectángulo.
+	void AddLine(MONSTER_SET_BASE_INFO info, int count);
+
 	void SetInfo(MONSTER_SET_BASE_INFO info);
 
 	bool GetPosition(int index, short map, short* ox, short* oy);

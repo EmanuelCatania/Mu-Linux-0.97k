@@ -27,3 +27,21 @@ mu_add_text_library(MuText "")
 mu_add_text_library(MuTextDLL "DLL")
 target_link_libraries(GameServer PRIVATE MuText)
 target_link_libraries(DataServer PRIVATE MuTextDLL)
+
+# Datos por carpeta de mapa (Fase 5): spawns en TOML. Lo usan el GameServer y
+# la herramienta mu-data (importar desde MonsterSetBase.txt y comparar).
+add_library(MuData STATIC Common/MapSpawns.cpp)
+target_include_directories(MuData PUBLIC Common)
+target_compile_features(MuData PUBLIC cxx_std_17)
+if(MSVC)
+  set_property(TARGET MuData PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+target_link_libraries(GameServer PRIVATE MuData)
+
+add_executable(mu-data MuData/mu-data.cpp)
+target_link_libraries(mu-data PRIVATE MuData)
+if(MSVC)
+  set_property(TARGET mu-data PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+  set_target_properties(mu-data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif()

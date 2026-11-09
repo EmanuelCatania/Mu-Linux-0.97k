@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MonsterSetBase.h"
 #include "Map.h"
+#include "MapSpawns.h"
 #include "ReadScript.h"
 #include "Util.h"
 
@@ -84,33 +85,22 @@ void CMonsterSetBase::Load(const char* path)
 
 					info.TY = lpReadScript->GetAsNumber();
 				}
-				else if (section == 2)
-				{
-					info.X = (info.X - 3) + GetLargeRand() % 7;
-
-					info.Y = (info.Y - 3) + GetLargeRand() % 7;
-				}
 
 				info.Dir = lpReadScript->GetAsNumber();
 
+				int count = 1;
+
 				if (section == 1 || section == 3)
 				{
-					int count = lpReadScript->GetAsNumber();
+					count = lpReadScript->GetAsNumber();
 
 					if (section == 3)
 					{
 						info.Value = lpReadScript->GetAsNumber();
 					}
+				}
 
-					for (int n = 0; n < count; n++)
-					{
-						this->SetInfo(info);
-					}
-				}
-				else
-				{
-					this->SetInfo(info);
-				}
+				this->AddLine(info, count);
 			}
 		}
 	}
@@ -120,6 +110,77 @@ void CMonsterSetBase::Load(const char* path)
 	}
 
 	delete lpReadScript;
+}
+
+void CMonsterSetBase::AddLine(MONSTER_SET_BASE_INFO info, int count)
+{
+	if (info.Type == 2)
+	{
+		info.X = (info.X - 3) + GetLargeRand() % 7;
+
+		info.Y = (info.Y - 3) + GetLargeRand() % 7;
+	}
+
+	if (info.Type == 1 || info.Type == 3)
+	{
+		for (int n = 0; n < count; n++)
+		{
+			this->SetInfo(info);
+		}
+	}
+	else
+	{
+		this->SetInfo(info);
+	}
+}
+
+bool CMonsterSetBase::LoadMaps(const char* path)
+{
+	std::vector<MapSpawnEntry> entries;
+
+	std::string error;
+
+	if (!MapSpawns_Load(path, entries, error))
+	{
+		ErrorMessageBox("[MonsterSetBase] %s", error.c_str());
+
+		return false;
+	}
+
+	this->m_count = 0;
+
+	for (const MapSpawnEntry& e : entries)
+	{
+		MONSTER_SET_BASE_INFO info;
+
+		memset(&info, 0, sizeof(info));
+
+		info.Type = e.Section;
+
+		info.MonsterClass = e.Monster;
+
+		info.Map = e.Map;
+
+		info.Dis = e.Dis;
+
+		info.X = e.X;
+
+		info.Y = e.Y;
+
+		info.TX = e.TX;
+
+		info.TY = e.TY;
+
+		info.Dir = e.Dir;
+
+		info.Value = e.Value;
+
+		this->AddLine(info, e.Count);
+	}
+
+	LogAdd(LOG_BLUE, "[MonsterSetBase] %d spawns desde %s (%d entradas)", this->m_count, path, (int)entries.size());
+
+	return true;
 }
 
 void CMonsterSetBase::SetInfo(MONSTER_SET_BASE_INFO info)

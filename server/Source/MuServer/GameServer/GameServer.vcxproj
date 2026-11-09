@@ -306,6 +306,9 @@
     <ClCompile Include="SkillManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />
     <ClCompile Include="SocketManagerUdp.cpp" />
+    <ClCompile Include="..\Common\MapSpawns.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\Common\TextName.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
