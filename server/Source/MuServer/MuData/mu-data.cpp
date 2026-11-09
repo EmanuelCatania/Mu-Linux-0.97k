@@ -6,14 +6,15 @@
 //       MapManager.txt. Sin --force no pisa un Spawns.toml existente.
 //
 //   mu-data check-spawns <MonsterSetBase.txt> <Maps>
-//       Lee las dos fuentes y compara la tabla que arma cada una, línea por
-//       línea y en orden. Sale con 0 si son idénticas.
+//       Lee las dos fuentes y compara la tabla que arma cada una, entrada por
+//       entrada, en orden de sección y mapa. Sale con 0 si son idénticas.
 //
 //   mu-data validate <Maps>
 //       Lee los Spawns.toml y avisa del primer error, con archivo y línea.
 
 #include "MapSpawns.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -161,6 +162,27 @@ static int CheckSpawns(const std::string& txt, const std::string& mapsDir)
 		return Fail(error);
 	}
 
+	// El .txt repite secciones (un bloque 0 por mapa, varios bloques 3 de
+	// eventos) y no siempre va en orden de mapa; los TOML quedan por sección y
+	// después por mapa. Se compara en ese orden, conservando el del archivo
+	// dentro de cada mapa: cambia en qué posición de la tabla cae cada spawn,
+	// no qué spawns hay ni en qué mapa.
+	bool reordered = false;
+
+	for (size_t n = 1; n < legacy.size(); n++)
+	{
+		const MapSpawnEntry& a = legacy[n - 1];
+
+		const MapSpawnEntry& b = legacy[n];
+
+		reordered = reordered || (b.Section < a.Section) || (b.Section == a.Section && b.Map < a.Map);
+	}
+
+	std::stable_sort(legacy.begin(), legacy.end(), [](const MapSpawnEntry& a, const MapSpawnEntry& b)
+	{
+		return (a.Section != b.Section) ? (a.Section < b.Section) : (a.Map < b.Map);
+	});
+
 	size_t count = (legacy.size() < maps.size()) ? legacy.size() : maps.size();
 
 	for (size_t n = 0; n < count; n++)
@@ -188,6 +210,11 @@ static int CheckSpawns(const std::string& txt, const std::string& mapsDir)
 	}
 
 	std::printf("Idénticas: %zu entradas (%zu monstruos y NPCs al expandir count)\n", maps.size(), monsters);
+
+	if (reordered)
+	{
+		std::printf("El .txt no está ordenado por sección y mapa: con los TOML cambia la posición de algunos spawns en la tabla (no cuáles ni dónde).\n");
+	}
 
 	return 0;
 }
