@@ -789,6 +789,12 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	// Mismo criterio que CGMoveRecv: con el chaos box abierto no hay movimiento.
+	if (lpObj->Interface.use != 0 && lpObj->Interface.type == INTERFACE_CHAOS_BOX)
+	{
+		return;
+	}
+
 	if (lpMsg->x < (lpObj->X - 15) || lpMsg->x >(lpObj->X + 15) || lpMsg->y < (lpObj->Y - 15) || lpMsg->y >(lpObj->Y + 15))
 	{
 		return;
@@ -1004,6 +1010,17 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 
 	if (gEffectManager.CheckImmobilizeEffect(lpObj) != 0)
 	{
+		return;
+	}
+
+	// Con la ventana del chaos box abierta no se camina. El cliente cierra la
+	// ventana antes de moverse (0x87) sólo si la caja está vacía; con items avisa
+	// pero manda el movimiento igual, y el jugador terminaba mezclando lejos del
+	// NPC. Se lo devuelve a su lugar.
+	if (lpObj->Interface.use != 0 && lpObj->Interface.type == INTERFACE_CHAOS_BOX)
+	{
+		gObjSetPosition(lpObj->Index, lpObj->X, lpObj->Y);
+
 		return;
 	}
 
