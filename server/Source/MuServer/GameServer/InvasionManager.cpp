@@ -964,6 +964,10 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 				}
 			}
 
+			// En dorado en el centro de la pantalla y además en el chat (azul),
+			// para que quede en el historial.
+			gNotice.GCNoticeSendToAll(0, 113, lpTarget->Name, lpObj->Name, total - alive, total);
+
 			gNotice.GCNoticeSendToAll(1, 113, lpTarget->Name, lpObj->Name, total - alive, total);
 		}
 
