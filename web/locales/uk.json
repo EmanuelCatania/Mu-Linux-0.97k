@@ -775,5 +775,12 @@
   "Crear un item nuevo a partir de este": "Створити новий предмет на основі цього",
   "Tooltips de items custom": "Підказки власних предметів",
   "El mensaje mide {bytes} bytes y el máximo es {max}.": "Повідомлення має {bytes} байтів, максимум {max}.",
-  "El server lee hasta {max} avisos: no se pueden agregar más.": "Сервер читає до {max} сповіщень: більше додати не можна."
+  "El server lee hasta {max} avisos: no se pueden agregar más.": "Сервер читає до {max} сповіщень: більше додати не можна.",
+  "Pasar a archivos por mapa": "Перенести в окремий файл для кожної мапи",
+  "Los spawns pasan a un archivo por mapa (Data/Maps) y las invasiones a Data/Events/Invasions. MonsterSetBase.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Спавни переносяться в окремий файл для кожної мапи (Data/Maps), а вторгнення — у Data/Events/Invasions. MonsterSetBase.txt лишається резервною копією, і сервер більше його не читає. Продовжити?",
+  "No se pudo convertir": "Не вдалося перетворити",
+  "Convertido y recargado en el servidor.": "Перетворено й перезавантажено на сервері.",
+  "Convertido, pero no se pudo recargar en el server.": "Перетворено, але не вдалося перезавантажити на сервері.",
+  "Formato: un archivo por mapa (Data/Maps) y las invasiones en Data/Events/Invasions.": "Формат: окремий файл для кожної мапи (Data/Maps), а вторгнення в Data/Events/Invasions.",
+  "Formato: MonsterSetBase.txt.": "Формат: MonsterSetBase.txt."
 }
