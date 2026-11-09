@@ -66,7 +66,7 @@ void RenderDerivedState_Begin() {
         auto *item=(BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72;
         if (AsObject(item)->Live) SaveObject(item,sizeof(OBJECT));
     }
-    for (int slot=0; slot<200; ++slot) SaveObject(DAT_07b11670+slot*OBJECT_STRIDE,sizeof(OBJECT));
+    for (int slot=0; slot<kEffectPoolSize; ++slot) SaveObject(DAT_07b11670+slot*OBJECT_STRIDE,sizeof(OBJECT));
     for (int slot=0; slot<40; ++slot) SaveObject(g_WeatherSlotPool+slot*OBJECT_STRIDE,sizeof(OBJECT));
     for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*OBJECT_STRIDE,sizeof(OBJECT));
     // Los objetos del mapa se guardan al tocarlos (RenderDerivedState_SaveObject):

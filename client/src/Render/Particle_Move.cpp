@@ -108,7 +108,7 @@ void __stdcall MoveParticles(void)
     }
 
     // ── 2. Per-particle update loop ──────────────────────────────────────────
-    for (iVar4 = 0; iVar4 < 3000; iVar4++) {
+    for (iVar4 = 0; iVar4 < kParticlePoolSize; iVar4++) {
         iVar9 = iVar4 * 0x70;
 
         if (P_ACTIVE(iVar9) == '\0') continue;

@@ -26,7 +26,7 @@ extern "C" void DbgLogPublic(const char* msg);
 // IDA: MoveEffects
 void Effect_TickAll(void)
 {
-  // Pool real DAT_07b11670[200 × 0x1bc].
+  // Pool DAT_07b11670[kEffectPoolSize] (IDA: 200 × 0x1bc).
   float *pfVar1 = (float *)DAT_07b11670;
   const uintptr_t poolEnd = (uintptr_t)DAT_07b11670 + sizeof(DAT_07b11670);
   int iVar2 = 0;
@@ -63,7 +63,7 @@ void Effect_TickAll(void)
 void Joint_TickAll(void)
 {
   JOINT* joints = AsJoint(DAT_07b27150);
-  const uint count = (uint)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
+  const uint count = (uint)(sizeof(DAT_07b27150) / sizeof(JOINT));   // kJointPoolSize
   for (uint i = 0; i < count; ++i) {
     if (joints[i].Live != 0) {
       MoveJoint((undefined1 *)&joints[i], i);

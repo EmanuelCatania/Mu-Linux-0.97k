@@ -37,7 +37,7 @@ extern void __cdecl operator_delete(void* ptr);
 extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType)
 {
     JOINT* joints = AsJoint(DAT_07b27150);
-    const int count = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
+    const int count = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // kJointPoolSize
     for (int i = 0; i < count; ++i) {
         JOINT* j = &joints[i];
         if (j->Live != 0 &&

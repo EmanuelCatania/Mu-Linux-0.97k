@@ -3,6 +3,7 @@
 #include "Render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
 #include "Scene/SceneObjectCell.h"
+#include "Render/EffectPools.h"
 struct GATE_ATTRIBUTE;
 struct OBJECT;
 // globals.h — extern declarations for all Ghidra DAT_ globals.
@@ -615,7 +616,7 @@ extern DWORD   DAT_07abf5dc;
 extern DWORD   DAT_07abf5e0;
 extern float  _DAT_07abf5e8;   // extra flag (reset 0 each frame)
 extern DWORD   DAT_07abf5e8;
-extern char    DAT_07abf5f0[3000 * 0x70];   // particle pool — 3000 slots × 112B
+extern char    DAT_07abf5f0[kParticlePoolSize * 0x70];   // particle pool — 3000 slots × 112B
 extern char    DAT_007abf06;   // (low byte flag)
 extern float  _DAT_007abf06;
 
@@ -642,7 +643,7 @@ extern float   g_AttackEffectMatrix_04D_Aux[3][4];
 // `g_RenderPool_07c608a8`; DAT_07c608b4 es el campo ancla +12 del slot[0].
 extern char    g_RenderPool_07c608a8[100 * 0x2f0];
 // Dueños de slot: los pools conservan el layout x86, con 4 bytes para el puntero.
-extern uintptr_t g_ParticleOwner[3000];
+extern uintptr_t g_ParticleOwner[kParticlePoolSize];
 extern uintptr_t g_TrailOwner[100];
 extern uintptr_t g_OperateObjects[200];
 #define DAT_07c608b4  (*(DWORD*)(&g_RenderPool_07c608a8[12]))
@@ -1219,7 +1220,7 @@ extern float  _DAT_00552954;   // sin animation frequency constant
 extern DamagePoint DAT_07c80110[kDamagePointCount];   // active-flag at +0; slot stride 0x70
 
 // ── Character/effect update pool (0x07c85890, stride 0x1BC, 1002 slots) ──────
-extern char    DAT_07c85890[1002 * OBJECT_STRIDE];  // pool array (was 1 byte → AUTO-SKIP)
+extern char    DAT_07c85890[kSpritePoolSize * OBJECT_STRIDE];  // pool array (was 1 byte → AUTO-SKIP)
 extern int&    DAT_07c85894;   // alias = pool[+4] (Sound_Queue / Sigil_RenderAll)
 
 // ── Math / animation constants ────────────────────────────────────────────────
@@ -1731,7 +1732,7 @@ extern float   _DAT_00552cf8;  // π/2 (used in SLERP degenerate case)
 extern float   _DAT_00552d00;  // SLERP near-parallel threshold (~1e-3)
 extern float   _DAT_00552a1c;  // animation speed multiplier
 // ── Effect pool ──────────────────────────────────────────────────────────────
-extern char    DAT_07b11670[200 * OBJECT_STRIDE];   // Effect pool: 200 × 0x1bc (IDA: 0x07B11670..0x07B27150)
+extern char    DAT_07b11670[kEffectPoolSize * OBJECT_STRIDE];   // Effect pool: 200 × 0x1bc (IDA: 0x07B11670..0x07B27150)
 // ── Monster_Data string literals ─────────────────────────────────────────────
 extern char    s_Data2_MonsterSetBase2_txt_00561530[];
 extern char    s_Data2_Monster__0055e06c[];  // "Data2/Monster/"
@@ -1960,7 +1961,7 @@ extern float   _DAT_00552d34;  // perspective scale constant
 // JOINT lleva un puntero en +0x40: los campos siguientes se corren en x64.
 constexpr int JOINT_FIELD_SHIFT = (int)sizeof(void*) - 4;
 constexpr int JOINT_STRIDE = 0x9D8 + JOINT_FIELD_SHIFT;
-extern char    DAT_07b27150[500 * JOINT_STRIDE];   // Joint pool: 500 × 0x9d8 (IDA: 0x07B27150..0x07C5AB30)
+extern char    DAT_07b27150[kJointPoolSize * JOINT_STRIDE];   // Joint pool: 500 × 0x9d8 (IDA: 0x07B27150..0x07C5AB30)
 
 // ── Joint_Create float constants ─────────────────────────────────────────────
 extern float   _DAT_00552a14;  // joint float constant

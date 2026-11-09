@@ -717,7 +717,7 @@ DWORD    DAT_07abf5e8  = 0;
 // Particle pool — 3000 slots × 0x70 (112) bytes = 336000 bytes total.
 // Binario original: 0x07abf5f0..0x07b11670 = 0x52080 bytes = 3000 slots exactos,
 // los que itera MoveParticles.
-char     DAT_07abf5f0[3000 * 0x70] = {0};   // particle pool base
+char     DAT_07abf5f0[kParticlePoolSize * 0x70] = {0};   // particle pool base
 char     DAT_007abf06  = 0;
 float    _DAT_007abf06 = 0.0f;
 
@@ -733,7 +733,7 @@ unsigned char DAT_07c5ab3c[200 * 0x70] = {};
 // field within slot[0]. We back the entire pool here and project the anchor
 // through a macro (see globals.h).
 char     g_RenderPool_07c608a8[100 * 0x2f0] = {};
-uintptr_t g_ParticleOwner[3000] = {};
+uintptr_t g_ParticleOwner[kParticlePoolSize] = {};
 uintptr_t g_TrailOwner[100] = {};
 uintptr_t g_OperateObjects[200] = {};
 DWORD    DAT_07c74ae0  = 0;
@@ -1252,7 +1252,7 @@ DamagePoint DAT_07c80110[kDamagePointCount] = {};
 // Character/effect update pool — 1002 slots × 444 bytes = 0x6c660 (matches
 // binario original 0x07c85890..0x07cf1ef0). CreateSprite (Effect_Spawn) necesita
 // el pool real para spawnear (glow +9, wing FX, weapon glows, lightning crackles).
-char     DAT_07c85890[1002 * OBJECT_STRIDE] = {0};
+char     DAT_07c85890[kSpritePoolSize * OBJECT_STRIDE] = {0};
 // DAT_07c85894 = mismo pool, offset +4 (Sound_Queue.cpp / Sigil_RenderAll).
 // Lo dejamos como referencia al int en pool[4..7] para compartir storage.
 int&     DAT_07c85894 = *reinterpret_cast<int*>(&DAT_07c85890[4]);
@@ -1745,7 +1745,7 @@ float   _DAT_00552d00 = 0.001f;        // SLERP near-parallel epsilon
 float   _DAT_00552a1c = 1.0f;
 // ── Effect pool ───────────────────────────────────────────────────────────────
 // Effect pool — Effect_TickAll itera 200 slots × 0x1bc bytes.
-char    DAT_07b11670[200 * OBJECT_STRIDE] = {};   // 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
+char    DAT_07b11670[kEffectPoolSize * OBJECT_STRIDE] = {};   // IDA: 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
 // ── Monster_Data string literals ─────────────────────────────────────────────
 char    s_Data2_MonsterSetBase2_txt_00561530[] = "Data2/MonsterSetBase2.txt";
 char    s_Data2_Monster__0055e06c[] = "Data2/Monster/";
@@ -1948,7 +1948,7 @@ float   _DAT_00552d34  = 1.4f;
 
 // ── Joint pool ────────────────────────────────────────────────────────────────
 // Joint pool — Joint_TickAll itera 500 slots × 0x9d8 bytes (~1.2MB).
-char    DAT_07b27150[500 * JOINT_STRIDE] = {};   // 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
+char    DAT_07b27150[kJointPoolSize * JOINT_STRIDE] = {};   // IDA: 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
 
 // ── Joint_Create float constants ─────────────────────────────────────────────
 float   _DAT_00552a14  = -0.5f;

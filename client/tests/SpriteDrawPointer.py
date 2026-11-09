@@ -16,7 +16,7 @@ from SceneObjectPointer import build_and_run, function, read_source
 SERVICES = r'''
 #include <algorithm>
 struct OBJECT;
-char* spritePool; char* g_BitmapsRaw;
+char* spritePool; char* g_BitmapsRaw; constexpr int kSpritePoolSize=1002;
 #define DAT_07c85890 (*reinterpret_cast<char(*)[1002*444]>(spritePool))
 bool blocked; int settingsCalls;
 struct Settings { bool GetAntilag(int id) { Require(id==ANTILAG_STATIC_EFFECTS); ++settingsCalls; return blocked; } } gUserSettings;

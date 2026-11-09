@@ -2109,7 +2109,7 @@ void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float para
 void CheckSprites(void)
 {
     char *pcVar1 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
+    for (int i = 0; i < kSpritePoolSize; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
             pcVar1[EntityOffset(0x160)] = '\x01';
     }

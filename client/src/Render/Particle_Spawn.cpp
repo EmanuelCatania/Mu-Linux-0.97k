@@ -306,14 +306,14 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     float local_30[12];
 
     // ── scan pool for free slot ────────────────────────────────────────────────
-    // Pool real de 3000 slots: se itera por índice, no por el end-bound absoluto
+    // Pool de kParticlePoolSize slots: se itera por índice, no por el end-bound absoluto
     // 0x7b1166f del binario.
     iVar6 = 0;
     pcVar11 = DAT_07abf5f0;
     while (*pcVar11 != '\0') {
         pcVar11 = pcVar11 + 0x70;
         iVar6 = iVar6 + 1;
-        if (iVar6 >= 3000)
+        if (iVar6 >= kParticlePoolSize)
             return 0;
     }
 
