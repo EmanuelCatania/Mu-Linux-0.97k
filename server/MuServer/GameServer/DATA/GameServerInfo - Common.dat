@@ -26,8 +26,11 @@ MoveCheckTolerance=4
 
 ; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
 AttackCheck=1
-; Intervalo minimo entre dos ataques normales, en milisegundos
-AttackCheckMinInterval=200
+; El intervalo minimo entre dos ataques depende de la velocidad, como la
+; animacion del cliente (PlaySpeed = 0.6 + PhysiSpeed * 0.004 en la mas rapida):
+;   minimo (ms) = AttackCheckScale / (0.6 + PhysiSpeed * 0.004)
+; Con 240: 400 ms con velocidad 0, 138 ms con 285. Medido: 238 ms con 285.
+AttackCheckScale=240
 
 ;==================================================
 ; Common Settings

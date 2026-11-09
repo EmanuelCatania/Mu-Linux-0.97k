@@ -102,7 +102,7 @@ public:
 	int m_MoveCheck;
 	int m_MoveCheckTolerance;
 	int m_AttackCheck;
-	int m_AttackCheckMinInterval;
+	int m_AttackCheckScale;
 	// Common
 	int m_MainChecksum;
 	int m_MaxItemOption;
