@@ -790,7 +790,9 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 	}
 
 	// Mismo criterio que CGMoveRecv: con el chaos box abierto no hay movimiento.
-	if (lpObj->Interface.use != 0 && lpObj->Interface.type == INTERFACE_CHAOS_BOX)
+	// La posición actual sí pasa: es la corrección que manda gObjSetPosition
+	// para devolver al jugador a su lugar.
+	if (lpObj->Interface.use != 0 && lpObj->Interface.type == INTERFACE_CHAOS_BOX && (lpMsg->x != lpObj->X || lpMsg->y != lpObj->Y))
 	{
 		return;
 	}
