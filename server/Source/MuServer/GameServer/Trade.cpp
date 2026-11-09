@@ -380,6 +380,23 @@ void CTrade::CGTradeOkButtonRecv(PMSG_TRADE_OK_BUTTON_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	// El zen ofrecido se valida al ponerlo (CGTradeMoneyRecv) pero se descuenta
+	// recién acá. Entre una cosa y la otra el jugador puede gastar zen (reparar no
+	// mira la interfaz), y como Money es DWORD la resta daría la vuelta: el que
+	// ofreció quedaría con ~4.290 millones y el otro recibiría el monto completo.
+	if (lpObj->Money < (DWORD)lpObj->TradeMoney || lpTarget->Money < (DWORD)lpTarget->TradeMoney)
+	{
+		this->ResetTrade(aIndex);
+
+		this->GCTradeResultSend(aIndex, 0);
+
+		this->ResetTrade(bIndex);
+
+		this->GCTradeResultSend(bIndex, 0);
+
+		return;
+	}
+
 	if (this->ExchangeTradeItem(lpObj, lpTarget) == 0 || this->ExchangeTradeItem(lpTarget, lpObj) == 0)
 	{
 		this->ResetTrade(aIndex);
