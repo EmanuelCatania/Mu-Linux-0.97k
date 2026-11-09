@@ -34,6 +34,7 @@
 #include "Message.h"
 #include "MonsterManager.h"
 #include "MonsterSetBase.h"
+#include "MapSpawns.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"

@@ -34,6 +34,7 @@ COPY --from=build /build/bin/ConnectServer /opt/mu/ConnectServer/ConnectServer
 COPY --from=build /build/bin/JoinServer /opt/mu/JoinServer/JoinServer
 COPY --from=build /build/bin/DataServer /opt/mu/DataServer/DataServer
 COPY --from=build /build/bin/GameServer /opt/mu/GameServer/GameServer
+COPY --from=build /build/bin/mu-data /opt/mu/mu-data
 
 COPY MuServer/ConnectServer/ConnectServer.ini /opt/mu/ConnectServer/
 COPY MuServer/ConnectServer/ServerList.dat /opt/mu/ConnectServer/
@@ -55,6 +56,8 @@ RUN chmod +x /opt/mu/entrypoint.sh \
     /opt/mu/JoinServer/JoinServer \
     /opt/mu/DataServer/DataServer \
     /opt/mu/GameServer/GameServer \
+    /opt/mu/mu-data \
+    && ln -s /opt/mu/mu-data /usr/local/bin/mu-data \
     && mv /opt/mu/GameServer/DATA /opt/mu/GameServer/Data
 
 EXPOSE 44405/tcp 55601/udp 55901/tcp
