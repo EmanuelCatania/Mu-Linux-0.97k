@@ -1106,8 +1106,6 @@ bool CSkillManager::SkillEvilSpirit(int aIndex, int bIndex, CSkill* lpSkill)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	int count = 0;
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE)
@@ -1128,11 +1126,6 @@ bool CSkillManager::SkillEvilSpirit(int aIndex, int bIndex, CSkill* lpSkill)
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, false, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == false)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1213,8 +1206,6 @@ bool CSkillManager::SkillTripleShot(int aIndex, int bIndex, CSkill* lpSkill, BYT
 
 	this->GetSkillFrustrum(SkillFrustrumX, SkillFrustrumY, angle, lpObj->X, lpObj->Y, (float)SkillInfo.Radio, (float)SkillInfo.Range);
 
-	int count = 0;
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE)
@@ -1240,11 +1231,6 @@ bool CSkillManager::SkillTripleShot(int aIndex, int bIndex, CSkill* lpSkill, BYT
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, false, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == 0)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1477,8 +1463,6 @@ bool CSkillManager::SkillTwistingSlash(int aIndex, int bIndex, CSkill* lpSkill)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	int count = 0;
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE)
@@ -1499,11 +1483,6 @@ bool CSkillManager::SkillTwistingSlash(int aIndex, int bIndex, CSkill* lpSkill)
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, false, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == 0)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1512,8 +1491,6 @@ bool CSkillManager::SkillTwistingSlash(int aIndex, int bIndex, CSkill* lpSkill)
 bool CSkillManager::SkillRagefulBlow(int aIndex, int bIndex, CSkill* lpSkill)
 {
 	LPOBJ lpObj = &gObj[aIndex];
-
-	int count = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1535,11 +1512,6 @@ bool CSkillManager::SkillRagefulBlow(int aIndex, int bIndex, CSkill* lpSkill)
 		}
 
 		gObjAddAttackProcMsgSendDelay(lpObj, 50, index, 500, lpSkill->m_index, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == 0)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1571,8 +1543,6 @@ bool CSkillManager::SkillDeathStab(int aIndex, int bIndex, CSkill* lpSkill)
 
 	this->GetSkillFrustrum(SkillFrustrumX, SkillFrustrumY, angle, lpObj->X, lpObj->Y, 1.5f, 3.0f);
 
-	int count = 0;
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE)
@@ -1603,11 +1573,6 @@ bool CSkillManager::SkillDeathStab(int aIndex, int bIndex, CSkill* lpSkill)
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, false, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == 0)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1709,8 +1674,6 @@ bool CSkillManager::SkillFireSlash(int aIndex, int bIndex, CSkill* lpSkill)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	int count = 0;
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer2[n].state == VIEWPORT_NONE)
@@ -1736,11 +1699,6 @@ bool CSkillManager::SkillFireSlash(int aIndex, int bIndex, CSkill* lpSkill)
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, true, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_EXTENDED_COUNT(count) == 0)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1760,8 +1718,6 @@ bool CSkillManager::SkillPowerSlash(int aIndex, int bIndex, CSkill* lpSkill, BYT
 	int SkillFrustrumX[4], SkillFrustrumY[4];
 
 	this->GetSkillFrustrum(SkillFrustrumX, SkillFrustrumY, angle, lpObj->X, lpObj->Y, (float)SkillInfo.Radio, (float)SkillInfo.Range);
-
-	int count = 0;
 
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
@@ -1788,11 +1744,6 @@ bool CSkillManager::SkillPowerSlash(int aIndex, int bIndex, CSkill* lpSkill, BYT
 		}
 
 		gAttack.Attack(lpObj, &gObj[index], lpSkill, false, 0, 0);
-
-		if (CHECK_SKILL_ATTACK_COUNT(count) == false)
-		{
-			break;
-		}
 	}
 
 	return true;
@@ -1889,7 +1840,19 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		}
 	}
 
-	lpMsg->count = ((lpMsg->count > 5) ? 5 : lpMsg->count);
+	// Sin tope de 5 blancos por paquete: el cliente manda todos los que alcanzó
+	// el skill. Sólo se acota a lo que realmente trae el paquete, y se descartan
+	// los repetidos para que un blanco no reciba dos golpes del mismo paquete.
+	int MaxCount = (lpMsg->header.size > sizeof(PMSG_MULTI_SKILL_ATTACK_RECV)) ? ((lpMsg->header.size - sizeof(PMSG_MULTI_SKILL_ATTACK_RECV)) / sizeof(PMSG_MULTI_SKILL_ATTACK)) : 0;
+
+	lpMsg->count = ((lpMsg->count > MaxCount) ? MaxCount : lpMsg->count);
+
+	// El ataque de área de los monstruos (type != 0) conserva su tope de 5
+	// jugadores: quitarlo cambiaría el balance del lado de los monstruos.
+	if (type != 0 && lpMsg->count > 5)
+	{
+		lpMsg->count = 5;
+	}
 
 	for (int n = 0; n < lpMsg->count; n++)
 	{
@@ -1898,6 +1861,20 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		int bIndex = MAKE_NUMBERW(lpInfo->index[0], lpInfo->index[1]);
 
 		if (OBJECT_RANGE(bIndex) == 0)
+		{
+			continue;
+		}
+
+		bool repeated = false;
+
+		for (int i = 0; i < n && !repeated; i++)
+		{
+			PMSG_MULTI_SKILL_ATTACK* lpPrev = (PMSG_MULTI_SKILL_ATTACK*)(((BYTE*)lpMsg) + sizeof(PMSG_MULTI_SKILL_ATTACK_RECV) + (sizeof(PMSG_MULTI_SKILL_ATTACK) * i));
+
+			repeated = (MAKE_NUMBERW(lpPrev->index[0], lpPrev->index[1]) == bIndex);
+		}
+
+		if (repeated)
 		{
 			continue;
 		}
