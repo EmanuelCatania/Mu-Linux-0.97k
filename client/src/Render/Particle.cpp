@@ -166,7 +166,7 @@ int __cdecl
 CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
              intptr_t param_5, float param_6, int param_7)
 {
-  // El pool DAT_07c85890 (1002 slots × 0x1bc) se itera por índice acotado, no
+  // El pool DAT_07c85890 (kSpritePoolSize slots; IDA: 1002) se itera por índice acotado, no
   // por la dirección absoluta del binario.
 
   // DESVIACION: guard de NULL en param_2 (pos) y param_4 (dir); el binario no lo
@@ -184,7 +184,7 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
     }
     return 0;
   }
-  const int kPoolSlots = 1002;
+  const int kPoolSlots = kSpritePoolSize;
   char *pcVar2 = DAT_07c85890;
   for (int iVar1 = 0; iVar1 < kPoolSlots; ++iVar1, pcVar2 += OBJECT_STRIDE) {
     if (*pcVar2 == '\0') {

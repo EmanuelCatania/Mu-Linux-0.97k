@@ -343,7 +343,7 @@ void __cdecl ItemDrop_Render(void)
     // DESVIACION (DLL Antilag, ret en 0x00473710): sin joints de skills.
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     JOINT* joints = AsJoint(DAT_07b27150);
-    const int kEntries = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
+    const int kEntries = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // kJointPoolSize
 
     for (int eIdx = 0; eIdx < kEntries; ++eIdx) {
         JOINT* j = &joints[eIdx];
@@ -936,7 +936,7 @@ void __cdecl EffectPool_RenderAll(void)
     // DESVIACION (DLL Antilag, ret en 0x0046BBA0): sin efectos de skills.
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     // HeadAngle (0x07B11698) está en offset +40 dentro del
-    // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
+    // effect pool DAT_07b11670 (kEffectPoolSize entries; IDA: 200).
     // En IDA: HeadAngle iter es float*, offsets negativos cubren la cabecera del
     // entry. v0 inicia en (float*)(pool + 40), recorre 200 entries de 111 floats.
     if (!DAT_05828d58) return;
@@ -945,7 +945,7 @@ void __cdecl EffectPool_RenderAll(void)
 
     // Pool: 200 entries x 0x1bc bytes = 444B stride = 111 floats por entry.
     float* v0 = HeadAngle;
-    const int kMaxEntries = 200;
+    const int kMaxEntries = kEffectPoolSize;
 
     for (int i = 0; i < kMaxEntries; ++i, v0 += OBJECT_STRIDE / 4) {
         if (!*((BYTE*)v0 - 40)) continue;
@@ -1218,7 +1218,7 @@ void Fauna_TickSprites() {
 void EffectPool_TickRenderState() {
     if (SceneFlag != 4 && SceneFlag != 5) return;
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS) || !DAT_05828d58) return;
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < kEffectPoolSize; ++i) {
         OBJECT &o = *(OBJECT *)((char *)DAT_07b11670 + i * OBJECT_STRIDE);
         if (!o.Live) continue;
         o.Visible = (BYTE)Frustum_TestSphere(o.Position, 400.0f);

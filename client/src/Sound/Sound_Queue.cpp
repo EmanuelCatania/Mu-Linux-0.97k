@@ -3,7 +3,7 @@
 //
 // Pese al nombre del archivo, acá no hay sonido: son RenderSprites
 // (Render_DrawSpritePool) y RenderSprite (Render_DrawSprite), que recorren y
-// dibujan el pool de sprites en DAT_07c85890 (1002 slots de 0x1bc bytes;
+// dibujan el pool de sprites en DAT_07c85890 (kSpritePoolSize slots, IDA: 1002;
 // +0 flag activo, +4 modo de blend), más los timers de avisos y de chat.
 
 #include "stdafx.h"
@@ -17,15 +17,15 @@ char simulationSprites[sizeof(DAT_07c85890)] = {};
 // Su consumo por el render no borra la muestra para los renders sin paso.
 void Sprite_CaptureStep() {
     memcpy(simulationSprites, DAT_07c85890, sizeof(simulationSprites));
-    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * OBJECT_STRIDE] = 0;
+    for (int i = 0; i < kSpritePoolSize; ++i) DAT_07c85890[i * OBJECT_STRIDE] = 0;
 }
 void Sprite_ReplayStep() {
     int destination = 0;
-    for (int i = 0; i < 1002; ++i) {
+    for (int i = 0; i < kSpritePoolSize; ++i) {
         const char *sample = simulationSprites + i * OBJECT_STRIDE;
         if (!sample[0]) continue;
-        while (destination < 1002 && DAT_07c85890[destination * OBJECT_STRIDE]) ++destination;
-        if (destination == 1002) break;
+        while (destination < kSpritePoolSize && DAT_07c85890[destination * OBJECT_STRIDE]) ++destination;
+        if (destination == kSpritePoolSize) break;
         char *out=DAT_07c85890+destination++*OBJECT_STRIDE;
         memcpy(out,sample,OBJECT_STRIDE);
         // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
@@ -45,13 +45,13 @@ void Sprite_ReplayStep() {
 //   - llama Render_DrawSprite (RenderSprite) para dibujar el quad
 //   - clear active flag
 // Es la función que dibuja todos los sprites/glows/sparkles del pool (glow +9
-// set, wing FX, weapon FX, particles, etc.). Itera los 1002 slots por índice.
+// set, wing FX, weapon FX, particles, etc.). Itera los kSpritePoolSize slots por índice.
 // IDA: RenderSprites
 extern "C" void DbgLogPublic(const char* msg);
 void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar2 += OBJECT_STRIDE) {
+    for (int i = 0; i < kSpritePoolSize; ++i, pcVar2 += OBJECT_STRIDE) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
             if      (blend == 0) GL_SetBlendAdditive();

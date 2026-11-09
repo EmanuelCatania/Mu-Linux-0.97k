@@ -96,17 +96,17 @@
 
 namespace {
 struct ParticleSample { bool valid = false; short type = 0; int variant = 0; float puff = 1.0f; };
-ParticleSample samples[200];
+ParticleSample samples[kEffectPoolSize];
 }
 void Particle_InvalidateRender(const void *entity) {
     const uintptr_t offset = (uintptr_t)entity - (uintptr_t)DAT_07b11670;
     // El índice es por OBJECT_STRIDE: con 0x1bc, en x64 pasaba de 199 y pisaba
     // los globals siguientes (la burbuja de chat pendiente: crash en Blood Castle).
-    if (offset < 200 * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / OBJECT_STRIDE].valid = false;
+    if (offset < (uintptr_t)kEffectPoolSize * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / OBJECT_STRIDE].valid = false;
 }
 // DESVIACION: el pool se muestrea antes del pase de personajes, a 25 Hz.
 void Particle_PrepareRender() {
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < kEffectPoolSize; ++i) {
         char *slot = (char *)DAT_07b11670 + i * OBJECT_STRIDE;
         ParticleSample &sample = samples[i];
         sample.valid = slot[0] && slot[EntityOffset(352)];
@@ -121,7 +121,7 @@ void Particle_PrepareRender() {
 
 // =============================================================================
 // IDA: FUN_0046be40 @ 0x0046BE40 — Particle_RenderAll
-// Itera el effect pool DAT_07b11670 (200 slots × 0x1BC bytes). Para cada slot
+// Itera el effect pool DAT_07b11670 (kEffectPoolSize slots; IDA: 200). Para cada slot
 // activo y visible, despacha por type code (1191/1200/1264/1265) llamando a
 // RenderTerrainAlphaBitmap con escala/color/rotación per-tipo:
 //   1191 = scaling glow (incrementa scale 0.2/frame, color desde counter)
@@ -144,7 +144,7 @@ void Particle_PrepareRender() {
 void __cdecl Particle_RenderAll(void)
 {
     char* base = (char*)&DAT_07b11670[0];
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < kEffectPoolSize; ++i) {
         char* slot = base + i * OBJECT_STRIDE;
         if (slot[0] == 0) continue;          // inactive
         if (slot[EntityOffset(352)] == 0) continue;         // not visible

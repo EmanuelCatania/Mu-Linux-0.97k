@@ -146,11 +146,11 @@ LAB_00460dd8:
   pfVar8 = (float *)0x0;
   pfVar17 = (float *)&DAT_07b11670[0];
   // El original corta con `if (0x7b2714f < (int)pfVar17)`, una dirección absoluta
-  // del binario. El pool DAT_07b11670 es de 200 × 0x1bc bytes: se recorre por
+  // del binario. El pool DAT_07b11670 es de kEffectPoolSize slots: se recorre por
   // cantidad de iteraciones.
   {
     bool found_slot = false;
-    for (int i = 0; i < 200; ++i, pfVar17 = pfVar17 + OBJECT_STRIDE / 4) {
+    for (int i = 0; i < kEffectPoolSize; ++i, pfVar17 = pfVar17 + OBJECT_STRIDE / 4) {
       if (*(char *)pfVar17 == '\0') { found_slot = true; break; }
     }
     if (!found_slot) return (float *)0x0;
@@ -4153,7 +4153,7 @@ LAB_00465388:
 // IDA 0.98j sub_46C220: apaga todo Tamachan vivo.
 void __cdecl Tamachan_Clear(void)
 {
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < kEffectPoolSize; ++i) {
     char *o = &DAT_07b11670[i * OBJECT_STRIDE];
     if (*o && *(short *)(o + 2) == 0xc1) {
       *o = 0;
@@ -4187,7 +4187,7 @@ void __cdecl Tamachan_Spawn(void)
 // (se hunde) y le quedan 10 frames.
 void __cdecl Tamachan_Dismiss(void)
 {
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < kEffectPoolSize; ++i) {
     char *o = &DAT_07b11670[i * OBJECT_STRIDE];
     if (*o && *(short *)(o + 2) == 0xc1) {
       *(int *)(o + 96) = 10;
