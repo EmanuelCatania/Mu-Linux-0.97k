@@ -32,6 +32,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
       PUBLIC_IP: ${PUBLIC_IP}
+      MU_TRACE_ENABLED: ${MU_TRACE_ENABLED:-0}
     depends_on:
       mysql:
         condition: service_healthy
