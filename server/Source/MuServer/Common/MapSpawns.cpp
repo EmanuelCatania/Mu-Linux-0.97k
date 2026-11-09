@@ -16,7 +16,7 @@
 
 namespace fs = std::filesystem;
 
-static const char* const kSectionNames[MAP_SPAWN_SECTIONS] = { "npc", "area", "spot", "event_area", "event" };
+static const char* const kSectionNames[MAP_SPAWN_SECTIONS] = { "npc", "area", "spot", "invasion", "event" };
 
 const char* MapSpawnSectionName(int section)
 {
@@ -109,15 +109,37 @@ static bool ListMapFolders(const std::string& mapsDir, std::map<int, fs::path>& 
 	return true;
 }
 
-bool MapSpawns_HasData(const std::string& mapsDir)
+static fs::path MapsDir(const std::string& dataDir)
+{
+	return fs::u8path(dataDir) / "Maps";
+}
+
+static fs::path InvasionsFile(const std::string& dataDir)
+{
+	return fs::u8path(dataDir) / "Events" / "Invasions" / "Spawns.toml";
+}
+
+std::string MapSpawns_InvasionsPath(const std::string& dataDir)
+{
+	return InvasionsFile(dataDir).u8string();
+}
+
+std::string MapSpawns_MapsPath(const std::string& dataDir)
+{
+	return MapsDir(dataDir).u8string();
+}
+
+bool MapSpawns_HasData(const std::string& dataDir)
 {
 	std::map<int, fs::path> folders;
 
 	std::string error;
 
+	std::error_code ec;
+
 	// Con carpetas repetidas también hay datos: que MapSpawns_Load lo reporte en
 	// vez de caer en silencio al .txt.
-	return !ListMapFolders(mapsDir, folders, error) || !folders.empty();
+	return !ListMapFolders(MapsDir(dataDir).u8string(), folders, error) || !folders.empty() || fs::is_regular_file(InvasionsFile(dataDir), ec);
 }
 
 // Lee un entero del entry; `required` hace que su ausencia sea error.
@@ -182,9 +204,26 @@ static bool ReadCoords(const toml::table& entry, const char* key, size_t count, 
 	return true;
 }
 
-static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry> (&sections)[MAP_SPAWN_SECTIONS], std::string& error)
+// Nombre de la lista en cada tipo de archivo. En las carpetas de mapa van las
+// cuatro secciones atadas a un mapa; las invasiones (sección 3) cruzan mapas y
+// viven aparte, en Events/Invasions/Spawns.toml, con el mapa en cada entrada.
+static const char* ListName(int section, bool invasions)
+{
+	if (invasions)
+	{
+		return (section == MAP_SPAWN_EVENT_AREA) ? "invasion" : nullptr;
+	}
+
+	return (section == MAP_SPAWN_EVENT_AREA) ? nullptr : kSectionNames[section];
+}
+
+// `map` = número de la carpeta, o -1 para el archivo de invasiones (el mapa va
+// en cada entrada).
+static bool LoadSpawnFile(const fs::path& path, int map, std::vector<MapSpawnEntry> (&sections)[MAP_SPAWN_SECTIONS], std::string& error)
 {
 	std::string file = path.u8string();
+
+	bool invasions = (map < 0);
 
 	toml::parse_result result = toml::parse_file(file);
 
@@ -205,12 +244,23 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 
 		for (int s = 0; s < MAP_SPAWN_SECTIONS; s++)
 		{
-			known = known || key.str() == kSectionNames[s];
+			const char* name = ListName(s, invasions);
+
+			known = known || (name != nullptr && key.str() == name);
 		}
 
 		if (!known)
 		{
-			error = file + ":" + std::to_string(node.source().begin.line) + ": sección desconocida '" + std::string(key.str()) + "' (valen npc, area, spot, event_area y event)";
+			std::string where = file + ":" + std::to_string(node.source().begin.line) + ": ";
+
+			if (!invasions && key.str() == "event_area")
+			{
+				error = where + "los puntos de las invasiones cruzan mapas: van en Events/Invasions/Spawns.toml, con `map` en cada entrada";
+			}
+			else
+			{
+				error = where + "sección desconocida '" + std::string(key.str()) + (invasions ? "' (vale invasion)" : "' (valen npc, area, spot y event)");
+			}
 
 			return false;
 		}
@@ -218,7 +268,14 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 
 	for (int s = 0; s < MAP_SPAWN_SECTIONS; s++)
 	{
-		const toml::node* sectionNode = root.get(kSectionNames[s]);
+		const char* listName = ListName(s, invasions);
+
+		if (listName == nullptr)
+		{
+			continue;
+		}
+
+		const toml::node* sectionNode = root.get(listName);
 
 		if (sectionNode == nullptr)
 		{
@@ -229,7 +286,7 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 
 		if (array == nullptr)
 		{
-			error = file + ":" + std::to_string(sectionNode->source().begin.line) + ": '" + kSectionNames[s] + "' tiene que ser una lista";
+			error = file + ":" + std::to_string(sectionNode->source().begin.line) + ": '" + listName + "' tiene que ser una lista";
 
 			return false;
 		}
@@ -242,7 +299,7 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 
 			if (entry == nullptr)
 			{
-				error = where + ": cada elemento de '" + kSectionNames[s] + "' es una tabla { monster = ..., ... }";
+				error = where + ": cada elemento de '" + listName + "' es una tabla { monster = ..., ... }";
 
 				return false;
 			}
@@ -253,11 +310,11 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 			{
 				std::string_view k = key.str();
 
-				bool allowed = k == "monster" || k == "dir" || k == "dis" || (box ? k == "box" || k == "count" : k == "at") || (s == MAP_SPAWN_EVENT_AREA && k == "value");
+				bool allowed = k == "monster" || k == "dir" || k == "dis" || (box ? k == "box" || k == "count" : k == "at") || (s == MAP_SPAWN_EVENT_AREA && k == "value") || (invasions && k == "map");
 
 				if (!allowed)
 				{
-					error = where + ": campo desconocido '" + std::string(k) + "' en '" + kSectionNames[s] + "'";
+					error = where + ": campo desconocido '" + std::string(k) + "' en '" + listName + "'";
 
 					return false;
 				}
@@ -275,7 +332,7 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 
 			std::string why;
 
-			bool ok = ReadInt(*entry, "monster", true, 0, 0, 65535, spawn.Monster, why) && ReadInt(*entry, "dir", false, -1, -1, 7, spawn.Dir, why) && ReadInt(*entry, "dis", false, 0, 0, 255, spawn.Dis, why) && ReadCoords(*entry, box ? "box" : "at", box ? 4 : 2, coords, why);
+			bool ok = (!invasions || ReadInt(*entry, "map", true, 0, 0, 255, spawn.Map, why)) && ReadInt(*entry, "monster", true, 0, 0, 65535, spawn.Monster, why) && ReadInt(*entry, "dir", false, -1, -1, 7, spawn.Dir, why) && ReadInt(*entry, "dis", false, 0, 0, 255, spawn.Dis, why) && ReadCoords(*entry, box ? "box" : "at", box ? 4 : 2, coords, why);
 
 			if (ok && box)
 			{
@@ -304,11 +361,11 @@ static bool LoadMapFile(const fs::path& path, int map, std::vector<MapSpawnEntry
 	return true;
 }
 
-bool MapSpawns_Load(const std::string& mapsDir, std::vector<MapSpawnEntry>& out, std::string& error)
+bool MapSpawns_Load(const std::string& dataDir, std::vector<MapSpawnEntry>& out, std::string& error)
 {
 	std::map<int, fs::path> folders;
 
-	if (!ListMapFolders(mapsDir, folders, error))
+	if (!ListMapFolders(MapsDir(dataDir).u8string(), folders, error))
 	{
 		return false;
 	}
@@ -319,10 +376,27 @@ bool MapSpawns_Load(const std::string& mapsDir, std::vector<MapSpawnEntry>& out,
 
 	for (const auto& [map, folder] : folders)
 	{
-		if (!LoadMapFile(folder / "Spawns.toml", map, sections, error))
+		if (!LoadSpawnFile(folder / "Spawns.toml", map, sections, error))
 		{
 			return false;
 		}
+	}
+
+	std::error_code ec;
+
+	if (fs::is_regular_file(InvasionsFile(dataDir), ec))
+	{
+		if (!LoadSpawnFile(InvasionsFile(dataDir), -1, sections, error))
+		{
+			return false;
+		}
+
+		// En el archivo de invasiones el mapa es un campo: se ordena por mapa
+		// conservando el orden del archivo dentro de cada uno.
+		std::stable_sort(sections[MAP_SPAWN_EVENT_AREA].begin(), sections[MAP_SPAWN_EVENT_AREA].end(), [](const MapSpawnEntry& a, const MapSpawnEntry& b)
+		{
+			return a.Map < b.Map;
+		});
 	}
 
 	out.clear();
@@ -484,6 +558,62 @@ bool MapSpawns_LoadLegacy(const std::string& path, std::vector<MapSpawnEntry>& o
 // ---------------------------------------------------------------------------
 // Escritura
 
+// Una entrada como tabla en línea, con el nombre del monstruo como comentario.
+static void WriteEntry(std::ofstream& file, const MapSpawnEntry& e, bool withMap, const std::string& mapName)
+{
+	file << "  { ";
+
+	if (withMap)
+	{
+		file << "map = " << e.Map << ", ";
+	}
+
+	file << "monster = " << e.Monster;
+
+	if (SectionIsBox(e.Section))
+	{
+		file << ", box = [" << e.X << ", " << e.Y << ", " << e.TX << ", " << e.TY << "], count = " << e.Count;
+
+		if (e.Section == MAP_SPAWN_EVENT_AREA)
+		{
+			file << ", value = " << e.Value;
+		}
+	}
+	else
+	{
+		file << ", at = [" << e.X << ", " << e.Y << "]";
+	}
+
+	if (e.Dir != -1)
+	{
+		file << ", dir = " << e.Dir;
+	}
+
+	if (e.Dis != 0)
+	{
+		file << ", dis = " << e.Dis;
+	}
+
+	file << " },";
+
+	if (!e.Comment.empty() || !mapName.empty())
+	{
+		file << " #";
+
+		if (!e.Comment.empty())
+		{
+			file << " " << e.Comment;
+		}
+
+		if (!mapName.empty())
+		{
+			file << (e.Comment.empty() ? " " : " - ") << mapName;
+		}
+	}
+
+	file << "\n";
+}
+
 bool MapSpawns_WriteToml(const std::string& path, int map, const std::string& mapName, const std::vector<MapSpawnEntry>& entries, std::string& error)
 {
 	std::ofstream file(fs::u8path(path), std::ios::binary);
@@ -497,17 +627,24 @@ bool MapSpawns_WriteToml(const std::string& path, int map, const std::string& ma
 
 	file << "# " << mapName << " (mapa " << map << "): monstruos y NPCs.\n"
 		<< "#\n"
-		<< "# npc         fijo en `at` = [x, y]\n"
-		<< "# area        `count` monstruos repartidos en `box` = [x, y, tx, ty]\n"
-		<< "# spot        uno, a 3 tiles o menos de `at`\n"
-		<< "# event_area  como area, para los eventos; `value` lo usa cada evento\n"
-		<< "# event       como npc, para los eventos\n"
+		<< "# npc    fijo en `at` = [x, y]\n"
+		<< "# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]\n"
+		<< "# spot   uno, a 3 tiles o menos de `at`\n"
+		<< "# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)\n"
+		<< "#\n"
+		<< "# Los puntos de las invasiones no van acá: cruzan mapas y viven en\n"
+		<< "# Events/Invasions/Spawns.toml.\n"
 		<< "#\n"
 		<< "# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se\n"
 		<< "# mueve el monstruo desde su lugar (0 si no se mueve).\n";
 
 	for (int s = 0; s < MAP_SPAWN_SECTIONS; s++)
 	{
+		if (s == MAP_SPAWN_EVENT_AREA)
+		{
+			continue;
+		}
+
 		bool first = true;
 
 		for (const MapSpawnEntry& e : entries)
@@ -524,40 +661,7 @@ bool MapSpawns_WriteToml(const std::string& path, int map, const std::string& ma
 				first = false;
 			}
 
-			file << "  { monster = " << e.Monster;
-
-			if (SectionIsBox(s))
-			{
-				file << ", box = [" << e.X << ", " << e.Y << ", " << e.TX << ", " << e.TY << "], count = " << e.Count;
-
-				if (s == MAP_SPAWN_EVENT_AREA)
-				{
-					file << ", value = " << e.Value;
-				}
-			}
-			else
-			{
-				file << ", at = [" << e.X << ", " << e.Y << "]";
-			}
-
-			if (e.Dir != -1)
-			{
-				file << ", dir = " << e.Dir;
-			}
-
-			if (e.Dis != 0)
-			{
-				file << ", dis = " << e.Dis;
-			}
-
-			file << " },";
-
-			if (!e.Comment.empty())
-			{
-				file << " # " << e.Comment;
-			}
-
-			file << "\n";
+			WriteEntry(file, e, false, std::string());
 		}
 
 		if (!first)
@@ -565,6 +669,52 @@ bool MapSpawns_WriteToml(const std::string& path, int map, const std::string& ma
 			file << "]\n";
 		}
 	}
+
+	if (!file)
+	{
+		error = "error escribiendo " + path;
+
+		return false;
+	}
+
+	return true;
+}
+
+bool MapSpawns_WriteInvasions(const std::string& path, const std::vector<MapSpawnEntry>& entries, const std::map<int, std::string>& mapNames, std::string& error)
+{
+	std::ofstream file(fs::u8path(path), std::ios::binary);
+
+	if (!file)
+	{
+		error = "no se pudo escribir " + path;
+
+		return false;
+	}
+
+	file << "# Puntos de aparición de las invasiones (Death King, Red Dragon, dorados...).\n"
+		<< "#\n"
+		<< "# Cruzan mapas, así que no están en ninguna carpeta de Maps: cada entrada\n"
+		<< "# dice en qué `map` aparece. Las invasiones en sí (horarios, jefes,\n"
+		<< "# mensajes) siguen en Event/InvasionManager.dat; ahí, la tabla 2 elige por\n"
+		<< "# mapa y por `value` qué puntos de esta lista usa cada una.\n"
+		<< "#\n"
+		<< "# `count` monstruos repartidos en `box` = [x, y, tx, ty]. dir: 0 a 7, o -1\n"
+		<< "# (o sin dir) para una al azar. dis: distancia que se mueve el monstruo.\n"
+		<< "\ninvasion = [\n";
+
+	for (const MapSpawnEntry& e : entries)
+	{
+		if (e.Section != MAP_SPAWN_EVENT_AREA)
+		{
+			continue;
+		}
+
+		auto name = mapNames.find(e.Map);
+
+		WriteEntry(file, e, true, (name != mapNames.end()) ? name->second : std::string());
+	}
+
+	file << "]\n";
 
 	if (!file)
 	{

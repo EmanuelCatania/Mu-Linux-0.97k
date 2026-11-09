@@ -312,13 +312,14 @@ void CServerInfo::ReadMonsterInfo()
 
 	gContentCatalog.LoadLegacyMonsters(gPath.GetFullPath("Custom\\Encoder\\"));
 
-	// Fase 5: si hay spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml)
+	// Fase 5: si hay spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml,
+	// y las invasiones en Data/Events/Invasions/Spawns.toml)
 	// mandan ellos; si no, MonsterSetBase.txt como siempre.
-	std::string maps = gPath.GetFullPath("Maps");
+	std::string data = gPath.GetFullPath("");
 
-	if (MapSpawns_HasData(maps))
+	if (MapSpawns_HasData(data))
 	{
-		gMonsterSetBase.LoadMaps(maps.c_str());
+		gMonsterSetBase.LoadMaps(data.c_str());
 	}
 	else
 	{

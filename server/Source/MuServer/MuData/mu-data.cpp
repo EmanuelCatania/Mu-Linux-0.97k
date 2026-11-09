@@ -1,15 +1,16 @@
 // mu-data: herramientas para los datos del server (Fase 5, datos por mapa).
 //
-//   mu-data import-spawns <MonsterSetBase.txt> <MapManager.txt> <Maps> [--force]
+//   mu-data import-spawns <MonsterSetBase.txt> <MapManager.txt> <Data> [--force]
 //       Parte MonsterSetBase.txt en un Spawns.toml por mapa
-//       (<Maps>/NN-Nombre/Spawns.toml). Los nombres de carpeta salen de
-//       MapManager.txt. Sin --force no pisa un Spawns.toml existente.
+//       (<Data>/Maps/NN-Nombre/Spawns.toml) y saca las invasiones, que cruzan
+//       mapas, a <Data>/Events/Invasions/Spawns.toml. Los nombres de carpeta
+//       salen de MapManager.txt. Sin --force no pisa archivos existentes.
 //
-//   mu-data check-spawns <MonsterSetBase.txt> <Maps>
+//   mu-data check-spawns <MonsterSetBase.txt> <Data>
 //       Lee las dos fuentes y compara la tabla que arma cada una, entrada por
 //       entrada, en orden de sección y mapa. Sale con 0 si son idénticas.
 //
-//   mu-data validate <Maps>
+//   mu-data validate <Data>
 //       Lee los Spawns.toml y avisa del primer error, con archivo y línea.
 
 #include "MapSpawns.h"
@@ -74,7 +75,31 @@ static bool ReadMapNames(const std::string& path, std::map<int, std::string>& na
 	return true;
 }
 
-static int ImportSpawns(const std::string& txt, const std::string& mapManager, const std::string& mapsDir, bool force)
+// Crea la carpeta de `file` y se niega a pisarlo sin --force.
+static bool PrepareOutput(const fs::path& file, bool force, std::string& error)
+{
+	std::error_code ec;
+
+	if (!force && fs::exists(file, ec))
+	{
+		error = file.u8string() + " ya existe (usar --force para pisarlo)";
+
+		return false;
+	}
+
+	fs::create_directories(file.parent_path(), ec);
+
+	if (ec)
+	{
+		error = "no se pudo crear " + file.parent_path().u8string() + ": " + ec.message();
+
+		return false;
+	}
+
+	return true;
+}
+
+static int ImportSpawns(const std::string& txt, const std::string& mapManager, const std::string& dataDir, bool force)
 {
 	std::string error;
 
@@ -92,44 +117,50 @@ static int ImportSpawns(const std::string& txt, const std::string& mapManager, c
 		return Fail(error);
 	}
 
+	// Las invasiones (sección 3) van a su propio archivo; el resto, por mapa.
 	std::map<int, std::vector<MapSpawnEntry>> byMap;
+
+	size_t invasions = 0;
 
 	for (const MapSpawnEntry& e : entries)
 	{
-		byMap[e.Map].push_back(e);
+		if (e.Section == MAP_SPAWN_EVENT_AREA)
+		{
+			invasions++;
+		}
+		else
+		{
+			byMap[e.Map].push_back(e);
+		}
 	}
 
 	for (const auto& [map, list] : byMap)
 	{
 		std::string name = names.count(map) ? names[map] : ("Map" + std::to_string(map));
 
-		fs::path folder = fs::u8path(mapsDir) / fs::u8path(MapSpawns_FolderName(map, name));
+		fs::path file = fs::u8path(MapSpawns_MapsPath(dataDir)) / fs::u8path(MapSpawns_FolderName(map, name)) / "Spawns.toml";
 
-		fs::path file = folder / "Spawns.toml";
-
-		std::error_code ec;
-
-		if (!force && fs::exists(file, ec))
-		{
-			return Fail(file.u8string() + " ya existe (usar --force para pisarlo)");
-		}
-
-		fs::create_directories(folder, ec);
-
-		if (ec)
-		{
-			return Fail("no se pudo crear " + folder.u8string() + ": " + ec.message());
-		}
-
-		if (!MapSpawns_WriteToml(file.u8string(), map, name, list, error))
+		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteToml(file.u8string(), map, name, list, error))
 		{
 			return Fail(error);
 		}
 
-		std::printf("%-40s %4zu entradas\n", file.u8string().c_str(), list.size());
+		std::printf("%-48s %4zu entradas\n", file.u8string().c_str(), list.size());
 	}
 
-	std::printf("%zu entradas en %zu mapas\n", entries.size(), byMap.size());
+	if (invasions > 0)
+	{
+		fs::path file = fs::u8path(MapSpawns_InvasionsPath(dataDir));
+
+		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteInvasions(file.u8string(), entries, names, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu entradas\n", file.u8string().c_str(), invasions);
+	}
+
+	std::printf("%zu entradas: %zu en %zu mapas y %zu de invasiones\n", entries.size(), entries.size() - invasions, byMap.size(), invasions);
 
 	return 0;
 }
@@ -151,13 +182,13 @@ static bool Same(const MapSpawnEntry& a, const MapSpawnEntry& b)
 	return a.Section == b.Section && a.Monster == b.Monster && a.Map == b.Map && a.Dis == b.Dis && a.X == b.X && a.Y == b.Y && a.Dir == b.Dir && a.Value == b.Value && (!box || (a.TX == b.TX && a.TY == b.TY && a.Count == b.Count));
 }
 
-static int CheckSpawns(const std::string& txt, const std::string& mapsDir)
+static int CheckSpawns(const std::string& txt, const std::string& dataDir)
 {
 	std::string error;
 
 	std::vector<MapSpawnEntry> legacy, maps;
 
-	if (!MapSpawns_LoadLegacy(txt, legacy, error) || !MapSpawns_Load(mapsDir, maps, error))
+	if (!MapSpawns_LoadLegacy(txt, legacy, error) || !MapSpawns_Load(dataDir, maps, error))
 	{
 		return Fail(error);
 	}
@@ -219,13 +250,13 @@ static int CheckSpawns(const std::string& txt, const std::string& mapsDir)
 	return 0;
 }
 
-static int Validate(const std::string& mapsDir)
+static int Validate(const std::string& dataDir)
 {
 	std::string error;
 
 	std::vector<MapSpawnEntry> entries;
 
-	if (!MapSpawns_Load(mapsDir, entries, error))
+	if (!MapSpawns_Load(dataDir, entries, error))
 	{
 		return Fail(error);
 	}
@@ -280,9 +311,9 @@ int main(int argc, char** argv)
 
 	std::fprintf(stderr,
 		"uso:\n"
-		"  mu-data import-spawns <MonsterSetBase.txt> <MapManager.txt> <Maps> [--force]\n"
-		"  mu-data check-spawns <MonsterSetBase.txt> <Maps>\n"
-		"  mu-data validate <Maps>\n");
+		"  mu-data import-spawns <MonsterSetBase.txt> <MapManager.txt> <Data> [--force]\n"
+		"  mu-data check-spawns <MonsterSetBase.txt> <Data>\n"
+		"  mu-data validate <Data>\n");
 
 	return 2;
 }

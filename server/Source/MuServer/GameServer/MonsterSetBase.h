@@ -26,7 +26,8 @@ public:
 
 	void Load(const char* path);
 
-	// Spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml). Arma la
+	// Spawns por carpeta de mapa (Data/Maps/NN-Nombre/Spawns.toml) y de las
+	// invasiones (Data/Events/Invasions/Spawns.toml); `path` es Data/. Arma la
 	// misma tabla que Load con MonsterSetBase.txt.
 	bool LoadMaps(const char* path);
 
