@@ -247,6 +247,8 @@ void PacketTraceInit(int port)
 	ring->startTimeUs = NowUs();
 	ring->capture.store(0);
 	ring->consumerPid.store(0);
+	ring->consumerKind.store(ConsumerNone);
+	memset(ring->recordDir, 0, sizeof(ring->recordDir));
 	ring->dirMask.store(kAllDirs);
 	ring->filterIndex.store(-1);
 	ring->filterHead.store(-1);

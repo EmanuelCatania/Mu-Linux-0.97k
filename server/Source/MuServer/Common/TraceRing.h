@@ -23,7 +23,7 @@
 namespace MuTrace
 {
 	constexpr uint32_t kMagic = 0x3152544D;   // "MTR1"
-	constexpr uint32_t kVersion = 1;
+	constexpr uint32_t kVersion = 2;
 	constexpr const char* kShmPrefix = "/mu-trace-";   // + puerto del GameServer
 	constexpr uint32_t kDefaultRingMB = 16;
 	constexpr uint32_t kMaxPayload = 1024;   // bytes de paquete que se copian como máximo
@@ -36,6 +36,26 @@ namespace MuTrace
 		DirDecision = 2,
 		DirPad = 0xFF,   // relleno al final del anillo; el lector lo saltea
 	};
+
+	enum ConsumerKind : uint32_t
+	{
+		ConsumerNone = 0,
+		ConsumerTail = 1,
+		ConsumerRecord = 2,
+	};
+
+	// Archivos que escribe `mu-trace record`: esta cabecera y después los
+	// registros tal cual salen del anillo (RecordHeader + datos, alineados a 8).
+	struct FileHeader
+	{
+		char magic[4];        // "MTF1"
+		uint32_t version;     // kVersion del anillo que los produjo
+		uint32_t serverPort;
+		uint32_t reserved;
+		uint64_t startTimeUs;
+	};
+
+	static_assert(sizeof(FileHeader) == 24, "FileHeader cambió de tamaño");
 
 	constexpr uint32_t DirBit(Dir d) { return 1u << d; }
 	constexpr uint32_t kAllDirs = DirBit(DirRecv) | DirBit(DirSend) | DirBit(DirDecision);
@@ -73,6 +93,8 @@ namespace MuTrace
 		// Escritos por el lector; el server los lee en cada captura.
 		std::atomic<uint32_t> capture;      // 0 = nadie leyendo, no se copia nada
 		std::atomic<int32_t> consumerPid;
+		std::atomic<uint32_t> consumerKind; // ConsumerKind
+		char recordDir[128];                // con un grabador: dónde escribe
 		std::atomic<uint32_t> dirMask;      // DirBit(...)
 		std::atomic<int32_t> filterIndex;   // -1 = todos
 		std::atomic<int32_t> filterHead;    // -1 = todos
