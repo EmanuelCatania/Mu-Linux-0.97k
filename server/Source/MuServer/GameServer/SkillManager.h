@@ -8,7 +8,6 @@
 #define MAX_SKILL 57
 #define MAX_SKILL_LIST 60
 
-#define CHECK_SKILL_ATTACK_COUNT(x) (((++x)>=10)?false:true)
 #define CHECK_SKILL_ATTACK_EXTENDED_COUNT(x) (((++x)>=20)?false:true)
 
 enum eSkillNumber

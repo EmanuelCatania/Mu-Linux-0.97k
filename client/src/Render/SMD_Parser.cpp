@@ -527,7 +527,7 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 }
 // Entity_FindNearby_SendPacket @ 0x0045FEC0 — Entity_FindNearby_SendPacket
 // Scans up to 400 entities for those within radius param_3 of world pos param_2.
-// Collects up to 5 entity IDs matching type/team filter (param_4/param_5).
+// Collects up to kMaxMultiSkillTargets entity IDs matching type/team filter (IDA: 5).
 // If any found, sends C1-0x1d packet with entity list XOR-encrypted.
 // param_1  = char data stat slot index (indexes into DAT_07cf1ff4+0x57)
 // param_2  = float[2] world position to search from
@@ -560,10 +560,15 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     // devolvia count = 0 siempre — por eso el 0x1D no salia nunca y ningun skill
     // multi-objetivo hacia dano.  Mismo error en el bloque 8/9, que leia
     // `ent + 0x105` (CurrentAction) donde IDA lee `*v16` = ent + 747.
+    // DESVIACION: el binario corta en 5 blancos (`count < 5`). Un skill de área
+    // tiene que alcanzar a todo lo que esté en el radio, así que se juntan hasta
+    // kMaxMultiSkillTargets: 8 + 2*80 = 168 bytes, que cifrado como C3 (bloques
+    // de 8 -> 11) da 233 y entra en el byte de tamaño del frame.
+    constexpr int kMaxMultiSkillTargets = 80;
     int count = 0;
-    short nearbyIds[5] = {};
+    short nearbyIds[kMaxMultiSkillTargets] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
-    for (int i = 0; i < 400 && count < 5; i++, pcEnt += CHARACTER_STRIDE) {
+    for (int i = 0; i < 400 && count < kMaxMultiSkillTargets; i++, pcEnt += CHARACTER_STRIDE) {
         if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
         if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
@@ -622,7 +627,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     // Aqua Beam, Blast, Inferno, Flame, Fire Slash): el C3:1E solo arma
     // `MultiSkillIndex` y es el 0x1D el que trae la lista de blancos y dispara
     // gAttack.Attack().
-    BYTE pkt[3 + 5 + 5 * 2];
+    BYTE pkt[3 + 5 + kMaxMultiSkillTargets * 2];
     int len = 0;
     pkt[len++] = 0xC1;
     pkt[len++] = 0;                                   // tamanio, se rellena abajo
