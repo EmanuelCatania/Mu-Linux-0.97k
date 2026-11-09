@@ -17,6 +17,7 @@ static_assert(sizeof(CHARACTER)==916&&offsetof(CHARACTER,PathNum)==0x356&&offset
 CHARACTER* AsCharacter(uintptr_t p){return reinterpret_cast<CHARACTER*>(p);}CHARACTER* AsCharacter(void* p){return static_cast<CHARACTER*>(p);}
 int DAT_00559bec,DAT_083a7c24,closed;std::vector<BYTE> sent;
 void SendMove_CloseWindows97k(){++closed;}
+static bool SendMove_ChaosBoxBlocks97k(const CHARACTER*){return false;}
 struct CNetwork{static BYTE XorKey[32];void SendRaw(const char* bytes,int length){Require(sent.empty());sent.assign(bytes,bytes+length);}}gNetwork;
 BYTE CNetwork::XorKey[32];
 '''
