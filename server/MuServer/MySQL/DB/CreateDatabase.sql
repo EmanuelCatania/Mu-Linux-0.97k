@@ -157,7 +157,7 @@ CREATE TABLE `GuildMember` (
 -- ----------------------------------------------------------------------------
 CREATE TABLE `MEMB_INFO` (
 	`memb___id` VARCHAR(10) NOT NULL,
-	`memb__pwd` VARBINARY(16) NOT NULL,
+	`memb__pwd` VARBINARY(60) NOT NULL,
 	`memb_name` VARCHAR(10) NOT NULL,
 	`mail_addr` VARCHAR(50) NULL,
 	`sno__numb` CHAR(18) NOT NULL,
