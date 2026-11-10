@@ -14,6 +14,7 @@
     maps: [],
     monsters: [],
     entries: [],
+    format: 'txt',
     selectedMap: 0,
     selectedType: 0,
     selectedEntry: null,
@@ -335,6 +336,10 @@
           <button type="button" id="resize-area">Ajustar area</button>
           <button type="button" id="save-spawns">Guardar</button>
         </div>
+      </div>
+      <div class="spawn-format">
+        <span id="spawn-format-label"></span>
+        <button type="button" id="convert-spawns" class="hidden">Pasar a archivos por mapa</button>
       </div>
       <div class="spawn-editor">
         <div class="spawn-map">
@@ -682,6 +687,27 @@
       setMessage(window.MuText.t('Arrastra en el mapa para definir el area.'), 'success');
     });
 
+    root.querySelector('#convert-spawns').addEventListener('click', async () => {
+      if (!window.confirm(window.MuText.t('Los spawns pasan a un archivo por mapa (Data/Maps) y las invasiones a Data/Events/Invasions. MonsterSetBase.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?'))) {
+        return;
+      }
+      try {
+        const res = await fetch('/admin/server-editor/api/monster-set/convert', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo convertir'));
+        state.format = 'toml';
+        renderFormat();
+        const reload = await fetch('/admin/server-editor/api/reload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target: 'monster' })
+        });
+        setMessage(window.MuText.t(reload.ok ? 'Convertido y recargado en el servidor.' : 'Convertido, pero no se pudo recargar en el server.'), reload.ok ? 'success' : 'error');
+      } catch (err) {
+        setMessage(err.message, 'error');
+      }
+    });
+
     root.querySelector('#save-spawns').addEventListener('click', async () => {
       try {
         const invalidEntry = state.entries.find((entry) => !isEntryValid(entry));
@@ -889,8 +915,20 @@
     state.maps = Array.isArray(mapsData.maps) ? mapsData.maps : [];
     state.monsters = Array.isArray(monstersData.monsters) ? monstersData.monsters : [];
     state.entries = parseMonsterSet(setData.content || '');
+    state.format = setData.format === 'toml' ? 'toml' : 'txt';
     state.selectedMap = state.maps[0]?.id ?? 0;
     state.selectedType = TYPE_META[0].type;
+  }
+
+  // De dónde lee los spawns el servidor. Con los archivos por mapa, el panel
+  // los convierte al formato de la grilla para editarlos y de vuelta al guardar.
+  function renderFormat() {
+    const label = root.querySelector('#spawn-format-label');
+    const button = root.querySelector('#convert-spawns');
+    label.textContent = state.format === 'toml'
+      ? window.MuText.t('Formato: un archivo por mapa (Data/Maps) y las invasiones en Data/Events/Invasions.')
+      : window.MuText.t('Formato: MonsterSetBase.txt.');
+    button.classList.toggle('hidden', state.format === 'toml');
   }
 
   async function init() {
@@ -899,6 +937,7 @@
     try {
       await loadInitialData();
       populateSelectors();
+      renderFormat();
       updateFormVisibility();
       renderSpawnList();
       await loadTerrain(state.selectedMap);

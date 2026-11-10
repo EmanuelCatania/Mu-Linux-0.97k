@@ -769,5 +769,12 @@
   "Crear un item nuevo a partir de este": "Criar um item novo a partir deste",
   "Tooltips de items custom": "Tooltips de itens custom",
   "El mensaje mide {bytes} bytes y el máximo es {max}.": "A mensagem tem {bytes} bytes e o máximo é {max}.",
-  "El server lee hasta {max} avisos: no se pueden agregar más.": "O servidor lê até {max} avisos: não é possível adicionar mais."
+  "El server lee hasta {max} avisos: no se pueden agregar más.": "O servidor lê até {max} avisos: não é possível adicionar mais.",
+  "Pasar a archivos por mapa": "Passar para um arquivo por mapa",
+  "Los spawns pasan a un archivo por mapa (Data/Maps) y las invasiones a Data/Events/Invasions. MonsterSetBase.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Os spawns passam para um arquivo por mapa (Data/Maps) e as invasões para Data/Events/Invasions. O MonsterSetBase.txt fica como backup e o servidor deixa de lê-lo. Continuar?",
+  "No se pudo convertir": "Não foi possível converter",
+  "Convertido y recargado en el servidor.": "Convertido e recarregado no servidor.",
+  "Convertido, pero no se pudo recargar en el server.": "Convertido, mas não foi possível recarregar no servidor.",
+  "Formato: un archivo por mapa (Data/Maps) y las invasiones en Data/Events/Invasions.": "Formato: um arquivo por mapa (Data/Maps) e as invasões em Data/Events/Invasions.",
+  "Formato: MonsterSetBase.txt.": "Formato: MonsterSetBase.txt."
 }
