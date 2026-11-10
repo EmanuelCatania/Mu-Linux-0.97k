@@ -74,6 +74,26 @@
       "architecture": "x64",
       "toolset": "v143",
       "description": "MariaDB Connector/C 3.4.11 compilado por CMake (estático, SHA256 fijo)."
+    },
+    {
+      "name": "mingw-x64-release",
+      "description": "Server para Windows x64 con MinGW-w64 (compilación cruzada desde Linux; ver cmake/toolchains/mingw-x64.cmake).",
+      "binaryDir": "${sourceDir}/out/build/mingw-x64-release",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-x64.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "mingw-x86-release",
+      "description": "Server para Windows x86 con MinGW-w64 (compilación cruzada desde Linux; ver cmake/toolchains/mingw-x86.cmake).",
+      "binaryDir": "${sourceDir}/out/build/mingw-x86-release",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-x86.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -115,6 +135,16 @@
     {
       "name": "windows-x64-release",
       "configurePreset": "windows-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "mingw-x64-release",
+      "configurePreset": "mingw-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "mingw-x86-release",
+      "configurePreset": "mingw-x86-release",
       "configuration": "Release"
     }
   ]

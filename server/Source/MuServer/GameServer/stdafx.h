@@ -16,6 +16,7 @@
 #include "../Common/TextName.h"
 
 // System includes
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <queue>
@@ -27,7 +28,11 @@
 
 #ifdef _WIN32
 #include <dbghelp.h>
+#ifdef _MSC_VER
 #include <atltime.h>
+#else
+#include "../Common/PortableTime.h"
+#endif
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"dbghelp.lib")
 #endif

@@ -14,6 +14,7 @@ endif()
 # Compartido por el build de CMake y por los proyectos MSBuild (cmake/mysql).
 set(MU_MARIADB_VERSION 3.4.11)
 set(MU_MARIADB_SHA256 7cdb35c571dd0c187f806f569285829d31b4aba4feb93957a034b0b1e887e276)
+set(MU_MARIADB_PATCH "${CMAKE_CURRENT_LIST_DIR}/mariadb/patch-variadic-stdcall.cmake")
 
 function(mu_fetch_mariadb)
   if(TARGET mariadbclient)
@@ -48,7 +49,9 @@ function(mu_fetch_mariadb)
 
   FetchContent_Declare(mu_mariadb
     URL "https://github.com/mariadb-corporation/mariadb-connector-c/archive/refs/tags/v${MU_MARIADB_VERSION}.tar.gz"
-    URL_HASH SHA256=${MU_MARIADB_SHA256})
+    URL_HASH SHA256=${MU_MARIADB_SHA256}
+    # Para MinGW de 32 bits (ver el archivo del parche).
+    PATCH_COMMAND "${CMAKE_COMMAND}" -P "${MU_MARIADB_PATCH}")
   FetchContent_GetProperties(mu_mariadb)
   if(NOT mu_mariadb_POPULATED)
     FetchContent_MakeAvailable(mu_mariadb)

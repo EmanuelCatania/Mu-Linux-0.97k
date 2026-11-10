@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Resource.h"
+#include "resource.h"
 #include "GameServer.h"
 #include "GameMain.h"
 #include "BloodCastle.h"

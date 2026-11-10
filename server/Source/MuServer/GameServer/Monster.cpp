@@ -1738,7 +1738,7 @@ void gObjMonsterMoveAction(LPOBJ lpObj)
 
 	while (searchc-- != 0)
 	{
-#ifdef _WIN32
+#ifdef _MSC_VER
 		__try
 		{
 			tpx = (lpObj->X - lpObj->MoveRange) + (BYTE)(GetLargeRand() % maxmoverange);
