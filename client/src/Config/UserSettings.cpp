@@ -229,7 +229,10 @@ const char* CUserSettings::RenderBackendKey(RenderBackendPreference preference)
 
 bool CUserSettings::IsRenderBackendAvailable(RenderBackendPreference preference)
 {
-#ifdef _WIN32
+    // Con MinGW, Dawn se compila sólo con Vulkan (cmake/triplets/x64-mingw-mu):
+    // igual que en Linux, D3D12/D3D11 no se ofrecen y un valor guardado cae en
+    // Auto, que elige Vulkan.
+#if defined(_WIN32) && !defined(__MINGW32__)
     return preference < RenderBackendPreference::Count;
 #else
     return preference < RenderBackendPreference::Count &&

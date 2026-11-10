@@ -11,6 +11,12 @@ endif()
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
     message(FATAL_ERROR "WebGPU sólo se soporta en 64 bits; x86 usa el backend OpenGL")
 endif()
+if(MINGW AND _VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
+    # MinGW (preset mingw-x64-webgpu-release): la toolchain busca paquetes sólo
+    # bajo CMAKE_FIND_ROOT_PATH, y en el primer configure, el que instala Dawn,
+    # vcpkg todavía no dejó ahí su carpeta.
+    list(APPEND CMAKE_FIND_ROOT_PATH "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+endif()
 find_package(Dawn CONFIG REQUIRED)
 if(WIN32 AND VCPKG_APPLOCAL_DEPS)
     # La feature d3d12 instala dxcompiler.dll/dxil.dll como dependencia aunque
