@@ -4,6 +4,7 @@
 #include "IpManager.h"
 #include "Log.h"
 #include "PacketManager.h"
+#include "PacketTrace.h"
 #include "Protocol.h"
 #include "SerialCheck.h"
 #include "User.h"
@@ -234,12 +235,14 @@ bool CSocketManager::DataRecv(int index, IO_MAIN_BUFFER* lpIoBuffer)
 		else
 		{
 			gLog.Output(LOG_CONNECT, "[SocketManager] Protocol header error (Index: %d, Header: %x)", index, lpMsg[count]);
+			TRACE_REJECT(index, -1, -1, "cabecera inválida 0x%02X: desconecta", lpMsg[count]);
 			return false;
 		}
 
 		if (size < 3 || size > MAX_MAIN_PACKET_SIZE)
 		{
 			gLog.Output(LOG_CONNECT, "[SocketManager] Protocol size error (Index: %d, Header: %x, Size: %d, Head: %x)", index, header, size, head);
+			TRACE_REJECT(index, head, -1, "tamaño inválido %d en frame 0x%02X: desconecta", size, header);
 			return false;
 		}
 
