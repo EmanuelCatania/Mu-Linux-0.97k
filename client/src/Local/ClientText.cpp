@@ -65,7 +65,8 @@ const char* const English[] = {
     "Depth fog",
     "Draw distance: %s",
     "Time left: %s", "Cast by: %s", "Damage +%d", "Defense +%d",
-    "Damage taken -%d%%", "Max HP +%d%%"
+    "Damage taken -%d%%", "Max HP +%d%%",
+    "%s: %d of %d alive"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -101,6 +102,7 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::BuffDefense, "Defensa +%d", "Defesa +%d" },
         { ClientTextId::BuffDamageReduction, "Da\xC3\xB1" "o recibido -%d%%", "Dano recebido -%d%%" },
         { ClientTextId::BuffMaxLife, "Vida m\xC3\xA1" "xima +%d%%", "Vida m\xC3\xA1" "xima +%d%%" },
+        { ClientTextId::InvasionAlive, "%s: %d de %d vivos", "%s: %d de %d vivos" },
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },

@@ -165,6 +165,7 @@ set(MU_SOURCES
     src/Game/Timer.cpp
     src/Game/FrameLimiter.cpp
     src/Sound/Music.cpp
+    src/Sound/EmoteSound.cpp
     src/Terrain/Terrain_Tile.cpp
     src/Render/GL_2D.cpp
     src/Render/Effect_Tick.cpp
@@ -290,6 +291,7 @@ set(MU_SOURCES
     src/Render/BMD_Load.cpp
     src/globals.cpp
     src/Model/Model_Items.cpp
+    src/Model/Model_CustomAnim.cpp
     src/Model/Model_Monsters.cpp
     src/Model/Model_Players.cpp
     src/Model/Model_Effects.cpp

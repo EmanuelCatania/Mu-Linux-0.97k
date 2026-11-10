@@ -3,6 +3,7 @@
 // caminar y muerte, clase y equipo del héroe, MoveCharacter y MoveCharacterVisual.
 #include <cstdint>
 #include "stdafx.h"
+#include "Model/Model_CustomAnim.h"
 #include "UI/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
@@ -1214,7 +1215,8 @@ void __cdecl MoveCharacter(intptr_t p1)
                 // L632-639: walking/running/dying actions stay; otherwise stop
                 BYTE act = AsObject(o)->CurrentAction;
                 if (act < 0x0Du
-                    || (act >= 0x22u && act <= 0x82u && act != 79 && act != 80)) {
+                    || (act >= 0x22u && act <= 0x82u && act != 79 && act != 80)
+                    || CustomAnim_EndsOnFinish(act)) {   // acciones propias (CustomAnim.bmd) sin loop
                     SetPlayerStop(AsCharacter(c));  // SetPlayerStop
                 }
                 skipIdleSelect = true;  // jump to L195

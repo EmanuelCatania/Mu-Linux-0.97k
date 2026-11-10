@@ -355,7 +355,8 @@ docker compose -f docker-compose.yml -f docker-compose.editor.yml up -d --build
 
 Ele mantém backups por arquivo e snapshots de `server/MuServer/Data` e `server/MuServer/GameServer/DATA`. `mu-web` oferece registro, login, rankings e notícias na porta externa `8085` (interna `8080`). Admin inicial: `admin / 123456`, com troca obrigatória no primeiro login.
 
-- `MD5Encryption=2` usa MD5 binário; recrie a DB com `docker compose down -v` ao migrar de texto simples.
+- Senhas: o JoinServer e o painel as guardam com bcrypt (`PasswordHash=1` no `JoinServer.ini`). As antigas (texto ou MD5, conforme `MD5Encryption`) continuam entrando e são trocadas pelo hash no primeiro login de cada conta. `memb__pwd` precisa de 60 bytes: o painel ajusta ao iniciar, ou rode `Migrate-password-hash.sql`.
+- `GlobalPassword` (entra em qualquer conta) vem vazia, ou seja, desligada. Se o seu `JoinServer.ini` ainda tiver `XwefDastoD`, apague: é um valor público.
 - Salve os TXT do servidor em UTF-8 sem BOM. Desde a 0.97.40 o servidor não converte mais para Windows-1252: um arquivo em ANSI com acentos aparece errado no cliente. Shops ficam em `server/MuServer/Data/Shop/*.txt`; `-1 -1` posiciona `SlotX SlotY` automaticamente.
 - Logs: `docker compose logs -f`. Pastas principais: `Source/`, `server/MuServer/`, `docker/`.
 

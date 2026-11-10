@@ -425,6 +425,7 @@
     <ClCompile Include="src\Game\Timer.cpp" />
     <ClCompile Include="src\Game\FrameLimiter.cpp" />
     <ClCompile Include="src\Sound\Music.cpp" />
+    <ClCompile Include="src\Sound\EmoteSound.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
     <ClCompile Include="src\Render\GL_2D.cpp" />
     <ClCompile Include="src\Render\Effect_Tick.cpp" />
@@ -550,6 +551,7 @@
     <ClCompile Include="src\Render\BMD_Load.cpp" />
     <ClCompile Include="src\globals.cpp" />
     <ClCompile Include="src\Model\Model_Items.cpp" />
+    <ClCompile Include="src\Model\Model_CustomAnim.cpp" />
     <ClCompile Include="src\Model\Model_Monsters.cpp" />
     <ClCompile Include="src\Model\Model_Players.cpp" />
     <ClCompile Include="src\Model\Model_Effects.cpp" />

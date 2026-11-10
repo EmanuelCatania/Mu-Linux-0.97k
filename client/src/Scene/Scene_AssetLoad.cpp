@@ -158,10 +158,12 @@ void __cdecl Scene_LoadGameAssets(void) {
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
     NPCName_LoadTextData(local_64);
     // DESVIACION (Fase 4, texto Unicode): las palabras de los filtros de chat y
-    // de nombres (Filter.bmd / FilterName.bmd, 1000 x 20 bytes) de 1252 a UTF-8.
+    // de nombres (Filter.bmd / FilterName.bmd, 1000 x 20 bytes) a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
     for (int i = 0; i < 1000; ++i) {
-        TextEngine::ConvertWindows1252InPlace(DAT_07d73104 + i * 0x14, 0x14);
-        TextEngine::ConvertWindows1252InPlace(DAT_07d27610 + i * 0x14, 0x14);
+        TextEngine::NormalizeTextFileInPlace(DAT_07d73104 + i * 0x14, 0x14);
+        TextEngine::NormalizeTextFileInPlace(DAT_07d27610 + i * 0x14, 0x14);
     }
     // Sound preloads (tail of OpenBasicData @ 0x00510F65-0x00510FC5).
     // IDs y filenames verificados contra IDA Hex-Rays 00510320_OpenBasicData.c

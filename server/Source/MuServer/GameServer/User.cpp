@@ -345,6 +345,8 @@ void gObjCharZeroSet(int aIndex)
 
 	lpObj->PathStartEnd = 0;
 
+	lpObj->LastAttackTime = 0;
+
 	lpObj->Authority = 0;
 
 	lpObj->AuthorityCode = 0;

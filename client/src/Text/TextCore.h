@@ -51,8 +51,9 @@ std::size_t CopyTruncated(char* out, std::size_t capacity, std::string_view text
 // Windows-1252 (recursos y paquetes viejos) a UTF-8, cortando sin partir un
 // cluster si no entra. Devuelve los bytes escritos sin el NUL.
 std::size_t ConvertWindows1252InPlace(char* field, std::size_t capacity);
-// Para archivos de texto que el usuario edita (NPCName.txt, macros): si ya es
-// UTF-8 válido se deja (el ASCII también lo es); si no, se toma como 1252.
+// Para texto que puede venir traducido (los .bmd de Data/Local, NPCName.txt,
+// macros, nombres de mapas y eventos del server): si ya es UTF-8 válido se deja
+// (el ASCII también lo es); si no, se toma como 1252.
 std::size_t NormalizeTextFileInPlace(char* field, std::size_t capacity);
 
 // ── Normalización y comparación ─────────────────────────────────────────────

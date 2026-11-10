@@ -25,7 +25,7 @@ void* AllocateShadow(std::size_t n) { Require(n == 0x8000); return shadowReserva
 
 TEXT = r'''
 namespace TextEngine {
-void ConvertWindows1252InPlace(char* p, int size) {
+void NormalizeTextFileInPlace(char* p, int size) {
     const auto address = reinterpret_cast<std::uintptr_t>(p);
     const auto base = reinterpret_cast<std::uintptr_t>(primary);
     const auto shadow = reinterpret_cast<std::uintptr_t>(reinterpret_cast<void*>(DAT_07cf1ff0));

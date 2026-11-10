@@ -57,6 +57,7 @@ void ItemNames_TickInput();
 #include "Game/FrameLimiter.h"
 #include "Input/Input.h"
 #include "Net/Ping.h"
+#include "Sound/EmoteSound.h"
 #include "Game/MapManager.h"
 #include "Debug/Benchmark.h"
 #include "Game/Game_MainLoop.h"
@@ -210,6 +211,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Decrement countdown counters
         if (ChatTime > 0) ChatTime--;
+        EmoteSound_Update();   // sonidos de los emotes propios
         if (DAT_07e11d7c > 0) DAT_07e11d7c--;
 
         // Frame index mod 32

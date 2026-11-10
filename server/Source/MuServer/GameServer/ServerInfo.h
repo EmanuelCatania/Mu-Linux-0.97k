@@ -98,6 +98,11 @@ public:
 	int m_CheckLatencyHackTolerance;
 	int m_CheckAutoPotionHack;
 	int m_CheckAutoPotionHackTolerance;
+	// Autoridad del server (Fase 5): 0 = apagado, 1 = observar, 2 = aplicar
+	int m_MoveCheck;
+	int m_MoveCheckTolerance;
+	int m_AttackCheck;
+	int m_AttackCheckScale;
 	// Common
 	int m_MainChecksum;
 	int m_MaxItemOption;
@@ -179,6 +184,8 @@ public:
 	int m_DevilSquareMaxUser;
 	int m_DevilSquareAllowPK;
 	int m_InvasionManagerSwitch;
+	int m_InvasionKillNotice;
+	int m_InvasionEndWhenCleared;
 	int m_FlyingDragonsSwitch;
 	int m_FlyingDragonsOnlyBossMapSpawn;
 	int m_FlyingDragonsKillBossDisappear;

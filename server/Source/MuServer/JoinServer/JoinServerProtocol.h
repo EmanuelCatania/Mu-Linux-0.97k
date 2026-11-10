@@ -2,6 +2,10 @@
 
 #include "ProtocolDefines.h"
 
+// Lee PasswordHash/PasswordHashCost y revisa el ancho de memb__pwd. Después
+// de conectar la base.
+void PasswordHashSetup(const char* path);
+
 //**********************************************//
 //********** JoinServer -> ConnectServer *******//
 //**********************************************//

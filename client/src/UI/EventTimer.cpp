@@ -98,16 +98,18 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
     // Los refrescos periódicos sólo traen tiempos nuevos: la lista del widget se
     // rearma únicamente si cambian la cantidad o los nombres.
     bool changed = count != m_Count;
-    // DESVIACION (Fase 4, texto Unicode): los nombres llegan en 1252 y se
-    // guardan en UTF-8; la comparación se hace sobre el nombre ya convertido.
+    // DESVIACION (Fase 4, texto Unicode): los nombres se guardan en UTF-8; lo
+    // que ya llega en UTF-8 se deja y el resto se toma como Windows-1252. La
+    // comparación pasa el nombre por la misma conversión que se guarda.
     for (int i = 0; !changed && i < count; ++i) {
         char name[sizeof(m_Events[i].name)];
-        NetText::FromServer(name, sizeof(name), packet + header + i * stride, sizeof(name));
+        memcpy(name, packet + header + i * stride, sizeof(name));
+        TextEngine::NormalizeTextFileInPlace(name, sizeof(name));
         changed = strcmp(m_Events[i].name, name) != 0;
     }
     if (count) memcpy(m_Events, packet + header, count * stride);
     for (int i = 0; i < count; ++i)
-        TextEngine::ConvertWindows1252InPlace(m_Events[i].name, sizeof(m_Events[i].name));
+        TextEngine::NormalizeTextFileInPlace(m_Events[i].name, sizeof(m_Events[i].name));
     m_Count = count;
     m_Received = true;
     m_ReceivedAt = Platform::GetTimer().Ticks();
@@ -117,9 +119,102 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
     return true;
 }
 
+// DESVIACION (Fase 5): el server manda, después del F3/E6, cuántos monstruos
+// de cada invasión en curso quedan vivos en cada mapa. Se empareja con la fila
+// por el nombre.
+bool CEventTimer::ReceiveInvasions(const BYTE* packet, int size)
+{
+    const int header = sizeof(Proto::PMSG_INVASION_DETAIL_SEND);
+    if (!packet || size < header || packet[0] != 0xC2 ||
+        packet[3] != 0xF3 || packet[4] != 0xF2 ||
+        ((packet[1] << 8) | packet[2]) != size) return false;
+    InvasionDetail parsed[32] = {};
+    int count = 0, offset = header;
+    for (int i = 0; i < packet[5]; ++i) {
+        if (offset + (int)sizeof(Proto::PMSG_INVASION_DETAIL) > size) return false;
+        Proto::PMSG_INVASION_DETAIL info;
+        memcpy(&info, packet + offset, sizeof(info));
+        offset += sizeof(info);
+        const int bytes = info.maps * (int)sizeof(Proto::PMSG_INVASION_DETAIL_MAP);
+        if (!memchr(info.name, 0, sizeof(info.name)) || offset + bytes > size) return false;
+        if (count < 32) {
+            InvasionDetail& d = parsed[count++];
+            NetText::FromServer(d.name, sizeof(d.name), (const BYTE*)info.name, sizeof(info.name));
+            d.maps = info.maps < 32 ? info.maps : 32;
+            memcpy(d.map, packet + offset, d.maps * sizeof(Proto::PMSG_INVASION_DETAIL_MAP));
+        }
+        offset += bytes;
+    }
+    if (offset != size) return false;
+    memcpy(m_Invasions, parsed, sizeof(parsed));
+    m_InvasionCount = count;
+    return true;
+}
+
+// Una línea por mapa: "Atlans: 3 de 5 vivos". Sólo para las invasiones en curso.
+// Recuadro propio y no el de los tooltips de items (CharMenu_RenderTextList):
+// ese alinea todas las líneas igual y su fondo translúcido deja ver las filas
+// del panel. Acá el título va centrado y el fondo es opaco, de otro tono.
+void CEventTimer::RenderInvasionTooltip(const Proto::PMSG_EVENT_TIME& event, int y) const
+{
+    if (event.status != Start) return;
+    const InvasionDetail* detail = nullptr;
+    for (int i = 0; i < m_InvasionCount && !detail; ++i)
+        if (strcmp(m_Invasions[i].name, event.name) == 0) detail = &m_Invasions[i];
+    if (!detail || !detail->maps) return;
+
+    char lines[25][100];
+    bool empty[25] = {};
+    int count = 0;
+    for (int i = 0; i < detail->maps && count < 25; ++i) {
+        const Proto::PMSG_INVASION_DETAIL_MAP& m = detail->map[i];
+        const char* map = GetMapName(m.map);
+        Platform::TextFormatSecure(lines[count], sizeof(lines[count]), gClientText.Get(ClientTextId::InvasionAlive),
+                                   map ? map : "?", (int)m.alive, (int)m.total);
+        empty[count++] = m.alive == 0;
+    }
+
+    // Ancho en el espacio de 640: el más largo de los textos medidos.
+    int widest = 0;
+    SIZE size = {};
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.MeasureText(gFont.GetTextDC(), event.name, Platform::TextLength(event.name), &size);
+    widest = size.cx;
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    for (int i = 0; i < count; ++i) {
+        gFont.MeasureText(gFont.GetTextDC(), lines[i], Platform::TextLength(lines[i]), &size);
+        if (size.cx > widest) widest = size.cx;
+    }
+    const int line = Layout::LineHeight();
+    const int width = widest * 640 / gWindow.GetWidth() + 10;
+    const int height = (count + 1) * line + 6;
+    const int x = Layout::X() + (190 - width) / 2;
+
+    // Borde claro y fondo azul oscuro opaco.
+    EnableAlphaTest(true);
+    Gfx::Color4f(0.45f, 0.5f, 0.65f, 1.0f);
+    GL_DrawRect((float)x - 1.0f, (float)y - 1.0f, (float)width + 2.0f, (float)height + 2.0f);
+    Gfx::Color4f(0.06f, 0.08f, 0.16f, 1.0f);
+    GL_DrawRect((float)x, (float)y, (float)width, (float)height);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
+    GL_ResetState();
+    EnableAlphaTest(true);
+
+    m_dwBackColor = 0;
+    m_dwTextColor = 0xFFFF9664u;   // el azul de "En curso"
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    RenderText(x, y + 3, const_cast<char*>(event.name), PhysicalWidth(width), 1, nullptr);
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    for (int i = 0; i < count; ++i) {
+        m_dwTextColor = empty[i] ? 0xFF3C3CFFu : 0xFFE6E6E6u;   // rojo si no queda ninguno
+        RenderText(x + 5, y + 3 + (i + 1) * line, lines[i], 0, 0, nullptr);
+    }
+}
+
 void CEventTimer::Clear()
 {
     m_Count = 0;
+    m_InvasionCount = 0;
     m_Open = false;
     m_Received = false;
     m_Page = 0;
@@ -291,9 +386,17 @@ void CEventTimer::RenderPanel()
     if (m_Count) {
         if (m_Page >= PageCount()) m_Page = PageCount() - 1;   // cambio de resolución
         const int perPage = Layout::RowsPerPage(), first = m_Page * perPage;
-        for (int row = 0; row < perPage && first + row < m_Count; ++row)
-            DrawRow(m_Events[first + row], Layout::RowY + row * Layout::RowStep());
+        int hovered = -1;
+        for (int row = 0; row < perPage && first + row < m_Count; ++row) {
+            const int rowY = Layout::RowY + row * Layout::RowStep();
+            DrawRow(m_Events[first + row], rowY);
+            if (Inside(Layout::RowX(), rowY, Layout::RowWidth, Layout::RowHeight())) hovered = row;
+        }
         DrawPager();
+        // Al final, para que quede por encima de las filas.
+        if (hovered >= 0)
+            RenderInvasionTooltip(m_Events[first + hovered],
+                                  Layout::RowY + hovered * Layout::RowStep() + Layout::RowHeight() + 2);
     } else {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;

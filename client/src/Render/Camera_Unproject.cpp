@@ -22,12 +22,20 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     // local_c/8/4 es otro). Ghidra los declaró como floats separados, y el
     // compilador C++ los puede reubicar en cualquier orden, así que tienen que ser
     // arrays reales: Vector_InverseRotate lee/escribe 3 floats secuenciales.
+    // El rayo del mouse (MouseTarget, DAT_083a4110) es un SEGMENTO para
+    // CollisionDetectLineToFace: el piso más lejos que su extremo no se puede
+    // clickear. Con la cámara 3D alejada el fondo de la pantalla queda a más de
+    // 2000 y el personaje no caminaba hacia allá. Para ese rayo se vuelve a la
+    // profundidad del original, CameraViewFar (que la cámara 3D agranda); la
+    // constante del DLL queda sólo para los items 3D del inventario.
+    const float depth = (param_3 == (float*)&DAT_083a4110 && CameraViewFar > kScreenVectorDepth)
+                      ? CameraViewFar : kScreenVectorDepth;
     float view_dir[3];
     view_dir[0] =  (float)(int)((UINT)gWindow.PixelFromUiX(param_1) - ViewportCenterX)
-                 * _DAT_083a42a4 * kScreenVectorDepth;
+                 * _DAT_083a42a4 * depth;
     view_dir[1] = -((float)(int)((UINT)(gWindow.GetHeight() * param_2) / 0x1e0 - ViewportCenterY)
-                 * _DAT_083a42a8 * kScreenVectorDepth);
-    view_dir[2] = -kScreenVectorDepth;
+                 * _DAT_083a42a8 * depth);
+    view_dir[2] = -depth;
 
     float cam_fwd_neg[3] = {
         -_DAT_083a414c,

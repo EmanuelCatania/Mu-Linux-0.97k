@@ -1578,6 +1578,10 @@ void CServerInfo::ReadEventInfo(const char* section, const char* path)
 
 	this->m_InvasionManagerSwitch = GetPrivateProfileInt(section, "InvasionManagerSwitch", 0, path);
 
+	this->m_InvasionKillNotice = GetPrivateProfileInt(section, "InvasionKillNotice", 1, path);
+
+	this->m_InvasionEndWhenCleared = GetPrivateProfileInt(section, "InvasionEndWhenCleared", 1, path);
+
 	this->m_FlyingDragonsSwitch = GetPrivateProfileInt(section, "FlyingDragonsSwitch", 0, path);
 
 	this->m_FlyingDragonsOnlyBossMapSpawn = GetPrivateProfileInt(section, "FlyingDragonsOnlyBossMapSpawn", 0, path);
@@ -1604,6 +1608,14 @@ void CServerInfo::ReadHackInfo(const char* section, const char* path)
 	this->m_CheckAutoPotionHack = GetPrivateProfileInt(section, "CheckAutoPotionHack", 0, path);
 
 	this->m_CheckAutoPotionHackTolerance = GetPrivateProfileInt(section, "CheckAutoPotionHackTolerance", 0, path);
+
+	this->m_MoveCheck = GetPrivateProfileInt(section, "MoveCheck", 1, path);
+
+	this->m_MoveCheckTolerance = GetPrivateProfileInt(section, "MoveCheckTolerance", 4, path);
+
+	this->m_AttackCheck = GetPrivateProfileInt(section, "AttackCheck", 1, path);
+
+	this->m_AttackCheckScale = GetPrivateProfileInt(section, "AttackCheckScale", 240, path);
 }
 
 void CServerInfo::ReadSkillInfo(const char* section, const char* path)
