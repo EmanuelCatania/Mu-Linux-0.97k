@@ -6,6 +6,10 @@ node_modules/
 /server/out/
 /server/Source/MuServer/bin/
 
+# Local credentials and client build output.
+.env
+/client/build/
+
 # Ajustes locales de cada instalación (puertos, proxy); Compose los carga solo.
 docker-compose.override.yml
 
