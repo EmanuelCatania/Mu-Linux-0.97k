@@ -334,7 +334,7 @@ void CGuild::DGGuildDeleteRecv(SDHP_GUILD_DELETE_RECV* lpMsg)
 
 					memset(lpTarget->GuildName, 0, sizeof(lpTarget->GuildName));
 
-					if (lpObj->Name != lpTarget->Name)
+					if (lpObj != lpTarget)
 					{
 						this->GCGuildDeleteSend(lpTarget->Index, 4);
 

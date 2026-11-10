@@ -13,6 +13,7 @@
 #include "Map.h"
 #include "Message.h"
 #include "Notice.h"
+#include "PacketTrace.h"
 #include "Quest.h"
 #include "ServerInfo.h"
 #include "ShopManager.h"
@@ -263,6 +264,8 @@ void CNpcTalk::CGNpcTalkRecv(PMSG_NPC_TALK_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	lpObj->InterfaceNpc = bIndex;
+
 	if (this->NpcTalk(lpNpc, lpObj) != 0)
 	{
 		return;
@@ -345,4 +348,45 @@ void CNpcTalk::CGNpcTalkCloseRecv(int aIndex)
 	lpObj->Interface.use = 0;
 	lpObj->Interface.type = INTERFACE_NONE;
 	lpObj->Interface.state = 0;
+
+	lpObj->InterfaceNpc = -1;
+}
+
+bool CNpcTalk::CheckInterfaceNpc(LPOBJ lpObj, int head)
+{
+	const int range = 8;
+
+	int index = lpObj->InterfaceNpc;
+
+	if (OBJECT_RANGE(index) == 0 || gObj[index].Type != OBJECT_NPC)
+	{
+		TRACE_REJECT(lpObj->Index, head, -1, "interfaz %d abierta sin NPC registrado (%d)", lpObj->Interface.type, index);
+
+		return false;
+	}
+
+	LPOBJ lpNpc = &gObj[index];
+
+	if (lpNpc->Map != lpObj->Map || abs(lpObj->X - lpNpc->X) > range || abs(lpObj->Y - lpNpc->Y) > range)
+	{
+		TRACE_REJECT(lpObj->Index, head, -1, "NPC %d lejos: yo %d,%d mapa %d / NPC %d,%d mapa %d (máximo %d)", index, lpObj->X, lpObj->Y, lpObj->Map, lpNpc->X, lpNpc->Y, lpNpc->Map, range);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool CNpcTalk::IsRepairNpc(int index)
+{
+	if (OBJECT_RANGE(index) == 0 || gObj[index].Type != OBJECT_NPC)
+	{
+		return false;
+	}
+
+	// 243 Craftsman, 246 Weapon Merchant, 251 Blacksmith: el 0.97k (Action, case
+	// de hablar con un NPC) sólo habilita el botón de reparar con estos tres.
+	int Class = gObj[index].Class;
+
+	return Class == 243 || Class == 246 || Class == 251;
 }

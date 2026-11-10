@@ -45,3 +45,13 @@ if(MSVC)
 else()
   set_target_properties(mu-data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
+
+# Lector de la traza de paquetes del GameServer (Fase 5, sección 5c). Sólo Linux:
+# el anillo vive en /dev/shm.
+if(NOT WIN32)
+  add_executable(mu-trace MuTrace/mu-trace.cpp)
+  target_include_directories(mu-trace PRIVATE Common MuTrace)
+  target_compile_features(mu-trace PRIVATE cxx_std_17)
+  target_link_libraries(mu-trace PRIVATE rt)
+  set_target_properties(mu-trace PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif()

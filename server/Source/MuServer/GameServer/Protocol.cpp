@@ -24,6 +24,7 @@
 #include "Notice.h"
 #include "NpcTalk.h"
 #include "ObjectManager.h"
+#include "PacketTrace.h"
 #include "Party.h"
 #include "Quest.h"
 #include "ServerInfo.h"
@@ -36,6 +37,8 @@
 void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int serial)
 {
 	ConsoleProtocolLog(CON_PROTO_TCP_RECV, aIndex, lpMsg, size);
+
+	PacketTraceRecv(aIndex, lpMsg, size, encrypt);
 
 	if (gObj[aIndex].Type == OBJECT_USER && gHackPacketCheck.CheckPacketHack(aIndex, head, ((lpMsg[0] == 0xC1) ? lpMsg[3] : lpMsg[4]), encrypt, serial) == 0)
 	{
