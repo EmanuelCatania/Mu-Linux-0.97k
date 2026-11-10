@@ -177,6 +177,18 @@ También están disponibles `windows-x86-debug` y `windows-x64-debug`; los ejecu
 
 Los cuatro servicios compilan en el CI para Windows x86/x64 y Linux x64/ARM64, Debug y Release. ARM64 sigue como compilado, no probado en partida. Fase 3 incluye correcciones del ancho de puntero en callbacks, IOCP y timers, y una cola de envío de 256 KiB para el catálogo de login; el límite individual sigue en 8 KiB. La prueba local de Windows x64 cubrió login, partida, reset, compra/venta y Chaos; no equivale a una prueba de carga.
 
+#### Compilar con MinGW
+
+Los cuatro servicios y `mu-data` también compilan con MinGW-w64 (GCC), en x64 y x86. Los presets son para compilación cruzada desde Linux; en Debian/Ubuntu hacen falta `g++-mingw-w64-x86-64-posix`, `g++-mingw-w64-i686-posix` y `ninja-build`:
+
+```sh
+cd server
+cmake --preset mingw-x64-release
+cmake --build --preset mingw-x64-release --parallel 4
+```
+
+Los `.exe` quedan en `server/out/build/mingw-x64-release/bin/` (`mingw-x86-release` para 32 bits) y salen estáticos: no piden las DLL del toolchain. Se copian a `server/MuServer/` igual que los de MSVC. Compilar con MSYS2 desde Windows todavía no está probado.
+
 ### Administración: eventos GM y recargas
 
 Sólo GM nivel 1 o superior, desde el chat del juego:

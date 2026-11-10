@@ -145,6 +145,24 @@ El ejecutable queda en `build/linux-x64-release/bin/main` (no en `bin/Client/`,
 así no se mezcla con el de Windows). Para correrlo contra los assets del repo,
 apuntá `MU_ASSET_ROOT` a `bin/Client` (ver [Correr en Linux](#correr-en-linux)).
 
+### Windows x64 con MinGW
+
+Alternativa a Visual Studio: compila con MinGW-w64 (GCC), con SDL3 y OpenGL;
+WebGPU sigue siendo sólo con MSVC. El preset es para compilación cruzada desde
+Linux; en Debian/Ubuntu hacen falta `g++-mingw-w64-x86-64-posix` y
+`ninja-build`:
+
+```sh
+cmake --preset mingw-x64-release
+cmake --build --preset mingw-x64-release --target mu97k
+```
+
+El ejecutable queda en `build/mingw-x64-release/bin/main.exe` y sale estático
+(no pide las DLL del toolchain); para jugar se copia a `bin/Client/`. GCC no
+tiene `__try`/`__except`: los sitios que con MSVC atrapan un acceso inválido
+corren sin esa protección, igual que en Linux. Compilar con MSYS2 desde Windows
+todavía no está probado.
+
 ### Builds históricos (x86 y Win32)
 
 Siguen disponibles para comparar contra el binario original, que es de 32 bits.

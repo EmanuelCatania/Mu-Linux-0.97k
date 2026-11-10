@@ -175,6 +175,18 @@ The `windows-x86-debug` and `windows-x64-debug` presets are also available; exec
 
 CI builds all four services for Windows x86/x64 and Linux x64/ARM64, Debug and Release. ARM64 remains build-only, without gameplay validation. Phase 3 fixes pointer widths in callbacks, IOCP and timers, and provides a 256 KiB pending send buffer for the login catalog; individual packets remain limited to 8 KiB. Local Windows x64 testing covered login, gameplay, reset, buying/selling and Chaos mixing; it was not a load test.
 
+#### Building with MinGW
+
+The four services and `mu-data` also build with MinGW-w64 (GCC), for x64 and x86. The presets cross-compile from Linux; on Debian/Ubuntu you need `g++-mingw-w64-x86-64-posix`, `g++-mingw-w64-i686-posix` and `ninja-build`:
+
+```sh
+cd server
+cmake --preset mingw-x64-release
+cmake --build --preset mingw-x64-release --parallel 4
+```
+
+The `.exe` files end up in `server/out/build/mingw-x64-release/bin/` (`mingw-x86-release` for 32 bits) and are fully static: they don't need the toolchain DLLs. Copy them into `server/MuServer/` just like the MSVC ones. Building with MSYS2 on Windows is not tested yet.
+
 ### Administration: GM events and reloads
 
 GM level 1 or higher only, through in-game chat:
