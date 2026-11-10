@@ -211,7 +211,7 @@ void LogAdd(eLogColor color, const char* text, ...)
 
 void ConsoleProtocolLog(int type, int aIndex, BYTE* lpMsg, int size)
 {
-	BYTE head, subhead;
+	BYTE head = 0, subhead;
 
 	BYTE header = lpMsg[0];
 
