@@ -1193,11 +1193,12 @@ app.post('/register', authLimiter, async (req, res) => {
     const membName = name && name.trim().length > 0 ? name.trim().slice(0, 10) : account;
     const sno = randomDigits(18);
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
-      [account, await accountPassword.make(password, passwordColumnWide), membName, email, sno]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
+      [account, storedPassword.value, membName, email, sno]
     );
 
     await conn.query(
@@ -1225,13 +1226,17 @@ app.post('/register', authLimiter, async (req, res) => {
 // Verifica la contraseña de la cuenta del juego y, si estaba guardada con el
 // formato viejo, la reemplaza por el hash bcrypt.
 async function checkAccountPassword(db, accountId, password) {
-  const [rows] = await db.query('SELECT memb___id, memb__pwd FROM MEMB_INFO WHERE memb___id = ? LIMIT 1', [accountId]);
+  const [rows] = await db.query(
+    `SELECT memb___id, memb__pwd, ${accountPassword.MD5_MATCH_SQL} AS md5Match FROM MEMB_INFO WHERE memb___id = ? LIMIT 1`,
+    [String(password ?? ''), accountId]
+  );
   if (rows.length === 0) return null;
-  const result = await accountPassword.verify(rows[0].memb__pwd, password);
+  const result = await accountPassword.verify(rows[0].memb__pwd, password, rows[0].md5Match);
   if (!result.ok) return null;
   if (result.legacy && passwordColumnWide) {
     try {
-      await db.query('UPDATE MEMB_INFO SET memb__pwd = ? WHERE memb___id = ?', [await accountPassword.make(password, true), rows[0].memb___id]);
+      const storedPassword = await accountPassword.make(password, true);
+      await db.query('UPDATE MEMB_INFO SET memb__pwd = ? WHERE memb___id = ?', [storedPassword.value, rows[0].memb___id]);
     } catch {
       // Sigue entrando con la contraseña vieja; se reintenta la próxima vez.
     }
@@ -1314,9 +1319,10 @@ app.post('/account/password', requireUser, authLimiter, async (req, res) => {
   const accountId = req.session.user.id;
   if (!(await checkAccountPassword(pool, accountId, current))) return fail('La contrasena actual es incorrecta.');
 
+  const storedPassword = await accountPassword.make(password, passwordColumnWide);
   const [result] = await pool.query(
-    'UPDATE MEMB_INFO SET memb__pwd = ? WHERE memb___id = ?',
-    [await accountPassword.make(password, passwordColumnWide), accountId]
+    `UPDATE MEMB_INFO SET memb__pwd = ${storedPassword.sql} WHERE memb___id = ?`,
+    [storedPassword.value, accountId]
   );
   if (!result || result.affectedRows === 0) return fail('No se pudo cambiar la contrasena.');
   return res.redirect(`/account?ok=${encodeURIComponent('Contrasena actualizada.')}`);
@@ -2985,11 +2991,12 @@ app.post('/admin/accounts/new', requireAdmin, requireAdminPasswordChange, async 
     const accountExpireValue = accountExpire.value ? accountExpire.value : new Date();
     const blockExpireValue = blocked ? blockExpire.value : '1900-01-01 00:00:00';
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [account, await accountPassword.make(password, passwordColumnWide), name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, ?, ?, ?, ?)`,
+      [account, storedPassword.value, name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
     );
 
     await conn.query(
@@ -3151,8 +3158,9 @@ app.post('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async 
   ];
 
   if (password) {
-    fields.push('memb__pwd = ?');
-    params.push(await accountPassword.make(password, passwordColumnWide));
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
+    fields.push(`memb__pwd = ${storedPassword.sql}`);
+    params.push(storedPassword.value);
   }
 
   params.push(accountId);

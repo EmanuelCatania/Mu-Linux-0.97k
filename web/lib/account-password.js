@@ -6,12 +6,18 @@
 // (Common/PasswordHash). Lo viejo puede ser MD5 binario (MD5Encryption=2, lo
 // que escribía este panel) o texto (MD5Encryption=0); se sigue aceptando y se
 // reemplaza por el hash cuando la cuenta entra.
+//
+// El MD5 de lo viejo lo calcula MySQL (UNHEX(MD5(?))), como hacía el panel
+// antes: acá sólo se recibe si coincidió.
 
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
 const HASH_LENGTH = 60;
 const COST = 10;
+
+// Expresión SQL que compara memb__pwd contra el MD5 de un parámetro.
+const MD5_MATCH_SQL = 'memb__pwd = UNHEX(MD5(?))';
 
 function toBuffer(stored) {
   if (stored == null) return Buffer.alloc(0);
@@ -28,7 +34,8 @@ function equalBuffers(a, b) {
 }
 
 // { ok, legacy }: legacy = la contraseña era vieja y conviene reemplazarla.
-async function verify(stored, password) {
+// md5Match = resultado de MD5_MATCH_SQL para esta contraseña.
+async function verify(stored, password, md5Match = false) {
   const value = toBuffer(stored);
   const plain = Buffer.from(String(password ?? ''), 'utf8');
   if (!plain.length) return { ok: false, legacy: false };
@@ -37,17 +44,17 @@ async function verify(stored, password) {
     return { ok: await bcrypt.compare(plain.toString('utf8'), value.toString('latin1')), legacy: false };
   }
 
-  const md5 = crypto.createHash('md5').update(plain).digest();
-  if (equalBuffers(value, md5) || equalBuffers(value, plain)) return { ok: true, legacy: true };
+  if (Number(md5Match) === 1 || md5Match === true || equalBuffers(value, plain)) return { ok: true, legacy: true };
   return { ok: false, legacy: false };
 }
 
-// Valor a guardar. Sin la columna de 60 bytes se sigue guardando MD5, como
-// antes: un hash cortado dejaría la cuenta sin poder entrar.
+// Valor a guardar, como { sql, value }: `sql` es lo que va en el lugar del
+// parámetro. Sin la columna de 60 bytes se sigue guardando MD5, como antes:
+// un hash cortado dejaría la cuenta sin poder entrar.
 async function make(password, wideColumn) {
   const plain = String(password ?? '');
-  if (!wideColumn) return crypto.createHash('md5').update(plain, 'utf8').digest();
-  return Buffer.from(await bcrypt.hash(plain, COST), 'latin1');
+  if (!wideColumn) return { sql: 'UNHEX(MD5(?))', value: plain };
+  return { sql: '?', value: Buffer.from(await bcrypt.hash(plain, COST), 'latin1') };
 }
 
-module.exports = { HASH_LENGTH, COST, isHash, verify, make };
+module.exports = { HASH_LENGTH, COST, MD5_MATCH_SQL, isHash, verify, make };
