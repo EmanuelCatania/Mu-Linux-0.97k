@@ -71,10 +71,12 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     // Copy decrypted pool into GlobalText.  Each 300-byte row is already a
     // null-terminated string in the file; we don't truncate or reformat.
     memcpy(GlobalText, buf, poolBytes);
-    // DESVIACION (Fase 4, texto Unicode): el archivo está en Windows-1252;
-    // en memoria el texto del cliente es UTF-8.
+    // DESVIACION (Fase 4, texto Unicode): en memoria el texto del cliente es
+    // UTF-8. El archivo original está en Windows-1252, pero una traducción puede
+    // venir en UTF-8: lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
     for (int row = 0; row < GLOBALTEXT_ROWS_FILE; ++row)
-        TextEngine::ConvertWindows1252InPlace(GlobalText[row], 300);
+        TextEngine::NormalizeTextFileInPlace(GlobalText[row], 300);
 
     free(buf);
     fclose(fp);
