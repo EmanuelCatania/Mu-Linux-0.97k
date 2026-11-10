@@ -682,6 +682,12 @@ else()
     target_compile_options(mu97k PRIVATE ${MU_COMMON_COMPILE_OPTIONS})
     target_compile_definitions(mu97k PRIVATE $<$<CONFIG:Debug>:_DEBUG>
         $<$<OR:$<BOOL:${MU_BENCHMARK}>,$<CONFIG:Debug>>:MU_BENCHMARK>)
+    if(MINGW)
+        # Los mismos defines que MSVC. Con -std=c++17 (sin extensiones) GCC
+        # define _WIN32 pero no WIN32.
+        target_compile_definitions(mu97k PRIVATE WIN32 _WINDOWS _MBCS
+            _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS _WINSOCK_DEPRECATED_NO_WARNINGS)
+    endif()
     # Mantener los artefactos Linux separados del cliente Windows de prueba.
     set_target_properties(mu97k PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin"
@@ -710,6 +716,13 @@ target_link_libraries(mu97k PRIVATE
 #   Release: /INCREMENTAL:NO, /OPT:REF, /OPT:ICF, /LTCG. El .vcxproj NO genera
 #            .map en Release; acá sí se pide (/MAP) para poder comparar símbolos.
 #            /MAP no cambia el contenido del exe.
+if(MINGW)
+    # Todo estático (libstdc++, libgcc y winpthreads): el exe no pide las DLL
+    # del toolchain. El .map sirve para resolver stacks de crash.
+    target_link_options(mu97k PRIVATE -static "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
+    # GCC ignora los #pragma comment(lib): la que MSVC toma de ahí va acá.
+    target_link_libraries(mu97k PRIVATE rpcrt4)
+else()
 target_link_options(mu97k PRIVATE
     /DEBUG
     /MAP:$<TARGET_FILE_DIR:mu97k>/main.map
@@ -722,6 +735,7 @@ target_link_options(mu97k PRIVATE
     $<$<CONFIG:Release>:/OPT:ICF>
     $<$<CONFIG:Release>:/LTCG>
 )
+endif()
 
 else()
     find_package(OpenGL REQUIRED)
