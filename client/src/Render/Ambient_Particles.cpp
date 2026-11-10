@@ -1,410 +1,250 @@
 // Ambient_Particles.cpp
 // IDA: Ambient_ParticleUpdate @ 0x00502320 — AmbientParticles_Update
 //
-// Ambient_ParticleUpdate — per-frame ambient particle spawner/updater.
+// Fauna ambiental que nada/camina cerca del héroe: los peces de Lorencia y
+// Atlans, y los bichos de Dungeon, Lost Tower y Tarkan. Comparte el pool con
+// RenderFishs (0x00502200): DAT_083a2e90, 10 slots × OBJECT_STRIDE. El binario
+// recorre el pool desde el ancla 0x083A2F78 (= slot + 0xE8), por eso el
+// decompile lee todos los campos con índices negativos; acá se usan los campos
+// del OBJECT.
 //
-// Iterates a table of ambient particle slots at DAT_083a2f78 (base), stepping by 0x6f
-// int-words (= 0x1bc = 444 bytes) up to 0x83A40CF. Index: local_20 (0..N).
+// Mapa → modelo (IDA L118-176):
+//   World 0 (Lorencia) → 181 (fish)                       sobre tiles con Layer1 == 5
+//   World 1 (Dungeon)  → 177                              sobre TerrainWall < 8
+//   World 6 (Arena)    → 178                              sobre TerrainWall < 8
+//   World 7 (Atlans)   → Y < 128: 184..187 (Fish04..07)   sobre TerrainWall ∈ {0, 2}
+//                        Y >= 128: 188/189 (Fish08/09)
+//   World 8 (Tarkan)   → 179 + joint 1258                 sobre TerrainWall ∈ {0, 2}
+// Los slots 3..9 sólo se usan en Atlans y Tarkan.
 //
-// Slot layout (relative to puVar9 = entry pointer):
-//   puVar9[-0x3a] (char)   — active flag (0=free, 1=active)
-//   puVar9[-0x39] (int?)   — lifetime / counter
-//   puVar9[-0x37] (float)  — angular speed
-//   puVar9[-0x36] (float)  — pos_x
-//   puVar9[-0x35] (float)  — pos_y
-//   puVar9[-0x34] (float)  — pos_z (height/altitude)
-//   puVar9[-0x33..] (float[3]) — velocity vector
-//   puVar9[-0x2a..] (float[3]) — prev_pos (used by type 0xb3 lightning bolt)
-//   puVar9[-0x24] (int)    — — (set to -1 = 0xffffffff)
-//   puVar9[-0x22] (int)    — lifetime counter (decremented each frame)
-//   puVar9[-0x21] (int)    — sprite Y-scale (0 or 1.0)
-//   puVar9[-0x20] (float)  — sprite Y-scale value (animated by sine for 0xbc/0xbd)
-//   puVar9[-0x1a] (float)  — oscillation phase angle
-//   puVar9[-0x16..] (float[3]) — direction/normal vector
-//   puVar9[-0x10] (float)  — cached pos_x (head of trail)
-//   puVar9[-0x0f] (float)  — cached pos_y (head of trail)
-//   puVar9[-7]  (float)    — speed (= life_speed / angular_speed)
-//   puVar9[-4]  (float)    — size / scale
-//   puVar9[-3]  (char)     — visible flag
-//   puVar9[0..2] (float[3]) — color RGB
-//   puVar9[0x1f] (float)   — sprite X-scale
-//   puVar9[0x20] (int)     — ???
-//   puVar9[0x79] (char)    — ???
-//   puVar9 + -0xe6 (short) — particle type:
-//       0xae = falling cloud / puff
-//       0xaf = snow flake
-//       0xb0 = rain drop (type 0=Login, type 1/4=CharSelect)
-//       0xb1 = leaf / debris
-//       0xb2 = flower petal (reverse)
-//       0xb3 = lightning bolt
-//       0xb5 = bubble
-//       0xb8 = tree leaf
-//       0xb9..0xbd = water splash variants
-//       0xbc/0xbd = wave ring (sine-animated scale)
-//       0xbf = rain splash
-//       0x10a = firefly / butterfly (circular orbit)
-//
-// Spawning logic:
-//   If slot is free (active==0):
-//     - Check terrain type at player position via Terrain_GetTileIndex(row, col)
-//     - game state 0: tile type 5 (water) → 0xb5 (bubble)
-//     - game state 1: terrain flags → 0xb5 or splash
-//     - game state 7/8: snow / rain environment
-//     - game state 2 (InWorld): leaf/flower/rain based on terrain
-//   When spawning: place near player pos (rand ±512 tiles), set speed, type, lifetime
-//
-// Update logic:
-//   If slot is active:
-//     - BMD__PlayAnimation = BMD_Animation update on the particle model
-//     - Animate type-specific motion (rain falls, petal spins, firefly orbits)
-//     - Move: pos += velocity * speed
-//     - Kill if out of range from player (_DAT_00552d24 = max dist)
-//     - Special: type 0xb1 can spawn sound PlayBuffer(0xf, ...) near player
-//
-// Globals:
-//   DAT_083a2f78  — ambient particle table base
-//   DAT_05828d58  — particle model table base (stride 0xbc, indexed by type)
-//   DAT_07abf5d8  — local player entity ptr
-//   World  — World
-//   DAT_0838bc70  — per-tile terrain attribute array
-//   TerrainMappingLayer1  — per-tile terrain type array (type 5 = water)
-//   _DAT_005524f4 — PI/180 (deg→rad) or small angle step
-//   _DAT_005524f8 — grid_to_world scale
-//   _DAT_00552504 — 1.0f
-//   _DAT_0055256c — 1.0f (duplicate)
-//   _DAT_00552534 — period or speed constant
-//   _DAT_00552d24 — despawn distance
+// Campos del OBJECT que usa esta función:
+//   SubType         contador de rebotes: dos seguidos contra pared → muere
+//   Scale / Velocity / Gravity, LifeTime (frames de animación activa),
+//   Timer (fase del brillo de Fish08/09 en BlendMeshLight),
+//   +0x40 vec3      posición previa del bicho 179 (sin nombre en OBJECT),
+//   +0x8A byte      = 1 al nacer (sin nombre en OBJECT),
+//   +0x90 matriz    3x4 de orientación (AngleMatrix),
+//   Direction[0..1] punto adelantado (posición + paso × 3).
 
 #include "stdafx.h"
 #include "Game/RenderFxSnapshots.h"
+#include "Render/ResourceTables.h"
+
+namespace {
+
+// Campos del OBJECT sin nombre en EntityTypes.h. Todos caen antes de Owner
+// (0xFC), así que el offset es el mismo en x86 y x64.
+inline float* AmbientPrevPos(OBJECT* o)  { return reinterpret_cast<float*>(reinterpret_cast<BYTE*>(o) + 0x40); }
+inline BYTE*  AmbientFlag8A(OBJECT* o)   { return reinterpret_cast<BYTE*>(o) + 0x8A; }
+inline float* AmbientMatrix(OBJECT* o)   { return reinterpret_cast<float*>(reinterpret_cast<BYTE*>(o) + 0x90); }
+
+inline float HeroX() { return *(const float*)(DAT_07abf5d8 + 0x10); }
+inline float HeroY() { return *(const float*)(DAT_07abf5d8 + 0x14); }
+inline float HeroZ() { return *(const float*)(DAT_07abf5d8 + 0x18); }
+
+inline int TileAt(float x, float y)
+{
+    // IDA: Terrain_Load((__int64)(x * 0.0099999998), (__int64)(y * 0.0099999998))
+    return Terrain_GetTileIndex((unsigned int)(long long)(x * 0.0099999998f),
+                                (unsigned int)(long long)(y * 0.0099999998f));
+}
+
+// IDA L82-118: el slot sólo nace sobre ciertos tiles según el mapa.
+bool AmbientCanSpawnOn(int world, int tile)
+{
+    switch (world) {
+    case 0:  return TerrainMappingLayer1[tile] == 5;
+    case 1:
+    case 6:  return TerrainWall[tile] < 8;
+    case 7:
+    case 8:  return TerrainWall[tile] == 0 || TerrainWall[tile] == 2;
+    default: return false;
+    }
+}
+
+// IDA L105-176. Devuelve false si el slot no quedó vivo.
+bool AmbientSpawn(OBJECT* o, int world)
+{
+    o->Position[0] = (float)(rand() % 1024 - 512) + HeroX();
+    o->Position[1] = (float)(rand() % 1024 - 512) + HeroY();
+    o->Position[2] = HeroZ();
+    if (!AmbientCanSpawnOn(world, TileAt(o->Position[0], o->Position[1])))
+        return false;
+
+    o->Light[0] = 0.5f;
+    o->Light[1] = 0.5f;
+    o->Light[2] = 0.5f;
+    RenderFxSnapshots_New(o);
+    o->Live = 1;
+    o->Alpha = 0.0f;
+    o->AlphaTarget = 1.0f;
+    o->BlendMesh = -1;
+    o->Angle[0] = 0.0f;
+    o->Angle[1] = 0.0f;
+    o->Angle[2] = 0.0f;
+    o->LightEnable = 1;
+    o->AlphaEnable = 1;
+    o->SubType = 0;
+    o->HiddenMesh = -1;
+    o->LifeTime = rand() % 128;
+    const int scaleRand = rand() % 4;
+    o->Gravity = 13.0f;
+    *AmbientFlag8A(o) = 1;
+    o->Scale = (float)(scaleRand + 4) * 0.1f;
+
+    switch (world) {
+    case 0:
+        o->Type = 181;
+        o->AlphaTarget = (float)(rand() % 2 + 2) * 0.1f;
+        o->Velocity = 0.6f / o->Scale;
+        break;
+    case 1:
+        o->Type = 177;
+        o->Velocity = 0.6f / o->Scale;
+        break;
+    case 6:
+        o->Type = 178;
+        o->Velocity = 0.6f / o->Scale;
+        break;
+    case 7: {
+        o->Scale = (float)(rand() % 2 + 8) * 0.1f;
+        if (HeroY() * 0.0099999998f >= 128.0f) {
+            // Atlans 3: Fish08/Fish09, con brillo animado en la malla 0.
+            const short type = (short)(rand() % 2 + 188);
+            o->Type = type;
+            if (type == 188 || type == 189) {
+                o->BlendMesh = 0;
+                o->BlendMeshLight = 1.0f;
+            }
+            o->Velocity = 0.5f / o->Scale;
+            o->Gravity = (rand() % 2 == 0) ? 1.0f : 2.0f;
+        } else {
+            // Atlans 1 y 2: Fish04..Fish07.
+            const short type = (short)(rand() % 4 + 184);
+            o->Velocity = 1.0f / o->Scale;
+            o->Type = type;
+            o->Gravity = (rand() % 2 != 0) ? 3.0f : 2.0f;
+        }
+        // IDA LABEL_40: nadan entre 50 y 200 unidades sobre el fondo.
+        o->Timer = (float)(rand() % 32) * 0.1f;
+        const float floor = RequestTerrainHeight(o->Position[0], o->Position[1]);
+        o->Position[2] = (float)(rand() % 150 + 50) + floor;
+        break;
+    }
+    case 8: {
+        o->Type = 179;
+        const int r = rand() % 4;
+        float* prev = AmbientPrevPos(o);
+        prev[0] = o->Position[0];
+        prev[1] = o->Position[1];
+        prev[2] = o->Position[2];
+        o->Scale = (float)(r + 8) * 0.1f;
+        o->Gravity = 9.0f;
+        o->LifeTime = 100;
+        o->Velocity = 2.5f / o->Scale;
+        Joint_Create(1258, o->Position, o->Position, o->Angle, 4,
+                     (intptr_t)o, 30.0f, -1, 0);
+        break;
+    }
+    default:
+        break;
+    }
+    return o->Live != 0;
+}
+
+// IDA L182-310: movimiento, rebote contra paredes y vida útil.
+void AmbientMove(OBJECT* o, int slotIndex)
+{
+    void* model = (void*)(DAT_05828d58 + o->Type * BMD_STRIDE);
+    *(BYTE*)((BYTE*)model + 0xa0 + BMD_FIELD_SHIFT) = o->CurrentAction;
+    BMD__PlayAnimation(model, &o->AnimationFrame, &o->PriorAnimationFrame,
+                       &o->PriorAction, o->Velocity * 0.5f);
+
+    const short type = o->Type;
+    if (type == 188 || type == 189) {
+        o->BlendMeshLight = sinf(o->Timer) * 0.40000001f + 0.5f;
+        o->Timer += 0.1f;
+    }
+
+    if ((type >= 181 && type <= 191) || o->LifeTime > 0) {
+        SetAction(o, type == 178);
+        Particle_PathUpdate(o, slotIndex, DAT_083a2e90, 10);
+        Matrix_BuildFromEuler(o->Angle, AmbientMatrix(o));
+
+        float step[3] = { (float)(rand() % 4 + 6) * o->Velocity, 0.0f, 0.0f };
+        float out[3] = { 0.0f, 0.0f, 0.0f };
+        Vector_Rotate(step, AmbientMatrix(o), out);
+
+        const int world = gMapManager.GetCurrentMap();
+        o->Position[0] += out[0];
+        o->Position[1] += out[1];
+        o->Position[2] += out[2];
+        if (world != 7)
+            o->Position[2] = RequestTerrainHeight(o->Position[0], o->Position[1]);
+        o->Direction[0] = out[0] * 3.0f + o->Position[0];
+        o->Direction[1] = out[1] * 3.0f + o->Position[1];
+
+        const int tile = TileAt(o->Position[0], o->Position[1]);
+        bool blocked = (type == 181 && TerrainMappingLayer1[tile] != 5) ||
+                       (type == 177 && TerrainWall[tile] >= 8);
+        if (!blocked && (world == 7 || world == 8)) {
+            const BYTE wall = TerrainWall[tile];
+            blocked = (wall == 1 || wall >= 8);
+        }
+
+        if (blocked) {
+            // Media vuelta; dos choques seguidos lo matan.
+            o->Angle[2] += 180.0f;
+            if (o->Angle[2] >= 360.0f)
+                o->Angle[2] -= 360.0f;
+            o->SubType += 1;
+        } else if (o->SubType > 0) {
+            o->SubType -= 1;
+        }
+        if (o->SubType >= 2)
+            o->Live = 0;
+
+        if (type == 179) {
+            float* prev = AmbientPrevPos(o);
+            prev[0] = o->Position[0];
+            prev[1] = o->Position[1];
+            prev[2] = o->Position[2];
+        }
+
+        const float dy = o->Position[1] - HeroY();
+        const float dx = o->Position[0] - HeroX();
+        const float dist = sqrtf(dy * dy + dx * dx);
+        if (dist >= 1500.0f)
+            o->Live = 0;
+        if (dist < 600.0f && type == 177 && rand() % 256 == 0)
+            PlayBuffer(15, o, 0);
+    } else {
+        SetAction(o, 0);
+    }
+
+    o->LifeTime -= 1;
+    if (o->LifeTime <= 0 && o->Type != 178 && rand() % 64 == 0)
+        o->LifeTime = rand() % 128;
+
+    Alpha(o);
+}
+
+} // namespace
 
 void __cdecl AmbientParticles_Update(void)
 {
-    float       *pfVar1;
-    void        *this_model;
-    unsigned char bVar2;
-    float        fVar3, fVar4;
-    short        sVar5;
-    unsigned int uVar6;
-    int          iVar7, iVar8;
-    unsigned int *puVar9;
-    bool         bVar10;
-    float10      fVar11;
-    long long    lVar12;
-    int          local_20;     // slot index
-    // Salida de Vector_Rotate (vec3 contiguo): se pasa &local_18 y despues se
-    // leen los TRES. Como escalares sueltos MSVC no garantiza contiguidad y los
-    // componentes 1 y 2 salian de otro lado. Mismo patron que las nubes de
-    // Icarus en Weather_Update.
-    float        __rot[3] = { 0.0f, 0.0f, 0.0f };
-    float       &local_18 = __rot[0], &local_14 = __rot[1], &local_10 = __rot[2];
-    float        local_c[3];
-
-    local_20 = 0;
-    puVar9 = (unsigned int *)DAT_083a2f78;   // base of pool (now real array)
-    iVar8  = gMapManager.GetCurrentMap();
-
-    // Las comparaciones del original contra 0x83a34ac / 0x83a40cf son direcciones
-    // absolutas del binario; acá los bounds son relativos al array real
-    // DAT_083a2f78 (10 × 0x1bc).
-    // - Active range (slots 0..2) = primeros 3 × 0x1bc = 0x534 bytes desde base
-    // - Total range (slots 0..9) = 10 × 0x1bc = 0x1158 bytes desde base
-    const uintptr_t arrBase   = (uintptr_t)DAT_083a2f78;
-    const uintptr_t arrActive = arrBase + 3 * OBJECT_STRIDE;     // hasta slot 2 inclusive
-    const uintptr_t arrEnd    = arrBase + 10 * OBJECT_STRIDE;    // hasta slot 9 inclusive
-
-    do {
-        // ── Is this slot forced active (game state 7/8) or within range? ──────
-        if (((iVar8 == 7) || (iVar8 == 8)) || ((uintptr_t)puVar9 < arrActive)) {
-
-            // ── Slot is free: try to spawn ────────────────────────────────────
-            if (*(char *)(puVar9 + -0x3a) == '\0') {
-                pfVar1 = (float *)(puVar9 + -0x36);
-
-                // Random position near player (±512 units in X, +200..600 in Y)
-                uVar6 = _rand();
-                uVar6 &= 0x800003ff;
-                if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffc00) + 1;
-                *pfVar1 = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x10);
-
-                uVar6 = _rand();
-                const char* const spawnHero = DAT_07abf5d8;
-                uVar6 &= 0x800003ff;
-                if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffc00) + 1;
-                // IDA: Ambient_ParticleUpdate (0x00502320): posición Y almacenada como float.
-                *(float*)&puVar9[-0x35] = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x14);
-                puVar9[-0x34] = *(const unsigned int *)(spawnHero + 0x18);    // pos_z = player_z
-
-                // Get terrain type at spawn position
-                // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
-                lVar12 = (long long)(*(float*)&puVar9[-0x35] * 0.0099999998);
-                uVar6  = (unsigned int)lVar12;
-                lVar12 = (long long)(*pfVar1 * 0.0099999998);
-                iVar7  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
-                iVar8  = gMapManager.GetCurrentMap();
-
-                // ── Spawn logic per game state ────────────────────────────────
-                if (gMapManager.GetCurrentMap() == 0) {
-                    // Connecting state: water bubble on water tiles
-                    if (TerrainMappingLayer1[iVar7] == '\x05') goto LAB_0050245e;
-                    goto switchD_caseD_2;
-                }
-                if (gMapManager.GetCurrentMap() == 1) {
-                    bVar2 = (unsigned char)DAT_0838bc70[iVar7];
-                    goto joined_spawn_check;
-                }
-
-                // Fall through to update path for non-spawn states
-                goto switchD_caseD_2;
-
-joined_spawn_check:
-                if (bVar2 < 8) {
-LAB_0050245e:
-                    // Initialize new particle slot
-                    puVar9[0]    = 0x3f000000; // color R = 0.5
-                    puVar9[1]    = 0x3f000000; // color G = 0.5
-                    puVar9[2]    = 0x3f000000; // color B = 0.5
-                    RenderFxSnapshots_New(puVar9-0x3a);
-                    *(unsigned char *)(puVar9 + -0x3a) = 1;  // active = true
-                    AsObject((char*)puVar9 - 0xE8)->Alpha = 0.0f;
-                    AsObject((char*)puVar9 - 0xE8)->AlphaTarget = 1.0f;
-                    puVar9[-0x21] = 0xffffffff;
-                    puVar9[-0x33] = 0;  // vel_x = 0
-                    puVar9[-0x32] = 0;  // vel_y = 0
-                    puVar9[-0x31] = 0;  // vel_z = 0
-                    *(unsigned char *)(puVar9 + -3) = 1;
-                    AsObject((char*)puVar9 - 0xE8)->AlphaEnable = 1;
-                    puVar9[-0x39] = 0;
-                    puVar9[-0x24] = 0xffffffff;
-
-                    uVar6 = _rand();
-                    uVar6 &= 0x8000007f;
-                    if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xffffff80) + 1;
-                    puVar9[-0x22] = uVar6;  // lifetime = rand & 0x7f
-
-                    uVar6 = _rand();
-                    iVar8 = gMapManager.GetCurrentMap();
-                    uVar6 &= 0x80000003;
-                    if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
-                    puVar9[-4]    = 0x41500000; // size = 13.0f
-                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + -0x5e) = 1;
-
-                    fVar3 = (float)(int)(uVar6 + 4) * _DAT_005524f4;
-                    puVar9[-0x37] = (unsigned int)(*(int *)&fVar3);  // angular speed
-
-                    // Assign type by game sub-state
-                    switch (iVar8) {
-                    case 0:
-                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb5;  // bubble
-                        uVar6 = _rand();
-                        uVar6 &= 0x80000001;
-                        if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
-                        AsObject((char*)puVar9 - 0xE8)->AlphaTarget = (float)(int)(uVar6 + 2) * _DAT_005524f4;
-                        *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
-                        iVar8 = gMapManager.GetCurrentMap();
-                        break;
-                    case 1:
-                        fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb1;  // leaf
-                        puVar9[-7] = (unsigned int)(*(int *)&fVar3);
-                        break;
-                    case 6:
-                        fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb2;  // petal
-                        puVar9[-7] = (unsigned int)(*(int *)&fVar3);
-                        break;
-                    case 7:
-                        // Snow: y-position check for altitude
-                        uVar6 = _rand();
-                        // La captura de Hero de IDA alimenta la lógica de nieve aún omitida.
-                        // En este port se sobrescribía iVar8 sin leer esa dirección.
-                        uVar6 &= 0x80000001;
-                        if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
-                        puVar9[-0x37] = (unsigned int)((float)(int)(uVar6 + 8) * _DAT_005524f4);
-                        // More snow-specific initialization follows in binary...
-                        iVar8 = gMapManager.GetCurrentMap();
-                        break;
-                    case 8:
-                        // Type 0xb3 — lightning bolt
-                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb3;
-                        uVar6 = _rand();
-                        uVar6 &= 0x80000003;
-                        if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
-                        puVar9[-0x2a] = *(unsigned int *)pfVar1;  // prev_pos_x = pos_x
-                        fVar3 = (float)(int)(uVar6 + 8) * _DAT_005524f4;
-                        puVar9[-0x37] = (unsigned int)(*(int *)&fVar3);
-                        fVar3 = _DAT_00552950 / fVar3;
-                        puVar9[-4]    = 0x41100000; // size = 9.0f
-                        puVar9[-0x22] = 100;
-                        puVar9[-0x29] = puVar9[-0x35]; // prev_pos_y = pos_y
-                        puVar9[-0x28] = puVar9[-0x34]; // prev_pos_z = pos_z
-                        puVar9[-7]    = (unsigned int)(*(int *)&fVar3);
-                        Joint_Create(0x4ea, pfVar1, pfVar1,
-                                     (float *)(puVar9 + -0x33), 4,
-                                     (intptr_t)(puVar9 + -0x3a),
-                                     30.0f, -1, 0);
-                        iVar8 = gMapManager.GetCurrentMap();
-                        break;
-                    }
-                }
-            } else {
-                // ── Slot is active: select model and update ───────────────────
-switchD_caseD_2:
-                if (*(char *)(puVar9 + -0x3a) == '\0') goto LAB_00502b38;
-            }
-        }
-
-        // ── Active slot update ────────────────────────────────────────────────
-        if (*(char *)(puVar9 + -0x3a) != '\0') {
-            pfVar1    = (float *)(puVar9 + -0x36);
-            short modelIdx = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
-            // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
-            // char-select). Models[] válido en 0..~0x4A8.
-            if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
-            this_model = (void *)(DAT_05828d58 + modelIdx * BMD_STRIDE);
-
-            // Animate model
-            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0 + BMD_FIELD_SHIFT) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
-            BMD__PlayAnimation(this_model,
-                         &AsObject((char*)puVar9 - 0xE8)->AnimationFrame,
-                         &AsObject((char*)puVar9 - 0xE8)->PriorAnimationFrame,
-                         &AsObject((char*)puVar9 - 0xE8)->PriorAction,
-                         *(float*)&puVar9[-7] * _DAT_00552504);
-
-            sVar5 = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
-
-            // Wave ring: animate scale with sine
-            if ((sVar5 == 0xbc) || (sVar5 == 0xbd)) {
-                fVar11 = (float10)fsin((float10)*(float*)&puVar9[-0x1a]);
-                puVar9[-0x20] = (unsigned int)(float)(fVar11 * (float10)_DAT_005528b4
-                                                      + (float10)_DAT_00552504);
-                *(float*)&puVar9[-0x1a] = *(float*)&puVar9[-0x1a] + _DAT_005524f4;
-            }
-
-            // Despawn if out-of-type or expired
-            if (((sVar5 < 0xb5) || (0xbf < sVar5)) && ((int)puVar9[-0x22] < 1)) {
-                SetAction(AsObject((puVar9 + -0x3a)), 0);
-            } else {
-                SetAction(AsObject((puVar9 + -0x3a)), (unsigned int)(sVar5 == 0xb2));
-                Particle_PathUpdate(AsObject(puVar9 + -0x3a), local_20, DAT_083a2e90, 10);
-                Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
-
-                uVar6 = _rand();
-                uVar6 &= 0x80000003;
-                if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
-                local_c[1] = 0.0f;
-                local_c[0] = (float)(int)(uVar6 + 6) * *(float*)&puVar9[-7];
-                local_c[2] = 0.0f;
-                Vector_Rotate(local_c, (float *)(puVar9 + -0x16), &local_18);
-
-                bVar10 = (gMapManager.GetCurrentMap() != 7);
-                *pfVar1 = local_18 + *pfVar1;            // pos_x += vel_x
-                *(float*)&puVar9[-0x35] = local_14 + *(float*)&puVar9[-0x35]; // pos_y
-                *(float*)&puVar9[-0x34] = local_10 + *(float*)&puVar9[-0x34]; // pos_z
-
-                if (bVar10) {
-                    // Se pasa (xf, yf) explícito — pos en pfVar1[0/1]
-                    float __h = RequestTerrainHeight(*pfVar1, *(float*)(puVar9 - 0x35));
-                    puVar9[-0x34] = *(unsigned int*)&__h;
-                    fVar11 = (float10)__h;
-                }
-
-                // Compute head position (leading edge offset)
-                *(float*)&puVar9[-10] = local_18 * _DAT_00552540 + *pfVar1;
-                puVar9[-9]  = (unsigned int)(local_14 * _DAT_00552540 + (float)puVar9[-0x35]);
-
-                // Terrain type check for special effects
-                // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
-                lVar12 = (long long)(*(float*)&puVar9[-0x35] * 0.0099999998);
-                uVar6  = (unsigned int)lVar12;
-                lVar12 = (long long)(*pfVar1 * 0.0099999998);
-                iVar8  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
-                sVar5  = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
-
-                // Transition to water or bounce on land
-                if (((sVar5 == 0xb5) &&
-                     (TerrainMappingLayer1[iVar8] != '\x05')) ||
-                    ((sVar5 == 0xb1) && (7 < (unsigned char)(unsigned char)DAT_0838bc70[iVar8])))
-                {
-                    // Rolling angle
-                    fVar3 = (float)puVar9[-0x31] + _DAT_005524ec;
-                    puVar9[-0x31] = (unsigned int)(*(int *)&fVar3);
-                    if (_DAT_0055286c <= fVar3)
-                        puVar9[-0x31] = (unsigned int)(fVar3 - _DAT_0055286c);
-                    iVar8 = puVar9[-0x39] + 1;
-                    puVar9[-0x39] = iVar8;
-                } else {
-                    if (gMapManager.GetCurrentMap() == 7 || gMapManager.GetCurrentMap() == 8) {
-                        bVar2 = (unsigned char)DAT_0838bc70[iVar8];
-                        if ((bVar2 == 1) || (7 < bVar2)) {
-                            fVar3 = (float)puVar9[-0x31] + _DAT_005524ec;
-                            puVar9[-0x31] = (unsigned int)(*(int *)&fVar3);
-                            if (_DAT_0055286c <= fVar3)
-                                puVar9[-0x31] = (unsigned int)(fVar3 - _DAT_0055286c);
-                            iVar8 = puVar9[-0x39] + 1;
-                            puVar9[-0x39] = iVar8;
-                            goto skip_decrement;
-                        }
-                    }
-                    if (0 < (int)puVar9[-0x39]) {
-                        iVar8 = (int)puVar9[-0x39] - 1;
-                        puVar9[-0x39] = iVar8;
-                    }
-                }
-skip_decrement:
-                if (1 < (int)puVar9[-0x39])
-                    *(unsigned char *)(puVar9 + -0x3a) = 0;  // deactivate
-
-                // Type 0xb3 (lightning): save prev pos
-                if (sVar5 == 0xb3) {
-                    puVar9[-0x2a] = *(unsigned int *)pfVar1;
-                    puVar9[-0x29] = puVar9[-0x35];
-                    puVar9[-0x28] = puVar9[-0x34];
-                }
-
-                // Despawn if too far from player
-                fVar3 = *pfVar1 - *(float *)(DAT_07abf5d8 + 0x10);
-                fVar4 = (float)puVar9[-0x35] - *(float *)(DAT_07abf5d8 + 0x14);
-                fVar3 = SQRT(fVar3 * fVar3 + fVar4 * fVar4);
-                if (_DAT_00552d24 <= fVar3)
-                    *(unsigned char *)(puVar9 + -0x3a) = 0;
-
-                // Type 0xb1 (leaf): chance to play sound near player
-                if ((fVar3 < _DAT_00552ab4) && (sVar5 == 0xb1)) {
-                    uVar6 = _rand();
-                    uVar6 &= 0x800000ff;
-                    bVar10 = (uVar6 == 0);
-                    if ((int)uVar6 < 0)
-                        bVar10 = ((uVar6 - 1 | 0xffffff00) == 0xffffffff);
-                    if (bVar10)
-                        PlayBuffer(0xf, AsObject((puVar9 + -0x3a)), 0);
-                }
-            }
-
-            // Decrement lifetime, possibly kill
-            iVar8 = (int)puVar9[-0x22];
-            puVar9[-0x22] = (unsigned int)(iVar8 - 1);
-            if ((iVar8 - 1 < 1) && (*(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) != 0xb2)) {
-                uVar6 = _rand();
-                uVar6 &= 0x8000003f;
-                bVar10 = (uVar6 == 0);
-                if ((int)uVar6 < 0)
-                    bVar10 = ((uVar6 - 1 | 0xffffffc0) == 0xffffffff);
-                if (bVar10) {
-                    uVar6 = _rand();
-                    uVar6 &= 0x8000007f;
-                    if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xffffff80) + 1;
-                    puVar9[-0x22] = uVar6;  // re-randomize lifetime
-                }
-            }
-
-            Alpha(AsObject(puVar9 + -0x3a)); // Actualiza el alpha del objeto del pool.
-            iVar8 = gMapManager.GetCurrentMap();
-        }
-
-LAB_00502b38:
-        puVar9  = puVar9 + OBJECT_STRIDE / 4;   // stride: 0x1bc bytes per slot
-        local_20++;
-        if ((uintptr_t)puVar9 >= arrEnd) return;
-    } while (true);
+    if (DAT_07abf5d8 == nullptr)
+        return;   // guarda propia: el spawn se ancla en la posición del héroe
+    for (int i = 0; i < 10; ++i) {
+        OBJECT* o = AsObject(DAT_083a2e90 + i * OBJECT_STRIDE);
+        const int world = gMapManager.GetCurrentMap();
+        // IDA L77: fuera de Atlans y Tarkan sólo se usan los 3 primeros slots.
+        if (world != 7 && world != 8 && i >= 3)
+            continue;
+        if (!o->Live && !AmbientSpawn(o, world))
+            continue;
+        if (o->Type < 0 || (size_t)o->Type >= ResourceTables::ModelCount())
+            continue;   // guarda propia: slot reciclado con tipo basura
+        AmbientMove(o, i);
+    }
 }
