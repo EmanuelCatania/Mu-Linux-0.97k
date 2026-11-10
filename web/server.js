@@ -17,6 +17,7 @@ const customItems = require('./lib/custom-items');
 const itemRows = require('./lib/item-rows');
 const noticeLimits = require('./lib/notices');
 const accountPassword = require('./lib/account-password');
+const spawns = require('./lib/spawns');
 
 // Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
 let passwordColumnWide = false;
@@ -2070,15 +2071,88 @@ app.get('/admin/server-editor/api/monster-defs', requireAdmin, requireAdminPassw
   }
 });
 
+// Spawns: el GameServer usa los TOML por mapa si hay alguno (Data/Maps/NN-Nombre
+// o el de las invasiones) y si no, MonsterSetBase.txt. El editor siempre recibe
+// y manda el texto del .txt; con los TOML el panel convierte en los dos sentidos.
+const MONSTER_SET_TXT = 'Data/Monster/MonsterSetBase.txt';
+
+async function listEditorDir(rel) {
+  try {
+    const data = await editorRequest('GET', `/api/list?path=${encodeURIComponent(rel)}`);
+    return Array.isArray(data.entries) ? data.entries : [];
+  } catch (err) {
+    return null; // la carpeta no existe
+  }
+}
+
+// Qué archivos TOML usa el GameServer hoy, con el mismo criterio que él.
+async function findSpawnTomlFiles() {
+  const files = [];
+  const folders = new Map();
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (!inside.some((f) => f.type === 'file' && f.name === 'Spawns.toml')) continue;
+    if (folders.has(map)) {
+      throw new spawns.SpawnError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+    }
+    folders.set(map, entry.name);
+    files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/Spawns.toml`, map });
+  }
+  const invasionsDir = spawns.INVASIONS_FILE.slice(0, spawns.INVASIONS_FILE.lastIndexOf('/'));
+  const invasions = (await listEditorDir(invasionsDir)) || [];
+  if (invasions.some((f) => f.type === 'file' && f.name === 'Spawns.toml')) {
+    files.push({ path: spawns.INVASIONS_FILE, map: null });
+  }
+  return { files, folders };
+}
+
+async function readEditorFile(rel) {
+  const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(rel)}`);
+  return data.content || '';
+}
+
+async function spawnNames() {
+  const [maps, monsters] = await Promise.all([
+    readEditorFile('Data/MapManager.txt').then(parseMapManager).catch(() => []),
+    readEditorFile('Data/Monster/Monster.txt').then(parseMonsterTxt).catch(() => [])
+  ]);
+  const mapNames = new Map(maps.map((m) => [m.id, m.name]));
+  const monsterNames = new Map(monsters.map((m) => [m.id, m.name]));
+  return { mapName: (id) => mapNames.get(id), monsterName: (id) => monsterNames.get(id) };
+}
+
+async function writeSpawnToml(entries, folders) {
+  const { mapName } = await spawnNames();
+  const files = spawns.buildToml(entries, { mapName, folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(files)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  return { files: Object.keys(files), backups };
+}
+
+function spawnErrorStatus(err) {
+  return err instanceof spawns.SpawnError ? 400 : (err.status || 502);
+}
+
 app.get('/admin/server-editor/api/monster-set', requireAdmin, requireAdminPasswordChange, async (req, res) => {
   if (!editorEnabled) {
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Monster/MonsterSetBase.txt')}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findSpawnTomlFiles();
+    if (!files.length) {
+      return res.json({ format: 'txt', content: await readEditorFile(MONSTER_SET_TXT) });
+    }
+    const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    const { monsterName } = await spawnNames();
+    const content = spawns.buildLegacy(spawns.parseToml(loaded), monsterName);
+    return res.json({ format: 'toml', files: files.map((f) => f.path), content });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2088,13 +2162,33 @@ app.post('/admin/server-editor/api/monster-set', requireAdmin, requireAdminPassw
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Monster/MonsterSetBase.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findSpawnTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: MONSTER_SET_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeSpawnToml(spawns.parseLegacy(content), folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa MonsterSetBase.txt a los TOML por mapa. No borra el .txt (queda como
+// respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/monster-set/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findSpawnTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Los spawns ya están en formato por mapa.' });
+    }
+    const written = await writeSpawnToml(spawns.parseLegacy(await readEditorFile(MONSTER_SET_TXT)), folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
   }
 });
 
