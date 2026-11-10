@@ -777,7 +777,14 @@ void __cdecl Player_ProcessInput(void)
                 {
                     const BYTE act = AsCharacter(ent)->Object.CurrentAction;
                     // 139/140/133/135 = animaciones de gate/teleport: no rotar.
-                    if (act != 139 && act != 140 && act != 133 && act != 135
+                    // DESVIACION: tampoco rota durante un gesto (68..73 de 5.2,
+                    // 93..124 y las acciones propias >= 141). En 5.2 y en IDA sí
+                    // rota, y el [C1][05][18][dir][102] que manda corta el gesto
+                    // en los demas jugadores (102 = SetPlayerStop), cosa muy visible
+                    // con el Dance. Un gesto dura hasta que termina o se cancela
+                    // caminando.
+                    const bool inGesture = (act >= 68 && act <= 73) || (act >= 93 && act <= 124) || act >= 141;
+                    if (act != 139 && act != 140 && act != 133 && act != 135 && !inGesture
                         && bHeadTrackActive && !AsCharacter(ent)->SkillStage)
                     {
                         DAT_07e11db8 = 0;
@@ -1141,7 +1148,11 @@ void __cdecl Player_ProcessInput(void)
                 // salta) y que alla resolvieron dejando de usar 76/77.
                 // Extender la excepcion es mas acotado: conserva la eleccion de
                 // accion de SetPlayerWalk y solo destraba el input.
-                if (act < 0x4C || act > 0x50)
+                // Los gestos de 5.2 que viven en los huecos 68..73 de player.bmd
+                // (Hustle, Provocation, Look around, Cheers, Rush, Dance) tambien
+                // quedan exceptuados: son gestos, no ataques, y el jugador tiene
+                // que poder cancelarlos caminando como a los de 93..124.
+                if ((act < 0x4C || act > 0x50) && (act < 68 || act > 73))
                     goto end_tick_inc;                 // IDA: goto LABEL_390
             }
         }

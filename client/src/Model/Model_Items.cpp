@@ -11,6 +11,7 @@
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
+#include "Model/Model_CustomAnim.h"
 
 // Model_LoadItems — loads player body + all equipment model slots.
 // Called once from OpenWorld (Map_LoadResources) during startup.
@@ -350,6 +351,12 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
             for (int action = 92; action <= 130; ++action) {
                 *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EA3D70A;
             }
+            // action[68..73]: gestos originales de 5.2 (HUSTLE, PROVOCATION, LOOK_AROUND,
+            // CHEERS, RUSH1 largo, COME_UP) en los huecos de player.bmd. 5.2 les da 0.32f
+            // (rango DEFENSE1..SHOCK de ZzzOpenData.cpp). Sin bandera de no-loop: terminan solos.
+            for (int action = 68; action <= 73; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EA3D70A;  // 0.32f
+            }
             // action[131..132].speed = 0.45f
             for (int action = 131; action <= 132; ++action) {
                 *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EE66666;
@@ -379,6 +386,9 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
             *(BYTE*)(A + ModelActionByte(2064)) = 1;
         }
     }
+
+    // Acciones propias (Data/Player/CustomAnim.bmd), anexadas al final del jugador.
+    CustomAnim_AppendToPlayer();
 
     // Lock animation state machine
     SetAttackSpeed();

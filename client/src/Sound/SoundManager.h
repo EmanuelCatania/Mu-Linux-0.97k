@@ -45,6 +45,18 @@ public:
     bool IsMusicStoppedByUser() const { return m_UserStopped; }
     void SetMusicStoppedByUser(bool stopped);
 
+    // Sonidos de los emotes (Data/Sound/Dances): voces cortas sobre el mismo motor.
+    // `gain` es el volumen base 0..1; se le aplica el nivel de efectos del jugador.
+    // Devuelve el numero de voz, o -1 si no existe el archivo o no hay voces libres.
+    int  PlayEmoteSound(const char* fileName, float gain, bool loop);
+    void SetEmoteSoundGain(int voice, float gain);
+    void StopEmoteSound(int voice);
+    // Baja el volumen en `ms` milisegundos y libera la voz despues (evita el corte seco).
+    void FadeOutEmoteSound(int voice, int ms);
+    // Libera las voces cuyo fundido ya termino; se llama una vez por tick.
+    void UpdateEmoteSounds();
+    bool IsEmoteSoundPlaying(int voice);
+
     // Para la música y libera el motor de audio (cierre del cliente).
     void Shutdown();
 

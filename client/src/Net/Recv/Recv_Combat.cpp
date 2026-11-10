@@ -5,6 +5,8 @@
 #include "stdafx.h"
 #include "Game/HeroVitals.h"
 #include "Net/Recv/NetRecv.h"
+#include "Model/Model_CustomAnim.h"
+#include "Sound/EmoteSound.h"
 
 void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
 {
@@ -455,7 +457,19 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     case 129: SetAnim(slot, 125); break;
     case 130: SetAnim(slot, 126); break;
     case 131: SetAnim(slot, 127); break;
+    // Gestos 5.2 en los huecos 68..73 de player.bmd (el 72, Rush largo, no tiene codigo).
+    case 132: SetAnim(slot, 68); break;   // Hustle
+    case 133: SetAnim(slot, 69); break;   // Provocation
+    case 134: SetAnim(slot, 70); break;   // Look around
+    case 135: SetAnim(slot, 71); break;   // Cheers
+    case 136: SetAnim(slot, 73); break;   // Dance (COME_UP en 5.2)
     default:
+        // Emotes propios (CustomAnim.bmd): 137 + n, enlazados a un canal del modelo.
+        if (action >= 137 && action - 137 < CustomAnim_Count()) {
+            const int channel = CustomAnim_Acquire(action - 137);
+            if (channel >= 0) { SetAnim(slot, (BYTE)channel); EmoteSound_Start(slot, action - 137); }
+            break;
+        }
         // Desconocido — setea la acción cruda como anim_state (coincide con IDA
         // SetAction default branch).
         SetAnim(slot, action);
@@ -723,6 +737,15 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // despacha SetPlayerDie en el frame terminal nativo.
     AsCharacter(entity)->Dead = 1;
     AsCharacter(entity)->Movement = 0;
+    // DESVIACION: si moria en medio de un gesto o un emote propio, la animacion de
+    // muerte lo pisa ya, sin esperar los 15 ticks del contador de MoveCharacter.
+    {
+        const BYTE act = AsObject(entity)->CurrentAction;
+        if ((act >= 68 && act <= 73) || CustomAnim_EmoteOfAction(act) >= 0) {
+            extern void __cdecl SetPlayerDie(CHARACTER* c_in);
+            SetPlayerDie(AsCharacter(entity));
+        }
+    }
 
     // Blood Castle: caer del puente al morir (IDA 0x42F030 L18-56).
     //   c+405 = m_bActionStart (lo consume MoveCharacter L572 y

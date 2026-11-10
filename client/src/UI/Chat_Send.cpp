@@ -17,6 +17,8 @@
 //   4. Check if Hero->ID contains "webzen" substring (GM detection)
 //   5. Build C1 packet with XOR encryption using 32-byte key
 //   6. Net_Send the encrypted chat packet
+bool __cdecl Chat_TryFortniteCommand(const char* text);
+
 void __cdecl SendChat(char* Text) {
     // 0x004C1B90 — Sends chat message packet to server (454 lines decompiled).
     // ~60% of original is anti-tamper XOR key init + dead forward/reverse loops.
@@ -36,6 +38,9 @@ void __cdecl SendChat(char* Text) {
     // Lo leen además WndProc y Chat_InputTick.  No usar un static local: nadie
     // lo decrementaría y el chat quedaría bloqueado tras el primer mensaje.
     if ((int)ChatTime > 0x32) return;
+
+    // Comando temporal de pruebas de animaciones propias (no va al server).
+    if (Chat_TryFortniteCommand(Text)) return;
 
     // Duplicate check: compare with last-sent text
     if ((int)ChatTime > 0 && strcmp(DAT_05826adc, Text) == 0) return;

@@ -16,7 +16,10 @@
 #include "globals.h"
 #include "functions.h"
 #include <initializer_list>
-
+#include "Model/Model_CustomAnim.h"
+#include "Sound/EmoteSound.h"
+#include <cstdio>
+#include <cstdlib>
 
 // [C1][05][18][dir][tipo]; dir = octante del facing del heroe.
 void __cdecl SendRequestAction(BYTE actionType)
@@ -40,7 +43,9 @@ void __cdecl SetActionClass(CHARACTER* character, OBJECT* object, int action, in
     BYTE cur = *(BYTE*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
     if (cur == 0 || cur > 12) return;
     int act = action;
-    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2 && (action < 123 || action > 128))
+    // Los gestos 68..73 (5.2) no tienen version femenina: no se corren.
+    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2 &&
+        (action < 123 || action > 128) && (action < 68 || action > 73))
         act = action + 1;
     SetAction(object, act);
     SendRequestAction((BYTE)actionType);
@@ -83,6 +88,46 @@ static void Gesture(int action, BYTE actionType)
     SendRequestAction(actionType);
 }
 
+// Codigo de red de las acciones propias: kCustomActionCode + n. El 0x18 lo
+// retransmite el server sin validar, y NetRecv_18 lo traduce de vuelta.
+constexpr int kCustomActionCode = 137;   // 137..255: alcanza para 119 emotes (byte de accion)
+
+// DESVIACION: "/fortnite" (al azar) y "/fortnite N" (1..cantidad) reproducen una
+// accion propia de CustomAnim.bmd y avisan al resto de los jugadores.
+bool __cdecl Chat_TryFortniteCommand(const char* text)
+{
+    if (!text || strncmp(text, "/fortnite", 9) != 0 || (text[9] != '\0' && text[9] != ' ')) return false;
+    char msg[96];
+    const int count = CustomAnim_Count();
+    if (!Hero || count <= 0) { UIChatLogWindow_AddText("", "fortnite: no hay emotes cargados", 1); return true; }
+    const char* arg = text + 9;
+    while (*arg == ' ') ++arg;
+    int n;
+    // Sin numero: al azar. El 0 (el baile clasico) sale 1 de cada 10 y el resto
+    // se reparte entre los demas.
+    if (*arg == '\0') n = (count <= 1 || rand() % 10 == 0) ? 0 : 1 + rand() % (count - 1);
+    else if (*arg >= '0' && *arg <= '9') n = atoi(arg);
+    else { snprintf(msg, sizeof(msg), "fortnite: /fortnite o /fortnite N (0 a %d)", count - 1); UIChatLogWindow_AddText("", msg, 1); return true; }
+    if (n < 0 || n >= count) { snprintf(msg, sizeof(msg), "fortnite: N fuera de rango (0 a %d)", count - 1); UIChatLogWindow_AddText("", msg, 1); return true; }
+    // Montado en Uniria/Dinorant no se puede, salvo en zona segura (ahi la montura no se dibuja).
+    const WORD helper = *(WORD*)&AsCharacter(Hero)->Helper.Type;
+    if ((helper == 818 || helper == 819) && !AsCharacter(Hero)->SafeZone) {
+        UIChatLogWindow_AddText("", "fortnite: no se puede usar montado", 1);
+        return true;
+    }
+    // Igual que SetActionClass: solo desde reposo (acciones 1..12).
+    const BYTE cur = AsCharacter(Hero)->Object.CurrentAction;
+    if (cur == 0 || cur > 12) return true;
+    const int action = CustomAnim_Acquire(n);
+    if (action < 0) return true;
+    SetAction(AsObject(Hero), action);
+    EmoteSound_Start((unsigned char*)(uintptr_t)Hero, n);
+    SendRequestAction((BYTE)(kCustomActionCode + n));
+    snprintf(msg, sizeof(msg), "fortnite %d: %s", n, CustomAnim_Name(n));
+    UIChatLogWindow_AddText("", msg, 1);
+    return true;
+}
+
 // IDA: sub_497C70 (0x00497C70)
 void __cdecl CheckChatText(char* text)
 {
@@ -117,5 +162,19 @@ void __cdecl CheckChatText(char* text)
     if (AnyGlobal(text, 342, 343) || AnyOf(text, { s_Kr_Slash, s_Kr_Caret })) {
         Gesture(124, 127); return;
     }
-    if (AnyGlobal(text, 344, 347)) Gesture(128, 128);
+    if (AnyGlobal(text, 344, 347)) { Gesture(128, 128); return; }
+
+    // Gestos de 5.2 (huecos 68..73 de player.bmd). En 5.2 se disparan con
+    // GlobalText[783] / [291] / [317] / [348]; en este Text_*.bmd esas entradas
+    // estan vacias o son otro texto, asi que van tambien las palabras en ingles
+    // (5.2 hace lo mismo con "hustle"). Coinciden dentro de la frase, distinguiendo mayusculas (la primera en mayuscula,
+    // como el resto de los gestos: asi no se disparan al escribir texto comun), con o sin
+    // barra, igual que el resto de los gestos. Codigos de red 132..136.
+    static char w_hustle[] = "Hustle", w_dance[] = "Dance", w_comeon[] = "Come on",
+                w_great[] = "Great", w_look[] = "Look around";
+    if (AnyOf(text, { w_hustle }))                        { Gesture(68, 132); return; }
+    if (AnyGlobal(text, 291, 291) || AnyOf(text, { w_comeon })) { Gesture(69, 133); return; }
+    if (AnyGlobal(text, 348, 348) || AnyOf(text, { w_look })) { Gesture(70, 134); return; }
+    if (AnyGlobal(text, 317, 317) || AnyOf(text, { w_great })) { Gesture(71, 135); return; }
+    if (AnyOf(text, { w_dance }))                         { Gesture(73, 136); return; }
 }
