@@ -265,7 +265,12 @@ std::size_t NormalizeTextFileInPlace(char* field, std::size_t capacity)
     if (!field || !capacity) return 0;
     std::size_t length = 0;
     while (length < capacity && field[length]) ++length;
-    if (length < capacity && IsValid(std::string_view(field, length))) return length;
+    if (IsValid(std::string_view(field, length))) {
+        if (length < capacity) return length;
+        // Campo lleno sin NUL: se corta sin partir un carácter.
+        const std::string text(field, length);
+        return CopyTruncated(field, capacity, text);
+    }
     return ConvertWindows1252InPlace(field, capacity);
 }
 

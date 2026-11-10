@@ -39,10 +39,12 @@ void __cdecl Dialog_LoadBMD(const char *path)
     } while (dst < end);
     operator_delete(buf);
     crt_fclose(fp);
-    // DESVIACION (Fase 4, texto Unicode): texto y respuestas de 1252 a UTF-8.
+    // DESVIACION (Fase 4, texto Unicode): texto y respuestas a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
     for (int i = 0; i < DIALOG_SCRIPT_COUNT; ++i) {
-        TextEngine::ConvertWindows1252InPlace(g_DialogScript[i].m_lpszText, sizeof(g_DialogScript[i].m_lpszText));
+        TextEngine::NormalizeTextFileInPlace(g_DialogScript[i].m_lpszText, sizeof(g_DialogScript[i].m_lpszText));
         for (auto& answer : g_DialogScript[i].m_lpszAnswer)
-            TextEngine::ConvertWindows1252InPlace(answer, sizeof(answer));
+            TextEngine::NormalizeTextFileInPlace(answer, sizeof(answer));
     }
 }

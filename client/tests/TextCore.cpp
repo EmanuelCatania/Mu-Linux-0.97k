@@ -2,6 +2,7 @@
 // de la página de códigos con la que el compilador lee el fuente.
 #include "Text/TextCore.h"
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 namespace {
@@ -114,6 +115,12 @@ int main()
     Check(NormalizeTextFileInPlace(utf8File, sizeof(utf8File)) == 3 && std::string(utf8File) == "\xC3\xB1" "a", "archivo ya UTF-8 se respeta");
     char legacyFile[8] = "\xF1" "a";
     Check(NormalizeTextFileInPlace(legacyFile, sizeof(legacyFile)) == 3 && std::string(legacyFile) == "\xC3\xB1" "a", "archivo 1252 se convierte");
+    // Issue #48: un .bmd traducido al chino no se vuelve a convertir.
+    char cjk[32] = "\xE6\xB3\xA2\xE5\x88\x83\xE5\x89\x91";
+    Check(NormalizeTextFileInPlace(cjk, sizeof(cjk)) == 9 && std::string(cjk) == "\xE6\xB3\xA2\xE5\x88\x83\xE5\x89\x91", "UTF-8 chino se respeta");
+    char fullCjk[9];
+    std::memcpy(fullCjk, "\xE6\xB3\xA2\xE5\x88\x83\xE5\x89\x91", 9);
+    Check(NormalizeTextFileInPlace(fullCjk, sizeof(fullCjk)) == 6 && std::string(fullCjk) == "\xE6\xB3\xA2\xE5\x88\x83", "campo lleno se corta en un carácter");
 
     if (failures) { std::printf("%d fallas\n", failures); return 1; }
     std::puts("TextCore: 1252, validación, clusters, cortes, NFC y case folding correctos");
