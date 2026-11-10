@@ -61,6 +61,18 @@ start_service JoinServer JoinServer
 start_service DataServer DataServer
 start_service GameServer GameServer
 
+# Traza de paquetes (ver server/docker/entrypoint.sh). El grabador no está en
+# `children`, así que si se cae el server sigue.
+if [ "${MU_TRACE_ENABLED:-0}" = "1" ] && [ "${MU_TRACE_RECORD:-0}" = "1" ]; then
+  (
+    for _ in $(seq 1 60); do
+      ls /dev/shm/mu-trace-* >/dev/null 2>&1 && break
+      sleep 1
+    done
+    exec "$MU_ROOT/mu-trace" record --out "${MU_TRACE_DIR:-$MU_ROOT/GameServer/LOG/trace}" --keep-mb "${MU_TRACE_KEEP_MB:-1024}"
+  ) &
+fi
+
 echo "GameServer started"
 status=0
 wait -n "${children[@]}" || status=$?

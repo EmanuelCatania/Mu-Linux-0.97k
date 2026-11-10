@@ -24,6 +24,9 @@
     { "name": "Database user", "description": "MySQL user.", "env_variable": "DB_USER", "default_value": "{{server.build.default.database.username}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database password", "description": "MySQL password.", "env_variable": "DB_PASS", "default_value": "{{server.build.default.database.password}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database name", "description": "MySQL database name.", "env_variable": "DB_NAME", "default_value": "{{server.build.default.database.database}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
-    { "name": "Public server address", "description": "Public IPv4 address or hostname advertised to MU clients.", "env_variable": "PUBLIC_IP", "default_value": "127.0.0.1", "user_viewable": true, "user_editable": true, "rules": "required|string|max:255" }
+    { "name": "Public server address", "description": "Public IPv4 address or hostname advertised to MU clients.", "env_variable": "PUBLIC_IP", "default_value": "127.0.0.1", "user_viewable": true, "user_editable": true, "rules": "required|string|max:255" },
+    { "name": "Packet trace", "description": "1 = the GameServer exposes its packet trace (read it with ./mu-trace tail). Nothing is copied while no reader is attached.", "env_variable": "MU_TRACE_ENABLED", "default_value": "0", "user_viewable": true, "user_editable": true, "rules": "required|in:0,1" },
+    { "name": "Record packet trace", "description": "1 = also record the trace to GameServer/LOG/trace (needs Packet trace = 1).", "env_variable": "MU_TRACE_RECORD", "default_value": "0", "user_viewable": true, "user_editable": true, "rules": "required|in:0,1" },
+    { "name": "Packet trace size (MB)", "description": "Maximum size of the recorded trace; the oldest files are deleted first.", "env_variable": "MU_TRACE_KEEP_MB", "default_value": "1024", "user_viewable": true, "user_editable": true, "rules": "required|integer|min:16|max:65536" }
   ]
 }

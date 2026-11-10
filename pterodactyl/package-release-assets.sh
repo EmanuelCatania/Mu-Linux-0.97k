@@ -24,7 +24,8 @@ package_server() {
     "$stage/ConnectServer/ConnectServer" \
     "$stage/JoinServer/JoinServer" \
     "$stage/DataServer/DataServer" \
-    "$stage/GameServer/GameServer"
+    "$stage/GameServer/GameServer" \
+    "$stage/mu-trace"
   tar -C "$stage" -czf "$RELEASE_DIR/mu-linux-97k-server-${arch}.tar.gz" .
   rm -rf "$stage"
 }
