@@ -279,13 +279,57 @@ jobs:
           done
           [ "$found" = 0 ]
 
+  # Windows x64 con MinGW-w64 y WebGPU: Dawn por vcpkg sólo con el backend
+  # Vulkan (triplet cmake/triplets/x64-mingw-mu). Corre en Debian 13 porque
+  # Dawn necesita MinGW-w64 12 o más nuevo (onecore_apiset), y Ubuntu 24.04
+  # trae el 11. Los binarios de vcpkg quedan en la caché de Actions; sólo la
+  # primera vez se compila Dawn.
+  mingw-webgpu:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    name: MinGW (windows-x64, WebGPU)
+    runs-on: ubuntu-24.04
+    container: debian:trixie
+    steps:
+      # Dentro del contenedor, github.workspace es la ruta del host: las rutas
+      # salen de GITHUB_WORKSPACE.
+      - name: Instalar MinGW-w64 y herramientas
+        working-directory: .
+        run: |
+          echo "VCPKG_ROOT=$GITHUB_WORKSPACE/vcpkg" >> "$GITHUB_ENV"
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$GITHUB_WORKSPACE/vcpkg-cache" >> "$GITHUB_ENV"
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++ g++-mingw-w64-x86-64-posix ninja-build cmake git ca-certificates curl zip unzip tar pkg-config python3 python3-venv
+      - uses: actions/checkout@v5
+      - name: Preparar vcpkg
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+      - name: Caché de binarios de vcpkg
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-cache
+          key: vcpkg-x64-mingw-mu-${{ hashFiles('client/vcpkg.json', 'client/vcpkg-configuration.json', 'client/cmake/triplets/x64-mingw-mu.cmake', 'client/cmake/triplets/mingw-include/**') }}
+          restore-keys: vcpkg-x64-mingw-mu-
+      - name: Configurar
+        run: cmake --preset mingw-x64-webgpu-release
+      - name: Compilar
+        run: cmake --build --preset mingw-x64-webgpu-release --target mu97k --parallel 4
+      - name: Verificar que no dependa de las DLL de MinGW
+        run: |
+          set -e
+          dlls=$(x86_64-w64-mingw32-objdump -p build/mingw-x64-webgpu-release/bin/main.exe | sed -n 's/.*DLL Name: //p' | tr '\n' ' ')
+          echo "main.exe: $dlls"
+          if echo "$dlls" | grep -qiE 'libstdc|libgcc|libwinpthread'; then exit 1; fi
+
   # Resultado del workflow: OK si compiló bien o si no hacía falta compilar.
   # Es el check que exige la regla de main (una matriz salteada no reporta sus
   # checks con nombre propio).
   result:
     name: Client
     if: always()
-    needs: [changes, backend, webgpu, linux-x64, mingw]
+    needs: [changes, backend, webgpu, linux-x64, mingw, mingw-webgpu]
     runs-on: ubuntu-24.04
     defaults:
       run:

@@ -147,17 +147,24 @@ apuntá `MU_ASSET_ROOT` a `bin/Client` (ver [Correr en Linux](#correr-en-linux))
 
 ### Windows x64 con MinGW
 
-Alternativa a Visual Studio: compila con MinGW-w64 (GCC), con SDL3 y OpenGL;
-WebGPU sigue siendo sólo con MSVC. El preset es para compilación cruzada desde
-Linux; en Debian/Ubuntu hacen falta `g++-mingw-w64-x86-64-posix` y
-`ninja-build`:
+Alternativa a Visual Studio: compila con MinGW-w64 (GCC), con SDL3. Los presets
+son para compilación cruzada desde Linux; en Debian/Ubuntu hacen falta
+`g++-mingw-w64-x86-64-posix` y `ninja-build`. Hay dos:
+
+- `mingw-x64-release`: sólo OpenGL, sin vcpkg.
+- `mingw-x64-webgpu-release`: OpenGL y WebGPU, con Dawn por vcpkg (requiere
+  `VCPKG_ROOT`, como el de Linux x64, y MinGW-w64 12 o más nuevo: Debian 13 o
+  Ubuntu 25.04 en adelante). Con MinGW, Dawn se compila **sólo con el
+  backend Vulkan**: los de Direct3D piden headers que MinGW no trae. En
+  Opciones no aparecen DirectX 11 ni DirectX 12, y un `d3d12`/`d3d11` guardado
+  en `Config.ini` se toma como WebGPU automático, que usa Vulkan.
 
 ```sh
-cmake --preset mingw-x64-release
-cmake --build --preset mingw-x64-release --target mu97k
+cmake --preset mingw-x64-webgpu-release
+cmake --build --preset mingw-x64-webgpu-release --target mu97k
 ```
 
-El ejecutable queda en `build/mingw-x64-release/bin/main.exe` y sale estático
+El ejecutable queda en `build/<preset>/bin/main.exe` y sale estático
 (no pide las DLL del toolchain); para jugar se copia a `bin/Client/`. GCC no
 tiene `__try`/`__except`: los sitios que con MSVC atrapan un acceso inválido
 corren sin esa protección, igual que en Linux. Compilar con MSYS2 desde Windows
