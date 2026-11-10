@@ -16,7 +16,11 @@ const translations = require('./lib/translations');
 const customItems = require('./lib/custom-items');
 const itemRows = require('./lib/item-rows');
 const noticeLimits = require('./lib/notices');
+const accountPassword = require('./lib/account-password');
 const spawns = require('./lib/spawns');
+
+// Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
+let passwordColumnWide = false;
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -900,6 +904,26 @@ async function ensureSchema() {
       await conn.query('ALTER TABLE MEMB_INFO MODIFY created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP');
     }
 
+    // Contraseñas con bcrypt: memb__pwd tiene que entrar el hash de 60 bytes
+    // (Migrate-password-hash.sql). Agrandarla no toca lo guardado.
+    try {
+      const [pwdCols] = await conn.query(
+        `SELECT CHARACTER_OCTET_LENGTH AS len
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = ?
+           AND TABLE_NAME = 'MEMB_INFO'
+           AND COLUMN_NAME = 'memb__pwd'`,
+        [DB_NAME]
+      );
+      if (Number(pwdCols[0]?.len || 0) < accountPassword.HASH_LENGTH) {
+        await conn.query('ALTER TABLE MEMB_INFO MODIFY memb__pwd VARBINARY(60) NOT NULL');
+      }
+      passwordColumnWide = true;
+    } catch (err) {
+      passwordColumnWide = false;
+      console.error('No se pudo agrandar MEMB_INFO.memb__pwd; las contraseñas siguen en MD5:', err.message);
+    }
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS web_public_ip (
         account_id VARCHAR(10) NOT NULL,
@@ -1170,11 +1194,12 @@ app.post('/register', authLimiter, async (req, res) => {
     const membName = name && name.trim().length > 0 ? name.trim().slice(0, 10) : account;
     const sno = randomDigits(18);
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire, created_at)
-       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
-      [account, password, membName, email, sno]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
+      [account, storedPassword.value, membName, email, sno]
     );
 
     await conn.query(
@@ -1199,6 +1224,27 @@ app.post('/register', authLimiter, async (req, res) => {
   }
 });
 
+// Verifica la contraseña de la cuenta del juego y, si estaba guardada con el
+// formato viejo, la reemplaza por el hash bcrypt.
+async function checkAccountPassword(db, accountId, password) {
+  const [rows] = await db.query(
+    `SELECT memb___id, memb__pwd, ${accountPassword.MD5_MATCH_SQL} AS md5Match FROM MEMB_INFO WHERE memb___id = ? LIMIT 1`,
+    [String(password ?? ''), accountId]
+  );
+  if (rows.length === 0) return null;
+  const result = await accountPassword.verify(rows[0].memb__pwd, password, rows[0].md5Match);
+  if (!result.ok) return null;
+  if (result.legacy && passwordColumnWide) {
+    try {
+      const storedPassword = await accountPassword.make(password, true);
+      await db.query('UPDATE MEMB_INFO SET memb__pwd = ? WHERE memb___id = ?', [storedPassword.value, rows[0].memb___id]);
+    } catch {
+      // Sigue entrando con la contraseña vieja; se reintenta la próxima vez.
+    }
+  }
+  return rows[0].memb___id;
+}
+
 app.get('/login', (req, res) => {
   res.render('login', { error: null, page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
 });
@@ -1209,17 +1255,14 @@ app.post('/login', authLimiter, async (req, res) => {
     return res.render('login', { error: 'Completa usuario y contrasena.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
   }
 
-  const [rows] = await pool.query(
-    'SELECT memb___id FROM MEMB_INFO WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?)) LIMIT 1',
-    [account, password]
-  );
+  const accountId = await checkAccountPassword(pool, account, password);
 
-  if (rows.length === 0) {
+  if (!accountId) {
     return res.render('login', { error: 'Credenciales invalidas.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
   }
 
   try {
-    await rememberAccountSource(pool, rows[0].memb___id, sourceFromRequest(req), false);
+    await rememberAccountSource(pool, accountId, sourceFromRequest(req), false);
   } catch {
     // A missing source must not block the login.
   }
@@ -1275,15 +1318,12 @@ app.post('/account/password', requireUser, authLimiter, async (req, res) => {
   if (!turnstileOk) return fail('Captcha invalido. Intenta nuevamente.');
 
   const accountId = req.session.user.id;
-  const [rows] = await pool.query(
-    'SELECT memb___id FROM MEMB_INFO WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?)) LIMIT 1',
-    [accountId, current]
-  );
-  if (rows.length === 0) return fail('La contrasena actual es incorrecta.');
+  if (!(await checkAccountPassword(pool, accountId, current))) return fail('La contrasena actual es incorrecta.');
 
+  const storedPassword = await accountPassword.make(password, passwordColumnWide);
   const [result] = await pool.query(
-    'UPDATE MEMB_INFO SET memb__pwd = UNHEX(MD5(?)) WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?))',
-    [password, accountId, current]
+    `UPDATE MEMB_INFO SET memb__pwd = ${storedPassword.sql} WHERE memb___id = ?`,
+    [storedPassword.value, accountId]
   );
   if (!result || result.affectedRows === 0) return fail('No se pudo cambiar la contrasena.');
   return res.redirect(`/account?ok=${encodeURIComponent('Contrasena actualizada.')}`);
@@ -3045,11 +3085,12 @@ app.post('/admin/accounts/new', requireAdmin, requireAdminPasswordChange, async 
     const accountExpireValue = accountExpire.value ? accountExpire.value : new Date();
     const blockExpireValue = blocked ? blockExpire.value : '1900-01-01 00:00:00';
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire)
-       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, ?, ?, ?, ?)`,
-      [account, password, name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, ?, ?, ?, ?)`,
+      [account, storedPassword.value, name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
     );
 
     await conn.query(
@@ -3211,8 +3252,9 @@ app.post('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async 
   ];
 
   if (password) {
-    fields.push('memb__pwd = UNHEX(MD5(?))');
-    params.push(password);
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
+    fields.push(`memb__pwd = ${storedPassword.sql}`);
+    params.push(storedPassword.value);
   }
 
   params.push(accountId);

@@ -354,7 +354,8 @@ Mantiene backups por archivo y snapshots de `server/MuServer/Data` y `server/MuS
 
 ## Datos, seguridad y logs
 
-- `MD5Encryption=2` usa MD5 binario. Al migrar desde texto plano, recreá la DB con `docker compose down -v`.
+- Contraseñas: el JoinServer y el panel las guardan con bcrypt (`PasswordHash=1` en `JoinServer.ini`). Las viejas (texto o MD5, según `MD5Encryption`) siguen entrando y se reemplazan por el hash la primera vez que cada cuenta entra. Hace falta `memb__pwd` de 60 bytes: el panel lo ajusta al arrancar, o corré `Migrate-password-hash.sql`.
+- `GlobalPassword` (entra a cualquier cuenta) viene vacía, o sea apagada. Si tu `JoinServer.ini` todavía tiene `XwefDastoD`, borrala: es un valor público.
 - Guardá los TXT del servidor en UTF-8 sin BOM. Desde 0.97.40 el server ya no convierte a Windows-1252: un archivo en ANSI con acentos se ve mal en el cliente.
 - Shops: `server/MuServer/Data/Shop/*.txt`; `SlotX SlotY` en `-1 -1` autoubica el ítem.
 - Mensajes: `server/MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y `server/MuServer/Data/Util/Notice.txt`.

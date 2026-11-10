@@ -11,6 +11,12 @@ foreach(service ConnectServer JoinServer DataServer GameServer)
 endforeach()
 mu_link_mysql(JoinServer DataServer)
 
+# Contraseñas de cuenta con bcrypt (Common/PasswordHash, crypt_blowfish en C).
+target_sources(JoinServer PRIVATE Common/PasswordHash.cpp Common/crypt_blowfish/crypt_blowfish.c)
+if(WIN32)
+  target_link_libraries(JoinServer PRIVATE bcrypt)
+endif()
+
 # Texto UTF-8 de los nombres (validación y comparación); utf8proc va como C.
 # En Windows cada servidor usa su propio runtime de C (GameServer estático,
 # DataServer dinámico, ver mu_add_server) y una biblioteca estática tiene que

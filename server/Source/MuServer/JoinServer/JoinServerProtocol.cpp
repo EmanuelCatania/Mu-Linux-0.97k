@@ -8,6 +8,84 @@
 #include "SocketManager.h"
 #include "SocketManagerUdp.h"
 #include "Util.h"
+#include "../Common/PasswordHash.h"
+
+// Contraseñas con bcrypt (Fase 5). Lo que ya está guardado como hash se
+// verifica con bcrypt; lo viejo (texto o MD5, según MD5Encryption) se verifica
+// como siempre y, si entra, se reemplaza por el hash en ese mismo login.
+static int PasswordHashEnabled = 1;
+static int PasswordHashCost = PasswordHash::DefaultCost;
+static bool PasswordColumnWide = false;
+
+// La contraseña global entra a cualquier cuenta: vacía queda apagada. Antes
+// venía con un valor por defecto conocido, y con la global vacía una
+// contraseña vacía habría entrado a todas.
+static bool IsGlobalPassword(const char* password)
+{
+	return GlobalPassword[0] != 0 && strcmp(password, GlobalPassword) == 0;
+}
+
+void PasswordHashSetup(const char* path)
+{
+	PasswordHashEnabled = GetPrivateProfileInt("AccountInfo", "PasswordHash", 1, path);
+
+	PasswordHashCost = GetPrivateProfileInt("AccountInfo", "PasswordHashCost", PasswordHash::DefaultCost, path);
+
+	if (PasswordHashCost < PasswordHash::MinCost || PasswordHashCost > PasswordHash::MaxCost)
+	{
+		PasswordHashCost = PasswordHash::DefaultCost;
+	}
+
+	int length = 0;
+
+#ifndef MYSQL
+	if (gQueryManager.ExecQuery("SELECT COL_LENGTH('MEMB_INFO', 'memb__pwd') AS len") != false && gQueryManager.Fetch() != SQL_NO_DATA)
+#else
+	if (gQueryManager.ExecResultQuery("SELECT CHARACTER_OCTET_LENGTH AS len FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'MEMB_INFO' AND COLUMN_NAME = 'memb__pwd'") != false && gQueryManager.Fetch() != false)
+#endif
+	{
+		length = gQueryManager.GetAsInteger("len");
+	}
+
+	gQueryManager.Close();
+
+	// Sin lugar para los 60 caracteres el hash quedaría cortado y la cuenta sin
+	// poder entrar: en ese caso no se migra nada.
+	PasswordColumnWide = length >= PasswordHash::HashLength;
+
+	if (PasswordHashEnabled != 0 && PasswordColumnWide == false)
+	{
+		LogAdd(LOG_RED, "[PasswordHash] memb__pwd has %d bytes, 60 needed: run Migrate-password-hash.sql. Passwords are not migrated until then.", length);
+	}
+}
+
+// Reemplaza la contraseña vieja por el hash bcrypt. Si falla, la cuenta sigue
+// entrando con la contraseña vieja y se reintenta en el próximo login.
+static void PasswordHashUpgrade(const char* account, const char* password)
+{
+	if (PasswordHashEnabled == 0 || PasswordColumnWide == false)
+	{
+		return;
+	}
+
+	char hash[PasswordHash::HashLength + 1];
+
+	if (PasswordHash::Make(password, PasswordHashCost, hash, sizeof(hash)) == false)
+	{
+		LogAdd(LOG_RED, "[PasswordHash] Could not hash the password of '%s'", account);
+
+		return;
+	}
+
+	// El hash sólo tiene [./$0-9A-Za-z]: no hace falta escaparlo.
+#ifndef MYSQL
+	gQueryManager.ExecQuery("UPDATE MEMB_INFO SET memb__pwd = CONVERT(VARBINARY(60), '%s') WHERE memb___id = '%s'", hash, account);
+#else
+	gQueryManager.ExecUpdateQuery("UPDATE MEMB_INFO SET memb__pwd = '%s' WHERE memb___id = '%s'", hash, account);
+#endif
+
+	gQueryManager.Close();
+}
 
 void JoinServerProtocolCore(int index, BYTE head, BYTE* lpMsg, int size)
 {
@@ -148,7 +226,15 @@ void GJConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg, int index)
 
 		gQueryManager.GetAsString("memb__pwd", password, sizeof(password));
 
-		if (strcmp(lpMsg->password, password) != 0 && strcmp(lpMsg->password, GlobalPassword) != 0)
+		char stored[PasswordHash::HashLength + 4] = { 0 };
+
+		gQueryManager.GetAsString("memb__pwd", stored, sizeof(stored));
+
+		const bool hashed = PasswordHash::IsHash((const BYTE*)stored, sizeof(stored));
+
+		const bool valid = (hashed != false) ? PasswordHash::Check(lpMsg->password, stored) : (strcmp(lpMsg->password, password) == 0);
+
+		if (valid == false && IsGlobalPassword(lpMsg->password) == false)
 		{
 			gQueryManager.Close();
 
@@ -161,7 +247,12 @@ void GJConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg, int index)
 
 		gQueryManager.Close();
 
-		if (strcmp(lpMsg->password, GlobalPassword) == 0)
+		if (valid != false && hashed == false)
+		{
+			PasswordHashUpgrade(lpMsg->account, lpMsg->password);
+		}
+
+		if (valid == false)
 		{
 			LogAdd(LOG_RED, "IP [%s] has logged in '%s' account with global password!", lpMsg->IpAddress, lpMsg->account);
 		}
@@ -183,16 +274,28 @@ void GJConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg, int index)
 			return;
 		}
 
-		BYTE password[16] = { 0 };
+		BYTE password[PasswordHash::HashLength + 4] = { 0 };
 
 		gQueryManager.GetAsBinary("memb__pwd", password, sizeof(password));
 
+		const bool hashed = PasswordHash::IsHash(password, sizeof(password));
+
 		MD5 MD5Hash;
 
-		if (((MD5Encryption == 1)
-		    ? MD5Hash.MD5_CheckValue(lpMsg->password, (char*)password, MakeAccountKey(lpMsg->account)) == false
-		    : MD5Hash.MD5_CheckValue(lpMsg->password, (char*)password) == false)
-		    && strcmp(lpMsg->password, GlobalPassword) != 0)
+		bool valid;
+
+		if (hashed != false)
+		{
+			valid = PasswordHash::Check(lpMsg->password, (const char*)password);
+		}
+		else
+		{
+			valid = (MD5Encryption == 1)
+			    ? MD5Hash.MD5_CheckValue(lpMsg->password, (char*)password, MakeAccountKey(lpMsg->account))
+			    : MD5Hash.MD5_CheckValue(lpMsg->password, (char*)password);
+		}
+
+		if (valid == false && IsGlobalPassword(lpMsg->password) == false)
 		{
 			gQueryManager.Close();
 
@@ -205,7 +308,12 @@ void GJConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg, int index)
 
 		gQueryManager.Close();
 
-		if (strcmp(lpMsg->password, GlobalPassword) == 0)
+		if (valid != false && hashed == false)
+		{
+			PasswordHashUpgrade(lpMsg->account, lpMsg->password);
+		}
+
+		if (valid == false)
 		{
 			LogAdd(LOG_RED, "IP [%s] has logged in '%s' account with global password!", lpMsg->IpAddress, lpMsg->account);
 		}
