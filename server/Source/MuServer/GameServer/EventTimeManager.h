@@ -17,6 +17,9 @@ public:
 	virtual ~CEventTimeManager();
 
 	void GCEventTimeSend(int aIndex);
+
+	// F3:F2: vivos por mapa de las invasiones en curso (tooltip del panel).
+	void GCInvasionDetailSend(int aIndex);
 };
 
 extern CEventTimeManager gEventTimeManager;
