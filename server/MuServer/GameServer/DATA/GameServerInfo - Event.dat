@@ -40,6 +40,11 @@ InvasionManagerSwitch=1
 ; Los jefes siguen con su propio mensaje (BossMessage de InvasionManager.dat).
 InvasionKillNotice=1
 
+; Terminar la invasion apenas mueren todos sus monstruos, en vez de esperar a
+; que se cumpla su tiempo (0 = No / 1 = Si). Solo si ninguno va a reaparecer
+; antes del final (RegenType 0); el Tamachan siempre dura su tiempo completo.
+InvasionEndWhenCleared=1
+
 ; Enable Invasion Flying Dragons Effect (0 = No / 1 = Yes)
 FlyingDragonsSwitch=1
 

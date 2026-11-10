@@ -115,6 +115,7 @@ public:
 	void ClearMonster(INVASION_INFO* lpInfo);
 
 	int GetMonsterCount(INVASION_INFO* lpInfo);
+	bool IsCleared(INVASION_INFO* lpInfo);
 
 	void SetMonster(INVASION_INFO* lpInfo, INVASION_RESPWAN_INFO* lpRespawnInfo, INVASION_MONSTER_INFO* lpMonsterInfo);
 

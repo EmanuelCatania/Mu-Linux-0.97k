@@ -1567,6 +1567,8 @@ void CServerInfo::ReadEventInfo(const char* section, const char* path)
 
 	this->m_InvasionKillNotice = GetPrivateProfileInt(section, "InvasionKillNotice", 1, path);
 
+	this->m_InvasionEndWhenCleared = GetPrivateProfileInt(section, "InvasionEndWhenCleared", 1, path);
+
 	this->m_FlyingDragonsSwitch = GetPrivateProfileInt(section, "FlyingDragonsSwitch", 0, path);
 
 	this->m_FlyingDragonsOnlyBossMapSpawn = GetPrivateProfileInt(section, "FlyingDragonsOnlyBossMapSpawn", 0, path);

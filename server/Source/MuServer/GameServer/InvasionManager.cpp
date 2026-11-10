@@ -374,7 +374,7 @@ void CInvasionManager::ProcState_EMPTY(INVASION_INFO* lpInfo)
 
 void CInvasionManager::ProcState_START(INVASION_INFO* lpInfo)
 {
-	if (lpInfo->RemainTime <= 0)
+	if (lpInfo->RemainTime <= 0 || this->IsCleared(lpInfo) != 0)
 	{
 		if (lpInfo->DespawnMessage != -1)
 		{
@@ -851,6 +851,46 @@ int CInvasionManager::GetMonsterCount(INVASION_INFO* lpInfo)
 	}
 
 	return count;
+}
+
+// Todos los monstruos muertos y ninguno vuelve antes del final: la invasion
+// ya no tiene nada que hacer. Un monstruo muerto reaparece MaxRegenTime despues
+// de su muerte, que fue antes de ahora; si MaxRegenTime cubre lo que falta, no
+// llega a reaparecer (es el caso de RegenType 0, que dura toda la invasion).
+bool CInvasionManager::IsCleared(INVASION_INFO* lpInfo)
+{
+	if (gServerInfo.m_InvasionEndWhenCleared == 0 || this->IsTamachanInvasion(lpInfo) != 0)
+	{
+		return false;
+	}
+
+	int total = 0;
+
+	for (int n = 0; n < MAX_INVASION_MONSTER; n++)
+	{
+		int index = lpInfo->MonsterIndex[n];
+
+		if (OBJECT_RANGE(index) == 0)
+		{
+			continue;
+		}
+
+		LPOBJ lpObj = &gObj[index];
+
+		if (lpObj->Live != 0 && lpObj->Life > 0)
+		{
+			return false;
+		}
+
+		if (lpObj->MaxRegenTime < (DWORD)lpInfo->RemainTime * 1000)
+		{
+			return false;
+		}
+
+		total++;
+	}
+
+	return total > 0;
 }
 
 void CInvasionManager::SetMonster(INVASION_INFO* lpInfo, INVASION_RESPWAN_INFO* lpRespawnInfo, INVASION_MONSTER_INFO* lpMonsterInfo)
