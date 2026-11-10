@@ -911,7 +911,10 @@ void CObjectManager::CharacterCalcExperienceParty(LPOBJ lpObj, LPOBJ lpMonster, 
 			{
 				TotalLevel += (((gObj[lpParty->Index[n]].Level + 200) < PartyTopLevel) ? (gObj[lpParty->Index[n]].Level + 200) : gObj[lpParty->Index[n]].Level);
 
-				PartyClass = (lpObj->Class != gObj[lpParty->Index[n]].Class) ? (++PartyClass) : PartyClass;
+				if (lpObj->Class != gObj[lpParty->Index[n]].Class)
+				{
+					PartyClass++;
+				}
 
 				PartyCount++;
 			}

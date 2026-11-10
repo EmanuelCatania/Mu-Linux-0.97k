@@ -3,6 +3,7 @@
 #include "DSProtocol.h"
 #include "GameMain.h"
 #include "NpcTalk.h"
+#include "PacketTrace.h"
 #include "Shop.h"
 #include "Util.h"
 
@@ -54,6 +55,11 @@ void CWarehouse::CGWarehouseMoneyRecv(PMSG_WAREHOUSE_MONEY_RECV* lpMsg, int aInd
 	}
 
 	if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_WAREHOUSE || lpObj->Interface.state == 0)
+	{
+		return;
+	}
+
+	if (gNpcTalk.CheckInterfaceNpc(lpObj, 0x81) == 0)
 	{
 		return;
 	}

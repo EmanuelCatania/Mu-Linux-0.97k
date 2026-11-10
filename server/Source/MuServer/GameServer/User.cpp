@@ -416,6 +416,8 @@ void gObjCharZeroSet(int aIndex)
 
 	lpObj->TargetShopNumber = -1;
 
+	lpObj->InterfaceNpc = -1;
+
 	lpObj->LastAttackerID = -1;
 
 	lpObj->MagicDefense = 0;
