@@ -176,8 +176,9 @@ void CEventTimer::RenderInvasionTooltip(const Proto::PMSG_EVENT_TIME& event, int
         // DrawItemInfoBox: 0 blanco, 2 rojo).
         add(m.alive ? 0 : 2, 0, text);
     }
-    // A la izquierda de la columna de paneles, a la altura de la fila.
-    CharMenu_RenderTextList(Layout::X() - 80, y, count, 0, 1, 1);
+    // Dentro del panel: centrado en la columna y justo debajo de la fila.
+    // CharMenu_RenderTextList centra el recuadro en la X que recibe.
+    CharMenu_RenderTextList(Layout::X() + 95, y + Layout::RowHeight() + 2, count, 0, 1, 1);
 }
 
 void CEventTimer::Clear()
