@@ -1,8 +1,9 @@
 #pragma once
 
 // El caller valida los rangos y la vida de sus datos antes de ejecutar.
-// Windows conserva la defensa SEH adicional de los sitios heredados.
-// POSIX no intenta capturar accesos invalidos como excepciones C++.
+// Con MSVC, Windows conserva la defensa SEH adicional de los sitios heredados.
+// POSIX y MinGW (GCC no tiene __try/__except) no intentan capturar accesos
+// invalidos como excepciones C++.
 #if defined(_WIN32)
 #include "Platform/PlatformHeaders.h"
 #endif
@@ -11,7 +12,7 @@ namespace Platform {
 namespace Detail {
 inline bool InvokeGuarded(void (*operation)(void*), void* context)
 {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
     __try {
         operation(context);
         return true;

@@ -30,6 +30,18 @@ function(mu_add_server target directory)
     set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>${crt_suffix}")
     set(MU_SERVER_OUTPUT_ROOT "${directory}/../bin" CACHE PATH "Directorio de binarios del servidor Windows")
     set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${MU_SERVER_OUTPUT_ROOT}/$<CONFIG>/${subdirectory}${target}")
+  elseif(MINGW)
+    # MinGW-w64 (issue #23): el mismo código de Windows que con MSVC. Todo
+    # estático (libstdc++, libgcc y winpthreads) para que el .exe no pida las
+    # DLL del toolchain.
+    target_compile_options(${target} PRIVATE -fsigned-char)
+    target_compile_definitions(${target} PRIVATE WIN32 $<$<CONFIG:Debug>:_DEBUG>)
+    target_link_libraries(${target} PRIVATE user32 gdi32 ws2_32 dbghelp)
+    if(target STREQUAL "JoinServer" OR target STREQUAL "DataServer")
+      target_link_libraries(${target} PRIVATE odbc32 advapi32)
+    endif()
+    target_link_options(${target} PRIVATE -static)
+    set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target}")
   else()
     target_compile_options(${target} PRIVATE -fsigned-char)
     # Escrituras fuera de rango: hoy no hay ninguna (GCC 11 y 14), y así no

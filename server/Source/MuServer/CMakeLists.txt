@@ -50,6 +50,9 @@ if(MSVC)
   set_property(TARGET mu-data PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
   set_target_properties(mu-data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+  if(MINGW)
+    target_link_options(mu-data PRIVATE -static)
+  endif()
 endif()
 
 # Lector de la traza de paquetes del GameServer (Fase 5, sección 5c). Sólo Linux:
