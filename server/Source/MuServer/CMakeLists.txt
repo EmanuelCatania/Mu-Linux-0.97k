@@ -33,3 +33,13 @@ mu_add_text_library(MuText "")
 mu_add_text_library(MuTextDLL "DLL")
 target_link_libraries(GameServer PRIVATE MuText)
 target_link_libraries(DataServer PRIVATE MuTextDLL)
+
+# Lector de la traza de paquetes del GameServer (Fase 5, sección 5c). Sólo Linux:
+# el anillo vive en /dev/shm.
+if(NOT WIN32)
+  add_executable(mu-trace MuTrace/mu-trace.cpp)
+  target_include_directories(mu-trace PRIVATE Common MuTrace)
+  target_compile_features(mu-trace PRIVATE cxx_std_17)
+  target_link_libraries(mu-trace PRIVATE rt)
+  set_target_properties(mu-trace PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif()

@@ -7,6 +7,7 @@
 #include "Notice.h"
 #include "ObjectManager.h"
 #include "ServerInfo.h"
+#include "PacketTrace.h"
 #include "Util.h"
 
 CTrade gTrade;
@@ -376,6 +377,24 @@ void CTrade::CGTradeOkButtonRecv(PMSG_TRADE_OK_BUTTON_RECV* lpMsg, int aIndex)
 		{
 			gNotice.GCNoticeSend(lpTarget->Index, 1, gMessage.GetTextMessage(111, lpTarget->Lang));
 		}
+
+		return;
+	}
+
+	// Al pedir y al aceptar se exigen 2 tiles; si al confirmar ya no están cerca
+	// (o están en otro mapa) el trade se cancela. Se tolera un tile más por si
+	// alguno fue empujado mientras tanto.
+	if (lpObj->Map != lpTarget->Map || abs(lpObj->X - lpTarget->X) > 3 || abs(lpObj->Y - lpTarget->Y) > 3)
+	{
+		TRACE_REJECT(aIndex, 0x3C, -1, "trade con %d cancelado: lejos (yo %d,%d mapa %d / otro %d,%d mapa %d)", bIndex, lpObj->X, lpObj->Y, lpObj->Map, lpTarget->X, lpTarget->Y, lpTarget->Map);
+
+		this->ResetTrade(aIndex);
+
+		this->GCTradeResultSend(aIndex, 0);
+
+		this->ResetTrade(bIndex);
+
+		this->GCTradeResultSend(bIndex, 0);
 
 		return;
 	}

@@ -279,7 +279,9 @@ void CQuestObjective::RemoveQuestObjective(LPOBJ lpObj, int QuestIndex)
 
 		if (lpInfo->Type == QUEST_OBJECTIVE_MONEY)
 		{
-			lpObj->Money = (((lpObj->Money - lpInfo->Value) < 0) ? 0 : (lpObj->Money - lpInfo->Value));
+			// Money es DWORD: la resta nunca da negativa, así que la guarda tiene
+			// que comparar antes de restar o el zen da la vuelta a ~4.290 millones.
+			lpObj->Money = ((lpObj->Money < (DWORD)lpInfo->Value) ? 0 : (lpObj->Money - lpInfo->Value));
 
 			GCMoneySend(lpObj->Index, lpObj->Money);
 

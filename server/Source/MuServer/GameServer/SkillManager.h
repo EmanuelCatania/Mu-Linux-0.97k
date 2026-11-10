@@ -228,6 +228,7 @@ public:
 	bool CheckSkillRange(int index, int x, int y, int tx, int ty);
 
 	bool CheckSkillRadio(int index, int x, int y, int tx, int ty);
+	int GetSkillRadio(int index);
 
 	bool CheckSkillFrustrum(int* SkillFrustrumX, int* SkillFrustrumY, int x, int y);
 

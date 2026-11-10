@@ -9,6 +9,7 @@
 #include "RandomManager.h"
 #include "ServerInfo.h"
 #include "Shop.h"
+#include "NpcTalk.h"
 #include "Util.h"
 
 CChaosBox gChaosBox;
@@ -166,6 +167,11 @@ void CChaosBox::CGChaosMixRecv(PMSG_CHAOS_MIX_RECV* lpMsg, int aIndex)
 	// Sólo con la ventana del chaos box abierta (se abre hablando con el NPC).
 	// Sin esto se mezclaba desde cualquier lado, también durante un trade.
 	if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX)
+	{
+		return;
+	}
+
+	if (gNpcTalk.CheckInterfaceNpc(lpObj, 0x86) == 0)
 	{
 		return;
 	}

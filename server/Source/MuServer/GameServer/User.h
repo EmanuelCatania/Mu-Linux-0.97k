@@ -456,6 +456,7 @@ struct OBJECTSTRUCT
 	int Change;
 	short TargetNumber;
 	short TargetShopNumber;
+	int InterfaceNpc; // NPC con el que se abrió la interfaz actual (tienda, baúl, chaos box); -1 = ninguno
 	short ShopNumber;
 	short LastAttackerID;
 	int PhysiDamageMin;
