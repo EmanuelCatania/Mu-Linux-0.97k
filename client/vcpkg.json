@@ -12,8 +12,8 @@
           "name": "dawn",
           "default-features": false,
           "features": [
-            { "name": "d3d11", "platform": "windows" },
-            { "name": "d3d12", "platform": "windows" },
+            { "name": "d3d11", "platform": "windows & !mingw" },
+            { "name": "d3d12", "platform": "windows & !mingw" },
             { "name": "vulkan", "platform": "windows | (linux & x64)" },
             { "name": "wayland", "platform": "linux & x64" },
             { "name": "x11", "platform": "linux & x64" }
