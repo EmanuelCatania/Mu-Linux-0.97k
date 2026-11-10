@@ -12,6 +12,7 @@
 #include "miniaudio.h"
 
 #include <math.h>
+#include <chrono>
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -41,6 +42,95 @@ ma_result SeekMusic(ma_decoder* decoder, ma_int64 offset, ma_seek_origin origin)
     const int whence = origin == ma_seek_origin_current ? SEEK_CUR : origin == ma_seek_origin_end ? SEEK_END : SEEK_SET;
     return fseek(stream->file, long(offset), whence) == 0 ? MA_SUCCESS : MA_ERROR;
 }
+}
+
+namespace {
+constexpr int kEmoteVoices = 16;
+struct EmoteVoice {
+    MusicStream* stream = nullptr;
+    ma_sound*    sound = nullptr;
+    std::chrono::steady_clock::time_point releaseAt{};
+    bool fading = false;
+};
+EmoteVoice g_emoteVoices[kEmoteVoices];
+
+void ReleaseVoice(EmoteVoice& v)
+{
+    v.fading = false;
+    if (v.sound) { ma_sound_stop(v.sound); ma_sound_uninit(v.sound); delete v.sound; v.sound = nullptr; }
+    if (v.stream) { ma_decoder_uninit(&v.stream->decoder); fclose(v.stream->file); delete v.stream; v.stream = nullptr; }
+}
+}
+
+int CSound::PlayEmoteSound(const char* fileName, float gain, bool loop)
+{
+    if (!fileName || !EnsureEngine()) return -1;
+    int voice = -1;
+    for (int i = 0; i < kEmoteVoices && voice < 0; ++i) {
+        EmoteVoice& v = g_emoteVoices[i];
+        if (v.sound && ma_sound_at_end(v.sound)) ReleaseVoice(v);   // termino sola
+        if (!v.sound) voice = i;
+    }
+    if (voice < 0) return -1;
+
+    auto* stream = new MusicStream;
+    stream->file = Platform::GetFileSystem().Open(fileName, "rb");
+    const ma_decoder_config config = ma_decoder_config_init_default();
+    if (!stream->file || ma_decoder_init(ReadMusic, SeekMusic, stream, &config, &stream->decoder) != MA_SUCCESS) {
+        if (stream->file) fclose(stream->file);
+        delete stream;
+        return -1;
+    }
+    ma_sound* sound = new ma_sound;
+    if (ma_sound_init_from_data_source(static_cast<ma_engine*>(m_Engine), &stream->decoder,
+                                       MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, sound) != MA_SUCCESS) {
+        delete sound;
+        ma_decoder_uninit(&stream->decoder);
+        fclose(stream->file);
+        delete stream;
+        return -1;
+    }
+    g_emoteVoices[voice].stream = stream;
+    g_emoteVoices[voice].sound = sound;
+    ma_sound_set_looping(sound, loop ? MA_TRUE : MA_FALSE);
+    ma_sound_set_volume(sound, gain * LevelToGain(m_SoundLevel));
+    ma_sound_start(sound);
+    return voice;
+}
+
+void CSound::SetEmoteSoundGain(int voice, float gain)
+{
+    if (voice < 0 || voice >= kEmoteVoices || !g_emoteVoices[voice].sound) return;
+    ma_sound_set_volume(g_emoteVoices[voice].sound, gain * LevelToGain(m_SoundLevel));
+}
+
+void CSound::FadeOutEmoteSound(int voice, int ms)
+{
+    if (voice < 0 || voice >= kEmoteVoices || !g_emoteVoices[voice].sound) return;
+    EmoteVoice& v = g_emoteVoices[voice];
+    if (v.fading) return;
+    ma_sound_set_fade_in_milliseconds(v.sound, -1.0f, 0.0f, (ma_uint64)ms);
+    v.fading = true;
+    v.releaseAt = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms + 50);
+}
+
+void CSound::UpdateEmoteSounds()
+{
+    const auto now = std::chrono::steady_clock::now();
+    for (auto& v : g_emoteVoices)
+        if (v.sound && ((v.fading && now >= v.releaseAt) || ma_sound_at_end(v.sound))) ReleaseVoice(v);
+}
+
+void CSound::StopEmoteSound(int voice)
+{
+    if (voice < 0 || voice >= kEmoteVoices) return;
+    ReleaseVoice(g_emoteVoices[voice]);
+}
+
+bool CSound::IsEmoteSoundPlaying(int voice)
+{
+    return voice >= 0 && voice < kEmoteVoices && g_emoteVoices[voice].sound &&
+           !ma_sound_at_end(g_emoteVoices[voice].sound);
 }
 
 long CSound::LevelToDirectSound(int level)
@@ -156,6 +246,7 @@ void CSound::SetMusicStoppedByUser(bool stopped)
 void CSound::Shutdown()
 {
     StopMusic();
+    for (auto& v : g_emoteVoices) ReleaseVoice(v);
     if (m_Engine) {
         ma_engine* engine = static_cast<ma_engine*>(m_Engine);
         ma_engine_uninit(engine);

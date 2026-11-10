@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Model/Model_CustomAnim.h"
 #include "Render/EquipmentVisuals.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -592,6 +593,10 @@ extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
     if (AsCharacter(c)->SafeZone != 0)          // c->SafeZone
         Bind = 1;
     else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
+        Bind = 1;
+    // DESVIACION: los gestos de 5.2 (68..73) y los emotes propios tambien guardan el
+    // arma en la espalda fuera de zona segura, igual que los saludos.
+    else if ((anim >= 68 && anim <= 73) || CustomAnim_EmoteOfAction(anim) >= 0)
         Bind = 1;
     else if (gMapManager.IsSwimmable(iWorld) && (anim == 21 || anim == 29))   // IDA: World == 7
         Bind = 1;
