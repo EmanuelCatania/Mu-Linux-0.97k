@@ -48,3 +48,8 @@ inline void PacketTraceSend(int aIndex, const BYTE* lpMsg, int size)
 // Los argumentos sólo se evalúan con la captura prendida.
 #define TRACE_REJECT(aIndex, head, sub, ...) \
 	do { if (PacketTraceActive()) PacketTraceDecisionImpl((aIndex), (head), (sub), __VA_ARGS__); } while (0)
+
+// Mediciones que no son rechazo (el inicio de cada camino, el intervalo entre
+// ataques): sirven para elegir las tolerancias de los chequeos en modo observar.
+#define TRACE_NOTE(aIndex, head, sub, fmt, ...) \
+	TRACE_REJECT((aIndex), (head), (sub), "nota: " fmt, ##__VA_ARGS__)
