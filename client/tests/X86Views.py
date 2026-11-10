@@ -12,7 +12,7 @@ from SceneObjectPointer import read_source
 
 _POINTER_SIZES = {"BYTE": 1, "char": 1, "short": 2, "WORD": 2, "int": 4, "DWORD": 4, "float": 4,
                   "std::uint8_t": 1, "std::int8_t": 1, "std::uint16_t": 2, "std::int16_t": 2,
-                  "std::uint32_t": 4, "std::int32_t": 4}
+                  "std::uint32_t": 4, "std::int32_t": 4, "vec3_t": 12}
 
 
 def _fields(struct, revision=None, header="src/Entity/EntityTypes.h"):
