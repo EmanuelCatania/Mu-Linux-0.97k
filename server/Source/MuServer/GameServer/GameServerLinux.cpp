@@ -5,6 +5,7 @@
 #include "QueueTimer.h"
 #include "ServerDisplayer.h"
 #include "ServerInfo.h"
+#include "PacketTrace.h"
 #include "Path.h"
 #include "SocketManager.h"
 #include "SocketManagerUdp.h"
@@ -152,6 +153,8 @@ int main()
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) == 0)
 	{
+		PacketTraceInit(gServerInfo.m_ServerPort);
+
 		if (gSocketManager.Start((WORD)gServerInfo.m_ServerPort) == 0)
 		{
 			LogAdd(LOG_RED, "Could not start GameServer");
