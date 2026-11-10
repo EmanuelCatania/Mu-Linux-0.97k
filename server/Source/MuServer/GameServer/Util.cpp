@@ -5,6 +5,7 @@
 #include "HackCheck.h"
 #include "ItemManager.h"
 #include "Message.h"
+#include "PacketTrace.h"
 #ifdef _WIN32
 #include "resource.h"
 #endif
@@ -210,7 +211,7 @@ void LogAdd(eLogColor color, const char* text, ...)
 
 void ConsoleProtocolLog(int type, int aIndex, BYTE* lpMsg, int size)
 {
-	BYTE head, subhead;
+	BYTE head = 0, subhead;
 
 	BYTE header = lpMsg[0];
 
@@ -231,6 +232,8 @@ void ConsoleProtocolLog(int type, int aIndex, BYTE* lpMsg, int size)
 bool DataSend(int aIndex, BYTE* lpMsg, DWORD size)
 {
 	ConsoleProtocolLog(CON_PROTO_TCP_SEND, aIndex, lpMsg, size);
+
+	PacketTraceSend(aIndex, lpMsg, size);
 
 	return gSocketManager.DataSend(aIndex, lpMsg, size);
 }

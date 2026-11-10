@@ -32,6 +32,12 @@ function(mu_add_server target directory)
     set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${MU_SERVER_OUTPUT_ROOT}/$<CONFIG>/${subdirectory}${target}")
   else()
     target_compile_options(${target} PRIVATE -fsigned-char)
+    # Escrituras fuera de rango: hoy no hay ninguna (GCC 11 y 14), y así no
+    # vuelven a entrar. Son las que la Fase 5 pidió vigilar (5d).
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      target_compile_options(${target} PRIVATE -Warray-bounds -Wstringop-overflow
+        -Werror=array-bounds -Werror=stringop-overflow)
+    endif()
     target_link_libraries(${target} PRIVATE pthread)
     set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   endif()
