@@ -29,7 +29,7 @@ void* AllocateSkills(std::size_t n) {
 
 TEXT = r'''
 namespace TextEngine {
-void ConvertWindows1252InPlace(char* p, int size) {
+void NormalizeTextFileInPlace(char* p, int size) {
     const auto address = reinterpret_cast<std::uintptr_t>(p);
     const auto raw = reinterpret_cast<std::uintptr_t>(SkillAttribute.Raw);
     const auto shadow = reinterpret_cast<std::uintptr_t>(reinterpret_cast<void*>(DAT_07cf1ff8));
