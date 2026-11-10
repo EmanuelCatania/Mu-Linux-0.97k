@@ -150,6 +150,9 @@ bool CEventTimer::ReceiveInvasions(const BYTE* packet, int size)
 }
 
 // Una línea por mapa: "Atlans: 3 de 5 vivos". Sólo para las invasiones en curso.
+// Recuadro propio y no el de los tooltips de items (CharMenu_RenderTextList):
+// ese alinea todas las líneas igual y su fondo translúcido deja ver las filas
+// del panel. Acá el título va centrado y el fondo es opaco, de otro tono.
 void CEventTimer::RenderInvasionTooltip(const Proto::PMSG_EVENT_TIME& event, int y) const
 {
     if (event.status != Start) return;
@@ -157,28 +160,53 @@ void CEventTimer::RenderInvasionTooltip(const Proto::PMSG_EVENT_TIME& event, int
     for (int i = 0; i < m_InvasionCount && !detail; ++i)
         if (strcmp(m_Invasions[i].name, event.name) == 0) detail = &m_Invasions[i];
     if (!detail || !detail->maps) return;
-    char* line = lpString_07e90798;
+
+    char lines[25][100];
+    bool empty[25] = {};
     int count = 0;
-    auto add = [&](int color, int bold, const char* text) {
-        Platform::TextFormatSecure(line + count * 100, 100, "%s", text);
-        DAT_07e91708[count] = color;
-        DAT_07ea7b10[count] = bold;
-        ++count;
-    };
-    add(1, 1, event.name);
     for (int i = 0; i < detail->maps && count < 25; ++i) {
         const Proto::PMSG_INVASION_DETAIL_MAP& m = detail->map[i];
         const char* map = GetMapName(m.map);
-        char text[100];
-        Platform::TextFormatSecure(text, sizeof(text), gClientText.Get(ClientTextId::InvasionAlive),
+        Platform::TextFormatSecure(lines[count], sizeof(lines[count]), gClientText.Get(ClientTextId::InvasionAlive),
                                    map ? map : "?", (int)m.alive, (int)m.total);
-        // En rojo los mapas donde ya no queda ninguno (paleta de 7 colores de
-        // DrawItemInfoBox: 0 blanco, 2 rojo).
-        add(m.alive ? 0 : 2, 0, text);
+        empty[count++] = m.alive == 0;
     }
-    // Dentro del panel: centrado en la columna y justo debajo de la fila.
-    // CharMenu_RenderTextList centra el recuadro en la X que recibe.
-    CharMenu_RenderTextList(Layout::X() + 95, y + Layout::RowHeight() + 2, count, 0, 1, 1);
+
+    // Ancho en el espacio de 640: el más largo de los textos medidos.
+    int widest = 0;
+    SIZE size = {};
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.MeasureText(gFont.GetTextDC(), event.name, Platform::TextLength(event.name), &size);
+    widest = size.cx;
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    for (int i = 0; i < count; ++i) {
+        gFont.MeasureText(gFont.GetTextDC(), lines[i], Platform::TextLength(lines[i]), &size);
+        if (size.cx > widest) widest = size.cx;
+    }
+    const int line = Layout::LineHeight();
+    const int width = widest * 640 / gWindow.GetWidth() + 10;
+    const int height = (count + 1) * line + 6;
+    const int x = Layout::X() + (190 - width) / 2;
+
+    // Borde claro y fondo azul oscuro opaco.
+    EnableAlphaTest(true);
+    Gfx::Color4f(0.45f, 0.5f, 0.65f, 1.0f);
+    GL_DrawRect((float)x - 1.0f, (float)y - 1.0f, (float)width + 2.0f, (float)height + 2.0f);
+    Gfx::Color4f(0.06f, 0.08f, 0.16f, 1.0f);
+    GL_DrawRect((float)x, (float)y, (float)width, (float)height);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
+    GL_ResetState();
+    EnableAlphaTest(true);
+
+    m_dwBackColor = 0;
+    m_dwTextColor = 0xFFFF9664u;   // el azul de "En curso"
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    RenderText(x, y + 3, const_cast<char*>(event.name), PhysicalWidth(width), 1, nullptr);
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    for (int i = 0; i < count; ++i) {
+        m_dwTextColor = empty[i] ? 0xFF3C3CFFu : 0xFFE6E6E6u;   // rojo si no queda ninguno
+        RenderText(x + 5, y + 3 + (i + 1) * line, lines[i], 0, 0, nullptr);
+    }
 }
 
 void CEventTimer::Clear()
@@ -365,7 +393,8 @@ void CEventTimer::RenderPanel()
         DrawPager();
         // Al final, para que quede por encima de las filas.
         if (hovered >= 0)
-            RenderInvasionTooltip(m_Events[first + hovered], Layout::RowY + hovered * Layout::RowStep());
+            RenderInvasionTooltip(m_Events[first + hovered],
+                                  Layout::RowY + hovered * Layout::RowStep() + Layout::RowHeight() + 2);
     } else {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
