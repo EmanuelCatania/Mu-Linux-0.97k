@@ -28,6 +28,10 @@ bool SqlFormat(std::string& out, const char* format, va_list args, const SqlEsca
 				out += std::to_string(va_arg(args, int));
 				break;
 
+			case 'u':
+				out += std::to_string(va_arg(args, unsigned int));
+				break;
+
 			case 's':
 			{
 				const char* value = va_arg(args, const char*);
@@ -51,7 +55,7 @@ bool SqlFormat(std::string& out, const char* format, va_list args, const SqlEsca
 			}
 
 			default:
-				error = std::string("conversion no soportada '%") + ((*p != 0) ? std::string(1, *p) : std::string()) + "' (solo %d, %s y %%)";
+				error = std::string("conversion no soportada '%") + ((*p != 0) ? std::string(1, *p) : std::string()) + "' (solo %d, %u, %s y %%)";
 				return false;
 		}
 	}

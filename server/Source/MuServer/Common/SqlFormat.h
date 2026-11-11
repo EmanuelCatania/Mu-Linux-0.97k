@@ -6,11 +6,13 @@
 //
 // Conversiones:
 //   %d  entero (int)
+//   %u  entero sin signo (unsigned int): experiencia, zen y stats al guardar
+//       el personaje
 //   %s  texto (const char*), pasado por `escape`. Las consultas lo ponen
 //       siempre entre comillas simples ('%s'), así que el valor no puede
 //       cerrar la comilla y meter SQL propio.
 //   %%  un signo %
-// Cualquier otra (ancho, precisión, %u, %x, etc.) es un error: la consulta no
+// Cualquier otra (ancho, precisión, %x, etc.) es un error: la consulta no
 // se ejecuta, para que un formato nuevo no se salte el escape sin que se note.
 
 #include <cstdarg>
