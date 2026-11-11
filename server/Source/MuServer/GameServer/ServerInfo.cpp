@@ -461,7 +461,7 @@ void CServerInfo::ReloadSpawns()
 		return;
 	}
 
-	int removed = 0, released = 0, created = 0;
+	int removed = 0, released = 0, created = 0, mismatched = 0;
 
 	for (int n = 0; n < MAX_OBJECT_MONSTER; n++)
 	{
@@ -480,6 +480,15 @@ void CServerInfo::ReloadSpawns()
 		if (remap[lpObj->PosNum] >= 0)
 		{
 			lpObj->PosNum = remap[lpObj->PosNum];
+
+			// La fila movida tiene que seguir siendo la de este monstruo (Class es
+			// un BYTE: se compara truncado).
+			const MONSTER_SET_BASE_INFO* lpInfo = &gMonsterSetBase.m_MonsterSetBaseInfo[lpObj->PosNum];
+
+			if (lpInfo->Map != lpObj->Map || (BYTE)lpInfo->MonsterClass != lpObj->Class)
+			{
+				mismatched++;
+			}
 
 			continue;
 		}
@@ -537,6 +546,11 @@ void CServerInfo::ReloadSpawns()
 	}
 
 	LogAdd(LOG_BLUE, "[MonsterSetBase] Recarga: %d monstruos borrados, %d creados, %d de eventos en curso quedan sin punto de spawn", removed, created, released);
+
+	if (mismatched > 0)
+	{
+		LogAdd(LOG_RED, "[MonsterSetBase] Recarga: %d monstruos quedaron apuntando a una fila de otro mapa o monstruo", mismatched);
+	}
 }
 
 void CServerInfo::ReadStartupInfo(const char* section, const char* path)
