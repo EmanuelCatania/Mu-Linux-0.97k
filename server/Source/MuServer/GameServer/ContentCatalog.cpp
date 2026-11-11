@@ -822,7 +822,9 @@ void CContentCatalog::Build()
 
 		entry.Map = (BYTE)it.first;
 
-		strncpy_s(entry.Music, it.second.Music, _TRUNCATE);
+		memcpy(entry.Music, it.second.Music, sizeof(entry.Music));
+
+		entry.Music[sizeof(entry.Music) - 1] = 0;
 
 		music.push_back(entry);
 	}
