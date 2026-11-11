@@ -49,3 +49,15 @@ test('maps: errores con el archivo y el campo', () => {
   assert.throws(() => maps.parseLegacy('0\t*\t15\t"Lorencia"\n'), /10 columnas/);
   assert.throws(() => maps.parseLegacy('0\t3\t15\t100\t100\t0\t17\t0\t1\t"L"\n'), /NonPK/);
 });
+
+test('maps: music se valida, se escribe y sobrevive a guardar desde el .txt', () => {
+  const file = (body) => [{ path: 'Data/Maps/10-Icarus/Map.toml', content: body, map: 10 }];
+  const [d] = maps.parseToml(file('name = "Icarus"\nmusic = "Pub"\n'));
+  assert.equal(d.music, 'Pub');
+  assert.equal(maps.parseToml(file('name = "Icarus"\nmusic = "*"\n'))[0].music, '');
+  assert.throws(() => maps.parseToml(file('name = "Icarus"\nmusic = "../x"\n')), /'music' es el nombre/);
+  const text = maps.buildToml([d])[`${spawns.MAPS_DIR}/10-Icarus/${maps.MAP_FILE}`];
+  assert.match(text, /^music = "Pub"$/m);
+  const fromTxt = maps.keepMusic(maps.parseLegacy(maps.buildLegacy([d])), [d]);
+  assert.equal(fromTxt[0].music, 'Pub');
+});

@@ -21,7 +21,10 @@ const NUMBERS = [
   ['excItemDropRate', 'exc_item_drop_rate', 0, 1000000],
   ['deadGate', 'dead_gate', 0, 65535]
 ];
-const KEYS = ['name', 'pk', ...NUMBERS.map((n) => n[1]), 'respawn_in_place', 'flying_dragons'];
+const KEYS = ['name', 'pk', ...NUMBERS.map((n) => n[1]), 'respawn_in_place', 'flying_dragons', 'music'];
+// `music`: nombre de un mp3 de Data/Music del cliente sin la extensión; "*" (o
+// sin la clave) deja el del cliente. Mismas reglas que MapInfo.cpp.
+const MUSIC_RE = /^[A-Za-z0-9_-]{1,27}$/;
 
 class MapError extends Error {}
 
@@ -104,6 +107,10 @@ function mapFileText(d) {
     + '# dead_gate           gate (Gate.txt) al que se va al morir\n'
     + '# respawn_in_place    revivir donde se murió en vez de en dead_gate\n'
     + '# flying_dragons      salen los dragones voladores del evento\n'
+    + '# music               tema del cliente: nombre de un mp3 de Data/Music sin la\n'
+    + '#                     extensión ("Pub" = Data/Music/Pub.mp3); "*" o sin la\n'
+    + '#                     clave, el del cliente (el del juego o un mp3 con el\n'
+    + '#                     nombre del mapa)\n'
     + '\n'
     + `name = ${quote(d.name)}\n`;
   if (d.nonPK >= 0 && d.nonPK <= 2) out += `pk = "${PK_NAMES[d.nonPK]}"\n`;
@@ -112,6 +119,7 @@ function mapFileText(d) {
   }
   out += `respawn_in_place = ${d.respawnInPlace ? 'true' : 'false'}\n`;
   out += `flying_dragons = ${d.flyingDragons ? 'true' : 'false'}\n`;
+  out += `music = ${quote(d.music || '*')}\n`;
   return out;
 }
 
@@ -125,7 +133,7 @@ function parseTomlFile(path, content, map) {
   for (const key of Object.keys(doc)) {
     if (!KEYS.includes(key)) throw new MapError(`${path}: campo desconocido '${key}'`);
   }
-  const d = { index: map, nonPK: -1, respawnInPlace: 0, flyingDragons: 0 };
+  const d = { index: map, nonPK: -1, respawnInPlace: 0, flyingDragons: 0, music: '' };
   if (typeof doc.name !== 'string' || !doc.name || doc.name.length >= 32) {
     throw new MapError(`${path}: falta 'name' (texto de 1 a 31 caracteres)`);
   }
@@ -152,7 +160,20 @@ function parseTomlFile(path, content, map) {
     if (typeof doc[key] !== 'boolean') throw new MapError(`${path}: '${key}' tiene que ser true o false`);
     d[field] = doc[key] ? 1 : 0;
   }
+  if (doc.music !== undefined) {
+    if (typeof doc.music !== 'string' || (doc.music !== '*' && !MUSIC_RE.test(doc.music))) {
+      throw new MapError(`${path}: 'music' es el nombre de un mp3 de Data/Music del cliente, sin la extensión (letras, números, '_' y '-', hasta 27), o "*" para el del cliente`);
+    }
+    d.music = doc.music === '*' ? '' : doc.music;
+  }
   return d;
+}
+
+// MapManager.txt no tiene columna de música: al guardar desde ese texto se
+// conserva la que ya tenía cada mapa en su Map.toml.
+function keepMusic(maps, previous) {
+  const music = new Map(previous.map((d) => [d.index, d.music || '']));
+  return maps.map((d) => ({ ...d, music: music.get(d.index) || '' }));
 }
 
 // files = [{ path, content, map }]
@@ -173,6 +194,7 @@ function buildToml(maps, { folders = new Map() } = {}) {
 
 module.exports = {
   MAP_FILE,
+  keepMusic,
   MapError,
   parseLegacy,
   buildLegacy,

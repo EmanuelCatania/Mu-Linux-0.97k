@@ -2571,7 +2571,10 @@ app.post('/admin/server-editor/api/mapmanager', requireAdmin, requireAdminPasswo
       const data = await editorRequest('POST', '/api/file', { path: MAP_MANAGER_TXT, content });
       return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
     }
-    const written = await writeMapToml(mapsLib.parseLegacy(content), files, folders);
+    // El .txt no trae la música: se conserva la de los Map.toml actuales.
+    const current = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    const maps = mapsLib.keepMusic(mapsLib.parseLegacy(content), mapsLib.parseToml(current));
+    const written = await writeMapToml(maps, files, folders);
     return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
     return res.status(mapErrorStatus(err)).json({ error: err.message });
