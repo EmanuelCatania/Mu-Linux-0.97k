@@ -20,6 +20,7 @@ const accountPassword = require('./lib/account-password');
 const spawns = require('./lib/spawns');
 const mapsLib = require('./lib/maps');
 const dropsLib = require('./lib/drops');
+const gatesLib = require('./lib/gates');
 
 // Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
 let passwordColumnWide = false;
@@ -2202,11 +2203,17 @@ async function findDropTomlFiles() {
   return { files, folders };
 }
 
-// Escribe los Drops.toml y borra los que quedaron sin drops.
-async function writeDropToml(drops, files, folders) {
+// Nombre de cada mapa (de los Map.toml o de MapManager.txt), para las carpetas
+// nuevas.
+async function mapNameLookup() {
   const maps = parseMapManager((await readMapManager().catch(() => ({ content: '' }))).content);
   const names = new Map(maps.map((m) => [m.id, m.name]));
-  const out = dropsLib.buildToml(drops, { mapName: (id) => names.get(id), folders });
+  return (id) => names.get(id);
+}
+
+// Escribe los Drops.toml y borra los que quedaron sin drops.
+async function writeDropToml(drops, files, folders) {
+  const out = dropsLib.buildToml(drops, { mapName: await mapNameLookup(), folders });
   let backups = [];
   for (const [path, content] of Object.entries(out)) {
     const data = await editorRequest('POST', '/api/file', { path, content });
@@ -2223,6 +2230,62 @@ async function writeDropToml(drops, files, folders) {
 
 function dropErrorStatus(err) {
   return err instanceof dropsLib.DropError ? 400 : (err.status || 502);
+}
+
+// Gates: el GameServer usa los Data/Maps/NN-Nombre/Gates.toml si hay alguno y si
+// no, Gate.txt. El editor siempre recibe y manda el texto del .txt; con los TOML
+// el panel convierte en los dos sentidos.
+const GATE_TXT = 'Data/Move/Gate.txt';
+
+async function findGateTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === gatesLib.GATE_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new gatesLib.GateError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${gatesLib.GATE_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+// { format: 'txt' | 'toml', content } con el texto de Gate.txt.
+async function readGates() {
+  const { files } = await findGateTomlFiles();
+  if (!files.length) {
+    return { format: 'txt', content: await readEditorFile(GATE_TXT) };
+  }
+  const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+  return { format: 'toml', files: files.map((f) => f.path), content: gatesLib.buildLegacy(gatesLib.parseToml(loaded)) };
+}
+
+// Escribe los Gates.toml y borra los de los mapas que quedaron sin gates.
+async function writeGateToml(gates, files, folders) {
+  const out = gatesLib.buildToml(gates, { mapName: await mapNameLookup(), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const data = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(data.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function gateErrorStatus(err) {
+  return err instanceof gatesLib.GateError ? 400 : (err.status || 502);
 }
 
 async function spawnNames() {
@@ -2326,10 +2389,9 @@ app.get('/admin/server-editor/api/gates', requireAdmin, requireAdminPasswordChan
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Move/Gate.txt')}`);
-    return res.json({ content: data.content || '' });
+    return res.json(await readGates());
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2339,13 +2401,33 @@ app.post('/admin/server-editor/api/gates', requireAdmin, requireAdminPasswordCha
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Move/Gate.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findGateTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: GATE_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeGateToml(gatesLib.parseLegacy(content), files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa Gate.txt a un Gates.toml por mapa. No borra el .txt (queda como
+// respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/gates/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findGateTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Las gates ya están en formato por mapa.' });
+    }
+    const written = await writeGateToml(gatesLib.parseLegacy(await readEditorFile(GATE_TXT)), [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
   }
 });
 

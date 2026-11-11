@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Gate.h"
+#include "MapGates.h"
 #include "DefaultClassInfo.h"
 #include "Map.h"
 #include "ReadScript.h"
@@ -91,6 +92,73 @@ void CGate::Load(const char* path)
 	}
 
 	delete lpReadScript;
+}
+
+void CGate::LoadToml(const char* path)
+{
+	std::vector<GateDef> defs;
+
+	std::string error;
+
+	if (!MapGates_Load(path, defs, error))
+	{
+		// Al arrancar es fatal, como el resto de los datos; en una recarga
+		// quedan las gates de antes.
+		if (this->m_GateInfo.empty())
+		{
+			ErrorMessageBox("[Gate] %s", error.c_str());
+		}
+		else
+		{
+			LogAdd(LOG_RED, "[Gate] Recarga cancelada, quedan las gates de antes: %s", error.c_str());
+		}
+
+		return;
+	}
+
+	this->m_GateInfo.clear();
+
+	for (const GateDef& g : defs)
+	{
+		GATE_INFO info;
+
+		info.Index = g.Index;
+
+		info.Flag = g.Flag;
+
+		info.Map = g.Map;
+
+		info.X = g.X;
+
+		info.Y = g.Y;
+
+		info.TX = g.TX;
+
+		info.TY = g.TY;
+
+		info.TargetGate = g.Target;
+
+		info.Dir = g.Dir;
+
+		info.MinLevel = g.MinLevel;
+
+		info.MaxLevel = g.MaxLevel;
+
+		info.MinReset = g.MinReset;
+
+		info.MaxReset = g.MaxReset;
+
+		info.AccountLevel = g.AccountLevel;
+
+		this->m_GateInfo.insert(std::pair<int, GATE_INFO>(info.Index, info));
+	}
+
+	for (const std::string& warning : MapGates_DanglingTargets(defs))
+	{
+		LogAdd(LOG_RED, "[Gate] %s", warning.c_str());
+	}
+
+	LogAdd(LOG_BLUE, "[Gate] %d gates desde %s", (int)defs.size(), path);
 }
 
 bool CGate::GetInfo(int index, GATE_INFO* lpInfo)

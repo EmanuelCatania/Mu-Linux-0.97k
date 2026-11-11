@@ -38,6 +38,7 @@
 #include "MapSpawns.h"
 #include "MapInfo.h"
 #include "ItemDrops.h"
+#include "MapGates.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
@@ -366,7 +367,16 @@ void CServerInfo::ReadMonsterInfo()
 
 void CServerInfo::ReadMoveInfo()
 {
-	gGate.Load(gPath.GetFullPath("Move\\Gate.txt"));
+	// Fase 5: si hay Data/Maps/NN-Nombre/Gates.toml mandan ellos; si no,
+	// Gate.txt como siempre.
+	if (MapGates_HasData(gPath.GetFullPath("")))
+	{
+		gGate.LoadToml(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gGate.Load(gPath.GetFullPath("Move\\Gate.txt"));
+	}
 
 	gMove.Load(gPath.GetFullPath("Move\\Move.txt"));
 
