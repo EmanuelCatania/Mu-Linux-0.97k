@@ -1,0 +1,415 @@
+# Devil Square 1 (mapa 9): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+event = [
+  { monster = 17, at = [145, 96], dis = 30 }, # Cyclops
+  { monster = 17, at = [129, 105], dis = 30 }, # Cyclops
+  { monster = 17, at = [147, 94], dis = 30 }, # Cyclops
+  { monster = 17, at = [133, 87], dis = 30 }, # Cyclops
+  { monster = 17, at = [141, 104], dis = 30 }, # Cyclops
+  { monster = 17, at = [144, 102], dis = 30 }, # Cyclops
+  { monster = 17, at = [143, 109], dis = 30 }, # Cyclops
+  { monster = 17, at = [127, 85], dis = 30 }, # Cyclops
+  { monster = 17, at = [141, 97], dis = 30 }, # Cyclops
+  { monster = 17, at = [135, 94], dis = 30 }, # Cyclops
+  { monster = 17, at = [142, 103], dis = 30 }, # Cyclops
+  { monster = 17, at = [128, 97], dis = 30 }, # Cyclops
+  { monster = 17, at = [128, 84], dis = 30 }, # Cyclops
+  { monster = 17, at = [134, 95], dis = 30 }, # Cyclops
+  { monster = 17, at = [121, 84], dis = 30 }, # Cyclops
+  { monster = 17, at = [139, 100], dis = 30 }, # Cyclops
+  { monster = 17, at = [141, 108], dis = 30 }, # Cyclops
+  { monster = 17, at = [145, 91], dis = 30 }, # Cyclops
+  { monster = 17, at = [145, 85], dis = 30 }, # Cyclops
+  { monster = 17, at = [145, 100], dis = 30 }, # Cyclops
+  { monster = 15, at = [135, 92], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [124, 82], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [135, 102], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [131, 87], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [126, 83], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [146, 87], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [128, 96], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [139, 98], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [134, 109], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [146, 102], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [127, 89], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [144, 98], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [148, 97], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [134, 95], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [128, 103], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [148, 101], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [130, 109], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [122, 86], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [129, 90], dis = 30 }, # Skeleton Archer
+  { monster = 15, at = [121, 100], dis = 30 }, # Skeleton Archer
+  { monster = 5, at = [148, 108], dis = 30 }, # Hell Hound
+  { monster = 5, at = [148, 90], dis = 30 }, # Hell Hound
+  { monster = 5, at = [132, 103], dis = 30 }, # Hell Hound
+  { monster = 5, at = [129, 102], dis = 30 }, # Hell Hound
+  { monster = 5, at = [143, 86], dis = 30 }, # Hell Hound
+  { monster = 5, at = [140, 104], dis = 30 }, # Hell Hound
+  { monster = 5, at = [146, 106], dis = 30 }, # Hell Hound
+  { monster = 5, at = [134, 105], dis = 30 }, # Hell Hound
+  { monster = 5, at = [134, 106], dis = 30 }, # Hell Hound
+  { monster = 5, at = [124, 109], dis = 30 }, # Hell Hound
+  { monster = 5, at = [141, 83], dis = 30 }, # Hell Hound
+  { monster = 5, at = [136, 85], dis = 30 }, # Hell Hound
+  { monster = 5, at = [131, 98], dis = 30 }, # Hell Hound
+  { monster = 5, at = [121, 83], dis = 30 }, # Hell Hound
+  { monster = 5, at = [138, 107], dis = 30 }, # Hell Hound
+  { monster = 16, at = [121, 82], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [123, 100], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [141, 94], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [124, 90], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [137, 90], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [130, 98], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [144, 89], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [124, 92], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [140, 102], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 16, at = [130, 86], dis = 30 }, # Chief Skeleton Warrior
+  { monster = 9, at = [142, 109], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [143, 88], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [146, 96], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [146, 101], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [139, 82], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [139, 99], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [137, 105], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [134, 108], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [128, 109], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [139, 90], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [148, 96], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [127, 92], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [144, 97], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [127, 95], dis = 30 }, # Thunder Lich
+  { monster = 9, at = [121, 107], dis = 30 }, # Thunder Lich
+  { monster = 10, at = [130, 96], dis = 30 }, # Dark Knight
+  { monster = 10, at = [137, 90], dis = 30 }, # Dark Knight
+  { monster = 10, at = [137, 93], dis = 30 }, # Dark Knight
+  { monster = 10, at = [131, 94], dis = 30 }, # Dark Knight
+  { monster = 10, at = [133, 102], dis = 30 }, # Dark Knight
+  { monster = 10, at = [124, 91], dis = 30 }, # Dark Knight
+  { monster = 10, at = [141, 82], dis = 30 }, # Dark Knight
+  { monster = 10, at = [142, 105], dis = 30 }, # Dark Knight
+  { monster = 10, at = [132, 86], dis = 30 }, # Dark Knight
+  { monster = 10, at = [136, 90], dis = 30 }, # Dark Knight
+  { monster = 18, at = [132, 96], dis = 30 }, # Gorgon
+  { monster = 18, at = [124, 107], dis = 30 }, # Gorgon
+  { monster = 18, at = [132, 84], dis = 30 }, # Gorgon
+  { monster = 18, at = [132, 105], dis = 30 }, # Gorgon
+  { monster = 18, at = [133, 100], dis = 30 }, # Gorgon
+  { monster = 18, at = [122, 86], dis = 30 }, # Gorgon
+  { monster = 18, at = [126, 94], dis = 30 }, # Gorgon
+  { monster = 18, at = [148, 101], dis = 30 }, # Gorgon
+  { monster = 18, at = [140, 90], dis = 30 }, # Gorgon
+  { monster = 18, at = [139, 106], dis = 30 }, # Gorgon
+  { monster = 36, at = [137, 164], dis = 30 }, # Shadow
+  { monster = 36, at = [126, 154], dis = 30 }, # Shadow
+  { monster = 36, at = [137, 174], dis = 30 }, # Shadow
+  { monster = 36, at = [133, 159], dis = 30 }, # Shadow
+  { monster = 36, at = [128, 155], dis = 30 }, # Shadow
+  { monster = 36, at = [148, 159], dis = 30 }, # Shadow
+  { monster = 36, at = [130, 168], dis = 30 }, # Shadow
+  { monster = 36, at = [141, 170], dis = 30 }, # Shadow
+  { monster = 36, at = [136, 181], dis = 30 }, # Shadow
+  { monster = 36, at = [148, 174], dis = 30 }, # Shadow
+  { monster = 36, at = [129, 161], dis = 30 }, # Shadow
+  { monster = 36, at = [146, 170], dis = 30 }, # Shadow
+  { monster = 36, at = [150, 169], dis = 30 }, # Shadow
+  { monster = 36, at = [136, 167], dis = 30 }, # Shadow
+  { monster = 36, at = [130, 175], dis = 30 }, # Shadow
+  { monster = 36, at = [150, 173], dis = 30 }, # Shadow
+  { monster = 36, at = [132, 181], dis = 30 }, # Shadow
+  { monster = 36, at = [124, 158], dis = 30 }, # Shadow
+  { monster = 36, at = [131, 162], dis = 30 }, # Shadow
+  { monster = 36, at = [123, 172], dis = 30 }, # Shadow
+  { monster = 39, at = [147, 168], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [131, 177], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [149, 166], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [135, 159], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [143, 176], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [146, 174], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [145, 181], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [129, 157], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [143, 169], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [137, 166], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [144, 175], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [130, 169], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [130, 156], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [136, 167], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [123, 156], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [141, 172], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [143, 180], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [147, 163], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [147, 157], dis = 30 }, # Poison Shadow
+  { monster = 39, at = [147, 172], dis = 30 }, # Poison Shadow
+  { monster = 34, at = [150, 180], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [150, 162], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [134, 175], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [131, 174], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [145, 158], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [142, 176], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [148, 178], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [136, 177], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [136, 178], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [126, 181], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [143, 155], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [138, 157], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [133, 170], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [123, 155], dis = 30 }, # Cursed Wizard
+  { monster = 34, at = [140, 179], dis = 30 }, # Cursed Wizard
+  { monster = 41, at = [144, 181], dis = 30 }, # Death Cow
+  { monster = 41, at = [145, 160], dis = 30 }, # Death Cow
+  { monster = 41, at = [148, 168], dis = 30 }, # Death Cow
+  { monster = 41, at = [148, 173], dis = 30 }, # Death Cow
+  { monster = 41, at = [141, 154], dis = 30 }, # Death Cow
+  { monster = 41, at = [141, 171], dis = 30 }, # Death Cow
+  { monster = 41, at = [139, 177], dis = 30 }, # Death Cow
+  { monster = 41, at = [136, 180], dis = 30 }, # Death Cow
+  { monster = 41, at = [130, 181], dis = 30 }, # Death Cow
+  { monster = 41, at = [141, 162], dis = 30 }, # Death Cow
+  { monster = 41, at = [150, 168], dis = 30 }, # Death Cow
+  { monster = 41, at = [129, 164], dis = 30 }, # Death Cow
+  { monster = 41, at = [146, 169], dis = 30 }, # Death Cow
+  { monster = 41, at = [129, 167], dis = 30 }, # Death Cow
+  { monster = 41, at = [123, 179], dis = 30 }, # Death Cow
+  { monster = 40, at = [123, 154], dis = 30 }, # Death Knight
+  { monster = 40, at = [125, 172], dis = 30 }, # Death Knight
+  { monster = 40, at = [143, 166], dis = 30 }, # Death Knight
+  { monster = 40, at = [126, 162], dis = 30 }, # Death Knight
+  { monster = 40, at = [139, 162], dis = 30 }, # Death Knight
+  { monster = 40, at = [132, 170], dis = 30 }, # Death Knight
+  { monster = 40, at = [146, 161], dis = 30 }, # Death Knight
+  { monster = 40, at = [126, 164], dis = 30 }, # Death Knight
+  { monster = 40, at = [142, 174], dis = 30 }, # Death Knight
+  { monster = 40, at = [132, 158], dis = 30 }, # Death Knight
+  { monster = 35, at = [132, 168], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [139, 162], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [139, 165], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [133, 166], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [135, 174], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [126, 163], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [143, 154], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [144, 177], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [134, 158], dis = 30 }, # Death Gorgon
+  { monster = 35, at = [138, 162], dis = 30 }, # Death Gorgon
+  { monster = 38, at = [134, 168], dis = 30 }, # Balrog
+  { monster = 38, at = [126, 179], dis = 30 }, # Balrog
+  { monster = 38, at = [134, 156], dis = 30 }, # Balrog
+  { monster = 38, at = [134, 177], dis = 30 }, # Balrog
+  { monster = 38, at = [135, 172], dis = 30 }, # Balrog
+  { monster = 38, at = [124, 158], dis = 30 }, # Balrog
+  { monster = 38, at = [128, 166], dis = 30 }, # Balrog
+  { monster = 38, at = [150, 173], dis = 30 }, # Balrog
+  { monster = 38, at = [142, 162], dis = 30 }, # Balrog
+  { monster = 38, at = [141, 178], dis = 30 }, # Balrog
+  { monster = 45, at = [65, 150], dis = 30 }, # Bahamut
+  { monster = 45, at = [54, 140], dis = 30 }, # Bahamut
+  { monster = 45, at = [65, 160], dis = 30 }, # Bahamut
+  { monster = 45, at = [61, 145], dis = 30 }, # Bahamut
+  { monster = 45, at = [56, 141], dis = 30 }, # Bahamut
+  { monster = 45, at = [76, 145], dis = 30 }, # Bahamut
+  { monster = 45, at = [58, 154], dis = 30 }, # Bahamut
+  { monster = 45, at = [69, 156], dis = 30 }, # Bahamut
+  { monster = 45, at = [64, 167], dis = 30 }, # Bahamut
+  { monster = 45, at = [76, 160], dis = 30 }, # Bahamut
+  { monster = 45, at = [57, 147], dis = 30 }, # Bahamut
+  { monster = 45, at = [74, 156], dis = 30 }, # Bahamut
+  { monster = 45, at = [78, 155], dis = 30 }, # Bahamut
+  { monster = 45, at = [64, 153], dis = 30 }, # Bahamut
+  { monster = 45, at = [58, 161], dis = 30 }, # Bahamut
+  { monster = 45, at = [78, 159], dis = 30 }, # Bahamut
+  { monster = 45, at = [60, 167], dis = 30 }, # Bahamut
+  { monster = 45, at = [52, 144], dis = 30 }, # Bahamut
+  { monster = 45, at = [59, 148], dis = 30 }, # Bahamut
+  { monster = 45, at = [51, 158], dis = 30 }, # Bahamut
+  { monster = 46, at = [75, 154], dis = 30 }, # Vepar
+  { monster = 46, at = [59, 163], dis = 30 }, # Vepar
+  { monster = 46, at = [77, 152], dis = 30 }, # Vepar
+  { monster = 46, at = [63, 145], dis = 30 }, # Vepar
+  { monster = 46, at = [71, 162], dis = 30 }, # Vepar
+  { monster = 46, at = [74, 160], dis = 30 }, # Vepar
+  { monster = 46, at = [73, 167], dis = 30 }, # Vepar
+  { monster = 46, at = [57, 143], dis = 30 }, # Vepar
+  { monster = 46, at = [71, 155], dis = 30 }, # Vepar
+  { monster = 46, at = [65, 152], dis = 30 }, # Vepar
+  { monster = 46, at = [72, 161], dis = 30 }, # Vepar
+  { monster = 46, at = [58, 155], dis = 30 }, # Vepar
+  { monster = 46, at = [58, 142], dis = 30 }, # Vepar
+  { monster = 46, at = [64, 153], dis = 30 }, # Vepar
+  { monster = 46, at = [51, 142], dis = 30 }, # Vepar
+  { monster = 46, at = [69, 158], dis = 30 }, # Vepar
+  { monster = 46, at = [71, 166], dis = 30 }, # Vepar
+  { monster = 46, at = [75, 149], dis = 30 }, # Vepar
+  { monster = 46, at = [75, 143], dis = 30 }, # Vepar
+  { monster = 46, at = [75, 158], dis = 30 }, # Vepar
+  { monster = 37, at = [78, 166], dis = 30 }, # Devil
+  { monster = 37, at = [78, 148], dis = 30 }, # Devil
+  { monster = 37, at = [62, 161], dis = 30 }, # Devil
+  { monster = 37, at = [59, 160], dis = 30 }, # Devil
+  { monster = 37, at = [73, 144], dis = 30 }, # Devil
+  { monster = 37, at = [70, 162], dis = 30 }, # Devil
+  { monster = 37, at = [76, 164], dis = 30 }, # Devil
+  { monster = 37, at = [64, 163], dis = 30 }, # Devil
+  { monster = 37, at = [64, 164], dis = 30 }, # Devil
+  { monster = 37, at = [54, 167], dis = 30 }, # Devil
+  { monster = 37, at = [71, 141], dis = 30 }, # Devil
+  { monster = 37, at = [66, 143], dis = 30 }, # Devil
+  { monster = 37, at = [61, 156], dis = 30 }, # Devil
+  { monster = 37, at = [51, 141], dis = 30 }, # Devil
+  { monster = 37, at = [68, 165], dis = 30 }, # Devil
+  { monster = 51, at = [72, 167], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [73, 146], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [76, 154], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [76, 159], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [69, 140], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [69, 157], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [67, 163], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [64, 166], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [58, 167], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [69, 148], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [78, 154], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [57, 150], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [74, 155], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [57, 153], dis = 30 }, # Great Bahamut
+  { monster = 51, at = [51, 165], dis = 30 }, # Great Bahamut
+  { monster = 52, at = [51, 140], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [53, 158], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [71, 152], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [54, 148], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [67, 148], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [60, 156], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [74, 147], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [54, 150], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [70, 160], dis = 30 }, # Silver Valkyrie
+  { monster = 52, at = [60, 144], dis = 30 }, # Silver Valkyrie
+  { monster = 48, at = [60, 154], dis = 30 }, # Lizard King
+  { monster = 48, at = [67, 148], dis = 30 }, # Lizard King
+  { monster = 48, at = [67, 151], dis = 30 }, # Lizard King
+  { monster = 48, at = [61, 152], dis = 30 }, # Lizard King
+  { monster = 48, at = [63, 160], dis = 30 }, # Lizard King
+  { monster = 48, at = [54, 149], dis = 30 }, # Lizard King
+  { monster = 48, at = [71, 140], dis = 30 }, # Lizard King
+  { monster = 48, at = [72, 163], dis = 30 }, # Lizard King
+  { monster = 48, at = [62, 144], dis = 30 }, # Lizard King
+  { monster = 48, at = [66, 148], dis = 30 }, # Lizard King
+  { monster = 49, at = [62, 154], dis = 30 }, # Hydra
+  { monster = 49, at = [54, 165], dis = 30 }, # Hydra
+  { monster = 49, at = [62, 142], dis = 30 }, # Hydra
+  { monster = 49, at = [62, 163], dis = 30 }, # Hydra
+  { monster = 49, at = [63, 158], dis = 30 }, # Hydra
+  { monster = 49, at = [52, 144], dis = 30 }, # Hydra
+  { monster = 49, at = [56, 152], dis = 30 }, # Hydra
+  { monster = 49, at = [78, 159], dis = 30 }, # Hydra
+  { monster = 49, at = [70, 148], dis = 30 }, # Hydra
+  { monster = 49, at = [69, 164], dis = 30 }, # Hydra
+  { monster = 64, at = [69, 86], dis = 30 }, # Ogre archer
+  { monster = 64, at = [58, 76], dis = 30 }, # Ogre archer
+  { monster = 64, at = [69, 96], dis = 30 }, # Ogre archer
+  { monster = 64, at = [65, 81], dis = 30 }, # Ogre archer
+  { monster = 64, at = [60, 77], dis = 30 }, # Ogre archer
+  { monster = 64, at = [80, 81], dis = 30 }, # Ogre archer
+  { monster = 64, at = [62, 90], dis = 30 }, # Ogre archer
+  { monster = 64, at = [73, 92], dis = 30 }, # Ogre archer
+  { monster = 64, at = [68, 103], dis = 30 }, # Ogre archer
+  { monster = 64, at = [80, 96], dis = 30 }, # Ogre archer
+  { monster = 64, at = [61, 83], dis = 30 }, # Ogre archer
+  { monster = 64, at = [78, 92], dis = 30 }, # Ogre archer
+  { monster = 64, at = [82, 91], dis = 30 }, # Ogre archer
+  { monster = 64, at = [68, 89], dis = 30 }, # Ogre archer
+  { monster = 64, at = [62, 97], dis = 30 }, # Ogre archer
+  { monster = 64, at = [82, 95], dis = 30 }, # Ogre archer
+  { monster = 64, at = [64, 103], dis = 30 }, # Ogre archer
+  { monster = 64, at = [56, 80], dis = 30 }, # Ogre archer
+  { monster = 64, at = [63, 84], dis = 30 }, # Ogre archer
+  { monster = 64, at = [55, 94], dis = 30 }, # Ogre archer
+  { monster = 65, at = [79, 90], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [63, 99], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [81, 88], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [67, 81], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [75, 98], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [78, 96], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [77, 103], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [61, 79], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [75, 91], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [69, 88], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [76, 97], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [62, 91], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [62, 78], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [68, 89], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [55, 78], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [73, 94], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [75, 102], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [79, 85], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [79, 79], dis = 30 }, # Elite Ogre
+  { monster = 65, at = [79, 94], dis = 30 }, # Elite Ogre
+  { monster = 69, at = [82, 102], dis = 30 }, # Alquamos
+  { monster = 69, at = [82, 84], dis = 30 }, # Alquamos
+  { monster = 69, at = [66, 97], dis = 30 }, # Alquamos
+  { monster = 69, at = [63, 96], dis = 30 }, # Alquamos
+  { monster = 69, at = [77, 80], dis = 30 }, # Alquamos
+  { monster = 69, at = [74, 98], dis = 30 }, # Alquamos
+  { monster = 69, at = [80, 100], dis = 30 }, # Alquamos
+  { monster = 69, at = [68, 99], dis = 30 }, # Alquamos
+  { monster = 69, at = [68, 100], dis = 30 }, # Alquamos
+  { monster = 69, at = [58, 103], dis = 30 }, # Alquamos
+  { monster = 69, at = [75, 77], dis = 30 }, # Alquamos
+  { monster = 69, at = [70, 79], dis = 30 }, # Alquamos
+  { monster = 69, at = [65, 92], dis = 30 }, # Alquamos
+  { monster = 69, at = [55, 77], dis = 30 }, # Alquamos
+  { monster = 69, at = [72, 101], dis = 30 }, # Alquamos
+  { monster = 71, at = [76, 103], dis = 30 }, # Mega Crust
+  { monster = 71, at = [77, 82], dis = 30 }, # Mega Crust
+  { monster = 71, at = [80, 90], dis = 30 }, # Mega Crust
+  { monster = 71, at = [80, 95], dis = 30 }, # Mega Crust
+  { monster = 71, at = [73, 76], dis = 30 }, # Mega Crust
+  { monster = 71, at = [73, 93], dis = 30 }, # Mega Crust
+  { monster = 71, at = [71, 99], dis = 30 }, # Mega Crust
+  { monster = 71, at = [68, 102], dis = 30 }, # Mega Crust
+  { monster = 71, at = [62, 103], dis = 30 }, # Mega Crust
+  { monster = 71, at = [73, 84], dis = 30 }, # Mega Crust
+  { monster = 71, at = [82, 90], dis = 30 }, # Mega Crust
+  { monster = 71, at = [61, 86], dis = 30 }, # Mega Crust
+  { monster = 71, at = [78, 91], dis = 30 }, # Mega Crust
+  { monster = 71, at = [61, 89], dis = 30 }, # Mega Crust
+  { monster = 71, at = [55, 101], dis = 30 }, # Mega Crust
+  { monster = 61, at = [64, 90], dis = 30 }, # Beam Knight
+  { monster = 61, at = [71, 84], dis = 30 }, # Beam Knight
+  { monster = 61, at = [71, 87], dis = 30 }, # Beam Knight
+  { monster = 61, at = [65, 88], dis = 30 }, # Beam Knight
+  { monster = 61, at = [67, 96], dis = 30 }, # Beam Knight
+  { monster = 61, at = [58, 85], dis = 30 }, # Beam Knight
+  { monster = 61, at = [75, 76], dis = 30 }, # Beam Knight
+  { monster = 61, at = [76, 99], dis = 30 }, # Beam Knight
+  { monster = 61, at = [66, 80], dis = 30 }, # Beam Knight
+  { monster = 61, at = [70, 84], dis = 30 }, # Beam Knight
+  { monster = 70, at = [55, 76], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [57, 94], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [75, 88], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [58, 84], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [71, 84], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [64, 92], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [78, 83], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [58, 86], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [74, 96], dis = 30 }, # Queen Rainier
+  { monster = 70, at = [64, 80], dis = 30 }, # Queen Rainier
+  { monster = 63, at = [66, 90], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [58, 101], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [66, 78], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [66, 99], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [67, 94], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [56, 80], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [60, 88], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [82, 95], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [74, 84], dis = 30 }, # Death Beam Knight
+  { monster = 63, at = [73, 100], dis = 30 }, # Death Beam Knight
+]

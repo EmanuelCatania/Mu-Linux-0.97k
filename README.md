@@ -199,7 +199,7 @@ Sólo GM nivel 1 o superior, desde el chat del juego:
 | `/bcstart` | Blood Castle, todos los niveles |
 | `/dsstart` | Devil Square, todos los niveles |
 | `/bingostart` | Golden Archer Bingo |
-| `/invasionstart <indice>` | Índice de `server/MuServer/Data/Event/InvasionManager.dat` |
+| `/invasionstart <indice>` | `index` de la invasión en `server/MuServer/Data/Events/Invasions/Invasions.toml` (o, en un server sin ese archivo, el índice de `Event/InvasionManager.dat`) |
 
 Programan una sola ejecución aproximadamente dos minutos después, sin modificar los horarios del archivo ni reiniciar eventos activos. BC/DS también rechazan el pedido con la entrada abierta. Iniciar una invasión no reinicia las demás. El evento debe estar habilitado. Los nuevos comandos registran el pedido y resultado en `COMMAND_LOG`.
 

@@ -10,9 +10,17 @@
 //       Lee las dos fuentes y compara la tabla que arma cada una, entrada por
 //       entrada, en orden de sección y mapa. Sale con 0 si son idénticas.
 //
+//   mu-data import-invasions <InvasionManager.dat> <Data> [--force]
+//       Pasa InvasionManager.dat a <Data>/Events/Invasions/Invasions.toml.
+//
+//   mu-data check-invasions <InvasionManager.dat> <Data>
+//       Compara las invasiones de las dos fuentes. Sale con 0 si son iguales.
+//
 //   mu-data validate <Data>
-//       Lee los Spawns.toml y avisa del primer error, con archivo y línea.
+//       Lee los Spawns.toml y el Invasions.toml y avisa del primer error, con
+//       archivo y línea.
 
+#include "EventInvasions.h"
 #include "MapSpawns.h"
 
 #include <algorithm>
@@ -250,6 +258,52 @@ static int CheckSpawns(const std::string& txt, const std::string& dataDir)
 	return 0;
 }
 
+static int ImportInvasions(const std::string& dat, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<InvasionDef> defs;
+
+	if (!EventInvasions_LoadLegacy(dat, defs, error))
+	{
+		return Fail(error);
+	}
+
+	fs::path file = fs::u8path(EventInvasions_Path(dataDir));
+
+	if (!PrepareOutput(file, force, error) || !EventInvasions_WriteToml(file.u8string(), defs, error))
+	{
+		return Fail(error);
+	}
+
+	std::printf("%-48s %4zu invasiones\n", file.u8string().c_str(), defs.size());
+
+	return 0;
+}
+
+static int CheckInvasions(const std::string& dat, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<InvasionDef> legacy, toml;
+
+	if (!EventInvasions_LoadLegacy(dat, legacy, error) || !EventInvasions_Load(EventInvasions_Path(dataDir), toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!EventInvasions_Equal(legacy, toml, error))
+	{
+		std::printf("Distintas: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticas: %zu invasiones\n", toml.size());
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -274,6 +328,18 @@ static int Validate(const std::string& dataDir)
 	}
 
 	std::printf("OK: %zu entradas en %zu mapas\n", entries.size(), perMap.size());
+
+	if (EventInvasions_HasData(dataDir))
+	{
+		std::vector<InvasionDef> defs;
+
+		if (!EventInvasions_Load(EventInvasions_Path(dataDir), defs, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: %zu invasiones\n", defs.size());
+	}
 
 	return 0;
 }
@@ -304,6 +370,16 @@ int main(int argc, char** argv)
 		return CheckSpawns(args[1], args[2]);
 	}
 
+	if (args.size() == 3 && args[0] == "import-invasions")
+	{
+		return ImportInvasions(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-invasions")
+	{
+		return CheckInvasions(args[1], args[2]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -313,6 +389,8 @@ int main(int argc, char** argv)
 		"uso:\n"
 		"  mu-data import-spawns <MonsterSetBase.txt> <MapManager.txt> <Data> [--force]\n"
 		"  mu-data check-spawns <MonsterSetBase.txt> <Data>\n"
+		"  mu-data import-invasions <InvasionManager.dat> <Data> [--force]\n"
+		"  mu-data check-invasions <InvasionManager.dat> <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;

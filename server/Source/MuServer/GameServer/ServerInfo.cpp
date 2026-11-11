@@ -34,6 +34,7 @@
 #include "Message.h"
 #include "MonsterManager.h"
 #include "MonsterSetBase.h"
+#include "EventInvasions.h"
 #include "MapSpawns.h"
 #include "Move.h"
 #include "Notice.h"
@@ -213,7 +214,16 @@ void CServerInfo::ReadEventInfo()
 
 	gDevilSquare.Load(gPath.GetFullPath("Event\\DevilSquare.dat"));
 
-	gInvasionManager.Load(gPath.GetFullPath("Event\\InvasionManager.dat"));
+	// Fase 5: si existe Data/Events/Invasions/Invasions.toml manda él; si no,
+	// InvasionManager.dat como siempre.
+	if (EventInvasions_HasData(gPath.GetFullPath("")))
+	{
+		gInvasionManager.LoadToml(EventInvasions_Path(gPath.GetFullPath("")).c_str());
+	}
+	else
+	{
+		gInvasionManager.Load(gPath.GetFullPath("Event\\InvasionManager.dat"));
+	}
 
 	gGoldenArcherBingo.Load(gPath.GetFullPath("Event\\GoldenArcherBingo.dat"));
 

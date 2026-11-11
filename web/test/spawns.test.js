@@ -5,7 +5,38 @@ const path = require('node:path');
 const spawns = require('../lib/spawns');
 
 const DATA = path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data');
-const legacyText = fs.readFileSync(path.join(DATA, 'Monster', 'MonsterSetBase.txt'), 'utf8');
+// El repo trae los spawns en TOML (Data/Maps y Data/Events/Invasions). Los
+// tests parten del .txt que sale de ellos, que es el mismo MonsterSetBase.txt
+// que había antes de la conversión.
+function repoTomlFiles() {
+  const files = [];
+  for (const folder of fs.readdirSync(path.join(DATA, 'Maps')).sort()) {
+    const file = path.join(DATA, 'Maps', folder, 'Spawns.toml');
+    if (fs.existsSync(file)) {
+      files.push({ path: `${spawns.MAPS_DIR}/${folder}/Spawns.toml`, content: fs.readFileSync(file, 'utf8'), map: spawns.folderMap(folder) });
+    }
+  }
+  files.push({ path: spawns.INVASIONS_FILE, content: fs.readFileSync(path.join(DATA, 'Events', 'Invasions', 'Spawns.toml'), 'utf8'), map: null });
+  return files;
+}
+const repoFiles = repoTomlFiles();
+const legacyText = spawns.buildLegacy(spawns.parseToml(repoFiles), () => '');
+
+test('spawns: los TOML del repo son los que arma el panel desde el .txt', () => {
+  const folders = new Map(repoFiles.filter((f) => f.map !== null).map((f) => [f.map, f.path.split('/')[2]]));
+  const built = spawns.buildToml(spawns.parseLegacy(legacyText), {
+    mapName: (id) => folders.has(id) ? folders.get(id).replace(/^\d+-/, '') : `Map${id}`,
+    folders
+  });
+  // Los comentarios con el nombre del monstruo salen de Monster.txt: se comparan
+  // las entradas, no el texto.
+  for (const f of repoFiles) {
+    if (f.map === null) continue;
+    assert.ok(built[f.path], `falta ${f.path}`);
+    const again = spawns.parseToml([{ ...f, content: built[f.path] }]);
+    assert.deepEqual(again.map(fields), spawns.parseToml([f]).map(fields), f.path);
+  }
+});
 
 const fields = (e) => [e.section, e.monster, e.map, e.dis, e.x, e.y, e.tx, e.ty, e.dir, e.count, e.value];
 const bySectionAndMap = (entries) => entries
