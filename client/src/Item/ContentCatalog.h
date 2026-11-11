@@ -55,12 +55,31 @@ public:
     void ReceivePets(const BYTE* msg, int size);       // F3/EE
     void ReceiveTooltips(const BYTE* msg, int size);   // F3/EF
     void ReceiveTexts(const BYTE* msg, int size);      // F3/F0
+    // F3/F3: se aplica apenas llega completa (no espera al F3/EA), porque el
+    // server la vuelve a mandar sola cuando recarga las gates.
+    void ReceiveGates(const BYTE* msg, int size);
+    // F3/F4: igual que las gates, se aplica apenas llega completa.
+    void ReceiveSkills(const BYTE* msg, int size);
+    // F3/F7: música por mapa (Map.toml del server); se aplica al llegar.
+    void ReceiveMapMusic(const BYTE* msg, int size);
+
+    // Caché del catálogo en disco (Cache/<ip>_<puerto>/<sección>.bin).
+    // SetServer: al conectarse a un GameServer.  SendCacheList: F1:06 con lo
+    // que hay guardado.  ReceiveSync: F3:F6, carga de disco lo que el server
+    // no va a mandar.
+    void SetServer(const char* ip, unsigned int port);
+    void SendCacheList();
+    void ReceiveSync(const BYTE* msg, int size);   // F3/F6
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
     void Clear();
 
     bool IsLoaded() const { return m_Loaded; }
+
+    // Nivel mínimo de la gate según el server (16 bits: Gate.bmd sólo guarda
+    // un byte), o `fallback` si el server no mandó gates.
+    int GetGateLevel(int index, int fallback) const;
 
     // Vanilla cuyo comportamiento hardcodeado usa el item (el propio si no
     // tiene columna Behavior).
@@ -136,6 +155,9 @@ public:
 
 private:
     void Publish();
+    void ApplyGates();
+    void ApplySkills();
+    void ApplyMapMusic();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
     int  LoadTexture(const char* path);

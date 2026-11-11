@@ -1,0 +1,22 @@
+# Atlans (mapa 7): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 46, type = "exit", area = [14, 12, 15, 13], dir = 3, level = [60, 400] },
+  { index = 47, type = "entrance", area = [9, 9, 11, 12], target = 48, level = [60, 400] },
+  { index = 49, type = "destination", area = [14, 11, 27, 23], level = [60, 400] },
+  { index = 53, type = "entrance", area = [14, 225, 15, 230], target = 54, level = [130, 400] },
+  { index = 56, type = "exit", area = [16, 225, 17, 230], dir = 3, level = [0, 400] },
+  { index = 75, type = "destination", area = [225, 53, 228, 50], level = [60, 400] },
+  { index = 76, type = "destination", area = [62, 163, 68, 157], level = [60, 400] },
+]

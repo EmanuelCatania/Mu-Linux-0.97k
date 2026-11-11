@@ -12,6 +12,7 @@ struct MAP_MANAGER_INFO
 	int RespawnInPlace;
 	int FlyingDragons;
 	char MapName[32];
+	char Music[28];     // Map.toml `music`; "" = el tema del cliente
 };
 
 class CMapManager
@@ -23,6 +24,10 @@ public:
 	~CMapManager();
 
 	void Load(const char* path);
+
+	// Fase 5: las reglas de cada mapa desde Data/Maps/NN-Nombre/Map.toml
+	// (`path` es Data/). Llena la misma tabla que Load con MapManager.txt.
+	void LoadMaps(const char* path);
 
 	int GetMapNonPK(int index);
 

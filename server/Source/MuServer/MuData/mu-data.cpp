@@ -16,11 +16,45 @@
 //   mu-data check-invasions <InvasionManager.dat> <Data>
 //       Compara las invasiones de las dos fuentes. Sale con 0 si son iguales.
 //
+//   mu-data import-maps <MapManager.txt> <Data> [--force]
+//       Pasa cada línea de MapManager.txt a <Data>/Maps/NN-Nombre/Map.toml (en
+//       la carpeta que ya tenga ese mapa, si hay una).
+//
+//   mu-data check-maps <MapManager.txt> <Data>
+//       Compara las reglas de los mapas de las dos fuentes. Sale con 0 si son
+//       iguales.
+//
+//   mu-data import-drops <ItemDrop.txt> <Data> [--force]
+//       Parte ItemDrop.txt: los drops de cualquier mapa van a
+//       <Data>/Items/Drops.toml y los de un mapa, a <Data>/Maps/NN-Nombre/Drops.toml.
+//
+//   mu-data check-drops <ItemDrop.txt> <Data>
+//       Compara los drops de las dos fuentes (sin importar el orden). Sale con 0
+//       si son iguales.
+//
+//   mu-data import-gates <Gate.txt> <Data> [--force]
+//       Pasa cada gate de Gate.txt al Gates.toml del mapa donde está
+//       (<Data>/Maps/NN-Nombre/Gates.toml).
+//
+//   mu-data check-gates <Gate.txt> <Data>
+//       Compara las gates de las dos fuentes. Sale con 0 si son iguales.
+//
+//   mu-data import-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data> [--force]
+//       Junta las tres listas de cada mapa en <Data>/Maps/NN-Nombre/Zones.toml.
+//
+//   mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>
+//       Compara las zonas de las dos fuentes. Sale con 0 si son iguales.
+//
 //   mu-data validate <Data>
-//       Lee los Spawns.toml y el Invasions.toml y avisa del primer error, con
-//       archivo y línea.
+//       Lee los Spawns.toml, los Map.toml, los Drops.toml, los Gates.toml, los
+//       Zones.toml y el Invasions.toml y avisa del primer error, con archivo y
+//       línea. También avisa de las gates que llevan a una que no existe.
 
 #include "EventInvasions.h"
+#include "ItemDrops.h"
+#include "MapGates.h"
+#include "MapZones.h"
+#include "MapInfo.h"
 #include "MapSpawns.h"
 
 #include <algorithm>
@@ -304,6 +338,269 @@ static int CheckInvasions(const std::string& dat, const std::string& dataDir)
 	return 0;
 }
 
+static int ImportMaps(const std::string& txt, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<MapInfoDef> defs;
+
+	if (!MapInfo_LoadLegacy(txt, defs, error))
+	{
+		return Fail(error);
+	}
+
+	for (const MapInfoDef& def : defs)
+	{
+		fs::path file = fs::u8path(MapInfo_Path(dataDir, def.Index, def.Name));
+
+		if (!PrepareOutput(file, force, error) || !MapInfo_WriteToml(file.u8string(), def, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%s\n", file.u8string().c_str());
+	}
+
+	std::printf("%zu mapas\n", defs.size());
+
+	return 0;
+}
+
+static int CheckMaps(const std::string& txt, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<MapInfoDef> legacy, toml;
+
+	if (!MapInfo_LoadLegacy(txt, legacy, error) || !MapInfo_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!MapInfo_Equal(legacy, toml, error))
+	{
+		std::printf("Distintos: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticos: %zu mapas\n", toml.size());
+
+	return 0;
+}
+
+static int ImportDrops(const std::string& txt, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<ItemDropDef> drops;
+
+	if (!ItemDrops_LoadLegacy(txt, drops, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	std::map<int, std::vector<ItemDropDef>> byMap;
+
+	for (const ItemDropDef& d : drops)
+	{
+		byMap[d.Map].push_back(d);
+	}
+
+	for (const auto& [map, list] : byMap)
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(map < 0 ? ItemDrops_GlobalPath(dataDir) : ItemDrops_MapPath(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !ItemDrops_WriteToml(file.u8string(), map, name, list, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu drops\n", file.u8string().c_str(), list.size());
+	}
+
+	std::printf("%zu drops\n", drops.size());
+
+	return 0;
+}
+
+static int CheckDrops(const std::string& txt, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<ItemDropDef> legacy, toml;
+
+	if (!ItemDrops_LoadLegacy(txt, legacy, error) || !ItemDrops_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!ItemDrops_Equal(legacy, toml, error))
+	{
+		std::printf("Distintos: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticos: %zu drops\n", toml.size());
+
+	return 0;
+}
+
+static int ImportGates(const std::string& txt, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<GateDef> gates;
+
+	if (!MapGates_LoadLegacy(txt, gates, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	std::map<int, std::vector<GateDef>> byMap;
+
+	for (const GateDef& g : gates)
+	{
+		byMap[g.Map].push_back(g);
+	}
+
+	for (const auto& [map, list] : byMap)
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(MapGates_Path(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !MapGates_WriteToml(file.u8string(), map, name, list, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu gates\n", file.u8string().c_str(), list.size());
+	}
+
+	std::printf("%zu gates\n", gates.size());
+
+	return 0;
+}
+
+static int CheckGates(const std::string& txt, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<GateDef> legacy, toml;
+
+	if (!MapGates_LoadLegacy(txt, legacy, error) || !MapGates_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!MapGates_Equal(legacy, toml, error))
+	{
+		std::printf("Distintas: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticas: %zu gates\n", toml.size());
+
+	return 0;
+}
+
+static int ImportZones(const std::string& safe, const std::string& pkFree, const std::string& npcMove, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	MapZonesData zones;
+
+	if (!MapZones_LoadLegacy(safe, pkFree, npcMove, zones, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	for (int map : MapZones_Maps(zones))
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(MapZones_Path(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !MapZones_WriteToml(file.u8string(), map, name, zones, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%s\n", file.u8string().c_str());
+	}
+
+	std::printf("%zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", zones.Safe.size(), zones.PkFree.size(), zones.NpcMove.size());
+
+	return 0;
+}
+
+static int CheckZones(const std::string& safe, const std::string& pkFree, const std::string& npcMove, const std::string& dataDir)
+{
+	std::string error;
+
+	MapZonesData legacy, toml;
+
+	if (!MapZones_LoadLegacy(safe, pkFree, npcMove, legacy, error) || !MapZones_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!MapZones_Equal(legacy, toml, error))
+	{
+		std::printf("Distintas: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticas: %zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", toml.Safe.size(), toml.PkFree.size(), toml.NpcMove.size());
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -339,6 +636,59 @@ static int Validate(const std::string& dataDir)
 		}
 
 		std::printf("OK: %zu invasiones\n", defs.size());
+	}
+
+	if (MapInfo_HasData(dataDir))
+	{
+		std::vector<MapInfoDef> maps;
+
+		if (!MapInfo_Load(dataDir, maps, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: reglas de %zu mapas\n", maps.size());
+	}
+
+	if (ItemDrops_HasData(dataDir))
+	{
+		std::vector<ItemDropDef> drops;
+
+		if (!ItemDrops_Load(dataDir, drops, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: %zu drops\n", drops.size());
+	}
+
+	if (MapGates_HasData(dataDir))
+	{
+		std::vector<GateDef> gates;
+
+		if (!MapGates_Load(dataDir, gates, error))
+		{
+			return Fail(error);
+		}
+
+		for (const std::string& warning : MapGates_DanglingTargets(gates))
+		{
+			std::printf("Aviso: %s\n", warning.c_str());
+		}
+
+		std::printf("OK: %zu gates\n", gates.size());
+	}
+
+	if (MapZones_HasData(dataDir))
+	{
+		MapZonesData zones;
+
+		if (!MapZones_Load(dataDir, zones, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: %zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", zones.Safe.size(), zones.PkFree.size(), zones.NpcMove.size());
 	}
 
 	return 0;
@@ -380,6 +730,46 @@ int main(int argc, char** argv)
 		return CheckInvasions(args[1], args[2]);
 	}
 
+	if (args.size() == 3 && args[0] == "import-maps")
+	{
+		return ImportMaps(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-maps")
+	{
+		return CheckMaps(args[1], args[2]);
+	}
+
+	if (args.size() == 3 && args[0] == "import-drops")
+	{
+		return ImportDrops(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-drops")
+	{
+		return CheckDrops(args[1], args[2]);
+	}
+
+	if (args.size() == 3 && args[0] == "import-gates")
+	{
+		return ImportGates(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-gates")
+	{
+		return CheckGates(args[1], args[2]);
+	}
+
+	if (args.size() == 5 && args[0] == "import-zones")
+	{
+		return ImportZones(args[1], args[2], args[3], args[4], force);
+	}
+
+	if (args.size() == 5 && args[0] == "check-zones")
+	{
+		return CheckZones(args[1], args[2], args[3], args[4]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -391,6 +781,14 @@ int main(int argc, char** argv)
 		"  mu-data check-spawns <MonsterSetBase.txt> <Data>\n"
 		"  mu-data import-invasions <InvasionManager.dat> <Data> [--force]\n"
 		"  mu-data check-invasions <InvasionManager.dat> <Data>\n"
+		"  mu-data import-maps <MapManager.txt> <Data> [--force]\n"
+		"  mu-data check-maps <MapManager.txt> <Data>\n"
+		"  mu-data import-drops <ItemDrop.txt> <Data> [--force]\n"
+		"  mu-data check-drops <ItemDrop.txt> <Data>\n"
+		"  mu-data import-gates <Gate.txt> <Data> [--force]\n"
+		"  mu-data check-gates <Gate.txt> <Data>\n"
+		"  mu-data import-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data> [--force]\n"
+		"  mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;

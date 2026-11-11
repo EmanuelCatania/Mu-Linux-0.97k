@@ -277,10 +277,21 @@ app.post('/api/file', async (req, res) => {
   try {
     const { path: relPath, content } = req.body || {};
     const { abs, rel } = normalizeRelativePath(relPath);
+    // Si el contenido no cambia no se escribe ni se respalda. El panel guarda
+    // datos por mapa reescribiendo todos los archivos del mismo tipo (los
+    // Spawns.toml de todos los mapas, por ejemplo); sin esto cada guardado
+    // sumaba una copia idéntica de cada mapa y, con EDITOR_MAX_BACKUPS
+    // copias por archivo, borraba las versiones anteriores de los que no
+    // se tocaron.
+    const text = String(content ?? '');
+    const current = await fsp.readFile(abs, 'utf8').catch(() => null);
+    if (current === text) {
+      return res.json({ ok: true, path: rel, unchanged: true, backups: await listBackups(rel) });
+    }
     await ensureBackup(abs, rel);
     // Los archivos nuevos (por ejemplo Data/Text/<idioma>/) pueden no tener su carpeta.
     await fsp.mkdir(path.dirname(abs), { recursive: true });
-    await fsp.writeFile(abs, String(content ?? ''), 'utf8');
+    await fsp.writeFile(abs, text, 'utf8');
     const backups = await listBackups(rel);
     res.json({ ok: true, path: rel, backups });
   } catch (err) {
@@ -290,7 +301,7 @@ app.post('/api/file', async (req, res) => {
 
 // Borrar un archivo: solo los JSON de los items y pets custom, y con copia de
 // respaldo antes. El resto del árbol de datos no se puede borrar desde el panel.
-const DELETABLE = /^Data\/Custom\/(Items|Pets)\/\d{2}_\d{3}\.json$/;
+const DELETABLE = /^Data\/(Custom\/(Items|Pets)\/\d{2}_\d{3}\.json|Maps\/\d+-[A-Za-z0-9]+\/(Map|Drops|Gates|Zones)\.toml|Items\/Drops\.toml)$/;
 
 app.post('/api/delete', async (req, res) => {
   try {
@@ -389,6 +400,7 @@ app.post('/api/reload', async (req, res) => {
       'custom',
       'character',
       'map',
+      'mapmanager',
       'hack',
       'all'
     ];
