@@ -59,6 +59,8 @@ public:
 
 	bool CheckPacketHack(int aIndex, int index, int value, int encrypt, int serial);
 
+	bool CheckPacketRate(int aIndex, int index, int value);
+
 	bool CheckPacketHackMaxDelay(int aIndex, int index, int MaxDelay);
 
 	bool CheckPacketHackMinCount(int aIndex, int index, int MinCount);

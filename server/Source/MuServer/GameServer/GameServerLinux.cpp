@@ -131,6 +131,11 @@ void CheckEditorReload()
 			gServerInfo.ReadMapInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Map reloaded by editor flag");
 		}
+		else if (_stricmp(token, "mapmanager") == 0)
+		{
+			gServerInfo.ReadMapManagerInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] MapManager reloaded by editor flag");
+		}
 		else if (_stricmp(token, "hack") == 0)
 		{
 			gServerInfo.ReadHackInfo();

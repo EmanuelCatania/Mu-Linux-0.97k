@@ -69,6 +69,11 @@ static int FolderMapNumber(const std::string& folder)
 	return std::atoi(folder.substr(0, dash).c_str());
 }
 
+int MapSpawns_FolderMap(const std::string& folder)
+{
+	return FolderMapNumber(folder);
+}
+
 // Carpetas de mapa con Spawns.toml, ordenadas por número. Falla si dos carpetas
 // dicen ser el mismo mapa.
 static bool ListMapFolders(const std::string& mapsDir, std::map<int, fs::path>& out, std::string& error)

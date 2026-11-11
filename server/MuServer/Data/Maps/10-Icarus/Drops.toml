@@ -1,0 +1,17 @@
+# Icarus (mapa 10): drops especiales que caen sólo en este mapa.
+#
+# item           [sección, índice] del item (Item.txt)
+# level          nivel del item (+N); sin la clave, 0
+# grade          opciones excelentes fijas, si `exc` no da ninguna
+# options        índices de ItemOptionRate.txt para level, skill, luck,
+#                add y exc; sin la clave, esa opción no sale
+# monster        sólo ese monstruo (Monster.txt); sin la clave, cualquiera
+# monster_level  [mínimo, máximo] del nivel del monstruo; -1 = sin límite
+# rate           chance de 1.000.000 por monstruo muerto; -1 = siempre
+#
+# Se prueban antes que el drop normal del monstruo (un item al azar de
+# nivel cercano al suyo): si cae uno de estos, el monstruo no tira nada más.
+
+drop = [
+  { item = [13, 14], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [25, 150], rate = 1000 }, # Loch's Feather
+]

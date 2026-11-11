@@ -56,6 +56,9 @@ public:
 	// mismo que ReloadMonsterInfo.
 	void ReloadSpawns();
 
+	// Reglas de los mapas: Data/Maps/NN-Nombre/Map.toml o MapManager.txt.
+	void ReadMapManagerInfo();
+
 	void ReadStartupInfo(const char* section, const char* path);
 
 	void ReadChaosMixInfo(const char* section, const char* path);
@@ -109,6 +112,8 @@ public:
 	int m_MoveCheckTolerance;
 	int m_AttackCheck;
 	int m_AttackCheckScale;
+	int m_PacketRateCheck;
+	int m_PacketRateMax;
 	// Common
 	int m_MainChecksum;
 	int m_MaxItemOption;

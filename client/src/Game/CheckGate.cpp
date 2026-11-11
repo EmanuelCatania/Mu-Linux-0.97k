@@ -61,7 +61,8 @@ void __cdecl CheckGate(void)
         if (DAT_07e11d1c != 0 || hero[EntityOffset(773)] != 0)          // LoadingWorld
             continue;
 
-        unsigned int requiredLevel = gate[8];
+        // DESVIACION (Fase 5): con gates del server el nivel viene en 16 bits.
+        unsigned int requiredLevel = (unsigned int)gContentCatalog.GetGateLevel(gateIndex, gate[8]);
         if ((hero[EntityOffset(444)] & 7) == 3) // Magic Gladiator: dos tercios.
             requiredLevel = (requiredLevel * 2) / 3;
 

@@ -319,7 +319,7 @@ The DLL injection-based client is fully deprecated and has been removed from thi
    docker compose up -d --build
    ```
 
-3. Open `44405/tcp` and `55901/tcp`.
+3. Open `44405/tcp` and `55901/tcp`. To limit connections per IP in the host firewall, see [docs/firewall.md](docs/firewall.md) (in Spanish).
 
 For published images without a build:
 

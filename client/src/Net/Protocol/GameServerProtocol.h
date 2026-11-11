@@ -769,6 +769,68 @@ struct CATALOG_PET
 };
 static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
 
+// F3:F3 — gates (Fase 5).  Reemplazan las de Gate.bmd: con ellas el cliente
+// detecta que el héroe pisa una entrada (CheckGate) y las dibuja en el minimapa.
+struct CATALOG_GATE
+{
+    std::uint16_t Index;
+    std::uint8_t Flag;          // 0 destino, 1 entrada, 2 salida
+    std::uint8_t Map;
+    std::uint8_t X;
+    std::uint8_t Y;
+    std::uint8_t TX;
+    std::uint8_t TY;
+    std::uint16_t Target;
+    std::uint8_t Dir;
+    std::uint8_t Reserved;
+    std::uint16_t MinLevel;     // 0 = sin mínimo
+    std::uint16_t Reserved2;
+};
+static_assert(sizeof(CATALOG_GATE) == 16, "F3:F3 entrada");
+
+// F3:F4 — skills (Fase 5): maná, AG y rango sobre los de skill.bmd.  El rango
+// decide hasta dónde camina el héroe antes de lanzar, y el server lo valida
+// con el suyo.
+struct CATALOG_SKILL
+{
+    std::uint16_t Index;
+    std::uint16_t Mana;
+    std::uint16_t BP;           // AG
+    std::uint8_t Range;         // en casillas
+    std::uint8_t Reserved;
+};
+static_assert(sizeof(CATALOG_SKILL) == 8, "F3:F4 entrada");
+
+// F3:F7 — música por mapa (Fase 5, `music` de Map.toml).  Sólo viajan los
+// mapas que la fijan; el resto usa la del cliente.  Music es el nombre del
+// archivo de Data/Music sin la extensión.
+struct CATALOG_MAP_MUSIC
+{
+    std::uint8_t Map;
+    std::uint8_t Reserved[3];
+    char Music[28];
+};
+static_assert(sizeof(CATALOG_MAP_MUSIC) == 32, "F3:F7 entrada");
+
+// Caché del catálogo (Fase 5).  F1:06 (cliente -> server, antes del login):
+// secciones que el cliente tiene guardadas de este server con su hash.
+// F3:F6 (server -> cliente, antes de las secciones): todas las secciones con su
+// hash; `cached` = 1 si el cliente la toma de su caché y el server no la manda.
+const int CATALOG_CACHE_MAX = 16;
+
+// hash: SHA-256 truncado a 8 bytes del tamaño de registro + los registros
+// (CatalogSectionHash, Util/Sha256.h).  El cliente lo recalcula al leer la
+// caché: una sección editada en disco deja de coincidir y el server la manda.
+struct CATALOG_CACHE_ENTRY
+{
+    std::uint8_t subh;
+    std::uint8_t cached;
+    std::uint16_t Reserved;
+    std::uint8_t hash[8];
+};
+static_assert(sizeof(CATALOG_CACHE_ENTRY) == 12, "F1:06 / F3:F6 entrada");
+static_assert(8 + CATALOG_CACHE_MAX * sizeof(CATALOG_CACHE_ENTRY) <= 255, "F1:06 / F3:F6 entran en un C1");
+
 // F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
 // llegan los del idioma que el cliente pidió con el F1:04.
 const std::uint8_t CATALOG_TEXT_ITEM = 1;

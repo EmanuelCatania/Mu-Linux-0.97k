@@ -203,6 +203,8 @@ public:
 
 	bool GetInfo(int index, SKILL_INFO* lpInfo);
 
+	const std::map<int, SKILL_INFO>& GetAll() const { return this->m_SkillInfo; }
+
 	int GetSkillDamage(int index);
 
 	int GetSkillMana(int index);

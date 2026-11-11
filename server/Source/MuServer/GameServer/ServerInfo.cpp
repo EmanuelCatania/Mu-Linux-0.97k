@@ -37,6 +37,10 @@
 #include "Monster.h"
 #include "EventInvasions.h"
 #include "MapSpawns.h"
+#include "MapInfo.h"
+#include "ItemDrops.h"
+#include "MapGates.h"
+#include "MapZones.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
@@ -179,7 +183,7 @@ void CServerInfo::ReadCommonInfo()
 
 	gEffectManager.Load(gPath.GetFullPath("Effect.txt"));
 
-	gMapManager.Load(gPath.GetFullPath("MapManager.txt"));
+	this->ReadMapManagerInfo();
 
 	gMessage.Load(gPath.GetFullPath("Message_Eng.txt"), LANGUAGE_ENGLISH);
 	gMessage.Load(gPath.GetFullPath("Message_Spn.txt"), LANGUAGE_SPANISH);
@@ -192,11 +196,48 @@ void CServerInfo::ReadCommonInfo()
 
 void CServerInfo::ReadCustomInfo()
 {
-	gCustomNpcMove.Load(gPath.GetFullPath("Custom\\CustomNpcMove.txt"));
+	// Fase 5: si hay Data/Maps/NN-Nombre/Zones.toml mandan ellos para las tres
+	// cosas; si no, los .txt de Data/Custom como siempre.
+	if (MapZones_HasData(gPath.GetFullPath("")))
+	{
+		static bool loaded = false;
 
-	gPKFree.Load(gPath.GetFullPath("Custom\\CustomPkFree.txt"));
+		MapZonesData zones;
 
-	gSafeZone.Load(gPath.GetFullPath("Custom\\CustomSafeZone.txt"));
+		std::string error;
+
+		if (!MapZones_Load(gPath.GetFullPath(""), zones, error))
+		{
+			// Al arrancar es fatal, como el resto de los datos; en una recarga
+			// quedan las zonas de antes.
+			if (!loaded)
+			{
+				ErrorMessageBox("[Zones] %s", error.c_str());
+			}
+
+			LogAdd(LOG_RED, "[Zones] Recarga cancelada, quedan las zonas de antes: %s", error.c_str());
+
+			return;
+		}
+
+		gCustomNpcMove.SetMoves(zones.NpcMove);
+
+		gPKFree.SetRects(zones.PkFree);
+
+		gSafeZone.SetRects(zones.Safe);
+
+		loaded = true;
+
+		LogAdd(LOG_BLUE, "[Zones] %d zonas seguras, %d sin PK y %d NPCs que mueven desde Maps/", (int)zones.Safe.size(), (int)zones.PkFree.size(), (int)zones.NpcMove.size());
+	}
+	else
+	{
+		gCustomNpcMove.Load(gPath.GetFullPath("Custom\\CustomNpcMove.txt"));
+
+		gPKFree.Load(gPath.GetFullPath("Custom\\CustomPkFree.txt"));
+
+		gSafeZone.Load(gPath.GetFullPath("Custom\\CustomSafeZone.txt"));
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Custom loaded successfully");
 }
@@ -257,7 +298,16 @@ void CServerInfo::ReadItemInfo()
 {
 	gItemManager.Load(gPath.GetFullPath("Item\\Item.txt"));
 
-	gItemDrop.Load(gPath.GetFullPath("Item\\ItemDrop.txt"));
+	// Fase 5: si hay Data/Items/Drops.toml o algún Data/Maps/NN-Nombre/Drops.toml
+	// mandan ellos; si no, ItemDrop.txt como siempre.
+	if (ItemDrops_HasData(gPath.GetFullPath("")))
+	{
+		gItemDrop.LoadToml(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gItemDrop.Load(gPath.GetFullPath("Item\\ItemDrop.txt"));
+	}
 
 	gItemMove.Load(gPath.GetFullPath("Item\\ItemMove.txt"));
 
@@ -292,6 +342,32 @@ void CServerInfo::ReadItemInfo()
 	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Item loaded successfully");
+}
+
+void CServerInfo::ReadMapManagerInfo()
+{
+	// Fase 5: si hay Data/Maps/NN-Nombre/Map.toml mandan ellos; si no,
+	// MapManager.txt como siempre.
+	if (MapInfo_HasData(gPath.GetFullPath("")))
+	{
+		gMapManager.LoadMaps(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gMapManager.Load(gPath.GetFullPath("MapManager.txt"));
+	}
+
+	// La música por mapa viaja en el catálogo (F3:F7): a los conectados se les
+	// manda sólo esa sección.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendMapMusic(gObj[n].Index);
+		}
+	}
 }
 
 void CServerInfo::ReadMapInfo()
@@ -342,11 +418,33 @@ void CServerInfo::ReadMonsterInfo()
 
 void CServerInfo::ReadMoveInfo()
 {
-	gGate.Load(gPath.GetFullPath("Move\\Gate.txt"));
+	// Fase 5: si hay Data/Maps/NN-Nombre/Gates.toml mandan ellos; si no,
+	// Gate.txt como siempre.
+	if (MapGates_HasData(gPath.GetFullPath("")))
+	{
+		gGate.LoadToml(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gGate.Load(gPath.GetFullPath("Move\\Gate.txt"));
+	}
 
 	gMove.Load(gPath.GetFullPath("Move\\Move.txt"));
 
 	gMove.ReloadMoveList();
+
+	// El cliente detecta las entradas con la tabla del catálogo (F3:F3): los
+	// que entren desde ahora la reciben con el resto, y a los conectados se les
+	// mandan sólo las gates.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendGates(gObj[n].Index);
+		}
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Move loaded successfully");
 }
@@ -380,6 +478,18 @@ void CServerInfo::ReadSkillInfo()
 	gSkillHitBox.Load(gPath.GetFullPath("Skill\\SkillElect.hit"));
 
 	gSkillManager.Load(gPath.GetFullPath("Skill\\Skill.txt"));
+
+	// El cliente toma maná, AG y rango del catálogo (F3:F4): los conectados
+	// reciben sólo los skills.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendSkills(gObj[n].Index);
+		}
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Skill loaded successfully");
 }
@@ -1760,6 +1870,10 @@ void CServerInfo::ReadHackInfo(const char* section, const char* path)
 	this->m_AttackCheck = GetPrivateProfileInt(section, "AttackCheck", 1, path);
 
 	this->m_AttackCheckScale = GetPrivateProfileInt(section, "AttackCheckScale", 240, path);
+
+	this->m_PacketRateCheck = GetPrivateProfileInt(section, "PacketRateCheck", 1, path);
+
+	this->m_PacketRateMax = GetPrivateProfileInt(section, "PacketRateMax", 60, path);
 }
 
 void CServerInfo::ReadSkillInfo(const char* section, const char* path)
