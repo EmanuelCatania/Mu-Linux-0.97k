@@ -60,6 +60,8 @@ public:
     void ReceiveGates(const BYTE* msg, int size);
     // F3/F4: igual que las gates, se aplica apenas llega completa.
     void ReceiveSkills(const BYTE* msg, int size);
+    // F3/F7: música por mapa (Map.toml del server); se aplica al llegar.
+    void ReceiveMapMusic(const BYTE* msg, int size);
 
     // Caché del catálogo en disco (Cache/<ip>_<puerto>/<sección>.bin).
     // SetServer: al conectarse a un GameServer.  SendCacheList: F1:06 con lo
@@ -155,6 +157,7 @@ private:
     void Publish();
     void ApplyGates();
     void ApplySkills();
+    void ApplyMapMusic();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
     int  LoadTexture(const char* path);

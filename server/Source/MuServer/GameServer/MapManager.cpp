@@ -137,6 +137,8 @@ void CMapManager::LoadMaps(const char* path)
 
 		strcpy_s(info.MapName, def.Name.c_str());
 
+		strcpy_s(info.Music, def.Music.c_str());
+
 		this->m_MapManagerInfo.insert(std::pair<int, MAP_MANAGER_INFO>(info.Index, info));
 	}
 

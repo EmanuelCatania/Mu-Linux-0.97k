@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ContentCatalog.h"
 #include "Gate.h"
+#include "MapManager.h"
 #include "SkillManager.h"
 #include "Sha256.h"
 #include "CustomPet.h"
@@ -32,6 +33,7 @@ static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
 static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
 static_assert(sizeof(CATALOG_GATE) == 16, "catalog gate");
 static_assert(sizeof(CATALOG_SKILL) == 8, "catalog skill");
+static_assert(sizeof(CATALOG_MAP_MUSIC) == 32, "catalog map music");
 static_assert(sizeof(CATALOG_CACHE_ENTRY) == 12, "catalog cache entry");
 static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) == 8 + 12 * CATALOG_CACHE_MAX, "catalog sync");
 static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) <= 255, "catalog sync entra en un C1");
@@ -805,6 +807,38 @@ void CContentCatalog::Build()
 
 	this->MarkSection(0xF4, sectionBegin);
 
+	std::vector<CATALOG_MAP_MUSIC> music;
+
+	for (const std::pair<const int, MAP_MANAGER_INFO>& it : gMapManager.m_MapManagerInfo)
+	{
+		if (it.second.Music[0] == 0 || it.first < 0 || it.first > 255)
+		{
+			continue;
+		}
+
+		CATALOG_MAP_MUSIC entry;
+
+		memset(&entry, 0, sizeof(entry));
+
+		entry.Map = (BYTE)it.first;
+
+		memcpy(entry.Music, it.second.Music, sizeof(entry.Music));
+
+		entry.Music[sizeof(entry.Music) - 1] = 0;
+
+		music.push_back(entry);
+	}
+
+	this->m_MapMusicPackets.clear();
+
+	this->BuildSection(0xF7, music.empty() ? 0 : (const BYTE*)&music[0], sizeof(CATALOG_MAP_MUSIC), (int)music.size(), this->m_MapMusicPackets);
+
+	sectionBegin = this->m_Packets.size();
+
+	this->m_Packets.insert(this->m_Packets.end(), this->m_MapMusicPackets.begin(), this->m_MapMusicPackets.end());
+
+	this->MarkSection(0xF7, sectionBegin);
+
 	// Los textos dependen del idioma de cada cliente: van aparte y no entran
 	// en el hash, que identifica el contenido compartido.
 	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
@@ -924,6 +958,19 @@ void CContentCatalog::SendGates(int aIndex)
 	}
 
 	for (const std::vector<BYTE>& packet : this->m_GatePackets)
+	{
+		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+	}
+}
+
+void CContentCatalog::SendMapMusic(int aIndex)
+{
+	if (!this->m_Built)
+	{
+		this->Build();
+	}
+
+	for (const std::vector<BYTE>& packet : this->m_MapMusicPackets)
 	{
 		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
 	}

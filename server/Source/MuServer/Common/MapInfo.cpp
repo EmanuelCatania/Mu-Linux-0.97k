@@ -165,7 +165,7 @@ static bool LoadMapFile(const fs::path& path, int map, MapInfoDef& def, std::str
 	{
 		std::string_view k = key.str();
 
-		bool known = k == "name" || k == "pk" || k == "view_range" || k == "experience_rate" || k == "item_drop_rate" || k == "exc_item_drop_rate" || k == "dead_gate" || k == "respawn_in_place" || k == "flying_dragons";
+		bool known = k == "name" || k == "pk" || k == "view_range" || k == "experience_rate" || k == "item_drop_rate" || k == "exc_item_drop_rate" || k == "dead_gate" || k == "respawn_in_place" || k == "flying_dragons" || k == "music";
 
 		if (!known)
 		{
@@ -206,6 +206,34 @@ static bool LoadMapFile(const fs::path& path, int map, MapInfoDef& def, std::str
 
 			return false;
 		}
+	}
+
+	if (const toml::node* music = table.get("music"))
+	{
+		std::optional<std::string> value = music->value<std::string>();
+
+		bool valid = value && !value->empty() && value->size() <= 27;
+
+		for (size_t n = 0; valid && n < value->size(); n++)
+		{
+			const char c = (*value)[n];
+
+			valid = std::isalnum((unsigned char)c) || c == '_' || c == '-';
+		}
+
+		if (value && *value == "*")
+		{
+			valid = true;
+		}
+
+		if (!valid)
+		{
+			error = file + ":" + std::to_string(music->source().begin.line) + ": 'music' es el nombre de un mp3 de Data/Music del cliente, sin la extensión (letras, números, '_' y '-', hasta 27), o \"*\" para el del cliente";
+
+			return false;
+		}
+
+		def.Music = (*value == "*") ? std::string() : *value;
 	}
 
 	std::string why;
@@ -474,6 +502,10 @@ bool MapInfo_WriteToml(const std::string& path, const MapInfoDef& def, std::stri
 		<< "# dead_gate           gate (Gate.txt) al que se va al morir\n"
 		<< "# respawn_in_place    revivir donde se murió en vez de en dead_gate\n"
 		<< "# flying_dragons      salen los dragones voladores del evento\n"
+		<< "# music               tema del cliente: nombre de un mp3 de Data/Music sin la\n"
+		<< "#                     extensión (\"Pub\" = Data/Music/Pub.mp3); \"*\" o sin la\n"
+		<< "#                     clave, el del cliente (el del juego o un mp3 con el\n"
+		<< "#                     nombre del mapa)\n"
 		<< "\n"
 		<< "name = " << Quote(def.Name) << "\n";
 
@@ -500,7 +532,8 @@ bool MapInfo_WriteToml(const std::string& path, const MapInfoDef& def, std::stri
 	}
 
 	file << "respawn_in_place = " << (def.RespawnInPlace != 0 ? "true" : "false") << "\n"
-		<< "flying_dragons = " << (def.FlyingDragons != 0 ? "true" : "false") << "\n";
+		<< "flying_dragons = " << (def.FlyingDragons != 0 ? "true" : "false") << "\n"
+		<< "music = " << Quote(def.Music.empty() ? std::string("*") : def.Music) << "\n";
 
 	if (!file)
 	{

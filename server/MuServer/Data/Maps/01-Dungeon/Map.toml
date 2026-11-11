@@ -10,6 +10,10 @@
 # dead_gate           gate (Gate.txt) al que se va al morir
 # respawn_in_place    revivir donde se murió en vez de en dead_gate
 # flying_dragons      salen los dragones voladores del evento
+# music               tema del cliente: nombre de un mp3 de Data/Music sin la
+#                     extensión ("Pub" = Data/Music/Pub.mp3); "*" o sin la
+#                     clave, el del cliente (el del juego o un mp3 con el
+#                     nombre del mapa)
 
 name = "Dungeon"
 view_range = 15
@@ -19,3 +23,4 @@ exc_item_drop_rate = 0
 dead_gate = 17
 respawn_in_place = false
 flying_dragons = true
+music = "*"
