@@ -235,7 +235,7 @@ static bool LoadGateFile(const fs::path& path, int map, std::vector<GateDef>& ou
 			ok = false;
 		}
 
-		ok = ok && ReadInt(*entry, "index", 0, 65535, g.Index, why) && ReadList(*entry, "area", 4, 0, 255, area, why) && ReadInt(*entry, "target", 0, 65535, g.Target, why) && ReadInt(*entry, "dir", -1, 7, g.Dir, why) && ReadInt(*entry, "account", 0, 255, g.AccountLevel, why);
+		ok = ok && ReadInt(*entry, "index", 0, 65535, g.Index, why) && ReadList(*entry, "area", 4, 0, 255, area, why) && ReadInt(*entry, "target", 0, 65535, g.Target, why) && ReadInt(*entry, "dir", -1, 255, g.Dir, why) && ReadInt(*entry, "account", 0, 255, g.AccountLevel, why);
 
 		ok = ok && (!entry->contains("level") || ReadList(*entry, "level", 2, -1, 1000, level, why)) && (!entry->contains("reset") || ReadList(*entry, "reset", 2, -1, 1000000, reset, why));
 
@@ -422,7 +422,7 @@ bool MapGates_LoadLegacy(const std::string& path, std::vector<GateDef>& out, std
 		else if (g.Flag < 0 || g.Flag > 2) why = "Flag vale 0, 1 o 2";
 		else if (g.Map < 0 || g.Map > 255) why = "el mapa va de 0 a 255";
 		else if (g.X < 0 || g.X > 255 || g.Y < 0 || g.Y > 255 || g.TX < 0 || g.TX > 255 || g.TY < 0 || g.TY > 255) why = "las coordenadas van de 0 a 255";
-		else if (g.Target < 0 || g.Dir < -1 || g.Dir > 7 || g.AccountLevel < 0) why = "Target >= 0, Dir de 0 a 7 y AccountLvl >= 0";
+		else if (g.Target < 0 || g.Dir < -1 || g.Dir > 255 || g.AccountLevel < 0) why = "Target >= 0, Dir de 0 a 255 y AccountLvl >= 0";
 		else if (g.MinLevel < -1 || g.MaxLevel < -1 || g.MinReset < -1 || g.MaxReset < -1) why = "los niveles y resets van de 0 en adelante (o *)";
 
 		if (!why.empty())

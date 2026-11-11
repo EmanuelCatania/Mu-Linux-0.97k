@@ -54,7 +54,7 @@ function parseLegacy(text) {
     else if (g.flag < 0 || g.flag > 2) why = 'Flag vale 0, 1 o 2';
     else if (g.map < 0 || g.map > 255) why = 'el mapa va de 0 a 255';
     else if ([g.x, g.y, g.tx, g.ty].some((v) => v < 0 || v > 255)) why = 'las coordenadas van de 0 a 255';
-    else if (g.target < 0 || g.dir < -1 || g.dir > 7 || g.account < 0) why = 'Target >= 0, Dir de 0 a 7 y AccountLvl >= 0';
+    else if (g.target < 0 || g.dir < -1 || g.dir > 255 || g.account < 0) why = 'Target >= 0, Dir de 0 a 255 y AccountLvl >= 0';
     else if ([g.minLevel, g.maxLevel, g.minReset, g.maxReset].some((v) => v < -1)) why = 'los niveles y resets van de 0 en adelante (o *)';
     if (why) throw new GateError(`${where}: ${why}`);
     gates.push(g);
@@ -144,7 +144,7 @@ function parseTomlFile(path, content, map) {
     if (!area) throw new GateError(`${where}: 'area' es una lista de 4 enteros entre 0 y 255`);
     [g.x, g.y, g.tx, g.ty] = area;
     g.target = int('target', 0, 65535, 0);
-    g.dir = int('dir', -1, 7, 0);
+    g.dir = int('dir', -1, 255, 0);
     g.account = int('account', 0, 255, 0);
     [g.minLevel, g.maxLevel] = list('level', 2, -1, 1000, [-1, -1]);
     [g.minReset, g.maxReset] = list('reset', 2, -1, 1000000, [-1, -1]);
