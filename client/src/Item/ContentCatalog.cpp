@@ -37,6 +37,27 @@ PendingSection s_PendingEffects;
 PendingSection s_PendingPets;
 PendingSection s_PendingTooltips;
 PendingSection s_PendingTexts;
+PendingSection s_PendingGates;
+
+// Gates del server (F3/F3) sobre la tabla de Gate.bmd, que se guarda para
+// volver a ella al desconectar.
+constexpr int MAX_CATALOG_GATE = 100;          // GateAttribute: 100 x 9 bytes
+GATE_ATTRIBUTE s_VanillaGates[MAX_CATALOG_GATE];
+bool s_HasVanillaGates = false;
+bool s_HasGates = false;
+WORD s_GateLevel[MAX_CATALOG_GATE];
+
+// Skills del server (F3/F4): maná (+0x22), AG (+0x24) y rango (+0x26) de cada
+// registro de SkillAttribute.  Se guardan los 8 bytes de skill.bmd que van
+// después del nombre para volver a ellos al desconectar (los nombres los
+// maneja F3/F0).
+constexpr int MAX_CATALOG_SKILL = 64;           // SkillAttribute: 64 x 0x28
+constexpr int SKILL_RECORD = 0x28;
+constexpr int SKILL_DATA = 0x20;                // después del nombre
+BYTE s_VanillaSkillData[MAX_CATALOG_SKILL][SKILL_RECORD - SKILL_DATA];
+bool s_HasVanillaSkillData = false;
+bool s_HasSkills = false;
+PendingSection s_PendingSkills;
 
 // Textos traducidos del server (F3/F0).  Los nombres de items y skills se
 // escriben en sus tablas; los originales se guardan para volver a ellos.
@@ -275,6 +296,85 @@ void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
     if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveGates(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingGates, msg, size)) {
+        Log("ContentCatalog: F3 descartado (size=%d)", size);
+        return;
+    }
+    if (!SectionComplete(s_PendingGates) || !GateAttribute) return;
+    if (!s_HasVanillaGates) {
+        memcpy(s_VanillaGates, GateAttribute, sizeof(s_VanillaGates));
+        s_HasVanillaGates = true;
+    }
+    memset(GateAttribute, 0, sizeof(s_VanillaGates));
+    memset(s_GateLevel, 0, sizeof(s_GateLevel));
+    const int gateSize = s_PendingGates.recordSize;
+    int count = 0;
+    for (size_t off = 0; gateSize > 0 && off + gateSize <= s_PendingGates.records.size(); off += gateSize) {
+        Proto::CATALOG_GATE row = {};
+        memcpy(&row, &s_PendingGates.records[off], (std::min)((int)sizeof(row), gateSize));
+        if (row.Index >= MAX_CATALOG_GATE) {
+            Log("ContentCatalog: gate %u fuera de la tabla (0..%d), se ignora", row.Index, MAX_CATALOG_GATE - 1);
+            continue;
+        }
+        GATE_ATTRIBUTE& gate = GateAttribute[row.Index];
+        gate.Flag = row.Flag;
+        gate.Map = row.Map;
+        gate.StartX = row.X;
+        gate.StartY = row.Y;
+        gate.EndX = row.TX;
+        gate.EndY = row.TY;
+        gate.Target = (std::uint8_t)((row.Target < MAX_CATALOG_GATE) ? row.Target : 0);
+        gate.Direction = row.Dir;
+        gate.RequireLevel = (std::uint8_t)((row.MinLevel > 255) ? 255 : row.MinLevel);
+        s_GateLevel[row.Index] = row.MinLevel;
+        ++count;
+    }
+    s_HasGates = true;
+    s_PendingGates = PendingSection();
+    Log("ContentCatalog: %d gates", count);
+}
+
+void CContentCatalog::ReceiveSkills(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingSkills, msg, size)) {
+        Log("ContentCatalog: F4 descartado (size=%d)", size);
+        return;
+    }
+    if (!SectionComplete(s_PendingSkills)) return;
+    BYTE* const table = (BYTE*)SkillAttribute.Raw;
+    if (!s_HasVanillaSkillData) {
+        for (int i = 0; i < MAX_CATALOG_SKILL; ++i)
+            memcpy(s_VanillaSkillData[i], table + i * SKILL_RECORD + SKILL_DATA, sizeof(s_VanillaSkillData[i]));
+        s_HasVanillaSkillData = true;
+    }
+    const int skillSize = s_PendingSkills.recordSize;
+    int count = 0;
+    for (size_t off = 0; skillSize > 0 && off + skillSize <= s_PendingSkills.records.size(); off += skillSize) {
+        Proto::CATALOG_SKILL row = {};
+        memcpy(&row, &s_PendingSkills.records[off], (std::min)((int)sizeof(row), skillSize));
+        if (row.Index >= MAX_CATALOG_SKILL) {
+            Log("ContentCatalog: skill %u fuera de la tabla (0..%d), se ignora", row.Index, MAX_CATALOG_SKILL - 1);
+            continue;
+        }
+        BYTE* const entry = table + row.Index * SKILL_RECORD;
+        memcpy(entry + 0x22, &row.Mana, sizeof(row.Mana));
+        memcpy(entry + 0x24, &row.BP, sizeof(row.BP));
+        entry[0x26] = row.Range;
+        ++count;
+    }
+    s_HasSkills = true;
+    s_PendingSkills = PendingSection();
+    Log("ContentCatalog: %d skills", count);
+}
+
+int CContentCatalog::GetGateLevel(int index, int fallback) const
+{
+    if (!s_HasGates || index < 0 || index >= MAX_CATALOG_GATE) return fallback;
+    return s_GateLevel[index];
+}
+
 void CContentCatalog::ReceiveTexts(const BYTE* msg, int size)
 {
     if (!ReadSection(s_PendingTexts, msg, size)) Log("ContentCatalog: F0 descartado (size=%d)", size);
@@ -380,6 +480,16 @@ void CContentCatalog::Clear()
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
     s_PendingTexts = PendingSection();
+    s_PendingGates = PendingSection();
+    if (s_HasGates && s_HasVanillaGates && GateAttribute)
+        memcpy(GateAttribute, s_VanillaGates, sizeof(s_VanillaGates));
+    s_HasGates = false;
+    s_PendingSkills = PendingSection();
+    if (s_HasSkills && s_HasVanillaSkillData) {
+        for (int i = 0; i < MAX_CATALOG_SKILL; ++i)
+            memcpy((BYTE*)SkillAttribute.Raw + i * SKILL_RECORD + SKILL_DATA, s_VanillaSkillData[i], sizeof(s_VanillaSkillData[i]));
+    }
+    s_HasSkills = false;
     gClientText.ClearServerTexts();
     s_TooltipTexts.clear();
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));

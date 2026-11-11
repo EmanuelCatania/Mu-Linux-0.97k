@@ -420,6 +420,19 @@ void CServerInfo::ReadMoveInfo()
 
 	gMove.ReloadMoveList();
 
+	// El cliente detecta las entradas con la tabla del catálogo (F3:F3): los
+	// que entren desde ahora la reciben con el resto, y a los conectados se les
+	// mandan sólo las gates.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendGates(gObj[n].Index);
+		}
+	}
+
 	LogAdd(LOG_BLUE, "[ServerInfo] Move loaded successfully");
 }
 
@@ -452,6 +465,18 @@ void CServerInfo::ReadSkillInfo()
 	gSkillHitBox.Load(gPath.GetFullPath("Skill\\SkillElect.hit"));
 
 	gSkillManager.Load(gPath.GetFullPath("Skill\\Skill.txt"));
+
+	// El cliente toma maná, AG y rango del catálogo (F3:F4): los conectados
+	// reciben sólo los skills.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendSkills(gObj[n].Index);
+		}
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Skill loaded successfully");
 }

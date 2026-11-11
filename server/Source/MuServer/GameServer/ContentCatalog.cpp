@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "ContentCatalog.h"
+#include "Gate.h"
+#include "SkillManager.h"
 #include "CustomPet.h"
 #include "CustomWing.h"
 #include "ItemManager.h"
@@ -26,6 +28,8 @@ static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "catalog end");
 static_assert(sizeof(CATALOG_EFFECT) == 132, "catalog effect");
 static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
 static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
+static_assert(sizeof(CATALOG_GATE) == 16, "catalog gate");
+static_assert(sizeof(CATALOG_SKILL) == 8, "catalog skill");
 
 bool IsSafeModelPath(const char* path);
 
@@ -696,6 +700,72 @@ void CContentCatalog::Build()
 
 	this->BuildSection(0xEE, pets.empty() ? 0 : (const BYTE*)&pets[0], sizeof(CATALOG_PET), (int)pets.size(), this->m_Packets);
 
+	std::vector<CATALOG_GATE> gates;
+
+	for (const std::pair<const int, GATE_INFO>& it : gGate.GetAll())
+	{
+		const GATE_INFO& info = it.second;
+
+		CATALOG_GATE entry;
+
+		memset(&entry, 0, sizeof(entry));
+
+		entry.Index = (WORD)info.Index;
+
+		entry.Flag = (BYTE)info.Flag;
+
+		entry.Map = (BYTE)info.Map;
+
+		entry.X = (BYTE)info.X;
+
+		entry.Y = (BYTE)info.Y;
+
+		entry.TX = (BYTE)info.TX;
+
+		entry.TY = (BYTE)info.TY;
+
+		entry.Target = (WORD)info.TargetGate;
+
+		entry.Dir = (BYTE)info.Dir;
+
+		entry.MinLevel = (WORD)((info.MinLevel < 0) ? 0 : info.MinLevel);
+
+		gates.push_back(entry);
+	}
+
+	this->m_GatePackets.clear();
+
+	this->BuildSection(0xF3, gates.empty() ? 0 : (const BYTE*)&gates[0], sizeof(CATALOG_GATE), (int)gates.size(), this->m_GatePackets);
+
+	this->m_Packets.insert(this->m_Packets.end(), this->m_GatePackets.begin(), this->m_GatePackets.end());
+
+	std::vector<CATALOG_SKILL> skills;
+
+	for (const std::pair<const int, SKILL_INFO>& it : gSkillManager.GetAll())
+	{
+		const SKILL_INFO& info = it.second;
+
+		CATALOG_SKILL entry;
+
+		memset(&entry, 0, sizeof(entry));
+
+		entry.Index = (WORD)info.Index;
+
+		entry.Mana = (WORD)((info.Mana < 0) ? 0 : info.Mana);
+
+		entry.BP = (WORD)((info.BP < 0) ? 0 : info.BP);
+
+		entry.Range = (BYTE)((info.Range < 0) ? 0 : ((info.Range > 255) ? 255 : info.Range));
+
+		skills.push_back(entry);
+	}
+
+	this->m_SkillPackets.clear();
+
+	this->BuildSection(0xF4, skills.empty() ? 0 : (const BYTE*)&skills[0], sizeof(CATALOG_SKILL), (int)skills.size(), this->m_SkillPackets);
+
+	this->m_Packets.insert(this->m_Packets.end(), this->m_SkillPackets.begin(), this->m_SkillPackets.end());
+
 	// Los textos dependen del idioma de cada cliente: van aparte y no entran
 	// en el hash, que identifica el contenido compartido.
 	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
@@ -735,7 +805,33 @@ void CContentCatalog::Build()
 
 	this->m_Built = true;
 
-	LogAdd(LOG_BLUE, "[ContentCatalog] %d items, %d monstruos, %d fog, %d efectos, %d paquetes", (int)items.size(), (int)monsters.size(), (int)this->m_MapFog.size(), (int)this->m_Effects.size(), (int)this->m_Packets.size());
+	LogAdd(LOG_BLUE, "[ContentCatalog] %d items, %d monstruos, %d fog, %d efectos, %d gates, %d skills, %d paquetes", (int)items.size(), (int)monsters.size(), (int)this->m_MapFog.size(), (int)this->m_Effects.size(), (int)gates.size(), (int)skills.size(), (int)this->m_Packets.size());
+}
+
+void CContentCatalog::SendGates(int aIndex)
+{
+	if (!this->m_Built)
+	{
+		this->Build();
+	}
+
+	for (const std::vector<BYTE>& packet : this->m_GatePackets)
+	{
+		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+	}
+}
+
+void CContentCatalog::SendSkills(int aIndex)
+{
+	if (!this->m_Built)
+	{
+		this->Build();
+	}
+
+	for (const std::vector<BYTE>& packet : this->m_SkillPackets)
+	{
+		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+	}
 }
 
 void CContentCatalog::Send(int aIndex)

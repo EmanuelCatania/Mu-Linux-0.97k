@@ -46,6 +46,8 @@ public:
 
 	bool GetGate(int index, int* gate, int* map, int* x, int* y, int* dir, int* level);
 
+	const std::map<int, GATE_INFO>& GetAll() const { return this->m_GateInfo; }
+
 private:
 
 	std::map<int, GATE_INFO> m_GateInfo;

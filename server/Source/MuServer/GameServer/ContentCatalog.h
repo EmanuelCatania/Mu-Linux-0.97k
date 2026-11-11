@@ -191,6 +191,35 @@ struct CATALOG_TEXT
 	char Text[64];      // UTF-8 en NFC
 };
 
+// Gates (Fase 5): el cliente las usa para detectar que el personaje pisa una
+// entrada y pedir el teleport, y para el minimapa. Antes salían de su Gate.bmd.
+struct CATALOG_GATE
+{
+	WORD Index;
+	BYTE Flag;          // 0 destino, 1 entrada, 2 salida
+	BYTE Map;
+	BYTE X;
+	BYTE Y;
+	BYTE TX;
+	BYTE TY;
+	WORD Target;
+	BYTE Dir;
+	BYTE Reserved;
+	WORD MinLevel;      // 0 = sin mínimo
+	WORD Reserved2;
+};
+
+// Skills (Fase 5): lo que el cliente usa para decidir si puede lanzar un skill
+// y hasta dónde camina antes de hacerlo. Antes salía de su skill.bmd.
+struct CATALOG_SKILL
+{
+	WORD Index;
+	WORD Mana;
+	WORD BP;            // AG
+	BYTE Range;         // en casillas
+	BYTE Reserved;
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -237,6 +266,13 @@ public:
 
 	void Send(int aIndex);
 
+	// Sólo las gates (F3:F3), a quien ya tiene el resto del catálogo: se usa al
+	// recargar las gates.
+	void SendGates(int aIndex);
+
+	// Sólo los skills (F3:F4), al recargar Skill.txt.
+	void SendSkills(int aIndex);
+
 	const ITEM_POSE_INFO* GetPose(int index) const;
 
 private:
@@ -256,6 +292,10 @@ private:
 	std::vector<CATALOG_TOOLTIP> m_Tooltips;
 
 	std::vector<std::vector<BYTE>> m_Packets;
+
+	std::vector<std::vector<BYTE>> m_GatePackets;
+
+	std::vector<std::vector<BYTE>> m_SkillPackets;
 
 	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
 
