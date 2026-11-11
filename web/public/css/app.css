@@ -1276,19 +1276,6 @@ textarea.invalid {
   opacity: 0.6;
 }
 
-.map-folder-modes {
-  display: flex;
-  gap: 4px;
-}
-
-.map-folder-modes.hidden {
-  display: none;
-}
-
-.map-folder-mode.selected {
-  background: rgba(125, 211, 252, 0.25);
-}
-
 /* El modo visual va dentro de la columna del formulario: sus selects y el
    zoom no ocupan todo el ancho. */
 .map-folder-visual .spawn-toolbar input,

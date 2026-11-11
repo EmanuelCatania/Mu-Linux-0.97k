@@ -90,10 +90,7 @@
           <div id="folder-tabs" class="map-folder-tabs"></div>
           <div class="spawn-toolbar">
             <code id="folder-path"></code>
-            <div id="folder-modes" class="map-folder-modes hidden">
-              <button type="button" class="map-folder-mode" data-mode="visual">Visual</button>
-              <button type="button" class="map-folder-mode" data-mode="text">Texto</button>
-            </div>
+            <button type="button" id="folder-mode" class="map-folder-mode hidden"></button>
             <a id="folder-full-editor" class="button-link" href="#">Abrir el editor completo</a>
           </div>
           <div id="folder-note" class="alert warning hidden"></div>
@@ -112,9 +109,9 @@
     root.querySelector('#folder-save').addEventListener('click', () => save(false));
     root.querySelector('#folder-revert').addEventListener('click', revert);
     root.querySelector('#folder-delete').addEventListener('click', remove);
-    root.querySelectorAll('.map-folder-mode').forEach((btn) => {
-      btn.addEventListener('click', () => switchMode(btn.dataset.mode));
-    });
+    // Un solo botón que lleva al otro modo; el texto dice a cuál.
+    const modeButton = root.querySelector('#folder-mode');
+    modeButton.addEventListener('click', () => switchMode(modeButton.dataset.mode));
     window.addEventListener('beforeunload', (event) => {
       if (dirty()) event.preventDefault();
     });
@@ -161,10 +158,10 @@
     const editable = !textarea().disabled;
     const spawns = state.kind === 'spawns' && editable;
     const showVisual = spawns && visual();
-    root.querySelector('#folder-modes').classList.toggle('hidden', !spawns);
-    root.querySelectorAll('.map-folder-mode').forEach((btn) => {
-      btn.classList.toggle('selected', btn.dataset.mode === (showVisual ? 'visual' : 'text'));
-    });
+    const modeButton = root.querySelector('#folder-mode');
+    modeButton.classList.toggle('hidden', !spawns);
+    modeButton.dataset.mode = showVisual ? 'text' : 'visual';
+    modeButton.textContent = showVisual ? t('Ver como texto') : t('Ver en el mapa');
     textarea().classList.toggle('hidden', showVisual);
     root.querySelector('#folder-visual').classList.toggle('hidden', !showVisual);
   }
