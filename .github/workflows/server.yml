@@ -75,6 +75,13 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v5
+      # El mirror de Ubuntu en Azure que usan los runners a veces no resuelve
+      # (2026-11-11: fallaban todas las descargas). Se baja directo de
+      # archive.ubuntu.com, con reintentos.
+      - name: Usar archive.ubuntu.com para apt
+        run: |
+          echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
       - name: Instalar MinGW-w64
         run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64-posix g++-mingw-w64-i686-posix ninja-build
       - name: Configurar
