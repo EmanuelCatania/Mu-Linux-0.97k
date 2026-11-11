@@ -28,8 +28,8 @@ public:
 	{
 		std::string File;
 		std::vector<MapSpawnEntry> Entries;
-		int Start = 0;
-		int Count = 0;
+		std::vector<int> RowStart; // filas de cada entrada (una por `count`)
+		std::vector<int> RowCount;
 	};
 
 	CMonsterSetBase();
@@ -52,8 +52,8 @@ public:
 	// Una entrada de un Spawns.toml, con AddLine.
 	void AddEntry(const MapSpawnEntry& e);
 
-	// Junta las entradas por archivo, en el orden en que llegan.
-	static std::vector<SpawnGroup> GroupSpawnEntries(const std::vector<MapSpawnEntry>& entries);
+	// El grupo del archivo de `e`; con `create` lo agrega si no está.
+	static int FindSpawnGroup(std::vector<SpawnGroup>& groups, const MapSpawnEntry& e, bool create);
 
 	bool GetPosition(int index, short map, short* ox, short* oy);
 

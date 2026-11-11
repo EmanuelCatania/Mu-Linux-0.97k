@@ -151,18 +151,19 @@ bool CMonsterSetBase::LoadMaps(const char* path)
 
 	this->m_count = 0;
 
-	this->m_Groups = GroupSpawnEntries(entries);
+	this->m_Groups.clear();
 
-	for (SpawnGroup& g : this->m_Groups)
+	for (const MapSpawnEntry& e : entries)
 	{
-		g.Start = this->m_count;
+		SpawnGroup& g = this->m_Groups[FindSpawnGroup(this->m_Groups, e, true)];
 
-		for (const MapSpawnEntry& e : g.Entries)
-		{
-			this->AddEntry(e);
-		}
+		g.Entries.push_back(e);
 
-		g.Count = this->m_count - g.Start;
+		g.RowStart.push_back(this->m_count);
+
+		this->AddEntry(e);
+
+		g.RowCount.push_back(this->m_count - g.RowStart.back());
 	}
 
 	LogAdd(LOG_BLUE, "[MonsterSetBase] %d spawns desde %s (%d entradas)", this->m_count, path, (int)entries.size());
@@ -178,26 +179,31 @@ static std::string SpawnEntryFile(const MapSpawnEntry& e)
 	return (colon == std::string::npos) ? e.Source : e.Source.substr(0, colon);
 }
 
-std::vector<CMonsterSetBase::SpawnGroup> CMonsterSetBase::GroupSpawnEntries(const std::vector<MapSpawnEntry>& entries)
+// MapSpawns_Load intercala las entradas de los distintos archivos (las ordena
+// por sección, como la tabla de MonsterSetBase.txt), así que el grupo de cada
+// entrada se busca por nombre de archivo.
+int CMonsterSetBase::FindSpawnGroup(std::vector<SpawnGroup>& groups, const MapSpawnEntry& e, bool create)
 {
-	// MapSpawns_Load devuelve las entradas de cada archivo juntas y en orden.
-	std::vector<SpawnGroup> groups;
+	std::string file = SpawnEntryFile(e);
 
-	for (const MapSpawnEntry& e : entries)
+	for (size_t i = 0; i < groups.size(); i++)
 	{
-		std::string file = SpawnEntryFile(e);
-
-		if (groups.empty() || groups.back().File != file)
+		if (groups[i].File == file)
 		{
-			groups.emplace_back();
-
-			groups.back().File = file;
+			return (int)i;
 		}
-
-		groups.back().Entries.push_back(e);
 	}
 
-	return groups;
+	if (!create)
+	{
+		return -1;
+	}
+
+	groups.emplace_back();
+
+	groups.back().File = file;
+
+	return (int)groups.size() - 1;
 }
 
 // Dos versiones de un archivo de spawns dan la misma tabla si sus entradas
@@ -261,55 +267,33 @@ bool CMonsterSetBase::ReloadMaps(const char* path, std::vector<int>& remap, std:
 		return false;
 	}
 
-	std::vector<SpawnGroup> groups = GroupSpawnEntries(entries);
+	// Primero los archivos nuevos completos, para saber cuáles cambiaron.
+	std::vector<SpawnGroup> groups;
 
-	// La tabla nueva se arma aparte (son 400 KB) y se copia al final.
-	CMonsterSetBase* next = new CMonsterSetBase;
+	for (const MapSpawnEntry& e : entries)
+	{
+		groups[FindSpawnGroup(groups, e, true)].Entries.push_back(e);
+	}
 
-	remap.assign(this->m_count, -1);
-
-	changed.clear();
+	// keep[i] = grupo viejo cuyas filas se conservan para groups[i], o -1.
+	std::vector<int> keep(groups.size(), -1);
 
 	files.clear();
 
-	for (SpawnGroup& g : groups)
+	for (size_t i = 0; i < groups.size(); i++)
 	{
-		const SpawnGroup* old = nullptr;
-
-		for (const SpawnGroup& o : this->m_Groups)
+		for (size_t o = 0; o < this->m_Groups.size(); o++)
 		{
-			if (o.File == g.File)
+			if (this->m_Groups[o].File == groups[i].File && SameSpawnEntries(this->m_Groups[o].Entries, groups[i].Entries))
 			{
-				old = &o;
-
-				break;
+				keep[i] = (int)o;
 			}
 		}
 
-		g.Start = next->m_count;
-
-		if (old != nullptr && SameSpawnEntries(old->Entries, g.Entries) && next->m_count + old->Count <= MAX_MSB_MONSTER)
+		if (keep[i] < 0)
 		{
-			for (int n = 0; n < old->Count; n++)
-			{
-				next->m_MonsterSetBaseInfo[next->m_count] = this->m_MonsterSetBaseInfo[old->Start + n];
-
-				remap[old->Start + n] = next->m_count++;
-			}
+			files.push_back(groups[i].File);
 		}
-		else
-		{
-			for (const MapSpawnEntry& e : g.Entries)
-			{
-				next->AddEntry(e);
-			}
-
-			changed.emplace_back(g.Start, next->m_count);
-
-			files.push_back(g.File);
-		}
-
-		g.Count = next->m_count - g.Start;
 	}
 
 	// Un archivo que desapareció también es un cambio: sus monstruos se van.
@@ -326,6 +310,59 @@ bool CMonsterSetBase::ReloadMaps(const char* path, std::vector<int>& remap, std:
 		{
 			files.push_back(o.File + " (borrado)");
 		}
+	}
+
+	// La tabla nueva se arma aparte (son 400 KB) y se copia al final, en el
+	// mismo orden de entradas que LoadMaps.
+	CMonsterSetBase* next = new CMonsterSetBase;
+
+	remap.assign(this->m_count, -1);
+
+	changed.clear();
+
+	for (SpawnGroup& g : groups)
+	{
+		g.Entries.clear();
+	}
+
+	for (const MapSpawnEntry& e : entries)
+	{
+		int i = FindSpawnGroup(groups, e, false);
+
+		SpawnGroup& g = groups[i];
+
+		size_t k = g.Entries.size();
+
+		g.Entries.push_back(e);
+
+		g.RowStart.push_back(next->m_count);
+
+		if (keep[i] >= 0)
+		{
+			const SpawnGroup& old = this->m_Groups[keep[i]];
+
+			for (int n = 0; n < old.RowCount[k] && next->m_count < MAX_MSB_MONSTER; n++)
+			{
+				next->m_MonsterSetBaseInfo[next->m_count] = this->m_MonsterSetBaseInfo[old.RowStart[k] + n];
+
+				remap[old.RowStart[k] + n] = next->m_count++;
+			}
+		}
+		else
+		{
+			next->AddEntry(e);
+
+			if (!changed.empty() && changed.back().second == g.RowStart.back())
+			{
+				changed.back().second = next->m_count;
+			}
+			else
+			{
+				changed.emplace_back(g.RowStart.back(), next->m_count);
+			}
+		}
+
+		g.RowCount.push_back(next->m_count - g.RowStart.back());
 	}
 
 	memcpy(this->m_MonsterSetBaseInfo, next->m_MonsterSetBaseInfo, sizeof(this->m_MonsterSetBaseInfo));
