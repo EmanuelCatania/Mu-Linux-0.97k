@@ -1626,6 +1626,10 @@ void CServerInfo::ReadHackInfo(const char* section, const char* path)
 	this->m_AttackCheck = GetPrivateProfileInt(section, "AttackCheck", 1, path);
 
 	this->m_AttackCheckScale = GetPrivateProfileInt(section, "AttackCheckScale", 240, path);
+
+	this->m_PacketRateCheck = GetPrivateProfileInt(section, "PacketRateCheck", 1, path);
+
+	this->m_PacketRateMax = GetPrivateProfileInt(section, "PacketRateMax", 60, path);
 }
 
 void CServerInfo::ReadSkillInfo(const char* section, const char* path)
