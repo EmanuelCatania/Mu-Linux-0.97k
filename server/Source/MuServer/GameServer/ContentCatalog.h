@@ -226,12 +226,15 @@ struct CATALOG_SKILL
 // tomar de su caché, y después sólo las que cambiaron.
 #define CATALOG_CACHE_MAX 16
 
+// hash: SHA-256 truncado a 8 bytes del tamaño de registro + los registros de
+// la sección (CatalogSectionHash en Common/Sha256.h).  Lo recalcula el cliente
+// al leer su caché, así una sección editada no coincide y se vuelve a mandar.
 struct CATALOG_CACHE_ENTRY
 {
 	BYTE subh;
 	BYTE cached;        // en F3:F6: 1 = el cliente la toma de su caché
 	WORD Reserved;
-	DWORD hash;
+	BYTE hash[8];
 };
 
 struct PMSG_CATALOG_CACHE_RECV
@@ -334,7 +337,7 @@ private:
 	struct SectionRange
 	{
 		BYTE subh;
-		DWORD hash;
+		BYTE hash[8];
 		size_t begin;
 		size_t end;
 	};

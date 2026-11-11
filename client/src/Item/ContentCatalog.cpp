@@ -8,6 +8,8 @@
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Local/ClientText.h"
+#include <array>
+#include "Util/Sha256.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include <map>
@@ -272,17 +274,26 @@ bool SectionComplete(const PendingSection& section)
 struct CacheFileHead
 {
     char Magic[4];          // "MUCC"
-    std::uint32_t Version;  // 1
-    std::uint32_t Hash;     // el que mandó el server en F3:F6
+    std::uint32_t Version;  // 2 (la 1 guardaba un FNV que no se verificaba)
+    std::uint8_t Hash[8];   // CatalogSectionHash de los registros
     std::uint16_t RecordSize;
     std::uint16_t Reserved;
     std::uint32_t Bytes;
 };
-static_assert(sizeof(CacheFileHead) == 20, "cabecera de la caché");
+static_assert(sizeof(CacheFileHead) == 24, "cabecera de la caché");
+
+using SectionHash = std::array<std::uint8_t, 8>;
+
+SectionHash HashOf(std::uint16_t recordSize, const std::vector<BYTE>& records)
+{
+    SectionHash hash;
+    CatalogSectionHash(recordSize, records.empty() ? nullptr : records.data(), records.size(), hash.data());
+    return hash;
+}
 
 const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4 };
 std::string s_CacheDir;                   // "Cache/<ip>_<puerto>", vacío = sin caché
-std::map<int, std::uint32_t> s_SyncHash;  // hash de cada sección del último F3:F6
+std::map<int, SectionHash> s_SyncHash;    // hash de cada sección del último F3:F6
 
 std::string CacheFile(BYTE subh)
 {
@@ -291,19 +302,27 @@ std::string CacheFile(BYTE subh)
     return s_CacheDir + name;
 }
 
-bool CacheRead(BYTE subh, CacheFileHead& head, std::vector<BYTE>* records)
+// Lee una sección y verifica que los registros den el hash de la cabecera.  Si
+// no (archivo editado, cortado o de otra versión), se borra y devuelve false.
+bool CacheRead(BYTE subh, CacheFileHead& head, std::vector<BYTE>& records)
 {
     if (s_CacheDir.empty()) return false;
-    FILE* f = Platform::GetFileSystem().Open(CacheFile(subh).c_str(), "rb");
+    const std::string path = CacheFile(subh);
+    FILE* f = Platform::GetFileSystem().Open(path.c_str(), "rb");
     if (!f) return false;
     bool ok = fread(&head, sizeof(head), 1, f) == 1 && memcmp(head.Magic, "MUCC", 4) == 0 &&
-              head.Version == 1 && head.RecordSize > 0 && head.Bytes % head.RecordSize == 0 &&
+              head.Version == 2 && head.RecordSize > 0 && head.Bytes % head.RecordSize == 0 &&
               head.Bytes <= 8u * 1024 * 1024;
-    if (ok && records) {
-        records->resize(head.Bytes);
-        ok = head.Bytes == 0 || fread(records->data(), head.Bytes, 1, f) == 1;
+    if (ok) {
+        records.resize(head.Bytes);
+        ok = head.Bytes == 0 || fread(records.data(), head.Bytes, 1, f) == 1;
     }
     fclose(f);
+    if (ok && memcmp(HashOf(head.RecordSize, records).data(), head.Hash, sizeof(head.Hash)) != 0) {
+        Log("ContentCatalog: %02X de la caché no coincide con su hash, se descarta", subh);
+        ok = false;
+    }
+    if (!ok) remove(path.c_str());
     return ok;
 }
 
@@ -314,14 +333,18 @@ void CacheStore(BYTE subh, const PendingSection& section)
 {
     auto it = s_SyncHash.find(subh);
     if (s_CacheDir.empty() || it == s_SyncHash.end()) return;
+    // Sólo se guarda lo que coincide con lo anunciado: una sección que el
+    // server reenvía sola al recargar trae otro contenido que el del F3:F6.
+    const SectionHash hash = HashOf((std::uint16_t)section.recordSize, section.records);
+    if (hash != it->second) return;
     Platform::GetFileSystem().EnsureDirectory("Cache");
     Platform::GetFileSystem().EnsureDirectory(s_CacheDir.c_str());
     FILE* f = Platform::GetFileSystem().Open(CacheFile(subh).c_str(), "wb");
     if (!f) return;
     CacheFileHead head = {};
     memcpy(head.Magic, "MUCC", 4);
-    head.Version = 1;
-    head.Hash = it->second;
+    head.Version = 2;
+    memcpy(head.Hash, hash.data(), sizeof(head.Hash));
     head.RecordSize = (std::uint16_t)section.recordSize;
     head.Bytes = (std::uint32_t)section.records.size();
     bool ok = fwrite(&head, sizeof(head), 1, f) == 1 &&
@@ -480,10 +503,11 @@ void CContentCatalog::SendCacheList()
     int count = 0;
     for (BYTE subh : kCachedSections) {
         CacheFileHead head;
-        if (!CacheRead(subh, head, nullptr)) continue;
+        std::vector<BYTE> records;
+        if (!CacheRead(subh, head, records)) continue;
         Proto::CATALOG_CACHE_ENTRY entry = {};
         entry.subh = subh;
-        entry.hash = head.Hash;
+        memcpy(entry.hash, head.Hash, sizeof(entry.hash));
         memcpy(pkt + 8 + count * sizeof(entry), &entry, sizeof(entry));
         ++count;
     }
@@ -508,12 +532,15 @@ void CContentCatalog::ReceiveSync(const BYTE* msg, int size)
     for (int i = 0; i < count; ++i) {
         Proto::CATALOG_CACHE_ENTRY entry;
         memcpy(&entry, msg + 8 + i * sizeof(entry), sizeof(entry));
-        s_SyncHash[entry.subh] = entry.hash;
+        SectionHash announced;
+        memcpy(announced.data(), entry.hash, announced.size());
+        s_SyncHash[entry.subh] = announced;
         if (!entry.cached) continue;
         PendingSection* section = PendingFor(entry.subh);
         CacheFileHead head;
         std::vector<BYTE> records;
-        if (!section || !CacheRead(entry.subh, head, &records) || head.Hash != entry.hash) {
+        if (!section || !CacheRead(entry.subh, head, records) ||
+            memcmp(head.Hash, announced.data(), announced.size()) != 0) {
             // El server no la va a mandar y no se puede leer: el catálogo queda
             // incompleto en este login.  Se borra la caché para que el próximo
             // la pida entera.

@@ -2,6 +2,7 @@
 #include "ContentCatalog.h"
 #include "Gate.h"
 #include "SkillManager.h"
+#include "Sha256.h"
 #include "CustomPet.h"
 #include "CustomWing.h"
 #include "ItemManager.h"
@@ -31,8 +32,9 @@ static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
 static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
 static_assert(sizeof(CATALOG_GATE) == 16, "catalog gate");
 static_assert(sizeof(CATALOG_SKILL) == 8, "catalog skill");
-static_assert(sizeof(CATALOG_CACHE_ENTRY) == 8, "catalog cache entry");
-static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) == 8 + 8 * CATALOG_CACHE_MAX, "catalog sync");
+static_assert(sizeof(CATALOG_CACHE_ENTRY) == 12, "catalog cache entry");
+static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) == 8 + 12 * CATALOG_CACHE_MAX, "catalog sync");
+static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) <= 255, "catalog sync entra en un C1");
 
 bool IsSafeModelPath(const char* path);
 
@@ -855,12 +857,31 @@ void CContentCatalog::MarkSection(BYTE subh, size_t begin)
 
 	range.end = this->m_Packets.size();
 
-	range.hash = 2166136261u;
+	// El hash cubre sólo los registros, que es lo que el cliente guarda en su
+	// caché: así puede recalcularlo al leerla.
+	std::vector<BYTE> records;
+
+	WORD recordSize = 0;
 
 	for (size_t n = begin; n < range.end; n++)
 	{
-		range.hash = Fnv1a(range.hash, &this->m_Packets[n][0], this->m_Packets[n].size());
+		const std::vector<BYTE>& packet = this->m_Packets[n];
+
+		if (packet.size() < sizeof(PMSG_CATALOG_HEAD))
+		{
+			continue;
+		}
+
+		PMSG_CATALOG_HEAD head;
+
+		memcpy(&head, &packet[0], sizeof(head));
+
+		recordSize = head.recordSize;
+
+		records.insert(records.end(), packet.begin() + sizeof(PMSG_CATALOG_HEAD), packet.end());
 	}
+
+	CatalogSectionHash(recordSize, records.empty() ? 0 : &records[0], records.size(), range.hash);
 
 	this->m_Sections.push_back(range);
 }
@@ -889,7 +910,7 @@ void CContentCatalog::SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* 
 	{
 		lpObj->CatalogCacheSub[n] = lpMsg->entry[n].subh;
 
-		lpObj->CatalogCacheHash[n] = lpMsg->entry[n].hash;
+		memcpy(lpObj->CatalogCacheHash[n], lpMsg->entry[n].hash, sizeof(lpObj->CatalogCacheHash[n]));
 	}
 
 	lpObj->CatalogCacheCount = (BYTE)count;
@@ -946,11 +967,11 @@ void CContentCatalog::Send(int aIndex)
 
 		entry.subh = this->m_Sections[s].subh;
 
-		entry.hash = this->m_Sections[s].hash;
+		memcpy(entry.hash, this->m_Sections[s].hash, sizeof(entry.hash));
 
 		for (int n = 0; n < lpObj->CatalogCacheCount; n++)
 		{
-			if (lpObj->CatalogCacheSub[n] == entry.subh && lpObj->CatalogCacheHash[n] == entry.hash)
+			if (lpObj->CatalogCacheSub[n] == entry.subh && memcmp(lpObj->CatalogCacheHash[n], entry.hash, sizeof(entry.hash)) == 0)
 			{
 				entry.cached = 1;
 
