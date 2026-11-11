@@ -782,5 +782,8 @@
   "Formato: MapManager.txt.": "Format: MapManager.txt.",
   "Formato: Data/Items/Drops.toml y un Drops.toml por mapa (Data/Maps).": "Format: Data/Items/Drops.toml and one Drops.toml per map (Data/Maps).",
   "Formato: ItemDrop.txt.": "Format: ItemDrop.txt.",
-  "Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Drops move to Data/Items/Drops.toml (the ones for any map) and to one Drops.toml per map. ItemDrop.txt stays as a backup and the server stops reading it. Continue?"
+  "Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Drops move to Data/Items/Drops.toml (the ones for any map) and to one Drops.toml per map. ItemDrop.txt stays as a backup and the server stops reading it. Continue?",
+  "Formato: un Gates.toml por mapa (Data/Maps).": "Format: one Gates.toml per map (Data/Maps).",
+  "Formato: Gate.txt.": "Format: Gate.txt.",
+  "Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Gates move to one Gates.toml per map (Data/Maps). Gate.txt stays as a backup and the server stops reading it. Continue?"
 }

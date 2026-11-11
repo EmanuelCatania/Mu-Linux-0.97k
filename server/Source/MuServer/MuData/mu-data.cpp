@@ -32,12 +32,21 @@
 //       Compara los drops de las dos fuentes (sin importar el orden). Sale con 0
 //       si son iguales.
 //
+//   mu-data import-gates <Gate.txt> <Data> [--force]
+//       Pasa cada gate de Gate.txt al Gates.toml del mapa donde está
+//       (<Data>/Maps/NN-Nombre/Gates.toml).
+//
+//   mu-data check-gates <Gate.txt> <Data>
+//       Compara las gates de las dos fuentes. Sale con 0 si son iguales.
+//
 //   mu-data validate <Data>
-//       Lee los Spawns.toml, los Map.toml, los Drops.toml y el Invasions.toml y
-//       avisa del primer error, con archivo y línea.
+//       Lee los Spawns.toml, los Map.toml, los Drops.toml, los Gates.toml y el
+//       Invasions.toml y avisa del primer error, con archivo y línea. También
+//       avisa de las gates que llevan a una que no existe.
 
 #include "EventInvasions.h"
 #include "ItemDrops.h"
+#include "MapGates.h"
 #include "MapInfo.h"
 #include "MapSpawns.h"
 
@@ -446,6 +455,79 @@ static int CheckDrops(const std::string& txt, const std::string& dataDir)
 	return 0;
 }
 
+static int ImportGates(const std::string& txt, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<GateDef> gates;
+
+	if (!MapGates_LoadLegacy(txt, gates, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	std::map<int, std::vector<GateDef>> byMap;
+
+	for (const GateDef& g : gates)
+	{
+		byMap[g.Map].push_back(g);
+	}
+
+	for (const auto& [map, list] : byMap)
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(MapGates_Path(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !MapGates_WriteToml(file.u8string(), map, name, list, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu gates\n", file.u8string().c_str(), list.size());
+	}
+
+	std::printf("%zu gates\n", gates.size());
+
+	return 0;
+}
+
+static int CheckGates(const std::string& txt, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<GateDef> legacy, toml;
+
+	if (!MapGates_LoadLegacy(txt, legacy, error) || !MapGates_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!MapGates_Equal(legacy, toml, error))
+	{
+		std::printf("Distintas: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticas: %zu gates\n", toml.size());
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -507,6 +589,23 @@ static int Validate(const std::string& dataDir)
 		std::printf("OK: %zu drops\n", drops.size());
 	}
 
+	if (MapGates_HasData(dataDir))
+	{
+		std::vector<GateDef> gates;
+
+		if (!MapGates_Load(dataDir, gates, error))
+		{
+			return Fail(error);
+		}
+
+		for (const std::string& warning : MapGates_DanglingTargets(gates))
+		{
+			std::printf("Aviso: %s\n", warning.c_str());
+		}
+
+		std::printf("OK: %zu gates\n", gates.size());
+	}
+
 	return 0;
 }
 
@@ -566,6 +665,16 @@ int main(int argc, char** argv)
 		return CheckDrops(args[1], args[2]);
 	}
 
+	if (args.size() == 3 && args[0] == "import-gates")
+	{
+		return ImportGates(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-gates")
+	{
+		return CheckGates(args[1], args[2]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -581,6 +690,8 @@ int main(int argc, char** argv)
 		"  mu-data check-maps <MapManager.txt> <Data>\n"
 		"  mu-data import-drops <ItemDrop.txt> <Data> [--force]\n"
 		"  mu-data check-drops <ItemDrop.txt> <Data>\n"
+		"  mu-data import-gates <Gate.txt> <Data> [--force]\n"
+		"  mu-data check-gates <Gate.txt> <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;

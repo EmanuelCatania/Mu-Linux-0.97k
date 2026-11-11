@@ -37,7 +37,7 @@ target_link_libraries(DataServer PRIVATE MuTextDLL)
 # Datos por carpeta de mapa y por evento (Fase 5): spawns e invasiones en TOML.
 # Lo usan el GameServer y la herramienta mu-data (importar desde los .txt/.dat
 # y comparar).
-add_library(MuData STATIC Common/MapSpawns.cpp Common/EventInvasions.cpp Common/MapInfo.cpp Common/ItemDrops.cpp)
+add_library(MuData STATIC Common/MapSpawns.cpp Common/EventInvasions.cpp Common/MapInfo.cpp Common/ItemDrops.cpp Common/MapGates.cpp)
 target_include_directories(MuData PUBLIC Common)
 target_compile_features(MuData PUBLIC cxx_std_17)
 if(MSVC)
