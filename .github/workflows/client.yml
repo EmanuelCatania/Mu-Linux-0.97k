@@ -329,7 +329,10 @@ jobs:
   result:
     name: Client
     if: always()
-    needs: [changes, backend, webgpu, linux-x64, mingw, mingw-webgpu]
+    # MinGW queda fuera: depende de bajar paquetes de apt y si los mirrors de
+    # Ubuntu no responden (2026-11-11) tumbaba el check obligatorio. Sigue
+    # corriendo y se ve en el PR, pero no bloquea el merge.
+    needs: [changes, backend, webgpu, linux-x64]
     runs-on: ubuntu-24.04
     defaults:
       run:
