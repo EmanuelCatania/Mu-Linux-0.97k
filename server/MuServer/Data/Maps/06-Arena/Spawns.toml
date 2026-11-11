@@ -11,6 +11,10 @@
 # dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
 # mueve el monstruo desde su lugar (0 si no se mueve).
 
+npc = [
+  { monster = 239, at = [72, 162], dir = 1 }, # Arena Guard
+]
+
 area = [
   { monster = 200, box = [62, 160, 62, 160], count = 1 }, # Soccer Ball
   { monster = 84, box = [44, 80, 50, 86], count = 3, dis = 2 }, # Chief Skeleton Warrior
