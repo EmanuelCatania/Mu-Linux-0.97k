@@ -43,7 +43,7 @@ table inet mu_linux {
 	set rate4 { type ipv4_addr; flags dynamic; timeout 1m; }
 	set rate6 { type ipv6_addr; flags dynamic; timeout 1m; }
 
-	chain limits {
+	chain mu_limits {
 		tcp dport != @ports return
 		ct state != new return
 
@@ -57,14 +57,14 @@ table inet mu_linux {
 	# Server instalado directo en el host.
 	chain input {
 		type filter hook input priority filter - 10; policy accept;
-		jump limits
+		jump mu_limits
 	}
 
 	# Server en Docker: los puertos publicados pasan por forward (Docker hace
 	# DNAT antes), no por input.
 	chain forward {
 		type filter hook forward priority filter - 10; policy accept;
-		jump limits
+		jump mu_limits
 	}
 }
 ```
@@ -87,7 +87,7 @@ Cuidado con los valores:
 ## Ver qué está frenando
 
 ```bash
-sudo nft list table inet mu_linux        # contadores de cada regla
+sudo nft list chain inet mu_linux mu_limits   # contadores de cada regla
 sudo nft list set inet mu_linux rate4    # IPs que conectaron en el último minuto
 ```
 
