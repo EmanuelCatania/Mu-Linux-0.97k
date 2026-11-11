@@ -13,7 +13,7 @@ function repoMapFiles() {
   for (const folder of fs.readdirSync(path.join(DATA, 'Maps')).sort()) {
     const file = path.join(DATA, 'Maps', folder, maps.MAP_FILE);
     if (fs.existsSync(file)) {
-      files.push({ path: `${spawns.MAPS_DIR}/${folder}/${maps.MAP_FILE}`, content: fs.readFileSync(file, 'utf8'), map: spawns.folderMap(folder) });
+      files.push({ path: `${spawns.MAPS_DIR}/${folder}/${maps.MAP_FILE}`, content: fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), map: spawns.folderMap(folder) });
     }
   }
   return files;
