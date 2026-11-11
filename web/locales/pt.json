@@ -817,5 +817,19 @@
   "Guardado.": "Salvo.",
   "¿Borrar {path}? Queda una copia de respaldo.": "Apagar {path}? Fica uma cópia de backup.",
   "Archivo borrado.": "Arquivo apagado.",
-  "No hay carpetas de mapa en Data/Maps.": "Não há pastas de mapa em Data/Maps."
+  "No hay carpetas de mapa en Data/Maps.": "Não há pastas de mapa em Data/Maps.",
+  "Editor por mapa": "Editor por mapa",
+  "Los spawns se editan sobre el mapa (Visual) o como texto (Texto): los dos modos escriben el mismo Spawns.toml.": "Os spawns são editados sobre o mapa (Visual) ou como texto (Texto): os dois modos gravam o mesmo Spawns.toml.",
+  "Los spawns también sobre el mapa.": "Os spawns também sobre o mapa.",
+  "Abrir editor por mapa": "Abrir editor por mapa",
+  "Visual": "Visual",
+  "Texto": "Texto",
+  "El texto se armó de nuevo desde el mapa: los comentarios de cada línea son los nombres de los monstruos.": "O texto foi refeito a partir do mapa: o comentário de cada linha é o nome do monstro.",
+  "No se puede abrir en el mapa: {error}": "Não é possível abrir no mapa: {error}",
+  "Area ajustada.": "Área ajustada.",
+  "NPCs": "NPCs",
+  "Spots": "Spots",
+  "Monsters": "Monstros",
+  "Invasiones": "Invasões",
+  "Eventos": "Eventos"
 }

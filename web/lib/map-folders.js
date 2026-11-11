@@ -9,6 +9,9 @@
 //   io.read(path)         -> texto
 //   io.write(path, text)  -> { unchanged?, backups? }
 //   io.remove(path)       -> { backups? }
+//
+// `names()` (opcional) da { mapName(id), monsterName(id) } para los comentarios
+// del Spawns.toml que arma el modo visual.
 const spawns = require('./spawns');
 const maps = require('./maps');
 const drops = require('./drops');
@@ -47,7 +50,16 @@ function kindDef(kind) {
 const filePath = (folder, kind) => `${spawns.MAPS_DIR}/${folder}/${kindDef(kind).file}`;
 const shortName = (folder) => folder.replace(/^\d+-/, '');
 
-function create(io) {
+// Secciones de un Spawns.toml de mapa (las invasiones van en otro archivo).
+const MAP_SPAWN_SECTIONS = [0, 1, 2, 4];
+
+function intField(raw, name) {
+  const n = Number(raw);
+  if (!Number.isInteger(n)) throw new spawns.SpawnError(`El campo '${name}' tiene que ser un número entero`);
+  return n;
+}
+
+function create(io, { names } = {}) {
   // Las carpetas de mapa con los tipos que tiene cada una, con el mismo
   // criterio que el GameServer (número de la carpeta, una carpeta por mapa).
   async function listFolders() {
@@ -118,7 +130,49 @@ function create(io) {
     return `# ${shortName(target.folder)} (mapa ${target.map})\n${help ? help + '\n' : ''}\n${body}`;
   }
 
+  async function spawnFolder(folder) {
+    return findFolder(await listFolders(), folder);
+  }
+
   return {
+    // Modo visual del Spawns.toml: el texto del archivo a la lista de spawns.
+    // Valida con las mismas reglas que al guardar.
+    async spawnEntries(folder, content) {
+      const target = await spawnFolder(folder);
+      const path = filePath(target.folder, 'spawns');
+      const entries = spawns.parseToml([{ path, map: target.map, content: String(content ?? '') }]);
+      return {
+        map: target.map,
+        entries: entries.map(({ section, monster, dis, x, y, tx, ty, dir, count, value }) => ({ section, monster, dis, x, y, tx, ty, dir, count, value }))
+      };
+    },
+
+    // Y de vuelta: la lista de spawns al texto del Spawns.toml, con el nombre
+    // de cada monstruo como comentario.
+    async spawnText(folder, entries) {
+      const target = await spawnFolder(folder);
+      if (!Array.isArray(entries)) throw new spawns.SpawnError('Falta la lista de spawns.');
+      const { mapName, monsterName } = names ? await names() : {};
+      const list = entries.map((raw, index) => {
+        const section = intField(raw?.section, 'section');
+        if (!MAP_SPAWN_SECTIONS.includes(section)) {
+          throw new spawns.SpawnError(`Spawn ${index + 1}: las invasiones no van en el archivo del mapa`);
+        }
+        const e = { section, map: target.map, tx: 0, ty: 0, count: 1, value: 0, dir: -1, dis: 0 };
+        for (const key of ['monster', 'dis', 'x', 'y', 'dir']) e[key] = intField(raw[key], key);
+        if (section === 1) {
+          for (const key of ['tx', 'ty', 'count']) e[key] = intField(raw[key], key);
+        }
+        e.comment = String((monsterName && monsterName(e.monster)) || '').replace(/[\r\n#]/g, ' ').trim();
+        return e;
+      });
+      const title = (mapName && mapName(target.map)) || shortName(target.folder);
+      const content = spawns.mapFileText(target.map, title, list);
+      // Mismas reglas que el GameServer: si algo quedó fuera de rango, que falle acá.
+      spawns.parseToml([{ path: filePath(target.folder, 'spawns'), map: target.map, content }]);
+      return { content };
+    },
+
     async summary() {
       const folders = await listFolders();
       const kinds = {};
@@ -173,4 +227,4 @@ function create(io) {
   };
 }
 
-module.exports = { KINDS, MapFolderError, errorStatus, create };
+module.exports = { KINDS, MAP_SPAWN_SECTIONS, MapFolderError, errorStatus, create };

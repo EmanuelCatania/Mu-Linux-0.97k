@@ -1,3 +1,7 @@
+// Editor por mapa: los TOML de una carpeta de Data/Maps, una pestaña por
+// archivo. El Spawns.toml tiene dos modos, Visual (el mapa con los spawns,
+// spawn-visual.js) y Texto; los dos editan el mismo archivo y cambiar de modo
+// no pierde lo editado. Los demás archivos se editan como texto.
 (function () {
   const root = document.getElementById('map-folder-editor');
   if (!root) return;
@@ -12,6 +16,9 @@
     ['zones', 'Zonas', '/admin/server-editor/customs']
   ];
 
+  // Tipos de spawn de un Spawns.toml de mapa (las invasiones van en otro archivo).
+  const MAP_SPAWN_TYPES = [0, 1, 2, 4];
+
   const state = {
     folders: [],
     kinds: {},
@@ -20,7 +27,12 @@
     path: '',
     exists: false,
     loaded: '', // contenido tal como vino del server, para saber si hay cambios
-    busy: false
+    busy: false,
+    mode: 'visual', // modo de los spawns: 'visual' | 'text'
+    monsters: null, // Monster.txt, se pide la primera vez que se abre el modo visual
+    view: null, // el editor visual abierto
+    visualBase: '', // texto del que salió el modo visual
+    visualSnapshot: '' // los spawns tal como se abrieron, para saber si cambiaron
   };
 
   function setMessage(text, type) {
@@ -43,7 +55,20 @@
   }
 
   const textarea = () => root.querySelector('#folder-content');
-  const dirty = () => textarea().value !== state.loaded;
+  const visual = () => state.kind === 'spawns' && state.mode === 'visual' && !!state.view;
+
+  // Spawns del modo visual <-> los del Spawns.toml.
+  const toServer = (e) => ({ section: e.type, monster: e.monsterId, dis: e.dis, x: e.x, y: e.y, dir: e.dir, tx: e.x2, ty: e.y2, count: e.count });
+  const toVisual = (e, map, index) => ({
+    id: index + 1, type: e.section, monsterId: e.monster, map, dis: e.dis, x: e.x, y: e.y, dir: e.dir, x2: e.tx, y2: e.ty, count: e.count, value: e.value
+  });
+  const snapshot = () => JSON.stringify(state.view.getEntries().map(toServer));
+  const visualChanged = () => visual() && snapshot() !== state.visualSnapshot;
+
+  function dirty() {
+    if (visual()) return visualChanged() || state.visualBase !== state.loaded;
+    return textarea().value !== state.loaded;
+  }
 
   function confirmDiscard() {
     return !dirty() || window.confirm(t('Hay cambios sin guardar. ¿Descartarlos?'));
@@ -65,10 +90,15 @@
           <div id="folder-tabs" class="map-folder-tabs"></div>
           <div class="spawn-toolbar">
             <code id="folder-path"></code>
+            <div id="folder-modes" class="map-folder-modes hidden">
+              <button type="button" class="map-folder-mode" data-mode="visual">Visual</button>
+              <button type="button" class="map-folder-mode" data-mode="text">Texto</button>
+            </div>
             <a id="folder-full-editor" class="button-link" href="#">Abrir el editor completo</a>
           </div>
           <div id="folder-note" class="alert warning hidden"></div>
           <textarea id="folder-content" class="map-folder-text" spellcheck="false" rows="28"></textarea>
+          <div id="folder-visual" class="map-folder-visual hidden"></div>
           <div class="spawn-actions">
             <button type="button" id="folder-check">Validar</button>
             <button type="button" id="folder-save">Guardar y recargar</button>
@@ -80,11 +110,11 @@
     `;
     root.querySelector('#folder-check').addEventListener('click', () => save(true));
     root.querySelector('#folder-save').addEventListener('click', () => save(false));
-    root.querySelector('#folder-revert').addEventListener('click', () => {
-      textarea().value = state.loaded;
-      setMessage('');
-    });
+    root.querySelector('#folder-revert').addEventListener('click', revert);
     root.querySelector('#folder-delete').addEventListener('click', remove);
+    root.querySelectorAll('.map-folder-mode').forEach((btn) => {
+      btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
     window.addEventListener('beforeunload', (event) => {
       if (dirty()) event.preventDefault();
     });
@@ -126,6 +156,19 @@
     }
   }
 
+  // Muestra el texto o el mapa según el modo.
+  function renderMode() {
+    const editable = !textarea().disabled;
+    const spawns = state.kind === 'spawns' && editable;
+    const showVisual = spawns && visual();
+    root.querySelector('#folder-modes').classList.toggle('hidden', !spawns);
+    root.querySelectorAll('.map-folder-mode').forEach((btn) => {
+      btn.classList.toggle('selected', btn.dataset.mode === (showVisual ? 'visual' : 'text'));
+    });
+    textarea().classList.toggle('hidden', showVisual);
+    root.querySelector('#folder-visual').classList.toggle('hidden', !showVisual);
+  }
+
   function renderFile() {
     const def = state.kinds[state.kind];
     root.querySelector('#folder-path').textContent = state.path;
@@ -143,12 +186,101 @@
     note.classList.toggle('hidden', !text);
     textarea().value = state.loaded;
     textarea().disabled = !state.exists && !def.toml;
+    renderMode();
+  }
+
+  async function monsters() {
+    if (!state.monsters) {
+      const data = await api('GET', '/admin/server-editor/api/monster-defs');
+      state.monsters = Array.isArray(data.monsters) ? data.monsters : [];
+    }
+    return state.monsters;
+  }
+
+  // Abre el modo visual sobre `text`. Si el texto no es válido tira el error y
+  // la página queda en modo texto.
+  async function openVisual(text) {
+    const folder = current();
+    const [list, data] = await Promise.all([
+      monsters(),
+      api('POST', '/admin/server-editor/api/map-folders/spawns/parse', { folder: state.folder, content: text })
+    ]);
+    const box = root.querySelector('#folder-visual');
+    state.view = window.MuSpawnVisual.create(box, {
+      maps: [{ id: folder.map, name: folder.folder }],
+      monsters: list,
+      entries: data.entries.map((e, i) => toVisual(e, data.map, i)),
+      map: data.map,
+      lockMap: true,
+      types: MAP_SPAWN_TYPES,
+      setMessage
+    });
+    state.visualBase = text;
+    state.visualSnapshot = snapshot();
+  }
+
+  function closeVisual() {
+    state.view = null;
+    root.querySelector('#folder-visual').innerHTML = '';
+  }
+
+  // El texto actual del archivo, venga del modo que venga. Si en el modo
+  // visual no se tocó nada, devuelve el texto original (con sus comentarios).
+  async function currentText() {
+    if (!visual()) return textarea().value;
+    if (!visualChanged()) return state.visualBase;
+    const data = await api('POST', '/admin/server-editor/api/map-folders/spawns/build', {
+      folder: state.folder,
+      entries: state.view.getEntries().map(toServer)
+    });
+    return data.content;
+  }
+
+  async function switchMode(mode) {
+    if (state.busy) return;
+    if (mode === (visual() ? 'visual' : 'text')) {
+      state.mode = mode;
+      return;
+    }
+    state.busy = true;
+    try {
+      if (mode === 'text') {
+        const text = await currentText();
+        if (visualChanged()) setMessage(t('El texto se armó de nuevo desde el mapa: los comentarios de cada línea son los nombres de los monstruos.'), 'success');
+        else setMessage('');
+        closeVisual();
+        textarea().value = text;
+      } else {
+        await openVisual(textarea().value);
+        setMessage('');
+      }
+      state.mode = mode;
+      renderMode();
+    } catch (err) {
+      setMessage(mode === 'visual' ? t('No se puede abrir en el mapa: {error}', { error: err.message }) : err.message, 'error');
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  async function showContent() {
+    closeVisual();
+    textarea().value = state.loaded;
+    if (state.kind === 'spawns' && state.mode === 'visual' && !textarea().disabled) {
+      try {
+        await openVisual(state.loaded);
+      } catch (err) {
+        setMessage(t('No se puede abrir en el mapa: {error}', { error: err.message }), 'error');
+      }
+    }
+    renderMode();
   }
 
   async function load() {
     renderList();
     renderTabs();
     setMessage('');
+    closeVisual();
     try {
       const q = new URLSearchParams({ folder: state.folder, kind: state.kind });
       const data = await api('GET', `/admin/server-editor/api/map-folders/file?${q}`);
@@ -156,9 +288,16 @@
       state.exists = data.exists;
       state.loaded = data.content.replace(/\r\n/g, '\n');
       renderFile();
+      await showContent();
     } catch (err) {
       setMessage(err.message, 'error');
     }
+  }
+
+  async function revert() {
+    if (state.busy) return;
+    setMessage('');
+    await showContent();
   }
 
   async function refreshFolders() {
@@ -178,9 +317,10 @@
 
   async function save(check) {
     if (state.busy) return;
+    if (visual() && state.view.findInvalid()) return;
     state.busy = true;
     try {
-      const content = textarea().value;
+      const content = await currentText();
       const data = await api('POST', '/admin/server-editor/api/map-folders/file', {
         folder: state.folder, kind: state.kind, content, check
       });
@@ -193,6 +333,11 @@
         return;
       }
       state.loaded = content;
+      textarea().value = content;
+      if (visual()) {
+        state.visualBase = content;
+        state.visualSnapshot = snapshot();
+      }
       const created = !state.exists;
       await refreshFolders();
       state.exists = true;
@@ -232,7 +377,12 @@
         setMessage(t('No hay carpetas de mapa en Data/Maps.'), 'error');
         return;
       }
-      state.folder = state.folders[0].folder;
+      // ?folder=02-Devias&kind=spawns&mode=text abre directo ahí.
+      const params = new URLSearchParams(window.location.search);
+      const folder = state.folders.find((f) => f.folder === params.get('folder'));
+      state.folder = (folder || state.folders[0]).folder;
+      if (KINDS.some((k) => k[0] === params.get('kind'))) state.kind = params.get('kind');
+      if (params.get('mode') === 'text') state.mode = 'text';
       await load();
     } catch (err) {
       setMessage(err.message, 'error');

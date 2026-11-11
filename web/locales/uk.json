@@ -823,5 +823,19 @@
   "Guardado.": "Збережено.",
   "¿Borrar {path}? Queda una copia de respaldo.": "Видалити {path}? Резервну копію буде збережено.",
   "Archivo borrado.": "Файл видалено.",
-  "No hay carpetas de mapa en Data/Maps.": "У Data/Maps немає тек мап."
+  "No hay carpetas de mapa en Data/Maps.": "У Data/Maps немає тек мап.",
+  "Editor por mapa": "Редактор мапи",
+  "Los spawns se editan sobre el mapa (Visual) o como texto (Texto): los dos modos escriben el mismo Spawns.toml.": "Спавни редагуються на мапі (Візуально) або як текст (Текст): обидва режими записують той самий Spawns.toml.",
+  "Los spawns también sobre el mapa.": "Спавни також на мапі.",
+  "Abrir editor por mapa": "Відкрити редактор мапи",
+  "Visual": "Візуально",
+  "Texto": "Текст",
+  "El texto se armó de nuevo desde el mapa: los comentarios de cada línea son los nombres de los monstruos.": "Текст зібрано заново з мапи: коментар кожного рядка — ім'я монстра.",
+  "No se puede abrir en el mapa: {error}": "Не вдається відкрити на мапі: {error}",
+  "Area ajustada.": "Область змінено.",
+  "NPCs": "NPC",
+  "Spots": "Зони",
+  "Monsters": "Монстри",
+  "Invasiones": "Вторгнення",
+  "Eventos": "Події"
 }
