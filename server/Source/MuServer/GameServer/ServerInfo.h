@@ -103,6 +103,8 @@ public:
 	int m_MoveCheckTolerance;
 	int m_AttackCheck;
 	int m_AttackCheckScale;
+	int m_PacketRateCheck;
+	int m_PacketRateMax;
 	// Common
 	int m_MainChecksum;
 	int m_MaxItemOption;

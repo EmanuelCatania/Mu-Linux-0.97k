@@ -539,6 +539,8 @@ struct OBJECTSTRUCT
 	DWORD* SkillDelay;
 	DWORD* HackPacketDelay;
 	DWORD* HackPacketCount;
+	DWORD PacketRateTime; // inicio de la ventana de un segundo (CheckPacketRate)
+	DWORD PacketRateCount; // paquetes recibidos en esa ventana
 	int WarehouseNumber;
 	int AccountLevel;
 	char AccountExpireDate[20];

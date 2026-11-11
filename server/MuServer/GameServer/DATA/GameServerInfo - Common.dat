@@ -32,6 +32,11 @@ AttackCheck=1
 ; Con 240: 400 ms con velocidad 0, 138 ms con 285. Medido: 238 ms con 285.
 AttackCheckScale=240
 
+; Paquetes por segundo por conexion, todos los opcodes juntos
+; (0 = apagado, 1 = observar, 2 = desconectar al pasarse)
+PacketRateCheck=1
+PacketRateMax=60
+
 ;==================================================
 ; Common Settings
 ;==================================================

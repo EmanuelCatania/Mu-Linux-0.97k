@@ -619,6 +619,10 @@ void gObjClearPlayerOption(LPOBJ lpObj)
 	{
 		memset(&lpObj->HackPacketCount[n], 0, sizeof(lpObj->HackPacketCount[n]));
 	}
+
+	lpObj->PacketRateTime = 0;
+
+	lpObj->PacketRateCount = 0;
 }
 
 void gObjClearSpecialOption(LPOBJ lpObj)
