@@ -11,6 +11,10 @@ foreach(service ConnectServer JoinServer DataServer GameServer)
 endforeach()
 mu_link_mysql(JoinServer DataServer)
 
+# Texto de las consultas con los valores escapados (Common/SqlFormat).
+target_sources(JoinServer PRIVATE Common/SqlFormat.cpp)
+target_sources(DataServer PRIVATE Common/SqlFormat.cpp)
+
 # Contraseñas de cuenta con bcrypt (Common/PasswordHash, crypt_blowfish en C).
 target_sources(JoinServer PRIVATE Common/PasswordHash.cpp Common/crypt_blowfish/crypt_blowfish.c)
 if(WIN32)
