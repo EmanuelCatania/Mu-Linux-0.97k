@@ -253,6 +253,14 @@ struct PMSG_CATALOG_SYNC_SEND
 	CATALOG_CACHE_ENTRY entry[CATALOG_CACHE_MAX];
 };
 
+// Música por mapa (Fase 5, `music` de Map.toml): sólo los mapas que la fijan.
+struct CATALOG_MAP_MUSIC
+{
+	BYTE Map;
+	BYTE Reserved[3];
+	char Music[28];     // nombre de Data/Music del cliente, sin extensión
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -306,6 +314,9 @@ public:
 	// Sólo los skills (F3:F4), al recargar Skill.txt.
 	void SendSkills(int aIndex);
 
+	// Sólo la música por mapa (F3:F7), al recargar los Map.toml.
+	void SendMapMusic(int aIndex);
+
 	// F1:06: secciones que el cliente tiene en caché.
 	void SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* lpMsg);
 
@@ -332,6 +343,8 @@ private:
 	std::vector<std::vector<BYTE>> m_GatePackets;
 
 	std::vector<std::vector<BYTE>> m_SkillPackets;
+
+	std::vector<std::vector<BYTE>> m_MapMusicPackets;
 
 	// Rango de m_Packets de cada sección y su hash (para la caché del cliente).
 	struct SectionRange

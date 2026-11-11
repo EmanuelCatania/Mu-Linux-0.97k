@@ -801,6 +801,17 @@ struct CATALOG_SKILL
 };
 static_assert(sizeof(CATALOG_SKILL) == 8, "F3:F4 entrada");
 
+// F3:F7 — música por mapa (Fase 5, `music` de Map.toml).  Sólo viajan los
+// mapas que la fijan; el resto usa la del cliente.  Music es el nombre del
+// archivo de Data/Music sin la extensión.
+struct CATALOG_MAP_MUSIC
+{
+    std::uint8_t Map;
+    std::uint8_t Reserved[3];
+    char Music[28];
+};
+static_assert(sizeof(CATALOG_MAP_MUSIC) == 32, "F3:F7 entrada");
+
 // Caché del catálogo (Fase 5).  F1:06 (cliente -> server, antes del login):
 // secciones que el cliente tiene guardadas de este server con su hash.
 // F3:F6 (server -> cliente, antes de las secciones): todas las secciones con su

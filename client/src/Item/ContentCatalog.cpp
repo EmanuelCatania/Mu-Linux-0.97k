@@ -7,6 +7,7 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
+#include "Game/MapManager.h"
 #include "Local/ClientText.h"
 #include <array>
 #include "Util/Sha256.h"
@@ -62,6 +63,7 @@ BYTE s_VanillaSkillData[MAX_CATALOG_SKILL][SKILL_RECORD - SKILL_DATA];
 bool s_HasVanillaSkillData = false;
 bool s_HasSkills = false;
 PendingSection s_PendingSkills;
+PendingSection s_PendingMapMusic;
 
 // Textos traducidos del server (F3/F0).  Los nombres de items y skills se
 // escriben en sus tablas; los originales se guardan para volver a ellos.
@@ -291,7 +293,7 @@ SectionHash HashOf(std::uint16_t recordSize, const std::vector<BYTE>& records)
     return hash;
 }
 
-const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4 };
+const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4, 0xF7 };
 std::string s_CacheDir;                   // "Cache/<ip>_<puerto>", vacío = sin caché
 std::map<int, SectionHash> s_SyncHash;    // hash de cada sección del último F3:F6
 
@@ -375,6 +377,7 @@ PendingSection* PendingFor(BYTE subh)
         case 0xEF: return &s_PendingTooltips;
         case 0xF3: return &s_PendingGates;
         case 0xF4: return &s_PendingSkills;
+        case 0xF7: return &s_PendingMapMusic;
         default:   return nullptr;
     }
 }
@@ -449,6 +452,28 @@ void CContentCatalog::ApplyGates()
     s_HasGates = true;
     s_PendingGates = PendingSection();
     Log("ContentCatalog: %d gates", count);
+}
+
+void CContentCatalog::ReceiveMapMusic(const BYTE* msg, int size)
+{
+    if (ReceiveSection(s_PendingMapMusic, 0xF7, msg, size)) ApplyMapMusic();
+}
+
+void CContentCatalog::ApplyMapMusic()
+{
+    if (!SectionComplete(s_PendingMapMusic)) return;
+    gMapManager.ClearServerMusic();
+    const int rowSize = s_PendingMapMusic.recordSize;
+    int count = 0;
+    for (size_t off = 0; rowSize > 0 && off + rowSize <= s_PendingMapMusic.records.size(); off += rowSize) {
+        Proto::CATALOG_MAP_MUSIC row = {};
+        memcpy(&row, &s_PendingMapMusic.records[off], (std::min)((int)sizeof(row), rowSize));
+        row.Music[sizeof(row.Music) - 1] = 0;
+        if (gMapManager.SetServerMusic(row.Map, row.Music)) ++count;
+        else Log("ContentCatalog: música '%s' del mapa %u no válida, se ignora", row.Music, row.Map);
+    }
+    s_PendingMapMusic = PendingSection();
+    Log("ContentCatalog: música propia en %d mapas", count);
 }
 
 void CContentCatalog::ReceiveSkills(const BYTE* msg, int size)
@@ -554,6 +579,7 @@ void CContentCatalog::ReceiveSync(const BYTE* msg, int size)
         section->total = 1;
         if (entry.subh == 0xF3) ApplyGates();
         if (entry.subh == 0xF4) ApplySkills();
+        if (entry.subh == 0xF7) ApplyMapMusic();
         ++loaded;
     }
     if (broken) {
@@ -685,6 +711,8 @@ void CContentCatalog::Clear()
             memcpy((BYTE*)SkillAttribute.Raw + i * SKILL_RECORD + SKILL_DATA, s_VanillaSkillData[i], sizeof(s_VanillaSkillData[i]));
     }
     s_HasSkills = false;
+    s_PendingMapMusic = PendingSection();
+    gMapManager.ClearServerMusic();
     gClientText.ClearServerTexts();
     s_TooltipTexts.clear();
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));

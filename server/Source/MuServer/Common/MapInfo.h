@@ -28,6 +28,7 @@ struct MapInfoDef
 	int DeadGate = -1;
 	int RespawnInPlace = 0;   // 0 o distinto de 0
 	int FlyingDragons = 0;    // 0 o distinto de 0
+	std::string Music;        // tema del cliente (Data/Music, sin extensión); "" = el del cliente
 	std::string Source;       // archivo (y línea), para los mensajes de error
 };
 

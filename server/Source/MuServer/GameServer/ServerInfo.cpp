@@ -355,6 +355,18 @@ void CServerInfo::ReadMapManagerInfo()
 	{
 		gMapManager.Load(gPath.GetFullPath("MapManager.txt"));
 	}
+
+	// La música por mapa viaja en el catálogo (F3:F7): a los conectados se les
+	// manda sólo esa sección.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendMapMusic(gObj[n].Index);
+		}
+	}
 }
 
 void CServerInfo::ReadMapInfo()

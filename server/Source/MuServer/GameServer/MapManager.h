@@ -12,6 +12,7 @@ struct MAP_MANAGER_INFO
 	int RespawnInPlace;
 	int FlyingDragons;
 	char MapName[32];
+	char Music[28];     // Map.toml `music`; "" = el tema del cliente
 };
 
 class CMapManager
