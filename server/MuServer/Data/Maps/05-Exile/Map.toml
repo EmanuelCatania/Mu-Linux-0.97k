@@ -1,0 +1,21 @@
+# Exile (mapa 5): reglas del mapa.
+#
+# name                nombre del mapa en los avisos del server
+# pk                  "allowed", "disabled" o "no_outlaws"; sin pk, lo que
+#                     diga NonPK en la configuración del server
+# view_range          tiles que ve un jugador (sin la clave, 15)
+# experience_rate     % de experiencia (sin la clave, 100)
+# item_drop_rate      % de drop de items (sin la clave, 100)
+# exc_item_drop_rate  % de items excelentes (sin la clave, 0)
+# dead_gate           gate (Gate.txt) al que se va al morir
+# respawn_in_place    revivir donde se murió en vez de en dead_gate
+# flying_dragons      salen los dragones voladores del evento
+
+name = "Exile"
+view_range = 15
+experience_rate = 100
+item_drop_rate = 100
+exc_item_drop_rate = 0
+dead_gate = 259
+respawn_in_place = false
+flying_dragons = true
