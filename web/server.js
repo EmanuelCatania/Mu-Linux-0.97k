@@ -21,6 +21,7 @@ const spawns = require('./lib/spawns');
 const mapsLib = require('./lib/maps');
 const dropsLib = require('./lib/drops');
 const gatesLib = require('./lib/gates');
+const zonesLib = require('./lib/zones');
 
 // Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
 let passwordColumnWide = false;
@@ -2288,6 +2289,56 @@ function gateErrorStatus(err) {
   return err instanceof gatesLib.GateError ? 400 : (err.status || 502);
 }
 
+// Zonas (zonas seguras, sin PK y NPCs que mueven): el GameServer usa los
+// Data/Maps/NN-Nombre/Zones.toml si hay alguno y si no, los .txt de
+// Data/Custom. El editor carga y guarda cada lista por separado con el texto de
+// su .txt; con los TOML el panel convierte en los dos sentidos.
+async function findZoneTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === zonesLib.ZONE_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new zonesLib.ZoneError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${zonesLib.ZONE_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+async function readZoneToml(files) {
+  const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+  return zonesLib.parseToml(loaded);
+}
+
+// Escribe los Zones.toml con `data` y borra los de los mapas que quedaron vacíos.
+async function writeZoneToml(data, files, folders) {
+  const out = zonesLib.buildToml(data, { mapName: await mapNameLookup(), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const result = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(result.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const result = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(result.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function zoneErrorStatus(err) {
+  return err instanceof zonesLib.ZoneError ? 400 : (err.status || 502);
+}
+
 async function spawnNames() {
   const [maps, monsters] = await Promise.all([
     readMapManager().then((m) => parseMapManager(m.content)).catch(() => []),
@@ -2972,14 +3023,20 @@ app.get('/admin/server-editor/api/custom', requireAdmin, requireAdminPasswordCha
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const filePath = getCustomFilePath(req.query.kind);
+    const kind = String(req.query.kind || '').toLowerCase();
+    const filePath = getCustomFilePath(kind);
     if (!filePath) {
       return res.status(400).json({ error: 'Tipo de custom invalido' });
     }
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(filePath)}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findZoneTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(filePath)}`);
+      return res.json({ format: 'txt', content: data.content || '' });
+    }
+    const zones = await readZoneToml(files);
+    return res.json({ format: 'toml', content: zonesLib.buildLegacy(kind, zones[kind]) });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2988,18 +3045,47 @@ app.post('/admin/server-editor/api/custom', requireAdmin, requireAdminPasswordCh
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const filePath = getCustomFilePath(req.query.kind);
+    const kind = String(req.query.kind || '').toLowerCase();
+    const filePath = getCustomFilePath(kind);
     if (!filePath) {
       return res.status(400).json({ error: 'Tipo de custom invalido' });
     }
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: filePath,
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findZoneTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: filePath, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    // Sólo cambia la lista de `kind`; las otras dos quedan como están.
+    const zones = await readZoneToml(files);
+    zones[kind] = zonesLib.parseLegacy(kind, content);
+    const written = await writeZoneToml(zones, files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa los tres .txt de Data/Custom a un Zones.toml por mapa. No borra los .txt
+// (quedan como respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/custom/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findZoneTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Las zonas ya están en formato por mapa.' });
+    }
+    const zones = {};
+    for (const kind of zonesLib.KINDS) {
+      const text = await readEditorFile(getCustomFilePath(kind)).catch(() => '');
+      zones[kind] = zonesLib.parseLegacy(kind, text);
+    }
+    const written = await writeZoneToml(zones, [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
   }
 });
 

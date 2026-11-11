@@ -791,5 +791,8 @@
   "Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Дропи переносяться в Data/Items/Drops.toml (ті, що для будь-якої мапи) і в окремий Drops.toml для кожної мапи. ItemDrop.txt лишається резервною копією, і сервер більше його не читає. Продовжити?",
   "Formato: un Gates.toml por mapa (Data/Maps).": "Формат: окремий Gates.toml для кожної мапи (Data/Maps).",
   "Formato: Gate.txt.": "Формат: Gate.txt.",
-  "Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Гейти переносяться в окремий Gates.toml для кожної мапи (Data/Maps). Gate.txt лишається резервною копією, і сервер більше його не читає. Продовжити?"
+  "Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Гейти переносяться в окремий Gates.toml для кожної мапи (Data/Maps). Gate.txt лишається резервною копією, і сервер більше його не читає. Продовжити?",
+  "Formato: un Zones.toml por mapa (Data/Maps) con las tres listas.": "Формат: окремий Zones.toml для кожної мапи (Data/Maps) з трьома списками.",
+  "Formato: CustomSafeZone.txt, CustomPkFree.txt y CustomNpcMove.txt.": "Формат: CustomSafeZone.txt, CustomPkFree.txt і CustomNpcMove.txt.",
+  "Las zonas seguras, sin PK y los NPCs que mueven pasan a un Zones.toml por mapa (Data/Maps). Los .txt de Data/Custom quedan como respaldo y el servidor deja de leerlos. ¿Seguir?": "Безпечні зони, зони без PK і NPC, що переміщують, переносяться в окремий Zones.toml для кожної мапи (Data/Maps). Файли .txt у Data/Custom лишаються резервною копією, і сервер більше їх не читає. Продовжити?"
 }

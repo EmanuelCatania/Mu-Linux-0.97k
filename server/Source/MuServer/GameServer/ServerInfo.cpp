@@ -39,6 +39,7 @@
 #include "MapInfo.h"
 #include "ItemDrops.h"
 #include "MapGates.h"
+#include "MapZones.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
@@ -194,11 +195,48 @@ void CServerInfo::ReadCommonInfo()
 
 void CServerInfo::ReadCustomInfo()
 {
-	gCustomNpcMove.Load(gPath.GetFullPath("Custom\\CustomNpcMove.txt"));
+	// Fase 5: si hay Data/Maps/NN-Nombre/Zones.toml mandan ellos para las tres
+	// cosas; si no, los .txt de Data/Custom como siempre.
+	if (MapZones_HasData(gPath.GetFullPath("")))
+	{
+		static bool loaded = false;
 
-	gPKFree.Load(gPath.GetFullPath("Custom\\CustomPkFree.txt"));
+		MapZonesData zones;
 
-	gSafeZone.Load(gPath.GetFullPath("Custom\\CustomSafeZone.txt"));
+		std::string error;
+
+		if (!MapZones_Load(gPath.GetFullPath(""), zones, error))
+		{
+			// Al arrancar es fatal, como el resto de los datos; en una recarga
+			// quedan las zonas de antes.
+			if (!loaded)
+			{
+				ErrorMessageBox("[Zones] %s", error.c_str());
+			}
+
+			LogAdd(LOG_RED, "[Zones] Recarga cancelada, quedan las zonas de antes: %s", error.c_str());
+
+			return;
+		}
+
+		gCustomNpcMove.SetMoves(zones.NpcMove);
+
+		gPKFree.SetRects(zones.PkFree);
+
+		gSafeZone.SetRects(zones.Safe);
+
+		loaded = true;
+
+		LogAdd(LOG_BLUE, "[Zones] %d zonas seguras, %d sin PK y %d NPCs que mueven desde Maps/", (int)zones.Safe.size(), (int)zones.PkFree.size(), (int)zones.NpcMove.size());
+	}
+	else
+	{
+		gCustomNpcMove.Load(gPath.GetFullPath("Custom\\CustomNpcMove.txt"));
+
+		gPKFree.Load(gPath.GetFullPath("Custom\\CustomPkFree.txt"));
+
+		gSafeZone.Load(gPath.GetFullPath("Custom\\CustomSafeZone.txt"));
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Custom loaded successfully");
 }

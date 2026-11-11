@@ -39,14 +39,21 @@
 //   mu-data check-gates <Gate.txt> <Data>
 //       Compara las gates de las dos fuentes. Sale con 0 si son iguales.
 //
+//   mu-data import-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data> [--force]
+//       Junta las tres listas de cada mapa en <Data>/Maps/NN-Nombre/Zones.toml.
+//
+//   mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>
+//       Compara las zonas de las dos fuentes. Sale con 0 si son iguales.
+//
 //   mu-data validate <Data>
-//       Lee los Spawns.toml, los Map.toml, los Drops.toml, los Gates.toml y el
-//       Invasions.toml y avisa del primer error, con archivo y línea. También
-//       avisa de las gates que llevan a una que no existe.
+//       Lee los Spawns.toml, los Map.toml, los Drops.toml, los Gates.toml, los
+//       Zones.toml y el Invasions.toml y avisa del primer error, con archivo y
+//       línea. También avisa de las gates que llevan a una que no existe.
 
 #include "EventInvasions.h"
 #include "ItemDrops.h"
 #include "MapGates.h"
+#include "MapZones.h"
 #include "MapInfo.h"
 #include "MapSpawns.h"
 
@@ -528,6 +535,72 @@ static int CheckGates(const std::string& txt, const std::string& dataDir)
 	return 0;
 }
 
+static int ImportZones(const std::string& safe, const std::string& pkFree, const std::string& npcMove, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	MapZonesData zones;
+
+	if (!MapZones_LoadLegacy(safe, pkFree, npcMove, zones, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	for (int map : MapZones_Maps(zones))
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(MapZones_Path(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !MapZones_WriteToml(file.u8string(), map, name, zones, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%s\n", file.u8string().c_str());
+	}
+
+	std::printf("%zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", zones.Safe.size(), zones.PkFree.size(), zones.NpcMove.size());
+
+	return 0;
+}
+
+static int CheckZones(const std::string& safe, const std::string& pkFree, const std::string& npcMove, const std::string& dataDir)
+{
+	std::string error;
+
+	MapZonesData legacy, toml;
+
+	if (!MapZones_LoadLegacy(safe, pkFree, npcMove, legacy, error) || !MapZones_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!MapZones_Equal(legacy, toml, error))
+	{
+		std::printf("Distintas: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticas: %zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", toml.Safe.size(), toml.PkFree.size(), toml.NpcMove.size());
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -606,6 +679,18 @@ static int Validate(const std::string& dataDir)
 		std::printf("OK: %zu gates\n", gates.size());
 	}
 
+	if (MapZones_HasData(dataDir))
+	{
+		MapZonesData zones;
+
+		if (!MapZones_Load(dataDir, zones, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: %zu zonas seguras, %zu sin PK y %zu NPCs que mueven\n", zones.Safe.size(), zones.PkFree.size(), zones.NpcMove.size());
+	}
+
 	return 0;
 }
 
@@ -675,6 +760,16 @@ int main(int argc, char** argv)
 		return CheckGates(args[1], args[2]);
 	}
 
+	if (args.size() == 5 && args[0] == "import-zones")
+	{
+		return ImportZones(args[1], args[2], args[3], args[4], force);
+	}
+
+	if (args.size() == 5 && args[0] == "check-zones")
+	{
+		return CheckZones(args[1], args[2], args[3], args[4]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -692,6 +787,8 @@ int main(int argc, char** argv)
 		"  mu-data check-drops <ItemDrop.txt> <Data>\n"
 		"  mu-data import-gates <Gate.txt> <Data> [--force]\n"
 		"  mu-data check-gates <Gate.txt> <Data>\n"
+		"  mu-data import-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data> [--force]\n"
+		"  mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;

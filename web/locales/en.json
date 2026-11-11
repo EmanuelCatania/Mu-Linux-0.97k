@@ -785,5 +785,8 @@
   "Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Drops move to Data/Items/Drops.toml (the ones for any map) and to one Drops.toml per map. ItemDrop.txt stays as a backup and the server stops reading it. Continue?",
   "Formato: un Gates.toml por mapa (Data/Maps).": "Format: one Gates.toml per map (Data/Maps).",
   "Formato: Gate.txt.": "Format: Gate.txt.",
-  "Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Gates move to one Gates.toml per map (Data/Maps). Gate.txt stays as a backup and the server stops reading it. Continue?"
+  "Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Gates move to one Gates.toml per map (Data/Maps). Gate.txt stays as a backup and the server stops reading it. Continue?",
+  "Formato: un Zones.toml por mapa (Data/Maps) con las tres listas.": "Format: one Zones.toml per map (Data/Maps) with the three lists.",
+  "Formato: CustomSafeZone.txt, CustomPkFree.txt y CustomNpcMove.txt.": "Format: CustomSafeZone.txt, CustomPkFree.txt and CustomNpcMove.txt.",
+  "Las zonas seguras, sin PK y los NPCs que mueven pasan a un Zones.toml por mapa (Data/Maps). Los .txt de Data/Custom quedan como respaldo y el servidor deja de leerlos. ¿Seguir?": "Safe zones, PK-free zones and moving NPCs move to one Zones.toml per map (Data/Maps). The .txt files in Data/Custom stay as a backup and the server stops reading them. Continue?"
 }

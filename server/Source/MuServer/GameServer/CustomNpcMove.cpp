@@ -18,6 +18,46 @@ CCustomNpcMove::~CCustomNpcMove()
 
 }
 
+void CCustomNpcMove::SetMoves(const std::vector<NpcMoveDef>& moves)
+{
+	this->m_CustomNpcMove.clear();
+
+	int Index = 0;
+
+	for (const NpcMoveDef& d : moves)
+	{
+		NPC_MOVE_INFO info;
+
+		info.MonsterClass = d.Npc;
+
+		info.Map = d.Map;
+
+		info.X = d.X;
+
+		info.Y = d.Y;
+
+		info.MoveMap = d.MoveMap;
+
+		info.MoveX = d.MoveX;
+
+		info.MoveY = d.MoveY;
+
+		info.MinLevel = d.MinLevel;
+
+		info.MaxLevel = d.MaxLevel;
+
+		info.MinReset = d.MinReset;
+
+		info.MaxReset = d.MaxReset;
+
+		info.AccountLevel = d.AccountLevel;
+
+		info.PkMove = d.PkMove;
+
+		this->m_CustomNpcMove.insert(std::pair<int, NPC_MOVE_INFO>(Index++, info));
+	}
+}
+
 void CCustomNpcMove::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
