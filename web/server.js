@@ -22,6 +22,7 @@ const mapsLib = require('./lib/maps');
 const dropsLib = require('./lib/drops');
 const gatesLib = require('./lib/gates');
 const zonesLib = require('./lib/zones');
+const mapFoldersLib = require('./lib/map-folders');
 
 // Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
 let passwordColumnWide = false;
@@ -1787,6 +1788,10 @@ app.get('/admin/server-editor/mapmanager', requireAdmin, requireAdminPasswordCha
   res.render('admin_mapmanager_editor');
 });
 
+app.get('/admin/server-editor/map-folders', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_map_folder_editor');
+});
+
 app.get('/admin/server-editor/gms', requireAdmin, requireAdminPasswordChange, (req, res) => {
   res.render('admin_gm_editor');
 });
@@ -2338,6 +2343,40 @@ async function writeZoneToml(data, files, folders) {
 function zoneErrorStatus(err) {
   return err instanceof zonesLib.ZoneError ? 400 : (err.status || 502);
 }
+
+// Editor por carpeta de mapa (lib/map-folders.js), sobre el editor del server.
+const mapFolders = mapFoldersLib.create({
+  list: listEditorDir,
+  read: readEditorFile,
+  write: (path, content) => editorRequest('POST', '/api/file', { path, content }),
+  remove: (path) => editorRequest('POST', '/api/delete', { path })
+});
+
+function mapFolderRoute(handler) {
+  return async (req, res) => {
+    if (!editorEnabled) {
+      return res.status(503).json({ error: 'Editor disabled' });
+    }
+    try {
+      return res.json(await handler(req));
+    } catch (err) {
+      return res.status(mapFoldersLib.errorStatus(err)).json({ error: err.message });
+    }
+  };
+}
+
+app.get('/admin/server-editor/api/map-folders', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute(() => mapFolders.summary()));
+
+app.get('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.read(String(req.query.folder || ''), String(req.query.kind || ''))));
+
+// { folder, kind, content, check } — con check sólo valida.
+app.post('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.save(String(req.body?.folder || ''), String(req.body?.kind || ''), req.body?.content, !!req.body?.check)));
+
+app.post('/admin/server-editor/api/map-folders/delete', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.remove(String(req.body?.folder || ''), String(req.body?.kind || ''))));
 
 async function spawnNames() {
   const [maps, monsters] = await Promise.all([
