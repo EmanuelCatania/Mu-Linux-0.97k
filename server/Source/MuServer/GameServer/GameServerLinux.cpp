@@ -67,6 +67,10 @@ void CheckEditorReload()
 			gServerInfo.ReloadMonsterInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Monster reloaded by editor flag");
 		}
+		else if (_stricmp(token, "spawns") == 0)
+		{
+			gServerInfo.ReloadSpawns();
+		}
 		else if (_stricmp(token, "move") == 0 || _stricmp(token, "gate") == 0)
 		{
 			gServerInfo.ReadMoveInfo();

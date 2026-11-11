@@ -34,6 +34,7 @@
 #include "Message.h"
 #include "MonsterManager.h"
 #include "MonsterSetBase.h"
+#include "Monster.h"
 #include "EventInvasions.h"
 #include "MapSpawns.h"
 #include "MapInfo.h"
@@ -527,6 +528,139 @@ void CServerInfo::ReloadMonsterInfo()
 	this->ReadMonsterInfo();
 
 	gMonsterManager.SetMonsterData();
+}
+
+void CServerInfo::ReloadSpawns()
+{
+	std::string data = gPath.GetFullPath("");
+
+	if (!MapSpawns_HasData(data) || gMonsterSetBase.m_Groups.empty())
+	{
+		this->ReloadMonsterInfo();
+
+		return;
+	}
+
+	// El tipo de cada fila vieja, para saber qué hacer con sus monstruos.
+	std::vector<int> oldType(gMonsterSetBase.m_count);
+
+	for (int n = 0; n < gMonsterSetBase.m_count; n++)
+	{
+		oldType[n] = gMonsterSetBase.m_MonsterSetBaseInfo[n].Type;
+	}
+
+	std::vector<int> remap;
+
+	std::vector<std::pair<int, int>> changed;
+
+	std::vector<std::string> files;
+
+	std::string error;
+
+	if (!gMonsterSetBase.ReloadMaps(data.c_str(), remap, changed, files, error))
+	{
+		LogAdd(LOG_RED, "[MonsterSetBase] Recarga cancelada, quedan los spawns de antes: %s", error.c_str());
+
+		return;
+	}
+
+	if (files.empty())
+	{
+		LogAdd(LOG_BLUE, "[MonsterSetBase] Recarga: los spawns no cambiaron");
+
+		return;
+	}
+
+	int removed = 0, released = 0, created = 0, mismatched = 0;
+
+	for (int n = 0; n < MAX_OBJECT_MONSTER; n++)
+	{
+		LPOBJ lpObj = &gObj[n];
+
+		if (lpObj->Connected == OBJECT_OFFLINE || (lpObj->Type != OBJECT_MONSTER && lpObj->Type != OBJECT_NPC))
+		{
+			continue;
+		}
+
+		if (lpObj->PosNum < 0 || lpObj->PosNum >= (int)remap.size())
+		{
+			continue; // /makemob y los que crean los eventos sin punto de spawn
+		}
+
+		if (remap[lpObj->PosNum] >= 0)
+		{
+			lpObj->PosNum = remap[lpObj->PosNum];
+
+			// La fila movida tiene que seguir siendo la de este monstruo (Class es
+			// un BYTE: se compara truncado).
+			const MONSTER_SET_BASE_INFO* lpInfo = &gMonsterSetBase.m_MonsterSetBaseInfo[lpObj->PosNum];
+
+			if (lpInfo->Map != lpObj->Map || (BYTE)lpInfo->MonsterClass != lpObj->Class)
+			{
+				mismatched++;
+			}
+
+			continue;
+		}
+
+		if (oldType[lpObj->PosNum] == MAP_SPAWN_EVENT_AREA || oldType[lpObj->PosNum] == MAP_SPAWN_EVENT)
+		{
+			// De una invasión o un evento en curso: siguen hasta que termine,
+			// pero ya sin su fila (si reaparecen, lo hacen cerca de donde están).
+			lpObj->PosNum = -1;
+
+			released++;
+
+			continue;
+		}
+
+		gObjDel(n);
+
+		removed++;
+	}
+
+	// Las filas nuevas se crean igual que en CMonsterManager::SetMonsterData;
+	// las de invasión y evento las crea su evento cuando arranca.
+	for (const std::pair<int, int>& range : changed)
+	{
+		for (int n = range.first; n < range.second; n++)
+		{
+			MONSTER_SET_BASE_INFO* lpInfo = &gMonsterSetBase.m_MonsterSetBaseInfo[n];
+
+			if (lpInfo->Type == MAP_SPAWN_EVENT_AREA || lpInfo->Type == MAP_SPAWN_EVENT)
+			{
+				continue;
+			}
+
+			int index = gObjAddMonster(lpInfo->Map);
+
+			if (OBJECT_RANGE(index) == false)
+			{
+				continue;
+			}
+
+			if (gObjSetPosMonster(index, n) == 0 || gObjSetMonster(index, lpInfo->MonsterClass) == 0)
+			{
+				gObjDel(index);
+
+				continue;
+			}
+
+			created++;
+		}
+	}
+
+	for (const std::string& file : files)
+	{
+		LogAdd(LOG_BLUE, "[MonsterSetBase] Recargado: %s", file.c_str());
+	}
+
+	LogAdd(LOG_BLUE, "[MonsterSetBase] Recarga: %d monstruos borrados, %d creados, %d de eventos en curso quedan sin punto de spawn", removed, created, released);
+
+	if (mismatched > 0)
+	{
+		LogAdd(LOG_RED, "[MonsterSetBase] Recarga: %d monstruos quedaron apuntando a una fila de otro mapa o monstruo", mismatched);
+	}
 }
 
 void CServerInfo::ReadStartupInfo(const char* section, const char* path)

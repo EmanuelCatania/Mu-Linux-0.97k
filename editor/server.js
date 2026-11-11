@@ -387,6 +387,7 @@ app.post('/api/reload', async (req, res) => {
     const allowed = [
       'shop',
       'monster',
+      'spawns',
       'move',
       'gate',
       'quest',
