@@ -731,10 +731,11 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
+        // Sólo recrea los monstruos de los mapas que cambiaron.
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ target: 'monster' })
+          body: JSON.stringify({ target: 'spawns' })
         });
         if (!reload.ok) {
           setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
