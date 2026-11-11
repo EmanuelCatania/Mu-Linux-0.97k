@@ -36,6 +36,7 @@
 #include "MonsterSetBase.h"
 #include "EventInvasions.h"
 #include "MapSpawns.h"
+#include "MapInfo.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
@@ -178,7 +179,7 @@ void CServerInfo::ReadCommonInfo()
 
 	gEffectManager.Load(gPath.GetFullPath("Effect.txt"));
 
-	gMapManager.Load(gPath.GetFullPath("MapManager.txt"));
+	this->ReadMapManagerInfo();
 
 	gMessage.Load(gPath.GetFullPath("Message_Eng.txt"), LANGUAGE_ENGLISH);
 	gMessage.Load(gPath.GetFullPath("Message_Spn.txt"), LANGUAGE_SPANISH);
@@ -291,6 +292,20 @@ void CServerInfo::ReadItemInfo()
 	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Item loaded successfully");
+}
+
+void CServerInfo::ReadMapManagerInfo()
+{
+	// Fase 5: si hay Data/Maps/NN-Nombre/Map.toml mandan ellos; si no,
+	// MapManager.txt como siempre.
+	if (MapInfo_HasData(gPath.GetFullPath("")))
+	{
+		gMapManager.LoadMaps(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gMapManager.Load(gPath.GetFullPath("MapManager.txt"));
+	}
 }
 
 void CServerInfo::ReadMapInfo()

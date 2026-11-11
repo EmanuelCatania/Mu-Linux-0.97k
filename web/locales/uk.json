@@ -782,5 +782,8 @@
   "Convertido y recargado en el servidor.": "Перетворено й перезавантажено на сервері.",
   "Convertido, pero no se pudo recargar en el server.": "Перетворено, але не вдалося перезавантажити на сервері.",
   "Formato: un archivo por mapa (Data/Maps) y las invasiones en Data/Events/Invasions.": "Формат: окремий файл для кожної мапи (Data/Maps), а вторгнення в Data/Events/Invasions.",
-  "Formato: MonsterSetBase.txt.": "Формат: MonsterSetBase.txt."
+  "Formato: MonsterSetBase.txt.": "Формат: MonsterSetBase.txt.",
+  "Las reglas de los mapas pasan a un archivo por mapa (Data/Maps/NN-Nombre/Map.toml). MapManager.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Правила мап переносяться в окремий файл для кожної мапи (Data/Maps/NN-Назва/Map.toml). MapManager.txt лишається резервною копією, і сервер більше його не читає. Продовжити?",
+  "Formato: un archivo por mapa (Data/Maps/NN-Nombre/Map.toml).": "Формат: окремий файл для кожної мапи (Data/Maps/NN-Назва/Map.toml).",
+  "Formato: MapManager.txt.": "Формат: MapManager.txt."
 }

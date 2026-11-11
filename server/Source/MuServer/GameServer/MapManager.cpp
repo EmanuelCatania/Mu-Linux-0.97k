@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "MapManager.h"
+#include "MapInfo.h"
 #include "ReadScript.h"
 #include "ServerInfo.h"
 #include "Util.h"
@@ -84,6 +85,62 @@ void CMapManager::Load(const char* path)
 	}
 
 	delete lpReadScript;
+}
+
+void CMapManager::LoadMaps(const char* path)
+{
+	std::vector<MapInfoDef> defs;
+
+	std::string error;
+
+	if (!MapInfo_Load(path, defs, error))
+	{
+		// Al arrancar es fatal, como el resto de los datos; en una recarga
+		// quedan las reglas de antes.
+		if (this->m_MapManagerInfo.empty())
+		{
+			ErrorMessageBox("[MapManager] %s", error.c_str());
+		}
+		else
+		{
+			LogAdd(LOG_RED, "[MapManager] Recarga cancelada, quedan las reglas de antes: %s", error.c_str());
+		}
+
+		return;
+	}
+
+	this->m_MapManagerInfo.clear();
+
+	for (const MapInfoDef& def : defs)
+	{
+		MAP_MANAGER_INFO info;
+
+		memset(&info, 0, sizeof(info));
+
+		info.Index = def.Index;
+
+		info.NonPK = def.NonPK;
+
+		info.ViewRange = def.ViewRange;
+
+		info.ExperienceRate = def.ExperienceRate;
+
+		info.ItemDropRate = def.ItemDropRate;
+
+		info.ExcItemDropRate = def.ExcItemDropRate;
+
+		info.DeadGate = def.DeadGate;
+
+		info.RespawnInPlace = def.RespawnInPlace;
+
+		info.FlyingDragons = def.FlyingDragons;
+
+		strcpy_s(info.MapName, def.Name.c_str());
+
+		this->m_MapManagerInfo.insert(std::pair<int, MAP_MANAGER_INFO>(info.Index, info));
+	}
+
+	LogAdd(LOG_BLUE, "[MapManager] %d mapas desde %s", (int)defs.size(), path);
 }
 
 int CMapManager::GetMapNonPK(int index)

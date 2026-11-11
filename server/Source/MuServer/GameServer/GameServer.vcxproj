@@ -311,6 +311,9 @@
     <ClCompile Include="..\Common\EventInvasions.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\Common\MapInfo.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\Common\MapSpawns.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
