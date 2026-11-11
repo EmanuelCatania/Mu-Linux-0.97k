@@ -785,5 +785,8 @@
   "Formato: MonsterSetBase.txt.": "Формат: MonsterSetBase.txt.",
   "Las reglas de los mapas pasan a un archivo por mapa (Data/Maps/NN-Nombre/Map.toml). MapManager.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Правила мап переносяться в окремий файл для кожної мапи (Data/Maps/NN-Назва/Map.toml). MapManager.txt лишається резервною копією, і сервер більше його не читає. Продовжити?",
   "Formato: un archivo por mapa (Data/Maps/NN-Nombre/Map.toml).": "Формат: окремий файл для кожної мапи (Data/Maps/NN-Назва/Map.toml).",
-  "Formato: MapManager.txt.": "Формат: MapManager.txt."
+  "Formato: MapManager.txt.": "Формат: MapManager.txt.",
+  "Formato: Data/Items/Drops.toml y un Drops.toml por mapa (Data/Maps).": "Формат: Data/Items/Drops.toml і окремий Drops.toml для кожної мапи (Data/Maps).",
+  "Formato: ItemDrop.txt.": "Формат: ItemDrop.txt.",
+  "Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Дропи переносяться в Data/Items/Drops.toml (ті, що для будь-якої мапи) і в окремий Drops.toml для кожної мапи. ItemDrop.txt лишається резервною копією, і сервер більше його не читає. Продовжити?"
 }

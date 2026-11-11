@@ -8,6 +8,7 @@
 
   const state = {
     rows: [],
+    format: 'txt',
     itemDefs: [],
     itemMap: new Map(),
     optionPresets: {
@@ -219,6 +220,10 @@
         <div class="spawn-toolbar-group">
           <button type="button" id="save-drop">Guardar</button>
         </div>
+      </div>
+      <div class="spawn-format">
+        <span id="drop-format-label"></span>
+        <button type="button" id="convert-drops" class="hidden">Pasar a archivos por mapa</button>
       </div>
       <div class="custom-note">
         Usa <code>*</code> para “cualquier” mapa/monster/nivel. El <code>DropRate</code> usa escala
@@ -533,6 +538,7 @@
     });
 
     root.querySelector('#save-drop')?.addEventListener('click', saveDrop);
+    root.querySelector('#convert-drops')?.addEventListener('click', convertDrops);
 
     const pickerInput = root.querySelector('#drop-item-search');
     const pickerList = root.querySelector('#drop-item-picker');
@@ -591,7 +597,42 @@
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar el drop'));
     state.rows = parseDrop(data.content || '');
+    state.format = data.format === 'toml' ? 'toml' : 'txt';
     state.selected = null;
+  }
+
+  // De dónde lee el servidor los drops. Con los archivos por mapa, el panel los
+  // convierte a la lista para editarlos y de vuelta al guardar (cada drop va al
+  // archivo de su mapa, o a Data/Items/Drops.toml si es de cualquier mapa).
+  function renderFormat() {
+    const label = root.querySelector('#drop-format-label');
+    const button = root.querySelector('#convert-drops');
+    if (!label || !button) return;
+    label.textContent = state.format === 'toml'
+      ? window.MuText.t('Formato: Data/Items/Drops.toml y un Drops.toml por mapa (Data/Maps).')
+      : window.MuText.t('Formato: ItemDrop.txt.');
+    button.classList.toggle('hidden', state.format === 'toml');
+  }
+
+  async function convertDrops() {
+    if (!window.confirm(window.MuText.t('Los drops pasan a Data/Items/Drops.toml (los de cualquier mapa) y a un Drops.toml por mapa. ItemDrop.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?'))) {
+      return;
+    }
+    try {
+      const res = await fetch('/admin/server-editor/api/drop/convert', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo convertir'));
+      state.format = 'toml';
+      renderFormat();
+      const reload = await fetch('/admin/server-editor/api/reload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: reloadTarget })
+      });
+      setMessage(window.MuText.t(reload.ok ? 'Convertido y recargado en el servidor.' : 'Convertido, pero no se pudo recargar en el server.'), reload.ok ? 'success' : 'error');
+    } catch (err) {
+      setMessage(err.message, 'error');
+    }
   }
 
   async function saveDrop() {
@@ -666,6 +707,7 @@
     fillPresetOptions();
     try {
       await loadDrop();
+      renderFormat();
       renderList();
     } catch (err) {
       setMessage(err.message, 'error');
