@@ -420,6 +420,19 @@ void CServerInfo::ReadMoveInfo()
 
 	gMove.ReloadMoveList();
 
+	// El cliente detecta las entradas con la tabla del catálogo (F3:F3): los
+	// que entren desde ahora la reciben con el resto, y a los conectados se les
+	// mandan sólo las gates.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendGates(gObj[n].Index);
+		}
+	}
+
 	LogAdd(LOG_BLUE, "[ServerInfo] Move loaded successfully");
 }
 

@@ -55,12 +55,19 @@ public:
     void ReceivePets(const BYTE* msg, int size);       // F3/EE
     void ReceiveTooltips(const BYTE* msg, int size);   // F3/EF
     void ReceiveTexts(const BYTE* msg, int size);      // F3/F0
+    // F3/F3: se aplica apenas llega completa (no espera al F3/EA), porque el
+    // server la vuelve a mandar sola cuando recarga las gates.
+    void ReceiveGates(const BYTE* msg, int size);
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
     void Clear();
 
     bool IsLoaded() const { return m_Loaded; }
+
+    // Nivel mínimo de la gate según el server (16 bits: Gate.bmd sólo guarda
+    // un byte), o `fallback` si el server no mandó gates.
+    int GetGateLevel(int index, int fallback) const;
 
     // Vanilla cuyo comportamiento hardcodeado usa el item (el propio si no
     // tiene columna Behavior).

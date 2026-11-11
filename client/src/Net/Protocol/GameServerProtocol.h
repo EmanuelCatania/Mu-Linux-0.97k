@@ -769,6 +769,25 @@ struct CATALOG_PET
 };
 static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
 
+// F3:F3 — gates (Fase 5).  Reemplazan las de Gate.bmd: con ellas el cliente
+// detecta que el héroe pisa una entrada (CheckGate) y las dibuja en el minimapa.
+struct CATALOG_GATE
+{
+    std::uint16_t Index;
+    std::uint8_t Flag;          // 0 destino, 1 entrada, 2 salida
+    std::uint8_t Map;
+    std::uint8_t X;
+    std::uint8_t Y;
+    std::uint8_t TX;
+    std::uint8_t TY;
+    std::uint16_t Target;
+    std::uint8_t Dir;
+    std::uint8_t Reserved;
+    std::uint16_t MinLevel;     // 0 = sin mínimo
+    std::uint16_t Reserved2;
+};
+static_assert(sizeof(CATALOG_GATE) == 16, "F3:F3 entrada");
+
 // F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
 // llegan los del idioma que el cliente pidió con el F1:04.
 const std::uint8_t CATALOG_TEXT_ITEM = 1;

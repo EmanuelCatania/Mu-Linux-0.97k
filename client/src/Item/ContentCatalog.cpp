@@ -37,6 +37,15 @@ PendingSection s_PendingEffects;
 PendingSection s_PendingPets;
 PendingSection s_PendingTooltips;
 PendingSection s_PendingTexts;
+PendingSection s_PendingGates;
+
+// Gates del server (F3/F3) sobre la tabla de Gate.bmd, que se guarda para
+// volver a ella al desconectar.
+constexpr int MAX_CATALOG_GATE = 100;          // GateAttribute: 100 x 9 bytes
+GATE_ATTRIBUTE s_VanillaGates[MAX_CATALOG_GATE];
+bool s_HasVanillaGates = false;
+bool s_HasGates = false;
+WORD s_GateLevel[MAX_CATALOG_GATE];
 
 // Textos traducidos del server (F3/F0).  Los nombres de items y skills se
 // escriben en sus tablas; los originales se guardan para volver a ellos.
@@ -275,6 +284,52 @@ void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
     if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveGates(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingGates, msg, size)) {
+        Log("ContentCatalog: F3 descartado (size=%d)", size);
+        return;
+    }
+    if (!SectionComplete(s_PendingGates) || !GateAttribute) return;
+    if (!s_HasVanillaGates) {
+        memcpy(s_VanillaGates, GateAttribute, sizeof(s_VanillaGates));
+        s_HasVanillaGates = true;
+    }
+    memset(GateAttribute, 0, sizeof(s_VanillaGates));
+    memset(s_GateLevel, 0, sizeof(s_GateLevel));
+    const int gateSize = s_PendingGates.recordSize;
+    int count = 0;
+    for (size_t off = 0; gateSize > 0 && off + gateSize <= s_PendingGates.records.size(); off += gateSize) {
+        Proto::CATALOG_GATE row = {};
+        memcpy(&row, &s_PendingGates.records[off], (std::min)((int)sizeof(row), gateSize));
+        if (row.Index >= MAX_CATALOG_GATE) {
+            Log("ContentCatalog: gate %u fuera de la tabla (0..%d), se ignora", row.Index, MAX_CATALOG_GATE - 1);
+            continue;
+        }
+        GATE_ATTRIBUTE& gate = GateAttribute[row.Index];
+        gate.Flag = row.Flag;
+        gate.Map = row.Map;
+        gate.StartX = row.X;
+        gate.StartY = row.Y;
+        gate.EndX = row.TX;
+        gate.EndY = row.TY;
+        gate.Target = (std::uint8_t)((row.Target < MAX_CATALOG_GATE) ? row.Target : 0);
+        gate.Direction = row.Dir;
+        gate.RequireLevel = (std::uint8_t)((row.MinLevel > 255) ? 255 : row.MinLevel);
+        s_GateLevel[row.Index] = row.MinLevel;
+        ++count;
+    }
+    s_HasGates = true;
+    s_PendingGates = PendingSection();
+    Log("ContentCatalog: %d gates", count);
+}
+
+int CContentCatalog::GetGateLevel(int index, int fallback) const
+{
+    if (!s_HasGates || index < 0 || index >= MAX_CATALOG_GATE) return fallback;
+    return s_GateLevel[index];
+}
+
 void CContentCatalog::ReceiveTexts(const BYTE* msg, int size)
 {
     if (!ReadSection(s_PendingTexts, msg, size)) Log("ContentCatalog: F0 descartado (size=%d)", size);
@@ -380,6 +435,10 @@ void CContentCatalog::Clear()
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
     s_PendingTexts = PendingSection();
+    s_PendingGates = PendingSection();
+    if (s_HasGates && s_HasVanillaGates && GateAttribute)
+        memcpy(GateAttribute, s_VanillaGates, sizeof(s_VanillaGates));
+    s_HasGates = false;
     gClientText.ClearServerTexts();
     s_TooltipTexts.clear();
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
