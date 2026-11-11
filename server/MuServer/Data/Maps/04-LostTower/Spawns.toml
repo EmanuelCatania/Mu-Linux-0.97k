@@ -1,0 +1,619 @@
+# Lost Tower (mapa 4): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 253, at = [207, 75], dir = 1 }, # Potion Girl Amy
+  { monster = 103, at = [100, 185], dir = 3 }, # Meteorite
+  { monster = 103, at = [100, 225], dir = 3 }, # Meteorite
+  { monster = 103, at = [101, 185], dir = 3 }, # Meteorite
+  { monster = 103, at = [101, 225], dir = 3 }, # Meteorite
+  { monster = 103, at = [102, 185], dir = 3 }, # Meteorite
+  { monster = 103, at = [103, 185], dir = 3 }, # Meteorite
+  { monster = 103, at = [107, 242], dir = 3 }, # Meteorite
+  { monster = 103, at = [107, 243], dir = 3 }, # Meteorite
+  { monster = 103, at = [107, 244], dir = 3 }, # Meteorite
+  { monster = 103, at = [110, 227], dir = 3 }, # Meteorite
+  { monster = 103, at = [111, 227], dir = 3 }, # Meteorite
+  { monster = 103, at = [112, 227], dir = 3 }, # Meteorite
+  { monster = 103, at = [113, 227], dir = 3 }, # Meteorite
+  { monster = 103, at = [120, 208], dir = 3 }, # Meteorite
+  { monster = 103, at = [121, 208], dir = 3 }, # Meteorite
+  { monster = 103, at = [122, 208], dir = 3 }, # Meteorite
+  { monster = 103, at = [123, 132], dir = 3 }, # Meteorite
+  { monster = 103, at = [123, 133], dir = 3 }, # Meteorite
+  { monster = 103, at = [123, 134], dir = 3 }, # Meteorite
+  { monster = 103, at = [123, 135], dir = 3 }, # Meteorite
+  { monster = 103, at = [125, 115], dir = 3 }, # Meteorite
+  { monster = 103, at = [126, 104], dir = 3 }, # Meteorite
+  { monster = 103, at = [126, 105], dir = 3 }, # Meteorite
+  { monster = 103, at = [126, 106], dir = 3 }, # Meteorite
+  { monster = 103, at = [126, 107], dir = 3 }, # Meteorite
+  { monster = 103, at = [126, 115], dir = 3 }, # Meteorite
+  { monster = 103, at = [127, 115], dir = 3 }, # Meteorite
+  { monster = 103, at = [128, 221], dir = 3 }, # Meteorite
+  { monster = 103, at = [129, 221], dir = 3 }, # Meteorite
+  { monster = 103, at = [130, 221], dir = 3 }, # Meteorite
+  { monster = 103, at = [132, 126], dir = 3 }, # Meteorite
+  { monster = 103, at = [132, 178], dir = 3 }, # Meteorite
+  { monster = 103, at = [133, 126], dir = 3 }, # Meteorite
+  { monster = 103, at = [133, 178], dir = 3 }, # Meteorite
+  { monster = 103, at = [134, 126], dir = 3 }, # Meteorite
+  { monster = 103, at = [14, 207], dir = 3 }, # Meteorite
+  { monster = 103, at = [14, 208], dir = 3 }, # Meteorite
+  { monster = 103, at = [15, 172], dir = 3 }, # Meteorite
+  { monster = 103, at = [15, 173], dir = 3 }, # Meteorite
+  { monster = 103, at = [15, 174], dir = 3 }, # Meteorite
+  { monster = 103, at = [196, 56], dir = 3 }, # Meteorite
+  { monster = 103, at = [196, 57], dir = 3 }, # Meteorite
+  { monster = 103, at = [196, 58], dir = 3 }, # Meteorite
+  { monster = 103, at = [196, 62], dir = 3 }, # Meteorite
+  { monster = 103, at = [197, 62], dir = 3 }, # Meteorite
+  { monster = 103, at = [198, 62], dir = 3 }, # Meteorite
+  { monster = 103, at = [199, 62], dir = 3 }, # Meteorite
+  { monster = 103, at = [202, 45], dir = 3 }, # Meteorite
+  { monster = 103, at = [202, 46], dir = 3 }, # Meteorite
+  { monster = 103, at = [202, 47], dir = 3 }, # Meteorite
+  { monster = 103, at = [202, 48], dir = 3 }, # Meteorite
+  { monster = 103, at = [21, 243], dir = 3 }, # Meteorite
+  { monster = 103, at = [219, 234], dir = 1 }, # Meteorite
+  { monster = 103, at = [219, 235], dir = 1 }, # Meteorite
+  { monster = 103, at = [219, 236], dir = 1 }, # Meteorite
+  { monster = 103, at = [219, 237], dir = 1 }, # Meteorite
+  { monster = 103, at = [22, 243], dir = 3 }, # Meteorite
+  { monster = 103, at = [226, 115], dir = 3 }, # Meteorite
+  { monster = 103, at = [226, 116], dir = 3 }, # Meteorite
+  { monster = 103, at = [226, 117], dir = 3 }, # Meteorite
+  { monster = 103, at = [226, 233], dir = 1 }, # Meteorite
+  { monster = 103, at = [227, 233], dir = 1 }, # Meteorite
+  { monster = 103, at = [228, 233], dir = 1 }, # Meteorite
+  { monster = 103, at = [23, 243], dir = 3 }, # Meteorite
+  { monster = 103, at = [26, 101], dir = 3 }, # Meteorite
+  { monster = 103, at = [26, 102], dir = 3 }, # Meteorite
+  { monster = 103, at = [26, 103], dir = 3 }, # Meteorite
+  { monster = 103, at = [26, 104], dir = 3 }, # Meteorite
+  { monster = 103, at = [26, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [27, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [27, 128], dir = 1 }, # Meteorite
+  { monster = 103, at = [27, 129], dir = 1 }, # Meteorite
+  { monster = 103, at = [27, 130], dir = 1 }, # Meteorite
+  { monster = 103, at = [28, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [29, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [30, 100], dir = 3 }, # Meteorite
+  { monster = 103, at = [30, 101], dir = 3 }, # Meteorite
+  { monster = 103, at = [30, 99], dir = 3 }, # Meteorite
+  { monster = 103, at = [33, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [34, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [34, 128], dir = 1 }, # Meteorite
+  { monster = 103, at = [34, 129], dir = 1 }, # Meteorite
+  { monster = 103, at = [34, 130], dir = 1 }, # Meteorite
+  { monster = 103, at = [35, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [36, 125], dir = 1 }, # Meteorite
+  { monster = 103, at = [36, 133], dir = 1 }, # Meteorite
+  { monster = 103, at = [36, 134], dir = 1 }, # Meteorite
+  { monster = 103, at = [37, 119], dir = 3 }, # Meteorite
+  { monster = 103, at = [37, 120], dir = 3 }, # Meteorite
+  { monster = 103, at = [38, 108], dir = 5 }, # Meteorite
+  { monster = 103, at = [38, 109], dir = 5 }, # Meteorite
+  { monster = 103, at = [38, 110], dir = 5 }, # Meteorite
+  { monster = 103, at = [4, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [4, 194], dir = 3 }, # Meteorite
+  { monster = 103, at = [41, 132], dir = 1 }, # Meteorite
+  { monster = 103, at = [41, 133], dir = 1 }, # Meteorite
+  { monster = 103, at = [42, 245], dir = 3 }, # Meteorite
+  { monster = 103, at = [42, 246], dir = 3 }, # Meteorite
+  { monster = 103, at = [45, 108], dir = 5 }, # Meteorite
+  { monster = 103, at = [45, 109], dir = 5 }, # Meteorite
+  { monster = 103, at = [45, 110], dir = 1 }, # Meteorite
+  { monster = 103, at = [45, 110], dir = 1 }, # Meteorite
+  { monster = 103, at = [45, 110], dir = 5 }, # Meteorite
+  { monster = 103, at = [46, 169], dir = 3 }, # Meteorite
+  { monster = 103, at = [46, 170], dir = 3 }, # Meteorite
+  { monster = 103, at = [46, 171], dir = 3 }, # Meteorite
+  { monster = 103, at = [46, 172], dir = 3 }, # Meteorite
+  { monster = 103, at = [47, 131], dir = 1 }, # Meteorite
+  { monster = 103, at = [47, 132], dir = 1 }, # Meteorite
+  { monster = 103, at = [5, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [5, 194], dir = 3 }, # Meteorite
+  { monster = 103, at = [5, 237], dir = 3 }, # Meteorite
+  { monster = 103, at = [51, 198], dir = 3 }, # Meteorite
+  { monster = 103, at = [51, 199], dir = 3 }, # Meteorite
+  { monster = 103, at = [51, 200], dir = 3 }, # Meteorite
+  { monster = 103, at = [51, 201], dir = 3 }, # Meteorite
+  { monster = 103, at = [52, 114], dir = 3 }, # Meteorite
+  { monster = 103, at = [52, 178], dir = 3 }, # Meteorite
+  { monster = 103, at = [53, 114], dir = 3 }, # Meteorite
+  { monster = 103, at = [53, 178], dir = 3 }, # Meteorite
+  { monster = 103, at = [54, 114], dir = 3 }, # Meteorite
+  { monster = 103, at = [54, 178], dir = 3 }, # Meteorite
+  { monster = 103, at = [6, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [6, 194], dir = 3 }, # Meteorite
+  { monster = 103, at = [6, 237], dir = 3 }, # Meteorite
+  { monster = 103, at = [7, 237], dir = 3 }, # Meteorite
+  { monster = 103, at = [82, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [82, 184], dir = 3 }, # Meteorite
+  { monster = 103, at = [82, 201], dir = 3 }, # Meteorite
+  { monster = 103, at = [83, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [83, 184], dir = 3 }, # Meteorite
+  { monster = 103, at = [83, 201], dir = 3 }, # Meteorite
+  { monster = 103, at = [84, 120], dir = 3 }, # Meteorite
+  { monster = 103, at = [84, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [84, 184], dir = 3 }, # Meteorite
+  { monster = 103, at = [84, 201], dir = 3 }, # Meteorite
+  { monster = 103, at = [85, 120], dir = 3 }, # Meteorite
+  { monster = 103, at = [85, 175], dir = 3 }, # Meteorite
+  { monster = 103, at = [86, 120], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 130], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 131], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 132], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 243], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 244], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 245], dir = 3 }, # Meteorite
+  { monster = 103, at = [93, 246], dir = 3 }, # Meteorite
+  { monster = 103, at = [98, 225], dir = 3 }, # Meteorite
+  { monster = 103, at = [99, 225], dir = 3 }, # Meteorite
+]
+
+area = [
+  { monster = 36, box = [199, 39, 206, 54], count = 4, dis = 10 }, # Shadow
+  { monster = 39, box = [199, 39, 206, 54], count = 3, dis = 10 }, # Poison Shadow
+  { monster = 36, box = [192, 100, 200, 108], count = 5, dis = 10 }, # Shadow
+  { monster = 39, box = [192, 100, 200, 108], count = 7, dis = 10 }, # Poison Shadow
+  { monster = 36, box = [162, 33, 166, 123], count = 5, dis = 10 }, # Shadow
+  { monster = 39, box = [162, 33, 166, 123], count = 7, dis = 10 }, # Poison Shadow
+  { monster = 36, box = [240, 11, 247, 120], count = 5, dis = 10 }, # Shadow
+  { monster = 39, box = [240, 11, 247, 120], count = 7, dis = 10 }, # Poison Shadow
+  { monster = 34, box = [217, 242, 224, 250], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 39, box = [217, 242, 224, 250], count = 3, dis = 10 }, # Poison Shadow
+  { monster = 34, box = [206, 204, 218, 218], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 39, box = [206, 204, 218, 218], count = 3, dis = 10 }, # Poison Shadow
+  { monster = 34, box = [232, 206, 241, 224], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 39, box = [232, 206, 241, 224], count = 3, dis = 10 }, # Poison Shadow
+  { monster = 41, box = [97, 166, 106, 171], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [97, 166, 106, 171], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 41, box = [82, 196, 85, 206], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [82, 196, 85, 206], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 41, box = [98, 182, 104, 188], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [98, 182, 104, 188], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 41, box = [110, 200, 116, 206], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [110, 200, 116, 206], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 41, box = [129, 199, 134, 204], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [129, 199, 134, 204], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 41, box = [120, 165, 125, 170], count = 3, dis = 10 }, # Death Cow
+  { monster = 34, box = [120, 165, 125, 170], count = 3, dis = 10 }, # Cursed Wizard
+  { monster = 37, box = [106, 106, 110, 112], count = 3, dis = 10 }, # Devil
+  { monster = 41, box = [106, 106, 110, 112], count = 3, dis = 10 }, # Death Cow
+  { monster = 37, box = [115, 106, 119, 112], count = 3, dis = 10 }, # Devil
+  { monster = 41, box = [115, 106, 119, 112], count = 3, dis = 10 }, # Death Cow
+  { monster = 37, box = [83, 130, 88, 135], count = 3, dis = 10 }, # Devil
+  { monster = 41, box = [83, 130, 88, 135], count = 3, dis = 10 }, # Death Cow
+  { monster = 37, box = [107, 130, 112, 135], count = 3, dis = 10 }, # Devil
+  { monster = 41, box = [107, 130, 112, 135], count = 3, dis = 10 }, # Death Cow
+  { monster = 37, box = [127, 39, 132, 44], count = 2, dis = 10 }, # Devil
+  { monster = 41, box = [127, 39, 132, 44], count = 2, dis = 10 }, # Death Cow
+  { monster = 40, box = [127, 39, 132, 44], count = 2, dis = 10 }, # Death Knight
+  { monster = 37, box = [109, 22, 115, 28], count = 2, dis = 10 }, # Devil
+  { monster = 41, box = [109, 22, 115, 28], count = 2, dis = 10 }, # Death Cow
+  { monster = 40, box = [109, 22, 115, 28], count = 2, dis = 10 }, # Death Knight
+  { monster = 37, box = [81, 14, 86, 19], count = 2, dis = 10 }, # Devil
+  { monster = 41, box = [81, 14, 86, 19], count = 2, dis = 10 }, # Death Cow
+  { monster = 40, box = [81, 14, 86, 19], count = 2, dis = 10 }, # Death Knight
+  { monster = 37, box = [84, 49, 91, 56], count = 3, dis = 10 }, # Devil
+  { monster = 41, box = [84, 49, 91, 56], count = 3, dis = 10 }, # Death Cow
+  { monster = 40, box = [84, 49, 91, 56], count = 2, dis = 10 }, # Death Knight
+  { monster = 37, box = [52, 23, 57, 28], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [52, 23, 57, 28], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [52, 5, 57, 10], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [52, 5, 57, 10], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [27, 37, 32, 42], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [27, 37, 32, 42], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [11, 47, 16, 52], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [11, 47, 16, 52], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [20, 9, 27, 12], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [20, 9, 27, 12], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [52, 87, 56, 94], count = 6, dis = 10 }, # Devil
+  { monster = 40, box = [12, 99, 18, 105], count = 4, dis = 10 }, # Death Knight
+  { monster = 37, box = [12, 99, 18, 105], count = 3, dis = 10 }, # Devil
+  { monster = 40, box = [52, 111, 56, 118], count = 6, dis = 10 }, # Death Knight
+  { monster = 40, box = [10, 126, 19, 134], count = 3, dis = 10 }, # Death Knight
+  { monster = 37, box = [10, 126, 19, 134], count = 4, dis = 10 }, # Devil
+  { monster = 35, box = [21, 185, 25, 198], count = 7, dis = 10 }, # Death Gorgon
+  { monster = 35, box = [35, 185, 39, 198], count = 7, dis = 10 }, # Death Gorgon
+  { monster = 35, box = [21, 226, 25, 239], count = 7, dis = 10 }, # Death Gorgon
+  { monster = 35, box = [35, 226, 39, 239], count = 7, dis = 10 }, # Death Gorgon
+]
+
+spot = [
+  { monster = 35, at = [29, 208], dis = 30 },
+  { monster = 40, at = [30, 183], dis = 30 },
+  { monster = 35, at = [33, 206], dis = 30 },
+  { monster = 40, at = [54, 213], dis = 30 },
+  { monster = 36, at = [193, 239], dis = 30 },
+  { monster = 36, at = [191, 131], dis = 30 },
+  { monster = 36, at = [191, 118], dis = 30 },
+  { monster = 36, at = [164, 29], dis = 30 },
+  { monster = 36, at = [164, 37], dis = 30 },
+  { monster = 36, at = [164, 48], dis = 30 },
+  { monster = 36, at = [164, 63], dis = 30 },
+  { monster = 36, at = [164, 74], dis = 30 },
+  { monster = 36, at = [164, 98], dis = 30 },
+  { monster = 36, at = [164, 112], dis = 30 },
+  { monster = 36, at = [164, 126], dis = 30 },
+  { monster = 36, at = [175, 127], dis = 30 },
+  { monster = 36, at = [184, 128], dis = 30 },
+  { monster = 36, at = [199, 134], dis = 30 },
+  { monster = 36, at = [206, 136], dis = 30 },
+  { monster = 36, at = [227, 136], dis = 30 },
+  { monster = 36, at = [242, 135], dis = 30 },
+  { monster = 39, at = [243, 125], dis = 30 },
+  { monster = 36, at = [229, 127], dis = 30 },
+  { monster = 39, at = [245, 109], dis = 30 },
+  { monster = 36, at = [217, 127], dis = 30 },
+  { monster = 36, at = [244, 89], dis = 30 },
+  { monster = 36, at = [207, 127], dis = 30 },
+  { monster = 39, at = [219, 6], dis = 30 },
+  { monster = 39, at = [244, 53], dis = 30 },
+  { monster = 36, at = [235, 56], dis = 30 },
+  { monster = 36, at = [235, 38], dis = 30 },
+  { monster = 36, at = [236, 26], dis = 30 },
+  { monster = 36, at = [235, 15], dis = 30 },
+  { monster = 36, at = [226, 14], dis = 30 },
+  { monster = 36, at = [211, 15], dis = 30 },
+  { monster = 36, at = [210, 101], dis = 30 },
+  { monster = 36, at = [210, 114], dis = 30 },
+  { monster = 39, at = [239, 7], dis = 30 },
+  { monster = 39, at = [244, 25], dis = 30 },
+  { monster = 39, at = [243, 40], dis = 30 },
+  { monster = 36, at = [244, 8], dis = 30 },
+  { monster = 39, at = [243, 65], dis = 30 },
+  { monster = 36, at = [195, 99], dis = 30 },
+  { monster = 39, at = [244, 82], dis = 30 },
+  { monster = 39, at = [244, 92], dis = 30 },
+  { monster = 36, at = [226, 118], dis = 30 },
+  { monster = 36, at = [235, 110], dis = 30 },
+  { monster = 36, at = [235, 87], dis = 30 },
+  { monster = 36, at = [199, 124], dis = 30 },
+  { monster = 36, at = [193, 108], dis = 30 },
+  { monster = 36, at = [210, 92], dis = 30 },
+  { monster = 36, at = [235, 73], dis = 30 },
+  { monster = 36, at = [196, 89], dis = 30 },
+  { monster = 36, at = [219, 94], dis = 30 },
+  { monster = 39, at = [193, 38], dis = 30 },
+  { monster = 39, at = [210, 23], dis = 30 },
+  { monster = 39, at = [226, 22], dis = 30 },
+  { monster = 39, at = [227, 33], dis = 30 },
+  { monster = 39, at = [227, 54], dis = 30 },
+  { monster = 39, at = [228, 67], dis = 30 },
+  { monster = 39, at = [228, 81], dis = 30 },
+  { monster = 39, at = [228, 104], dis = 30 },
+  { monster = 39, at = [191, 16], dis = 30 },
+  { monster = 39, at = [220, 79], dis = 30 },
+  { monster = 39, at = [219, 60], dis = 30 },
+  { monster = 39, at = [219, 45], dis = 30 },
+  { monster = 39, at = [219, 34], dis = 30 },
+  { monster = 39, at = [202, 38], dis = 30 },
+  { monster = 36, at = [205, 62], dis = 30 },
+  { monster = 39, at = [208, 166], dis = 30 },
+  { monster = 39, at = [196, 166], dis = 30 },
+  { monster = 39, at = [188, 165], dis = 30 },
+  { monster = 39, at = [179, 165], dis = 30 },
+  { monster = 39, at = [165, 183], dis = 30 },
+  { monster = 34, at = [167, 197], dis = 30 },
+  { monster = 39, at = [167, 211], dis = 30 },
+  { monster = 34, at = [192, 203], dis = 30 },
+  { monster = 39, at = [165, 241], dis = 30 },
+  { monster = 39, at = [184, 246], dis = 30 },
+  { monster = 34, at = [191, 244], dis = 30 },
+  { monster = 39, at = [200, 245], dis = 30 },
+  { monster = 39, at = [214, 245], dis = 30 },
+  { monster = 39, at = [228, 245], dis = 30 },
+  { monster = 39, at = [245, 246], dis = 30 },
+  { monster = 34, at = [235, 237], dis = 30 },
+  { monster = 34, at = [224, 235], dis = 30 },
+  { monster = 34, at = [206, 237], dis = 30 },
+  { monster = 34, at = [200, 228], dis = 30 },
+  { monster = 34, at = [209, 212], dis = 30 },
+  { monster = 34, at = [225, 196], dis = 30 },
+  { monster = 34, at = [209, 190], dis = 30 },
+  { monster = 34, at = [198, 192], dis = 30 },
+  { monster = 34, at = [187, 184], dis = 30 },
+  { monster = 34, at = [193, 173], dis = 30 },
+  { monster = 34, at = [172, 177], dis = 30 },
+  { monster = 39, at = [198, 184], dis = 30 },
+  { monster = 39, at = [217, 196], dis = 30 },
+  { monster = 39, at = [227, 212], dis = 30 },
+  { monster = 39, at = [217, 217], dis = 30 },
+  { monster = 39, at = [201, 216], dis = 30 },
+  { monster = 39, at = [191, 238], dis = 30 },
+  { monster = 39, at = [193, 217], dis = 30 },
+  { monster = 39, at = [179, 229], dis = 30 },
+  { monster = 39, at = [178, 210], dis = 30 },
+  { monster = 39, at = [177, 195], dis = 30 },
+  { monster = 41, at = [126, 246], dis = 30 },
+  { monster = 41, at = [133, 235], dis = 30 },
+  { monster = 41, at = [133, 225], dis = 30 },
+  { monster = 34, at = [133, 185], dis = 30 },
+  { monster = 41, at = [133, 209], dis = 30 },
+  { monster = 34, at = [132, 201], dis = 30 },
+  { monster = 41, at = [127, 192], dis = 30 },
+  { monster = 41, at = [128, 175], dis = 30 },
+  { monster = 34, at = [134, 166], dis = 30 },
+  { monster = 41, at = [124, 167], dis = 30 },
+  { monster = 41, at = [97, 184], dis = 30 },
+  { monster = 41, at = [103, 168], dis = 30 },
+  { monster = 34, at = [96, 171], dis = 30 },
+  { monster = 41, at = [89, 174], dis = 30 },
+  { monster = 41, at = [83, 183], dis = 30 },
+  { monster = 34, at = [86, 190], dis = 30 },
+  { monster = 41, at = [83, 201], dis = 30 },
+  { monster = 41, at = [83, 213], dis = 30 },
+  { monster = 41, at = [89, 224], dis = 30 },
+  { monster = 34, at = [84, 237], dis = 30 },
+  { monster = 41, at = [86, 245], dis = 30 },
+  { monster = 34, at = [98, 245], dis = 30 },
+  { monster = 41, at = [108, 245], dis = 30 },
+  { monster = 41, at = [116, 244], dis = 30 },
+  { monster = 41, at = [118, 229], dis = 30 },
+  { monster = 41, at = [116, 211], dis = 30 },
+  { monster = 41, at = [111, 194], dis = 30 },
+  { monster = 41, at = [115, 178], dis = 30 },
+  { monster = 41, at = [97, 202], dis = 30 },
+  { monster = 41, at = [97, 214], dis = 30 },
+  { monster = 41, at = [102, 225], dis = 30 },
+  { monster = 41, at = [98, 236], dis = 30 },
+  { monster = 34, at = [111, 219], dis = 30 },
+  { monster = 34, at = [123, 224], dis = 30 },
+  { monster = 41, at = [116, 134], dis = 30 },
+  { monster = 41, at = [97, 133], dis = 30 },
+  { monster = 41, at = [85, 132], dis = 30 },
+  { monster = 41, at = [85, 116], dis = 30 },
+  { monster = 41, at = [85, 96], dis = 30 },
+  { monster = 41, at = [101, 87], dis = 30 },
+  { monster = 41, at = [118, 89], dis = 30 },
+  { monster = 37, at = [133, 87], dis = 30 },
+  { monster = 41, at = [116, 113], dis = 30 },
+  { monster = 41, at = [133, 115], dis = 30 },
+  { monster = 37, at = [104, 136], dis = 30 },
+  { monster = 41, at = [124, 136], dis = 30 },
+  { monster = 37, at = [96, 116], dis = 30 },
+  { monster = 37, at = [94, 100], dis = 30 },
+  { monster = 37, at = [89, 135], dis = 30 },
+  { monster = 37, at = [133, 98], dis = 30 },
+  { monster = 41, at = [106, 112], dis = 30 },
+  { monster = 41, at = [95, 106], dis = 30 },
+  { monster = 37, at = [112, 87], dis = 30 },
+  { monster = 37, at = [133, 109], dis = 30 },
+  { monster = 37, at = [121, 119], dis = 30 },
+  { monster = 37, at = [123, 130], dis = 30 },
+  { monster = 37, at = [87, 7], dis = 30 },
+  { monster = 37, at = [97, 6], dis = 30 },
+  { monster = 37, at = [115, 8], dis = 30 },
+  { monster = 37, at = [126, 8], dis = 30 },
+  { monster = 37, at = [133, 26], dis = 30 },
+  { monster = 37, at = [134, 37], dis = 30 },
+  { monster = 37, at = [134, 49], dis = 30 },
+  { monster = 37, at = [118, 53], dis = 30 },
+  { monster = 37, at = [111, 53], dis = 30 },
+  { monster = 37, at = [98, 54], dis = 30 },
+  { monster = 37, at = [84, 54], dis = 30 },
+  { monster = 37, at = [93, 41], dis = 30 },
+  { monster = 37, at = [99, 40], dis = 30 },
+  { monster = 37, at = [101, 29], dis = 30 },
+  { monster = 37, at = [98, 17], dis = 30 },
+  { monster = 37, at = [112, 16], dis = 30 },
+  { monster = 37, at = [124, 41], dis = 30 },
+  { monster = 37, at = [111, 39], dis = 30 },
+  { monster = 40, at = [86, 41], dis = 30 },
+  { monster = 40, at = [98, 24], dis = 30 },
+  { monster = 40, at = [115, 28], dis = 30 },
+  { monster = 40, at = [55, 15], dis = 30 },
+  { monster = 40, at = [46, 13], dis = 30 },
+  { monster = 37, at = [39, 11], dis = 30 },
+  { monster = 40, at = [29, 17], dis = 30 },
+  { monster = 37, at = [14, 24], dis = 30 },
+  { monster = 37, at = [53, 39], dis = 30 },
+  { monster = 40, at = [10, 41], dis = 30 },
+  { monster = 37, at = [7, 52], dis = 30 },
+  { monster = 40, at = [15, 54], dis = 30 },
+  { monster = 37, at = [25, 49], dis = 30 },
+  { monster = 40, at = [38, 48], dis = 30 },
+  { monster = 40, at = [48, 48], dis = 30 },
+  { monster = 40, at = [41, 57], dis = 30 },
+  { monster = 34, at = [123, 201], dis = 30 },
+  { monster = 40, at = [55, 28], dis = 30 },
+  { monster = 35, at = [46, 25], dis = 30 },
+  { monster = 37, at = [30, 32], dis = 30 },
+  { monster = 40, at = [20, 40], dis = 30 },
+  { monster = 40, at = [22, 30], dis = 30 },
+  { monster = 40, at = [39, 38], dis = 30 },
+  { monster = 40, at = [6, 98], dis = 30 },
+  { monster = 40, at = [33, 86], dis = 30 },
+  { monster = 40, at = [46, 86], dis = 30 },
+  { monster = 40, at = [55, 87], dis = 30 },
+  { monster = 40, at = [53, 97], dis = 30 },
+  { monster = 35, at = [42, 97], dis = 30 },
+  { monster = 40, at = [35, 98], dis = 30 },
+  { monster = 40, at = [25, 98], dis = 30 },
+  { monster = 35, at = [15, 127], dis = 30 },
+  { monster = 40, at = [8, 107], dis = 30 },
+  { monster = 40, at = [53, 116], dis = 30 },
+  { monster = 40, at = [41, 121], dis = 30 },
+  { monster = 34, at = [115, 167], dis = 30 },
+  { monster = 40, at = [25, 135], dis = 30 },
+  { monster = 40, at = [42, 135], dis = 30 },
+  { monster = 40, at = [52, 135], dis = 30 },
+  { monster = 35, at = [30, 171], dis = 30 },
+  { monster = 40, at = [38, 227], dis = 30 },
+  { monster = 35, at = [8, 191], dis = 30 },
+  { monster = 40, at = [51, 183], dis = 30 },
+  { monster = 35, at = [8, 211], dis = 30 },
+  { monster = 35, at = [8, 231], dis = 30 },
+  { monster = 35, at = [15, 244], dis = 30 },
+  { monster = 35, at = [18, 107], dis = 30 },
+  { monster = 35, at = [39, 246], dis = 30 },
+  { monster = 35, at = [11, 175], dis = 30 },
+  { monster = 35, at = [54, 220], dis = 30 },
+  { monster = 35, at = [31, 127], dis = 30 },
+  { monster = 35, at = [55, 195], dis = 30 },
+  { monster = 34, at = [105, 175], dis = 30 },
+  { monster = 35, at = [55, 174], dis = 30 },
+  { monster = 38, at = [31, 212], dis = 30 },
+  { monster = 35, at = [30, 233], dis = 30 },
+  { monster = 35, at = [21, 216], dis = 30 },
+  { monster = 35, at = [38, 212], dis = 30 },
+  { monster = 35, at = [29, 200], dis = 30 },
+  { monster = 40, at = [24, 189], dis = 30 },
+  { monster = 40, at = [48, 167], dis = 30 },
+  { monster = 40, at = [41, 167], dis = 30 },
+  { monster = 35, at = [38, 234], dis = 30 },
+  { monster = 37, at = [38, 201], dis = 30 },
+  { monster = 37, at = [18, 200], dis = 30 },
+  { monster = 37, at = [13, 191], dis = 30 },
+  { monster = 37, at = [38, 192], dis = 30 },
+  { monster = 34, at = [215, 174], dis = 30 },
+  { monster = 34, at = [245, 168], dis = 30 },
+  { monster = 34, at = [235, 214], dis = 30 },
+  { monster = 34, at = [165, 223], dis = 30 },
+  { monster = 34, at = [127, 239], dis = 30 },
+  { monster = 34, at = [125, 180], dis = 30 },
+  { monster = 34, at = [113, 189], dis = 30 },
+  { monster = 34, at = [98, 231], dis = 30 },
+  { monster = 37, at = [89, 119], dis = 30 },
+  { monster = 37, at = [86, 100], dis = 30 },
+  { monster = 37, at = [108, 116], dis = 30 },
+  { monster = 37, at = [126, 108], dis = 30 },
+  { monster = 37, at = [86, 26], dis = 30 },
+  { monster = 37, at = [111, 26], dis = 30 },
+  { monster = 37, at = [48, 17], dis = 30 },
+  { monster = 37, at = [13, 9], dis = 30 },
+  { monster = 37, at = [16, 41], dis = 30 },
+  { monster = 37, at = [38, 53], dis = 30 },
+  { monster = 37, at = [54, 51], dis = 30 },
+  { monster = 37, at = [45, 32], dis = 30 },
+  { monster = 37, at = [25, 86], dis = 30 },
+  { monster = 37, at = [52, 92], dis = 30 },
+  { monster = 37, at = [30, 102], dis = 30 },
+  { monster = 35, at = [34, 108], dis = 30 },
+  { monster = 35, at = [53, 111], dis = 30 },
+  { monster = 35, at = [45, 137], dis = 30 },
+  { monster = 35, at = [11, 96], dis = 30 },
+  { monster = 35, at = [43, 170], dis = 30 },
+  { monster = 35, at = [8, 220], dis = 30 },
+  { monster = 35, at = [27, 247], dis = 30 },
+  { monster = 35, at = [54, 232], dis = 30 },
+  { monster = 35, at = [24, 225], dis = 30 },
+  { monster = 36, at = [164, 16], dis = 30 },
+  { monster = 36, at = [164, 87], dis = 30 },
+  { monster = 36, at = [200, 104], dis = 30 },
+  { monster = 36, at = [205, 87], dis = 30 },
+  { monster = 36, at = [219, 68], dis = 30 },
+  { monster = 36, at = [211, 64], dis = 30 },
+  { monster = 36, at = [209, 52], dis = 30 },
+  { monster = 36, at = [210, 41], dis = 30 },
+  { monster = 36, at = [210, 32], dis = 30 },
+  { monster = 36, at = [194, 23], dis = 30 },
+  { monster = 36, at = [204, 15], dis = 30 },
+  { monster = 36, at = [236, 44], dis = 30 },
+  { monster = 36, at = [235, 98], dis = 30 },
+  { monster = 36, at = [222, 109], dis = 30 },
+  { monster = 36, at = [218, 87], dis = 30 },
+  { monster = 36, at = [228, 91], dis = 30 },
+  { monster = 36, at = [244, 15], dis = 30 },
+  { monster = 36, at = [228, 7], dis = 30 },
+  { monster = 36, at = [202, 25], dis = 30 },
+  { monster = 39, at = [226, 166], dis = 30 },
+  { monster = 39, at = [239, 167], dis = 30 },
+  { monster = 39, at = [227, 175], dis = 30 },
+  { monster = 39, at = [239, 174], dis = 30 },
+  { monster = 39, at = [245, 179], dis = 30 },
+  { monster = 39, at = [245, 189], dis = 30 },
+  { monster = 39, at = [245, 200], dis = 30 },
+  { monster = 39, at = [246, 212], dis = 30 },
+  { monster = 39, at = [245, 224], dis = 30 },
+  { monster = 39, at = [237, 226], dis = 30 },
+  { monster = 39, at = [236, 220], dis = 30 },
+  { monster = 39, at = [238, 208], dis = 30 },
+  { monster = 39, at = [237, 201], dis = 30 },
+  { monster = 39, at = [232, 196], dis = 30 },
+  { monster = 39, at = [238, 184], dis = 30 },
+  { monster = 39, at = [224, 185], dis = 30 },
+  { monster = 39, at = [216, 183], dis = 30 },
+  { monster = 39, at = [207, 178], dis = 30 },
+  { monster = 39, at = [196, 176], dis = 30 },
+  { monster = 39, at = [187, 192], dis = 30 },
+  { monster = 39, at = [185, 201], dis = 30 },
+  { monster = 39, at = [187, 209], dis = 30 },
+  { monster = 39, at = [185, 220], dis = 30 },
+  { monster = 39, at = [175, 217], dis = 30 },
+  { monster = 39, at = [176, 245], dis = 30 },
+  { monster = 39, at = [206, 244], dis = 30 },
+  { monster = 39, at = [215, 209], dis = 30 },
+  { monster = 39, at = [184, 173], dis = 30 },
+  { monster = 39, at = [172, 188], dis = 30 },
+  { monster = 39, at = [173, 171], dis = 30 },
+  { monster = 39, at = [206, 200], dis = 30 },
+  { monster = 39, at = [218, 229], dis = 30 },
+  { monster = 34, at = [112, 235], dis = 30 },
+  { monster = 34, at = [83, 220], dis = 30 },
+  { monster = 34, at = [90, 239], dis = 30 },
+  { monster = 34, at = [133, 215], dis = 30 },
+  { monster = 34, at = [88, 206], dis = 30 },
+  { monster = 34, at = [121, 235], dis = 30 },
+  { monster = 34, at = [98, 190], dis = 30 },
+  { monster = 41, at = [86, 109], dis = 30 },
+  { monster = 41, at = [96, 86], dis = 30 },
+  { monster = 41, at = [128, 86], dis = 30 },
+  { monster = 41, at = [122, 101], dis = 30 },
+  { monster = 41, at = [101, 100], dis = 30 },
+  { monster = 41, at = [86, 125], dis = 30 },
+  { monster = 41, at = [132, 124], dis = 30 },
+  { monster = 37, at = [110, 100], dis = 30 },
+  { monster = 40, at = [103, 8], dis = 30 },
+  { monster = 40, at = [111, 7], dis = 30 },
+  { monster = 40, at = [127, 34], dis = 30 },
+  { monster = 40, at = [130, 48], dis = 30 },
+  { monster = 40, at = [105, 55], dis = 30 },
+  { monster = 40, at = [84, 16], dis = 30 },
+  { monster = 40, at = [124, 24], dis = 30 },
+  { monster = 35, at = [14, 15], dis = 30 },
+  { monster = 35, at = [13, 33], dis = 30 },
+  { monster = 35, at = [30, 39], dis = 30 },
+  { monster = 35, at = [55, 8], dis = 30 },
+  { monster = 35, at = [44, 41], dis = 30 },
+  { monster = 35, at = [8, 25], dis = 30 },
+  { monster = 35, at = [37, 21], dis = 30 },
+  { monster = 35, at = [29, 24], dis = 30 },
+  { monster = 35, at = [19, 97], dis = 30 },
+  { monster = 35, at = [42, 109], dis = 30 },
+  { monster = 35, at = [22, 121], dis = 30 },
+  { monster = 35, at = [5, 122], dis = 30 },
+  { monster = 35, at = [5, 132], dis = 30 },
+  { monster = 35, at = [14, 137], dis = 30 },
+  { monster = 35, at = [38, 184], dis = 30 },
+  { monster = 35, at = [36, 174], dis = 30 },
+  { monster = 35, at = [23, 174], dis = 30 },
+  { monster = 35, at = [18, 168], dis = 30 },
+  { monster = 35, at = [7, 184], dis = 30 },
+  { monster = 35, at = [8, 200], dis = 30 },
+  { monster = 35, at = [19, 208], dis = 30 },
+  { monster = 35, at = [50, 241], dis = 30 },
+  { monster = 35, at = [54, 205], dis = 30 },
+  { monster = 40, at = [46, 208], dis = 30 },
+  { monster = 40, at = [18, 183], dis = 30 },
+  { monster = 40, at = [14, 224], dis = 30 },
+  { monster = 40, at = [7, 240], dis = 30 },
+  { monster = 40, at = [48, 232], dis = 30 },
+  { monster = 40, at = [48, 215], dis = 30 },
+  { monster = 40, at = [49, 191], dis = 30 },
+  { monster = 40, at = [48, 174], dis = 30 },
+  { monster = 38, at = [28, 212], dis = 30 },
+]

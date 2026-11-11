@@ -1,0 +1,34 @@
+# Arena (mapa 6): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+area = [
+  { monster = 200, box = [62, 160, 62, 160], count = 1 }, # Soccer Ball
+  { monster = 84, box = [44, 80, 50, 86], count = 3, dis = 2 }, # Chief Skeleton Warrior
+  { monster = 127, box = [44, 80, 50, 86], count = 2, dis = 2 }, # Dark Skull Soldier
+  { monster = 72, box = [66, 72, 71, 77], count = 5, dis = 2 }, # Phantom Knight
+  { monster = 36, box = [47, 57, 47, 57], count = 5, dis = 2 }, # Shadow
+  { monster = 58, box = [42, 34, 51, 43], count = 5, dis = 2 }, # Tantalos
+  { monster = 92, box = [25, 34, 34, 43], count = 5, dis = 2 }, # Dark Skull Soldier
+  { monster = 74, box = [25, 52, 34, 61], count = 5, dis = 2 }, # Alpha Crust
+  { monster = 93, box = [30, 74, 30, 74], count = 5, dis = 2 }, # Giant Ogre
+  { monster = 63, box = [25, 87, 34, 97], count = 5, dis = 2 }, # Death Beam Knight
+  { monster = 129, box = [12, 74, 12, 74], count = 5, dis = 2 }, # Red Skeleton Knight
+  { monster = 129, box = [7, 52, 15, 61], count = 5, dis = 2 }, # Red Skeleton Knight
+  { monster = 60, box = [11, 38, 11, 38], count = 5, dis = 2 }, # Bloody wolf
+  { monster = 57, box = [8, 90, 15, 95], count = 6, dis = 2 }, # Iron Wheel
+  { monster = 125, box = [47, 10, 50, 6], count = 5, dis = 2 }, # Chief Skeleton Warrior
+  { monster = 126, box = [83, 13, 86, 10], count = 5, dis = 2 }, # Chief Skeleton Archer
+  { monster = 127, box = [79, 23, 99, 115], count = 22, dis = 60 }, # Dark Skull Soldier
+  { monster = 125, box = [29, 110, 32, 110], count = 5, dis = 4 }, # Chief Skeleton Warrior
+  { monster = 126, box = [12, 111, 14, 108], count = 5, dis = 4 }, # Chief Skeleton Archer
+]
