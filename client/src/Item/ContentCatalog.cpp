@@ -13,6 +13,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "Net/Network.h"
+#include "Platform/IFileSystem.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -264,44 +266,134 @@ bool SectionComplete(const PendingSection& section)
 {
     return section.total >= 0 && section.received == section.total;
 }
+
+// ---- Caché en disco ----------------------------------------------------
+// Un archivo por sección: cabecera + los registros tal como llegaron.
+struct CacheFileHead
+{
+    char Magic[4];          // "MUCC"
+    std::uint32_t Version;  // 1
+    std::uint32_t Hash;     // el que mandó el server en F3:F6
+    std::uint16_t RecordSize;
+    std::uint16_t Reserved;
+    std::uint32_t Bytes;
+};
+static_assert(sizeof(CacheFileHead) == 20, "cabecera de la caché");
+
+const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4 };
+std::string s_CacheDir;                   // "Cache/<ip>_<puerto>", vacío = sin caché
+std::map<int, std::uint32_t> s_SyncHash;  // hash de cada sección del último F3:F6
+
+std::string CacheFile(BYTE subh)
+{
+    char name[16];
+    Platform::TextFormat(name, "/%02X.bin", subh);
+    return s_CacheDir + name;
+}
+
+bool CacheRead(BYTE subh, CacheFileHead& head, std::vector<BYTE>* records)
+{
+    if (s_CacheDir.empty()) return false;
+    FILE* f = Platform::GetFileSystem().Open(CacheFile(subh).c_str(), "rb");
+    if (!f) return false;
+    bool ok = fread(&head, sizeof(head), 1, f) == 1 && memcmp(head.Magic, "MUCC", 4) == 0 &&
+              head.Version == 1 && head.RecordSize > 0 && head.Bytes % head.RecordSize == 0 &&
+              head.Bytes <= 8u * 1024 * 1024;
+    if (ok && records) {
+        records->resize(head.Bytes);
+        ok = head.Bytes == 0 || fread(records->data(), head.Bytes, 1, f) == 1;
+    }
+    fclose(f);
+    return ok;
+}
+
+// Guarda una sección recién recibida con el hash que anunció el F3:F6.  Si no
+// hubo F3:F6 (server viejo, o una sección que el server reenvía sola al
+// recargar) no se guarda: el hash no se conoce.
+void CacheStore(BYTE subh, const PendingSection& section)
+{
+    auto it = s_SyncHash.find(subh);
+    if (s_CacheDir.empty() || it == s_SyncHash.end()) return;
+    Platform::GetFileSystem().EnsureDirectory("Cache");
+    Platform::GetFileSystem().EnsureDirectory(s_CacheDir.c_str());
+    FILE* f = Platform::GetFileSystem().Open(CacheFile(subh).c_str(), "wb");
+    if (!f) return;
+    CacheFileHead head = {};
+    memcpy(head.Magic, "MUCC", 4);
+    head.Version = 1;
+    head.Hash = it->second;
+    head.RecordSize = (std::uint16_t)section.recordSize;
+    head.Bytes = (std::uint32_t)section.records.size();
+    bool ok = fwrite(&head, sizeof(head), 1, f) == 1 &&
+              (section.records.empty() || fwrite(section.records.data(), section.records.size(), 1, f) == 1);
+    fclose(f);
+    if (!ok) remove(CacheFile(subh).c_str());
+}
+
+// ReadSection + guardar en la caché cuando la sección se completa.
+bool ReceiveSection(PendingSection& section, BYTE subh, const BYTE* msg, int size)
+{
+    if (!ReadSection(section, msg, size)) {
+        Log("ContentCatalog: %02X descartado (size=%d)", subh, size);
+        return false;
+    }
+    if (SectionComplete(section)) CacheStore(subh, section);
+    return true;
+}
+
+PendingSection* PendingFor(BYTE subh)
+{
+    switch (subh) {
+        case 0xE7: return &s_PendingItems;
+        case 0xE8: return &s_PendingMonsters;
+        case 0xE9: return &s_PendingFog;
+        case 0xEC: return &s_PendingEffects;
+        case 0xEE: return &s_PendingPets;
+        case 0xEF: return &s_PendingTooltips;
+        case 0xF3: return &s_PendingGates;
+        case 0xF4: return &s_PendingSkills;
+        default:   return nullptr;
+    }
+}
 } // namespace
 
 void CContentCatalog::ReceiveItems(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingItems, msg, size)) Log("ContentCatalog: E7 descartado (size=%d)", size);
+    ReceiveSection(s_PendingItems, 0xE7, msg, size);
 }
 
 void CContentCatalog::ReceiveMonsters(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingMonsters, msg, size)) Log("ContentCatalog: E8 descartado (size=%d)", size);
+    ReceiveSection(s_PendingMonsters, 0xE8, msg, size);
 }
 
 void CContentCatalog::ReceiveMapFog(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingFog, msg, size)) Log("ContentCatalog: E9 descartado (size=%d)", size);
+    ReceiveSection(s_PendingFog, 0xE9, msg, size);
 }
 
 void CContentCatalog::ReceiveEffects(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingEffects, msg, size)) Log("ContentCatalog: EC descartado (size=%d)", size);
+    ReceiveSection(s_PendingEffects, 0xEC, msg, size);
 }
 
 void CContentCatalog::ReceivePets(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingPets, msg, size)) Log("ContentCatalog: EE descartado (size=%d)", size);
+    ReceiveSection(s_PendingPets, 0xEE, msg, size);
 }
 
 void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
+    ReceiveSection(s_PendingTooltips, 0xEF, msg, size);
 }
 
 void CContentCatalog::ReceiveGates(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingGates, msg, size)) {
-        Log("ContentCatalog: F3 descartado (size=%d)", size);
-        return;
-    }
+    if (ReceiveSection(s_PendingGates, 0xF3, msg, size)) ApplyGates();
+}
+
+void CContentCatalog::ApplyGates()
+{
     if (!SectionComplete(s_PendingGates) || !GateAttribute) return;
     if (!s_HasVanillaGates) {
         memcpy(s_VanillaGates, GateAttribute, sizeof(s_VanillaGates));
@@ -338,10 +430,11 @@ void CContentCatalog::ReceiveGates(const BYTE* msg, int size)
 
 void CContentCatalog::ReceiveSkills(const BYTE* msg, int size)
 {
-    if (!ReadSection(s_PendingSkills, msg, size)) {
-        Log("ContentCatalog: F4 descartado (size=%d)", size);
-        return;
-    }
+    if (ReceiveSection(s_PendingSkills, 0xF4, msg, size)) ApplySkills();
+}
+
+void CContentCatalog::ApplySkills()
+{
     if (!SectionComplete(s_PendingSkills)) return;
     BYTE* const table = (BYTE*)SkillAttribute.Raw;
     if (!s_HasVanillaSkillData) {
@@ -367,6 +460,79 @@ void CContentCatalog::ReceiveSkills(const BYTE* msg, int size)
     s_HasSkills = true;
     s_PendingSkills = PendingSection();
     Log("ContentCatalog: %d skills", count);
+}
+
+void CContentCatalog::SetServer(const char* ip, unsigned int port)
+{
+    s_CacheDir.clear();
+    if (!ip || !*ip) return;
+    std::string dir = "Cache/";
+    for (const char* p = ip; *p; ++p)
+        dir += (isalnum((unsigned char)*p) || *p == '.' || *p == '-') ? *p : '_';
+    char suffix[16];
+    Platform::TextFormat(suffix, "_%u", port);
+    s_CacheDir = dir + suffix;
+}
+
+void CContentCatalog::SendCacheList()
+{
+    BYTE pkt[8 + Proto::CATALOG_CACHE_MAX * sizeof(Proto::CATALOG_CACHE_ENTRY)] = {};
+    int count = 0;
+    for (BYTE subh : kCachedSections) {
+        CacheFileHead head;
+        if (!CacheRead(subh, head, nullptr)) continue;
+        Proto::CATALOG_CACHE_ENTRY entry = {};
+        entry.subh = subh;
+        entry.hash = head.Hash;
+        memcpy(pkt + 8 + count * sizeof(entry), &entry, sizeof(entry));
+        ++count;
+    }
+    if (count == 0) return;
+    pkt[0] = 0xC1;
+    pkt[1] = (BYTE)(8 + count * sizeof(Proto::CATALOG_CACHE_ENTRY));
+    pkt[2] = 0xF1;
+    pkt[3] = 0x06;
+    pkt[4] = (BYTE)count;
+    gNetwork.Send(pkt, pkt[1]);
+    Log("ContentCatalog: F1/06 con %d secciones en caché (%s)", count, s_CacheDir.c_str());
+}
+
+void CContentCatalog::ReceiveSync(const BYTE* msg, int size)
+{
+    s_SyncHash.clear();
+    if (size < 8) return;
+    int count = msg[4];
+    if (count > Proto::CATALOG_CACHE_MAX || 8 + count * (int)sizeof(Proto::CATALOG_CACHE_ENTRY) > size) return;
+    int loaded = 0;
+    bool broken = false;
+    for (int i = 0; i < count; ++i) {
+        Proto::CATALOG_CACHE_ENTRY entry;
+        memcpy(&entry, msg + 8 + i * sizeof(entry), sizeof(entry));
+        s_SyncHash[entry.subh] = entry.hash;
+        if (!entry.cached) continue;
+        PendingSection* section = PendingFor(entry.subh);
+        CacheFileHead head;
+        std::vector<BYTE> records;
+        if (!section || !CacheRead(entry.subh, head, &records) || head.Hash != entry.hash) {
+            // El server no la va a mandar y no se puede leer: el catálogo queda
+            // incompleto en este login.  Se borra la caché para que el próximo
+            // la pida entera.
+            Log("ContentCatalog: no se pudo leer %02X de la caché", entry.subh);
+            broken = true;
+            continue;
+        }
+        section->records = std::move(records);
+        section->recordSize = head.RecordSize;
+        section->received = 1;
+        section->total = 1;
+        if (entry.subh == 0xF3) ApplyGates();
+        if (entry.subh == 0xF4) ApplySkills();
+        ++loaded;
+    }
+    if (broken) {
+        for (BYTE subh : kCachedSections) remove(CacheFile(subh).c_str());
+    }
+    Log("ContentCatalog: F3/F6 %d secciones, %d desde la caché", count, loaded);
 }
 
 int CContentCatalog::GetGateLevel(int index, int fallback) const
@@ -457,6 +623,7 @@ void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
         return;
     }
     Publish();
+    s_SyncHash.clear();
     Log("ContentCatalog: %d items, %d monstruos, hash %08X", items, monsters, end.hash);
 }
 
@@ -480,6 +647,7 @@ void CContentCatalog::Clear()
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
     s_PendingTexts = PendingSection();
+    s_SyncHash.clear();
     s_PendingGates = PendingSection();
     if (s_HasGates && s_HasVanillaGates && GateAttribute)
         memcpy(GateAttribute, s_VanillaGates, sizeof(s_VanillaGates));

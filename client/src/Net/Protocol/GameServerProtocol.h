@@ -801,6 +801,21 @@ struct CATALOG_SKILL
 };
 static_assert(sizeof(CATALOG_SKILL) == 8, "F3:F4 entrada");
 
+// Caché del catálogo (Fase 5).  F1:06 (cliente -> server, antes del login):
+// secciones que el cliente tiene guardadas de este server con su hash.
+// F3:F6 (server -> cliente, antes de las secciones): todas las secciones con su
+// hash; `cached` = 1 si el cliente la toma de su caché y el server no la manda.
+const int CATALOG_CACHE_MAX = 16;
+
+struct CATALOG_CACHE_ENTRY
+{
+    std::uint8_t subh;
+    std::uint8_t cached;
+    std::uint16_t Reserved;
+    std::uint32_t hash;
+};
+static_assert(sizeof(CATALOG_CACHE_ENTRY) == 8, "F1:06 / F3:F6 entrada");
+
 // F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
 // llegan los del idioma que el cliente pidió con el F1:04.
 const std::uint8_t CATALOG_TEXT_ITEM = 1;

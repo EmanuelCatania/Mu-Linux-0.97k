@@ -5,6 +5,7 @@
 #include "CustomPet.h"
 #include "CustomWing.h"
 #include "ItemManager.h"
+#include "Log.h"
 #include "MonsterManager.h"
 #include "ReadScript.h"
 #include "TextName.h"
@@ -30,6 +31,8 @@ static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
 static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
 static_assert(sizeof(CATALOG_GATE) == 16, "catalog gate");
 static_assert(sizeof(CATALOG_SKILL) == 8, "catalog skill");
+static_assert(sizeof(CATALOG_CACHE_ENTRY) == 8, "catalog cache entry");
+static_assert(sizeof(PMSG_CATALOG_SYNC_SEND) == 8 + 8 * CATALOG_CACHE_MAX, "catalog sync");
 
 bool IsSafeModelPath(const char* path);
 
@@ -686,19 +689,45 @@ void CContentCatalog::Build()
 		monsters.push_back(entry);
 	}
 
+	this->m_Sections.clear();
+
+	size_t sectionBegin = this->m_Packets.size();
+
 	this->BuildSection(0xE7, items.empty() ? 0 : (const BYTE*)&items[0], sizeof(CATALOG_ITEM), (int)items.size(), this->m_Packets);
+
+	this->MarkSection(0xE7, sectionBegin);
+
+	sectionBegin = this->m_Packets.size();
 
 	this->BuildSection(0xE8, monsters.empty() ? 0 : (const BYTE*)&monsters[0], sizeof(CATALOG_MONSTER), (int)monsters.size(), this->m_Packets);
 
+	this->MarkSection(0xE8, sectionBegin);
+
+	sectionBegin = this->m_Packets.size();
+
 	this->BuildSection(0xE9, this->m_MapFog.empty() ? 0 : (const BYTE*)&this->m_MapFog[0], sizeof(CATALOG_MAP_FOG), (int)this->m_MapFog.size(), this->m_Packets);
+
+	this->MarkSection(0xE9, sectionBegin);
+
+	sectionBegin = this->m_Packets.size();
 
 	this->BuildSection(0xEC, this->m_Effects.empty() ? 0 : (const BYTE*)&this->m_Effects[0], sizeof(CATALOG_EFFECT), (int)this->m_Effects.size(), this->m_Packets);
 
+	this->MarkSection(0xEC, sectionBegin);
+
+	sectionBegin = this->m_Packets.size();
+
 	this->BuildSection(0xEF, this->m_Tooltips.empty() ? 0 : (const BYTE*)&this->m_Tooltips[0], sizeof(CATALOG_TOOLTIP), (int)this->m_Tooltips.size(), this->m_Packets);
+
+	this->MarkSection(0xEF, sectionBegin);
+
+	sectionBegin = this->m_Packets.size();
 
 	const std::vector<CATALOG_PET>& pets = gCustomPet.GetCatalog();
 
 	this->BuildSection(0xEE, pets.empty() ? 0 : (const BYTE*)&pets[0], sizeof(CATALOG_PET), (int)pets.size(), this->m_Packets);
+
+	this->MarkSection(0xEE, sectionBegin);
 
 	std::vector<CATALOG_GATE> gates;
 
@@ -737,7 +766,11 @@ void CContentCatalog::Build()
 
 	this->BuildSection(0xF3, gates.empty() ? 0 : (const BYTE*)&gates[0], sizeof(CATALOG_GATE), (int)gates.size(), this->m_GatePackets);
 
+	sectionBegin = this->m_Packets.size();
+
 	this->m_Packets.insert(this->m_Packets.end(), this->m_GatePackets.begin(), this->m_GatePackets.end());
+
+	this->MarkSection(0xF3, sectionBegin);
 
 	std::vector<CATALOG_SKILL> skills;
 
@@ -764,7 +797,11 @@ void CContentCatalog::Build()
 
 	this->BuildSection(0xF4, skills.empty() ? 0 : (const BYTE*)&skills[0], sizeof(CATALOG_SKILL), (int)skills.size(), this->m_SkillPackets);
 
+	sectionBegin = this->m_Packets.size();
+
 	this->m_Packets.insert(this->m_Packets.end(), this->m_SkillPackets.begin(), this->m_SkillPackets.end());
+
+	this->MarkSection(0xF4, sectionBegin);
 
 	// Los textos dependen del idioma de cada cliente: van aparte y no entran
 	// en el hash, que identifica el contenido compartido.
@@ -808,6 +845,56 @@ void CContentCatalog::Build()
 	LogAdd(LOG_BLUE, "[ContentCatalog] %d items, %d monstruos, %d fog, %d efectos, %d gates, %d skills, %d paquetes", (int)items.size(), (int)monsters.size(), (int)this->m_MapFog.size(), (int)this->m_Effects.size(), (int)gates.size(), (int)skills.size(), (int)this->m_Packets.size());
 }
 
+void CContentCatalog::MarkSection(BYTE subh, size_t begin)
+{
+	SectionRange range;
+
+	range.subh = subh;
+
+	range.begin = begin;
+
+	range.end = this->m_Packets.size();
+
+	range.hash = 2166136261u;
+
+	for (size_t n = begin; n < range.end; n++)
+	{
+		range.hash = Fnv1a(range.hash, &this->m_Packets[n][0], this->m_Packets[n].size());
+	}
+
+	this->m_Sections.push_back(range);
+}
+
+void CContentCatalog::SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* lpMsg)
+{
+	LPOBJ lpObj = &gObj[aIndex];
+
+	lpObj->CatalogCacheCount = 0;
+
+	const int size = lpMsg->header.size;
+
+	int count = lpMsg->count;
+
+	if (count > CATALOG_CACHE_MAX)
+	{
+		count = CATALOG_CACHE_MAX;
+	}
+
+	if (size < (int)(8 + count * sizeof(CATALOG_CACHE_ENTRY)))
+	{
+		count = (size < 8) ? 0 : (int)((size - 8) / sizeof(CATALOG_CACHE_ENTRY));
+	}
+
+	for (int n = 0; n < count; n++)
+	{
+		lpObj->CatalogCacheSub[n] = lpMsg->entry[n].subh;
+
+		lpObj->CatalogCacheHash[n] = lpMsg->entry[n].hash;
+	}
+
+	lpObj->CatalogCacheCount = (BYTE)count;
+}
+
 void CContentCatalog::SendGates(int aIndex)
 {
 	if (!this->m_Built)
@@ -841,13 +928,69 @@ void CContentCatalog::Send(int aIndex)
 		this->Build();
 	}
 
+	LPOBJ lpObj = &gObj[aIndex];
+
+	// Lista de secciones con su hash: las que el cliente ya tiene con el mismo
+	// hash las toma de su caché y no se mandan.
+	PMSG_CATALOG_SYNC_SEND sync;
+
+	memset(&sync, 0, sizeof(sync));
+
+	std::vector<bool> cached(this->m_Sections.size(), false);
+
+	int cachedCount = 0;
+
+	for (size_t s = 0; s < this->m_Sections.size() && s < CATALOG_CACHE_MAX; s++)
+	{
+		CATALOG_CACHE_ENTRY& entry = sync.entry[sync.count++];
+
+		entry.subh = this->m_Sections[s].subh;
+
+		entry.hash = this->m_Sections[s].hash;
+
+		for (int n = 0; n < lpObj->CatalogCacheCount; n++)
+		{
+			if (lpObj->CatalogCacheSub[n] == entry.subh && lpObj->CatalogCacheHash[n] == entry.hash)
+			{
+				entry.cached = 1;
+
+				cached[s] = true;
+
+				cachedCount++;
+
+				break;
+			}
+		}
+	}
+
+	lpObj->CatalogCacheCount = 0;
+
+	const BYTE syncSize = (BYTE)(8 + sync.count * sizeof(CATALOG_CACHE_ENTRY));
+
+	sync.header.set(0xF3, 0xF6, syncSize);
+
+	DataSend(aIndex, (BYTE*)&sync, syncSize);
+
+	for (size_t s = 0; s < this->m_Sections.size(); s++)
+	{
+		if (cached[s])
+		{
+			continue;
+		}
+
+		for (size_t n = this->m_Sections[s].begin; n < this->m_Sections[s].end; n++)
+		{
+			DataSend(aIndex, &this->m_Packets[n][0], (DWORD)this->m_Packets[n].size());
+		}
+	}
+
+	if (cachedCount > 0)
+	{
+		gLog.Output(LOG_CONNECT, "[ContentCatalog][%d] %d de %d secciones desde la caché del cliente", aIndex, cachedCount, (int)this->m_Sections.size());
+	}
+
 	// El fin (F3:EA) va último: el cliente publica todo lo recibido al verlo.
 	const size_t last = this->m_Packets.size() - 1;
-
-	for (size_t n = 0; n < last; n++)
-	{
-		DataSend(aIndex, &this->m_Packets[n][0], (DWORD)this->m_Packets[n].size());
-	}
 
 	const int lang = gObj[aIndex].Lang;
 

@@ -903,6 +903,8 @@ short gObjAdd(SOCKET socket, char* IpAddress, int aIndex)
 
 	memset(lpObj->HardwareID, 0, sizeof(lpObj->HardwareID));
 
+	lpObj->CatalogCacheCount = 0;
+
 	gSerialCheck[aIndex].Init();
 
 	gIpManager.InsertIpAddress(lpObj->IpAddr);

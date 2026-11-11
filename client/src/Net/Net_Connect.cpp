@@ -13,6 +13,7 @@
 #include "Net/Network.h"
 #include "Net/Reconnect.h"
 #include "Net/Net.h"
+#include "Item/ContentCatalog.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -54,8 +55,10 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   s_LastConnectOk = iVar2 != 0;
   // DESVIACION (DLL Reconnect.cpp ReconnectCreateConnection): recordar el
   // GameServer para poder reconectar.
-  if (iVar2 != 0 && !gNetwork.IsConnectServerMode())
+  if (iVar2 != 0 && !gNetwork.IsConnectServerMode()) {
     gReconnect.OnGameServerConnect(param_1, (WORD)param_2);
+    gContentCatalog.SetServer(param_1, param_2);   // DESVIACION (Fase 5): caché del catálogo
+  }
   if (iVar2 == 0 && s_NonFatalConnect) {
     DbgLogPublic("NET: CreateSocket falló (reconexión: se reintenta)");
     return;

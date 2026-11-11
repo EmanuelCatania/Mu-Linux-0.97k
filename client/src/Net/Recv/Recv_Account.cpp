@@ -16,6 +16,7 @@
 #include "Net/ServerCharacterStats.h"
 #include "Config/UserSettings.h"
 #include "Net/HWID.h"
+#include "Item/ContentCatalog.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
@@ -58,6 +59,7 @@ void Recv_JoinServer(const BYTE* Msg)
         if (gUserSettings.GetLanguage() != USER_LANG_DEFAULT)
             Lang_Send(gUserSettings.GetLanguage());
         HWID_Send();
+        gContentCatalog.SendCacheList();   // DESVIACION (Fase 5): caché del catálogo
         gReconnect.OnJoinServer();   // DESVIACION: la reconexión reenvía el login
     } else {
         NetLog("NET:    JoinServer FAIL code=%d → SetErrorMessage(113)", Msg[4]);

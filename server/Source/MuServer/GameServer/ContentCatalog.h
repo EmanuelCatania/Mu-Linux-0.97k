@@ -220,6 +220,36 @@ struct CATALOG_SKILL
 	BYTE Reserved;
 };
 
+// Caché del catálogo en el cliente (Fase 5).  Antes del login el cliente dice
+// qué secciones tiene guardadas de este server (F1:06); al aceptar el login el
+// server manda la lista de secciones con su hash (F3:F6), marcando cuáles puede
+// tomar de su caché, y después sólo las que cambiaron.
+#define CATALOG_CACHE_MAX 16
+
+struct CATALOG_CACHE_ENTRY
+{
+	BYTE subh;
+	BYTE cached;        // en F3:F6: 1 = el cliente la toma de su caché
+	WORD Reserved;
+	DWORD hash;
+};
+
+struct PMSG_CATALOG_CACHE_RECV
+{
+	PSBMSG_HEAD header; // C1:F1:06
+	BYTE count;
+	BYTE Reserved[3];
+	CATALOG_CACHE_ENTRY entry[CATALOG_CACHE_MAX];
+};
+
+struct PMSG_CATALOG_SYNC_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:F6
+	BYTE count;
+	BYTE Reserved[3];
+	CATALOG_CACHE_ENTRY entry[CATALOG_CACHE_MAX];
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -273,6 +303,9 @@ public:
 	// Sólo los skills (F3:F4), al recargar Skill.txt.
 	void SendSkills(int aIndex);
 
+	// F1:06: secciones que el cliente tiene en caché.
+	void SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* lpMsg);
+
 	const ITEM_POSE_INFO* GetPose(int index) const;
 
 private:
@@ -296,6 +329,19 @@ private:
 	std::vector<std::vector<BYTE>> m_GatePackets;
 
 	std::vector<std::vector<BYTE>> m_SkillPackets;
+
+	// Rango de m_Packets de cada sección y su hash (para la caché del cliente).
+	struct SectionRange
+	{
+		BYTE subh;
+		DWORD hash;
+		size_t begin;
+		size_t end;
+	};
+
+	std::vector<SectionRange> m_Sections;
+
+	void MarkSection(BYTE subh, size_t begin);
 
 	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
 
