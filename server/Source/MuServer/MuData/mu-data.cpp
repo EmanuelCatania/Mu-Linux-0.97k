@@ -24,11 +24,20 @@
 //       Compara las reglas de los mapas de las dos fuentes. Sale con 0 si son
 //       iguales.
 //
+//   mu-data import-drops <ItemDrop.txt> <Data> [--force]
+//       Parte ItemDrop.txt: los drops de cualquier mapa van a
+//       <Data>/Items/Drops.toml y los de un mapa, a <Data>/Maps/NN-Nombre/Drops.toml.
+//
+//   mu-data check-drops <ItemDrop.txt> <Data>
+//       Compara los drops de las dos fuentes (sin importar el orden). Sale con 0
+//       si son iguales.
+//
 //   mu-data validate <Data>
-//       Lee los Spawns.toml, los Map.toml y el Invasions.toml y avisa del primer
-//       error, con archivo y línea.
+//       Lee los Spawns.toml, los Map.toml, los Drops.toml y el Invasions.toml y
+//       avisa del primer error, con archivo y línea.
 
 #include "EventInvasions.h"
+#include "ItemDrops.h"
 #include "MapInfo.h"
 #include "MapSpawns.h"
 
@@ -364,6 +373,79 @@ static int CheckMaps(const std::string& txt, const std::string& dataDir)
 	return 0;
 }
 
+static int ImportDrops(const std::string& txt, const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<ItemDropDef> drops;
+
+	if (!ItemDrops_LoadLegacy(txt, drops, error))
+	{
+		return Fail(error);
+	}
+
+	// El nombre de la carpeta de un mapa nuevo sale de su Map.toml, si hay.
+	std::vector<MapInfoDef> maps;
+
+	MapInfo_Load(dataDir, maps, error);
+
+	std::map<int, std::vector<ItemDropDef>> byMap;
+
+	for (const ItemDropDef& d : drops)
+	{
+		byMap[d.Map].push_back(d);
+	}
+
+	for (const auto& [map, list] : byMap)
+	{
+		std::string name = "Map" + std::to_string(map);
+
+		for (const MapInfoDef& m : maps)
+		{
+			if (m.Index == map)
+			{
+				name = m.Name;
+			}
+		}
+
+		fs::path file = fs::u8path(map < 0 ? ItemDrops_GlobalPath(dataDir) : ItemDrops_MapPath(dataDir, map, name));
+
+		if (!PrepareOutput(file, force, error) || !ItemDrops_WriteToml(file.u8string(), map, name, list, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu drops\n", file.u8string().c_str(), list.size());
+	}
+
+	std::printf("%zu drops\n", drops.size());
+
+	return 0;
+}
+
+static int CheckDrops(const std::string& txt, const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<ItemDropDef> legacy, toml;
+
+	if (!ItemDrops_LoadLegacy(txt, legacy, error) || !ItemDrops_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!ItemDrops_Equal(legacy, toml, error))
+	{
+		std::printf("Distintos: %s\n", error.c_str());
+
+		return 1;
+	}
+
+	std::printf("Idénticos: %zu drops\n", toml.size());
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -411,6 +493,18 @@ static int Validate(const std::string& dataDir)
 		}
 
 		std::printf("OK: reglas de %zu mapas\n", maps.size());
+	}
+
+	if (ItemDrops_HasData(dataDir))
+	{
+		std::vector<ItemDropDef> drops;
+
+		if (!ItemDrops_Load(dataDir, drops, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: %zu drops\n", drops.size());
 	}
 
 	return 0;
@@ -462,6 +556,16 @@ int main(int argc, char** argv)
 		return CheckMaps(args[1], args[2]);
 	}
 
+	if (args.size() == 3 && args[0] == "import-drops")
+	{
+		return ImportDrops(args[1], args[2], force);
+	}
+
+	if (args.size() == 3 && args[0] == "check-drops")
+	{
+		return CheckDrops(args[1], args[2]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -475,6 +579,8 @@ int main(int argc, char** argv)
 		"  mu-data check-invasions <InvasionManager.dat> <Data>\n"
 		"  mu-data import-maps <MapManager.txt> <Data> [--force]\n"
 		"  mu-data check-maps <MapManager.txt> <Data>\n"
+		"  mu-data import-drops <ItemDrop.txt> <Data> [--force]\n"
+		"  mu-data check-drops <ItemDrop.txt> <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;

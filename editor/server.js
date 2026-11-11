@@ -290,7 +290,7 @@ app.post('/api/file', async (req, res) => {
 
 // Borrar un archivo: solo los JSON de los items y pets custom, y con copia de
 // respaldo antes. El resto del árbol de datos no se puede borrar desde el panel.
-const DELETABLE = /^Data\/(Custom\/(Items|Pets)\/\d{2}_\d{3}\.json|Maps\/\d+-[A-Za-z0-9]+\/Map\.toml)$/;
+const DELETABLE = /^Data\/(Custom\/(Items|Pets)\/\d{2}_\d{3}\.json|Maps\/\d+-[A-Za-z0-9]+\/(Map|Drops)\.toml|Items\/Drops\.toml)$/;
 
 app.post('/api/delete', async (req, res) => {
   try {

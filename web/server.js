@@ -19,6 +19,7 @@ const noticeLimits = require('./lib/notices');
 const accountPassword = require('./lib/account-password');
 const spawns = require('./lib/spawns');
 const mapsLib = require('./lib/maps');
+const dropsLib = require('./lib/drops');
 
 // Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
 let passwordColumnWide = false;
@@ -2171,6 +2172,59 @@ function mapErrorStatus(err) {
   return err instanceof mapsLib.MapError ? 400 : (err.status || 502);
 }
 
+// Drops especiales: el GameServer usa Data/Items/Drops.toml y los
+// Data/Maps/NN-Nombre/Drops.toml si hay alguno y si no, ItemDrop.txt. El editor
+// siempre recibe y manda el texto del .txt; con los TOML el panel convierte en
+// los dos sentidos.
+const ITEM_DROP_TXT = 'Data/Item/ItemDrop.txt';
+
+async function findDropTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  const globalDir = dropsLib.GLOBAL_FILE.slice(0, dropsLib.GLOBAL_FILE.lastIndexOf('/'));
+  if (((await listEditorDir(globalDir)) || []).some((f) => f.type === 'file' && f.name === dropsLib.DROP_FILE)) {
+    files.push({ path: dropsLib.GLOBAL_FILE, map: -1 });
+  }
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === dropsLib.DROP_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new dropsLib.DropError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${dropsLib.DROP_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+// Escribe los Drops.toml y borra los que quedaron sin drops.
+async function writeDropToml(drops, files, folders) {
+  const maps = parseMapManager((await readMapManager().catch(() => ({ content: '' }))).content);
+  const names = new Map(maps.map((m) => [m.id, m.name]));
+  const out = dropsLib.buildToml(drops, { mapName: (id) => names.get(id), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const data = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(data.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function dropErrorStatus(err) {
+  return err instanceof dropsLib.DropError ? 400 : (err.status || 502);
+}
+
 async function spawnNames() {
   const [maps, monsters] = await Promise.all([
     readMapManager().then((m) => parseMapManager(m.content)).catch(() => []),
@@ -2946,10 +3000,14 @@ app.get('/admin/server-editor/api/drop', requireAdmin, requireAdminPasswordChang
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Item/ItemDrop.txt')}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findDropTomlFiles();
+    if (!files.length) {
+      return res.json({ format: 'txt', content: await readEditorFile(ITEM_DROP_TXT) });
+    }
+    const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    return res.json({ format: 'toml', files: files.map((f) => f.path), content: dropsLib.buildLegacy(dropsLib.parseToml(loaded)) });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2959,13 +3017,33 @@ app.post('/admin/server-editor/api/drop', requireAdmin, requireAdminPasswordChan
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Item/ItemDrop.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findDropTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: ITEM_DROP_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeDropToml(dropsLib.parseLegacy(content), files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa ItemDrop.txt a Items/Drops.toml y un Drops.toml por mapa. No borra el
+// .txt (queda como respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/drop/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findDropTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Los drops ya están en formato por mapa.' });
+    }
+    const written = await writeDropToml(dropsLib.parseLegacy(await readEditorFile(ITEM_DROP_TXT)), [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
   }
 });
 

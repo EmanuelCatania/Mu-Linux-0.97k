@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ItemDrop.h"
+#include "ItemDrops.h"
 #include "BonusManager.h"
 #include "DSProtocol.h"
 #include "ItemManager.h"
@@ -95,6 +96,66 @@ void CItemDrop::Load(const char* path)
 	}
 
 	delete lpReadScript;
+}
+
+void CItemDrop::LoadToml(const char* path)
+{
+	std::vector<ItemDropDef> defs;
+
+	std::string error;
+
+	if (!ItemDrops_Load(path, defs, error))
+	{
+		// Al arrancar es fatal, como el resto de los datos; en una recarga
+		// quedan los drops de antes.
+		if (this->m_ItemDropInfo.empty())
+		{
+			ErrorMessageBox("[ItemDrop] %s", error.c_str());
+		}
+		else
+		{
+			LogAdd(LOG_RED, "[ItemDrop] Recarga cancelada, quedan los drops de antes: %s", error.c_str());
+		}
+
+		return;
+	}
+
+	this->m_ItemDropInfo.clear();
+
+	for (const ItemDropDef& d : defs)
+	{
+		ITEM_DROP_INFO info;
+
+		info.Index = SafeGetItem(GET_ITEM(d.Section, d.Index));
+
+		info.Level = d.Level;
+
+		info.Grade = d.Grade;
+
+		info.LevelOptionRate = d.LevelOption;
+
+		info.SkillOptionRate = d.SkillOption;
+
+		info.LuckOptionRate = d.LuckOption;
+
+		info.AddOptionRate = d.AddOption;
+
+		info.ExceOptionRate = d.ExcOption;
+
+		info.MapNumber = d.Map;
+
+		info.MonsterClass = d.Monster;
+
+		info.MonsterLevelMin = d.MonsterLevelMin;
+
+		info.MonsterLevelMax = d.MonsterLevelMax;
+
+		info.DropRate = d.Rate;
+
+		this->m_ItemDropInfo.push_back(info);
+	}
+
+	LogAdd(LOG_BLUE, "[ItemDrop] %d drops desde %s", (int)defs.size(), path);
 }
 
 int CItemDrop::DropItem(LPOBJ lpObj, LPOBJ lpTarget)

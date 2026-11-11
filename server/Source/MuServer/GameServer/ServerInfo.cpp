@@ -37,6 +37,7 @@
 #include "EventInvasions.h"
 #include "MapSpawns.h"
 #include "MapInfo.h"
+#include "ItemDrops.h"
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
@@ -257,7 +258,16 @@ void CServerInfo::ReadItemInfo()
 {
 	gItemManager.Load(gPath.GetFullPath("Item\\Item.txt"));
 
-	gItemDrop.Load(gPath.GetFullPath("Item\\ItemDrop.txt"));
+	// Fase 5: si hay Data/Items/Drops.toml o algún Data/Maps/NN-Nombre/Drops.toml
+	// mandan ellos; si no, ItemDrop.txt como siempre.
+	if (ItemDrops_HasData(gPath.GetFullPath("")))
+	{
+		gItemDrop.LoadToml(gPath.GetFullPath(""));
+	}
+	else
+	{
+		gItemDrop.Load(gPath.GetFullPath("Item\\ItemDrop.txt"));
+	}
 
 	gItemMove.Load(gPath.GetFullPath("Item\\ItemMove.txt"));
 
