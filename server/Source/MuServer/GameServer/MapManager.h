@@ -24,6 +24,10 @@ public:
 
 	void Load(const char* path);
 
+	// Fase 5: las reglas de cada mapa desde Data/Maps/NN-Nombre/Map.toml
+	// (`path` es Data/). Llena la misma tabla que Load con MapManager.txt.
+	void LoadMaps(const char* path);
+
 	int GetMapNonPK(int index);
 
 	int GetMapNonOutlaw(int index);

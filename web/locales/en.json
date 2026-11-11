@@ -776,5 +776,8 @@
   "Convertido y recargado en el servidor.": "Converted and reloaded on the server.",
   "Convertido, pero no se pudo recargar en el server.": "Converted, but it could not be reloaded on the server.",
   "Formato: un archivo por mapa (Data/Maps) y las invasiones en Data/Events/Invasions.": "Format: one file per map (Data/Maps) and invasions in Data/Events/Invasions.",
-  "Formato: MonsterSetBase.txt.": "Format: MonsterSetBase.txt."
+  "Formato: MonsterSetBase.txt.": "Format: MonsterSetBase.txt.",
+  "Las reglas de los mapas pasan a un archivo por mapa (Data/Maps/NN-Nombre/Map.toml). MapManager.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?": "Map rules move to one file per map (Data/Maps/NN-Name/Map.toml). MapManager.txt stays as a backup and the server stops reading it. Continue?",
+  "Formato: un archivo por mapa (Data/Maps/NN-Nombre/Map.toml).": "Format: one file per map (Data/Maps/NN-Name/Map.toml).",
+  "Formato: MapManager.txt.": "Format: MapManager.txt."
 }

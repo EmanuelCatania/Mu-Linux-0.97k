@@ -50,6 +50,9 @@ public:
 
 	void ReloadMonsterInfo();
 
+	// Reglas de los mapas: Data/Maps/NN-Nombre/Map.toml o MapManager.txt.
+	void ReadMapManagerInfo();
+
 	void ReadStartupInfo(const char* section, const char* path);
 
 	void ReadChaosMixInfo(const char* section, const char* path);
