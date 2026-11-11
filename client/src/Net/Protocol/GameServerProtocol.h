@@ -788,6 +788,19 @@ struct CATALOG_GATE
 };
 static_assert(sizeof(CATALOG_GATE) == 16, "F3:F3 entrada");
 
+// F3:F4 — skills (Fase 5): maná, AG y rango sobre los de skill.bmd.  El rango
+// decide hasta dónde camina el héroe antes de lanzar, y el server lo valida
+// con el suyo.
+struct CATALOG_SKILL
+{
+    std::uint16_t Index;
+    std::uint16_t Mana;
+    std::uint16_t BP;           // AG
+    std::uint8_t Range;         // en casillas
+    std::uint8_t Reserved;
+};
+static_assert(sizeof(CATALOG_SKILL) == 8, "F3:F4 entrada");
+
 // F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
 // llegan los del idioma que el cliente pidió con el F1:04.
 const std::uint8_t CATALOG_TEXT_ITEM = 1;

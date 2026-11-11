@@ -58,6 +58,8 @@ public:
     // F3/F3: se aplica apenas llega completa (no espera al F3/EA), porque el
     // server la vuelve a mandar sola cuando recarga las gates.
     void ReceiveGates(const BYTE* msg, int size);
+    // F3/F4: igual que las gates, se aplica apenas llega completa.
+    void ReceiveSkills(const BYTE* msg, int size);
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.

@@ -209,6 +209,17 @@ struct CATALOG_GATE
 	WORD Reserved2;
 };
 
+// Skills (Fase 5): lo que el cliente usa para decidir si puede lanzar un skill
+// y hasta dónde camina antes de hacerlo. Antes salía de su skill.bmd.
+struct CATALOG_SKILL
+{
+	WORD Index;
+	WORD Mana;
+	WORD BP;            // AG
+	BYTE Range;         // en casillas
+	BYTE Reserved;
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -259,6 +270,9 @@ public:
 	// recargar las gates.
 	void SendGates(int aIndex);
 
+	// Sólo los skills (F3:F4), al recargar Skill.txt.
+	void SendSkills(int aIndex);
+
 	const ITEM_POSE_INFO* GetPose(int index) const;
 
 private:
@@ -280,6 +294,8 @@ private:
 	std::vector<std::vector<BYTE>> m_Packets;
 
 	std::vector<std::vector<BYTE>> m_GatePackets;
+
+	std::vector<std::vector<BYTE>> m_SkillPackets;
 
 	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
 

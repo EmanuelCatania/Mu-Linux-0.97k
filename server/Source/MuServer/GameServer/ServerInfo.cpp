@@ -466,6 +466,18 @@ void CServerInfo::ReadSkillInfo()
 
 	gSkillManager.Load(gPath.GetFullPath("Skill\\Skill.txt"));
 
+	// El cliente toma maná, AG y rango del catálogo (F3:F4): los conectados
+	// reciben sólo los skills.
+	gContentCatalog.Invalidate();
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) != 0)
+		{
+			gContentCatalog.SendSkills(gObj[n].Index);
+		}
+	}
+
 	LogAdd(LOG_BLUE, "[ServerInfo] Skill loaded successfully");
 }
 
