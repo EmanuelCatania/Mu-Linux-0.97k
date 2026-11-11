@@ -60,6 +60,14 @@ public:
     void ReceiveGates(const BYTE* msg, int size);
     // F3/F4: igual que las gates, se aplica apenas llega completa.
     void ReceiveSkills(const BYTE* msg, int size);
+
+    // Caché del catálogo en disco (Cache/<ip>_<puerto>/<sección>.bin).
+    // SetServer: al conectarse a un GameServer.  SendCacheList: F1:06 con lo
+    // que hay guardado.  ReceiveSync: F3:F6, carga de disco lo que el server
+    // no va a mandar.
+    void SetServer(const char* ip, unsigned int port);
+    void SendCacheList();
+    void ReceiveSync(const BYTE* msg, int size);   // F3/F6
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -145,6 +153,8 @@ public:
 
 private:
     void Publish();
+    void ApplyGates();
+    void ApplySkills();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
     int  LoadTexture(const char* path);
