@@ -1,0 +1,16 @@
+# Lorencia (mapa 0): zonas.
+#
+# safe      [x, y, tx, ty] donde nadie recibe daño
+# pk_free   [x, y, tx, ty] donde matar no te vuelve PK
+# npc_move  hablar con el NPC `npc` parado en `at` = [x, y] lleva a
+#           `to` = [mapa, x, y]. Opcionales: level y reset = [mínimo,
+#           máximo] (-1 = sin límite), account (nivel de cuenta mínimo)
+#           y pk_move (si pueden usarlo los PK; sin la clave, no)
+
+pk_free = [
+  [139, 123, 148, 133], # Ring de Lorencia
+]
+
+npc_move = [
+  { npc = 247, at = [145, 157], to = [37, 227, 15], level = [50, -1], account = 1, pk_move = true }, # Greed Island
+]
