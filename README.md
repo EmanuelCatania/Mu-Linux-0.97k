@@ -327,7 +327,7 @@ El cliente basado en inyección de DLL está completamente deprecado y fue retir
    docker compose up -d --build
    ```
 
-3. Abrí `44405/tcp` y `55901/tcp`.
+3. Abrí `44405/tcp` y `55901/tcp`. Para limitar conexiones por IP desde el firewall del host, ver [docs/firewall.md](docs/firewall.md).
 
 Para imágenes publicadas sin build:
 
