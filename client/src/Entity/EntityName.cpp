@@ -5,6 +5,7 @@
 #include "Entity/EntityTypes.h"
 #include "Text/TextCore.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -14,8 +15,13 @@ namespace {
 
 constexpr std::size_t PoolSize = 400;
 constexpr std::size_t Stride = sizeof(CHARACTER);
-constexpr std::size_t IdOffset = 0x1C1;
-constexpr std::size_t IdCapacity = 0x1DA - 0x1C1;   // hasta GuildMarkIndex
+// CHARACTER::ID (0x1C1 en x86) hasta GuildMarkIndex.  Con offsetof y no con el
+// número del binario: en x64 los punteros anteriores corren el campo, y el
+// 0x1C1 fijo caía 15 bytes antes de `Class` (+0x1BC x86).  Un nombre de más
+// de 10 bytes en UTF-8 (p. ej. cirílico) pisaba la clase con su último byte y
+// el personaje quedaba sin cuerpo y sin poder equipar.
+constexpr std::size_t IdOffset = offsetof(CHARACTER, ID);
+constexpr std::size_t IdCapacity = offsetof(CHARACTER, GuildMarkIndex) - offsetof(CHARACTER, ID);
 
 char s_Names[PoolSize][Capacity];
 char s_Selected[Capacity];
