@@ -117,7 +117,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+            SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
         }
         // Antes del login el servidor puede vencer la sesión por inactividad.
         // La lista visible no significa que el socket siga vivo: liberar la

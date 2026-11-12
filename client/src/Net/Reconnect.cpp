@@ -86,7 +86,7 @@ void CReconnect::GiveUp()
     DAT_083a7c24 = 0;   // ErrorMessage
     if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-        SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+        SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
     }
     extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
     UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
@@ -122,14 +122,14 @@ void CReconnect::Tick()
         // Sin respuesta: empezar de nuevo.
         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+            SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
     default:
         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+            SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
