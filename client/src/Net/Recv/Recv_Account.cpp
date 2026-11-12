@@ -17,6 +17,7 @@
 #include "Config/UserSettings.h"
 #include "Net/HWID.h"
 #include "Item/ContentCatalog.h"
+#include "Net/Protocol/ProtocolVersion.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
@@ -35,9 +36,21 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 // F1/00 — ReceiveJoinServer  (@ 0x00424010)
 // Server saluda tras conectar. Sub-byte Msg[4]: 1=OK, otro=fail.
 // ---------------------------------------------------------------------------
-void Recv_JoinServer(const BYTE* Msg)
+void Recv_JoinServer(const BYTE* Msg, int Size)
 {
     gNetwork.ResetSessionData();
+    // DESVIACION (Fase 5, C1): negociación de versión.  El server manda su
+    // versión de protocolo en Msg[12..13]; un F1/00 más corto viene de un server
+    // anterior a la negociación (versión 0).  Con otra versión no se manda la
+    // cuenta: se muestra el cartel de versión incorrecta (0x1A), que al
+    // confirmarlo cierra el cliente, igual que el resultado 6 del login.
+    const int serverProtocol = (Size >= 14) ? ((Msg[12] << 8) | Msg[13]) : 0;
+    if (Msg[4] == 1 && serverProtocol != MU_PROTOCOL_VERSION) {
+        NetLog("NET:    JoinServer: el server usa el protocolo %d y el cliente el %d, no se hace login",
+               serverProtocol, (int)MU_PROTOCOL_VERSION);
+        SetErrorMessage(0x1a);
+        return;
+    }
     if (Msg[4] == 1) {
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
         // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
@@ -329,7 +342,7 @@ void NetRecv_F1(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0x00:
             NetLog("NET:  → F1/00 JoinServer result=%d hero=%d",
                    Msg[4], Msg[5] | (Msg[6] << 8));
-            Recv_JoinServer(Msg);
+            Recv_JoinServer(Msg, Size);
             break;
         case 0x01:
             NetLog("NET:  → F1/01 LoginResult code=%02X", Msg[4]);
