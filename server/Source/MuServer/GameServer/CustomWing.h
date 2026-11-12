@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ItemExtras.h"
+
 #define MAX_CUSTOM_WING 7
 
 struct CUSTOM_WING_INFO
@@ -24,6 +26,10 @@ public:
 	void Init();
 
 	void Load(const char* path);
+
+	// Fase 5: las alas de Data/Items/NN-nombre.toml (`wing`), en orden de
+	// sección e índice. El índice (0..6) viaja en el CharSet.
+	void SetInfo(const std::vector<ItemExtraDef>& items);
 
 	void SetInfo(CUSTOM_WING_INFO info);
 

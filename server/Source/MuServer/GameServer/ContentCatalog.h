@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProtocolDefines.h"
+#include "ItemExtras.h"
 
 // Catálogo de contenido (0.97.20): el server es la única autoridad de las
 // definiciones de items, monstruos y fog por mapa.  Se arma una vez a partir
@@ -293,6 +294,14 @@ public:
 	// Fusión de los txt del Encoder (CustomItem, CustomGlow, CustomBow,
 	// ItemPosition) sobre la tabla de items ya cargada, y fog por mapa.
 	void LoadLegacyItems(const char* folder);
+
+	// Fog por mapa (MapFog.txt del Encoder). LoadLegacyItems la incluye.
+	void LoadMapFog(const char* folder);
+
+	// Fase 5: los datos extra de Data/Items/NN-nombre.toml (modelo, glow, arco,
+	// pose, efectos, tooltip) sobre la tabla de items ya cargada. Reemplaza a
+	// LoadLegacyItems (salvo la fog) y a LoadItemJson.
+	void ApplyItemExtras(const std::vector<ItemExtraDef>& items);
 
 	// CustomMonster.txt sobre la tabla de monstruos ya cargada.
 	void LoadLegacyMonsters(const char* folder);

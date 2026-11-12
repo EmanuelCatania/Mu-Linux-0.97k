@@ -1,0 +1,105 @@
+# Items de la sección 4 (bows): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 4,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Short Bow
+[000]
+glow = [255, 127, 0]
+
+# Bow
+[001]
+glow = [255, 127, 0]
+
+# Elven Bow
+[002]
+glow = [255, 127, 0]
+
+# Battle Bow
+[003]
+glow = [255, 127, 0]
+
+# Tiger Bow
+[004]
+glow = [255, 127, 0]
+
+# Silver Bow
+[005]
+glow = [255, 255, 255]
+
+# Chaos Nature Bow
+[006]
+glow = [255, 127, 0]
+
+# Bolts
+[007]
+glow = [255, 127, 0]
+stack = 255
+value = [
+	{ level = 0, buy = 100 },
+	{ level = 1, buy = 1400 },
+	{ level = 2, buy = 2200 },
+	{ level = 3, buy = 3000 },
+]
+
+# Crossbow
+[008]
+glow = [255, 127, 0]
+
+# Golden Crossbow
+[009]
+glow = [255, 127, 0]
+
+# Arquebus
+[010]
+glow = [255, 127, 0]
+
+# Light Crossbow
+[011]
+glow = [255, 127, 0]
+
+# Serpent Crossbow
+[012]
+glow = [255, 127, 0]
+
+# Bluewing Crossbow
+[013]
+glow = [255, 255, 255]
+
+# Aquagold Crossbow
+[014]
+glow = [255, 127, 0]
+
+# Arrows
+[015]
+glow = [255, 127, 0]
+stack = 255
+value = [
+	{ level = 0, buy = 70 },
+	{ level = 1, buy = 1200 },
+	{ level = 2, buy = 2000 },
+	{ level = 3, buy = 2800 },
+]
+
+# Saint Crossbow
+[016]
+glow = [255, 127, 0]
+
+# Celestial Bow
+[017]
+glow = [127, 127, 204]
+
+# Divine Crossbow of Archangel
+[018]
+glow = [191, 165, 127]
+

@@ -4,6 +4,7 @@
 // false, null) para los datos de contenido de Data/Custom.  No soporta
 // escapes \u: los nombres y rutas del juego son ASCII.
 
+#include <cstring>
 #include <map>
 #include <memory>
 #include <string>

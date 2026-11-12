@@ -253,6 +253,54 @@ void CCustomPet::Load(const char* folder)
 	}
 }
 
+void CCustomPet::SetInfo(const std::vector<ItemExtraDef>& items)
+{
+	this->m_Info.clear();
+
+	this->m_Catalog.clear();
+
+	for (const ItemExtraDef& d : items)
+	{
+		if (!d.Pet.IsObject())
+		{
+			continue;
+		}
+
+		const int item = GET_ITEM(d.Section, d.Index);
+
+		ITEM_INFO* lpInfo = gItemManager.GetInfoPtr(item);
+
+		if (lpInfo == 0)
+		{
+			LogAdd(LOG_RED, "[CustomPet] %s: el item %d,%d no existe en Item.txt", d.Source.c_str(), d.Section, d.Index);
+
+			continue;
+		}
+
+		if (lpInfo->Slot != 8)
+		{
+			LogAdd(LOG_RED, "[CustomPet] %s: el item %d,%d no va en el slot del helper (Slot 8 en Item.txt)", d.Source.c_str(), d.Section, d.Index);
+
+			continue;
+		}
+
+		CUSTOM_PET_INFO info;
+
+		std::string error;
+
+		if (!ReadPet(item, d.Pet, info, error))
+		{
+			LogAdd(LOG_RED, "[CustomPet] %s: pet: %s", d.Source.c_str(), error.c_str());
+
+			continue;
+		}
+
+		this->m_Info[item] = info;
+
+		this->m_Catalog.push_back(info.Catalog);
+	}
+}
+
 const CUSTOM_PET_INFO* CCustomPet::GetInfo(int item) const
 {
 	std::map<int, CUSTOM_PET_INFO>::const_iterator it = this->m_Info.find(item);

@@ -2,6 +2,7 @@
 
 #include "Item.h"
 #include "ProtocolDefines.h"
+#include "ItemExtras.h"
 
 //**********************************************//
 //************ GameServer -> Client ************//
@@ -34,6 +35,9 @@ public:
 	~CItemValue();
 
 	void Load(const char* path);
+
+	// Fase 5: los precios de Data/Items/NN-nombre.toml (`value`).
+	void SetInfo(const std::vector<ItemExtraDef>& items);
 
 	bool GetItemBuyValue(CItem* lpItem, ULONGLONG* value);
 

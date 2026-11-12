@@ -39,6 +39,7 @@
 #include "MapSpawns.h"
 #include "MapInfo.h"
 #include "ItemDrops.h"
+#include "ItemExtras.h"
 #include "MapGates.h"
 #include "MapZones.h"
 #include "Move.h"
@@ -315,19 +316,52 @@ void CServerInfo::ReadItemInfo()
 
 	gItemOptionRate.Load(gPath.GetFullPath("Item\\ItemOptionRate.txt"));
 
-	gItemStack.Load(gPath.GetFullPath("Item\\ItemStack.txt"));
+	// Fase 5: si hay algún Data/Items/NN-nombre.toml mandan ellos (modelo,
+	// glow, arco, ala, pose, efectos, tooltip, pet, apilado y precio); si no,
+	// los archivos de siempre. La fog sigue en MapFog.txt del Encoder.
+	if (ItemExtras_HasData(gPath.GetFullPath("")))
+	{
+		std::vector<ItemExtraDef> items;
 
-	gItemValue.Load(gPath.GetFullPath("Item\\ItemValue.txt"));
+		std::string error;
 
-	gCustomWing.Load(gPath.GetFullPath("Item\\CustomWing.txt"));
+		if (!ItemExtras_Load(gPath.GetFullPath(""), items, error))
+		{
+			LogAdd(LOG_RED, "[ServerInfo] Data/Items: %s (los datos extra de los items no se aplican)", error.c_str());
 
-	gContentCatalog.LoadLegacyItems(gPath.GetFullPath("Custom\\Encoder\\"));
+			items.clear();
+		}
 
-	gContentCatalog.LoadItemJson(gPath.GetFullPath("Custom\\Items\\"));
+		gItemStack.SetInfo(items);
 
-	gContentCatalog.LoadTexts(gPath.GetFullPath("Text\\"));
+		gItemValue.SetInfo(items);
 
-	gCustomPet.Load(gPath.GetFullPath("Custom\\Pets\\"));
+		gCustomWing.SetInfo(items);
+
+		gContentCatalog.LoadMapFog(gPath.GetFullPath("Custom\\Encoder\\"));
+
+		gContentCatalog.ApplyItemExtras(items);
+
+		gContentCatalog.LoadTexts(gPath.GetFullPath("Text\\"));
+
+		gCustomPet.SetInfo(items);
+	}
+	else
+	{
+		gItemStack.Load(gPath.GetFullPath("Item\\ItemStack.txt"));
+
+		gItemValue.Load(gPath.GetFullPath("Item\\ItemValue.txt"));
+
+		gCustomWing.Load(gPath.GetFullPath("Item\\CustomWing.txt"));
+
+		gContentCatalog.LoadLegacyItems(gPath.GetFullPath("Custom\\Encoder\\"));
+
+		gContentCatalog.LoadItemJson(gPath.GetFullPath("Custom\\Items\\"));
+
+		gContentCatalog.LoadTexts(gPath.GetFullPath("Text\\"));
+
+		gCustomPet.Load(gPath.GetFullPath("Custom\\Pets\\"));
+	}
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{

@@ -116,8 +116,6 @@ void CContentCatalog::LoadLegacyItems(const char* folder)
 {
 	this->m_ItemPose.clear();
 
-	this->m_MapFog.clear();
-
 	this->m_Built = false;
 
 	// Un ala de CustomWing.txt sin columna Behavior se comporta como un ala de
@@ -315,6 +313,17 @@ void CContentCatalog::LoadLegacyItems(const char* folder)
 
 		delete lpReadScript;
 	}
+
+	this->LoadMapFog(folder);
+}
+
+void CContentCatalog::LoadMapFog(const char* folder)
+{
+	this->m_MapFog.clear();
+
+	this->m_Built = false;
+
+	CReadScript* lpReadScript;
 
 	// MapFog: Mapa DiaR DiaG DiaB NocheR NocheG NocheB.
 	if ((lpReadScript = OpenLegacy(folder, "MapFog.txt")) != 0)
@@ -1477,6 +1486,193 @@ namespace
 	}
 }
 
+namespace
+{
+	bool ReadPose(const JsonValue& inventory, ITEM_POSE_INFO& pose, std::string& error)
+	{
+		float position[2] = { 0.0f, 0.0f };
+
+		float rotation[3] = { 0.0f, 0.0f, 0.0f };
+
+		error.clear();
+
+		if (!inventory.IsObject() || !ReadVector(inventory, "position", position, 2, error) || !ReadVector(inventory, "rotation", rotation, 3, error))
+		{
+			if (error.empty())
+			{
+				error = "tiene que ser un objeto";
+			}
+
+			return false;
+		}
+
+		pose.Valid = true;
+
+		pose.PositionX = position[0];
+
+		pose.PositionY = position[1];
+
+		pose.RotationX = rotation[0];
+
+		pose.RotationY = rotation[1];
+
+		pose.RotationZ = rotation[2];
+
+		pose.Scale = (float)inventory.GetNumber("scale", 0.0);
+
+		return true;
+	}
+
+	// El catálogo corta la carpeta a 40 y el nombre a 28 bytes (E7): un texto
+	// más largo llegaba truncado al cliente sin aviso.
+	bool CopyModelPath(const ItemExtraDef& d, char* folder, size_t folderSize, char* model, size_t modelSize, std::string& error)
+	{
+		if (d.ModelFolder.size() >= 40 || d.ModelName.size() >= 28)
+		{
+			error = "'model': la carpeta tiene que tener menos de 40 caracteres y el nombre menos de 28";
+
+			return false;
+		}
+
+		if (!IsSafeModelPath(d.ModelFolder.c_str()) || !IsSafeModelPath(d.ModelName.c_str()))
+		{
+			error = "'model': ruta no válida (sólo letras, números, '/', '_', '-', '.' y espacios, sin '..')";
+
+			return false;
+		}
+
+		snprintf(folder, folderSize, "%s", d.ModelFolder.c_str());
+
+		snprintf(model, modelSize, "%s", d.ModelName.c_str());
+
+		return true;
+	}
+}
+
+void CContentCatalog::ApplyItemExtras(const std::vector<ItemExtraDef>& items)
+{
+	this->m_ItemPose.clear();
+
+	this->m_Effects.clear();
+
+	this->m_Tooltips.clear();
+
+	this->Invalidate();
+
+	// Igual que con CustomWing.txt: un ala custom sin Behavior se comporta como
+	// un ala de segunda (12,3).
+	for (int n = 0; n < MAX_CUSTOM_WING; n++)
+	{
+		CUSTOM_WING_INFO* wing = gCustomWing.GetInfo(n);
+
+		ITEM_INFO* lpInfo = (wing != 0) ? gItemManager.GetInfoPtr(wing->ItemIndex) : 0;
+
+		if (lpInfo != 0 && lpInfo->Behavior < 0)
+		{
+			lpInfo->Behavior = GET_ITEM(12, 3);
+		}
+	}
+
+	int applied = 0;
+
+	for (const ItemExtraDef& d : items)
+	{
+		const int item = GET_ITEM(d.Section, d.Index);
+
+		ITEM_INFO* lpInfo = gItemManager.GetInfoPtr(item);
+
+		if (lpInfo == 0)
+		{
+			// Sólo apilado o precio de un item que no está en Item.txt no hace
+			// daño; el resto no tiene dónde aplicarse.
+			LogAdd(LOG_RED, "[ContentCatalog] %s: el item %d,%d no existe en Item.txt", d.Source.c_str(), d.Section, d.Index);
+
+			continue;
+		}
+
+		std::string error;
+
+		std::vector<CATALOG_EFFECT> effects;
+
+		std::vector<CATALOG_TOOLTIP> tooltip;
+
+		ITEM_POSE_INFO pose = {};
+
+		char folder[sizeof(lpInfo->ModelFolder)] = {};
+
+		char model[sizeof(lpInfo->ModelName)] = {};
+
+		bool valid = d.ModelName.empty() || CopyModelPath(d, folder, sizeof(folder), model, sizeof(model), error);
+
+		for (size_t n = 0; valid && d.Effects.IsArray() && n < d.Effects.items.size(); n++)
+		{
+			CATALOG_EFFECT effect;
+
+			valid = ReadEffect(item, d.Effects.items[n], effect, error);
+
+			if (!valid)
+			{
+				error = "efecto " + std::to_string(n) + ": " + error;
+			}
+
+			effects.push_back(effect);
+		}
+
+		if (valid && d.Tooltip.IsArray() && !ReadTooltip(item, d.Tooltip, tooltip, error))
+		{
+			error = "'tooltip': " + error;
+
+			valid = false;
+		}
+
+		if (valid && d.Inventory.IsObject() && !ReadPose(d.Inventory, pose, error))
+		{
+			error = "'inventory': " + error;
+
+			valid = false;
+		}
+
+		// Un item con errores no aplica nada: mejor sin efecto que a medias.
+		if (!valid)
+		{
+			LogAdd(LOG_RED, "[ContentCatalog] %s: %s", d.Source.c_str(), error.c_str());
+
+			continue;
+		}
+
+		// La columna de Item.txt manda, como con los txt del Encoder.
+		if (!d.ModelName.empty() && lpInfo->ModelName[0] == 0)
+		{
+			memcpy(lpInfo->ModelFolder, folder, sizeof(folder));
+
+			memcpy(lpInfo->ModelName, model, sizeof(model));
+		}
+
+		if (d.Bow >= 0 && lpInfo->Behavior < 0)
+		{
+			lpInfo->Behavior = (d.Bow == 0) ? GET_ITEM(4, 0) : GET_ITEM(4, 8);
+		}
+
+		if (d.Glow >= 0 && lpInfo->GlowColor < 0)
+		{
+			lpInfo->GlowColor = d.Glow;
+		}
+
+		if (pose.Valid)
+		{
+			this->m_ItemPose[item] = pose;
+		}
+
+		this->m_Effects.insert(this->m_Effects.end(), effects.begin(), effects.end());
+
+		this->m_Tooltips.insert(this->m_Tooltips.end(), tooltip.begin(), tooltip.end());
+
+		applied++;
+	}
+
+	LogAdd(LOG_BLUE, "[ContentCatalog] Data/Items: %d de %d items aplicados, %d efectos, %d líneas de tooltip", applied, (int)items.size(), (int)this->m_Effects.size(), (int)this->m_Tooltips.size());
+}
+
 void CContentCatalog::LoadItemJson(const char* folder)
 {
 	this->m_Effects.clear();
@@ -1574,32 +1770,14 @@ void CContentCatalog::LoadItemJson(const char* folder)
 		{
 			if (const JsonValue* inventory = root.Get("inventory"))
 			{
-				float position[2] = { 0.0f, 0.0f };
-
-				float rotation[3] = { 0.0f, 0.0f, 0.0f };
-
-				if (!inventory->IsObject() || !ReadVector(*inventory, "position", position, 2, error) || !ReadVector(*inventory, "rotation", rotation, 3, error))
+				if (!ReadPose(*inventory, pose, error))
 				{
-					LogAdd(LOG_RED, "[ContentCatalog] %s: 'inventory': %s", name.c_str(), error.empty() ? "tiene que ser un objeto" : error.c_str());
+					LogAdd(LOG_RED, "[ContentCatalog] %s: 'inventory': %s", name.c_str(), error.c_str());
 
 					valid = false;
 				}
 				else
 				{
-					pose.Valid = true;
-
-					pose.PositionX = position[0];
-
-					pose.PositionY = position[1];
-
-					pose.RotationX = rotation[0];
-
-					pose.RotationY = rotation[1];
-
-					pose.RotationZ = rotation[2];
-
-					pose.Scale = (float)inventory->GetNumber("scale", 0.0);
-
 					hasPose = true;
 				}
 			}

@@ -837,5 +837,8 @@
   "Eventos": "Події",
   "Los spawns se editan sobre el mapa o como texto: los dos modos escriben el mismo Spawns.toml.": "Спавни редагуються на мапі або як текст: обидва режими записують той самий Spawns.toml.",
   "Ver como texto": "Показати як текст",
-  "Ver en el mapa": "Показати на мапі"
+  "Ver en el mapa": "Показати на мапі",
+  "Se guarda en Data/Items/{file}, en la tabla [{index}]. Sirve para items custom y para los originales.": "Зберігається в Data/Items/{file}, у таблиці [{index}]. Підходить для власних та оригінальних предметів.",
+  "Se guarda en Data/Items/{file}, en la tabla [{index}.pet]. El cliente dibuja el movimiento y el server ejecuta las habilidades.": "Зберігається в Data/Items/{file}, у таблиці [{index}.pet]. Клієнт малює рух, а сервер виконує здібності.",
+  "y el precio y el apilado de": "а також ціну та складання в"
 }

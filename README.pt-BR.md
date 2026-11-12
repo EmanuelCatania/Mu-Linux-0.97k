@@ -263,13 +263,14 @@ Instale também os assets correspondentes no cliente 0.97.20. Reinicie o servido
 
 O servidor é a fonte das definições; o cliente só precisa dos modelos `.bmd` e das texturas. O cliente baseado em sources não exige regenerar `item.bmd` ou `ClientInfo.bmd`.
 
-1. Adicione a linha do item à sua seção em `Data/Item/Item.txt`. Para índices 32..511, informe o item clássico imitado em **Comportamento** (por exemplo `00,020`), seguido da pasta, modelo e brilho RGB. Copie uma linha completa da seção e ajuste os atributos; não use uma linha abreviada com `...`.
-2. Para customs clássicos, mantenha as definições de modelo/brilho em `Data/Custom/Encoder/CustomItem.txt` e `CustomGlow.txt`, além das demais tabelas do Encoder incluídas.
-3. Opcionalmente, crie `Data/Custom/Items/<seção>_<índice>.json` com `item`, `effects`, `inventory` e/ou `tooltip`. Os exemplos `03_000.json` e `13_400.json` mostram o formato real.
-4. Para um pet custom, adicione `Data/Custom/Pets/<seção>_<índice>.json`. Rudolph usa `13,400`, slot 8, comportamento `*`, e define movimento e coleta de zen. O cliente anima o pet; o servidor autoriza e executa a coleta.
-5. Distribua os assets do modelo ao cliente, reinicie o servidor e entre novamente para receber o catálogo. Com permissão de GM, teste Rudolph usando `/make 13 400`.
+1. Adicione a linha do item à sua seção em `Data/Item/Item.txt`. Para índices 32..511, informe o item clássico imitado em **Comportamento** (por exemplo `00,020`). Copie uma linha completa da seção e ajuste os atributos; não use uma linha abreviada com `...`.
+2. O resto do item (modelo, brilho, arco, asa, pose, efeitos, tooltip, pet, empilhamento e preço) vai em `Data/Items/NN-seção.toml`, numa tabela com o seu índice: `[020]` é o item `0,20`. O cabeçalho de cada arquivo lista as chaves; o `13-helpers.toml` tem o exemplo completo do Rudolph (`13,400`).
+3. O modelo vai no cliente, na pasta do item: `Data/Item/NN-seção/III/` (o `.bmd` e suas texturas). Com `model = { name = "..." }` o server o procura ali.
+4. Revise com `mu-data validate /opt/mu/Data`, reinicie o servidor e entre novamente para receber o catálogo. Com permissão de GM, teste Rudolph usando `/make 13 400`.
 
-Consulte os [exemplos completos e caminhos dos assets do cliente](https://github.com/EmanuelCatania/Mu-97k-Client-Source/blob/0.97.20/README.md#cómo-agregar-items-custom).
+Um server com os arquivos antigos (`Custom/Encoder`, `CustomWing.txt`, `ItemStack.txt`, `ItemValue.txt`, `Custom/Items` e `Custom/Pets`) continua lendo-os enquanto `Data/Items` não tiver nenhum arquivo de seção. Para passar para o formato novo: `mu-data import-items /opt/mu/Data` e `mu-data check-items /opt/mu/Data`.
+
+Consulte os [exemplos completos e caminhos dos assets do cliente](client/README.pt-BR.md#como-adicionar-itens-custom).
 
 ## Base e referência
 

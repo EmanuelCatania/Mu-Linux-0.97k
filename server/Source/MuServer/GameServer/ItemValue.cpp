@@ -17,6 +17,29 @@ CItemValue::~CItemValue()
 
 }
 
+void CItemValue::SetInfo(const std::vector<ItemExtraDef>& items)
+{
+	this->m_ItemValueInfo.clear();
+
+	for (const ItemExtraDef& d : items)
+	{
+		for (const ItemExtraValue& v : d.Value)
+		{
+			ITEM_VALUE_INFO info;
+
+			info.Index = SafeGetItem(GET_ITEM(d.Section, d.Index));
+
+			info.Level = v.Level;
+
+			info.BuyValue = v.Buy;
+
+			info.SellValue = v.Sell;
+
+			this->m_ItemValueInfo.push_back(info);
+		}
+	}
+}
+
 void CItemValue::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -151,6 +174,14 @@ void CItemValue::GCItemValueListSend(int aIndex)
 
 	for (std::vector<ITEM_VALUE_INFO>::iterator it = this->m_ItemValueInfo.begin(); it != this->m_ItemValueInfo.end(); it++)
 	{
+		// Mismo tope que el F3:E3: send[2048] y count de un byte.
+		if (pMsg.count == 0xFF || size + (int)sizeof(info) > (int)sizeof(send))
+		{
+			LogAdd(LOG_RED, "[ItemValue] Demasiadas filas para el F3:E4: se mandan %d de %d", pMsg.count, (int)this->m_ItemValueInfo.size());
+
+			break;
+		}
+
 		info.Index = it->Index;
 
 		info.Level = it->Level;

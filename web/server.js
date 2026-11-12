@@ -15,6 +15,7 @@ const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-ma
 const translations = require('./lib/translations');
 const customItems = require('./lib/custom-items');
 const itemRows = require('./lib/item-rows');
+const itemExtras = require('./lib/item-extras');
 const noticeLimits = require('./lib/notices');
 const accountPassword = require('./lib/account-password');
 const spawns = require('./lib/spawns');
@@ -2699,9 +2700,62 @@ async function readFileReference(table) {
   return translations.parseReference(reference.content, table);
 }
 
-// Las líneas de tooltip originales salen de los JSON de Data/Custom/Items: una entrada
+// Datos extra de los items (Fase 5): Data/Items/NN-nombre.toml, uno por sección.
+// Si no hay ninguno (server sin convertir con `mu-data import-items`), el panel
+// sigue con los archivos de antes.
+async function readItemSections() {
+  const names = await editorFileNames(itemExtras.ITEMS_DIR);
+  const out = {};
+  for (const name of names) {
+    const section = itemExtras.fileSection(name);
+    if (section < 0) continue;
+    const path = `${itemExtras.ITEMS_DIR}/${name}`;
+    const text = await readEditorFile(path);
+    out[section] = { path, text, items: itemExtras.parseSection(text, name) };
+  }
+  return out;
+}
+
+async function writeItemSection(sections, section, text) {
+  const path = sections[section]?.path || itemExtras.sectionPath(section);
+  return editorRequest('POST', '/api/file', { path, content: text });
+}
+
+function itemNameMap(items) {
+  return Object.fromEntries(items.map((item) => [item.key.join(','), item.name]));
+}
+
+// Lo que el editor de items custom muestra como "JSON del item" y "JSON del pet",
+// armado desde el TOML de la sección.
+function extrasToJson(kind, key, item) {
+  if (!item) return null;
+  if (kind === 'pets') return item.pet ? { item: `${key[0]},${key[1]}`, ...item.pet } : null;
+  const out = { item: `${key[0]},${key[1]}` };
+  for (const field of ['inventory', 'effects', 'tooltip']) {
+    if (item[field] !== undefined) out[field] = item[field];
+  }
+  return Object.keys(out).length > 1 ? out : null;
+}
+
+// Las líneas de tooltip originales salen de los items custom: una entrada
 // por línea, con el nombre del item para reconocerla.
 async function readTooltipReference() {
+  const sections = await readItemSections();
+  if (Object.keys(sections).length) {
+    const items = await readItemList();
+    const nameOf = new Map(items.map((item) => [item.key.join(','), item.name]));
+    const out = [];
+    for (const section of Object.keys(sections).map(Number).sort((a, b) => a - b)) {
+      for (const [index, item] of Object.entries(sections[section].items)) {
+        const lines = Array.isArray(item.tooltip) ? item.tooltip : [];
+        lines.slice(0, customItems.MAX_TOOLTIP_LINES).forEach((line, n) => {
+          const text = typeof line === 'string' ? line : line?.text;
+          if (typeof text === 'string' && text !== '') out.push({ key: [section, Number(index), n], name: text, label: nameOf.get(`${section},${index}`) || '' });
+        });
+      }
+    }
+    return out;
+  }
   const [names, items] = await Promise.all([editorFileNames(customItems.KINDS.items), readItemList()]);
   const nameOf = new Map(items.map((item) => [item.key.join(','), item.name]));
   const out = [];
@@ -2805,15 +2859,27 @@ app.get('/admin/server-editor/api/custom-items', requireAdmin, requireAdminPassw
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const [items, itemFiles, petFiles] = await Promise.all([
-      readItemList(),
-      editorFileNames(customItems.KINDS.items),
-      editorFileNames(customItems.KINDS.pets)
-    ]);
-    const keys = (names) => names.map(customItems.keyFromFileName).filter(Boolean);
+    const sections = await readItemSections();
+    let files;
+    if (Object.keys(sections).length) {
+      files = { items: [], pets: [] };
+      for (const section of Object.keys(sections).map(Number).sort((a, b) => a - b)) {
+        for (const index of Object.keys(sections[section].items).map(Number).sort((a, b) => a - b)) {
+          const key = [section, index];
+          if (extrasToJson('items', key, sections[section].items[index])) files.items.push(key);
+          if (extrasToJson('pets', key, sections[section].items[index])) files.pets.push(key);
+        }
+      }
+    } else {
+      const [itemFiles, petFiles] = await Promise.all([editorFileNames(customItems.KINDS.items), editorFileNames(customItems.KINDS.pets)]);
+      const keys = (names) => names.map(customItems.keyFromFileName).filter(Boolean);
+      files = { items: keys(itemFiles), pets: keys(petFiles) };
+    }
+    const items = await readItemList();
     return res.json({
       items,
-      files: { items: keys(itemFiles), pets: keys(petFiles) },
+      files,
+      storage: Object.keys(sections).length ? 'toml' : 'json',
       colors: customItems.TOOLTIP_COLORS,
       maxTooltipLines: customItems.MAX_TOOLTIP_LINES,
       layouts: Array.from({ length: 16 }, (_, section) => itemRows.statColumns(section)),
@@ -2835,6 +2901,11 @@ app.get('/admin/server-editor/api/custom-items/file', requireAdmin, requireAdmin
     return res.status(400).json({ error: 'Pedido inválido' });
   }
   try {
+    const sections = await readItemSections();
+    if (Object.keys(sections).length) {
+      const data = extrasToJson(kind, key, sections[key[0]]?.items[key[1]]);
+      return data ? res.json({ exists: true, header: [], data, hasInnerComments: false }) : res.json({ exists: false });
+    }
     let content;
     try {
       content = (await editorRequest('GET', `/api/file?path=${encodeURIComponent(customItems.pathFor(kind, key))}`)).content;
@@ -2875,6 +2946,24 @@ app.post('/admin/server-editor/api/custom-items/file', requireAdmin, requireAdmi
     }
     if (errors.length > 0) {
       return res.status(400).json({ error: 'El archivo tiene errores', errors });
+    }
+    const sections = await readItemSections();
+    if (Object.keys(sections).length) {
+      const item = { ...(sections[key[0]]?.items[key[1]] || {}) };
+      if (kind === 'pets') {
+        const { item: _ignored, ...pet } = body;
+        item.pet = pet;
+      } else {
+        for (const field of ['inventory', 'effects', 'tooltip']) {
+          if (body[field] !== undefined) item[field] = body[field];
+          else delete item[field];
+        }
+      }
+      const names = itemNameMap(await readItemList());
+      const text = itemExtras.replaceItem(sections[key[0]]?.text || '', key[0], key[1], item, names[key.join(',')] || '');
+      itemExtras.parseSection(text, itemExtras.sectionFileName(key[0]));
+      const saved = await writeItemSection(sections, key[0], text);
+      return res.json({ ok: true, backups: saved.backups || [] });
     }
     const header = Array.isArray(req.body?.header) ? req.body.header.map(String) : [];
     const saved = await editorRequest('POST', '/api/file', {
@@ -2944,6 +3033,17 @@ app.post('/admin/server-editor/api/custom-items/delete', requireAdmin, requireAd
     return res.status(400).json({ error: 'Pedido inválido' });
   }
   try {
+    const sections = await readItemSections();
+    if (Object.keys(sections).length) {
+      const current = sections[key[0]]?.items[key[1]];
+      if (!current) return res.json({ ok: true, backups: [] });
+      const item = { ...current };
+      if (kind === 'pets') delete item.pet;
+      else for (const field of ['inventory', 'effects', 'tooltip']) delete item[field];
+      const text = itemExtras.replaceItem(sections[key[0]].text, key[0], key[1], item);
+      const saved = await writeItemSection(sections, key[0], text);
+      return res.json({ ok: true, backups: saved.backups || [] });
+    }
     const data = await editorRequest('POST', '/api/delete', { path: customItems.pathFor(kind, key) });
     return res.json({ ok: true, backups: data.backups || [] });
   } catch (err) {
@@ -3189,6 +3289,16 @@ app.get('/admin/server-editor/api/items-base', requireAdmin, requireAdminPasswor
     return res.status(400).json({ error: 'Tipo invalido.' });
   }
   try {
+    const kind = String(req.query.kind).toLowerCase();
+    if (kind !== 'item') {
+      // Con Data/Items el precio y el apilado viven en el TOML de cada sección;
+      // el editor sigue viendo la tabla de siempre.
+      const sections = await readItemSections();
+      if (Object.keys(sections).length) {
+        const items = Object.fromEntries(Object.entries(sections).map(([section, data]) => [section, data.items]));
+        return res.json({ format: 'toml', content: itemExtras.buildRows(kind, items, itemNameMap(await readItemList())) });
+      }
+    }
     const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(path)}`);
     return res.json({ content: data.content || '' });
   } catch (err) {
@@ -3206,6 +3316,20 @@ app.post('/admin/server-editor/api/items-base', requireAdmin, requireAdminPasswo
   }
   try {
     const content = String(req.body?.content ?? '');
+    const kind = String(req.query.kind).toLowerCase();
+    if (kind !== 'item') {
+      const sections = await readItemSections();
+      if (Object.keys(sections).length) {
+        const files = Object.fromEntries(Object.entries(sections).map(([section, data]) => [section, data.text]));
+        const changed = itemExtras.applyRows(kind, itemExtras.parseRows(kind, content), files, itemNameMap(await readItemList()));
+        const backups = [];
+        for (const [section, text] of Object.entries(changed)) {
+          const saved = await writeItemSection(sections, Number(section), text);
+          backups.push(...(saved.backups || []));
+        }
+        return res.json({ ok: true, backups });
+      }
+    }
     const data = await editorRequest('POST', '/api/file', { path, content });
     return res.json({ ok: true, backups: data.backups || [] });
   } catch (err) {

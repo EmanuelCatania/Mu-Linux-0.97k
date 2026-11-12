@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProtocolDefines.h"
+#include "ItemExtras.h"
 
 //**********************************************//
 //************ GameServer -> Client ************//
@@ -40,6 +41,9 @@ public:
 	~CItemStack();
 
 	void Load(const char* path);
+
+	// Fase 5: el apilado de Data/Items/NN-nombre.toml (`stack`).
+	void SetInfo(const std::vector<ItemExtraDef>& items);
 
 	int GetItemMaxStack(int index, int level);
 

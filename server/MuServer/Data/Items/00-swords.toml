@@ -1,0 +1,104 @@
+# Items de la sección 0 (swords): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 0,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Kris
+[000]
+glow = [255, 127, 0]
+
+# Short Sword
+[001]
+glow = [255, 127, 0]
+
+# Rapier
+[002]
+glow = [255, 127, 0]
+
+# Katana
+[003]
+glow = [255, 127, 0]
+
+# Sword of Assassin
+[004]
+glow = [255, 127, 0]
+
+# Blade
+[005]
+glow = [255, 127, 0]
+
+# Gladius
+[006]
+glow = [255, 127, 0]
+
+# Falchion
+[007]
+glow = [255, 127, 0]
+
+# Serpent Sword
+[008]
+glow = [255, 127, 0]
+
+# Sword of Salamander
+[009]
+glow = [255, 127, 0]
+
+# Light Saber
+[010]
+glow = [255, 127, 0]
+
+# Legendary Sword
+[011]
+glow = [255, 127, 0]
+
+# Heliacal Sword
+[012]
+glow = [255, 127, 0]
+
+# Double Blade
+[013]
+glow = [255, 127, 0]
+
+# Lightning Sword
+[014]
+glow = [0, 127, 255]
+
+# Giant Sword
+[015]
+glow = [255, 127, 0]
+
+# Sword of Destruction
+[016]
+glow = [255, 127, 0]
+
+# Dark Breaker
+[017]
+glow = [255, 127, 0]
+
+# Thunder Blade
+[018]
+glow = [255, 127, 0]
+
+# Divine Sword of Archangel
+[019]
+glow = [255, 127, 0]
+
+# Knight Blade
+[020]
+model = { name = "Sword21" }
+glow = [191, 165, 127]
+
+# Rune Blade
+[031]
+glow = [191, 165, 127]
+
