@@ -1275,16 +1275,6 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             Recv_NewCharacterCalc(Msg, Size);
             break;
         }
-        case 0xE3: {  // lista de apilado (DLL CItemStack)
-            extern void Recv_ItemStackList(const BYTE* Msg, int Size);
-            Recv_ItemStackList((const BYTE*)Msg, Size);
-            break;
-        }
-        case 0xE4: {  // precios fijos (DLL CItemValue)
-            extern void Recv_ItemValueList(const BYTE* Msg, int Size);
-            Recv_ItemValueList((const BYTE*)Msg, Size);
-            break;
-        }
         case 0xE2: {
             gHealthBar.Receive(Msg, Size);
             break;
@@ -1312,6 +1302,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF3: gContentCatalog.ReceiveGates((const BYTE*)Msg, Size); break;
         case 0xF4: gContentCatalog.ReceiveSkills((const BYTE*)Msg, Size); break;
         case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
+        case 0xF8: gContentCatalog.ReceiveItemStacks((const BYTE*)Msg, Size); break;
+        case 0xF9: gContentCatalog.ReceiveItemValues((const BYTE*)Msg, Size); break;
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
         case 0xF1: gBuffBar.Receive((const BYTE*)Msg, Size); break;

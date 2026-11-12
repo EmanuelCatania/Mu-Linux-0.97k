@@ -363,14 +363,13 @@ void CServerInfo::ReadItemInfo()
 		gCustomPet.Load(gPath.GetFullPath("Custom\\Pets\\"));
 	}
 
+	// El apilado y los precios viajan en el catálogo (F3:F8 y F3:F9).
+	gContentCatalog.Invalidate();
+
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
 		if (gObjIsConnectedGP(n) != 0)
 		{
-			gItemStack.GCItemStackListSend(gObj[n].Index);
-
-			gItemValue.GCItemValueListSend(gObj[n].Index);
-
 			gContentCatalog.Send(gObj[n].Index);
 		}
 	}

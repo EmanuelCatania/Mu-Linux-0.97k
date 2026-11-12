@@ -58,22 +58,20 @@ unsigned int DisplayPrice(unsigned long long value)
     return value > INT_MAX ? INT_MAX : (unsigned int)value;
 }
 
-// ItemStack.h / ItemValue.h del server: no publicar tablas truncadas o inválidas.
-template <typename Header, typename T>
-void ReadList(std::vector<T>& out, const BYTE* msg, int size)
+// Sección del catálogo con registros de ItemStack.h / ItemValue.h del server:
+// no publicar tablas truncadas o inválidas.
+template <typename T>
+bool ReadRecords(std::vector<T>& out, const BYTE* records, int recordSize, int count)
 {
-    if (!msg || size < (int)sizeof(Header)) return;
-    Header header;
-    memcpy(&header, msg, sizeof(header));
-    if (header.count > ((size_t)size - sizeof(Header)) / sizeof(T)) return;
+    if (count < 0 || recordSize != (int)sizeof(T) || (count > 0 && !records)) return false;
     // Validar antes de reemplazar: un registro inválido conserva la tabla anterior.
-    for (int n = 0; n < header.count; ++n) {
-        T info;
-        memcpy(&info, msg + sizeof(Header) + sizeof(T) * n, sizeof(info));
-        if (!ValidEntry(info)) return;
+    std::vector<T> table((size_t)count);
+    for (int n = 0; n < count; ++n) {
+        memcpy(&table[n], records + sizeof(T) * n, sizeof(T));
+        if (!ValidEntry(table[n])) return false;
     }
-    out.resize(header.count);
-    if (header.count) memcpy(out.data(), msg + sizeof(Header), header.count * sizeof(T));
+    out.swap(table);
+    return true;
 }
 
 // CItem::myCalcMaxDurability del DLL.
@@ -127,16 +125,16 @@ void ItemServerValue_ResetSession()
     s_ItemValue.clear();
 }
 
-// F3/E3: lista de apilado (DLL CItemStack::GCItemStackListRecv).
-void Recv_ItemStackList(const BYTE* Msg, int Size)
+// F3:F8: apilado (antes la lista F3/E3 del DLL, CItemStack::GCItemStackListRecv).
+bool ItemServerValue_SetStacks(const std::uint8_t* records, int recordSize, int count)
 {
-    ReadList<Proto::PMSG_ITEM_STACK_LIST_SEND>(s_ItemStack, Msg, Size);
+    return ReadRecords(s_ItemStack, records, recordSize, count);
 }
 
-// F3/E4: precios fijos (DLL CItemValue::GCItemValueListRecv).
-void Recv_ItemValueList(const BYTE* Msg, int Size)
+// F3:F9: precios fijos (antes la lista F3/E4 del DLL, CItemValue::GCItemValueListRecv).
+bool ItemServerValue_SetValues(const std::uint8_t* records, int recordSize, int count)
 {
-    ReadList<Proto::PMSG_ITEM_VALUE_LIST_SEND>(s_ItemValue, Msg, Size);
+    return ReadRecords(s_ItemValue, records, recordSize, count);
 }
 
 int __cdecl ItemStack_GetMaxStack(int index, int level)

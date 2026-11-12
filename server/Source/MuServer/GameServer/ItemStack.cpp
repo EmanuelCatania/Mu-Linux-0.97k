@@ -137,50 +137,20 @@ int CItemStack::GetCreateItemIndex(int index)
 	return -1;
 }
 
-void CItemStack::GCItemStackListSend(int aIndex)
+void CItemStack::BuildCatalog(std::vector<ITEM_STACK>& out) const
 {
-	BYTE send[2048];
+	out.clear();
 
-	PMSG_ITEM_STACK_LIST_SEND pMsg;
-
-	pMsg.header.set(0xF3, 0xE3, 0);
-
-	int size = sizeof(pMsg);
-
-	pMsg.count = 0;
-
-	ITEM_STACK info;
-
-	for (std::vector<ITEM_STACK_INFO>::iterator it = this->m_ItemStackInfo.begin(); it != this->m_ItemStackInfo.end(); it++)
+	for (const ITEM_STACK_INFO& it : this->m_ItemStackInfo)
 	{
-		// El paquete entra en send[2048] y count es un BYTE: con más filas
-		// escribía fuera del buffer. Las que sobran no viajan (el server las
-		// sigue aplicando); el catálogo nuevo las va a partir en paquetes.
-		if (pMsg.count == 0xFF || size + (int)sizeof(info) > (int)sizeof(send))
-		{
-			LogAdd(LOG_RED, "[ItemStack] Demasiadas filas para el F3:E3: se mandan %d de %d", pMsg.count, (int)this->m_ItemStackInfo.size());
+		ITEM_STACK info;
 
-			break;
-		}
+		info.ItemIndex = it.ItemIndex;
 
-		info.ItemIndex = it->ItemIndex;
+		info.Level = it.Level;
 
-		info.Level = it->Level;
+		info.MaxStack = it.MaxStack;
 
-		info.MaxStack = it->MaxStack;
-
-		memcpy(&send[size], &info, sizeof(info));
-
-		size += sizeof(info);
-
-		pMsg.count++;
+		out.push_back(info);
 	}
-
-	pMsg.header.size[0] = SET_NUMBERHB(size);
-
-	pMsg.header.size[1] = SET_NUMBERLB(size);
-
-	memcpy(send, &pMsg, sizeof(pMsg));
-
-	DataSend(aIndex, send, size);
 }

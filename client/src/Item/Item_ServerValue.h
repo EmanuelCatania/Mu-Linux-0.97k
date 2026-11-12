@@ -1,7 +1,14 @@
 #pragma once
 
-// Las tablas F3/E3 y F3/E4 pertenecen a la conexion con el GameServer.
+#include <cstdint>
+
+// Las tablas de apilado y precios pertenecen a la conexión con el GameServer.
 void ItemServerValue_ResetSession();
 
-// Máximo de apilado del item (F3/E3), o 0 si no se apila.
+// Secciones F3:F8 (apilado) y F3:F9 (precios) del catálogo.  Una sección con un
+// registro inválido no se aplica y queda la tabla anterior.
+bool ItemServerValue_SetStacks(const std::uint8_t* records, int recordSize, int count);
+bool ItemServerValue_SetValues(const std::uint8_t* records, int recordSize, int count);
+
+// Máximo de apilado del item (F3:F8), o 0 si no se apila.
 int __cdecl ItemStack_GetMaxStack(int index, int level);

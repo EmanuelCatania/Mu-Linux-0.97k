@@ -7,12 +7,7 @@
 //************ GameServer -> Client ************//
 //**********************************************//
 
-struct PMSG_ITEM_STACK_LIST_SEND
-{
-	PSWMSG_HEAD header; // C2:F3:E3
-	BYTE count;
-};
-
+// Registro de la sección F3:F8 del catálogo (antes, lista F3:E3 del DLL).
 struct ITEM_STACK
 {
 	int ItemIndex;
@@ -49,7 +44,8 @@ public:
 
 	int GetCreateItemIndex(int index);
 
-	void GCItemStackListSend(int aIndex);
+	// Las filas que viajan en el catálogo (sección F3:F8).
+	void BuildCatalog(std::vector<ITEM_STACK>& out) const;
 
 private:
 
