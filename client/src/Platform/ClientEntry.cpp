@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "Core/DataPrefetch.h"
 #include "Render/ResourceTables.h"
 #include "Platform/Diagnostics.h"
@@ -310,13 +311,18 @@ static void DbgLog(const char* msg)
 #ifdef _WIN32
         static HANDLE h = INVALID_HANDLE_VALUE;
         if (h == INVALID_HANDLE_VALUE) {
-            h = CreateFileA("debug.log", GENERIC_WRITE, FILE_SHARE_READ,
+            // Fase 5 (E1): el log va a User/ (Platform/UserPath.h).
+            Platform::PrepareUserDir();
+            char path[64];
+            Platform::UserPath(path, "debug.log");
+            h = CreateFileA(path, GENERIC_WRITE, FILE_SHARE_READ,
                             NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             if (h == INVALID_HANDLE_VALUE) {
                 // Otro cliente de la misma carpeta ya tiene debug.log abierto:
                 // el segundo escribe en debug-<pid>.log en vez de quedarse mudo.
-                char alt[64];
-                Platform::TextFormat(alt, "debug-%u.log", (unsigned)GetCurrentProcessId());
+                char name[64], alt[80];
+                Platform::TextFormat(name, "debug-%u.log", (unsigned)GetCurrentProcessId());
+                Platform::UserPath(alt, name);
                 h = CreateFileA(alt, GENERIC_WRITE, FILE_SHARE_READ,
                                 NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             }
@@ -334,7 +340,12 @@ static void DbgLog(const char* msg)
             }
         }
 #else
-        static FILE* log = std::fopen("debug.log", "ab");
+        static FILE* log = [] {
+            Platform::PrepareUserDir();
+            char path[64];
+            Platform::UserPath(path, "debug.log");
+            return std::fopen(path, "ab");
+        }();
         if (!log || std::fwrite(buf, 1, n, log) != static_cast<size_t>(n)) s_killed = 1;
         if (log) std::fflush(log);
 #endif

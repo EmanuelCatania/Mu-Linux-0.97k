@@ -264,7 +264,9 @@ com o `CustomerName` do servidor.
 
 As preferências são lidas do **`Config.ini`**, com as mesmas seções e chaves que
 o `Main.dll` de injeção usava, então o `Config.ini` que você já tem serve. No
-Windows fica em `bin/Client/Config.ini`; no Linux, em
+Windows fica em `bin/Client/User/Config.ini` (o `Config.ini` ao lado do exe é o
+modelo copiado para lá na primeira execução; `Macro.txt`, `Cache/`,
+`Screenshots/` e `debug.log` também ficam em `User/`); no Linux, em
 `~/.local/share/mu97k/Config.ini`. A maioria também pode ser mudada pelo menu de
 opções do jogo, que as salva no mesmo arquivo.
 

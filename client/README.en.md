@@ -266,7 +266,9 @@ compare it with the server's `CustomerName`.
 
 Preferences are read from **`Config.ini`**, with the same sections and keys the
 `Main.dll` injection DLL used, so the `Config.ini` you already have works. On
-Windows it is `bin/Client/Config.ini`; on Linux, `~/.local/share/mu97k/Config.ini`.
+Windows it is `bin/Client/User/Config.ini` (the `Config.ini` next to the exe is
+the template copied there on first start; `Macro.txt`, `Cache/`, `Screenshots/`
+and `debug.log` also live in `User/`); on Linux, `~/.local/share/mu97k/Config.ini`.
 Most of them can also be changed from the in-game options menu, which saves them
 to the same file.
 

@@ -474,6 +474,7 @@ set(MU_HEADERS
     src/Platform/IWindow.h
     src/Platform/Win32/Win32Window.h
     src/Platform/IFileSystem.h
+    src/Platform/UserPath.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
     src/Render/GlyphAtlas.h

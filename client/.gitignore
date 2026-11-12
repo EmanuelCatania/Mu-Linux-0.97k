@@ -33,6 +33,8 @@ bin/Client/Screenshots/
 
 # Caché del catálogo de cada server (Item/ContentCatalog.cpp).
 bin/Client/Cache/
+# Estado del usuario (Fase 5, E1): Config.ini, Macro.txt, Cache, capturas y logs.
+bin/Client/User/
 bin/Client/Screen(*.jpg
 
 *.pch

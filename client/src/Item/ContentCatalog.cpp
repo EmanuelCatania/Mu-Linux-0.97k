@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "Model/ModelTypes.h"
 #include "Net/NetText.h"
 #include "Render/ResourceTables.h"
@@ -339,7 +340,9 @@ void CacheStore(BYTE subh, const PendingSection& section)
     // server reenvía sola al recargar trae otro contenido que el del F3:F6.
     const SectionHash hash = HashOf((std::uint16_t)section.recordSize, section.records);
     if (hash != it->second) return;
-    Platform::GetFileSystem().EnsureDirectory("Cache");
+    char cacheRoot[64];
+    Platform::UserPath(cacheRoot, "Cache");
+    Platform::GetFileSystem().EnsureDirectory(cacheRoot);
     Platform::GetFileSystem().EnsureDirectory(s_CacheDir.c_str());
     FILE* f = Platform::GetFileSystem().Open(CacheFile(subh).c_str(), "wb");
     if (!f) return;
@@ -514,7 +517,7 @@ void CContentCatalog::SetServer(const char* ip, unsigned int port)
 {
     s_CacheDir.clear();
     if (!ip || !*ip) return;
-    std::string dir = "Cache/";
+    std::string dir = std::string(Platform::UserDir()) + "Cache/";   // Fase 5 (E1): User/
     for (const char* p = ip; *p; ++p)
         dir += (isalnum((unsigned char)*p) || *p == '.' || *p == '-') ? *p : '_';
     char suffix[16];
