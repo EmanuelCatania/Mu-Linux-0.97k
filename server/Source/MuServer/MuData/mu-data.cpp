@@ -45,6 +45,16 @@
 //   mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>
 //       Compara las zonas de las dos fuentes. Sale con 0 si son iguales.
 //
+//   mu-data import-items <Data> [--force]
+//       Junta los datos extra de los items (Custom/Encoder: CustomItem,
+//       CustomGlow, CustomBow, ItemPosition; Item/CustomWing.txt,
+//       Item/ItemStack.txt, Item/ItemValue.txt; Custom/Items y Custom/Pets) en
+//       un archivo por sección: <Data>/Items/NN-nombre.toml.
+//
+//   mu-data check-items <Data>
+//       Compara los datos de las dos fuentes. Sale con 0 si son iguales y
+//       lista los archivos viejos que se pueden borrar.
+//
 //   mu-data validate <Data>
 //       Lee los Spawns.toml, los Map.toml, los Drops.toml, los Gates.toml, los
 //       Zones.toml y el Invasions.toml y avisa del primer error, con archivo y
@@ -52,6 +62,7 @@
 
 #include "EventInvasions.h"
 #include "ItemDrops.h"
+#include "ItemExtras.h"
 #include "MapGates.h"
 #include "MapZones.h"
 #include "MapInfo.h"
@@ -601,6 +612,80 @@ static int CheckZones(const std::string& safe, const std::string& pkFree, const 
 	return 0;
 }
 
+static int ImportItems(const std::string& dataDir, bool force)
+{
+	std::string error;
+
+	std::vector<ItemExtraDef> items;
+
+	if (!ItemExtras_LoadLegacy(dataDir, items, error))
+	{
+		return Fail(error);
+	}
+
+	std::vector<std::string> names;
+
+	ItemExtras_ReadItemNames((fs::u8path(dataDir) / "Item" / "Item.txt").u8string(), names);
+
+	std::map<int, size_t> perSection;
+
+	for (const ItemExtraDef& d : items)
+	{
+		perSection[d.Section]++;
+	}
+
+	for (const std::pair<const int, size_t>& section : perSection)
+	{
+		fs::path file = fs::u8path(ItemExtras_SectionPath(dataDir, section.first));
+
+		if (!PrepareOutput(file, force, error) || !ItemExtras_WriteSection(file.u8string(), section.first, items, names, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("%-48s %4zu items\n", file.u8string().c_str(), section.second);
+	}
+
+	std::printf("%zu items\n", items.size());
+
+	return 0;
+}
+
+static int CheckItems(const std::string& dataDir)
+{
+	std::string error;
+
+	std::vector<ItemExtraDef> legacy;
+
+	std::vector<ItemExtraDef> toml;
+
+	if (!ItemExtras_LoadLegacy(dataDir, legacy, error) || !ItemExtras_Load(dataDir, toml, error))
+	{
+		return Fail(error);
+	}
+
+	if (!ItemExtras_Equal(legacy, toml, error))
+	{
+		return Fail("difieren: " + error);
+	}
+
+	std::printf("Idénticos: %zu items\n", toml.size());
+
+	std::vector<std::string> files = ItemExtras_LegacyFiles(dataDir);
+
+	if (!files.empty())
+	{
+		std::printf("Se pueden borrar:\n");
+
+		for (const std::string& file : files)
+		{
+			std::printf("  %s\n", file.c_str());
+		}
+	}
+
+	return 0;
+}
+
 static int Validate(const std::string& dataDir)
 {
 	std::string error;
@@ -660,6 +745,18 @@ static int Validate(const std::string& dataDir)
 		}
 
 		std::printf("OK: %zu drops\n", drops.size());
+	}
+
+	if (ItemExtras_HasData(dataDir))
+	{
+		std::vector<ItemExtraDef> items;
+
+		if (!ItemExtras_Load(dataDir, items, error))
+		{
+			return Fail(error);
+		}
+
+		std::printf("OK: datos extra de %zu items\n", items.size());
 	}
 
 	if (MapGates_HasData(dataDir))
@@ -770,6 +867,16 @@ int main(int argc, char** argv)
 		return CheckZones(args[1], args[2], args[3], args[4]);
 	}
 
+	if (args.size() == 2 && args[0] == "import-items")
+	{
+		return ImportItems(args[1], force);
+	}
+
+	if (args.size() == 2 && args[0] == "check-items")
+	{
+		return CheckItems(args[1]);
+	}
+
 	if (args.size() == 2 && args[0] == "validate")
 	{
 		return Validate(args[1]);
@@ -789,6 +896,8 @@ int main(int argc, char** argv)
 		"  mu-data check-gates <Gate.txt> <Data>\n"
 		"  mu-data import-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data> [--force]\n"
 		"  mu-data check-zones <CustomSafeZone.txt> <CustomPkFree.txt> <CustomNpcMove.txt> <Data>\n"
+		"  mu-data import-items <Data> [--force]\n"
+		"  mu-data check-items <Data>\n"
 		"  mu-data validate <Data>\n");
 
 	return 2;
