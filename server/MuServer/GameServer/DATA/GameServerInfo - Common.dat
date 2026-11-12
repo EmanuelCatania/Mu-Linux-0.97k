@@ -26,12 +26,17 @@ CheckAutoPotionHackTolerance=50
 MoveCheck=1
 ; Tiles que el inicio del camino puede alejarse de la posicion del server
 MoveCheckTolerance=4
-; Distancia que el personaje puede recorrer, medida en milisegundos de
-; caminata del server (MoveSpeed por tile). Se recarga con el tiempo hasta
-; este tope y la gastan los pasos del server y los saltos al inicio del camino
-; que manda el cliente. Sin esto, mandar caminos que arrancan 4 tiles adelante
-; cada 100 ms movia al personaje 40 tiles por segundo. Usa el mismo MoveCheck.
+; Distancia que el personaje puede recorrer, en milisegundos. Se recarga con
+; el tiempo hasta este tope y cada tile recorrido cuesta MoveCheckTileTime
+; (los pasos del server y los saltos al inicio del camino que manda el
+; cliente). Sin esto, mandar caminos que arrancan 4 tiles adelante cada
+; 100 ms movia al personaje 40 tiles por segundo. Usa el mismo MoveCheck.
 MoveCheckBudget=2000
+; Costo de un tile: el tiempo del cliente mas rapido. El cliente avanza por
+; pasos de 40 ms: 12 unidades caminando (333 ms por tile), 15 corriendo o
+; con alas/montura (267 ms) y 16 con las alas 789 (250 ms). El server camina
+; a 400 ms, asi que con ese costo el saldo se vaciaba en linea recta.
+MoveCheckTileTime=250
 
 ; Linea de vision entre el atacante y cada blanco de un skill de area (0x1D):
 ; 0 = apagada, 1 = observar, 2 = descartar el blanco tapado por una pared

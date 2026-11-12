@@ -850,7 +850,7 @@ static bool MoveCheckPath(LPOBJ lpObj, PMSG_MOVE_RECV* lpMsg)
 	// El server adopta el inicio que manda el cliente: ese salto gasta
 	// presupuesto. Sin esto, caminos que arrancan 4 tiles adelante cada 100 ms
 	// (el mínimo entre dos 0x10) movían al personaje 40 tiles por segundo.
-	if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+	if (d > 0 && gObjMoveBudgetCharge(lpObj, d * gServerInfo.m_MoveCheckTileTime) == false)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Movimiento: salto de %d tiles al inicio (%d,%d) sin presupuesto%s", lpObj->Account, lpObj->Name, d, lpMsg->x, lpMsg->y, mode);
 
@@ -930,7 +930,7 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 	{
 		int d = MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y);
 
-		if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+		if (d > 0 && gObjMoveBudgetCharge(lpObj, d * gServerInfo.m_MoveCheckTileTime) == false)
 		{
 			const char* mode = (gServerInfo.m_MoveCheck == 2) ? "" : " [observado]";
 
