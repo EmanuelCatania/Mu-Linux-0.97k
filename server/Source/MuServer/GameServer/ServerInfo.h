@@ -110,6 +110,8 @@ public:
 	// Autoridad del server (Fase 5): 0 = apagado, 1 = observar, 2 = aplicar
 	int m_MoveCheck;
 	int m_MoveCheckTolerance;
+	int m_MoveCheckBudget;
+	int m_SkillLineCheck;
 	int m_AttackCheck;
 	int m_AttackCheckScale;
 	int m_PacketRateCheck;

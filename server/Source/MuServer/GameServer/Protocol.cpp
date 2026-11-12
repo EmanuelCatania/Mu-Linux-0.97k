@@ -830,13 +830,25 @@ static bool MoveCheckPath(LPOBJ lpObj, PMSG_MOVE_RECV* lpMsg)
 
 	int d = MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y);
 
-	TRACE_NOTE(lpObj->Index, PROTOCOL_CODE1, -1, "mov: inicio (%d,%d) server (%d,%d) d=%d pasos=%d", lpMsg->x, lpMsg->y, lpObj->X, lpObj->Y, d, lpObj->PathCount);
+	TRACE_NOTE(lpObj->Index, PROTOCOL_CODE1, -1, "mov: inicio (%d,%d) server (%d,%d) d=%d pasos=%d saldo=%d", lpMsg->x, lpMsg->y, lpObj->X, lpObj->Y, d, lpObj->PathCount, lpObj->MoveBudget);
 
 	if (d > gServerInfo.m_MoveCheckTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Movimiento: inicio (%d,%d) a %d tiles de la posicion del server (%d,%d)%s", lpObj->Account, lpObj->Name, lpMsg->x, lpMsg->y, d, lpObj->X, lpObj->Y, mode);
 
 		TRACE_REJECT(lpObj->Index, PROTOCOL_CODE1, -1, "mov: inicio a %d tiles de la posicion del server (tolerancia %d)%s", d, gServerInfo.m_MoveCheckTolerance, mode);
+
+		return false;
+	}
+
+	// El server adopta el inicio que manda el cliente: ese salto gasta
+	// presupuesto. Sin esto, caminos que arrancan 4 tiles adelante cada 100 ms
+	// (el mínimo entre dos 0x10) movían al personaje 40 tiles por segundo.
+	if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+	{
+		gLog.Output(LOG_HACK, "[%s][%s] Movimiento: salto de %d tiles al inicio (%d,%d) sin presupuesto%s", lpObj->Account, lpObj->Name, d, lpMsg->x, lpMsg->y, mode);
+
+		TRACE_REJECT(lpObj->Index, PROTOCOL_CODE1, -1, "mov: salto de %d tiles al inicio sin presupuesto (se desplaza mas rapido que el server)%s", d, mode);
 
 		return false;
 	}
@@ -901,6 +913,25 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 		if (gServerInfo.m_MoveCheck == 2)
 		{
 			return;
+		}
+	}
+
+	if (lpObj->Type == OBJECT_USER && gServerInfo.m_MoveCheck != 0)
+	{
+		int d = MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y);
+
+		if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+		{
+			const char* mode = (gServerInfo.m_MoveCheck == 2) ? "" : " [observado]";
+
+			gLog.Output(LOG_HACK, "[%s][%s] Posicion: salto de %d tiles a (%d,%d) sin presupuesto%s", lpObj->Account, lpObj->Name, d, lpMsg->x, lpMsg->y, mode);
+
+			TRACE_REJECT(aIndex, PROTOCOL_CODE3, -1, "pos: salto de %d tiles sin presupuesto%s", d, mode);
+
+			if (gServerInfo.m_MoveCheck == 2)
+			{
+				return;
+			}
 		}
 	}
 

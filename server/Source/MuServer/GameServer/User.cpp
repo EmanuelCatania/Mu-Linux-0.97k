@@ -75,6 +75,39 @@ DWORD gLevelExperience[MAX_CHARACTER_LEVEL + 1];
 // OBJECT MAIN FUNCTIONS ***************************************************//
 //**************************************************************************//
 
+// Fase 5: presupuesto de movimiento, en milisegundos de caminata del server.
+// Se recarga con el tiempo transcurrido hasta MoveCheckBudget y lo gastan los
+// pasos que avanza el server (ObjectMoveProc) y los saltos al inicio del camino
+// o a la posición que manda el cliente. Caminando a la velocidad del server el
+// saldo no baja; sólo baja si el personaje se desplaza más rápido que eso.
+// Devuelve false si el gasto deja el saldo en negativo (el saldo queda en 0).
+bool gObjMoveBudgetCharge(LPOBJ lpObj, int cost)
+{
+	DWORD now = GetTickCount();
+
+	long long budget = (long long)lpObj->MoveBudget + (now - lpObj->MoveBudgetTime);
+
+	lpObj->MoveBudgetTime = now;
+
+	if (budget > gServerInfo.m_MoveCheckBudget)
+	{
+		budget = gServerInfo.m_MoveCheckBudget;
+	}
+
+	budget -= cost;
+
+	if (budget < 0)
+	{
+		lpObj->MoveBudget = 0;
+
+		return false;
+	}
+
+	lpObj->MoveBudget = (int)budget;
+
+	return true;
+}
+
 void gObjEventRunProc()
 {
 	gBloodCastle.MainProc();
@@ -346,6 +379,11 @@ void gObjCharZeroSet(int aIndex)
 	lpObj->PathStartEnd = 0;
 
 	lpObj->LastAttackTime = 0;
+
+	// Presupuesto de movimiento en 0 con hora 0: el primer reintegro lo llena.
+	lpObj->MoveBudget = 0;
+
+	lpObj->MoveBudgetTime = 0;
 
 	lpObj->Authority = 0;
 
