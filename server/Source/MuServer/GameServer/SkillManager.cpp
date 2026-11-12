@@ -6,6 +6,7 @@
 #include "Fruit.h"
 #include "Guild.h"
 #include "ItemManager.h"
+#include "Log.h"
 #include "Map.h"
 #include "ReadScript.h"
 #include "Message.h"
@@ -1903,6 +1904,24 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		{
 			TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: blanco %d fuera de radio (yo %d,%d / blanco %d,%d / radio %d)", lpSkill->m_skill, bIndex, lpObj->X, lpObj->Y, lpTarget->X, lpTarget->Y, this->GetSkillRadio(lpSkill->m_index));
 			continue;
+		}
+
+		// Fase 5: el blanco tiene que estar en el mismo mapa y sin una pared en
+		// medio. El cliente ya lo filtra antes de mandarlo (Attack hace CheckWall,
+		// 0x4830B0), pero la lista del 0x1D la arma el cliente y el server la
+		// tomaba tal cual: se podía pegar a través de paredes.
+		if (lpObj->Type == OBJECT_USER && gServerInfo.m_SkillLineCheck != 0 && (lpTarget->Map != lpObj->Map || gMap[lpObj->Map].CheckWall(lpObj->X, lpObj->Y, lpTarget->X, lpTarget->Y) == FALSE))
+		{
+			const char* mode = (gServerInfo.m_SkillLineCheck == 2) ? "" : " [observado]";
+
+			gLog.Output(LOG_HACK, "[%s][%s] Skill %d: blanco %d tapado por una pared (yo %d,%d / blanco %d,%d)%s", lpObj->Account, lpObj->Name, lpSkill->m_skill, bIndex, lpObj->X, lpObj->Y, lpTarget->X, lpTarget->Y, mode);
+
+			TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: blanco %d sin linea de vision (yo %d,%d / blanco %d,%d)%s", lpSkill->m_skill, bIndex, lpObj->X, lpObj->Y, lpTarget->X, lpTarget->Y, mode);
+
+			if (gServerInfo.m_SkillLineCheck == 2)
+			{
+				continue;
+			}
 		}
 
 		if (type != 0 || lpSkill->m_skill == SKILL_FIRE_SLASH)
