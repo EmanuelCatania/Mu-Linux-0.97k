@@ -1838,12 +1838,15 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 	}
 
 	// Triple Shot resuelve sus blancos en el 0x1E (SkillTripleShot, con el cono
-	// del ángulo) y no anota MultiSkillIndex: el 0x1D que el cliente manda al
-	// chocar la flecha sobra y siempre se descartó.  Se ignora sin avisarle al
-	// cliente, que si no muestra un rechazo por cada flecha.
+	// del ángulo) y no anota MultiSkillIndex.  El 0x1D que llega después no es
+	// de la flecha: es la explosión del virote de la Aquagold Crossbow (efecto
+	// 223), que el cliente original manda al terminar su vida con el skill con
+	// el que se disparó (MoveEffect 0x466AD0, `CreateBomb` + `sub_45FEC0` con
+	// radio 100).  Siempre se descartó; se ignora sin avisarle al cliente, que
+	// si no muestra un rechazo por cada virote.
 	if (lpObj->Type == OBJECT_USER && lpSkill->m_skill == SKILL_TRIPLE_SHOT && lpObj->MultiSkillIndex == 0)
 	{
-		TRACE_NOTE(aIndex, 0x1D, -1, "Triple Shot: 0x1D de la flecha, los blancos ya se resolvieron en el 0x1E");
+		TRACE_NOTE(aIndex, 0x1D, -1, "Triple Shot: 0x1D de la explosión del virote, los blancos ya se resolvieron en el 0x1E");
 		return;
 	}
 
