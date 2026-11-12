@@ -425,6 +425,8 @@ struct OBJECTSTRUCT
 	WORD ViewSkillState;
 	DWORD LastMoveTime;
 	DWORD LastAttackTime;
+	int MoveBudget;
+	DWORD MoveBudgetTime;
 	DWORD TeleportTime;
 	char Teleport;
 	char KillerType;
@@ -654,6 +656,8 @@ extern DWORD gLevelExperience[MAX_CHARACTER_LEVEL + 1];
 //**************************************************************************//
 // OBJECT MAIN FUNCTIONS ***************************************************//
 //**************************************************************************//
+
+bool gObjMoveBudgetCharge(LPOBJ lpObj, int cost);
 
 void gObjEventRunProc();
 
