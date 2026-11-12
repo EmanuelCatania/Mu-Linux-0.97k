@@ -666,7 +666,7 @@ void gObjAllLogOut();
 
 void gObjAllDisconnect();
 
-void gObjSetExperienceTable();
+void gObjSetExperienceTable(double exponent);
 
 void gObjCharZeroSet(int aIndex);
 

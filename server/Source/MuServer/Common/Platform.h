@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <string>
 
 typedef unsigned __int64 QWORD;
 #else
@@ -860,3 +861,24 @@ inline BOOL FindNextFile(HANDLE handle, WIN32_FIND_DATA* data)
 }
 
 #endif
+
+// Lee un valor double del INI. Usa GetPrivateProfileString, que existe en las
+// dos ramas (WinAPI en Windows, version portable en POSIX).
+inline double GetPrivateProfileDouble(const char* section, const char* key, double defaultValue, const char* path)
+{
+	char value[64] = { 0 };
+
+	if (GetPrivateProfileString(section, key, "", value, sizeof(value), path) == 0)
+	{
+		return defaultValue;
+	}
+
+	try
+	{
+		return std::stod(value);
+	}
+	catch (...)
+	{
+		return defaultValue;
+	}
+}
