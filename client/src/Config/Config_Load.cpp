@@ -43,6 +43,7 @@
 //     SetByte(0x0041EFB5, 0xEB);  // Crack gg init
 
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "Platform/ClientSettings.h"
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
@@ -85,6 +86,9 @@ int Config_Load(void)
         configPath[pathLen]     = '\\';
         configPath[pathLen + 1] = '\0';
     }
+    // DESVIACION (Fase 5, E1): las preferencias viven en User/ (Platform/UserPath.h).
+    Platform::PrepareUserDir();
+    Platform::TextConcatSecure(configPath, MAX_PATH, Platform::UserDir());
     Platform::TextConcatSecure(configPath, MAX_PATH, "config.ini");
 
     // --- 2/3. Version que muestra el pie del login (m_ExeVersion) ---

@@ -1,4 +1,5 @@
 #pragma once
+#include "Platform/UserPath.h"
 #include "Platform/IDiagnostics.h"
 #include <csignal>
 #include <unistd.h>
@@ -40,7 +41,9 @@ public:
     }
     bool Install(DiagnosticLog log) override {
         if (descriptor >= 0) return true;
-        const int fd = ::open("debug.log", O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+        char logPath[64];
+        Platform::UserPath(logPath, "debug.log");
+        const int fd = ::open(logPath, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
         if (fd < 0) { if (log) log("No se pudo abrir debug.log para señales"); return false; }
         // Precargar el unwinder antes del crash. El backtrace es de mejor esfuerzo:
         // no se garantiza recuperar una pila corrupta ni locks internos del unwinder.

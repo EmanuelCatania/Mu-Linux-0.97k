@@ -14,6 +14,7 @@
 // an empty pool (UI strings just render blank rather than killing the client).
 
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
@@ -103,7 +104,7 @@ void __cdecl OpenTextData(void)
         // DESVIACION (DLL Language.cpp): Text_<idioma>.bmd si hay selección.
         char path[MAX_PATH];
         LoadTextData_Bin(LocalizedDataPath("Data\\Local\\Text", ".bmd", path, sizeof(path)));
-        OpenMacro("Data\\Macro.txt");   // macros de chat (Alt+1..0)
+        OpenMacro(const_cast<char*>(Platform::UserMacroPath()));   // macros de chat (Alt+1..0); Fase 5: User/
     } else {
         // Plain-text branch — not taken in our build, but implement for parity.
         // sub_4797B0 tokenises "index value" pairs out of Text(xxx).txt.
