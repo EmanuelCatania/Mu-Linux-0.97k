@@ -203,6 +203,8 @@ public:
 
 	bool GetInfo(int index, SKILL_INFO* lpInfo);
 
+	const std::map<int, SKILL_INFO>& GetAll() const { return this->m_SkillInfo; }
+
 	int GetSkillDamage(int index);
 
 	int GetSkillMana(int index);
@@ -228,6 +230,7 @@ public:
 	bool CheckSkillRange(int index, int x, int y, int tx, int ty);
 
 	bool CheckSkillRadio(int index, int x, int y, int tx, int ty);
+	int GetSkillRadio(int index);
 
 	bool CheckSkillFrustrum(int* SkillFrustrumX, int* SkillFrustrumY, int x, int y);
 

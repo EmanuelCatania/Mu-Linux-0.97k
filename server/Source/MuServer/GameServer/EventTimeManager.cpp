@@ -220,4 +220,87 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 
 		DataSend(aIndex, send, size);
 	}
+
+	this->GCInvasionDetailSend(aIndex);
+}
+
+void CEventTimeManager::GCInvasionDetailSend(int aIndex)
+{
+	if (gServerInfo.m_InvasionManagerSwitch == 0)
+	{
+		return;
+	}
+
+	BYTE send[4096];
+
+	PMSG_INVASION_DETAIL_SEND pMsg;
+
+	pMsg.header.set(0xF3, 0xF2, 0);
+
+	pMsg.count = 0;
+
+	int size = sizeof(pMsg);
+
+	int alive[MAX_MAP];
+
+	int total[MAX_MAP];
+
+	for (int i = 0; i < MAX_INVASION; i++)
+	{
+		if (gInvasionManager.GetMapStatus(i, alive, total) == 0)
+		{
+			continue;
+		}
+
+		PMSG_INVASION_DETAIL info;
+
+		memset(&info, 0, sizeof(info));
+
+		strcpy_s(info.name, gInvasionManager.GetInvasionName(i));
+
+		int start = size;
+
+		size += sizeof(info);
+
+		for (int map = 0; map < MAX_MAP; map++)
+		{
+			if (total[map] == 0 || (size + (int)sizeof(PMSG_INVASION_DETAIL_MAP)) > (int)sizeof(send))
+			{
+				continue;
+			}
+
+			PMSG_INVASION_DETAIL_MAP entry;
+
+			entry.map = map;
+
+			entry.alive = alive[map];
+
+			entry.total = total[map];
+
+			memcpy(&send[size], &entry, sizeof(entry));
+
+			size += sizeof(entry);
+
+			info.maps++;
+		}
+
+		memcpy(&send[start], &info, sizeof(info));
+
+		pMsg.count++;
+	}
+
+	// Sin invasiones en curso no se manda nada: el cliente sólo muestra el
+	// detalle de las filas que el F3:E6 marca como en curso.
+	if (pMsg.count == 0)
+	{
+		return;
+	}
+
+	pMsg.header.size[0] = SET_NUMBERHB(size);
+
+	pMsg.header.size[1] = SET_NUMBERLB(size);
+
+	memcpy(send, &pMsg, sizeof(pMsg));
+
+	DataSend(aIndex, send, size);
 }

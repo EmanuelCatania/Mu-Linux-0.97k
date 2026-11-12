@@ -321,6 +321,9 @@
     <ClInclude Include="PacketManager.h">
       <Filter>Connection</Filter>
     </ClInclude>
+    <ClInclude Include="PacketTrace.h">
+      <Filter>Connection</Filter>
+    </ClInclude>
     <ClInclude Include="Queue.h">
       <Filter>Connection</Filter>
     </ClInclude>
@@ -630,6 +633,9 @@
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="PacketManager.cpp">
+      <Filter>Connection</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketTrace.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="Queue.cpp">

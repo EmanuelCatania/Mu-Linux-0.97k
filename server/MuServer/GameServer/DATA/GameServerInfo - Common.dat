@@ -17,6 +17,26 @@ CheckAutoPotionHack=0
 ; The tolerance for consuming potions when CheckAutoPotionHack=1
 CheckAutoPotionHackTolerance=0
 
+; Validacion del camino que manda el cliente: el inicio tiene que estar cerca
+; de la posicion que calcula el server y ningun paso puede pisar una pared.
+; 0 = apagada, 1 = observar (solo registra en el log de hack), 2 = aplicar
+MoveCheck=1
+; Tiles que el inicio del camino puede alejarse de la posicion del server
+MoveCheckTolerance=4
+
+; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
+AttackCheck=1
+; El intervalo minimo entre dos ataques depende de la velocidad, como la
+; animacion del cliente (PlaySpeed = 0.6 + PhysiSpeed * 0.004 en la mas rapida):
+;   minimo (ms) = AttackCheckScale / (0.6 + PhysiSpeed * 0.004)
+; Con 240: 400 ms con velocidad 0, 138 ms con 285. Medido: 238 ms con 285.
+AttackCheckScale=240
+
+; Paquetes por segundo por conexion, todos los opcodes juntos
+; (0 = apagado, 1 = observar, 2 = desconectar al pasarse)
+PacketRateCheck=1
+PacketRateMax=60
+
 ;==================================================
 ; Common Settings
 ;==================================================

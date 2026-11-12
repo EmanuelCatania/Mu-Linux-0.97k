@@ -177,6 +177,18 @@ También están disponibles `windows-x86-debug` y `windows-x64-debug`; los ejecu
 
 Los cuatro servicios compilan en el CI para Windows x86/x64 y Linux x64/ARM64, Debug y Release. ARM64 sigue como compilado, no probado en partida. Fase 3 incluye correcciones del ancho de puntero en callbacks, IOCP y timers, y una cola de envío de 256 KiB para el catálogo de login; el límite individual sigue en 8 KiB. La prueba local de Windows x64 cubrió login, partida, reset, compra/venta y Chaos; no equivale a una prueba de carga.
 
+#### Compilar con MinGW
+
+Los cuatro servicios y `mu-data` también compilan con MinGW-w64 (GCC), en x64 y x86. Los presets son para compilación cruzada desde Linux; en Debian/Ubuntu hacen falta `g++-mingw-w64-x86-64-posix`, `g++-mingw-w64-i686-posix` y `ninja-build`:
+
+```sh
+cd server
+cmake --preset mingw-x64-release
+cmake --build --preset mingw-x64-release --parallel 4
+```
+
+Los `.exe` quedan en `server/out/build/mingw-x64-release/bin/` (`mingw-x86-release` para 32 bits) y salen estáticos: no piden las DLL del toolchain. Se copian a `server/MuServer/` igual que los de MSVC. Compilar con MSYS2 desde Windows todavía no está probado.
+
 ### Administración: eventos GM y recargas
 
 Sólo GM nivel 1 o superior, desde el chat del juego:
@@ -187,7 +199,7 @@ Sólo GM nivel 1 o superior, desde el chat del juego:
 | `/bcstart` | Blood Castle, todos los niveles |
 | `/dsstart` | Devil Square, todos los niveles |
 | `/bingostart` | Golden Archer Bingo |
-| `/invasionstart <indice>` | Índice de `server/MuServer/Data/Event/InvasionManager.dat` |
+| `/invasionstart <indice>` | `index` de la invasión en `server/MuServer/Data/Events/Invasions/Invasions.toml` (o, en un server sin ese archivo, el índice de `Event/InvasionManager.dat`) |
 
 Programan una sola ejecución aproximadamente dos minutos después, sin modificar los horarios del archivo ni reiniciar eventos activos. BC/DS también rechazan el pedido con la entrada abierta. Iniciar una invasión no reinicia las demás. El evento debe estar habilitado. Los nuevos comandos registran el pedido y resultado en `COMMAND_LOG`.
 
@@ -315,7 +327,7 @@ El cliente basado en inyección de DLL está completamente deprecado y fue retir
    docker compose up -d --build
    ```
 
-3. Abrí `44405/tcp` y `55901/tcp`.
+3. Abrí `44405/tcp` y `55901/tcp`. Para limitar conexiones por IP desde el firewall del host, ver [docs/firewall.md](docs/firewall.md).
 
 Para imágenes publicadas sin build:
 
@@ -354,7 +366,8 @@ Mantiene backups por archivo y snapshots de `server/MuServer/Data` y `server/MuS
 
 ## Datos, seguridad y logs
 
-- `MD5Encryption=2` usa MD5 binario. Al migrar desde texto plano, recreá la DB con `docker compose down -v`.
+- Contraseñas: el JoinServer y el panel las guardan con bcrypt (`PasswordHash=1` en `JoinServer.ini`). Las viejas (texto o MD5, según `MD5Encryption`) siguen entrando y se reemplazan por el hash la primera vez que cada cuenta entra. Hace falta `memb__pwd` de 60 bytes: el panel lo ajusta al arrancar, o corré `Migrate-password-hash.sql`.
+- `GlobalPassword` (entra a cualquier cuenta) viene vacía, o sea apagada. Si tu `JoinServer.ini` todavía tiene `XwefDastoD`, borrala: es un valor público.
 - Guardá los TXT del servidor en UTF-8 sin BOM. Desde 0.97.40 el server ya no convierte a Windows-1252: un archivo en ANSI con acentos se ve mal en el cliente.
 - Shops: `server/MuServer/Data/Shop/*.txt`; `SlotX SlotY` en `-1 -1` autoubica el ítem.
 - Mensajes: `server/MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y `server/MuServer/Data/Util/Notice.txt`.

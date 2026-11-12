@@ -1249,3 +1249,50 @@ textarea.invalid {
 .ci-effect { border: 1px solid #2a313b; border-radius: 6px; padding: 10px; margin: 8px 0; background: #14181e; }
 .ci-preview { max-height: 260px; overflow: auto; background: #0f1318; padding: 8px; border-radius: 6px; font-size: 0.85em; }
 .ci-pending { box-shadow: 0 0 0 2px #c9a55a; }
+
+/* Editor por carpeta de mapa */
+.map-folder-editor {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.map-folder-list {
+  max-height: 640px;
+}
+
+.map-folder-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.map-folder-tab.selected {
+  background: rgba(125, 211, 252, 0.25);
+}
+
+.map-folder-tab.missing {
+  opacity: 0.6;
+}
+
+/* El modo visual va dentro de la columna del formulario: sus selects y el
+   zoom no ocupan todo el ancho. */
+.map-folder-visual .spawn-toolbar input,
+.map-folder-visual .spawn-toolbar select {
+  width: auto;
+}
+
+.map-folder-text {
+  width: 100%;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  white-space: pre;
+  tab-size: 2;
+}
+
+@media (max-width: 800px) {
+  .map-folder-editor {
+    grid-template-columns: 1fr;
+  }
+}

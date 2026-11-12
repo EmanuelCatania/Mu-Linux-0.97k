@@ -74,6 +74,13 @@ public:
 	void CGNpcTalkRecv(PMSG_NPC_TALK_RECV* lpMsg, int aIndex);
 
 	void CGNpcTalkCloseRecv(int aIndex);
+
+	// La interfaz de NPC sigue abierta y el NPC que la abrió está cerca. Al
+	// hablar se exigen 5 tiles; acá se toleran unos más.
+	bool CheckInterfaceNpc(LPOBJ lpObj, int head);
+
+	// Herreros: los únicos NPC con los que el cliente ofrece reparar.
+	bool IsRepairNpc(int index);
 };
 
 extern CNpcTalk gNpcTalk;

@@ -30,6 +30,10 @@ public:
 
 	void Load(const char* path);
 
+	// Fase 5: desde Data/Maps/NN-Nombre/Gates.toml (`path` es Data/). Llena la
+	// misma tabla que Load con Gate.txt.
+	void LoadToml(const char* path);
+
 	bool GetInfo(int index, GATE_INFO* lpInfo);
 
 	int GetGateMap(int index);
@@ -41,6 +45,8 @@ public:
 	bool IsInGate(LPOBJ lpObj, int index);
 
 	bool GetGate(int index, int* gate, int* map, int* x, int* y, int* dir, int* level);
+
+	const std::map<int, GATE_INFO>& GetAll() const { return this->m_GateInfo; }
 
 private:
 

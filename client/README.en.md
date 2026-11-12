@@ -145,6 +145,31 @@ The executable ends up in `build/linux-x64-release/bin/main` (not in
 repo's assets, point `MU_ASSET_ROOT` at `bin/Client` (see
 [Running on Linux](#running-on-linux)).
 
+### Windows x64 with MinGW
+
+An alternative to Visual Studio: it builds with MinGW-w64 (GCC), with SDL3. The
+presets cross-compile from Linux; on Debian/Ubuntu you need
+`g++-mingw-w64-x86-64-posix` and `ninja-build`. There are two:
+
+- `mingw-x64-release`: OpenGL only, no vcpkg.
+- `mingw-x64-webgpu-release`: OpenGL and WebGPU, with Dawn from vcpkg (needs
+  `VCPKG_ROOT`, like the Linux x64 one, and MinGW-w64 12 or newer: Debian 13 or
+  Ubuntu 25.04 onwards). With MinGW, Dawn is built **with the
+  Vulkan backend only**: the Direct3D ones need headers MinGW doesn't ship. The
+  Options menu doesn't offer DirectX 11 or DirectX 12, and a `d3d12`/`d3d11`
+  saved in `Config.ini` is read as automatic WebGPU, which uses Vulkan.
+
+```sh
+cmake --preset mingw-x64-webgpu-release
+cmake --build --preset mingw-x64-webgpu-release --target mu97k
+```
+
+The executable ends up in `build/<preset>/bin/main.exe` and is fully
+static (it doesn't need the toolchain DLLs); copy it into `bin/Client/` to play.
+GCC has no `__try`/`__except`: the places that catch an invalid access with
+MSVC run without that guard, as on Linux. Building with MSYS2 on Windows is not
+tested yet.
+
 ### Historical builds (x86 and Win32)
 
 They are still available for comparing against the original binary, which is

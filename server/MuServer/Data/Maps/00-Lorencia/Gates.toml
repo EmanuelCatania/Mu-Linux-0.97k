@@ -1,0 +1,23 @@
+# Lorencia (mapa 0): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 1, type = "entrance", area = [121, 232, 123, 233], target = 2, level = [20, 400] },
+  { index = 4, type = "exit", area = [121, 231, 123, 231], dir = 1, level = [0, 400] },
+  { index = 17, type = "destination", area = [133, 118, 151, 135], level = [0, 400] },
+  { index = 18, type = "entrance", area = [5, 38, 6, 41], target = 19, level = [15, 400] },
+  { index = 21, type = "exit", area = [7, 38, 8, 41], dir = 3, level = [0, 400] },
+  { index = 23, type = "entrance", area = [213, 246, 217, 247], target = 24, level = [10, 400] },
+  { index = 26, type = "exit", area = [213, 244, 217, 245], dir = 1, level = [10, 400] },
+  { index = 78, type = "entrance", area = [236, 239, 240, 240], target = 79, level = [300, 400] },
+]

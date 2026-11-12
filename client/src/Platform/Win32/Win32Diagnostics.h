@@ -4,6 +4,17 @@
 #include "Platform/IWindow.h"
 #include "Debug/MiniDump.h"
 #include <windows.h>
+
+// SEH: cada paso del filtro de crash va protegido para que un fallo al
+// loguear no tape el volcado. GCC (MinGW) no tiene __try/__except: ahí los
+// pasos corren sin protección, igual que en Linux.
+#if defined(_MSC_VER)
+#define MU_SEH_TRY __try
+#define MU_SEH_EXCEPT __except (EXCEPTION_EXECUTE_HANDLER)
+#else
+#define MU_SEH_TRY if (true)
+#define MU_SEH_EXCEPT else
+#endif
 #include <cstdio>
 #include <intrin.h>
 #include "Platform/ITimer.h"
@@ -26,32 +37,32 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     // enfoque del MuServer.
     char dumpPath[MAX_PATH] = {};
     bool dumpOk = false;
-    __try {
+    MU_SEH_TRY {
         dumpOk = CMiniDump::Write(ep, dumpPath, sizeof(dumpPath));
-    } __except (EXCEPTION_EXECUTE_HANDLER) { dumpOk = false; }
+    } MU_SEH_EXCEPT { dumpOk = false; }
 
     char line1[256], line2[256], full[600];
-    __try {
+    MU_SEH_TRY {
         _snprintf_s(line1, sizeof(line1), _TRUNCATE,
             "CRASH: code=0x%08X  addr=0x%p",
             ep->ExceptionRecord->ExceptionCode,
             ep->ExceptionRecord->ExceptionAddress);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
+    } MU_SEH_EXCEPT {
         line1[0] = 0;
     }
     line2[0] = 0;
-    __try {
+    MU_SEH_TRY {
         if (ep && ep->ExceptionRecord && ep->ExceptionRecord->NumberParameters >= 2) {
             _snprintf_s(line2, sizeof(line2), _TRUNCATE,
                 "param0=%u  param1=0x%p",
                 (unsigned)ep->ExceptionRecord->ExceptionInformation[0],
                 (void*)ep->ExceptionRecord->ExceptionInformation[1]);
         }
-    } __except (EXCEPTION_EXECUTE_HANDLER) { line2[0] = 0; }
-    __try { CrashLog(line1); } __except (EXCEPTION_EXECUTE_HANDLER) {}
-    if (line2[0]) __try { CrashLog(line2); } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } MU_SEH_EXCEPT { line2[0] = 0; }
+    MU_SEH_TRY { CrashLog(line1); } MU_SEH_EXCEPT {}
+    if (line2[0]) MU_SEH_TRY { CrashLog(line2); } MU_SEH_EXCEPT {}
     // ── Stack trace desde el contexto del crash ──────────────────────────────
-    __try {
+    MU_SEH_TRY {
 #if defined(_M_X64)
         if (ep && ep->ContextRecord) {
             char trace[128];
@@ -63,13 +74,13 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             const DWORD64 image = (DWORD64)GetModuleHandleA(nullptr);
             const DWORD64* stack = (const DWORD64*)ep->ContextRecord->Rsp;
             for (int i = 0, found = 0; i < 400 && found < 24; ++i) {
-                __try {
+                MU_SEH_TRY {
                     const DWORD64 value = stack[i];
                     if (value > image + 0x1000 && value < image + 0x2000000) {
                         used += _snprintf_s(scan + used, sizeof(scan) - used, _TRUNCATE, " %llX", value - image);
                         ++found;
                     }
-                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
+                } MU_SEH_EXCEPT { break; }
             }
             CrashLog(scan);
         }
@@ -97,7 +108,7 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             DWORD ebp = ctx->Ebp;
             DWORD prev_ebp_value = 0;
             for (int frame = 0; frame < 12 && n < (int)sizeof(trace) - 16; ++frame) {
-                __try {
+                MU_SEH_TRY {
                     if (ebp < 0x10000 || ebp > 0x7FFFFFFF) break;
                     if (ebp & 3) break; // misaligned
                     DWORD ret = *(DWORD*)(ebp + 4);
@@ -108,7 +119,7 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
                     prev_ebp_value = ebp;
                     ebp = next;
                     if (ebp == prev_ebp_value) break;
-                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
+                } MU_SEH_EXCEPT { break; }
             }
             CrashLog(trace);
 
@@ -118,21 +129,21 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             n = _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_SCAN:");
             DWORD esp = ctx->Esp;
             for (int i = 0; i < 250 && n < (int)sizeof(trace) - 16 && dumped < 25; ++i) {
-                __try {
+                MU_SEH_TRY {
                     DWORD val = *(DWORD*)(esp + i * 4);
                     if (val >= 0x401000 && val < 0x600000) {
                         n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
                             " %X:%X", esp + i*4, val);
                         dumped++;
                     }
-                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
+                } MU_SEH_EXCEPT { break; }
             }
             CrashLog(trace);
         }
 #endif
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } MU_SEH_EXCEPT {}
 
-    __try {
+    MU_SEH_TRY {
         if (dumpOk) {
             char b[MAX_PATH + 32];
             _snprintf_s(b, sizeof(b), _TRUNCATE, "MINIDUMP: %s", dumpPath);
@@ -140,14 +151,14 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
         } else {
             CrashLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
         }
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } MU_SEH_EXCEPT {}
 
     // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
     // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
     // peor, queda asi despues de que el proceso muere.
-    __try { Platform::GetWindow().RestoreDisplay(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    MU_SEH_TRY { Platform::GetWindow().RestoreDisplay(); } MU_SEH_EXCEPT {}
 
-    __try {
+    MU_SEH_TRY {
         if (dumpOk) {
             _snprintf_s(full, sizeof(full), _TRUNCATE,
                         "%s\n%s\n\nVolcado guardado en:\n%s", line1, line2, dumpPath);
@@ -155,7 +166,7 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
         }
         Platform::GetWindow().ShowError(full, "Crash", false, true);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    } MU_SEH_EXCEPT {}
 
     s_handlerDepth--;
     return EXCEPTION_EXECUTE_HANDLER;

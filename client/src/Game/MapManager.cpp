@@ -4,6 +4,10 @@
 #include "Platform/Text.h"
 #include "Game/MapManager.h"
 #include "Sound/SoundManager.h"
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <vector>
 
 CMapManager gMapManager;
 
@@ -24,12 +28,42 @@ constexpr int kLorencia = 0;
 constexpr int kDungeon  = 1;
 constexpr int kDevias   = 2;
 constexpr int kNoria    = 3;
+constexpr int kLostTower = 4;
 constexpr int kDungeon2 = 5;   // el binario le pone la música del Dungeon
 constexpr int kAtlans   = 7;
 constexpr int kMapCount = 17;  // mapas del 0.97k: 0..16 (Blood Castle 1..6 = 11..16)
 
 // HeroTile 4 = el piso de la taberna de Lorencia.
 constexpr int kPubTile = 4;
+
+constexpr char kMusicDir[] = "Data\\Music\\";
+
+// Nombre con que se busca el mp3 de cada mapa en Data/Music (los mismos que las
+// carpetas Data/Maps del server).  Blood Castle 1..6 comparte uno.
+const char* const kMusicFileNames[] = {
+    "Lorencia", "Dungeon", "Devias", "Noria", "LostTower", "Exile", "Arena",
+    "Atlans", "Tarkan", "DevilSquare", "Icarus",
+    "BloodCastle", "BloodCastle", "BloodCastle", "BloodCastle", "BloodCastle", "BloodCastle",
+};
+
+// Para comparar nombres: minúsculas y sin '_', '-' ni espacios, así
+// "lost_tower_a" y "LostTower" se reconocen igual.
+std::string MusicKey(const std::string& name)
+{
+    std::string key;
+    for (unsigned char c : name)
+        if (std::isalnum(c)) key += (char)std::tolower(c);
+    return key;
+}
+
+bool ValidMusicName(const char* name)
+{
+    const size_t length = name ? strlen(name) : 0;
+    if (length == 0 || length > 27) return false;
+    for (const char* p = name; *p; ++p)
+        if (!std::isalnum((unsigned char)*p) && *p != '_' && *p != '-') return false;
+    return true;
+}
 
 bool InSafeZone()
 {
@@ -44,6 +78,18 @@ bool InDeviasCathedral()
     const int x = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionX;
     const int y = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionY;
     return x > 204 && x < 215 && y > 12 && y < 32;
+}
+
+// Pisos 5 a 7 de Lost Tower.  Cada piso es un área separada por paredes en
+// Terrain5.att: 1 = x 162..247 y 1..138, 2 = x 162..248 y 164..250,
+// 3 = x 80..135 y 165..250, 4 = x 80..135 y 85..140, 5 = x 80..135 y 5..60,
+// 6 = x 2..57 y 5..60, 7 = x 2..57 y 85..250.
+bool InLostTowerUpperFloors()
+{
+    if (!Hero) return false;
+    const int x = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionX;
+    const int y = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionY;
+    return x < 70 || (x < 140 && y < 70);
 }
 }
 
@@ -101,11 +147,74 @@ CMapManager::MiniMapMode CMapManager::GetMiniMap(int map) const
     return info ? info->miniMap : MiniMapMode::None;
 }
 
+const char* CMapManager::ResolveMusic(int map) const
+{
+    if (map < 0 || map >= MaxMaps) return nullptr;
+    if (!m_ServerMusic[map].empty()) return m_ServerMusic[map].c_str();
+    if (m_Maps[map].music) return m_Maps[map].music;
+    DetectMusicFiles();
+    return m_DetectedMusic[map].empty() ? nullptr : m_DetectedMusic[map].c_str();
+}
+
+// Busca una vez los mp3 de Data/Music que llevan el nombre de un mapa: el nombre
+// exacto (Atlans.mp3), o con una letra o un número de variante
+// (lost_tower_a.mp3).  Si hay varias variantes gana la primera en orden
+// alfabético, como 5.2, que en Lost Tower sólo usa lost_tower_a.  Las que llevan
+// una palabra después (devil_square_intro.mp3) no cuentan: son cortinas de un
+// evento, no el tema del mapa.
+void CMapManager::DetectMusicFiles() const
+{
+    if (m_MusicDetected) return;
+    m_MusicDetected = true;
+    namespace fs = std::filesystem;
+    std::vector<std::string> files;
+    std::error_code error;
+    for (fs::directory_iterator it("Data/Music", error), end; !error && it != end; it.increment(error)) {
+        const fs::path& path = it->path();
+        std::string ext = path.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+        if (ext == ".mp3" && it->is_regular_file(error)) files.push_back(path.filename().string());
+    }
+    std::sort(files.begin(), files.end());
+    const int count = (int)(sizeof(kMusicFileNames) / sizeof(kMusicFileNames[0]));
+    for (int map = 0; map < count && map < MaxMaps; ++map) {
+        const std::string want = MusicKey(kMusicFileNames[map]);
+        std::string exact;
+        std::vector<std::string> variants;
+        for (const std::string& file : files) {
+            const std::string key = MusicKey(fs::path(file).stem().string());
+            if (key == want && exact.empty()) exact = file;
+            else if (key.size() == want.size() + 1 && key.compare(0, want.size(), want) == 0)
+                variants.push_back(file);
+        }
+        const std::string& found = !exact.empty() ? exact : (variants.empty() ? exact : variants[0]);
+        if (!found.empty()) m_DetectedMusic[map] = std::string(kMusicDir) + found;
+        if (exact.empty() && variants.size() > 1) m_DetectedSecond[map] = std::string(kMusicDir) + variants[1];
+    }
+}
+
+bool CMapManager::SetServerMusic(int map, const char* name)
+{
+    if (map < 0 || map >= MaxMaps || !ValidMusicName(name)) return false;
+    m_ServerMusic[map] = std::string(kMusicDir) + name + ".mp3";
+    return true;
+}
+
+void CMapManager::ClearServerMusic()
+{
+    for (std::string& music : m_ServerMusic) music.clear();
+}
+
 // Temas de una zona del mapa que reemplazan al del mapa (reglas del binario).
 const char* CMapManager::SelectZoneMusic(int map) const
 {
+    if (map >= 0 && map < MaxMaps && !m_ServerMusic[map].empty()) return nullptr;
     if (map == kLorencia && HeroTile == kPubTile) return kMusicPub;
     if (map == kDevias && InDeviasCathedral())     return kMusicCathedral;
+    if (map == kLostTower && InLostTowerUpperFloors()) {
+        DetectMusicFiles();
+        if (!m_DetectedSecond[map].empty()) return m_DetectedSecond[map].c_str();
+    }
     return nullptr;
 }
 
@@ -113,9 +222,11 @@ bool CMapManager::IsMapTrack(int map, const char* track) const
 {
     const MapInfo* info = Get(map);
     if (!info) return false;
-    if (info->music && Platform::TextCompareIgnoreCase(info->music, track) == 0) return true;
+    const char* music = ResolveMusic(map);
+    if (music && Platform::TextCompareIgnoreCase(music, track) == 0) return true;
     if (map == kLorencia && Platform::TextCompareIgnoreCase(kMusicPub, track) == 0) return true;
     if (map == kDevias && Platform::TextCompareIgnoreCase(kMusicCathedral, track) == 0) return true;
+    if (!m_DetectedSecond[map].empty() && Platform::TextCompareIgnoreCase(m_DetectedSecond[map].c_str(), track) == 0) return true;
     return false;
 }
 
@@ -141,11 +252,12 @@ void CMapManager::UpdateMusic() const
         Music_StopTrack(gSound.GetCurrentTrack(), 0);
 
     const MapInfo* info = Get(gMapManager.GetCurrentMap());
-    if (!info || !info->music) return;
+    const char* music = ResolveMusic(gMapManager.GetCurrentMap());
+    if (!info || !music) return;
     if (info->musicSafeZoneOnly && !InSafeZone()) return;
 
     const char* track = SelectZoneMusic(gMapManager.GetCurrentMap());
-    Music_PlayTrack(track ? track : info->music, 0);
+    Music_PlayTrack(track ? track : music, 0);
 }
 
 // IDA: StopMusic (0x00513420) recorre los 6 temas de g_lpszMp3 con StopMp3; o

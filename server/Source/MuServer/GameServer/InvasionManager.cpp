@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "InvasionManager.h"
+#include "EventInvasions.h"
 #include "FlyingDragons.h"
 #include "ReadScript.h"
 #include "Monster.h"
@@ -93,6 +94,110 @@ void CInvasionManager::Init()
 	gFlyingDragons.Init();
 }
 
+// Deja las 30 invasiones como sin definir (lo que vale para un índice que el
+// archivo no menciona).
+void CInvasionManager::Reset()
+{
+	for (int n = 0; n < MAX_INVASION; n++)
+	{
+		INVASION_INFO* lpInfo = &this->m_InvasionInfo[n];
+
+		lpInfo->RespawnMessage = -1;
+
+		lpInfo->DespawnMessage = -1;
+
+		lpInfo->BossIndex = -1;
+
+		lpInfo->BossMessage = -1;
+
+		lpInfo->InvasionTime = 0;
+
+		lpInfo->WarningTime = 0;
+
+		lpInfo->WarningMsg = -1;
+
+		lpInfo->TamachanRainWave = -1;
+
+		lpInfo->TamachanRainDropCount = 0;
+
+		lpInfo->StartTime.clear();
+
+		for (int g = 0; g < MAX_INVASION_RESPAWN_GROUP; g++)
+		{
+			lpInfo->RespawnInfo[g].clear();
+		}
+
+		lpInfo->MonsterInfo.clear();
+	}
+}
+
+// Fase 5: Data/Events/Invasions/Invasions.toml. Arma las mismas tablas que
+// Load() con el .dat: el horario, la definición, y por grupo sus mapas y sus
+// monstruos (en ese orden, que es el que usa SetState_START).
+void CInvasionManager::LoadToml(const char* path)
+{
+	std::vector<InvasionDef> defs;
+
+	std::string error;
+
+	if (!EventInvasions_Load(path, defs, error))
+	{
+		ErrorMessageBox("%s", error.c_str());
+
+		return;
+	}
+
+	this->Reset();
+
+	for (const InvasionDef& def : defs)
+	{
+		INVASION_INFO* lpInfo = &this->m_InvasionInfo[def.Index];
+
+		for (const InvasionSchedule& s : def.Schedule)
+		{
+			lpInfo->StartTime.push_back({ s.Year, s.Month, s.Day, s.DayOfWeek, s.Hour, s.Minute, s.Second });
+		}
+
+		if (def.Defined)
+		{
+			lpInfo->RespawnMessage = def.RespawnMessage;
+
+			lpInfo->DespawnMessage = def.DespawnMessage;
+
+			lpInfo->BossIndex = def.BossIndex;
+
+			lpInfo->BossMessage = def.BossMessage;
+
+			lpInfo->InvasionTime = def.InvasionTime;
+
+			lpInfo->WarningTime = def.WarningTime;
+
+			lpInfo->WarningMsg = def.WarningMessage;
+
+			lpInfo->InvasionEffect = def.InvasionEffect;
+
+			strcpy_s(lpInfo->InvasionName, def.Name.c_str());
+
+#ifdef _WIN32
+			CreateSubMenuItem(ID_STARTINVASION, def.Index, lpInfo->InvasionName);
+#endif
+		}
+
+		for (size_t g = 0; g < def.Groups.size(); g++)
+		{
+			for (const InvasionMap& m : def.Groups[g].Maps)
+			{
+				lpInfo->RespawnInfo[g].push_back({ (int)g, m.Map, m.Value });
+			}
+
+			for (const InvasionMonster& m : def.Groups[g].Monsters)
+			{
+				lpInfo->MonsterInfo.push_back({ (int)g, m.Monster, m.RegenType, m.RegenTime });
+			}
+		}
+	}
+}
+
 void CInvasionManager::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -113,69 +218,7 @@ void CInvasionManager::Load(const char* path)
 		return;
 	}
 
-	for (int n = 0; n < MAX_INVASION; n++)
-	{
-		this->m_InvasionInfo[n].RespawnMessage = -1;
-
-		this->m_InvasionInfo[n].DespawnMessage = -1;
-
-		this->m_InvasionInfo[n].BossIndex = -1;
-
-		this->m_InvasionInfo[n].BossMessage = -1;
-
-		this->m_InvasionInfo[n].InvasionTime = 0;
-
-		this->m_InvasionInfo[n].WarningTime = 0;
-
-		this->m_InvasionInfo[n].WarningMsg = -1;
-
-		this->m_InvasionInfo[n].TamachanRainWave = -1;
-		this->m_InvasionInfo[n].TamachanRainDropCount = 0;
-
-		this->m_InvasionInfo[n].StartTime.clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[0].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[1].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[2].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[3].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[4].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[5].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[6].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[7].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[8].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[9].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[10].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[11].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[12].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[13].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[14].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[15].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[16].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[17].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[18].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[19].clear();
-
-		this->m_InvasionInfo[n].MonsterInfo.clear();
-	}
+	this->Reset();
 
 	try
 	{
@@ -374,7 +417,7 @@ void CInvasionManager::ProcState_EMPTY(INVASION_INFO* lpInfo)
 
 void CInvasionManager::ProcState_START(INVASION_INFO* lpInfo)
 {
-	if (lpInfo->RemainTime <= 0)
+	if (lpInfo->RemainTime <= 0 || this->IsCleared(lpInfo) != 0)
 	{
 		if (lpInfo->DespawnMessage != -1)
 		{
@@ -853,6 +896,46 @@ int CInvasionManager::GetMonsterCount(INVASION_INFO* lpInfo)
 	return count;
 }
 
+// Todos los monstruos muertos y ninguno vuelve antes del final: la invasion
+// ya no tiene nada que hacer. Un monstruo muerto reaparece MaxRegenTime despues
+// de su muerte, que fue antes de ahora; si MaxRegenTime cubre lo que falta, no
+// llega a reaparecer (es el caso de RegenType 0, que dura toda la invasion).
+bool CInvasionManager::IsCleared(INVASION_INFO* lpInfo)
+{
+	if (gServerInfo.m_InvasionEndWhenCleared == 0 || this->IsTamachanInvasion(lpInfo) != 0)
+	{
+		return false;
+	}
+
+	int total = 0;
+
+	for (int n = 0; n < MAX_INVASION_MONSTER; n++)
+	{
+		int index = lpInfo->MonsterIndex[n];
+
+		if (OBJECT_RANGE(index) == 0)
+		{
+			continue;
+		}
+
+		LPOBJ lpObj = &gObj[index];
+
+		if (lpObj->Live != 0 && lpObj->Life > 0)
+		{
+			return false;
+		}
+
+		if (lpObj->MaxRegenTime < (DWORD)lpInfo->RemainTime * 1000)
+		{
+			return false;
+		}
+
+		total++;
+	}
+
+	return total > 0;
+}
+
 void CInvasionManager::SetMonster(INVASION_INFO* lpInfo, INVASION_RESPWAN_INFO* lpRespawnInfo, INVASION_MONSTER_INFO* lpMonsterInfo)
 {
 	for (int n = 0; n < gMonsterSetBase.m_count; n++)
@@ -938,6 +1021,39 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 			continue;
 		}
 
+		// Aviso con la cuenta de su clase: "(muertos/total)". Los jefes tienen
+		// su propio mensaje (BossMessage), más abajo.
+		if (gServerInfo.m_InvasionKillNotice != 0 && lpObj->Class != lpInfo->BossIndex)
+		{
+			int total = 0;
+
+			int alive = 0;
+
+			for (int i = 0; i < MAX_INVASION_MONSTER; i++)
+			{
+				int index = lpInfo->MonsterIndex[i];
+
+				if (OBJECT_RANGE(index) == 0 || gObj[index].Class != lpObj->Class)
+				{
+					continue;
+				}
+
+				total++;
+
+				// El que acaba de morir todavía tiene Live: se lo cuenta por la vida.
+				if (gObj[index].Live != 0 && gObj[index].Life > 0)
+				{
+					alive++;
+				}
+			}
+
+			// En dorado en el centro de la pantalla y además en el chat (azul),
+			// para que quede en el historial.
+			gNotice.GCNoticeSendToAll(0, 113, lpTarget->Name, lpObj->Name, total - alive, total);
+
+			gNotice.GCNoticeSendToAll(1, 113, lpTarget->Name, lpObj->Name, total - alive, total);
+		}
+
 		if (lpObj->Class == lpInfo->BossIndex)
 		{
 			if (gServerInfo.m_FlyingDragonsKillBossDisappear != 0)
@@ -951,6 +1067,46 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 			}
 		}
 	}
+}
+
+bool CInvasionManager::GetMapStatus(int index, int alive[MAX_MAP], int total[MAX_MAP])
+{
+	if (index < 0 || index >= MAX_INVASION || this->GetState(index) != INVASION_STATE_START)
+	{
+		return false;
+	}
+
+	INVASION_INFO* lpInfo = &this->m_InvasionInfo[index];
+
+	bool any = false;
+
+	for (int n = 0; n < MAX_MAP; n++)
+	{
+		alive[n] = 0;
+
+		total[n] = 0;
+	}
+
+	for (int n = 0; n < MAX_INVASION_MONSTER; n++)
+	{
+		int aIndex = lpInfo->MonsterIndex[n];
+
+		if (OBJECT_RANGE(aIndex) == 0 || MAP_RANGE(gObj[aIndex].Map) == 0)
+		{
+			continue;
+		}
+
+		total[gObj[aIndex].Map]++;
+
+		if (gObj[aIndex].Live != 0 && gObj[aIndex].Life > 0)
+		{
+			alive[gObj[aIndex].Map]++;
+		}
+
+		any = true;
+	}
+
+	return any;
 }
 
 bool CInvasionManager::StartInvasion(int InvasionIndex)

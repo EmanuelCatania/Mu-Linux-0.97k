@@ -50,9 +50,11 @@ uint __cdecl CSQuest_OpenQuestScript(BYTE* handle, const char *path)
     operator_delete(buf);
     crt_fclose(fp);
     // DESVIACION (Fase 4, texto Unicode): el nombre de cada quest (+5, 32 bytes;
-    // lo dibuja RenderText(..., questBase + 13)) de 1252 a UTF-8.
+    // lo dibuja RenderText(..., questBase + 13)) a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
     for (int i = 0; i < 200; ++i)
-        TextEngine::ConvertWindows1252InPlace((char *)(handle + 8 + i * 0x248 + 5), 32);
+        TextEngine::NormalizeTextFileInPlace((char *)(handle + 8 + i * 0x248 + 5), 32);
     // Ghidra shows: return CONCAT31((int3)((uint)fclose_result >> 8), 1)
     // i.e. success = low byte 1, upper bytes from fclose. Simplified:
     return 1;

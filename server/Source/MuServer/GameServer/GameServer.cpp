@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Resource.h"
+#include "resource.h"
 #include "GameServer.h"
 #include "GameMain.h"
 #include "BloodCastle.h"
@@ -85,6 +85,10 @@ void CheckEditorReload()
 			gServerInfo.ReloadMonsterInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Monster reloaded by editor flag");
 		}
+		else if (_stricmp(token, "spawns") == 0)
+		{
+			gServerInfo.ReloadSpawns();
+		}
 		else if (_stricmp(token, "move") == 0 || _stricmp(token, "gate") == 0)
 		{
 			gServerInfo.ReadMoveInfo();
@@ -144,6 +148,11 @@ void CheckEditorReload()
 		{
 			gServerInfo.ReadMapInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Map reloaded by editor flag");
+		}
+		else if (_stricmp(token, "mapmanager") == 0)
+		{
+			gServerInfo.ReadMapManagerInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] MapManager reloaded by editor flag");
 		}
 		else if (_stricmp(token, "hack") == 0)
 		{

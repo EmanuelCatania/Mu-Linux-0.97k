@@ -191,6 +191,76 @@ struct CATALOG_TEXT
 	char Text[64];      // UTF-8 en NFC
 };
 
+// Gates (Fase 5): el cliente las usa para detectar que el personaje pisa una
+// entrada y pedir el teleport, y para el minimapa. Antes salían de su Gate.bmd.
+struct CATALOG_GATE
+{
+	WORD Index;
+	BYTE Flag;          // 0 destino, 1 entrada, 2 salida
+	BYTE Map;
+	BYTE X;
+	BYTE Y;
+	BYTE TX;
+	BYTE TY;
+	WORD Target;
+	BYTE Dir;
+	BYTE Reserved;
+	WORD MinLevel;      // 0 = sin mínimo
+	WORD Reserved2;
+};
+
+// Skills (Fase 5): lo que el cliente usa para decidir si puede lanzar un skill
+// y hasta dónde camina antes de hacerlo. Antes salía de su skill.bmd.
+struct CATALOG_SKILL
+{
+	WORD Index;
+	WORD Mana;
+	WORD BP;            // AG
+	BYTE Range;         // en casillas
+	BYTE Reserved;
+};
+
+// Caché del catálogo en el cliente (Fase 5).  Antes del login el cliente dice
+// qué secciones tiene guardadas de este server (F1:06); al aceptar el login el
+// server manda la lista de secciones con su hash (F3:F6), marcando cuáles puede
+// tomar de su caché, y después sólo las que cambiaron.
+#define CATALOG_CACHE_MAX 16
+
+// hash: SHA-256 truncado a 8 bytes del tamaño de registro + los registros de
+// la sección (CatalogSectionHash en Common/Sha256.h).  Lo recalcula el cliente
+// al leer su caché, así una sección editada no coincide y se vuelve a mandar.
+struct CATALOG_CACHE_ENTRY
+{
+	BYTE subh;
+	BYTE cached;        // en F3:F6: 1 = el cliente la toma de su caché
+	WORD Reserved;
+	BYTE hash[8];
+};
+
+struct PMSG_CATALOG_CACHE_RECV
+{
+	PSBMSG_HEAD header; // C1:F1:06
+	BYTE count;
+	BYTE Reserved[3];
+	CATALOG_CACHE_ENTRY entry[CATALOG_CACHE_MAX];
+};
+
+struct PMSG_CATALOG_SYNC_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:F6
+	BYTE count;
+	BYTE Reserved[3];
+	CATALOG_CACHE_ENTRY entry[CATALOG_CACHE_MAX];
+};
+
+// Música por mapa (Fase 5, `music` de Map.toml): sólo los mapas que la fijan.
+struct CATALOG_MAP_MUSIC
+{
+	BYTE Map;
+	BYTE Reserved[3];
+	char Music[28];     // nombre de Data/Music del cliente, sin extensión
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -237,6 +307,19 @@ public:
 
 	void Send(int aIndex);
 
+	// Sólo las gates (F3:F3), a quien ya tiene el resto del catálogo: se usa al
+	// recargar las gates.
+	void SendGates(int aIndex);
+
+	// Sólo los skills (F3:F4), al recargar Skill.txt.
+	void SendSkills(int aIndex);
+
+	// Sólo la música por mapa (F3:F7), al recargar los Map.toml.
+	void SendMapMusic(int aIndex);
+
+	// F1:06: secciones que el cliente tiene en caché.
+	void SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* lpMsg);
+
 	const ITEM_POSE_INFO* GetPose(int index) const;
 
 private:
@@ -256,6 +339,25 @@ private:
 	std::vector<CATALOG_TOOLTIP> m_Tooltips;
 
 	std::vector<std::vector<BYTE>> m_Packets;
+
+	std::vector<std::vector<BYTE>> m_GatePackets;
+
+	std::vector<std::vector<BYTE>> m_SkillPackets;
+
+	std::vector<std::vector<BYTE>> m_MapMusicPackets;
+
+	// Rango de m_Packets de cada sección y su hash (para la caché del cliente).
+	struct SectionRange
+	{
+		BYTE subh;
+		BYTE hash[8];
+		size_t begin;
+		size_t end;
+	};
+
+	std::vector<SectionRange> m_Sections;
+
+	void MarkSection(BYTE subh, size_t begin);
 
 	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
 

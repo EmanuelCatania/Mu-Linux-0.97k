@@ -50,6 +50,15 @@ public:
 
 	void ReloadMonsterInfo();
 
+	// Recarga sólo los spawns (Data/Maps y Data/Events/Invasions): borra y
+	// vuelve a crear los monstruos de los archivos que cambiaron y deja vivos
+	// los demás. Con un error en un TOML no toca nada. Sin Data/Maps hace lo
+	// mismo que ReloadMonsterInfo.
+	void ReloadSpawns();
+
+	// Reglas de los mapas: Data/Maps/NN-Nombre/Map.toml o MapManager.txt.
+	void ReadMapManagerInfo();
+
 	void ReadStartupInfo(const char* section, const char* path);
 
 	void ReadChaosMixInfo(const char* section, const char* path);
@@ -98,6 +107,13 @@ public:
 	int m_CheckLatencyHackTolerance;
 	int m_CheckAutoPotionHack;
 	int m_CheckAutoPotionHackTolerance;
+	// Autoridad del server (Fase 5): 0 = apagado, 1 = observar, 2 = aplicar
+	int m_MoveCheck;
+	int m_MoveCheckTolerance;
+	int m_AttackCheck;
+	int m_AttackCheckScale;
+	int m_PacketRateCheck;
+	int m_PacketRateMax;
 	// Common
 	int m_MainChecksum;
 	int m_MaxItemOption;
@@ -179,6 +195,8 @@ public:
 	int m_DevilSquareMaxUser;
 	int m_DevilSquareAllowPK;
 	int m_InvasionManagerSwitch;
+	int m_InvasionKillNotice;
+	int m_InvasionEndWhenCleared;
 	int m_FlyingDragonsSwitch;
 	int m_FlyingDragonsOnlyBossMapSpawn;
 	int m_FlyingDragonsKillBossDisappear;

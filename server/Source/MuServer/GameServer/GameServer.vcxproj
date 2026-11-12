@@ -179,6 +179,7 @@
     <ClInclude Include="NpcTalk.h" />
     <ClInclude Include="ObjectManager.h" />
     <ClInclude Include="PacketManager.h" />
+    <ClInclude Include="PacketTrace.h" />
     <ClInclude Include="Party.h" />
     <ClInclude Include="Path.h" />
     <ClInclude Include="Protocol.h" />
@@ -283,6 +284,7 @@
     <ClCompile Include="NpcTalk.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
     <ClCompile Include="PacketManager.cpp" />
+    <ClCompile Include="PacketTrace.cpp" />
     <ClCompile Include="Party.cpp" />
     <ClCompile Include="Path.cpp" />
     <ClCompile Include="Protocol.cpp" />
@@ -306,6 +308,24 @@
     <ClCompile Include="SkillManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />
     <ClCompile Include="SocketManagerUdp.cpp" />
+    <ClCompile Include="..\Common\EventInvasions.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\MapInfo.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\ItemDrops.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\MapGates.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\MapZones.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\MapSpawns.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\Common\TextName.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

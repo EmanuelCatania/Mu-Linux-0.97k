@@ -5,6 +5,7 @@
 #include "QueueTimer.h"
 #include "ServerDisplayer.h"
 #include "ServerInfo.h"
+#include "PacketTrace.h"
 #include "Path.h"
 #include "SocketManager.h"
 #include "SocketManagerUdp.h"
@@ -66,6 +67,10 @@ void CheckEditorReload()
 			gServerInfo.ReloadMonsterInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Monster reloaded by editor flag");
 		}
+		else if (_stricmp(token, "spawns") == 0)
+		{
+			gServerInfo.ReloadSpawns();
+		}
 		else if (_stricmp(token, "move") == 0 || _stricmp(token, "gate") == 0)
 		{
 			gServerInfo.ReadMoveInfo();
@@ -126,6 +131,11 @@ void CheckEditorReload()
 			gServerInfo.ReadMapInfo();
 			LogAdd(LOG_BLUE, "[ServerInfo] Map reloaded by editor flag");
 		}
+		else if (_stricmp(token, "mapmanager") == 0)
+		{
+			gServerInfo.ReadMapManagerInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] MapManager reloaded by editor flag");
+		}
 		else if (_stricmp(token, "hack") == 0)
 		{
 			gServerInfo.ReadHackInfo();
@@ -152,6 +162,8 @@ int main()
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) == 0)
 	{
+		PacketTraceInit(gServerInfo.m_ServerPort);
+
 		if (gSocketManager.Start((WORD)gServerInfo.m_ServerPort) == 0)
 		{
 			LogAdd(LOG_RED, "Could not start GameServer");

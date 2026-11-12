@@ -611,6 +611,29 @@ struct PMSG_EVENT_TIME
 	DWORD time;
 };
 
+// Detalle de las invasiones en curso, para el tooltip del panel de eventos:
+// por cada una, cuántos monstruos quedan vivos en cada mapa. Va después del
+// F3:E6 y se empareja con su fila por el nombre. Un cliente que no lo conoce
+// lo ignora.
+struct PMSG_INVASION_DETAIL_SEND
+{
+	PSWMSG_HEAD header; // C2:F3:F2
+	BYTE count;
+};
+
+struct PMSG_INVASION_DETAIL
+{
+	char name[32];
+	BYTE maps; // cantidad de PMSG_INVASION_DETAIL_MAP que siguen
+};
+
+struct PMSG_INVASION_DETAIL_MAP
+{
+	BYTE map;
+	WORD alive;
+	WORD total;
+};
+
 //**********************************************//
 //**********************************************//
 //**********************************************//

@@ -89,7 +89,7 @@ LANGUAGE LANG_SPANISH, SUBLANG_SPANISH_MEXICAN
 // remains consistent on all systems.
 IDI_ICON_NORMAL         ICON                    "DataServer.ico"
 
-IDI_ICON_SMALL          ICON                    "Small.ico"
+IDI_ICON_SMALL          ICON                    "small.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////

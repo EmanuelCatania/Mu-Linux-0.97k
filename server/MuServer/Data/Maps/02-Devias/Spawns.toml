@@ -1,0 +1,94 @@
+# Devias (mapa 2): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 236, at = [226, 66], dir = 1 }, # Golden Archer
+  { monster = 233, at = [209, 30], dir = 1 }, # Messenger of Archangel
+  { monster = 233, at = [219, 9], dir = 3 }, # Messenger of Archangel
+  { monster = 235, at = [183, 32], dir = 3 }, # Sebina the Priest
+  { monster = 244, at = [226, 25], dir = 3 }, # Caren the Barmaid
+  { monster = 245, at = [225, 41], dir = 3 }, # Wizard Izabel
+  { monster = 246, at = [186, 47], dir = 3 }, # Weapons Merchant Zienna
+  { monster = 247, at = [224, 79], dir = 5, dis = 20 }, # Archer Guard
+  { monster = 247, at = [219, 79], dir = 5, dis = 20 }, # Archer Guard
+  { monster = 247, at = [169, 45], dir = 7, dis = 20 }, # Archer Guard
+  { monster = 247, at = [169, 39], dir = 7, dis = 20 }, # Archer Guard
+  { monster = 241, at = [215, 45], dir = 1 }, # Royal Guard Captain Lorence
+  { monster = 240, at = [218, 63], dir = 2 }, # Safety Guardian
+]
+
+area = [
+  { monster = 24, box = [170, 80, 245, 200], count = 20, dis = 30 }, # Worm
+  { monster = 24, box = [228, 88, 237, 81], count = 20, dis = 20 }, # Worm
+  { monster = 23, box = [170, 80, 245, 200], count = 10, dis = 30 }, # Hommerd
+  { monster = 22, box = [50, 6, 166, 244], count = 20, dis = 30 }, # Ice Monster
+  { monster = 23, box = [50, 6, 166, 244], count = 20, dis = 30 }, # Hommerd
+  { monster = 19, box = [50, 6, 166, 244], count = 30, dis = 30 }, # Yeti
+  { monster = 21, box = [50, 6, 166, 244], count = 10, dis = 30 }, # Assassin
+  { monster = 20, box = [50, 6, 166, 244], count = 15, dis = 30 }, # Elite Yeti
+  { monster = 20, box = [5, 50, 50, 155], count = 15, dis = 30 }, # Elite Yeti
+  { monster = 20, box = [6, 184, 80, 244], count = 15, dis = 30 }, # Elite Yeti
+  { monster = 25, box = [6, 184, 80, 244], count = 3, dis = 30 }, # Ice Queen
+  { monster = 41, box = [13, 24, 24, 27], count = 10, dis = 10 }, # Zamek
+  { monster = 20, box = [219, 237, 231, 225], count = 12, dis = 20 }, # Elite Yeti
+]
+
+spot = [
+  { monster = 25, at = [74, 239], dis = 30 },
+  { monster = 25, at = [70, 212], dis = 30 },
+  { monster = 25, at = [45, 189], dis = 30 },
+  { monster = 25, at = [113, 230], dis = 30 },
+  { monster = 25, at = [94, 203], dis = 30 },
+  { monster = 25, at = [63, 160], dis = 30 },
+  { monster = 20, at = [203, 244], dis = 30 },
+  { monster = 20, at = [194, 241], dis = 30 },
+  { monster = 20, at = [203, 232], dis = 30 },
+  { monster = 20, at = [209, 224], dis = 30 },
+  { monster = 20, at = [186, 224], dis = 30 },
+  { monster = 20, at = [200, 171], dis = 30 },
+  { monster = 20, at = [207, 158], dis = 30 },
+  { monster = 20, at = [221, 177], dis = 30 },
+  { monster = 20, at = [213, 193], dis = 30 },
+  { monster = 20, at = [196, 218], dis = 30 },
+  { monster = 20, at = [230, 200], dis = 30 },
+  { monster = 20, at = [221, 160], dis = 30 },
+  { monster = 20, at = [205, 149], dis = 30 },
+  { monster = 20, at = [184, 166], dis = 30 },
+  { monster = 20, at = [212, 170], dis = 30 },
+  { monster = 25, at = [116, 210], dis = 30 },
+  { monster = 20, at = [203, 201], dis = 30 },
+  { monster = 24, at = [170, 6], dis = 30 },
+  { monster = 24, at = [161, 58], dis = 30 },
+  { monster = 24, at = [180, 78], dis = 30 },
+  { monster = 20, at = [190, 146], dis = 30 },
+  { monster = 25, at = [51, 227], dis = 30 },
+  { monster = 20, at = [189, 160], dis = 30 },
+  { monster = 20, at = [207, 183], dis = 30 },
+  { monster = 20, at = [218, 201], dis = 30 },
+  { monster = 20, at = [240, 207], dis = 30 },
+  { monster = 20, at = [238, 184], dis = 30 },
+  { monster = 20, at = [227, 167], dis = 30 },
+  { monster = 20, at = [202, 209], dis = 30 },
+  { monster = 20, at = [113, 105], dis = 30 },
+  { monster = 20, at = [96, 103], dis = 30 },
+  { monster = 20, at = [102, 117], dis = 30 },
+  { monster = 20, at = [241, 198], dis = 30 },
+  { monster = 20, at = [228, 184], dis = 30 },
+  { monster = 20, at = [193, 231], dis = 30 },
+  { monster = 20, at = [214, 152], dis = 30 },
+  { monster = 20, at = [197, 183], dis = 30 },
+  { monster = 24, at = [162, 11], dis = 30 },
+  { monster = 24, at = [244, 80], dis = 30 },
+  { monster = 24, at = [238, 88], dis = 30 },
+  { monster = 24, at = [229, 83], dis = 30 },
+]

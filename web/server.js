@@ -16,6 +16,16 @@ const translations = require('./lib/translations');
 const customItems = require('./lib/custom-items');
 const itemRows = require('./lib/item-rows');
 const noticeLimits = require('./lib/notices');
+const accountPassword = require('./lib/account-password');
+const spawns = require('./lib/spawns');
+const mapsLib = require('./lib/maps');
+const dropsLib = require('./lib/drops');
+const gatesLib = require('./lib/gates');
+const zonesLib = require('./lib/zones');
+const mapFoldersLib = require('./lib/map-folders');
+
+// Se pone en true cuando ensureSchema confirma que memb__pwd tiene 60 bytes.
+let passwordColumnWide = false;
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -899,6 +909,26 @@ async function ensureSchema() {
       await conn.query('ALTER TABLE MEMB_INFO MODIFY created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP');
     }
 
+    // Contraseñas con bcrypt: memb__pwd tiene que entrar el hash de 60 bytes
+    // (Migrate-password-hash.sql). Agrandarla no toca lo guardado.
+    try {
+      const [pwdCols] = await conn.query(
+        `SELECT CHARACTER_OCTET_LENGTH AS len
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = ?
+           AND TABLE_NAME = 'MEMB_INFO'
+           AND COLUMN_NAME = 'memb__pwd'`,
+        [DB_NAME]
+      );
+      if (Number(pwdCols[0]?.len || 0) < accountPassword.HASH_LENGTH) {
+        await conn.query('ALTER TABLE MEMB_INFO MODIFY memb__pwd VARBINARY(60) NOT NULL');
+      }
+      passwordColumnWide = true;
+    } catch (err) {
+      passwordColumnWide = false;
+      console.error('No se pudo agrandar MEMB_INFO.memb__pwd; las contraseñas siguen en MD5:', err.message);
+    }
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS web_public_ip (
         account_id VARCHAR(10) NOT NULL,
@@ -1169,11 +1199,12 @@ app.post('/register', authLimiter, async (req, res) => {
     const membName = name && name.trim().length > 0 ? name.trim().slice(0, 10) : account;
     const sno = randomDigits(18);
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire, created_at)
-       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
-      [account, password, membName, email, sno]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
+      [account, storedPassword.value, membName, email, sno]
     );
 
     await conn.query(
@@ -1198,6 +1229,27 @@ app.post('/register', authLimiter, async (req, res) => {
   }
 });
 
+// Verifica la contraseña de la cuenta del juego y, si estaba guardada con el
+// formato viejo, la reemplaza por el hash bcrypt.
+async function checkAccountPassword(db, accountId, password) {
+  const [rows] = await db.query(
+    `SELECT memb___id, memb__pwd, ${accountPassword.MD5_MATCH_SQL} AS md5Match FROM MEMB_INFO WHERE memb___id = ? LIMIT 1`,
+    [String(password ?? ''), accountId]
+  );
+  if (rows.length === 0) return null;
+  const result = await accountPassword.verify(rows[0].memb__pwd, password, rows[0].md5Match);
+  if (!result.ok) return null;
+  if (result.legacy && passwordColumnWide) {
+    try {
+      const storedPassword = await accountPassword.make(password, true);
+      await db.query('UPDATE MEMB_INFO SET memb__pwd = ? WHERE memb___id = ?', [storedPassword.value, rows[0].memb___id]);
+    } catch {
+      // Sigue entrando con la contraseña vieja; se reintenta la próxima vez.
+    }
+  }
+  return rows[0].memb___id;
+}
+
 app.get('/login', (req, res) => {
   res.render('login', { error: null, page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
 });
@@ -1208,17 +1260,14 @@ app.post('/login', authLimiter, async (req, res) => {
     return res.render('login', { error: 'Completa usuario y contrasena.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
   }
 
-  const [rows] = await pool.query(
-    'SELECT memb___id FROM MEMB_INFO WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?)) LIMIT 1',
-    [account, password]
-  );
+  const accountId = await checkAccountPassword(pool, account, password);
 
-  if (rows.length === 0) {
+  if (!accountId) {
     return res.render('login', { error: 'Credenciales invalidas.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
   }
 
   try {
-    await rememberAccountSource(pool, rows[0].memb___id, sourceFromRequest(req), false);
+    await rememberAccountSource(pool, accountId, sourceFromRequest(req), false);
   } catch {
     // A missing source must not block the login.
   }
@@ -1274,15 +1323,12 @@ app.post('/account/password', requireUser, authLimiter, async (req, res) => {
   if (!turnstileOk) return fail('Captcha invalido. Intenta nuevamente.');
 
   const accountId = req.session.user.id;
-  const [rows] = await pool.query(
-    'SELECT memb___id FROM MEMB_INFO WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?)) LIMIT 1',
-    [accountId, current]
-  );
-  if (rows.length === 0) return fail('La contrasena actual es incorrecta.');
+  if (!(await checkAccountPassword(pool, accountId, current))) return fail('La contrasena actual es incorrecta.');
 
+  const storedPassword = await accountPassword.make(password, passwordColumnWide);
   const [result] = await pool.query(
-    'UPDATE MEMB_INFO SET memb__pwd = UNHEX(MD5(?)) WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?))',
-    [password, accountId, current]
+    `UPDATE MEMB_INFO SET memb__pwd = ${storedPassword.sql} WHERE memb___id = ?`,
+    [storedPassword.value, accountId]
   );
   if (!result || result.affectedRows === 0) return fail('No se pudo cambiar la contrasena.');
   return res.redirect(`/account?ok=${encodeURIComponent('Contrasena actualizada.')}`);
@@ -1742,6 +1788,10 @@ app.get('/admin/server-editor/mapmanager', requireAdmin, requireAdminPasswordCha
   res.render('admin_mapmanager_editor');
 });
 
+app.get('/admin/server-editor/map-folders', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_map_folder_editor');
+});
+
 app.get('/admin/server-editor/gms', requireAdmin, requireAdminPasswordChange, (req, res) => {
   res.render('admin_gm_editor');
 });
@@ -2009,8 +2059,7 @@ app.get('/admin/server-editor/api/map-defs', requireAdmin, requireAdminPasswordC
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/MapManager.txt')}`);
-    const maps = parseMapManager(data.content || '');
+    const maps = parseMapManager((await readMapManager()).content);
     return res.json({ maps });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });
@@ -2030,15 +2079,353 @@ app.get('/admin/server-editor/api/monster-defs', requireAdmin, requireAdminPassw
   }
 });
 
+// Spawns: el GameServer usa los TOML por mapa si hay alguno (Data/Maps/NN-Nombre
+// o el de las invasiones) y si no, MonsterSetBase.txt. El editor siempre recibe
+// y manda el texto del .txt; con los TOML el panel convierte en los dos sentidos.
+const MONSTER_SET_TXT = 'Data/Monster/MonsterSetBase.txt';
+
+async function listEditorDir(rel) {
+  try {
+    const data = await editorRequest('GET', `/api/list?path=${encodeURIComponent(rel)}`);
+    return Array.isArray(data.entries) ? data.entries : [];
+  } catch (err) {
+    return null; // la carpeta no existe
+  }
+}
+
+// Qué archivos TOML usa el GameServer hoy, con el mismo criterio que él.
+async function findSpawnTomlFiles() {
+  const files = [];
+  const folders = new Map();
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (!inside.some((f) => f.type === 'file' && f.name === 'Spawns.toml')) continue;
+    if (folders.has(map)) {
+      throw new spawns.SpawnError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+    }
+    folders.set(map, entry.name);
+    files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/Spawns.toml`, map });
+  }
+  const invasionsDir = spawns.INVASIONS_FILE.slice(0, spawns.INVASIONS_FILE.lastIndexOf('/'));
+  const invasions = (await listEditorDir(invasionsDir)) || [];
+  if (invasions.some((f) => f.type === 'file' && f.name === 'Spawns.toml')) {
+    files.push({ path: spawns.INVASIONS_FILE, map: null });
+  }
+  return { files, folders };
+}
+
+async function readEditorFile(rel) {
+  const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(rel)}`);
+  return data.content || '';
+}
+
+// Reglas de los mapas: el GameServer usa los Data/Maps/NN-Nombre/Map.toml si hay
+// alguno y si no, MapManager.txt. El editor siempre recibe y manda el texto del
+// .txt; con los TOML el panel convierte en los dos sentidos.
+const MAP_MANAGER_TXT = 'Data/MapManager.txt';
+
+// Todas las carpetas de mapa por número (tengan lo que tengan) y los Map.toml
+// que hay, con el mismo criterio que el GameServer.
+async function findMapTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === mapsLib.MAP_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new mapsLib.MapError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${mapsLib.MAP_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+// { format: 'txt' | 'toml', content } con el texto de MapManager.txt.
+async function readMapManager() {
+  const { files } = await findMapTomlFiles();
+  if (!files.length) {
+    return { format: 'txt', content: await readEditorFile(MAP_MANAGER_TXT) };
+  }
+  const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+  return { format: 'toml', files: files.map((f) => f.path), content: mapsLib.buildLegacy(mapsLib.parseToml(loaded)) };
+}
+
+// Escribe un Map.toml por mapa y borra el de los mapas que ya no están.
+async function writeMapToml(maps, files, folders) {
+  const out = mapsLib.buildToml(maps, { folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const data = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(data.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function mapErrorStatus(err) {
+  return err instanceof mapsLib.MapError ? 400 : (err.status || 502);
+}
+
+// Drops especiales: el GameServer usa Data/Items/Drops.toml y los
+// Data/Maps/NN-Nombre/Drops.toml si hay alguno y si no, ItemDrop.txt. El editor
+// siempre recibe y manda el texto del .txt; con los TOML el panel convierte en
+// los dos sentidos.
+const ITEM_DROP_TXT = 'Data/Item/ItemDrop.txt';
+
+async function findDropTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  const globalDir = dropsLib.GLOBAL_FILE.slice(0, dropsLib.GLOBAL_FILE.lastIndexOf('/'));
+  if (((await listEditorDir(globalDir)) || []).some((f) => f.type === 'file' && f.name === dropsLib.DROP_FILE)) {
+    files.push({ path: dropsLib.GLOBAL_FILE, map: -1 });
+  }
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === dropsLib.DROP_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new dropsLib.DropError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${dropsLib.DROP_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+// Nombre de cada mapa (de los Map.toml o de MapManager.txt), para las carpetas
+// nuevas.
+async function mapNameLookup() {
+  const maps = parseMapManager((await readMapManager().catch(() => ({ content: '' }))).content);
+  const names = new Map(maps.map((m) => [m.id, m.name]));
+  return (id) => names.get(id);
+}
+
+// Escribe los Drops.toml y borra los que quedaron sin drops.
+async function writeDropToml(drops, files, folders) {
+  const out = dropsLib.buildToml(drops, { mapName: await mapNameLookup(), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const data = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(data.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function dropErrorStatus(err) {
+  return err instanceof dropsLib.DropError ? 400 : (err.status || 502);
+}
+
+// Gates: el GameServer usa los Data/Maps/NN-Nombre/Gates.toml si hay alguno y si
+// no, Gate.txt. El editor siempre recibe y manda el texto del .txt; con los TOML
+// el panel convierte en los dos sentidos.
+const GATE_TXT = 'Data/Move/Gate.txt';
+
+async function findGateTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === gatesLib.GATE_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new gatesLib.GateError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${gatesLib.GATE_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+// { format: 'txt' | 'toml', content } con el texto de Gate.txt.
+async function readGates() {
+  const { files } = await findGateTomlFiles();
+  if (!files.length) {
+    return { format: 'txt', content: await readEditorFile(GATE_TXT) };
+  }
+  const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+  return { format: 'toml', files: files.map((f) => f.path), content: gatesLib.buildLegacy(gatesLib.parseToml(loaded)) };
+}
+
+// Escribe los Gates.toml y borra los de los mapas que quedaron sin gates.
+async function writeGateToml(gates, files, folders) {
+  const out = gatesLib.buildToml(gates, { mapName: await mapNameLookup(), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const data = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(data.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function gateErrorStatus(err) {
+  return err instanceof gatesLib.GateError ? 400 : (err.status || 502);
+}
+
+// Zonas (zonas seguras, sin PK y NPCs que mueven): el GameServer usa los
+// Data/Maps/NN-Nombre/Zones.toml si hay alguno y si no, los .txt de
+// Data/Custom. El editor carga y guarda cada lista por separado con el texto de
+// su .txt; con los TOML el panel convierte en los dos sentidos.
+async function findZoneTomlFiles() {
+  const folders = new Map();
+  const files = [];
+  for (const entry of (await listEditorDir(spawns.MAPS_DIR)) || []) {
+    const map = spawns.folderMap(entry.name);
+    if (entry.type !== 'dir' || map < 0) continue;
+    const inside = (await listEditorDir(`${spawns.MAPS_DIR}/${entry.name}`)) || [];
+    if (inside.some((f) => f.type === 'file' && f.name === zonesLib.ZONE_FILE)) {
+      if (files.some((f) => f.map === map)) {
+        throw new zonesLib.ZoneError(`Dos carpetas para el mapa ${map}: '${folders.get(map)}' y '${entry.name}'`);
+      }
+      files.push({ path: `${spawns.MAPS_DIR}/${entry.name}/${zonesLib.ZONE_FILE}`, map });
+      folders.set(map, entry.name);
+    } else if (!folders.has(map)) {
+      folders.set(map, entry.name);
+    }
+  }
+  return { files, folders };
+}
+
+async function readZoneToml(files) {
+  const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+  return zonesLib.parseToml(loaded);
+}
+
+// Escribe los Zones.toml con `data` y borra los de los mapas que quedaron vacíos.
+async function writeZoneToml(data, files, folders) {
+  const out = zonesLib.buildToml(data, { mapName: await mapNameLookup(), folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(out)) {
+    const result = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(result.backups || []);
+  }
+  for (const f of files) {
+    if (!out[f.path]) {
+      const result = await editorRequest('POST', '/api/delete', { path: f.path });
+      backups = backups.concat(result.backups || []);
+    }
+  }
+  return { files: Object.keys(out), backups };
+}
+
+function zoneErrorStatus(err) {
+  return err instanceof zonesLib.ZoneError ? 400 : (err.status || 502);
+}
+
+// Editor por carpeta de mapa (lib/map-folders.js), sobre el editor del server.
+const mapFolders = mapFoldersLib.create({
+  list: listEditorDir,
+  read: readEditorFile,
+  write: (path, content) => editorRequest('POST', '/api/file', { path, content }),
+  remove: (path) => editorRequest('POST', '/api/delete', { path })
+}, { names: () => spawnNames() });
+
+function mapFolderRoute(handler) {
+  return async (req, res) => {
+    if (!editorEnabled) {
+      return res.status(503).json({ error: 'Editor disabled' });
+    }
+    try {
+      return res.json(await handler(req));
+    } catch (err) {
+      return res.status(mapFoldersLib.errorStatus(err)).json({ error: err.message });
+    }
+  };
+}
+
+app.get('/admin/server-editor/api/map-folders', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute(() => mapFolders.summary()));
+
+app.get('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.read(String(req.query.folder || ''), String(req.query.kind || ''))));
+
+// { folder, kind, content, check } — con check sólo valida.
+app.post('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.save(String(req.body?.folder || ''), String(req.body?.kind || ''), req.body?.content, !!req.body?.check)));
+
+// Modo visual del Spawns.toml: { folder, content } -> { entries } y
+// { folder, entries } -> { content }. No escriben nada.
+app.post('/admin/server-editor/api/map-folders/spawns/parse', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.spawnEntries(String(req.body?.folder || ''), req.body?.content)));
+
+app.post('/admin/server-editor/api/map-folders/spawns/build', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.spawnText(String(req.body?.folder || ''), req.body?.entries)));
+
+app.post('/admin/server-editor/api/map-folders/delete', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.remove(String(req.body?.folder || ''), String(req.body?.kind || ''))));
+
+async function spawnNames() {
+  const [maps, monsters] = await Promise.all([
+    readMapManager().then((m) => parseMapManager(m.content)).catch(() => []),
+    readEditorFile('Data/Monster/Monster.txt').then(parseMonsterTxt).catch(() => [])
+  ]);
+  const mapNames = new Map(maps.map((m) => [m.id, m.name]));
+  const monsterNames = new Map(monsters.map((m) => [m.id, m.name]));
+  return { mapName: (id) => mapNames.get(id), monsterName: (id) => monsterNames.get(id) };
+}
+
+async function writeSpawnToml(entries, folders) {
+  const { mapName } = await spawnNames();
+  const files = spawns.buildToml(entries, { mapName, folders });
+  let backups = [];
+  for (const [path, content] of Object.entries(files)) {
+    const data = await editorRequest('POST', '/api/file', { path, content });
+    backups = backups.concat(data.backups || []);
+  }
+  return { files: Object.keys(files), backups };
+}
+
+function spawnErrorStatus(err) {
+  return err instanceof spawns.SpawnError ? 400 : (err.status || 502);
+}
+
 app.get('/admin/server-editor/api/monster-set', requireAdmin, requireAdminPasswordChange, async (req, res) => {
   if (!editorEnabled) {
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Monster/MonsterSetBase.txt')}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findSpawnTomlFiles();
+    if (!files.length) {
+      return res.json({ format: 'txt', content: await readEditorFile(MONSTER_SET_TXT) });
+    }
+    const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    const { monsterName } = await spawnNames();
+    const content = spawns.buildLegacy(spawns.parseToml(loaded), monsterName);
+    return res.json({ format: 'toml', files: files.map((f) => f.path), content });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2048,13 +2435,33 @@ app.post('/admin/server-editor/api/monster-set', requireAdmin, requireAdminPassw
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Monster/MonsterSetBase.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findSpawnTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: MONSTER_SET_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeSpawnToml(spawns.parseLegacy(content), folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa MonsterSetBase.txt a los TOML por mapa. No borra el .txt (queda como
+// respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/monster-set/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findSpawnTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Los spawns ya están en formato por mapa.' });
+    }
+    const written = await writeSpawnToml(spawns.parseLegacy(await readEditorFile(MONSTER_SET_TXT)), folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(spawnErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2080,10 +2487,9 @@ app.get('/admin/server-editor/api/gates', requireAdmin, requireAdminPasswordChan
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Move/Gate.txt')}`);
-    return res.json({ content: data.content || '' });
+    return res.json(await readGates());
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2093,13 +2499,33 @@ app.post('/admin/server-editor/api/gates', requireAdmin, requireAdminPasswordCha
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Move/Gate.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findGateTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: GATE_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeGateToml(gatesLib.parseLegacy(content), files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa Gate.txt a un Gates.toml por mapa. No borra el .txt (queda como
+// respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/gates/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findGateTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Las gates ya están en formato por mapa.' });
+    }
+    const written = await writeGateToml(gatesLib.parseLegacy(await readEditorFile(GATE_TXT)), [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(gateErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2136,10 +2562,9 @@ app.get('/admin/server-editor/api/mapmanager', requireAdmin, requireAdminPasswor
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/MapManager.txt')}`);
-    return res.json({ content: data.content || '' });
+    return res.json(await readMapManager());
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(mapErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2149,13 +2574,36 @@ app.post('/admin/server-editor/api/mapmanager', requireAdmin, requireAdminPasswo
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/MapManager.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findMapTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: MAP_MANAGER_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    // El .txt no trae la música: se conserva la de los Map.toml actuales.
+    const current = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    const maps = mapsLib.keepMusic(mapsLib.parseLegacy(content), mapsLib.parseToml(current));
+    const written = await writeMapToml(maps, files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(mapErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa MapManager.txt a un Map.toml por mapa. No borra el .txt (queda como
+// respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/mapmanager/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findMapTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Las reglas de los mapas ya están en formato por mapa.' });
+    }
+    const written = await writeMapToml(mapsLib.parseLegacy(await readEditorFile(MAP_MANAGER_TXT)), [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(mapErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2625,14 +3073,20 @@ app.get('/admin/server-editor/api/custom', requireAdmin, requireAdminPasswordCha
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const filePath = getCustomFilePath(req.query.kind);
+    const kind = String(req.query.kind || '').toLowerCase();
+    const filePath = getCustomFilePath(kind);
     if (!filePath) {
       return res.status(400).json({ error: 'Tipo de custom invalido' });
     }
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(filePath)}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findZoneTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(filePath)}`);
+      return res.json({ format: 'txt', content: data.content || '' });
+    }
+    const zones = await readZoneToml(files);
+    return res.json({ format: 'toml', content: zonesLib.buildLegacy(kind, zones[kind]) });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2641,18 +3095,47 @@ app.post('/admin/server-editor/api/custom', requireAdmin, requireAdminPasswordCh
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const filePath = getCustomFilePath(req.query.kind);
+    const kind = String(req.query.kind || '').toLowerCase();
+    const filePath = getCustomFilePath(kind);
     if (!filePath) {
       return res.status(400).json({ error: 'Tipo de custom invalido' });
     }
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: filePath,
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findZoneTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: filePath, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    // Sólo cambia la lista de `kind`; las otras dos quedan como están.
+    const zones = await readZoneToml(files);
+    zones[kind] = zonesLib.parseLegacy(kind, content);
+    const written = await writeZoneToml(zones, files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa los tres .txt de Data/Custom a un Zones.toml por mapa. No borra los .txt
+// (quedan como respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/custom/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findZoneTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Las zonas ya están en formato por mapa.' });
+    }
+    const zones = {};
+    for (const kind of zonesLib.KINDS) {
+      const text = await readEditorFile(getCustomFilePath(kind)).catch(() => '');
+      zones[kind] = zonesLib.parseLegacy(kind, text);
+    }
+    const written = await writeZoneToml(zones, [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(zoneErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2735,10 +3218,14 @@ app.get('/admin/server-editor/api/drop', requireAdmin, requireAdminPasswordChang
     return res.status(503).json({ error: 'Editor disabled' });
   }
   try {
-    const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Item/ItemDrop.txt')}`);
-    return res.json({ content: data.content || '' });
+    const { files } = await findDropTomlFiles();
+    if (!files.length) {
+      return res.json({ format: 'txt', content: await readEditorFile(ITEM_DROP_TXT) });
+    }
+    const loaded = await Promise.all(files.map(async (f) => ({ ...f, content: await readEditorFile(f.path) })));
+    return res.json({ format: 'toml', files: files.map((f) => f.path), content: dropsLib.buildLegacy(dropsLib.parseToml(loaded)) });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2748,13 +3235,33 @@ app.post('/admin/server-editor/api/drop', requireAdmin, requireAdminPasswordChan
   }
   try {
     const content = String(req.body?.content ?? '');
-    const data = await editorRequest('POST', '/api/file', {
-      path: 'Data/Item/ItemDrop.txt',
-      content
-    });
-    return res.json({ ok: true, backups: data.backups || [] });
+    const { files, folders } = await findDropTomlFiles();
+    if (!files.length) {
+      const data = await editorRequest('POST', '/api/file', { path: ITEM_DROP_TXT, content });
+      return res.json({ ok: true, format: 'txt', backups: data.backups || [] });
+    }
+    const written = await writeDropToml(dropsLib.parseLegacy(content), files, folders);
+    return res.json({ ok: true, format: 'toml', ...written });
   } catch (err) {
-    return res.status(err.status || 502).json({ error: err.message });
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
+  }
+});
+
+// Pasa ItemDrop.txt a Items/Drops.toml y un Drops.toml por mapa. No borra el
+// .txt (queda como respaldo); desde ahí el GameServer usa los TOML.
+app.post('/admin/server-editor/api/drop/convert', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const { files, folders } = await findDropTomlFiles();
+    if (files.length) {
+      return res.status(409).json({ error: 'Los drops ya están en formato por mapa.' });
+    }
+    const written = await writeDropToml(dropsLib.parseLegacy(await readEditorFile(ITEM_DROP_TXT)), [], folders);
+    return res.json({ ok: true, format: 'toml', ...written });
+  } catch (err) {
+    return res.status(dropErrorStatus(err)).json({ error: err.message });
   }
 });
 
@@ -2951,11 +3458,12 @@ app.post('/admin/accounts/new', requireAdmin, requireAdminPasswordChange, async 
     const accountExpireValue = accountExpire.value ? accountExpire.value : new Date();
     const blockExpireValue = blocked ? blockExpire.value : '1900-01-01 00:00:00';
 
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
     await conn.query(
       `INSERT INTO MEMB_INFO
        (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire)
-       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, ?, ?, ?, ?)`,
-      [account, password, name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
+       VALUES (?, ${storedPassword.sql}, ?, ?, ?, ?, ?, ?, ?)`,
+      [account, storedPassword.value, name, email || null, code, accountLevelField.value, accountExpireValue, blocked ? 1 : 0, blockExpireValue]
     );
 
     await conn.query(
@@ -3117,8 +3625,9 @@ app.post('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async 
   ];
 
   if (password) {
-    fields.push('memb__pwd = UNHEX(MD5(?))');
-    params.push(password);
+    const storedPassword = await accountPassword.make(password, passwordColumnWide);
+    fields.push(`memb__pwd = ${storedPassword.sql}`);
+    params.push(storedPassword.value);
   }
 
   params.push(accountId);

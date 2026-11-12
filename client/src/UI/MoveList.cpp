@@ -67,9 +67,11 @@ bool CMoveList::Receive(const BYTE* packet, int size)
             if (row[n] < 32 || row[n] == 127) return false;
     }
     if (count) memcpy(m_Maps, packet + header, count * stride);
-    // DESVIACION (Fase 4, texto Unicode): nombres de mapa de 1252 a UTF-8.
+    // DESVIACION (Fase 4, texto Unicode): nombres de mapa a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
     for (int i = 0; i < count; ++i)
-        TextEngine::ConvertWindows1252InPlace(m_Maps[i].MapName, sizeof(m_Maps[i].MapName));
+        TextEngine::NormalizeTextFileInPlace(m_Maps[i].MapName, sizeof(m_Maps[i].MapName));
     m_Count = count;
     m_PKLimitFree = packet[5];
     m_Received = true;

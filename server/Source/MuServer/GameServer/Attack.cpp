@@ -12,6 +12,8 @@
 #include "ServerInfo.h"
 #include "SkillManager.h"
 #include "Util.h"
+#include "Log.h"
+#include "PacketTrace.h"
 
 CAttack gAttack;
 
@@ -1372,6 +1374,41 @@ void CAttack::CGAttackRecv(PMSG_ATTACK_RECV* lpMsg, int aIndex)
 	if (lpObj->Type == OBJECT_USER && sqrt(pow(((float)lpObj->X - (float)lpTarget->X), 2) + pow(((float)lpObj->Y - (float)lpTarget->Y), 2)) > ((lpObj->Class == CLASS_FE) ? 6 : 3))
 	{
 		return;
+	}
+
+	// Fase 5: cadencia del ataque normal. Antes no había ninguna: el cliente
+	// podía mandar ataques tan seguido como quisiera (LastAttackTime existía y
+	// nadie lo usaba). El mínimo sigue a la velocidad de la animación del
+	// cliente: SetAttackSpeed (0x443E70) pone PlaySpeed = base + AttackSpeed*0.004,
+	// con base 0.25 (espadas), 0.3 (arcos) y 0.6 (puño, la más rápida). Se usa la
+	// de puño para no rechazar a nadie: mínimo = Scale / (0.6 + 0.004*PhysiSpeed).
+	// Medido en una sesión de prueba: 238 ms entre ataques con arco y
+	// PhysiSpeed 285, contra un mínimo de 138 ms con Scale 240.
+	if (lpObj->Type == OBJECT_USER && gServerInfo.m_AttackCheck != 0)
+	{
+		DWORD gap = GetTickCount() - lpObj->LastAttackTime;
+
+		DWORD MinInterval = (DWORD)((gServerInfo.m_AttackCheckScale * 1000) / (600 + 4 * ((lpObj->PhysiSpeed > 0) ? lpObj->PhysiSpeed : 0)));
+
+		TRACE_NOTE(aIndex, PROTOCOL_CODE2, -1, "ataque: %u ms desde el anterior (minimo %u), PhysiSpeed=%d", gap, MinInterval, lpObj->PhysiSpeed);
+
+		if (gap < MinInterval)
+		{
+			const char* mode = (gServerInfo.m_AttackCheck == 2) ? "" : " [observado]";
+
+			gLog.Output(LOG_HACK, "[%s][%s] Ataque: %u ms desde el anterior (minimo %u, PhysiSpeed %d)%s", lpObj->Account, lpObj->Name, gap, MinInterval, lpObj->PhysiSpeed, mode);
+
+			TRACE_REJECT(aIndex, PROTOCOL_CODE2, -1, "ataque: %u ms desde el anterior (minimo %u)%s", gap, MinInterval, mode);
+
+			// Rechazado no actualiza LastAttackTime: el siguiente ataque legítimo
+			// se mide contra el último que sí pasó.
+			if (gServerInfo.m_AttackCheck == 2)
+			{
+				return;
+			}
+		}
+
+		lpObj->LastAttackTime = GetTickCount();
 	}
 
 	lpObj->Dir = lpMsg->dir;

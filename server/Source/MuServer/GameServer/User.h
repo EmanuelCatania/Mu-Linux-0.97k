@@ -341,6 +341,9 @@ struct OBJECTSTRUCT
 	SOCKET Socket;
 	char IpAddr[16];
 	char HardwareID[36];
+	BYTE CatalogCacheCount; // secciones del catálogo que el cliente tiene en caché (F1:06)
+	BYTE CatalogCacheSub[16];
+	BYTE CatalogCacheHash[16][8];
 	BYTE ClassCode;
 	BYTE ClassFlag;
 	DWORD AutoSaveTime;
@@ -456,6 +459,7 @@ struct OBJECTSTRUCT
 	int Change;
 	short TargetNumber;
 	short TargetShopNumber;
+	int InterfaceNpc; // NPC con el que se abrió la interfaz actual (tienda, baúl, chaos box); -1 = ninguno
 	short ShopNumber;
 	short LastAttackerID;
 	int PhysiDamageMin;
@@ -538,6 +542,8 @@ struct OBJECTSTRUCT
 	DWORD* SkillDelay;
 	DWORD* HackPacketDelay;
 	DWORD* HackPacketCount;
+	DWORD PacketRateTime; // inicio de la ventana de un segundo (CheckPacketRate)
+	DWORD PacketRateCount; // paquetes recibidos en esa ventana
 	int WarehouseNumber;
 	int AccountLevel;
 	char AccountExpireDate[20];

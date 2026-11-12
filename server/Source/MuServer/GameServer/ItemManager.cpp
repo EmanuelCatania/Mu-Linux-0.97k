@@ -20,6 +20,9 @@
 #include "ShopManager.h"
 #include "SkillManager.h"
 #include "Trade.h"
+#include "MapManager.h"
+#include "NpcTalk.h"
+#include "PacketTrace.h"
 #include "Util.h"
 #include "Viewport.h"
 #include "Warehouse.h"
@@ -2646,6 +2649,18 @@ void CItemManager::CGItemDropRecv(PMSG_ITEM_DROP_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	// El punto del suelo lo elige el cliente: se acota a lo que el jugador ve.
+	int DropRange = gMapManager.GetMapViewRange(lpObj->Map);
+
+	if (abs(lpMsg->x - lpObj->X) > DropRange || abs(lpMsg->y - lpObj->Y) > DropRange)
+	{
+		TRACE_REJECT(aIndex, 0x23, -1, "tirar en %d,%d lejos de %d,%d (máximo %d)", lpMsg->x, lpMsg->y, lpObj->X, lpObj->Y, DropRange);
+
+		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+		return;
+	}
+
 	gObjFixInventoryPointer(aIndex);
 
 	if (lpObj->Transaction == 1)
@@ -2753,7 +2768,7 @@ void CItemManager::CGItemMoveRecv(PMSG_ITEM_MOVE_RECV* lpMsg, int aIndex)
 
 	if (lpMsg->SourceFlag == 2 || lpMsg->TargetFlag == 2) // Warehouse
 	{
-		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_WAREHOUSE || lpObj->Interface.state == 0 || lpObj->LoadWarehouse == 0 || lpObj->WarehouseLock == 1)
+		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_WAREHOUSE || lpObj->Interface.state == 0 || lpObj->LoadWarehouse == 0 || lpObj->WarehouseLock == 1 || gNpcTalk.CheckInterfaceNpc(lpObj, 0x24) == 0)
 		{
 			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -2765,7 +2780,7 @@ void CItemManager::CGItemMoveRecv(PMSG_ITEM_MOVE_RECV* lpMsg, int aIndex)
 	// movía items al chaos box sin la ventana del NPC abierta.
 	if (lpMsg->SourceFlag == 3 || (lpMsg->SourceFlag >= 5 && lpMsg->SourceFlag <= 20) || lpMsg->TargetFlag == 3 || (lpMsg->TargetFlag >= 5 && lpMsg->TargetFlag <= 20)) // Chaos Box
 	{
-		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX || lpObj->ChaosLock != 0)
+		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_CHAOS_BOX || lpObj->ChaosLock != 0 || gNpcTalk.CheckInterfaceNpc(lpObj, 0x24) == 0)
 		{
 			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -3203,6 +3218,13 @@ void CItemManager::CGItemBuyRecv(PMSG_ITEM_BUY_RECV* lpMsg, int aIndex)
 		return;
 	}
 
+	if (gNpcTalk.CheckInterfaceNpc(lpObj, 0x32) == 0)
+	{
+		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+		return;
+	}
+
 	if (SHOP_RANGE(lpObj->TargetShopNumber) == 0)
 	{
 		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
@@ -3284,6 +3306,13 @@ void CItemManager::CGItemSellRecv(PMSG_ITEM_SELL_RECV* lpMsg, int aIndex)
 	pMsg.money = 0;
 
 	if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_SHOP)
+	{
+		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+		return;
+	}
+
+	if (gNpcTalk.CheckInterfaceNpc(lpObj, 0x33) == 0)
 	{
 		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -3392,6 +3421,36 @@ void CItemManager::CGItemRepairRecv(PMSG_ITEM_REPAIR_RECV* lpMsg, int aIndex)
 		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
 		return;
+	}
+
+	// El tipo 0 cobra el precio del herrero: exige su tienda abierta y estar
+	// cerca. Antes se reparaba así desde cualquier lado, incluso durante un trade.
+	if (lpMsg->type == 0)
+	{
+		if (lpObj->Interface.use == 0 || lpObj->Interface.type != INTERFACE_SHOP)
+		{
+			TRACE_REJECT(aIndex, 0x34, -1, "reparar al precio del NPC sin la tienda abierta (interfaz %d)", lpObj->Interface.type);
+
+			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+			return;
+		}
+
+		if (gNpcTalk.CheckInterfaceNpc(lpObj, 0x34) == 0)
+		{
+			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+			return;
+		}
+
+		if (gNpcTalk.IsRepairNpc(lpObj->InterfaceNpc) == 0)
+		{
+			TRACE_REJECT(aIndex, 0x34, -1, "el NPC %d (clase %d) no repara", lpObj->InterfaceNpc, gObj[lpObj->InterfaceNpc].Class);
+
+			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+
+			return;
+		}
 	}
 
 	if (lpMsg->slot == 0xFF)

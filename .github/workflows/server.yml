@@ -57,12 +57,50 @@ jobs:
         if: matrix.config == 'release'
         run: python -B tests/recall_packet_layout.py --architecture ${{ matrix.target.preset == 'windows-x64' && 'x64' || 'Win32' }}
 
+  # Windows con MinGW-w64 (issue #23), en compilación cruzada desde Linux.
+  # Los .exe salen estáticos: no tienen que pedir las DLL del toolchain.
+  mingw:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    name: MinGW (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, prefix: x86_64-w64-mingw32 }
+          - { arch: x86, prefix: i686-w64-mingw32 }
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v5
+      - name: Instalar MinGW-w64
+        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64-posix g++-mingw-w64-i686-posix ninja-build
+      - name: Configurar
+        run: cmake --preset mingw-${{ matrix.arch }}-release
+      - name: Compilar
+        run: cmake --build --preset mingw-${{ matrix.arch }}-release --parallel 4
+      - name: Verificar que no dependa de las DLL de MinGW
+        run: |
+          set -e
+          found=0
+          for exe in $(find out/build/mingw-${{ matrix.arch }}-release/bin -name '*.exe'); do
+            dlls=$(${{ matrix.prefix }}-objdump -p "$exe" | sed -n 's/.*DLL Name: //p' | tr '\n' ' ')
+            echo "$exe: $dlls"
+            if echo "$dlls" | grep -qiE 'libstdc|libgcc|libwinpthread'; then found=1; fi
+          done
+          [ "$found" = 0 ]
+
   # Resultado del workflow: OK si compiló bien o si no hacía falta compilar.
   # Es el check que exige la regla de main (una matriz salteada no reporta sus
   # checks con nombre propio).
   result:
     name: Server
     if: always()
+    # MinGW queda fuera: depende de bajar paquetes de apt y si los mirrors de
+    # Ubuntu no responden (2026-11-11) tumbaba el check obligatorio. Sigue
+    # corriendo y se ve en el PR, pero no bloquea el merge.
     needs: [changes, build]
     runs-on: ubuntu-24.04
     defaults:

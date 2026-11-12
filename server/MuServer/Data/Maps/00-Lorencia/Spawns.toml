@@ -1,0 +1,99 @@
+# Lorencia (mapa 0): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 230, at = [62, 130], dir = 3 }, # Wandering Merchant Alex
+  { monster = 253, at = [127, 86], dir = 2 }, # Potion Girl Amy
+  { monster = 251, at = [116, 141], dir = 3 }, # Hanzo the Blacksmith
+  { monster = 255, at = [123, 135], dir = 1 }, # Lumen the Barmaid
+  { monster = 254, at = [118, 113], dir = 3 }, # Pasi the Mage
+  { monster = 240, at = [147, 145], dir = 1 }, # Safety Guardian
+  { monster = 240, at = [146, 110], dir = 3 }, # Safety Guardian
+  { monster = 236, at = [130, 127], dir = 3 }, # Golden Archer
+  { monster = 249, at = [131, 88], dir = 1, dis = 10 }, # Berdysh Guard
+  { monster = 249, at = [173, 125], dir = 3, dis = 20 }, # Berdysh Guard
+  { monster = 249, at = [94, 125], dir = 7, dis = 20 }, # Berdysh Guard
+  { monster = 249, at = [94, 130], dir = 7, dis = 20 }, # Berdysh Guard
+  { monster = 249, at = [131, 148], dir = 1, dis = 30 }, # Berdysh Guard
+  { monster = 248, at = [183, 137], dir = 2 }, # Harold The Wandering Merchant
+  { monster = 250, at = [6, 145], dir = 2 }, # Martin The Wandering Merchant
+]
+
+area = [
+  { monster = 3, box = [183, 105, 189, 99], count = 10, dis = 30 }, # Spider
+  { monster = 3, box = [180, 90, 226, 244], count = 35, dis = 30 }, # Spider
+  { monster = 2, box = [180, 90, 226, 244], count = 35, dis = 30 }, # Budge Dragon
+  { monster = 2, box = [135, 20, 240, 88], count = 20, dis = 30 }, # Budge Dragon
+  { monster = 0, box = [135, 20, 240, 88], count = 35, dis = 30 }, # Bull Fighter
+  { monster = 6, box = [95, 168, 175, 244], count = 20, dis = 30 }, # Lich
+  { monster = 14, box = [95, 168, 175, 244], count = 22, dis = 30 }, # Skeleton Warrior
+  { monster = 1, box = [8, 11, 94, 244], count = 35, dis = 30 }, # Hound
+  { monster = 4, box = [8, 11, 94, 244], count = 35, dis = 30 }, # Hunter
+  { monster = 7, box = [8, 11, 60, 80], count = 15, dis = 30 }, # Giant
+  { monster = 3, box = [174, 129, 180, 123], count = 15, dis = 10 }, # Spider
+  { monster = 7, box = [14, 46, 24, 32], count = 20, dis = 20 }, # Giant
+]
+
+spot = [
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 3, at = [179, 123], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 2, at = [177, 124], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 1, at = [90, 128], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+  { monster = 0, at = [164, 84], dir = 0, dis = 5 },
+]

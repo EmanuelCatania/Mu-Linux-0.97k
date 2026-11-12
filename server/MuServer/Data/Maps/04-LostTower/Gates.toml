@@ -1,0 +1,32 @@
+# Lost Tower (mapa 4): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 29, type = "exit", area = [162, 2, 166, 3], dir = 5, level = [40, 400] },
+  { index = 30, type = "entrance", area = [190, 6, 191, 8], target = 31, level = [40, 400] },
+  { index = 31, type = "exit", area = [241, 237, 244, 238], dir = 1, level = [40, 400] },
+  { index = 32, type = "entrance", area = [166, 163, 167, 166], target = 33, level = [40, 400] },
+  { index = 33, type = "exit", area = [86, 166, 87, 168], dir = 3, level = [40, 400] },
+  { index = 34, type = "entrance", area = [132, 245, 135, 246], target = 35, level = [50, 400] },
+  { index = 35, type = "exit", area = [87, 86, 88, 89], dir = 3, level = [50, 400] },
+  { index = 36, type = "entrance", area = [132, 135, 135, 136], target = 37, level = [50, 400] },
+  { index = 37, type = "exit", area = [128, 53, 131, 54], dir = 1, level = [50, 400] },
+  { index = 38, type = "entrance", area = [131, 15, 132, 18], target = 39, level = [50, 400] },
+  { index = 39, type = "exit", area = [52, 53, 55, 54], dir = 1, level = [50, 400] },
+  { index = 40, type = "entrance", area = [6, 5, 7, 8], target = 41, level = [50, 400] },
+  { index = 41, type = "exit", area = [8, 85, 9, 87], dir = 1, level = [50, 400] },
+  { index = 42, type = "destination", area = [203, 70, 213, 81], level = [40, 400] },
+  { index = 43, type = "entrance", area = [162, 0, 166, 1], target = 44, level = [15, 400] },
+  { index = 62, type = "entrance", area = [17, 250, 19, 250], target = 63, level = [160, 400] },
+  { index = 65, type = "exit", area = [17, 249, 19, 249], dir = 1, level = [50, 400] },
+]

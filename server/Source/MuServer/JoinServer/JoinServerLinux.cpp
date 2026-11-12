@@ -54,7 +54,7 @@ int main()
 
 		CaseSensitive = GetPrivateProfileInt("AccountInfo", "CaseSensitive", 0, "./JoinServer.ini");
 		MD5Encryption = GetPrivateProfileInt("AccountInfo", "MD5Encryption", 0, "./JoinServer.ini");
-		GetPrivateProfileString("AccountInfo", "GlobalPassword", "XwefDastoD", GlobalPassword, sizeof(GlobalPassword), "./JoinServer.ini");
+		GetPrivateProfileString("AccountInfo", "GlobalPassword", "", GlobalPassword, sizeof(GlobalPassword), "./JoinServer.ini");
 
 #ifndef MYSQL
 		if (gQueryManager.Connect(DataBaseODBC, DataBaseUser, DataBasePass) == false)
@@ -80,6 +80,8 @@ int main()
 				else
 				{
 					gAllowableIpList.Load("AllowableIpList.txt");
+
+					PasswordHashSetup("./JoinServer.ini");
 				}
 			}
 		}

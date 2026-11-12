@@ -1,0 +1,29 @@
+# Dungeon (mapa 1): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 2, type = "exit", area = [107, 247, 110, 247], dir = 1, level = [20, 400] },
+  { index = 3, type = "entrance", area = [108, 248, 109, 248], target = 4, level = [0, 400] },
+  { index = 5, type = "entrance", area = [239, 149, 239, 150], target = 6, level = [20, 400] },
+  { index = 6, type = "exit", area = [231, 126, 234, 127], dir = 1, level = [20, 400] },
+  { index = 7, type = "entrance", area = [232, 127, 233, 128], target = 8, level = [20, 400] },
+  { index = 8, type = "exit", area = [240, 148, 241, 151], dir = 3, level = [20, 400] },
+  { index = 9, type = "entrance", area = [2, 17, 2, 18], target = 10, level = [20, 400] },
+  { index = 10, type = "exit", area = [3, 83, 4, 86], dir = 3, level = [20, 400] },
+  { index = 11, type = "entrance", area = [2, 84, 2, 85], target = 12, level = [20, 400] },
+  { index = 12, type = "exit", area = [3, 16, 6, 17], dir = 3, level = [20, 400] },
+  { index = 13, type = "entrance", area = [5, 34, 6, 34], target = 14, level = [20, 400] },
+  { index = 14, type = "exit", area = [29, 125, 30, 126], dir = 1, level = [20, 400] },
+  { index = 15, type = "entrance", area = [29, 127, 30, 127], target = 16, level = [20, 400] },
+  { index = 16, type = "exit", area = [5, 32, 7, 33], dir = 1, level = [20, 400] },
+]

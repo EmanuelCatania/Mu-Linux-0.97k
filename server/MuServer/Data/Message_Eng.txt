@@ -185,4 +185,5 @@
 110	"Your inventory is full."
 111	"You've reached the maximum zen."
 112	"You don't have enough zen."
+113	"'%s' defeated '%s' (%d/%d)"
 end

@@ -19,7 +19,9 @@ end
 
 2
 //Index	DropRate
-0	10000
+// Sin filas en la seccion 3 el drop avanzado no tira nada y tapa al normal
+// (la Box of Kundun de arriba): por eso va comentado.
+//0	10000
 end
 
 3

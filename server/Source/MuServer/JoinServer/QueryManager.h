@@ -77,6 +77,7 @@ extern CQueryManager gQueryManager;
 
 #else
 
+#include <cstdarg>
 #include <map>
 #include <string>
 #include <vector>
@@ -143,6 +144,8 @@ private:
 	};
 
 	bool RunQuery(const char* query, bool& HasResult);
+
+	bool BuildQuery(std::string& out, const char* format, va_list args);
 
 	void FreeResults();
 

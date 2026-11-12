@@ -223,6 +223,9 @@
     <ClCompile Include="ReadScript.cpp" />
     <ClCompile Include="MiniDump.cpp" />
     <ClCompile Include="QueryManager.cpp" />
+    <ClCompile Include="..\Common\SqlFormat.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
@@ -235,6 +238,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_MySQL|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="..\Common\PasswordHash.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Common\crypt_blowfish\crypt_blowfish.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="JoinServer.rc" />

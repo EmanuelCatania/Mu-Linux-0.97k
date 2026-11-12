@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "HackPacketCheck.h"
 #include "Log.h"
+#include "PacketTrace.h"
 #include "ReadScript.h"
 #include "SerialCheck.h"
+#include "ServerInfo.h"
 #include "Util.h"
 
 CHackPacketCheck gHackPacketCheck;
@@ -129,11 +131,18 @@ HACK_PACKET_INFO* CHackPacketCheck::GetInfo(int index, int value)
 
 bool CHackPacketCheck::CheckPacketHack(int aIndex, int index, int value, int encrypt, int serial)
 {
+	if (this->CheckPacketRate(aIndex, index, value) == 0)
+	{
+		return 0;
+	}
+
 	HACK_PACKET_INFO* lpInfo = this->GetInfo(index, value);
 
 	if (lpInfo == 0)
 	{
 		gLog.Output(LOG_HACK, "[HackPacketCheck][%s][%s] Packet unknown error (Index: %d, Value: %d)", gObj[aIndex].Account, gObj[aIndex].Name, index, value);
+
+		TRACE_REJECT(aIndex, index, value, "opcode desconocido en HackPacketCheck.txt: desconecta");
 
 		CloseClient(aIndex);
 
@@ -144,6 +153,8 @@ bool CHackPacketCheck::CheckPacketHack(int aIndex, int index, int value, int enc
 	{
 		gLog.Output(LOG_HACK, "[HackPacketCheck][%s][%s] Packet encryption error (Index: %d, Value: %d, Encrypt: [%d][%d])", gObj[aIndex].Account, gObj[aIndex].Name, index, lpInfo->Value, encrypt, lpInfo->Encrypt);
 
+		TRACE_REJECT(aIndex, index, value, "frame equivocado (vino %s, se espera %s): desconecta", encrypt ? "C3/C4" : "C1/C2", lpInfo->Encrypt ? "C3/C4" : "C1/C2");
+
 		CloseClient(aIndex);
 
 		return 0;
@@ -152,6 +163,8 @@ bool CHackPacketCheck::CheckPacketHack(int aIndex, int index, int value, int enc
 	if (serial >= 0 && gSerialCheck[aIndex].CheckSerial(serial) == 0)
 	{
 		gLog.Output(LOG_HACK, "[HackPacketCheck][%s][%s] Packet serial error (Index: %d, Value: %d, Serial: [%d][%d])", gObj[aIndex].Account, gObj[aIndex].Name, index, lpInfo->Value, serial, gSerialCheck[aIndex].GetRecvSerial());
+
+		TRACE_REJECT(aIndex, index, value, "serial %d, se esperaba %d: desconecta", serial, (BYTE)(gSerialCheck[aIndex].GetRecvSerial() + 1));
 
 		CloseClient(aIndex);
 
@@ -169,6 +182,8 @@ bool CHackPacketCheck::CheckPacketHack(int aIndex, int index, int value, int enc
 	{
 		gLog.Output(LOG_HACK, "[HackPacketCheck][%s][%s] Packet count error (Index: %d, Value: %d, Count: [%d][%d])", gObj[aIndex].Account, gObj[aIndex].Name, index, lpInfo->Value, gObj[aIndex].HackPacketCount[index], lpInfo->MaxCount);
 
+		TRACE_REJECT(aIndex, index, value, "demasiados paquetes seguidos (%u, tope %d)%s", gObj[aIndex].HackPacketCount[index], lpInfo->MinCount, (this->CheckPacketHackMaxCount(aIndex, index, lpInfo->MaxCount) == 0) ? ": desconecta" : ": descartado");
+
 		if (this->CheckPacketHackMaxCount(aIndex, index, lpInfo->MaxCount) == 0)
 		{
 			CloseClient(aIndex);
@@ -178,6 +193,52 @@ bool CHackPacketCheck::CheckPacketHack(int aIndex, int index, int value, int enc
 	}
 
 	return 1;
+}
+
+// Tope de paquetes por segundo por conexion, para todos los opcodes juntos (los
+// topes por opcode de HackPacketCheck.txt solo cubren los que tienen MaxDelay).
+// Ventana fija de un segundo. Con PacketRateCheck = 1 solo registra (una vez
+// por ventana); con 2 desconecta.
+bool CHackPacketCheck::CheckPacketRate(int aIndex, int index, int value)
+{
+	if (gServerInfo.m_PacketRateCheck == 0 || gServerInfo.m_PacketRateMax <= 0)
+	{
+		return 1;
+	}
+
+	LPOBJ lpObj = &gObj[aIndex];
+
+	DWORD now = GetTickCount();
+
+	if ((now - lpObj->PacketRateTime) >= 1000)
+	{
+		lpObj->PacketRateTime = now;
+
+		lpObj->PacketRateCount = 0;
+	}
+
+	if ((++lpObj->PacketRateCount) <= (DWORD)gServerInfo.m_PacketRateMax)
+	{
+		return 1;
+	}
+
+	bool enforce = (gServerInfo.m_PacketRateCheck >= 2);
+
+	if (lpObj->PacketRateCount == (DWORD)gServerInfo.m_PacketRateMax + 1)
+	{
+		gLog.Output(LOG_HACK, "[HackPacketCheck][%s][%s] Packet rate error (Index: %d, Value: %d, Max: %d/s)%s", lpObj->Account, lpObj->Name, index, value, gServerInfo.m_PacketRateMax, enforce ? "" : " [observe]");
+
+		TRACE_REJECT(aIndex, index, value, "mas de %d paquetes en un segundo%s", gServerInfo.m_PacketRateMax, enforce ? ": desconecta" : " (observar)");
+	}
+
+	if (enforce == 0)
+	{
+		return 1;
+	}
+
+	CloseClient(aIndex);
+
+	return 0;
 }
 
 bool CHackPacketCheck::CheckPacketHackMaxDelay(int aIndex, int index, int MaxDelay)

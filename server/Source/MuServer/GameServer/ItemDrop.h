@@ -29,6 +29,10 @@ public:
 
 	void Load(const char* path);
 
+	// Fase 5: desde Data/Items/Drops.toml y Data/Maps/NN-Nombre/Drops.toml
+	// (`path` es Data/). Llena la misma tabla que Load con ItemDrop.txt.
+	void LoadToml(const char* path);
+
 	int DropItem(LPOBJ lpObj, LPOBJ lpTarget);
 
 	int GetItemDropRate(LPOBJ lpObj, LPOBJ lpTarget, int ItemIndex, int ItemLevel, int DropRate);

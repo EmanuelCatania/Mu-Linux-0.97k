@@ -145,6 +145,31 @@ O executável fica em `build/linux-x64-release/bin/main` (não em `bin/Client/`,
 para não se misturar com o do Windows). Para rodá-lo com os assets do repo,
 aponte `MU_ASSET_ROOT` para `bin/Client` (veja [Rodar no Linux](#rodar-no-linux)).
 
+### Windows x64 com MinGW
+
+Alternativa ao Visual Studio: compila com MinGW-w64 (GCC), com SDL3. Os presets
+são para compilação cruzada a partir do Linux; no Debian/Ubuntu são necessários
+`g++-mingw-w64-x86-64-posix` e `ninja-build`. São dois:
+
+- `mingw-x64-release`: só OpenGL, sem vcpkg.
+- `mingw-x64-webgpu-release`: OpenGL e WebGPU, com Dawn pelo vcpkg (precisa de
+  `VCPKG_ROOT`, como o de Linux x64, e de MinGW-w64 12 ou mais novo: Debian 13
+  ou Ubuntu 25.04 em diante). Com MinGW, o Dawn é compilado **só com o
+  backend Vulkan**: os de Direct3D pedem headers que o MinGW não traz. O menu
+  de Opções não oferece DirectX 11 nem DirectX 12, e um `d3d12`/`d3d11` salvo no
+  `Config.ini` é lido como WebGPU automático, que usa Vulkan.
+
+```sh
+cmake --preset mingw-x64-webgpu-release
+cmake --build --preset mingw-x64-webgpu-release --target mu97k
+```
+
+O executável fica em `build/<preset>/bin/main.exe` e sai estático
+(não pede as DLL do toolchain); para jogar, copie-o para `bin/Client/`. O GCC
+não tem `__try`/`__except`: os pontos que com MSVC capturam um acesso inválido
+rodam sem essa proteção, como no Linux. Compilar com MSYS2 no Windows ainda não
+foi testado.
+
 ### Builds históricos (x86 e Win32)
 
 Continuam disponíveis para comparar com o binário original, que é de 32 bits.

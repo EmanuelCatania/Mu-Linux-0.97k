@@ -33,7 +33,7 @@ void operator_delete(void* buffer) { Require(buffer==scratch+16 && frees++==0 &&
 int crt_fclose(FILE* file) { Require(frees==1 && !closed); closed=true; return std::fclose(file); }
 void crt_sprintf(char*,const char* format) { Require(failOpen && std::strcmp(format,s__s___File_not_exist__00558094)==0); ++errors; }
 namespace TextEngine {
-void ConvertWindows1252InPlace(char* address,int size) {
+void NormalizeTextFileInPlace(char* address,int size) {
     Require(closed && names<200 && size==32 && reinterpret_cast<BYTE*>(address)==quest+8+names*584+5); ++names;
 }
 }

@@ -84,6 +84,33 @@
       "architecture": "x64",
       "toolset": "v143",
       "inherits": "windows-webgpu-base"
+    },
+    {
+      "name": "mingw-x64-release",
+      "description": "Cliente para Windows x64 con MinGW-w64: SDL3 y OpenGL, sin WebGPU (compilación cruzada desde Linux; ver cmake/toolchains/mingw-x64.cmake).",
+      "binaryDir": "${sourceDir}/build/mingw-x64-release",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-x64.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MU_PLATFORM_BACKEND": "SDL3"
+      }
+    },
+    {
+      "name": "mingw-x64-webgpu-release",
+      "description": "Cliente para Windows x64 con MinGW-w64: SDL3, OpenGL y WebGPU (Dawn estático por vcpkg, sólo backend Vulkan; requiere VCPKG_ROOT).",
+      "binaryDir": "${sourceDir}/build/mingw-x64-webgpu-release",
+      "generator": "Ninja",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "MU_RENDER_WEBGPU": "ON",
+        "VCPKG_MANIFEST_FEATURES": "webgpu",
+        "VCPKG_TARGET_TRIPLET": "x64-mingw-mu",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/mingw-x64.cmake",
+        "VCPKG_APPLOCAL_DEPS": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -115,6 +142,16 @@
     {
       "name": "windows-sdl3-x64-release",
       "configurePreset": "windows-sdl3-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "mingw-x64-release",
+      "configurePreset": "mingw-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "mingw-x64-webgpu-release",
+      "configurePreset": "mingw-x64-webgpu-release",
       "configuration": "Release"
     }
   ]

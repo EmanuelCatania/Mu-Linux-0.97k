@@ -24,11 +24,13 @@
 #include "Notice.h"
 #include "NpcTalk.h"
 #include "ObjectManager.h"
+#include "PacketTrace.h"
 #include "Party.h"
 #include "Quest.h"
 #include "ServerInfo.h"
 #include "SkillManager.h"
 #include "Trade.h"
+#include "ContentCatalog.h"
 #include "Util.h"
 #include "Viewport.h"
 #include "Warehouse.h"
@@ -36,6 +38,8 @@
 void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int serial)
 {
 	ConsoleProtocolLog(CON_PROTO_TCP_RECV, aIndex, lpMsg, size);
+
+	PacketTraceRecv(aIndex, lpMsg, size, encrypt);
 
 	if (gObj[aIndex].Type == OBJECT_USER && gHackPacketCheck.CheckPacketHack(aIndex, head, ((lpMsg[0] == 0xC1) ? lpMsg[3] : lpMsg[4]), encrypt, serial) == 0)
 	{
@@ -490,6 +494,16 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 
 					break;
 				}
+
+				case 0x06:
+				{
+					if (gObj[aIndex].Connected >= OBJECT_CONNECTED)
+					{
+						gContentCatalog.SetClientCache(aIndex, (PMSG_CATALOG_CACHE_RECV*)lpMsg);
+					}
+
+					break;
+				}
 			}
 
 			break;
@@ -791,6 +805,57 @@ static bool ChaosBoxBlocksMove(LPOBJ lpObj)
 	return false;
 }
 
+// Distancia (en tiles, la mayor de las dos coordenadas) entre una posición
+// que declara el cliente y la que tiene el server.
+static int MoveCheckDistance(LPOBJ lpObj, int x, int y)
+{
+	int dx = abs(x - lpObj->X);
+
+	int dy = abs(y - lpObj->Y);
+
+	return (dx > dy) ? dx : dy;
+}
+
+// Fase 5: el inicio del camino tiene que quedar cerca de donde el server
+// calcula que está el personaje (ObjectMoveProc lo avanza a la velocidad de
+// caminata del server) y ningún paso puede pisar una pared (4) ni un tile sin
+// suelo (8). Antes sólo se miraba el destino, a ±15 tiles de un inicio que el
+// cliente elegía libremente: se podía saltar 15 tiles cada 100 ms y atravesar
+// paredes. Medido en una sesión de prueba, el inicio queda a 3 tiles o menos
+// salvo justo después de un teleport (que mueve también la posición del server).
+// Devuelve false si el camino no pasa; qué se hace con eso lo decide MoveCheck.
+static bool MoveCheckPath(LPOBJ lpObj, PMSG_MOVE_RECV* lpMsg)
+{
+	const char* mode = (gServerInfo.m_MoveCheck == 2) ? "" : " [observado]";
+
+	int d = MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y);
+
+	TRACE_NOTE(lpObj->Index, PROTOCOL_CODE1, -1, "mov: inicio (%d,%d) server (%d,%d) d=%d pasos=%d", lpMsg->x, lpMsg->y, lpObj->X, lpObj->Y, d, lpObj->PathCount);
+
+	if (d > gServerInfo.m_MoveCheckTolerance)
+	{
+		gLog.Output(LOG_HACK, "[%s][%s] Movimiento: inicio (%d,%d) a %d tiles de la posicion del server (%d,%d)%s", lpObj->Account, lpObj->Name, lpMsg->x, lpMsg->y, d, lpObj->X, lpObj->Y, mode);
+
+		TRACE_REJECT(lpObj->Index, PROTOCOL_CODE1, -1, "mov: inicio a %d tiles de la posicion del server (tolerancia %d)%s", d, gServerInfo.m_MoveCheckTolerance, mode);
+
+		return false;
+	}
+
+	for (int n = 1; n < lpObj->PathCount; n++)
+	{
+		if (gMap[lpObj->Map].CheckAttr(lpObj->PathX[n], lpObj->PathY[n], 4) != 0 || gMap[lpObj->Map].CheckAttr(lpObj->PathX[n], lpObj->PathY[n], 8) != 0)
+		{
+			gLog.Output(LOG_HACK, "[%s][%s] Movimiento: el paso %d (%d,%d) pisa una pared%s", lpObj->Account, lpObj->Name, n, lpObj->PathX[n], lpObj->PathY[n], mode);
+
+			TRACE_REJECT(lpObj->Index, PROTOCOL_CODE1, -1, "mov: el paso %d (%d,%d) pisa una pared o un tile sin suelo%s", n, lpObj->PathX[n], lpObj->PathY[n], mode);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 {
 	LPOBJ lpObj = &gObj[aIndex];
@@ -821,6 +886,22 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 	if (lpMsg->x < (lpObj->X - 15) || lpMsg->x >(lpObj->X + 15) || lpMsg->y < (lpObj->Y - 15) || lpMsg->y >(lpObj->Y + 15))
 	{
 		return;
+	}
+
+	// Misma tolerancia que el inicio de un camino (MoveCheckPath): la corrección
+	// de posición no puede reubicar al personaje más lejos que eso.
+	if (gServerInfo.m_MoveCheck != 0 && MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y) > gServerInfo.m_MoveCheckTolerance)
+	{
+		const char* mode = (gServerInfo.m_MoveCheck == 2) ? "" : " [observado]";
+
+		gLog.Output(LOG_HACK, "[%s][%s] Posicion: (%d,%d) a %d tiles de la del server (%d,%d)%s", lpObj->Account, lpObj->Name, lpMsg->x, lpMsg->y, MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y), lpObj->X, lpObj->Y, mode);
+
+		TRACE_REJECT(aIndex, PROTOCOL_CODE3, -1, "pos: (%d,%d) a %d tiles de la del server (%d,%d)%s", lpMsg->x, lpMsg->y, MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y), lpObj->X, lpObj->Y, mode);
+
+		if (gServerInfo.m_MoveCheck == 2)
+		{
+			return;
+		}
 	}
 
 	gMap[lpObj->Map].DelStandAttr(lpObj->OldX, lpObj->OldY);
@@ -1111,7 +1192,9 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 		}
 	}
 
-	if (lpObj->TX < (lpObj->X - 15) || lpObj->TX >(lpObj->X + 15) || lpObj->TY < (lpObj->Y - 15) || lpObj->TY >(lpObj->Y + 15))
+	bool bBadPath = (lpObj->Type == OBJECT_USER && gServerInfo.m_MoveCheck != 0 && MoveCheckPath(lpObj, lpMsg) == false);
+
+	if ((bBadPath && gServerInfo.m_MoveCheck == 2) || lpObj->TX < (lpObj->X - 15) || lpObj->TX >(lpObj->X + 15) || lpObj->TY < (lpObj->Y - 15) || lpObj->TY >(lpObj->Y + 15))
 	{
 		lpObj->PathCur = 0;
 

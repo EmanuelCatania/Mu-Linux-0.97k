@@ -76,6 +76,7 @@
 
   const state = {
     activeTab: 'safezone',
+    format: 'txt',
     safezone: { rows: [], selected: null },
     pkfree: { rows: [], selected: null },
     npcmove: { rows: [], selected: null }
@@ -239,6 +240,10 @@
       <div class="muted custom-note">
         Estos archivos se aplican solo del lado servidor. Recorda recargar <code>custom</code> luego de guardar.
       </div>
+      <div class="spawn-format">
+        <span id="zone-format-label"></span>
+        <button type="button" id="convert-zones" class="hidden">Pasar a archivos por mapa</button>
+      </div>
       ${panels}
     `;
   }
@@ -388,25 +393,27 @@
       const npcContent = buildNpcMoveFile(state.npcmove.rows);
 
       const requests = [
-        fetch('/admin/server-editor/api/custom?kind=safezone', {
+        () => fetch('/admin/server-editor/api/custom?kind=safezone', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: safeContent })
         }),
-        fetch('/admin/server-editor/api/custom?kind=pkfree', {
+        () => fetch('/admin/server-editor/api/custom?kind=pkfree', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: pkContent })
         }),
-        fetch('/admin/server-editor/api/custom?kind=npcmove', {
+        () => fetch('/admin/server-editor/api/custom?kind=npcmove', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: npcContent })
         })
       ];
 
-      const responses = await Promise.all(requests);
-      for (const res of responses) {
+      // De a una: con los archivos por mapa, las tres listas viven en los mismos
+      // Zones.toml y cada guardado reescribe esos archivos.
+      for (const request of requests) {
+        const res = await request();
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       }
@@ -432,6 +439,7 @@
     });
     root.querySelector('#add-row').addEventListener('click', () => addRow(state.activeTab));
     root.querySelector('#save-customs').addEventListener('click', saveAll);
+    root.querySelector('#convert-zones').addEventListener('click', convertZones);
   }
 
   async function loadInitialData() {
@@ -449,6 +457,37 @@
     state.safezone.rows = parseZone(safeData.content || '');
     state.pkfree.rows = parseZone(pkData.content || '');
     state.npcmove.rows = parseNpcMove(npcData.content || '');
+    state.format = safeData.format === 'toml' ? 'toml' : 'txt';
+  }
+
+  // De dónde lee el servidor las zonas. Con los archivos por mapa, el panel las
+  // convierte a las listas para editarlas y de vuelta al guardar.
+  function renderFormat() {
+    root.querySelector('#zone-format-label').textContent = state.format === 'toml'
+      ? window.MuText.t('Formato: un Zones.toml por mapa (Data/Maps) con las tres listas.')
+      : window.MuText.t('Formato: CustomSafeZone.txt, CustomPkFree.txt y CustomNpcMove.txt.');
+    root.querySelector('#convert-zones').classList.toggle('hidden', state.format === 'toml');
+  }
+
+  async function convertZones() {
+    if (!window.confirm(window.MuText.t('Las zonas seguras, sin PK y los NPCs que mueven pasan a un Zones.toml por mapa (Data/Maps). Los .txt de Data/Custom quedan como respaldo y el servidor deja de leerlos. ¿Seguir?'))) {
+      return;
+    }
+    try {
+      const res = await fetch('/admin/server-editor/api/custom/convert', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo convertir'));
+      state.format = 'toml';
+      renderFormat();
+      const reload = await fetch('/admin/server-editor/api/reload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'custom' })
+      });
+      setMessage(window.MuText.t(reload.ok ? 'Convertido y recargado en el servidor.' : 'Convertido, pero no se pudo recargar en el server.'), reload.ok ? 'success' : 'error');
+    } catch (err) {
+      setMessage(err.message, 'error');
+    }
   }
 
   async function init() {
@@ -457,6 +496,7 @@
     bindEvents();
     try {
       await loadInitialData();
+      renderFormat();
       setActiveTab(state.activeTab);
     } catch (err) {
       setMessage(err.message, 'error');

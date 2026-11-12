@@ -341,6 +341,8 @@ typedef MYSQL MuSqlConnection;
 #define QM_RES ((MYSQL_RES*)this->m_Result)
 #define QM_STMT ((MYSQL_STMT*)this->m_Statement)
 
+#include "SqlFormat.h"
+
 #include <cstdlib>
 #include <cstring>
 
@@ -453,17 +455,71 @@ void CQueryManager::Disconnect()
 	}
 }
 
+// Arma la consulta con los %s escapados (Common/SqlFormat). Si el formato tiene
+// una conversión que no es %d, %s o %%, la consulta no se ejecuta.
+bool CQueryManager::BuildQuery(std::string& out, const char* format, va_list args)
+{
+	MuSqlConnection* conn = QM_CONN;
+
+	std::string error;
+
+	bool ok = SqlFormat(out, format, args, [conn](const char* in, std::string& escaped)
+	{
+		if (conn == NULL)
+		{
+			return false;
+		}
+
+		size_t len = strlen(in);
+
+		escaped.resize(len * 2 + 1);
+
+		unsigned long written = mysql_real_escape_string(conn, &escaped[0], in, (unsigned long)len);
+
+		if (written == (unsigned long)-1)
+		{
+			return false;
+		}
+
+		escaped.resize(written);
+
+		return true;
+	}, error);
+
+	if (ok == false)
+	{
+		LogAdd(LOG_RED, "[QueryManager] Consulta no armada (%s): %s", error.c_str(), format);
+	}
+
+	return ok;
+}
+
 void CQueryManager::PrepareQuery(std::string query, ...)
 {
-	char buff[4096];
+	std::string text;
 
 	va_list arg;
 
 	va_start(arg, query);
 
-	vsprintf_s(buff, query.c_str(), arg);
+	bool built = this->BuildQuery(text, query.c_str(), arg);
 
 	va_end(arg);
+
+	if (built == false)
+	{
+		// Sin esto el ExecPreparedUpdateQuery siguiente ejecutaria la consulta
+		// preparada anterior con los parametros nuevos.
+		this->FreeResults();
+
+		this->CloseStatement();
+
+		this->m_Params.clear();
+
+		return;
+	}
+
+	const char* buff = text.c_str();
 
 	this->FreeResults();
 
@@ -567,15 +623,22 @@ bool CQueryManager::ExecPreparedResultQuery()
 
 bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 {
-	char buff[4096];
+	std::string text;
 
 	va_list arg;
 
 	va_start(arg, query);
 
-	vsprintf_s(buff, query.c_str(), arg);
+	bool built = this->BuildQuery(text, query.c_str(), arg);
 
 	va_end(arg);
+
+	if (built == false)
+	{
+		return false;
+	}
+
+	const char* buff = text.c_str();
 
 	bool HasResult = false;
 
@@ -591,15 +654,22 @@ bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 
 bool CQueryManager::ExecResultQuery(std::string query, ...)
 {
-	char buff[4096];
+	std::string text;
 
 	va_list arg;
 
 	va_start(arg, query);
 
-	vsprintf_s(buff, query.c_str(), arg);
+	bool built = this->BuildQuery(text, query.c_str(), arg);
 
 	va_end(arg);
+
+	if (built == false)
+	{
+		return false;
+	}
+
+	const char* buff = text.c_str();
 
 	bool HasResult = false;
 
@@ -622,15 +692,22 @@ bool CQueryManager::ExecResultQuery(std::string query, ...)
 
 bool CQueryManager::ExecQuery(std::string query, ...)
 {
-	char buff[4096];
+	std::string text;
 
 	va_list arg;
 
 	va_start(arg, query);
 
-	vsprintf_s(buff, query.c_str(), arg);
+	bool built = this->BuildQuery(text, query.c_str(), arg);
 
 	va_end(arg);
+
+	if (built == false)
+	{
+		return false;
+	}
+
+	const char* buff = text.c_str();
 
 	bool HasResult = false;
 

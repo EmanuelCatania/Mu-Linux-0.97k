@@ -1297,6 +1297,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             gEventTimer.Receive(Msg, Size);
             break;
         }
+        // DESVIACION (Fase 5): invasiones en curso, vivos por mapa.
+        case 0xF2: gEventTimer.ReceiveInvasions((const BYTE*)Msg, Size); break;
         // DESVIACION (0.97.20): catálogo de contenido del server.
         case 0xE7: gContentCatalog.ReceiveItems((const BYTE*)Msg, Size); break;
         case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;
@@ -1306,6 +1308,11 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xEE: gContentCatalog.ReceivePets((const BYTE*)Msg, Size); break;
         case 0xEF: gContentCatalog.ReceiveTooltips((const BYTE*)Msg, Size); break;
         case 0xF0: gContentCatalog.ReceiveTexts((const BYTE*)Msg, Size); break;
+        // DESVIACION (Fase 5): gates del server en lugar de Gate.bmd.
+        case 0xF3: gContentCatalog.ReceiveGates((const BYTE*)Msg, Size); break;
+        case 0xF4: gContentCatalog.ReceiveSkills((const BYTE*)Msg, Size); break;
+        case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
+        case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
         case 0xF1: gBuffBar.Receive((const BYTE*)Msg, Size); break;
         case 0xED: {
