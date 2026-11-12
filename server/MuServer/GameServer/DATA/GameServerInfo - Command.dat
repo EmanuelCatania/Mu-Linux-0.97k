@@ -130,10 +130,10 @@ CommandGrandResetStartLevel_AL2=1
 CommandGrandResetStartLevel_AL3=1
 
 ; Required Reset to use "/grandreset" 
-CommandGrandResetReset_AL0=400
-CommandGrandResetReset_AL1=400
-CommandGrandResetReset_AL2=400
-CommandGrandResetReset_AL3=400
+CommandGrandResetReset_AL0=50
+CommandGrandResetReset_AL1=50
+CommandGrandResetReset_AL2=50
+CommandGrandResetReset_AL3=50
 
 ; Character Reset after utilizing "/grandreset"
 CommandGrandResetStartReset_AL0=1
