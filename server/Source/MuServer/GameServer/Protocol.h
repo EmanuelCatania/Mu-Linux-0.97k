@@ -631,9 +631,14 @@ struct PMSG_HEALTH_BAR
 	BYTE rateHP;
 };
 
+// Horarios de eventos (Fase 5, C2, protocolo 9): antes F3:E6 + F3:F2, ahora un
+// solo C2:91.  El C1:91 sigue siendo la respuesta al click derecho sobre una
+// invitación (PMSG_EVENT_REMAIN_TIME_SEND); el cliente los distingue por el frame.
+//   BYTE count + count PMSG_EVENT_TIME
+//   BYTE invasiones + por cada una PMSG_INVASION_DETAIL y sus PMSG_INVASION_DETAIL_MAP
 struct PMSG_EVENT_TIME_SEND
 {
-	PSWMSG_HEAD header; // C2:F3:E6
+	PWMSG_HEAD header; // C2:91
 	BYTE count;
 };
 
@@ -648,12 +653,6 @@ struct PMSG_EVENT_TIME
 // por cada una, cuántos monstruos quedan vivos en cada mapa. Va después del
 // F3:E6 y se empareja con su fila por el nombre. Un cliente que no lo conoce
 // lo ignora.
-struct PMSG_INVASION_DETAIL_SEND
-{
-	PSWMSG_HEAD header; // C2:F3:F2
-	BYTE count;
-};
-
 struct PMSG_INVASION_DETAIL
 {
 	char name[32];
