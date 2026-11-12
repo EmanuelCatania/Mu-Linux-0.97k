@@ -606,10 +606,9 @@ char __cdecl Party_HPBar_HoverCheck(void)
             // [HashTable obfuscation block skipped — anti-tamper, not game logic]
 
             // Get entity stat ID for this party slot
-            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill + 0x57 + (char*)DAT_07cf1ff4);
+            UINT pVal = (UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill + 0x57 + (char*)DAT_07cf1ff4);
 
             // Check if entity type is a hoverable icon (0x1a/0x1b/0x1c/0xf/0x10)
-            UINT pVal = (UINT)(uintptr_t)puVar12;
             bool bTypeOk = (pVal == 0x1a || pVal == 0x1b || pVal == 0x1c ||
                             pVal == 0xf  || pVal == 0x10);
 

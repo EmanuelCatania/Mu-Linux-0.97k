@@ -2331,7 +2331,10 @@ extern int     DAT_00559f84;   // level threshold array upper (index by slot)
 #define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
 #define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])
 // DAT_07ea7b88 — declared above as DWORD
-extern char    DAT_07ea5b30;   // second-password char-slot list base
+// DAT_07ea5b30 es la base del pool de warehouse (OffsetWarehouseItems).  Se
+// mantiene como alias char de 1 byte para el código que hace aritmética de
+// bytes sobre él, pero apunta a la memoria real del pool.
+#define DAT_07ea5b30  (*(char*)(OffsetWarehouseItems + 0))
 
 // BMD_DrawMesh / BMD_DrawBoneSlot_Anim (BMD__RenderMesh / BMD__RenderMeshTranslate) buffers
 // LightTransform pool (see globals.cpp). Backed by g_BoneLightBuf.

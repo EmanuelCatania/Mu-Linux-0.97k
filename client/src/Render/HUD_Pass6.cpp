@@ -1377,7 +1377,7 @@ extern "C" void __cdecl RenderTrade(void)
     }
 
     const DWORD gold[2] = { DAT_07eaa0f0, DAT_07eaa0f4 };
-    const int goldY[2] = { TradeInventoryStartY + 160, TradeInventoryStartY + 360 };
+    const int goldY[2] = { (int)TradeInventoryStartY + 160, (int)TradeInventoryStartY + 360 };
     for (int i = 0; i < 2; ++i) {
         const int x = TradeInventoryStartX + 50;
         GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);

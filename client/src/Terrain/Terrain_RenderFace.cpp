@@ -35,10 +35,10 @@
 
 // ── Aliases locales que mapean los nombres IDA a nuestros globals ────────────
 #define TER_FLAG    DAT_0838bc44
-#define TER_IDX1    DAT_07eab1ec
-#define TER_IDX2    DAT_07eab1f0
-#define TER_IDX3    DAT_07eab1f4
-#define TER_IDX4    DAT_07eab1f8
+#define TER_IDX1    ((int)DAT_07eab1ec)
+#define TER_IDX2    ((int)DAT_07eab1f0)
+#define TER_IDX3    ((int)DAT_07eab1f4)
+#define TER_IDX4    ((int)DAT_07eab1f8)
 #define TER_ALPHA   TerrainMappingAlpha                          // TerrainMappingAlpha (float)
 #define TER_L1      TerrainMappingLayer1                           // TerrainMappingLayer1 (BYTE)
 #define TER_L2      TerrainMappingLayer2                           // TerrainMappingLayer2 (BYTE)

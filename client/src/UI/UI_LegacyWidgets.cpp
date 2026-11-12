@@ -105,7 +105,7 @@ void __cdecl FUN_004102e0(void* self, int param_1, unsigned char param_2) {
 // bytes from output, measures each segment via GetTextExtentPointA. Calls FUN_004102e0
 // per segment.
 // FUN_004104b0 (IDA-activated)
-void __cdecl FUN_004104b0(LONG _this, char *Source)
+void __cdecl FUN_004104b0(void *self, char *Source)
 {
   DWORD *cx; // edx
   int v3; // ebx
@@ -126,13 +126,13 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
   char Destination[253]; // [esp+20h] [ebp-100h] BYREF
   short v19; // [esp+11Dh] [ebp-3h]
   char v20; // [esp+11Fh] [ebp-1h]
+  const uintptr_t selfAddr = (uintptr_t)self;
 
-  cx = (DWORD *)_this;
-  sz.cx = _this;
+  cx = (DWORD *)selfAddr;
   if ( Source )
   {
     v3 = 0;
-    memset((void *)(_this + 36), 0, 0xA0u);
+    memset((void *)(selfAddr + 36), 0, 0xA0u);
     v4 = strlen(Source);
     v5 = 0;
     v17 = v4;
@@ -152,7 +152,7 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
           ++v5;
           *v15 = v7;
           FUN_004102e0(cx, v3, Source[v5]);
-          cx = (DWORD *)sz.cx;
+          cx = (DWORD *)selfAddr;
           v4 = v17;
           ++v3;
           v6 += 2;
@@ -196,7 +196,7 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
       }
       if ( v3 > 0 )
       {
-        v12 = (LONG *)(sz.cx + 40);
+        v12 = (LONG *)(selfAddr + 40);
         do
         {
           v13 = *(v12 - 1);

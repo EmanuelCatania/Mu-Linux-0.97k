@@ -809,7 +809,7 @@ void MoveEffect(float *param_1, int param_2)
               __owner_fVar4 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552998 +
                                      (float10)(intptr_t)local_35c * (float10)_DAT_0055299c);
-              local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
+              local_35c = (float *)(intptr_t)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
               fVar18 = (float10)fsin(fVar17);
               local_260 = (float)(fVar18 * (float10)(intptr_t)local_35c +
                                  (float10)*(float *)(__owner_fVar4 + 0x10));
@@ -1063,7 +1063,7 @@ LAB_00469772:
             do {
               local_348 = AsObject(param_1)->Position[0] - *(float *)(iVar9 + 0x10 + DAT_07abf5d0);
               pcVar11 = (char *)(iVar9 + DAT_07abf5d0);
-              local_35c = (float *)(int)(AsObject(param_1)->Position[1] - AsObject(pcVar11)->Position[1]);
+              local_35c = (float *)(intptr_t)(int)(AsObject(param_1)->Position[1] - AsObject(pcVar11)->Position[1]);
               if ((((*pcVar11 != '\0') && (*(char *)&AsObject(pcVar11)->Visible != '\0')) && (pcVar11 != DAT_07abf5d8)) &&
                  ((pcVar11[EntityOffset(0x2fd)] == '\0' &&
                   (SQRT(local_348 * local_348 + (float)(int)(intptr_t)local_35c * (float)(int)(intptr_t)local_35c) <=
@@ -1681,8 +1681,8 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xee:
       CreateEffect(0xef,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,(float *)(4 - __cnt),
-                   (float *)(intptr_t)AsObject(param_1)->Owner,(float *)(uint)*(ushort *)&AsObject(param_1)->PKKey,
-                   (float *)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
+                   (float *)(intptr_t)AsObject(param_1)->Owner,(float *)(uintptr_t)(uint)*(ushort *)&AsObject(param_1)->PKKey,
+                   (float *)(intptr_t)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
                                      AsObject(param_1)->Skill),AsObject(param_1)->Kind);
       break;
     case 0xef:

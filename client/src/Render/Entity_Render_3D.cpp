@@ -173,12 +173,12 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
     }
 
     local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
-    pfVar3 = (float *)gMapManager.GetCurrentMap();
+    pfVar3 = (float *)(intptr_t)gMapManager.GetCurrentMap();
 
     switch (gMapManager.GetCurrentMap()) {
     // ── case 0: login / connecting ────────────────────────────────────────────
     case 0:
-        pfVar3 = (float *)(int)*(short *)(param_1 + 2);
+        pfVar3 = (float *)(intptr_t)*(short *)(param_1 + 2);
         if (pfVar3 == (float *)0x38) {
             // Type 56 — portal gate: two fire jets from bone data
             local_30 = fVar14 * _DAT_00552660;
@@ -189,7 +189,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             float fSave = local_30;
             WorldEffects_AddSprite(0x47e, local_c, local_30, &local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_0697154c, &local_18, local_c, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, local_c, fSave, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x47e, local_c, fSave, &local_24, param_1, 0, 0);
             return pfVar3;
         }
         if (pfVar3 == (float *)0x69) {
@@ -222,7 +222,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
                 local_c[2] = (float)(int)(uVar4 - 0x10);
                 BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
-                pfVar3 = (float *)Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+                pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
                 return pfVar3;
             }
         }
@@ -230,7 +230,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
 
     // ── case 2: in-world ──────────────────────────────────────────────────────
     case 2:
-        pfVar3 = (float *)(int)*(short *)(param_1 + 2);
+        pfVar3 = (float *)(intptr_t)*(short *)(param_1 + 2);
         if (pfVar3 == (float *)0x64) {
             // Type 100 — player: rotating spark pair at z=150
             local_24 = fVar14; local_20 = fVar14; local_1c = fVar14;
@@ -240,14 +240,14 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
                                                | uVar11 & 0xffffffff) % 0x168);
             BMD_TransformPosition(pModel, (float *)&DAT_06970a9c, local_c, &local_18, '\0');
             WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
-            pfVar3 = (float *)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
             return pfVar3;
         }
         // Type 103 — weapon spark trigger (once per anim cycle, 1/32 chance)
         if ((pfVar3 == (float *)0x67) &&
             (pfVar3 = (float *)(intptr_t)(*(short *)((intptr_t)AsObject(param_1)->CurrentAction * sizeof(ModelAnimationAction) + 8
                                            + (intptr_t)AsModel(pModel)->Actions) + -1),
-             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8 + BMD_FIELD_SHIFT) == pfVar3))
+             (float *)(intptr_t)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8 + BMD_FIELD_SHIFT) == pfVar3))
         {
             uVar4 = _rand() & 0x8000001f;
             bVar8 = (uVar4 == 0);
@@ -260,7 +260,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
 
     // ── case 3: char-select scene ─────────────────────────────────────────────
     case 3:
-        pfVar3 = (float *)(*(short *)(param_1 + 2) + -1);
+        pfVar3 = (float *)(intptr_t)(*(short *)(param_1 + 2) + -1);
         switch (*(short *)(param_1 + 2)) {
         case 1:
             local_24 = fVar14 * _DAT_005528b4;
@@ -299,7 +299,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, &local_18, 1.5f,&local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x47e, &local_18, 1.5f,&local_24, param_1, 0, 0);
             return pfVar3;
         case 0x27:
             // Special portal: 2 rotating sparks + 4-bone fire loop + optional burst
@@ -354,7 +354,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
 
     // ── case 4: in-world variant ──────────────────────────────────────────────
     case 4:
-        pfVar3 = (float *)(int)*(short *)(param_1 + 2);
+        pfVar3 = (float *)(intptr_t)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         if (entityType > 0x12 && entityType < 0x15) {
             if (*(short *)(param_1 + 2) == 0x13) {
@@ -378,7 +378,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             WorldEffects_AddSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970e8c, local_c, &local_18, '\0');
             WorldEffects_AddSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngle1,   0);
-            pfVar3 = (float *)WorldEffects_AddSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
         } else if (pfVar3 == (float *)0x28) {
             local_24 = fVar14; local_20 = fVar14; local_1c = fVar14;
             uVar11 = (longlong)(WorldTime * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
@@ -389,7 +389,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             local_18 = *(float *)(param_1 + 0x10);
             local_10 = *(float *)(param_1 + 0x18) + _DAT_005529e0;
             WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
-            pfVar3 = (float *)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
         }
         // fallthrough to case 6
     case 6:
@@ -406,14 +406,14 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             fVar14 = fVar14 * _DAT_00552660;
             pfVar3 = local_c;
 LAB_004fc55a:
-            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, pfVar3, fVar14, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x47e, pfVar3, fVar14, &local_24, param_1, 0, 0);
             return pfVar3;
         }
         break;
 
     // ── case 8: various special types ─────────────────────────────────────────
     case 8:
-        pfVar3 = (float *)(int)*(short *)(param_1 + 2);
+        pfVar3 = (float *)(intptr_t)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         switch (entityType) {
         case 0:
@@ -422,13 +422,13 @@ LAB_004fc55a:
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x498, &local_18, (float)fVar9 * _DAT_00552660, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x498, &local_18, (float)fVar9 * _DAT_00552660, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x3c:
             if (*(int *)(param_1 + 0x58) != -2) {
                 iVar2 = 0x14;
                 do {
-                    pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
+                    pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
                 } while (--iVar2 != 0);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
@@ -440,7 +440,7 @@ LAB_004fc55a:
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x597, &local_18, (float)fVar9 * _DAT_005528f0, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x597, &local_18, (float)fVar9 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x40:
             fVar9 = (float10)fsin(((float10)*(float *)(param_1 + 0x24) * (float10)_DAT_00552660
@@ -449,13 +449,13 @@ LAB_004fc55a:
             local_20 = fVar14 * _DAT_00552d08;
             local_24 = fVar14; local_1c = local_20;
             BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x597, &local_18, fVar14 * _DAT_005528f0, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x597, &local_18, fVar14 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x46:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             iVar2 = _rand();
             if (iVar2 % 5 == 0) {
-                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -464,7 +464,7 @@ LAB_004fc55a:
             uVar11 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime % 5000 > 4500
             uVar11 = (ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20 | uVar11 & 0xffffffff;
             if (0x1194 < (int)((longlong)uVar11 % 5000)) {
-                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -505,7 +505,7 @@ LAB_004fc55a:
 
     // ── case 9: sub-type 2 (entity type 2) — slash trails ────────────────────
     case 9:
-        pfVar3 = (float *)(*(short *)(param_1 + 2) + -2);
+        pfVar3 = (float *)(intptr_t)(*(short *)(param_1 + 2) + -2);
         if (pfVar3 == (float *)0x0) {
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
             local_c[0] = -15.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
@@ -525,14 +525,14 @@ LAB_004fc55a:
             }
             local_c[0] = -15.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
             BMD_TransformPosition(pModel, (float *)&DAT_06970eec, local_c, &local_18, '\0');
-            pfVar3 = (float *)Particle_Spawn(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+            pfVar3 = (float *)(intptr_t)Particle_Spawn(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             return pfVar3;
         }
         break;
 
     // ── case 0xa: skill particle emitters (types 0–5, 0xa) ───────────────────
     case 0xa:
-        pfVar3 = (float *)(int)*(short *)(param_1 + 2);
+        pfVar3 = (float *)(intptr_t)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         switch (entityType) {
         case 0: case 1: case 2: {
@@ -543,7 +543,7 @@ LAB_004fc55a:
                 // salian de basura — las nubes de Icarus se veian verdes y magenta.
                 float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 0x14;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
@@ -556,7 +556,7 @@ LAB_004fc55a:
                 // salian de basura — las nubes de Icarus se veian verdes y magenta.
                 float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 10;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
@@ -565,7 +565,7 @@ LAB_004fc55a:
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-            pfVar3 = (float *)Particle_Spawn(0x47e, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+            pfVar3 = (float *)(intptr_t)Particle_Spawn(0x47e, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             return pfVar3;
         }
         break;
@@ -590,7 +590,7 @@ LAB_004fc55a:
                     // (char*) cast is mandatory — without it DWORD* stride multiplies by 4.
                     (float *)((char *)&DAT_06970a9c + waveBones[iVar7] * 0x30),
                     local_c, &local_18, '\0');
-                pfVar3 = (float *)WorldEffects_AddSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
+                pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
                 iVar7++;
             } while (iVar7 < 7);
         } else if (iVar2 == 0xd) {
@@ -599,7 +599,7 @@ LAB_004fc55a:
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
             local_24 = (float)fVar9; local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
-            pfVar3 = (float *)WorldEffects_AddSprite(0x4e1, &local_18, (float)fVar9 + _DAT_00552504, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)(intptr_t)WorldEffects_AddSprite(0x4e1, &local_18, (float)fVar9 + _DAT_00552504, &local_24, param_1, 0, 0);
             return pfVar3;
         } else if ((iVar2 - 0x25) == 0) {
             // Type 0x25 — occasional lightning streaks
@@ -638,7 +638,7 @@ LAB_004fc55a:
                     Particle_Spawn(0x4f4, pfVar6, pfVar3, &local_24, 6, 1.0f, 0);
                     Particle_Spawn(0x565, pfVar6, pfVar3, &local_24, 1, 1.0f, 0);
                     local_24 = 1.0f; local_20 = 0.8f; local_1c = 0.8f;
-                    pfVar3 = (float *)Particle_Spawn(0x4e1, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
+                    pfVar3 = (float *)(intptr_t)Particle_Spawn(0x4e1, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
                     return pfVar3;
                 }
             }

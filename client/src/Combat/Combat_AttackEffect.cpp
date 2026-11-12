@@ -85,6 +85,7 @@ static inline void AE_TransformPosition(uintptr_t model, const void* mat,
 #define Models                        DAT_05828d58
 #define Matrix                        DAT_07abf444   // IDA `Matrix` @ 0x07ABF444
 #define operator_new(n)               AE_new((size_t)(n))
+#undef  delete__
 #define delete__(p)                   AE_delete((DWORD)(uintptr_t)(p))
 #define FUN_004041e0(ctx, key)        AE_ht_index((const void*)(ctx), (DWORD)(key))
 #pragma push_macro("DAT_055c9bd4")

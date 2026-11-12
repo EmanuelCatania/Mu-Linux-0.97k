@@ -263,7 +263,7 @@ DWORD    DAT_00559c78  = 0xffffffff;
 // composición de burbujas de chat (`sub_47F360`).  Lo escriben `RenderBoolean`
 // (3 sitios, según el sub-modo del mensaje) y `RenderPartyHP`.  Se define acá
 // con el nombre de IDA; `DAT_00559c7c` es un macro-alias en globals.h.
-extern "C" DWORD SetTextColor_0 = 0xffffffff;
+extern "C" { DWORD SetTextColor_0 = 0xffffffff; }
 char     DAT_00559b80[64] = "";   // GM/admin name filter string (Entity_FindNearby)
 DWORD    SetBackgroundTextColor  = 0;
 DWORD    InputEnable  = 0; // IDA: DAT_00559c84 (0x00559C84)
@@ -2374,7 +2374,7 @@ int     DAT_00559f84  = 0;   // level threshold array upper
 // int     DAT_00559f60  = 0;   // level range lower array
 // int     DAT_00559f64  = 0;   // level range upper array
 // DAT_07ea7b88 — declared above as DWORD
-char    DAT_07ea5b30  = 0;   // second-password char-slot list base
+// DAT_07ea5b30 -> macro-alias de OffsetWarehouseItems (globals.h).
 
 // ── BMD_DrawMesh / BMD_DrawBoneSlot_Anim buffers ─────────────────────────────
 // LightTransform RGB buffer (float R,G,B per vertex). Stride 12 B per vertex.

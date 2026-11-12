@@ -567,7 +567,7 @@ static bool IsBackItem(int iType)
 
 // Mano cuyo item se esta colgando (0 = Weapon[0], 1 = Weapon[1]).  La lee la
 // tabla de poses de RenderLinkObject; equivale al `SecondWeaponFixVal` del DLL.
-extern "C" int g_BackItemHand = 0;
+extern "C" { int g_BackItemHand = 0; }
 
 extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
 {

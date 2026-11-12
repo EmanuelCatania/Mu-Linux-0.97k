@@ -814,7 +814,7 @@ LAB_0047036e:
         if (subtype_4e5 == 0 || subtype_4e5 == 5) {
             if (*(int *)&AsJoint(param_1)->Scale == 1117782016) {
                 CreateEffect(205, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light,
-                             (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
+                             (float *)(intptr_t)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)(intptr_t)-1, 0, 0);
                 if ((AsJoint(param_1)->LifeTime % 15) == 0 && (intptr_t)AsJoint(param_1)->Target == (intptr_t)Hero) {
                     Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, pfVar15, 150.0f,
                                   AsJoint(param_1)->Weapon, *(unsigned short *)&AsJoint(param_1)->PKKey);

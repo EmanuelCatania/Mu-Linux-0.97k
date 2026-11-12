@@ -595,7 +595,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
     short sVar2 = AsObject(entity)->Type;
     BYTE bVar7 = AsCharacter(entity)->MonsterIndex;
     bool bDeferWing = false;
-    void *local_74 = nullptr;
+    UINT local_74 = 0;
     float fVar32 = (float)highlighted * _DAT_005524f8;
     float savedLight[3];
     memcpy(savedLight, (char *)param_1 + EntityOffset(800), sizeof(savedLight));
@@ -640,11 +640,11 @@ void Equipment_Tick(intptr_t entity, int highlighted)
     {
         bool bSafeZone = *(char *)&((CHARACTER*)(uintptr_t)(param_1))->SafeZone != '\0';
         BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
-        local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
+        local_74 = (bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1;
         if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
-            local_74 = (void *)1;
+            local_74 = 1;
         if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
-            local_74 = (void *)0;
+            local_74 = 0;
     }
 
     // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
@@ -751,7 +751,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
             RenderLinkObject(20.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xae * 4))),
                          0x331,
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,
-                         (UINT)(size_t)local_74, '\0', '\x01', 0);
+                         local_74, '\0', '\x01', 0);
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
