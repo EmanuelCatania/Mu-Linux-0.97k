@@ -1781,12 +1781,14 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 	if (lpObj->Live == 0 || lpObj->Teleport != 0)
 	{
 		TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: muerto o teletransportándose (Live=%d Teleport=%d)", lpMsg->skill, lpObj->Live, lpObj->Teleport);
+		GCRejectSend(aIndex, 0x1D, REJECT_SKILL_STATE);
 		return;
 	}
 
 	if (gMap[lpObj->Map].CheckAttr(lpObj->X, lpObj->Y, 1) != 0)
 	{
 		TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: en zona segura (%d,%d)", lpMsg->skill, lpObj->X, lpObj->Y);
+		GCRejectSend(aIndex, 0x1D, REJECT_SKILL_SAFE_ZONE);
 		return;
 	}
 
@@ -1801,18 +1803,21 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		if (lpSkill == 0)
 		{
 			TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: el personaje no lo tiene", skill);
+			GCRejectSend(aIndex, 0x1D, REJECT_SKILL_NOT_LEARNED);
 			return;
 		}
 
 		if (!this->CheckSkillDelay(lpObj, lpSkill->m_index))
 		{
 			TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: delay del skill sin cumplir", skill);
+			GCRejectSend(aIndex, 0x1D, REJECT_SKILL_DELAY);
 			return;
 		}
 
 		if (!this->CheckSkillRequireClass(lpObj, lpSkill->m_index))
 		{
 			TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: la clase no puede usarlo", skill);
+			GCRejectSend(aIndex, 0x1D, REJECT_SKILL_CLASS);
 			return;
 		}
 	}
@@ -1835,6 +1840,7 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 	if (lpObj->Type == OBJECT_USER && (lpObj->MultiSkillIndex == 0 || lpObj->MultiSkillIndex != lpSkill->m_index || (lpObj->MultiSkillCount++) >= 5))
 	{
 		TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: sin 0x1E previo o fuera de cuenta (MultiSkillIndex=%d esperado=%d MultiSkillCount=%d)", lpSkill->m_skill, lpObj->MultiSkillIndex, lpSkill->m_index, lpObj->MultiSkillCount);
+		GCRejectSend(aIndex, 0x1D, REJECT_SKILL_SEQUENCE);
 		return;
 	}
 
@@ -1843,6 +1849,7 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		if (lpObj->Inventory[0].IsItem() == 0 || lpObj->Inventory[1].IsItem() == 0)
 		{
 			TRACE_REJECT(aIndex, 0x1D, -1, "Triple Shot: faltan arco o flechas");
+			GCRejectSend(aIndex, 0x1D, REJECT_SKILL_NO_ARROWS);
 			return;
 		}
 
@@ -2047,12 +2054,14 @@ void CSkillManager::CGDurationSkillAttackRecv(PMSG_DURATION_SKILL_ATTACK_RECV* l
 		if (lpSkill == 0)
 		{
 			TRACE_REJECT(aIndex, 0x1E, -1, "skill %d: el personaje no lo tiene", skill);
+			GCRejectSend(aIndex, 0x1E, REJECT_SKILL_NOT_LEARNED);
 			return;
 		}
 
 		if (!this->CheckSkillDelay(lpObj, lpSkill->m_index))
 		{
 			TRACE_REJECT(aIndex, 0x1E, -1, "skill %d: delay del skill sin cumplir", skill);
+			GCRejectSend(aIndex, 0x1E, REJECT_SKILL_DELAY);
 			return;
 		}
 

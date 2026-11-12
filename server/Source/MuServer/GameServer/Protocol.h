@@ -357,6 +357,15 @@ struct PMSG_PLAYER_SPEED_SEND
 	WORD MagicSpeed;
 };
 
+// C1:F3:FB — el server descartó un pedido (Fase 5, A6).  Ver Common/RejectReason.h.
+struct PMSG_REJECT_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:FB
+	BYTE head;          // opcode del pedido rechazado
+	BYTE reason;        // REJECT_REASON
+	BYTE flags;         // 0x01 = cuenta GM: el cliente Release muestra el motivo
+};
+
 struct PMSG_CONNECT_CLIENT_SEND
 {
 	PSBMSG_HEAD header; // C1:F1:00
@@ -766,3 +775,4 @@ void GCNewCharacterCalcSend(LPOBJ lpObj);
 
 void GCHealthBarSend(int aIndex);
 void GCPlayerSpeedSend(LPOBJ lpObj);
+void GCRejectSend(int aIndex, BYTE head, BYTE reason);

@@ -12,6 +12,7 @@
 #include "Filter.h"
 #include "Fruit.h"
 #include "GoldenArcher.h"
+#include "GameMaster.h"
 #include "Guild.h"
 #include "GuildManager.h"
 #include "HackPacketCheck.h"
@@ -912,6 +913,10 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 
 		if (gServerInfo.m_MoveCheck == 2)
 		{
+			GCRejectSend(aIndex, PROTOCOL_CODE3, REJECT_MOVE);
+
+			gObjSetPosition(aIndex, lpObj->X, lpObj->Y);
+
 			return;
 		}
 	}
@@ -930,6 +935,10 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 
 			if (gServerInfo.m_MoveCheck == 2)
 			{
+				GCRejectSend(aIndex, PROTOCOL_CODE3, REJECT_MOVE);
+
+				gObjSetPosition(aIndex, lpObj->X, lpObj->Y);
+
 				return;
 			}
 		}
@@ -1224,6 +1233,11 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 	}
 
 	bool bBadPath = (lpObj->Type == OBJECT_USER && gServerInfo.m_MoveCheck != 0 && MoveCheckPath(lpObj, lpMsg) == false);
+
+	if (bBadPath && gServerInfo.m_MoveCheck == 2)
+	{
+		GCRejectSend(lpObj->Index, PROTOCOL_CODE1, REJECT_MOVE);
+	}
 
 	if ((bBadPath && gServerInfo.m_MoveCheck == 2) || lpObj->TX < (lpObj->X - 15) || lpObj->TX >(lpObj->X + 15) || lpObj->TY < (lpObj->Y - 15) || lpObj->TY >(lpObj->Y + 15))
 	{
@@ -2435,6 +2449,26 @@ void GCPlayerSpeedSend(LPOBJ lpObj)
 	pMsg.MagicSpeed = (WORD)lpObj->MagicSpeed;
 
 	MsgSendV2(lpObj, (BYTE*)&pMsg, pMsg.header.size);
+}
+
+void GCRejectSend(int aIndex, BYTE head, BYTE reason)
+{
+	if (OBJECT_RANGE(aIndex) == 0 || gObj[aIndex].Type != OBJECT_USER)
+	{
+		return;
+	}
+
+	PMSG_REJECT_SEND pMsg;
+
+	pMsg.header.set(0xF3, 0xFB, sizeof(pMsg));
+
+	pMsg.head = head;
+
+	pMsg.reason = reason;
+
+	pMsg.flags = gGameMaster.CheckGameMasterLevel(&gObj[aIndex], 1) ? 0x01 : 0x00;
+
+	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
 
 void GCHealthBarSend(int aIndex)

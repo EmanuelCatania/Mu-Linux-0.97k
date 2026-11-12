@@ -1404,6 +1404,8 @@ void CAttack::CGAttackRecv(PMSG_ATTACK_RECV* lpMsg, int aIndex)
 			// se mide contra el último que sí pasó.
 			if (gServerInfo.m_AttackCheck == 2)
 			{
+				GCRejectSend(aIndex, PROTOCOL_CODE2, REJECT_ATTACK_SPEED);
+
 				return;
 			}
 		}
