@@ -14,4 +14,5 @@
 // 3: velocidad de ataque de los demás jugadores (0x12 expandido, F3:FA).
 // 4: evento de rechazo F3:FB.
 // 5: lista de /move en el catálogo (F3:F5); se quita F3:E5.
-constexpr unsigned short MU_PROTOCOL_VERSION = 5;
+// 6: vida de monstruos en el 0x13 y el 0x15; F3:E2 sólo cuando cambia.
+constexpr unsigned short MU_PROTOCOL_VERSION = 6;

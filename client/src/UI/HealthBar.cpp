@@ -33,10 +33,34 @@ bool CHealthBar::Receive(const BYTE* packet, int size)
         memcpy(&entry, packet + sizeof(header) + i * sizeof(entry), sizeof(entry));
         if (entry.rateHP > 100) return false;
     }
-    // Una lista truncada no debe reemplazar la foto anterior por datos parciales.
-    memcpy(m_Entries, packet + sizeof(header), header.count * sizeof(entry));
-    m_Count = header.count;
+    // Fase 5 (C2): el server ya no manda la foto completa cada segundo, sólo
+    // las filas que cambiaron; se mezclan con las que ya hay.
+    for (int i = 0; i < header.count; ++i) {
+        memcpy(&entry, packet + sizeof(header) + i * sizeof(entry), sizeof(entry));
+        Set(entry.index, entry.type, entry.rateHP);
+    }
     return true;
+}
+
+void CHealthBar::Set(WORD index, BYTE type, BYTE rateHP)
+{
+    if (index == 0xFFFF || rateHP > 100) return;
+    int freeSlot = -1;
+    for (int i = 0; i < m_Count; ++i) {
+        if (m_Entries[i].index == index) {
+            m_Entries[i].type = type;
+            m_Entries[i].rateHP = rateHP;
+            return;
+        }
+        if (freeSlot < 0 && m_Entries[i].index == 0xFFFF) freeSlot = i;
+    }
+    if (freeSlot < 0) {
+        if (m_Count >= (int)(sizeof(m_Entries) / sizeof(m_Entries[0]))) return;
+        freeSlot = m_Count++;
+    }
+    m_Entries[freeSlot].index = index;
+    m_Entries[freeSlot].type = type;
+    m_Entries[freeSlot].rateHP = rateHP;
 }
 
 const Proto::PMSG_HEALTH_BAR* CHealthBar::Find(WORD index, BYTE type) const
@@ -52,7 +76,11 @@ const Proto::PMSG_HEALTH_BAR* CHealthBar::FindEntity(const BYTE* entity) const
     const EntityView view(entity);
     if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.MonsterIndex() == EntityView::SoccerBall)
         return nullptr;
-    return Find(view.NetworkKey(), view.Kind());
+    // Muerto (ReceiveDie / 0x9C marcan Dead) o en 0 %: la barra se va enseguida,
+    // sin esperar a que termine la animación de muerte y se borre la entidad.
+    if (AsCharacter(entity)->Dead) return nullptr;
+    const Proto::PMSG_HEALTH_BAR* bar = Find(view.NetworkKey(), view.Kind());
+    return (bar && bar->rateHP == 0) ? nullptr : bar;
 }
 
 namespace {

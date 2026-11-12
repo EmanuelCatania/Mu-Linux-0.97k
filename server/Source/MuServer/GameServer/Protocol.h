@@ -209,6 +209,7 @@ struct PMSG_DAMAGE_SEND
 #if(GAMESERVER_EXTRA==1)
 	DWORD ViewCurHP;
 	DWORD ViewDamageHP;
+	BYTE rateHP;        // Fase 5 (C2): % de vida del blanco, para la barra
 #endif
 };
 
@@ -773,6 +774,7 @@ void GCNewCharacterInfoSend(LPOBJ lpObj);
 
 void GCNewCharacterCalcSend(LPOBJ lpObj);
 
-void GCHealthBarSend(int aIndex);
+BYTE gObjHealthRate(LPOBJ lpObj);
+void GCHealthBarUpdate(int aIndex);
 void GCPlayerSpeedSend(LPOBJ lpObj);
 void GCRejectSend(int aIndex, BYTE head, BYTE reason);

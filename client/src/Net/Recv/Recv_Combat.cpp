@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Entity/EntityView.h"
+#include "UI/HealthBar.h"
 #include "Game/HeroVitals.h"
 #include "Net/Recv/NetRecv.h"
 #include "Model/Model_CustomAnim.h"
@@ -169,6 +171,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         const DWORD viewDamage = *(const DWORD*)(Msg + 12);
         if (viewDamage != 0) damage = viewDamage;
     }
+    // Protocolo 6 (Fase 5, C2): +16 = % de vida del blanco, para la barra.
+    if (Size >= 17) gHealthBar.Set(targetId, (BYTE)EntityView::MonsterKind, Msg[16]);
     BYTE  typeBits  = (Msg[5] >> 4) & 0x0F;
     bool  bIgnore    = (typeBits & 1) != 0;  // yellow (PvP defense ignore)
     bool  bReflect   = (typeBits & 2) != 0;  // purple (reflect dmg)

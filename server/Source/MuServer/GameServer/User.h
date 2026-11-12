@@ -480,6 +480,8 @@ struct OBJECTSTRUCT
 	// todavía no se mandaron.
 	int SentPhysiSpeed;
 	int SentMagicSpeed;
+	// % de vida que vieron por última vez los demás (F3:E2); -1 = ninguno.
+	int SentRateHP;
 	int Defense;
 	int MagicDefense;
 	int DefenseSuccessRate;

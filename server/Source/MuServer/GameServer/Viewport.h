@@ -65,6 +65,9 @@ struct PMSG_VIEWPORT_MONSTER
 	BYTE tx;
 	BYTE ty;
 	BYTE DirAndPkLevel;
+	// Fase 5 (C2, protocolo 6): % de vida, para la barra del cliente.  Ocupa el
+	// byte de relleno que ya tenía la entrada: sigue midiendo 12.
+	BYTE rateHP;
 };
 
 struct PMSG_VIEWPORT_SUMMON
