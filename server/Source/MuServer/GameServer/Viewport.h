@@ -53,7 +53,13 @@ struct PMSG_VIEWPORT_PLAYER
 	// que los demás clientes animen sus ataques a la velocidad real.
 	WORD PhysiSpeed;
 	WORD MagicSpeed;
+	// CharSet expandido (Fase 5, C2, protocolo 7): índice de los items >= 512
+	// equipados en los slots 0..8; 0xFFFF = vanilla o vacío.  Antes F3:EB.
+	WORD ExtItem[9];
 };
+
+// Llena ExtItem[9] con el equipo agregado (>= 512) de los slots 0..8.
+void gObjFillExtItems(LPOBJ lpObj, WORD* item);
 
 struct PMSG_VIEWPORT_MONSTER
 {

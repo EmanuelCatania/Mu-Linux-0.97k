@@ -96,6 +96,8 @@ void NetLog(const char* fmt, ...);
 // Recv_Account.cpp
 void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted);
 void Recv_JoinServer(const BYTE* Msg, int Size);
+// CharSet expandido (protocolo 7): items >= 512 de los slots 0..8 (9 WORD).
+void ApplyCustomEquipment(BYTE* c, const BYTE* items);
 void Recv_LoginResult(const BYTE* Msg);
 void Recv_LogOut(const BYTE* Msg);
 void Recv_CustomServerList(const BYTE* Msg);

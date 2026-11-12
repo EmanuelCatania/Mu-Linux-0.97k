@@ -354,8 +354,6 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 
 	WORD CharacterCreationLevel = 0;
 
-	std::vector<PMSG_CHARACTER_LIST_CUSTOM_SEND> custom;
-
 	for (int n = 0; n < lpMsg->count; n++)
 	{
 		SDHP_CHARACTER_LIST* lpInfo = (SDHP_CHARACTER_LIST*)(((BYTE*)lpMsg) + sizeof(SDHP_CHARACTER_LIST_RECV) + (sizeof(SDHP_CHARACTER_LIST) * n));
@@ -401,16 +399,9 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 			}
 		}
 
-		if (hasCustom)
-		{
-			customInfo.header.set(0xF3, 0xED, sizeof(customInfo));
+		memcpy(info.ExtItem, customInfo.item, sizeof(info.ExtItem));
 
-			customInfo.slot = lpInfo->slot;
-
-			customInfo.reserved = 0;
-
-			custom.push_back(customInfo);
-		}
+		(void)hasCustom;
 
 		for (int i = 0; i < 9; i++)
 		{
@@ -530,11 +521,6 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 	memcpy(send, &pMsg, sizeof(pMsg));
 
 	DataSend(lpMsg->index, send, size);
-
-	for (size_t n = 0; n < custom.size(); n++)
-	{
-		DataSend(lpMsg->index, (BYTE*)&custom[n], sizeof(custom[n]));
-	}
 
 	GCCharacterDeleteLevelSend(lpMsg->index, gServerInfo.m_CharacterDeleteMaxLevel[gObj[lpMsg->index].AccountLevel]);
 

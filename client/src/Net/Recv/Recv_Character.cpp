@@ -182,10 +182,11 @@ void Recv_CharList(const BYTE* Msg, int Size)
     if (count > MAX_PREVIEW) count = MAX_PREVIEW;
 
     // PMSG_CHARACTER_LIST (0.97.40): slot, Name[40], padding, Level, CtlCode,
-    // CharSet[11]; 56 bytes por registro.
+    // CharSet[11]; 56 bytes por registro.  Protocolo 7 (Fase 5, C2): +
+    // ExtItem[9] (WORD) = 74 bytes.
     const int NAME = (int)NetText::CharacterNameSize;
     const BYTE* rec = Msg + 5;
-    for (int i = 0; i < (int)count; ++i, rec += NAME + 16) {
+    for (int i = 0; i < (int)count; ++i, rec += NAME + 34) {
         BYTE  slot     = rec[0];
         WORD  level    = (WORD)(rec[NAME + 2] | (rec[NAME + 3] << 8));
         BYTE  ctlCode  = rec[NAME + 4];
@@ -222,6 +223,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // Equipment visuals: CharSet[1..10] (10 bytes packed).
         // Pipeline ya completo (LevelConvert + DeleteBug + CreateBug + ChangeCharacterExt).
         ChangeCharacterExt((int)slot, (BYTE*)&rec[NAME + 6]);
+        ApplyCustomEquipment(c, rec + NAME + 16);   // CharSet expandido (antes F3:ED)
 
         // CreateHero llamó SetPlayerStop con las alas todavía en -1, así que
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
@@ -1063,6 +1065,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             NetLog("NET:  -> F3/13 ItemEquipment key=%d idx=%d", eqKey, eqIdx);
             if (eqIdx < 0 || eqIdx >= 400) break;
             ChangeCharacterExt(eqIdx, (BYTE*)Msg + 7);
+            // CharSet expandido (protocolo 7): ExtItem[9] en +18.
+            if (Size >= 36)
+                ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)eqIdx * CHARACTER_STRIDE, Msg + 18);
             break;
         }
 
@@ -1309,16 +1314,6 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
         case 0xF1: gBuffBar.Receive((const BYTE*)Msg, Size); break;
-        case 0xED: {
-            void Recv_CharacterListCustom(const BYTE* Msg, int Size);
-            Recv_CharacterListCustom((const BYTE*)Msg, Size);
-            break;
-        }
-        case 0xEB: {
-            void Recv_CustomEquipment(const BYTE* Msg, int Size);
-            Recv_CustomEquipment((const BYTE*)Msg, Size);
-            break;
-        }
         case 0x30: {
             // ── ReceiveOption (IDA 0x436FB0) — PORT FIEL ─────────────────
             // Layout autoritativo del server MuEmu (Protocol.h,

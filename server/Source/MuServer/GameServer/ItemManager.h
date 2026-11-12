@@ -193,6 +193,7 @@ struct PMSG_ITEM_EQUIPMENT_SEND
 	PSBMSG_HEAD header; // C1:F3:13
 	BYTE index[2];
 	BYTE CharSet[11];
+	WORD ExtItem[9];    // CharSet expandido (protocolo 7): items >= 512, 0xFFFF = no
 };
 
 struct PMSG_ITEM_MODIFY_SEND

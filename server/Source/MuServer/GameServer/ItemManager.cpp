@@ -3616,6 +3616,8 @@ void CItemManager::GCItemEquipmentSend(int aIndex)
 
 	memcpy(pMsg.CharSet, gObj[aIndex].CharSet, sizeof(pMsg.CharSet));
 
+	gObjFillExtItems(&gObj[aIndex], pMsg.ExtItem);
+
 	MsgSendV2(&gObj[aIndex], (BYTE*)&pMsg, pMsg.header.size);
 }
 
