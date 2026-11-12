@@ -22,5 +22,7 @@ int  CustomAnim_EmoteOfAction(int action);
 // Sonidos candidatos del emote, separados por '|' (vacio si no tiene) y si repite.
 const char* CustomAnim_Sound(int emote);
 bool CustomAnim_IsLoop(int emote);
+// Fuerza (1) o quita (-1) el loop de un emote mientras dura su audio; ver EmoteSound.cpp.
+void CustomAnim_SetLoopOverride(int emote, int value);
 // Duracion en segundos de una pasada del emote (a 25 ticks por segundo).
 float CustomAnim_Duration(int emote);

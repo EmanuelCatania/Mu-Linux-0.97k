@@ -56,6 +56,8 @@ public:
     // Libera las voces cuyo fundido ya termino; se llama una vez por tick.
     void UpdateEmoteSounds();
     bool IsEmoteSoundPlaying(int voice);
+    // Duracion total del audio en segundos (0 si no se puede saber).
+    float EmoteSoundLength(int voice);
 
     // Para la música y libera el motor de audio (cierre del cliente).
     void Shutdown();
