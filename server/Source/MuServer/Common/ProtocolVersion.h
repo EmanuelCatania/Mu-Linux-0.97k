@@ -22,4 +22,5 @@
 // 7: CharSet expandido (ExtItem[9] en 0x12, F3:13 y F3:00); se quitan F3:EB y F3:ED.
 // 8: stats en un bloque View* dentro de F3:03, F3:05 y F3:06; se quitan F3:E0 y F3:E1.
 // 9: horarios de eventos e invasiones en el C2:91; se quitan F3:E6 y F3:F2.
-#define MU_PROTOCOL_VERSION 9
+// 10: detalle de los buffs propios en el 0x07 expandido; se quita F3:F1.
+#define MU_PROTOCOL_VERSION 10

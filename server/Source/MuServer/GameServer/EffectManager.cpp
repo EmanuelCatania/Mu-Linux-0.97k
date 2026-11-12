@@ -835,8 +835,6 @@ void CEffectManager::GCEffectStateSend(LPOBJ lpObj, BYTE state, BYTE effect)
 
 	if (lpObj->Type == OBJECT_USER)
 	{
-		DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
-
 		this->GCEffectInfoSend(lpObj, state, effect);
 	}
 
@@ -845,15 +843,23 @@ void CEffectManager::GCEffectStateSend(LPOBJ lpObj, BYTE state, BYTE effect)
 
 void CEffectManager::GCEffectInfoSend(LPOBJ lpObj, BYTE state, BYTE effect)
 {
-	PMSG_EFFECT_INFO_SEND pMsg;
+	// Fase 5 (C2): el 0x07 del propio personaje, con el detalle para la barra de
+	// buffs (antes un F3:F1 aparte).
+	PMSG_EFFECT_STATE_EX_SEND pMsg;
 
 	memset(&pMsg, 0, sizeof(pMsg));
 
-	pMsg.header.set(0xF3, 0xF1, sizeof(pMsg));
+	pMsg.header.set(0x07, sizeof(pMsg));
 
 	pMsg.state = state;
 
-	pMsg.effect = effect;
+	pMsg.effect = this->GetViewSkillState(effect);
+
+	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
+
+	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
+
+	pMsg.effectIndex = effect;
 
 	pMsg.skill = (WORD)gSkillManager.GetEffectSkill(effect);
 
