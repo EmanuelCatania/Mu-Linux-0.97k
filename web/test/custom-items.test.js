@@ -16,8 +16,42 @@ const {
   parseItemList
 } = require('../lib/custom-items');
 
+// Los JSON de Custom/Items y Custom/Pets que traía el repo antes de pasar a
+// Data/Items (Fase 5). El formato sigue valiendo para los servers sin convertir.
+const FIXTURES = {
+  'Custom/Items/03_000.json': [
+    '// Light Spear (vanilla 3,0): el 0.97 lo dibuja corrido en su casilla.',
+    '{',
+    '  "item": "3,0",',
+    '  "inventory": { "position": [0.0, 0.05], "rotation": [0, 90, 20] }',
+    '}',
+    ''
+  ].join('\n'),
+  'Custom/Items/13_400.json': [
+    '// Pet Rudolph (13,400): pose del 5.2 y una línea de tooltip.',
+    '{',
+    '  "item": "13,400",',
+    '  "inventory": { "position": [0.0, -0.05], "rotation": [270, 40, 0], "scale": 0.0015 },',
+    '  "tooltip": [ { "text": "Zen picker", "color": "gold" } ]',
+    '}',
+    ''
+  ].join('\n'),
+  'Custom/Pets/13_400.json': [
+    '// Pet Rudolph (13,400): da vueltas alrededor del dueño y levanta zen.',
+    '{',
+    '  "item": "13,400",',
+    '  "scale": 1.0,',
+    '  "blendMesh": 0,',
+    '  "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },',
+    '  "abilities": [',
+    '    { "type": "pickup", "what": "zen", "range": 3, "interval": 1000, "delay": 1500 }',
+    '  ]',
+    '}',
+    ''
+  ].join('\n')
+};
 const DATA = path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data');
-const read = (relative) => fs.readFileSync(path.join(DATA, relative), 'utf8');
+const read = (relative) => FIXTURES[relative] ?? fs.readFileSync(path.join(DATA, relative), 'utf8');
 
 test('claves: acepta "12,32", "12,032" y [12, 32]; rechaza lo demás', () => {
   assert.deepEqual(parseKey('12,32'), [12, 32]);
@@ -40,7 +74,7 @@ test('nombres de archivo: SS_III.json y de vuelta', () => {
   assert.throws(() => pathFor('items', [99, 1]));
 });
 
-test('los JSON de ejemplo del repo se leen y validan sin errores', () => {
+test('los JSON de ejemplo se leen y validan sin errores', () => {
   for (const file of ['Custom/Items/03_000.json', 'Custom/Items/13_400.json']) {
     const parsed = parseJsonFile(read(file));
     assert.equal(parsed.error, undefined, file);

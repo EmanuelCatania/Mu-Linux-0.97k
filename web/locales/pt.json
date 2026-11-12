@@ -831,5 +831,8 @@
   "Eventos": "Eventos",
   "Los spawns se editan sobre el mapa o como texto: los dos modos escriben el mismo Spawns.toml.": "Os spawns são editados sobre o mapa ou como texto: os dois modos gravam o mesmo Spawns.toml.",
   "Ver como texto": "Ver como texto",
-  "Ver en el mapa": "Ver no mapa"
+  "Ver en el mapa": "Ver no mapa",
+  "Se guarda en Data/Items/{file}, en la tabla [{index}]. Sirve para items custom y para los originales.": "Salvo em Data/Items/{file}, na tabela [{index}]. Serve para itens custom e originais.",
+  "Se guarda en Data/Items/{file}, en la tabla [{index}.pet]. El cliente dibuja el movimiento y el server ejecuta las habilidades.": "Salvo em Data/Items/{file}, na tabela [{index}.pet]. O cliente desenha o movimento e o server executa as habilidades.",
+  "y el precio y el apilado de": "e o preço e o empilhamento de"
 }

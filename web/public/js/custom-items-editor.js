@@ -287,7 +287,7 @@
     custom.append(el('div', { class: 'ci-grid' },
       field(t('Comportamiento: sección'), behaviorSec, t('Item original que imita en la lógica. Obligatorio en los agregados (índice 32 o más).')),
       field(t('Comportamiento: índice'), behaviorIdx),
-      field(t('Carpeta del modelo'), textField('folder', 'Item\\Custom\\20\\')),
+      field(t('Carpeta del modelo'), textField('folder', 'Item\\00-swords\\020\\')),
       field(t('Nombre del modelo'), textField('model', 'Sword21')),
       field(t('Brillo R, G, B (0 a 255)'), glowBox),
       field(t('Carpeta del modelo puesto'), textField('equippedFolder', ''), t('Solo si el item se ve distinto puesto, como una montura.')),
@@ -372,10 +372,19 @@
     renderDetail();
   }
 
+  // Archivo de la sección en Data/Items (el mismo nombre que arma lib/item-extras.js).
+  const SECTION_NAMES = ['swords', 'axes', 'maces', 'spears', 'bows', 'staffs', 'shields', 'helms',
+    'armors', 'pants', 'gloves', 'boots', 'wings', 'helpers', 'potions', 'scrolls'];
+
+  function sectionFile(section) {
+    return `${String(section).padStart(2, '0')}-${SECTION_NAMES[section] || 'items'}.toml`;
+  }
+
   // ── Items: pose, tooltip y efectos ─────────────────────────────────────────
   function renderItemSection(item) {
-    const { frame, doc } = sectionFrame('items', t('Efectos, pose y tooltip'),
-      t('Archivo Data/Custom/Items/{name}. Sirve para items custom y para los originales.', { name: `${String(item.key[0]).padStart(2, '0')}_${String(item.key[1]).padStart(3, '0')}.json` }));
+    const { frame, doc } = sectionFrame('items', t('Efectos, pose y tooltip'), state.storage === 'toml'
+      ? t('Se guarda en Data/Items/{file}, en la tabla [{index}]. Sirve para items custom y para los originales.', { file: sectionFile(item.key[0]), index: String(item.key[1]).padStart(3, '0') })
+      : t('Archivo Data/Custom/Items/{name}. Sirve para items custom y para los originales.', { name: `${String(item.key[0]).padStart(2, '0')}_${String(item.key[1]).padStart(3, '0')}.json` }));
     if (!doc) return frame;
     const data = doc.data;
     const dirty = () => markDirty('items');
@@ -496,8 +505,9 @@
       return el('div', { class: 'ci-section' }, el('h4', { text: t('Pet') }),
         el('p', { class: 'muted', text: t('Este item no va en el slot del helper (Slot 8 en Item.txt): no puede ser un pet.') }));
     }
-    const { frame, doc } = sectionFrame('pets', t('Pet'),
-      t('Archivo Data/Custom/Pets/{name}. El cliente dibuja el movimiento y el server ejecuta las habilidades.', { name: `${String(item.key[0]).padStart(2, '0')}_${String(item.key[1]).padStart(3, '0')}.json` }));
+    const { frame, doc } = sectionFrame('pets', t('Pet'), state.storage === 'toml'
+      ? t('Se guarda en Data/Items/{file}, en la tabla [{index}.pet]. El cliente dibuja el movimiento y el server ejecuta las habilidades.', { file: sectionFile(item.key[0]), index: String(item.key[1]).padStart(3, '0') })
+      : t('Archivo Data/Custom/Pets/{name}. El cliente dibuja el movimiento y el server ejecuta las habilidades.', { name: `${String(item.key[0]).padStart(2, '0')}_${String(item.key[1]).padStart(3, '0')}.json` }));
     if (!doc) return frame;
     const data = doc.data;
     const dirty = () => markDirty('pets');
@@ -618,6 +628,7 @@
     state.maxNameBytes = data.maxNameBytes || 31;
     state.files.items = new Set(data.files.items.map(keyId));
     state.files.pets = new Set(data.files.pets.map(keyId));
+    state.storage = data.storage || 'json';
     renderList();
   }
 
