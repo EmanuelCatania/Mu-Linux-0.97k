@@ -185,12 +185,15 @@ uint __cdecl Weather_Update(void)
             if (iVar14 == 0) {
                 if (uVar8 == 0xffffffff) goto LAB_00500f16;
                 uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
-                puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
-                                                 : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
-                cVar4 = *(char *)(puVar10 + 1);
-                *(unsigned char *)(puVar10 + 1) = cVar4 + 1U;
-                if ((unsigned char)(cVar4 + 1U) < 2)
-                    Packet_DecryptDword(&MoveSceneFrame, puVar10);
+                if (uVar8 != 0xffffffff) {
+                    puVar10 = *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
+                    if (puVar10 != nullptr) {
+                        cVar4 = *(char *)(puVar10 + 1);
+                        *(unsigned char *)(puVar10 + 1) = cVar4 + 1U;
+                        if ((unsigned char)(cVar4 + 1U) < 2)
+                            Packet_DecryptDword(&MoveSceneFrame, puVar10);
+                    }
+                }
                 goto LAB_00500f34;
             }
             uVar8 = (uVar8 + 1) % DAT_055c9bd4;
@@ -234,12 +237,15 @@ LAB_00500f34:
             if (iVar14 == 0) {
                 if (uVar8 != 0xffffffff) {
                     uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
-                    puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
-                                                     : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
-                    cVar4 = *(char *)(puVar10 + 1);
-                    *(char *)(puVar10 + 1) = cVar4 - 1;
-                    if ((char)(cVar4 - 1) == '\0')
-                        Packet_EncryptDword(puVar10, &MoveSceneFrame);
+                    if (uVar8 != 0xffffffff) {
+                        puVar10 = *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
+                        if (puVar10 != nullptr) {
+                            cVar4 = *(char *)(puVar10 + 1);
+                            *(char *)(puVar10 + 1) = cVar4 - 1;
+                            if ((char)(cVar4 - 1) == '\0')
+                                Packet_EncryptDword(puVar10, &MoveSceneFrame);
+                        }
+                    }
                 }
                 goto LAB_00501064;
             }
