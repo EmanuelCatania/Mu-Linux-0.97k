@@ -1307,10 +1307,12 @@ void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex, int size
 	}
 
 	// Negociación de versión (Fase 5, C1): un cliente sin el campo es anterior a
-	// la negociación y cuenta como versión 0.
+	// la negociación y cuenta como versión 0.  Se mide contra el offset del campo
+	// y no contra sizeof: con GCC el struct queda rellenado a 52 y el paquete
+	// trae 51.
 	int protocol = 0;
 
-	if (size >= (int)sizeof(PMSG_CONNECT_ACCOUNT_RECV))
+	if (size >= (int)(offsetof(PMSG_CONNECT_ACCOUNT_RECV, ProtocolVersion) + sizeof(lpMsg->ProtocolVersion)))
 	{
 		protocol = MAKE_NUMBERW(lpMsg->ProtocolVersion[0], lpMsg->ProtocolVersion[1]);
 	}
