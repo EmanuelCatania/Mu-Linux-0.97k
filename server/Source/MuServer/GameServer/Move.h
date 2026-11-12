@@ -31,26 +31,6 @@ struct PMSG_TELEPORT_SEND
 	BYTE dir;
 };
 
-struct PMSG_MOVE_LIST_SEND
-{
-	PSWMSG_HEAD header; // C2:F3:E5
-	BYTE PKLimitFree;
-	BYTE count;
-};
-
-struct MOVE_LIST_INFO
-{
-	BYTE MapNumber;
-	char MapName[32];
-	bool CanMove;
-	short MinLevel;
-	short MaxLevel;
-	short MinReset;
-	short MaxReset;
-	short AccountLevel;
-	DWORD Money;
-};
-
 //**********************************************//
 //**********************************************//
 //**********************************************//
@@ -88,7 +68,8 @@ public:
 
 	void GCTeleportSend(int aIndex, int gate, BYTE map, BYTE x, BYTE y, BYTE dir);
 
-	void GCMoveListSend(LPOBJ lpObj);
+	// La lista viaja en el catálogo (sección F3:F5).
+	const std::map<int, MOVE_INFO>& GetList() const { return this->m_MoveInfo; }
 
 	void ReloadMoveList();
 

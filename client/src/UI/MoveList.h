@@ -1,11 +1,16 @@
 #pragma once
 #include "Net/Protocol/GameServerProtocol.h"
 
-// Menú M del DLL (MoveList.cpp). La lista y los requisitos llegan por F3/E5.
+// Menú M del DLL (MoveList.cpp). La lista y los requisitos llegan en el
+// catálogo (sección F3:F5).
 class CMoveList {
 public:
-    bool Receive(const BYTE* packet, int size);
+    // Sección F3:F5.  false si algún registro no es válido (queda la anterior).
+    bool SetCatalog(const BYTE* records, int recordSize, int count);
+    // Al desconectar: la lista llega una vez por conexión.
     void Clear();
+    // Al cambiar de personaje: sólo lo que depende de él.
+    void ResetCharacter();
     void Toggle();
     bool IsOpen() const { return m_Open; }
     void Close() { m_Open = false; }
@@ -20,6 +25,7 @@ private:
     bool Blocked() const;
     int VisibleRows() const;
     bool CheckMove(const Proto::MOVE_LIST_INFO& map) const;
+    int  MinLevelFor(const Proto::MOVE_LIST_INFO& map) const;
     Proto::MOVE_LIST_INFO m_Maps[255] = {};
     int m_Count = 0;
     int m_Page = 0;

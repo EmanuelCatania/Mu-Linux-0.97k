@@ -759,8 +759,6 @@ void DGCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg)
 
 	GCNewCharacterInfoSend(lpObj);
 
-	gMove.GCMoveListSend(lpObj);
-
 	gGuild.GDGuildMemberGetInfoSend(lpObj->Index, lpObj->Name);
 
 	gItemManager.GCItemListSend(lpObj->Index);

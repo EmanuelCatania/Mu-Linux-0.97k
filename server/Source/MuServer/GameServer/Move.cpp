@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Move.h"
+#include "ContentCatalog.h"
 #include "EffectManager.h"
 #include "Gate.h"
 #include "Map.h"
@@ -301,65 +302,16 @@ void CMove::GCTeleportSend(int aIndex, int gate, BYTE map, BYTE x, BYTE y, BYTE 
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
 
-void CMove::GCMoveListSend(LPOBJ lpObj)
-{
-	BYTE send[4096];
-
-	PMSG_MOVE_LIST_SEND pMsg;
-
-	pMsg.header.set(0xF3, 0xE5, 0);
-
-	int size = sizeof(pMsg);
-
-	pMsg.PKLimitFree = gServerInfo.m_PKLimitFree;
-
-	pMsg.count = 0;
-
-	MOVE_LIST_INFO info;
-
-	for (std::map<int, MOVE_INFO>::iterator it = this->m_MoveInfo.begin(); it != this->m_MoveInfo.end(); it++)
-	{
-		info.MapNumber = gGate.GetGateMap(it->second.Gate);
-
-		TextField::Copy(info.MapName, it->second.Name);
-
-		info.MinLevel = gGate.GetMoveLevel(lpObj, info.MapNumber, it->second.MinLevel);
-
-		info.MaxLevel = it->second.MaxLevel;
-
-		info.MinReset = it->second.MinReset;
-
-		info.MaxReset = it->second.MaxReset;
-
-		info.AccountLevel = it->second.AccountLevel;
-
-		info.Money = it->second.Money;
-
-		info.CanMove = true;
-
-		memcpy(&send[size], &info, sizeof(info));
-
-		size += sizeof(info);
-
-		pMsg.count++;
-	}
-
-	pMsg.header.size[0] = SET_NUMBERHB(size);
-
-	pMsg.header.size[1] = SET_NUMBERLB(size);
-
-	memcpy(send, &pMsg, sizeof(pMsg));
-
-	DataSend(lpObj->Index, send, size);
-}
-
 void CMove::ReloadMoveList()
 {
+	// La lista viaja en el catálogo: a los conectados se les manda sólo esa sección.
+	gContentCatalog.Invalidate();
+
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
 		if (gObjIsConnectedGP(n) != 0)
 		{
-			this->GCMoveListSend(&gObj[n]);
+			gContentCatalog.SendMoveList(n);
 		}
 	}
 }

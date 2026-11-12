@@ -17,4 +17,5 @@
 // 2: apilado y precios en el catálogo (F3:F8, F3:F9); se quitan F3:E3 y F3:E4.
 // 3: velocidad de ataque de los demás jugadores (0x12 expandido, F3:FA).
 // 4: evento de rechazo F3:FB.
-#define MU_PROTOCOL_VERSION 4
+// 5: lista de /move en el catálogo (F3:F5); se quita F3:E5.
+#define MU_PROTOCOL_VERSION 5

@@ -1282,10 +1282,6 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             gHealthBar.Receive(Msg, Size);
             break;
         }
-        case 0xE5: {
-            gMoveList.Receive(Msg, Size);
-            break;
-        }
         case 0xE6: {
             gEventTimer.Receive(Msg, Size);
             break;
@@ -1305,6 +1301,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF3: gContentCatalog.ReceiveGates((const BYTE*)Msg, Size); break;
         case 0xF4: gContentCatalog.ReceiveSkills((const BYTE*)Msg, Size); break;
         case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
+        case 0xF5: gContentCatalog.ReceiveMoveList((const BYTE*)Msg, Size); break;
         case 0xF8: gContentCatalog.ReceiveItemStacks((const BYTE*)Msg, Size); break;
         case 0xFA: PlayerAttackSpeed_Receive((const BYTE*)Msg, Size); break;
         case 0xFB: Recv_Reject((const BYTE*)Msg, Size); break;
