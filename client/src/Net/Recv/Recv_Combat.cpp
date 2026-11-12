@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/Protocol/GameServerProtocol.h"
+#include "UI/BuffBar.h"
 #include "Entity/EntityView.h"
 #include "UI/HealthBar.h"
 #include "Game/HeroVitals.h"
@@ -517,6 +519,21 @@ void NetRecv_07(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     NetLog("NET:    EffectState state=%u effect=0x%03X key=%u entity=%s",
            (unsigned)state, (unsigned)effect, (unsigned)entityKey,
            foundEntity ? "found" : "missing");
+
+    // Protocolo 10 (Fase 5, C2): el 0x07 del propio personaje trae el detalle
+    // para la barra de buffs (antes F3:F1).  +8 índice del efecto, +10 skill,
+    // +12 tiempo, +16 valores, +24 caster, +34 nombre.
+    if (Size >= 68) {
+        Proto::PMSG_EFFECT_INFO_SEND info = {};
+        info.state = state;
+        info.effect = Msg[8];
+        memcpy(&info.skill, Msg + 10, sizeof(info.skill));
+        memcpy(&info.time, Msg + 12, sizeof(info.time));
+        memcpy(info.value, Msg + 16, sizeof(info.value));
+        memcpy(info.caster, Msg + 24, sizeof(info.caster));
+        memcpy(info.name, Msg + 34, sizeof(info.name));
+        gBuffBar.Receive((const unsigned char*)&info, (int)sizeof(info));
+    }
 }
 
 // 0x19
