@@ -2380,6 +2380,32 @@ void GCNewCharacterCalcSend(LPOBJ lpObj)
 #endif
 }
 
+void GCPlayerSpeedSend(LPOBJ lpObj)
+{
+	if (lpObj->SentPhysiSpeed == lpObj->PhysiSpeed && lpObj->SentMagicSpeed == lpObj->MagicSpeed)
+	{
+		return;
+	}
+
+	lpObj->SentPhysiSpeed = lpObj->PhysiSpeed;
+
+	lpObj->SentMagicSpeed = lpObj->MagicSpeed;
+
+	PMSG_PLAYER_SPEED_SEND pMsg;
+
+	pMsg.header.set(0xF3, 0xFA, sizeof(pMsg));
+
+	pMsg.index[0] = SET_NUMBERHB(lpObj->Index);
+
+	pMsg.index[1] = SET_NUMBERLB(lpObj->Index);
+
+	pMsg.PhysiSpeed = (WORD)lpObj->PhysiSpeed;
+
+	pMsg.MagicSpeed = (WORD)lpObj->MagicSpeed;
+
+	MsgSendV2(lpObj, (BYTE*)&pMsg, pMsg.header.size);
+}
+
 void GCHealthBarSend(int aIndex)
 {
 	if (gServerInfo.m_MonsterHealthBarSwitch == 0)

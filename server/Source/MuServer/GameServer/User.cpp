@@ -379,6 +379,10 @@ void gObjCharZeroSet(int aIndex)
 
 	lpObj->DrinkSpeed = 0;
 
+	lpObj->SentPhysiSpeed = -1;
+
+	lpObj->SentMagicSpeed = -1;
+
 	lpObj->DrinkLastTime = 0;
 
 	lpObj->MonsterDeleteTime = 0;

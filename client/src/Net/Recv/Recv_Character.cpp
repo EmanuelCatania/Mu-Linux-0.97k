@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Combat/PlayerAttackSpeed.h"
 #include "UI/BuffBar.h"
 #include "UI/ChatListBox.h"
 #include "Net/NetText.h"
@@ -1303,6 +1304,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF4: gContentCatalog.ReceiveSkills((const BYTE*)Msg, Size); break;
         case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
         case 0xF8: gContentCatalog.ReceiveItemStacks((const BYTE*)Msg, Size); break;
+        case 0xFA: PlayerAttackSpeed_Receive((const BYTE*)Msg, Size); break;
         case 0xF9: gContentCatalog.ReceiveItemValues((const BYTE*)Msg, Size); break;
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).

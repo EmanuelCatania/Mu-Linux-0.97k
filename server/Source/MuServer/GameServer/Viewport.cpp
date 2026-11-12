@@ -720,6 +720,10 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 		info.DirAndPkLevel = (lpTarget->Dir * 16) | (lpTarget->PKLevel & 0x0F);
 
+		info.PhysiSpeed = (WORD)lpTarget->PhysiSpeed;
+
+		info.MagicSpeed = (WORD)lpTarget->MagicSpeed;
+
 		int InfoSize = sizeof(info);
 
 		info.ViewSkillState = lpTarget->ViewSkillState;
@@ -1318,6 +1322,10 @@ void CViewport::GCViewportSimplePlayerSend(LPOBJ lpObj)
 	info.ty = (BYTE)lpObj->TY;
 
 	info.DirAndPkLevel = (lpObj->Dir * 16) | (lpObj->PKLevel & 0x0F);
+
+	info.PhysiSpeed = (WORD)lpObj->PhysiSpeed;
+
+	info.MagicSpeed = (WORD)lpObj->MagicSpeed;
 
 	int InfoSize = sizeof(info);
 

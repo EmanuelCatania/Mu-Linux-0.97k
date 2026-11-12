@@ -49,6 +49,10 @@ struct PMSG_VIEWPORT_PLAYER
 	BYTE tx;
 	BYTE ty;
 	BYTE DirAndPkLevel;
+	// Fase 5 (A5, protocolo 3): velocidad de ataque y de magia del jugador, para
+	// que los demás clientes animen sus ataques a la velocidad real.
+	WORD PhysiSpeed;
+	WORD MagicSpeed;
 };
 
 struct PMSG_VIEWPORT_MONSTER
