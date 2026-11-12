@@ -66,7 +66,22 @@ const char* const English[] = {
     "Draw distance: %s",
     "Time left: %s", "Cast by: %s", "Damage +%d", "Defense +%d",
     "Damage taken -%d%%", "Max HP +%d%%",
-    "%s: %d of %d alive"
+    "%s: %d of %d alive",
+    "Movement rejected by the server",
+    "Attack too fast",
+    "Skills cannot be used right now",
+    "Skills cannot be used in a safe zone",
+    "You do not have that skill",
+    "The skill is not ready yet",
+    "Your class cannot use that skill",
+    "Skill rejected by the server",
+    "Triple Shot needs a bow and arrows",
+    "Too far to drop the item there",
+    "No NPC is attending you",
+    "The NPC is too far away",
+    "That NPC does not repair",
+    "Trade canceled: too far apart",
+    "Open the shop to repair"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -106,6 +121,21 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::RenderBackendRestart, "Se aplica al reiniciar", "Aplica ao reiniciar" },
         { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
         { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },
+        { ClientTextId::RejectMove, "El server rechaz\xC3\xB3 el movimiento", "O servidor rejeitou o movimento" },
+        { ClientTextId::RejectAttackSpeed, "Ataque demasiado r\xC3\xA1pido", "Ataque r\xC3\xA1pido demais" },
+        { ClientTextId::RejectSkillState, "No se pueden usar skills ahora", "N\xC3\xA3o \xC3\xA9 poss\xC3\xADvel usar skills agora" },
+        { ClientTextId::RejectSkillSafeZone, "No se pueden usar skills en zona segura", "N\xC3\xA3o \xC3\xA9 poss\xC3\xADvel usar skills na zona segura" },
+        { ClientTextId::RejectSkillNotLearned, "No ten\xC3\xA9s ese skill", "Voc\xC3\xAA n\xC3\xA3o tem essa skill" },
+        { ClientTextId::RejectSkillDelay, "El skill todav\xC3\xAD" "a no est\xC3\xA1 listo", "A skill ainda n\xC3\xA3o est\xC3\xA1 pronta" },
+        { ClientTextId::RejectSkillClass, "Tu clase no puede usar ese skill", "Sua classe n\xC3\xA3o pode usar essa skill" },
+        { ClientTextId::RejectSkillSequence, "El server rechaz\xC3\xB3 el skill", "O servidor rejeitou a skill" },
+        { ClientTextId::RejectSkillNoArrows, "Triple Shot necesita arco y flechas", "Triple Shot precisa de arco e flechas" },
+        { ClientTextId::RejectDropRange, "Demasiado lejos para tirar el item ah\xC3\xAD", "Longe demais para largar o item a\xC3\xAD" },
+        { ClientTextId::RejectNpcMissing, "Ning\xC3\xBAn NPC te est\xC3\xA1 atendiendo", "Nenhum NPC est\xC3\xA1 te atendendo" },
+        { ClientTextId::RejectNpcRange, "El NPC est\xC3\xA1 demasiado lejos", "O NPC est\xC3\xA1 longe demais" },
+        { ClientTextId::RejectNpcNoRepair, "Ese NPC no repara", "Esse NPC n\xC3\xA3o conserta" },
+        { ClientTextId::RejectTradeRange, "Trade cancelado: est\xC3\xA1n demasiado lejos", "Troca cancelada: longe demais" },
+        { ClientTextId::RejectRepairNoShop, "Abr\xC3\xAD la tienda para reparar", "Abra a loja para consertar" },
         { ClientTextId::RenderVSyncUnavailable, "VSync no disponible", "VSync indispon\xC3\xAD" "vel" },
     };
     for (const Entry& entry : entries) {

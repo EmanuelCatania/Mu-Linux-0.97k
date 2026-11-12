@@ -396,6 +396,10 @@ void CTrade::CGTradeOkButtonRecv(PMSG_TRADE_OK_BUTTON_RECV* lpMsg, int aIndex)
 
 		this->GCTradeResultSend(bIndex, 0);
 
+		GCRejectSend(aIndex, 0x3C, REJECT_TRADE_RANGE);
+
+		GCRejectSend(bIndex, 0x3C, REJECT_TRADE_RANGE);
+
 		return;
 	}
 

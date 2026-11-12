@@ -4,6 +4,8 @@
 
 #include "stdafx.h"
 #include "Combat/PlayerAttackSpeed.h"
+#include "Net/Protocol/RejectReason.h"
+#include "Local/ClientText.h"
 #include "UI/BuffBar.h"
 #include "UI/ChatListBox.h"
 #include "Net/NetText.h"
@@ -1305,6 +1307,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
         case 0xF8: gContentCatalog.ReceiveItemStacks((const BYTE*)Msg, Size); break;
         case 0xFA: PlayerAttackSpeed_Receive((const BYTE*)Msg, Size); break;
+        case 0xFB: Recv_Reject((const BYTE*)Msg, Size); break;
         case 0xF9: gContentCatalog.ReceiveItemValues((const BYTE*)Msg, Size); break;
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
@@ -1764,4 +1767,43 @@ void NetRecv_DF(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetLog("NET:  → 0xDF MaxCharacterLevel=%u", maxLvl);
         g_MaxCharacterLevel = maxLvl;
     }
+}
+
+// F3:FB — el server descartó un pedido (Fase 5, A6).
+// [C1][07][F3][FB] head reason flags
+void Recv_Reject(const unsigned char* msg, int size)
+{
+    if (!msg || size < 7) return;
+    const int head = msg[4];
+    const int reason = msg[5];
+    const bool gm = (msg[6] & 0x01) != 0;
+    const char* text = (reason >= REJECT_MOVE && reason < REJECT_REASON_COUNT)
+        ? gClientText.Get((ClientTextId)((int)ClientTextId::RejectMove + reason - REJECT_MOVE))
+        : "?";
+    NetLog("NET:  -> F3/FB rechazo: opcode 0x%02X motivo %d (%s)", head, reason, text);
+
+    // Lo que el cliente dio por hecho y el server no: la tienda que el NPC ya
+    // no atiende.  El resto (posición, drop, trade) lo corrige el server con
+    // su propio paquete.
+    switch (reason) {
+        case REJECT_NPC_MISSING:
+        case REJECT_NPC_RANGE:
+        case REJECT_REPAIR_NO_SHOP:
+            CloseInventoryRelatedWindows();
+            break;
+        case REJECT_NPC_NO_REPAIR:
+            DAT_07eaa134 = 0;   // RepairEnable_0: sale del modo reparar
+            break;
+        default:
+            break;
+    }
+
+#ifdef NDEBUG
+    if (!gm) return;
+#else
+    (void)gm;
+#endif
+    char line[160];
+    Platform::TextFormat(line, "%s (0x%02X)", text, head);
+    UIChatLogWindow_AddText("", line, 2);
 }

@@ -362,6 +362,8 @@ bool CNpcTalk::CheckInterfaceNpc(LPOBJ lpObj, int head)
 	{
 		TRACE_REJECT(lpObj->Index, head, -1, "interfaz %d abierta sin NPC registrado (%d)", lpObj->Interface.type, index);
 
+		GCRejectSend(lpObj->Index, (BYTE)head, REJECT_NPC_MISSING);
+
 		return false;
 	}
 
@@ -370,6 +372,8 @@ bool CNpcTalk::CheckInterfaceNpc(LPOBJ lpObj, int head)
 	if (lpNpc->Map != lpObj->Map || abs(lpObj->X - lpNpc->X) > range || abs(lpObj->Y - lpNpc->Y) > range)
 	{
 		TRACE_REJECT(lpObj->Index, head, -1, "NPC %d lejos: yo %d,%d mapa %d / NPC %d,%d mapa %d (máximo %d)", index, lpObj->X, lpObj->Y, lpObj->Map, lpNpc->X, lpNpc->Y, lpNpc->Map, range);
+
+		GCRejectSend(lpObj->Index, (BYTE)head, REJECT_NPC_RANGE);
 
 		return false;
 	}

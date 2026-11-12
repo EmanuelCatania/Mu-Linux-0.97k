@@ -130,4 +130,34 @@
 63	"Max HP +%d%%"
 //InvasionAlive
 64	"%s: %d of %d alive"
+//RejectMove
+65	"Movement rejected by the server"
+//RejectAttackSpeed
+66	"Attack too fast"
+//RejectSkillState
+67	"Skills cannot be used right now"
+//RejectSkillSafeZone
+68	"Skills cannot be used in a safe zone"
+//RejectSkillNotLearned
+69	"You do not have that skill"
+//RejectSkillDelay
+70	"The skill is not ready yet"
+//RejectSkillClass
+71	"Your class cannot use that skill"
+//RejectSkillSequence
+72	"Skill rejected by the server"
+//RejectSkillNoArrows
+73	"Triple Shot needs a bow and arrows"
+//RejectDropRange
+74	"Too far to drop the item there"
+//RejectNpcMissing
+75	"No NPC is attending you"
+//RejectNpcRange
+76	"The NPC is too far away"
+//RejectNpcNoRepair
+77	"That NPC does not repair"
+//RejectTradeRange
+78	"Trade canceled: too far apart"
+//RejectRepairNoShop
+79	"Open the shop to repair"
 end
