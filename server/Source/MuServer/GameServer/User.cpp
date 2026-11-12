@@ -421,6 +421,8 @@ void gObjCharZeroSet(int aIndex)
 
 	lpObj->SentMagicSpeed = -1;
 
+	lpObj->SentRateHP = -1;
+
 	lpObj->DrinkLastTime = 0;
 
 	lpObj->MonsterDeleteTime = 0;
@@ -2283,13 +2285,14 @@ void gObjSecondProc()
 
 					continue;
 				}
+
+				// La regeneración también mueve la barra (F3:E2 sólo si cambió).
+				GCHealthBarUpdate(lpObj->Index);
 			}
 
 			if (lpObj->Type == OBJECT_USER)
 			{
 				gObjCheckMapTile(lpObj, 3);
-
-				GCHealthBarSend(lpObj->Index);
 
 				gEventTimeManager.GCEventTimeSend(lpObj->Index);
 

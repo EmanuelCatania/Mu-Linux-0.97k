@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Entity/EntityView.h"
+#include "UI/HealthBar.h"
 #include "Combat/PlayerAttackSpeed.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
@@ -612,7 +614,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         //   e[0]=KeyH|CREATE, e[1]=KeyL, e[2]=Class,
         //   e[3]=padding, e[4..5]=ViewSkillState (LE),
         //   e[6]=PosX, e[7]=PosY, e[8]=TargetX, e[9]=TargetY,
-        //   e[10]=Path|Dir, e[11]=padding.
+        //   e[10]=Path|Dir, e[11]=% de vida (protocolo 6; antes relleno).
         WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];
         BYTE type = e[2];
         BYTE x = e[6], y = e[7];
@@ -632,6 +634,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // El facing va por separado — CreateMonster no lo setea.
             AsCharacter(slot)->Object.Angle[2] = rot;
             AsCharacter(slot)->Key = entityId;
+            gHealthBar.Set(entityId, (BYTE)EntityView::MonsterKind, e[11]);
             // NO sobrescribir +0x84 (kind).  CreateMonster ya lo setea correcto por
             // Type: 2=monster, 4=NPC (type>200), 8=ground-item.  Forzarlo a 2 haría
             // que Target_Render muestre a los NPCs con el banner de monstruo

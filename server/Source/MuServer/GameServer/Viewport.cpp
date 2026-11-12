@@ -825,6 +825,8 @@ void CViewport::GCViewportMonsterSend(int aIndex)
 
 		info.DirAndPkLevel = (lpTarget->Dir * 16) | (lpTarget->PKLevel & 0x0F);
 
+		info.rateHP = gObjHealthRate(lpTarget);
+
 		int InfoSize = sizeof(info);
 
 		info.ViewSkillState = lpTarget->ViewSkillState;
@@ -1399,6 +1401,8 @@ void CViewport::GCViewportSimpleMonsterSend(LPOBJ lpObj)
 	info.ty = (BYTE)lpObj->TY;
 
 	info.DirAndPkLevel = (lpObj->Dir * 16) | (lpObj->PKLevel & 0x0F);
+
+	info.rateHP = gObjHealthRate(lpObj);
 
 	int InfoSize = sizeof(info);
 

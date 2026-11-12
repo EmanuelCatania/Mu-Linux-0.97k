@@ -1800,6 +1800,8 @@ void GCDamageSend(int aIndex, int bIndex, BYTE flag, int damage, int type)
 
 	pMsg.ViewDamageHP = damage;
 
+	pMsg.rateHP = gObjHealthRate(&gObj[bIndex]);
+
 #endif
 
 	if (gObj[aIndex].Type == OBJECT_USER)
@@ -1811,6 +1813,9 @@ void GCDamageSend(int aIndex, int bIndex, BYTE flag, int damage, int type)
 	{
 		DataSend(bIndex, (BYTE*)&pMsg, pMsg.header.size);
 	}
+
+	// Los demás que lo tienen en el viewport.
+	GCHealthBarUpdate(bIndex);
 }
 
 void GCUserDieSend(LPOBJ lpObj, int aIndex, int skill, int bIndex)
@@ -2471,69 +2476,68 @@ void GCRejectSend(int aIndex, BYTE head, BYTE reason)
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
 
-void GCHealthBarSend(int aIndex)
+// % de vida (0..100) para la barra de los monstruos.
+BYTE gObjHealthRate(LPOBJ lpObj)
 {
-	if (gServerInfo.m_MonsterHealthBarSwitch == 0)
+	const double max = lpObj->MaxLife + lpObj->AddLife;
+
+	if (max <= 0 || lpObj->Life <= 0)
+	{
+		return 0;
+	}
+
+	const int rate = (int)((lpObj->Life * 100) / max);
+
+	return (BYTE)((rate > 100) ? 100 : rate);
+}
+
+// Fase 5 (C2): antes el server mandaba cada segundo, a cada jugador, la vida de
+// todos los monstruos de su viewport (F3:E2).  Ahora el % inicial viaja en el
+// 0x13, el del blanco en el 0x15, y este aviso sale sólo cuando el % de un
+// monstruo cambia, a los que lo tienen en el viewport (regeneración y los que
+// miran sin pegar).  Mismo formato del F3:E2, con una sola fila.
+void GCHealthBarUpdate(int aIndex)
+{
+	if (gServerInfo.m_MonsterHealthBarSwitch == 0 || OBJECT_RANGE(aIndex) == 0)
 	{
 		return;
 	}
 
 	LPOBJ lpObj = &gObj[aIndex];
 
-	BYTE send[4096];
+	if (lpObj->Type != OBJECT_MONSTER || lpObj->Live == 0 || lpObj->State != OBJECT_PLAYING || OBJECT_RANGE(lpObj->SummonIndex) != 0)
+	{
+		return;
+	}
+
+	const BYTE rate = gObjHealthRate(lpObj);
+
+	if (lpObj->SentRateHP == rate)
+	{
+		return;
+	}
+
+	lpObj->SentRateHP = rate;
+
+	BYTE send[sizeof(PMSG_HEALTH_BAR_SEND) + sizeof(PMSG_HEALTH_BAR)];
 
 	PMSG_HEALTH_BAR_SEND pMsg;
 
-	pMsg.header.set(0xF3, 0xE2, 0);
+	pMsg.header.set(0xF3, 0xE2, sizeof(send));
 
-	int size = sizeof(pMsg);
-
-	pMsg.count = 0;
+	pMsg.count = 1;
 
 	PMSG_HEALTH_BAR info;
 
-	for (int n = 0; n < MAX_VIEWPORT; n++)
-	{
-		if (lpObj->VpPlayer[n].state != VIEWPORT_SEND && lpObj->VpPlayer[n].state != VIEWPORT_WAIT)
-		{
-			continue;
-		}
+	info.index = lpObj->Index;
 
-		if (lpObj->VpPlayer[n].type != OBJECT_MONSTER)
-		{
-			continue;
-		}
+	info.type = (BYTE)lpObj->Type;
 
-		if (OBJECT_RANGE(lpObj->VpPlayer[n].index) == 0)
-		{
-			continue;
-		}
-
-		LPOBJ lpTarget = &gObj[lpObj->VpPlayer[n].index];
-
-		if (lpTarget->Live == 0 || lpTarget->State != OBJECT_PLAYING || OBJECT_RANGE(lpTarget->SummonIndex) != 0)
-		{
-			continue;
-		}
-
-		info.index = lpTarget->Index;
-
-		info.type = (BYTE)lpTarget->Type;
-
-		info.rateHP = (BYTE)((lpTarget->Life * 100) / (lpTarget->MaxLife + lpTarget->AddLife));
-
-		memcpy(&send[size], &info, sizeof(info));
-
-		size += sizeof(info);
-
-		pMsg.count++;
-	}
-
-	pMsg.header.size[0] = SET_NUMBERHB(size);
-
-	pMsg.header.size[1] = SET_NUMBERLB(size);
+	info.rateHP = rate;
 
 	memcpy(send, &pMsg, sizeof(pMsg));
 
-	DataSend(lpObj->Index, send, size);
+	memcpy(&send[sizeof(pMsg)], &info, sizeof(info));
+
+	MsgSendV2(lpObj, send, sizeof(send));
 }
