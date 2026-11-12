@@ -32,7 +32,7 @@ void __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char* param_2) {
                 }
 
                 do {
-                    ITEM& item = AsItem(&DAT_07ea5b30)[param_1 + iVar5 * 8 + iVar6];
+                    ITEM& item = AsItem(&OffsetWarehouseItems[0])[param_1 + iVar5 * 8 + iVar6];
 
                     // Set item type
                     item.Type = (short)iVar3;

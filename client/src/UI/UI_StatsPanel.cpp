@@ -887,7 +887,7 @@ LAB_0051d2dd:
       if (4 < (int)uVar5) goto LAB_0051d2dd;
     }
     ptVar17 = &local_d0;
-    pCVar6 = &DAT_07d29d24 + iVar3 * 300;
+    pCVar6 = GlobalText[iVar3];
     iVar3 = Platform::TextLength(pCVar6);
     gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
