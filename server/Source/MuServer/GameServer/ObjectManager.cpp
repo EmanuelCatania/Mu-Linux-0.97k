@@ -557,6 +557,14 @@ void CObjectManager::ObjectMoveProc()
 
 				lpObj->PathTime = GetTickCount();
 
+				// El paso ya respeta MoveTime, así que nunca deja el saldo en
+				// negativo; sólo lo gasta para que los saltos del cliente se
+				// sumen a lo que el server ya caminó (ver gObjMoveBudgetCharge).
+				if (lpObj->Type == OBJECT_USER)
+				{
+					gObjMoveBudgetCharge(lpObj, (int)MoveTime);
+				}
+
 				if ((++lpObj->PathCur) >= lpObj->PathCount)
 				{
 					lpObj->PathCur = 0;
