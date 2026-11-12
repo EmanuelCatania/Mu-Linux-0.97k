@@ -210,6 +210,7 @@ set(MU_SOURCES
     src/Render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
     src/UI/EmojiPicker.cpp
+    src/UI/EmoteMenu.cpp
     src/Terrain/Terrain_RayCollision.cpp
     src/Platform/Win32/MiniDump.cpp
     src/Combat/Combat_AttackEffect.cpp

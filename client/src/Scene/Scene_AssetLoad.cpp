@@ -57,6 +57,8 @@ void __cdecl Scene_LoadGameAssets(void) {
     OpenJPG("Interface/nis_btnchat.jpg", 0x505, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/nis_btnsize.jpg", 0x506, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/nis_btnalpha.jpg",0x507, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Interface/nis_btndance.jpg",0x508, 0x2600, 0x2900, 0, '\x01');   // menu de emotes (propio)
+    OpenJPG("Interface/nis_btngesture.jpg",0x509, 0x2600, 0x2900, 0, '\x01');   // menu de gestos clasicos (propio)
     OpenJPG("Interface/bar.jpg",         0xfd, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/back1.jpg",       0xfe, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/back2.jpg",       0xff, 0x2600, 0x2900, 0, '\x01');

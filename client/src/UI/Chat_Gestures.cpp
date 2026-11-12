@@ -18,6 +18,7 @@
 #include <initializer_list>
 #include "Model/Model_CustomAnim.h"
 #include "Sound/EmoteSound.h"
+#include "Core/Window.h"
 #include <cstdio>
 #include <cstdlib>
 
@@ -92,8 +93,74 @@ static void Gesture(int action, BYTE actionType)
 // retransmite el server sin validar, y NetRecv_18 lo traduce de vuelta.
 constexpr int kCustomActionCode = 137;   // 137..255: alcanza para 119 emotes (byte de accion)
 
-// DESVIACION: "/fortnite" (al azar) y "/fortnite N" (1..cantidad) reproducen una
-// accion propia de CustomAnim.bmd y avisan al resto de los jugadores.
+// Direccion a la que mira el heroe para un emote lanzado desde el menu: de frente a la
+// camara (el mouse "imaginario" justo debajo del heroe, con la misma cuenta que usa el
+// giro hacia el mouse en Player_InputTick).
+static float FrontFacing()
+{
+    const float half = gWindow.IsWide() ? 320.0f : (float)(GetScreenWidth() / 2);
+    const int ang = (int)CreateAngle(half, 280.0f, half, 180.0f);
+    return (float)((405 - ang) % 360);
+}
+
+// Lanza el emote propio `n` (0..CustomAnim_Count()-1). Devuelve false si no se puede
+// (y avisa por el chat cuando es por montura). `faceFront` gira al heroe de frente.
+bool Emote_Play(int n, bool faceFront)
+{
+    if (!Hero || n < 0 || n >= CustomAnim_Count()) return false;
+    // Montado en Uniria/Dinorant no se puede, salvo en zona segura (ahi la montura no se dibuja).
+    const WORD helper = *(WORD*)&AsCharacter(Hero)->Helper.Type;
+    if ((helper == 818 || helper == 819) && !AsCharacter(Hero)->SafeZone) {
+        UIChatLogWindow_AddText("", "fortnite: no se puede usar montado", 1);
+        return false;
+    }
+    // Igual que SetActionClass: solo desde reposo (acciones 1..12); ademas se puede cambiar
+    // de un emote a otro sin esperar a que termine el primero.
+    const BYTE cur = AsCharacter(Hero)->Object.CurrentAction;
+    if ((cur == 0 || cur > 12) && CustomAnim_EmoteOfAction(cur) < 0) return false;
+    const int action = CustomAnim_Acquire(n);
+    if (action < 0) return false;
+    if (faceFront) AsCharacter(Hero)->Object.Angle[2] = FrontFacing();
+    SetAction(AsObject(Hero), action);
+    EmoteSound_Start((unsigned char*)(uintptr_t)Hero, n);
+    SendRequestAction((BYTE)(kCustomActionCode + n));   // lleva el octante del facing
+    return true;
+}
+
+// Gestos clasicos para el menu del chat: los mismos (accion, codigo de red) que dispara el
+// texto en CheckChatText, mas los de 5.2 de los huecos 68..73 (Hustle, Dance...).
+struct ClassicGestureEntry { const char* name; int action; BYTE code; };
+static const ClassicGestureEntry kClassicGestures[] = {
+    { "Saludo", 93, 111 },        { "Despedida", 95, 112 },    { "Aplauso", 97, 113 },
+    { "Ovaci\xC3\xB3n", 99, 118 },  { "Se\xC3\xB1" "alar", 101, 115 },  { "Gesto", 103, 114 },
+    { "Duda", 105, 116 },         { "Llorar", 107, 117 },      { "Inc\xC3\xB3modo", 109, 119 },
+    { "Mirar", 111, 120 },        { "Victoria", 113, 121 },    { "Risa", 115, 122 },
+    { "Dormir", 117, 123 },       { "Fr\xC3\xADo", 119, 124 },    { "Otra vez", 121, 125 },
+    { "Respeto", 123, 126 },      { "Saludo militar", 124, 127 }, { "Carga", 128, 128 },
+    { "Hustle", 68, 132 },        { "Provocar", 69, 133 },     { "Mirar alrededor", 70, 134 },
+    { "Brindar", 71, 135 },       { "Bailar (Dance)", 73, 136 },
+};
+int ClassicGesture_Count() { return (int)(sizeof(kClassicGestures) / sizeof(kClassicGestures[0])); }
+const char* ClassicGesture_Name(int index)
+{
+    return (index >= 0 && index < ClassicGesture_Count()) ? kClassicGestures[index].name : "";
+}
+// Igual que escribir el gesto en el chat (misma regla de montura y de reposo) pero sin
+// texto; `faceFront` gira al heroe de frente a la camara antes de empezar.
+bool ClassicGesture_Play(int index, bool faceFront)
+{
+    if (!Hero || index < 0 || index >= ClassicGesture_Count()) return false;
+    const WORD helper = *(WORD*)&AsCharacter(Hero)->Helper.Type;
+    if ((helper == 818 || helper == 819) && !AsCharacter(Hero)->SafeZone) return false;   // como WndProc
+    const BYTE cur = AsCharacter(Hero)->Object.CurrentAction;
+    if (cur == 0 || cur > 12) return false;
+    if (faceFront) AsCharacter(Hero)->Object.Angle[2] = FrontFacing();
+    Gesture(kClassicGestures[index].action, kClassicGestures[index].code);
+    return true;
+}
+
+// DESVIACION: "/fortnite" (al azar) y "/fortnite N" (0..cantidad-1) reproducen un emote
+// propio de CustomAnim.bmd y avisan al resto de los jugadores.
 bool __cdecl Chat_TryFortniteCommand(const char* text)
 {
     if (!text || strncmp(text, "/fortnite", 9) != 0 || (text[9] != '\0' && text[9] != ' ')) return false;
@@ -109,22 +176,10 @@ bool __cdecl Chat_TryFortniteCommand(const char* text)
     else if (*arg >= '0' && *arg <= '9') n = atoi(arg);
     else { snprintf(msg, sizeof(msg), "fortnite: /fortnite o /fortnite N (0 a %d)", count - 1); UIChatLogWindow_AddText("", msg, 1); return true; }
     if (n < 0 || n >= count) { snprintf(msg, sizeof(msg), "fortnite: N fuera de rango (0 a %d)", count - 1); UIChatLogWindow_AddText("", msg, 1); return true; }
-    // Montado en Uniria/Dinorant no se puede, salvo en zona segura (ahi la montura no se dibuja).
-    const WORD helper = *(WORD*)&AsCharacter(Hero)->Helper.Type;
-    if ((helper == 818 || helper == 819) && !AsCharacter(Hero)->SafeZone) {
-        UIChatLogWindow_AddText("", "fortnite: no se puede usar montado", 1);
-        return true;
+    if (Emote_Play(n, false)) {
+        snprintf(msg, sizeof(msg), "fortnite %d: %s", n, CustomAnim_Name(n));
+        UIChatLogWindow_AddText("", msg, 1);
     }
-    // Igual que SetActionClass: solo desde reposo (acciones 1..12).
-    const BYTE cur = AsCharacter(Hero)->Object.CurrentAction;
-    if (cur == 0 || cur > 12) return true;
-    const int action = CustomAnim_Acquire(n);
-    if (action < 0) return true;
-    SetAction(AsObject(Hero), action);
-    EmoteSound_Start((unsigned char*)(uintptr_t)Hero, n);
-    SendRequestAction((BYTE)(kCustomActionCode + n));
-    snprintf(msg, sizeof(msg), "fortnite %d: %s", n, CustomAnim_Name(n));
-    UIChatLogWindow_AddText("", msg, 1);
     return true;
 }
 
