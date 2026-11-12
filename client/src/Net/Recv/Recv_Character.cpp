@@ -106,6 +106,22 @@ void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     gServerCharacterStats.Apply(CA);
 }
 
+// Bloque de stats (Fase 5, C2, protocolo 8): VIEW_CHARACTER_STATS del server, 35
+// DWORD al final de F3:03, F3:05 y F3:06.  Los primeros 18 son lo que traía el
+// F3:E0 y los 17 siguientes lo del F3:E1: se aplican con los mismos handlers.
+constexpr int kViewStatsSize = 35 * 4;
+constexpr int kViewInfoSize  = 18 * 4;
+
+static void ApplyViewStats(const BYTE* block)
+{
+    BYTE info[4 + kViewInfoSize] = { 0xC1, (BYTE)sizeof(info), 0xF3, 0xE0 };
+    memcpy(info + 4, block, kViewInfoSize);
+    Recv_NewCharacterInfo(info, (int)sizeof(info));
+    BYTE calc[4 + kViewStatsSize - kViewInfoSize] = { 0xC1, (BYTE)sizeof(calc), 0xF3, 0xE1 };
+    memcpy(calc + 4, block + kViewInfoSize, kViewStatsSize - kViewInfoSize);
+    Recv_NewCharacterCalc(calc, (int)sizeof(calc));
+}
+
 // ── Globals del state machine de login (mapping IDA → nuestro codebase) ────
 // IDA                            | nuestro
 // -------------------------------|----------------------------
@@ -897,6 +913,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0x03:
             NetLog("NET:  → F3/03 JoinMapServer world=%d", Msg[6]);
             Recv_JoinMapServer(Msg, (int)bEncrypted);
+            // Protocolo 8: el bloque de stats en +52 (antes el F3:E0 de después).
+            if (Size >= 52 + kViewStatsSize) ApplyViewStats(Msg + 52);
             break;
         case 0x04:
             // Respawn tras la muerte.  Ver Recv_Revival.
@@ -905,6 +923,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0x05:
             // Subida de nivel.  Ver Recv_LevelUp.
             Recv_LevelUp(Msg, Size);
+            // Protocolo 8: el bloque de stats en +48.
+            if (Size >= 48 + kViewStatsSize) ApplyViewStats(Msg + 48);
             break;
         case 0x06: {
             // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────
@@ -935,6 +955,12 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 break;
             }
             BYTE result = Msg[4];
+            // Protocolo 8: result 0xFE = sólo el recálculo (equipo, buffs,
+            // comandos): lo que antes eran F3:E0 / F3:E1.
+            if (result == 0xFE) {
+                if (Size >= 44 + kViewStatsSize) ApplyViewStats(Msg + 44);
+                break;
+            }
             if (result == 0) {
                 NetLog("NET:  → F3/06 AddPoint REJECTED");
                 break;
@@ -983,6 +1009,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // (CharData_RecalcStats).  Sin esto dano, defensa y
             // velocidad quedaban viejos hasta cambiar el equipo.
             CalculateAll(static_cast<BYTE*>(CharacterMachine), 0, 0);
+            // Protocolo 8: el bloque de stats en +44 (los valores del server
+            // mandan sobre el recálculo local, como antes con el F3:E1).
+            if (Size >= 44 + kViewStatsSize) ApplyViewStats(Msg + 44);
             break;
         }
 
@@ -1268,19 +1297,6 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             NetLog("NET:    F3/11 stored %d skills: %d %d %d %d %d %d %d %d %d %d",
                    written, CA[87], CA[88], CA[89], CA[90], CA[91],
                    CA[92], CA[93], CA[94], CA[95], CA[96]);
-            break;
-        }
-        case 0xE0: {
-            // F3/E0 PMSG_NEW_CHARACTER_INFO_RECV: Level/Stats/HP/MP.
-            // Port FIEL desde DLL injection (Protocol.cpp:849).
-            NetLog("NET:  → F3/E0 NewCharacterInfo");
-            Recv_NewCharacterInfo(Msg, Size);
-            break;
-        }
-        case 0xE1: {
-            // F3/E1 PMSG_NEW_CHARACTER_CALC_RECV: HP/MP/Defense/Attack.
-            NetLog("NET:  → F3/E1 NewCharacterCalc");
-            Recv_NewCharacterCalc(Msg, Size);
             break;
         }
         case 0xE2: {

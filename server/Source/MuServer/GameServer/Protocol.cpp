@@ -1621,6 +1621,12 @@ void CGLevelUpPointRecv(PMSG_LEVEL_UP_POINT_RECV* lpMsg, int aIndex)
 #endif
 	}
 
+#if(GAMESERVER_EXTRA==1)
+
+	gObjFillViewStats(lpObj, &pMsg.Stats);
+
+#endif
+
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
 
@@ -2235,6 +2241,8 @@ void GCLevelUpSend(LPOBJ lpObj)
 
 	pMsg.ViewNextExperience = lpObj->NextExperience;
 
+	gObjFillViewStats(lpObj, &pMsg.Stats);
+
 #endif
 
 	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
@@ -2340,49 +2348,110 @@ void GCServerCommandSend(int aIndex, BYTE type, BYTE cmd1, BYTE cmd2)
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
 
+void gObjFillViewStats(LPOBJ lpObj, VIEW_CHARACTER_STATS* lpStats)
+{
+	memset(lpStats, 0, sizeof(VIEW_CHARACTER_STATS));
+
+	lpStats->Level = lpObj->Level;
+
+	lpStats->LevelUpPoint = (DWORD)(lpObj->LevelUpPoint);
+
+	lpStats->Experience = lpObj->Experience;
+
+	lpStats->NextExperience = lpObj->NextExperience;
+
+	lpStats->Strength = (DWORD)(lpObj->Strength);
+
+	lpStats->Dexterity = (DWORD)(lpObj->Dexterity);
+
+	lpStats->Vitality = (DWORD)(lpObj->Vitality);
+
+	lpStats->Energy = (DWORD)(lpObj->Energy);
+
+	lpStats->Life = (DWORD)(lpObj->Life);
+
+	lpStats->MaxLife = (DWORD)(lpObj->MaxLife + lpObj->AddLife);
+
+	lpStats->Mana = (DWORD)(lpObj->Mana);
+
+	lpStats->MaxMana = (DWORD)((lpObj->MaxMana + lpObj->AddMana));
+
+	lpStats->BP = (DWORD)(lpObj->BP);
+
+	lpStats->MaxBP = (DWORD)(lpObj->MaxBP + lpObj->AddBP);
+
+	lpStats->FruitAddPoint = lpObj->FruitAddPoint;
+
+	lpStats->MaxFruitAddPoint = gFruit.GetMaxFruitPoint(lpObj);
+
+	lpStats->ViewReset = (DWORD)(lpObj->Reset);
+
+	lpStats->ViewGrandReset = (DWORD)(lpObj->GrandReset);
+
+	lpStats->ViewCurHP = lpStats->Life;
+
+	lpStats->ViewMaxHP = lpStats->MaxLife;
+
+	lpStats->ViewCurMP = lpStats->Mana;
+
+	lpStats->ViewMaxMP = lpStats->MaxMana;
+
+	lpStats->ViewCurBP = lpStats->BP;
+
+	lpStats->ViewMaxBP = lpStats->MaxBP;
+
+	lpStats->ViewPhysiSpeed = lpObj->PhysiSpeed;
+
+	lpStats->ViewMagicSpeed = lpObj->MagicSpeed;
+
+	gAttack.GetPreviewPhysiDamage(lpObj, &lpStats->ViewPhysiDamageMin, &lpStats->ViewPhysiDamageMax);
+
+	gAttack.GetPreviewMagicDamage(lpObj, &lpStats->ViewMagicDamageMin, &lpStats->ViewMagicDamageMax, &lpStats->ViewMagicDamageRate);
+
+	lpStats->ViewAttackSuccessRate = lpObj->AttackSuccessRate;
+
+	lpStats->ViewDamageMultiplier = lpObj->DamageMultiplierRate;
+
+	gAttack.GetPreviewDefense(lpObj, &lpStats->ViewDefense);
+
+	lpStats->ViewDefenseSuccessRate = lpObj->DefenseSuccessRate;
+}
+
+// Fase 5 (C2): lo que antes era F3:E0 / F3:E1 es un F3:06 con result =
+// LEVEL_UP_POINT_RECALC: no suma ningún punto, sólo lleva el estado completo.
 void GCNewCharacterInfoSend(LPOBJ lpObj)
 {
 #if(GAMESERVER_EXTRA==1)
 
-	PMSG_NEW_CHARACTER_INFO_SEND pMsg;
+	PMSG_LEVEL_UP_POINT_SEND pMsg;
 
-	pMsg.header.set(0xF3, 0xE0, sizeof(pMsg));
+	memset(&pMsg, 0, sizeof(pMsg));
 
-	pMsg.Level = lpObj->Level;
+	pMsg.header.set(0xF3, 0x06, sizeof(pMsg));
 
-	pMsg.LevelUpPoint = (DWORD)(lpObj->LevelUpPoint);
+	pMsg.result = LEVEL_UP_POINT_RECALC;
 
-	pMsg.Experience = lpObj->Experience;
+	pMsg.MaxLifeAndMana = 0;
 
-	pMsg.NextExperience = lpObj->NextExperience;
+	pMsg.MaxBP = (WORD)GET_MAX_WORD_VALUE(lpObj->MaxBP + lpObj->AddBP);
 
-	pMsg.Strength = (DWORD)(lpObj->Strength);
+	pMsg.ViewPoint = (DWORD)lpObj->LevelUpPoint;
 
-	pMsg.Dexterity = (DWORD)(lpObj->Dexterity);
+	pMsg.ViewMaxHP = (DWORD)(lpObj->MaxLife + lpObj->AddLife);
 
-	pMsg.Vitality = (DWORD)(lpObj->Vitality);
+	pMsg.ViewMaxMP = (DWORD)(lpObj->MaxMana + lpObj->AddMana);
 
-	pMsg.Energy = (DWORD)(lpObj->Energy);
+	pMsg.ViewMaxBP = (DWORD)(lpObj->MaxBP + lpObj->AddBP);
 
-	pMsg.Life = (DWORD)(lpObj->Life);
+	pMsg.ViewStrength = (DWORD)lpObj->Strength;
 
-	pMsg.MaxLife = (DWORD)(lpObj->MaxLife + lpObj->AddLife);
+	pMsg.ViewDexterity = (DWORD)lpObj->Dexterity;
 
-	pMsg.Mana = (DWORD)(lpObj->Mana);
+	pMsg.ViewVitality = (DWORD)lpObj->Vitality;
 
-	pMsg.MaxMana = (DWORD)((lpObj->MaxMana + lpObj->AddMana));
+	pMsg.ViewEnergy = (DWORD)lpObj->Energy;
 
-	pMsg.BP = (DWORD)(lpObj->BP);
-
-	pMsg.MaxBP = (DWORD)(lpObj->MaxBP + lpObj->AddBP);
-
-	pMsg.FruitAddPoint = lpObj->FruitAddPoint;
-
-	pMsg.MaxFruitAddPoint = gFruit.GetMaxFruitPoint(lpObj);
-
-	pMsg.ViewReset = (DWORD)(lpObj->Reset);
-
-	pMsg.ViewGrandReset = (DWORD)(lpObj->GrandReset);
+	gObjFillViewStats(lpObj, &pMsg.Stats);
 
 	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -2391,43 +2460,7 @@ void GCNewCharacterInfoSend(LPOBJ lpObj)
 
 void GCNewCharacterCalcSend(LPOBJ lpObj)
 {
-#if(GAMESERVER_EXTRA==1)
-
-	PMSG_NEW_CHARACTER_CALC_SEND pMsg;
-
-	pMsg.header.set(0xF3, 0xE1, sizeof(pMsg));
-
-	pMsg.ViewCurHP = (DWORD)(lpObj->Life);
-
-	pMsg.ViewMaxHP = (DWORD)(lpObj->MaxLife + lpObj->AddLife);
-
-	pMsg.ViewCurMP = (DWORD)(lpObj->Mana);
-
-	pMsg.ViewMaxMP = (DWORD)(lpObj->MaxMana + lpObj->AddMana);
-
-	pMsg.ViewCurBP = (DWORD)(lpObj->BP);
-
-	pMsg.ViewMaxBP = (DWORD)(lpObj->MaxBP + lpObj->AddBP);
-
-	pMsg.ViewPhysiSpeed = lpObj->PhysiSpeed;
-
-	pMsg.ViewMagicSpeed = lpObj->MagicSpeed;
-
-	gAttack.GetPreviewPhysiDamage(lpObj, &pMsg.ViewPhysiDamageMin, &pMsg.ViewPhysiDamageMax);
-
-	gAttack.GetPreviewMagicDamage(lpObj, &pMsg.ViewMagicDamageMin, &pMsg.ViewMagicDamageMax, &pMsg.ViewMagicDamageRate);
-
-	pMsg.ViewAttackSuccessRate = lpObj->AttackSuccessRate;
-
-	pMsg.ViewDamageMultiplier = lpObj->DamageMultiplierRate;
-
-	gAttack.GetPreviewDefense(lpObj, &pMsg.ViewDefense);
-
-	pMsg.ViewDefenseSuccessRate = lpObj->DefenseSuccessRate;
-
-	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
-
-#endif
+	GCNewCharacterInfoSend(lpObj);
 }
 
 void GCPlayerSpeedSend(LPOBJ lpObj)

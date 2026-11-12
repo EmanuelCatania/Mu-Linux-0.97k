@@ -737,13 +737,18 @@ void DGCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg)
 
 	pMsg.MaxFruitAddPoint = gFruit.GetMaxFruitPoint(lpObj);
 
+	// Fase 5 (C2): el bloque de stats que antes llegaba aparte en el F3:E0.
+#if(GAMESERVER_EXTRA==1)
+
+	gObjFillViewStats(lpObj, &pMsg.Stats);
+
+#endif
+
 	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
 
 	GDConnectCharacterSend(lpObj->Index);
 
 	GDOptionDataSend(lpObj->Index);
-
-	GCNewCharacterInfoSend(lpObj);
 
 	gGuild.GDGuildMemberGetInfoSend(lpObj->Index, lpObj->Name);
 
