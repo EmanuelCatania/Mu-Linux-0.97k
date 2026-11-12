@@ -519,12 +519,24 @@ item se veía mal o el server lo rechazaba.
 
 Ahora **el server es la única fuente**. Al loguearse, le manda al cliente un
 catálogo con todas las definiciones (items, monstruos, efectos, pets). El
-cliente **sólo necesita los archivos del modelo** (`.bmd` y texturas) dentro de
-`bin/Client/Data`. No hay que regenerar `item.bmd` ni tocar código.
+cliente **sólo necesita los archivos del modelo** (`.bmd` y texturas). No hay
+que regenerar `item.bmd` ni tocar código.
 
-Los `.txt` del `Encoder` del DLL se siguen leyendo desde
-`Data/Custom/Encoder` del server, así que una carpeta de customs armada para el
-DLL funciona sin convertir nada.
+En el server, un item tiene dos lugares:
+
+| Dónde | Qué va |
+|---|---|
+| `Data/Item/Item.txt` | la fila del item: nombre, stats, clases, tamaño y slot |
+| `Data/Items/NN-sección.toml` | todo lo demás: modelo, brillo, arco, ala, pose, efectos, tooltip, pet, apilado y precio |
+
+Hay un archivo por sección (`00-swords.toml`, `13-helpers.toml`, …) y adentro
+una tabla por item, con su índice: `[020]` es el item `0,20`. Sólo tienen tabla
+los items que llevan algo más que su fila de `Item.txt`. El encabezado de cada
+archivo lista todas las claves.
+
+En el cliente, el modelo de un item va en **la carpeta del item**:
+`bin/Client/Data/Item/NN-sección/III/` (el `.bmd` y sus texturas juntos). Así,
+agregar un item es crear esa carpeta con su número y poner el modelo adentro.
 
 ### Índices: el rango clásico y el extendido
 
@@ -533,27 +545,24 @@ Cada sección de items (espadas, hachas, …, joyas) tiene en el 0.97k **32
 items *agregados*. En el protocolo viajan con 13 bits (el item usa 7 bytes en
 vez de 5), así que entran sin pisar ningún item vanilla.
 
-Un agregado necesita decir **qué item vanilla imita** (columna *Comportamiento*):
-eso decide la lógica que el 0.97k tiene escrita por tipo de item (si es un arco
-y gasta flechas, si es un ala, si es una joya, qué opciones excellent puede
-tener). Todo lo demás —nombre, stats, tamaño, modelo, brillo, efectos— sale de
-su propia fila.
+Un agregado necesita decir **qué item vanilla imita** (columna *Comportamiento*
+de `Item.txt`): eso decide la lógica que el 0.97k tiene escrita por tipo de item
+(si es un arco y gasta flechas, si es un ala, si es una joya, qué opciones
+excellent puede tener). Todo lo demás sale de su propia fila y de su tabla.
 
-### Ejemplo 1: la Knight Blade, como se hacía con el DLL
+### Ejemplo 1: la Knight Blade con otro modelo
 
-El item está dentro del rango clásico (`0,20`); el modelo y el brillo se
-definen en el `Encoder`:
+El item está dentro del rango clásico (`0,20`):
 
-```
-// Data/Custom/Encoder/CustomItem.txt
-00,020		22		"Sword21"		// Knight Blade
-
-// Data/Custom/Encoder/CustomGlow.txt
-00,020		191	165	127		// Knight Blade
+```toml
+# Data/Items/00-swords.toml
+[020]
+model = { name = "Sword21" }
+glow = [191, 165, 127]
 ```
 
-Assets en el cliente: `bin/Client/Data/Item/Custom/20/` (`sword21.bmd` y sus
-texturas).
+Assets en el cliente: `bin/Client/Data/Item/00-swords/020/` (`sword21.bmd` y
+sus texturas). Sin `folder`, el modelo se busca en esa carpeta.
 
 ### Ejemplo 2: la Crimson Knight Blade, fuera del rango clásico
 
@@ -562,7 +571,7 @@ El mismo modelo como item agregado (`0,32`), todo en una fila de
 comportamiento, carpeta y nombre del modelo, y el color del brillo (RGB):
 
 ```
-32	0	22	1	4	1	1	0	"Crimson Knight Blade"	...	00,020	"Item\Custom\20\"	"Sword21"	255	40	40
+32	0	22	1	4	1	1	0	"Crimson Knight Blade"	...	00,020	"Item\00-swords\020\"	"Sword21"	255	40	40
 ```
 
 Se comporta como la Knight Blade (`00,020`), usa el modelo `Sword21` y brilla en
@@ -570,64 +579,57 @@ rojo. Comando de prueba: `/make 0 32`.
 
 ### Ejemplo 3: el set Great Dragon
 
-Cinco piezas en el índice `21` de las secciones 7 a 11, con el modelo definido
-en el `CustomItem.txt` del `Encoder` (como en el DLL):
+Cinco piezas en el índice `21` de las secciones 7 a 11. Como las cinco
+comparten texturas, el modelo indica una carpeta propia del set:
 
-```
-07,021		0		"HelmMale22"		// Great Dragon Helm
-08,021		0		"ArmorMale22"		// Great Dragon Armor
-09,021		0		"PantMale22"		// Great Dragon Pant
-10,021		0		"GloveMale22"		// Great Dragon Glove
-11,021		0		"BootMale22"		// Great Dragon Boot
+```toml
+# Data/Items/07-helms.toml
+[021]
+model = { folder = "Player/Custom/21/", name = "HelmMale22" }
 ```
 
-Assets en el cliente: `bin/Client/Data/Player/Custom/21/`. Las mismas piezas
-también se pueden definir sin el `Encoder`, con las columnas de modelo en
-`Item.txt` (`"Player\Custom\21\" "HelmMale22"`).
+y lo mismo en `08-armors.toml`, `09-pants.toml`, `10-gloves.toml` y
+`11-boots.toml`. Assets en el cliente: `bin/Client/Data/Player/Custom/21/`.
 
 ### Ejemplo 4: efectos propios y pose en el inventario
 
-`Data/Custom/Items/<sección>_<índice>.json` agrega a un item (custom o vanilla)
-su pose en el inventario y efectos que el cliente dibuja sobre los huesos del
-modelo. Por ejemplo, unas alas con los destellos de las Wings of Illusion del
-5.2:
+`effects` agrega efectos que el cliente dibuja sobre los huesos del modelo, e
+`inventory` la pose del item en la grilla. Por ejemplo, unas alas con los
+destellos de las Wings of Illusion del 5.2:
 
-```json
-{
-  "item": "12,032",
-  "effects": [
-    { "on": "equipped", "type": "sprite", "texture": "Effect/Flare.jpg",
-      "bones": [5, 6, 7, 8, 18, 19], "color": [0.5, 0.0, 0.0], "scale": 0.6,
-      "pulse": { "speed": 0.002, "scale": 0.2, "color": 0.4 } },
-    { "on": "equipped", "type": "particle", "particle": 1230,
-      "bones": [13, 31], "chance": 2, "color": [0.8, 0.8, 0.3], "scale": 0.5 }
-  ]
-}
+```toml
+# Data/Items/12-wings.toml
+[032]
+effects = [
+	{ on = "equipped", type = "sprite", texture = "Effect/Flare.jpg", bones = [5, 6, 7, 8, 18, 19], color = [0.5, 0, 0], scale = 0.6, pulse = { speed = 0.002, scale = 0.2, color = 0.4 } },
+	{ on = "equipped", type = "particle", particle = 1230, bones = [13, 31], chance = 2, color = [0.8, 0.8, 0.3], scale = 0.5 },
+]
 ```
 
-En el repo del server hay un caso real: `Data/Custom/Items/03_000.json` corrige
-la posición del Light Spear (vanilla) en su casilla, con la corrección del 5.2.
+En el repo del server hay un caso real: `[000]` de `03-spears.toml` corrige la
+posición del Light Spear (vanilla) en su casilla, con la corrección del 5.2.
 
 ### Ejemplo 5: un pet custom (Pet Rudolph)
 
 El Rudolph del 5.2 como pet que da vueltas alrededor del jugador y levanta el
 zen cercano. Va en un índice alto (`13,400`) a propósito, para que sirva de
-ejemplo del rango extendido. Son cuatro archivos, todos incluidos en los repos:
+ejemplo del rango extendido:
 
 | Dónde | Archivo | Qué define |
 |---|---|---|
-| cliente | `bin/Client/Data/Item/Custom/Rudolph/` | el modelo `xmas_deer.bmd` y sus texturas |
+| cliente | `bin/Client/Data/Item/13-helpers/400/` | el modelo `xmas_deer.bmd` y sus texturas |
 | server | `Data/Item/Item.txt` | la fila del item: `Slot` 8 (helper), comportamiento `*` (no imita a ningún pet vanilla) y el modelo |
-| server | `Data/Custom/Items/13_400.json` | la pose en el inventario |
-| server | `Data/Custom/Pets/13_400.json` | cómo se mueve y qué hace |
+| server | `Data/Items/13-helpers.toml` | la pose, el tooltip y el pet |
 
-```json
-{
-  "item": "13,400",
-  "blendMesh": 0,
-  "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },
-  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000, "delay": 1500 } ]
-}
+```toml
+[400]
+inventory = { position = [0, -0.05], rotation = [270, 40, 0], scale = 0.0015 }
+tooltip = [{ color = "gold", text = "Zen picker" }]
+
+[400.pet]
+abilities = [{ delay = 1500, interval = 1000, range = 3, type = "pickup", what = "zen" }]
+blendMesh = 0
+movement = { height = 20, period = 4000, radius = 50, type = "orbit" }
 ```
 
 El cliente dibuja el movimiento; las habilidades (levantar el zen) las ejecuta
@@ -653,25 +655,53 @@ Assets en el cliente: `bin/Client/Data/Monster/Karane/`.
 
 ### Referencia
 
-Columnas opcionales al final de cada fila de `Item.txt` (`*` = sin valor):
+Claves de cada item en `Data/Items/NN-sección.toml`:
+
+| Clave | Ejemplo | Qué hace |
+|---|---|---|
+| `model` | `{ name = "Sword21" }` | modelo propio; sin `folder` va en `Data/Item/NN-sección/III/` |
+| `glow` | `[255, 40, 40]` | color del brillo por nivel |
+| `bow` | `"crossbow"` | arco (`"bow"`) o ballesta custom |
+| `wing` | `{ defense = 2, inc_damage = [25, 2], dec_damage = [20, 1] }` | constantes de un ala custom (hasta 7) |
+| `inventory` | `{ position = [0, 0.05], rotation = [0, 90, 20], scale = 0.0025 }` | pose en la grilla (`scale` 0 = la vanilla) |
+| `tooltip` | `[{ text = "Zen picker", color = "gold" }]` | hasta 6 líneas propias debajo del nombre |
+| `effects` | ver el ejemplo 4 | efectos sobre los huesos |
+| `[NNN.pet]` | ver el ejemplo 5 | movimiento y habilidades de un pet (slot 8) |
+| `stack` | `255` o `[{ level = 1, max = 3, create = "14,22" }]` | apilado (sólo server) |
+| `value` | `[{ level = 0, buy = 100, sell = 20 }]` | precio de compra y venta (sólo server) |
+
+Colores del tooltip: `white`, `blue`, `red`, `gold`, `green`, `darkred`,
+`purple`, `darkblue`, `darkgold`.
+
+Columnas opcionales al final de cada fila de `Item.txt` (`*` = sin valor). Si un
+dato está en las dos partes, manda la columna de `Item.txt`:
 
 | Columna | Ejemplo | Qué hace |
 |---|---|---|
 | Comportamiento | `00,020` | vanilla que imita en la lógica |
-| Carpeta y modelo | `"Item\Custom\20\" "Sword21"` | modelo en el inventario, el suelo y el personaje |
+| Carpeta y modelo | `"Item\00-swords\020\" "Sword21"` | modelo en el inventario, el suelo y el personaje |
 | Brillo | `255 40 40` | color del brillo por nivel |
 | Carpeta y modelo puesto | `"Item\Custom\FenrirMount\" "fenril_black"` | sólo si el item se ve distinto puesto (una montura) |
 | Gate | `22` | para pergaminos: lleva siempre a ese gate |
 
-Los JSON de `Data/Custom/Items` también aceptan `"tooltip"`: hasta 6 líneas
-propias debajo del nombre del item, como texto (`"Zen picker"`) o con color
-(`{ "text": "Zen picker", "color": "gold" }`; colores: `white`, `blue`, `red`,
-`gold`, `green`, `darkred`, `purple`, `darkblue`, `darkgold`).
+`mu-data validate <Data>` revisa los archivos sin arrancar el server. Al
+arrancar, un item con errores no se aplica (ninguna de sus claves) y el motivo
+queda en `GameServer/LOG`. El panel web edita estas tablas desde el editor de
+items custom y el de precios y apilado.
 
-Para alas custom, `Data/Item/CustomWing.txt` agrega las constantes de defensa y
-daño. Los JSON de `Data/Custom/Items` y `Data/Custom/Pets` se validan al
-arrancar el server: un archivo con errores se descarta entero y el motivo queda
-en `GameServer/LOG`.
+**Servers con los archivos de antes.** Si `Data/Items` no tiene ningún archivo
+de sección, el server sigue leyendo `Custom/Encoder` (`CustomItem`,
+`CustomGlow`, `CustomBow`, `ItemPosition`), `Item/CustomWing.txt`,
+`Item/ItemStack.txt`, `Item/ItemValue.txt` y los JSON de `Custom/Items` y
+`Custom/Pets`. Para pasarlos al formato nuevo:
+
+```bash
+mu-data import-items /opt/mu/Data
+mu-data check-items /opt/mu/Data
+```
+
+`check-items` compara las dos fuentes y lista los archivos viejos que se pueden
+borrar. `MapFog.txt` y `CustomMonster.txt` siguen en `Custom/Encoder`.
 
 ---
 
