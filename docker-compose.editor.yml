@@ -31,6 +31,8 @@ services:
     volumes:
       - mu_data:/opt/mu/Data:rw
       - mu_gameserver_data:/opt/mu/GameServer/Data:rw
+      # Logs y traza de paquetes (mu-trace): sobreviven a recrear el contenedor.
+      - mu_gameserver_log:/opt/mu/GameServer/LOG:rw
 
 networks:
   proxy_net:
@@ -39,4 +41,5 @@ networks:
 volumes:
   mu_data:
   mu_gameserver_data:
+  mu_gameserver_log:
   mu_editor_backups:

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ObjectManager.h"
+#include "PacketTrace.h"
 #include "Attack.h"
 #include "BattleSoccerManager.h"
 #include "BloodCastle.h"
@@ -1317,6 +1318,9 @@ bool CObjectManager::CharacterUseScroll(LPOBJ lpObj, CItem* lpItem)
 
 bool CObjectManager::CharacterUsePotion(LPOBJ lpObj, CItem* lpItem)
 {
+	// Medición para CheckAutoPotionHack (Fase 5, A4): intervalo entre pociones.
+	TRACE_NOTE(lpObj->Index, 0x26, -1, "pocion: %u ms desde la anterior (item %d)", (unsigned)(GetTickCount() - lpObj->PotionTime), lpItem->m_Index);
+
 	if (gServerInfo.m_CheckAutoPotionHack != 0 && (GetTickCount() - lpObj->PotionTime) < ((DWORD)gServerInfo.m_CheckAutoPotionHackTolerance))
 	{
 		return 0;

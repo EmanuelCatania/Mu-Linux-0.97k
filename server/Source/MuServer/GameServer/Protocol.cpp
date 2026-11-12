@@ -754,6 +754,11 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 
 	GCLiveClientSend(aIndex, lpMsg->TickCount);
 
+	// Medición para CheckSpeedHack / CheckLatencyHack (Fase 5, A4): sólo con la
+	// traza activa.  Velocidades que reporta el cliente contra las del server y
+	// la deriva del reloj del cliente.
+	TRACE_NOTE(aIndex, 0x0E, -1, "vivo: PhysiSpeed cliente=%d server=%d MagicSpeed cliente=%d server=%d deriva=%d ms", (int)lpMsg->PhysiSpeed, lpObj->PhysiSpeed, (int)lpMsg->MagicSpeed, lpObj->MagicSpeed, (int)((GetTickCount() - lpObj->ServerTickCount) - (lpMsg->TickCount - lpObj->ClientTickCount)));
+
 	if (gServerInfo.m_CheckLatencyHack != 0 && abs((int)((GetTickCount() - lpObj->ServerTickCount) - (lpMsg->TickCount - lpObj->ClientTickCount))) > gServerInfo.m_CheckLatencyHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Latency Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, (GetTickCount() - lpObj->ServerTickCount), (lpMsg->TickCount - lpObj->ClientTickCount));
