@@ -10,6 +10,10 @@ public:
     void Receive(const unsigned char* packet, int size);
     void Clear();
     void Render();
+    // Suma de lo que suman los buffs activos de ese efecto (índice de
+    // Effect.txt: 1 daño, 2 defensa, 4 daño recibido %, 8 vida máxima %).
+    // 0 si no hay ninguno.  Lo usa el panel C.
+    int TotalBonus(int effect) const;
 
 private:
     struct Buff {

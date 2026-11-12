@@ -43,6 +43,10 @@ void HUD_BeginGridPass(int pass);
 #include "Game/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
 #include "Local/ClientText.h"
+#include "UI/BuffBar.h"
+
+// Color de las líneas de buffs del panel C (lo que suman mientras duran).
+static constexpr DWORD kBuffBonusColor = 0xFF64E664u;
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "structs.h"
@@ -1010,6 +1014,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     m_dwBackColor = 0x80000000u;
     RenderText(iPosX + 24, iPosY + 140, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
+    // DESVIACION (Fase 5): lo que suman los buffs activos, en otro color, debajo
+    // de la línea que mejoran.  Sale sólo mientras el buff dura.
+    if (const int bonus = gBuffBar.TotalBonus(1)) {
+        Platform::TextFormatSecure(Buffer, gClientText.Get(ClientTextId::BuffDamage), bonus);
+        m_dwTextColor = kBuffBonusColor;
+        RenderText(iPosX + 24, iPosY + 155, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
+    }
+
     // Equipment-set bonus check — original walks 5 equipment slots looking
     // for matching set indexes (offset +740, stride 68 from +136..+408).
     // Result stored in HIBYTE(v165) per IDA but visual effect is just a tint
@@ -1053,6 +1065,26 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     sprintf(Buffer, GlobalText[64], defRate);
     RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
+    // DESVIACION (Fase 5): lo que suman los buffs activos, en otro color, debajo
+    // de la línea que mejoran.  Sale sólo mientras el buff dura.
+    {
+        const int defense = gBuffBar.TotalBonus(2);
+        const int reduction = gBuffBar.TotalBonus(4);
+        Buffer[0] = 0;
+        if (defense) Platform::TextFormatSecure(Buffer, gClientText.Get(ClientTextId::BuffDefense), defense);
+        if (reduction) {
+            char part[64];
+            Platform::TextFormatSecure(part, gClientText.Get(ClientTextId::BuffDamageReduction), reduction);
+            if (Buffer[0]) Platform::TextConcatSecure(Buffer, sizeof(Buffer), ", ");
+            Platform::TextConcatSecure(Buffer, sizeof(Buffer), part);
+        }
+        if (Buffer[0]) {
+            m_dwTextColor = kBuffBonusColor;
+            RenderText(iPosX + 24, iPosY + 228, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
+            m_dwTextColor = 0xFFFFFFFFu;
+        }
+    }
+
     // ── Vitality row + HP ───────────────────────────────────────────────────
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(2, 2);  // Vitality = slot 2
@@ -1068,6 +1100,15 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
+
+    // DESVIACION (Fase 5): lo que suman los buffs activos, en otro color, debajo
+    // de la línea que mejoran.  Sale sólo mientras el buff dura.
+    if (const int bonus = gBuffBar.TotalBonus(8)) {
+        Platform::TextFormatSecure(Buffer, gClientText.Get(ClientTextId::BuffMaxLife), bonus);
+        m_dwTextColor = kBuffBonusColor;
+        RenderText(iPosX + 24, iPosY + 275, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
+        m_dwTextColor = 0xFFFFFFFFu;
+    }
 
     // ── Energy row + Mana ───────────────────────────────────────────────────
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));

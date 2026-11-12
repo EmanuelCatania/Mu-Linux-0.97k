@@ -49,6 +49,18 @@ ClientTextId BonusText(int effect)
 }
 }
 
+int CBuffBar::TotalBonus(int effect) const
+{
+    int total = 0;
+    for (int i = 0; i < m_Count; ++i) {
+        const Buff& buff = m_Buffs[i];
+        if (buff.effect != effect) continue;
+        if (buff.seconds != 0 && Remaining(buff) == 0) continue;
+        total += buff.value[0];
+    }
+    return total;
+}
+
 void CBuffBar::Receive(const unsigned char* packet, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_EFFECT_INFO_SEND)) return;
