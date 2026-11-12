@@ -3,9 +3,11 @@
 ; Hack Settings
 ;==================================================
 ; Check Physic and Magic Speed (0 = No / 1 = Yes)
-CheckSpeedHack=0
+CheckSpeedHack=1
 ; The tolerance for the SpeedHack when CheckSpeedHack=1
-CheckSpeedHackTolerance=0
+; Medido 2026-11-12: en el juego cliente y server coinciden siempre; sólo difieren
+; mientras el server todavía no calculó al personaje (valor 0), que se saltea.
+CheckSpeedHackTolerance=20
 
 ; Check Latency (0 = No / 1 = Yes)
 CheckLatencyHack=0
@@ -13,9 +15,10 @@ CheckLatencyHack=0
 CheckLatencyHackTolerance=0
 
 ; Check Potions consumption (0 = No / 1 = Yes)
-CheckAutoPotionHack=0
+CheckAutoPotionHack=1
 ; The tolerance for consuming potions when CheckAutoPotionHack=1
-CheckAutoPotionHackTolerance=0
+; Medido 2026-11-12: el intervalo humano más corto (tecla sostenida) es 75 ms.
+CheckAutoPotionHackTolerance=50
 
 ; Validacion del camino que manda el cliente: el inicio tiene que estar cerca
 ; de la posicion que calcula el server y ningun paso puede pisar una pared.
@@ -35,7 +38,7 @@ MoveCheckBudget=2000
 SkillLineCheck=1
 
 ; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
-AttackCheck=1
+AttackCheck=2
 ; El intervalo minimo entre dos ataques depende de la velocidad, como la
 ; animacion del cliente (PlaySpeed = 0.6 + PhysiSpeed * 0.004 en la mas rapida):
 ;   minimo (ms) = AttackCheckScale / (0.6 + PhysiSpeed * 0.004)

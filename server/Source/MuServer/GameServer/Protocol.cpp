@@ -768,7 +768,7 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpMsg->PhysiSpeed > lpObj->PhysiSpeed && abs((int)(lpObj->PhysiSpeed - lpMsg->PhysiSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
+	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpObj->PhysiSpeed > 0 && lpMsg->PhysiSpeed > lpObj->PhysiSpeed && abs((int)(lpObj->PhysiSpeed - lpMsg->PhysiSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Speed Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, lpObj->PhysiSpeed, lpMsg->PhysiSpeed);
 
@@ -777,7 +777,7 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpMsg->MagicSpeed > lpObj->MagicSpeed && abs((int)(lpObj->MagicSpeed - lpMsg->MagicSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
+	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpObj->MagicSpeed > 0 && lpMsg->MagicSpeed > lpObj->MagicSpeed && abs((int)(lpObj->MagicSpeed - lpMsg->MagicSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Speed Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, lpObj->MagicSpeed, lpMsg->MagicSpeed);
 
