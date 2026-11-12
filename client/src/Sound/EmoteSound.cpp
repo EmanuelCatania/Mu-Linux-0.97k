@@ -24,8 +24,33 @@ struct Active {
     int voice;
     std::chrono::steady_clock::time_point start;
     float duration;   // segundos de una pasada del emote
+    bool extended;    // el audio dura mucho mas que el emote: se repite hasta que termina el audio
 };
 std::vector<Active> s_active;
+std::vector<int> s_forcedLoop;   // emotes a los que se les forzo el loop mientras suena su audio
+
+// Un emote sin loop cuyo audio dura mas de kExtendRatio veces su animacion (p. ej. Gangnam
+// Style: 7 s de baile y 29 s de cancion) se repite mientras suene la cancion; si no, la
+// animacion terminaria y el audio seguiria solo. Al terminar el audio el personaje se frena.
+constexpr float kExtendRatio = 1.5f;
+
+void ForceLoop(int emote)
+{
+    for (int e : s_forcedLoop) if (e == emote) return;
+    s_forcedLoop.push_back(emote);
+    CustomAnim_SetLoopOverride(emote, 1);
+}
+
+void ReleaseForcedLoops()
+{
+    for (size_t k = 0; k < s_forcedLoop.size();) {
+        bool used = false;
+        for (const Active& a : s_active) if (a.extended && a.emote == s_forcedLoop[k]) { used = true; break; }
+        if (used) { ++k; continue; }
+        CustomAnim_SetLoopOverride(s_forcedLoop[k], -1);
+        s_forcedLoop.erase(s_forcedLoop.begin() + k);
+    }
+}
 
 float DistanceGain(unsigned char* character)
 {
@@ -73,7 +98,14 @@ void EmoteSound_Start(unsigned char* character, int emote)
         char path[300];
         snprintf(path, sizeof(path), "Data\\Sound\\Dances\\%s.mp3", names[(first + k) % names.size()].c_str());
         const int voice = gSound.PlayEmoteSound(path, gain, CustomAnim_IsLoop(emote));
-        if (voice >= 0) { s_active.push_back({character, emote, voice, std::chrono::steady_clock::now(), CustomAnim_Duration(emote)}); return; }
+        if (voice >= 0) {
+            const float duration = CustomAnim_Duration(emote);
+            const float length = gSound.EmoteSoundLength(voice);
+            const bool extended = !CustomAnim_IsLoop(emote) && length > duration * kExtendRatio;
+            if (extended) ForceLoop(emote);
+            s_active.push_back({character, emote, voice, std::chrono::steady_clock::now(), duration, extended});
+            return;
+        }
     }
 }
 
@@ -86,14 +118,23 @@ void EmoteSound_Update()
         const bool alive = c && c[0] &&
             CustomAnim_EmoteOfAction(AsObject(c)->CurrentAction) == a.emote;
         if (!alive || !gSound.IsEmoteSoundPlaying(a.voice)) {
-            // Un emote sin loop que termino solo deja sonar el audio hasta el final; si se
-            // cancelo antes (caminando, otro emote) el audio se apaga.
+            // Audio parecido al emote: si el emote termino solo, el audio sigue hasta el final.
+            // Si se cancelo antes (caminando, otro emote, muerte) el audio se apaga.
             const float elapsed = std::chrono::duration<float>(std::chrono::steady_clock::now() - a.start).count();
-            if (!alive && !CustomAnim_IsLoop(a.emote) && elapsed >= a.duration * 0.9f) s_active.erase(s_active.begin() + i);
-            else Remove(i);
+            if (alive && a.extended) {
+                // Termino la cancion mientras el baile se repetia: el personaje se frena.
+                extern void __cdecl SetPlayerStop(CHARACTER* c);
+                SetPlayerStop(AsCharacter(c));
+                Remove(i);
+            } else if (!alive && !a.extended && !CustomAnim_IsLoop(a.emote) && elapsed >= a.duration * 0.9f) {
+                s_active.erase(s_active.begin() + i);
+            } else {
+                Remove(i);
+            }
             continue;
         }
         gSound.SetEmoteSoundGain(a.voice, kBaseGain * DistanceGain(c));
         ++i;
     }
+    ReleaseForcedLoops();
 }

@@ -34,6 +34,7 @@ struct Emote {
     std::string name;
     std::string sound;                      // candidatos separados por '|'
     bool        loop = false;
+    int         loopOverride = -1;                  // -1 = el del sidecar; 0/1 = forzado en esta sesion
     float       speed = kDefaultPlaySpeed;
     int         frames = 0;
     std::vector<ModelAnimationKeys> keys;   // uno por hueso (vacio en los dummy)
@@ -116,14 +117,23 @@ float CustomAnim_Duration(int emote)
     const Emote& e = s_emotes[emote];
     return e.speed > 0.0f ? (e.frames - 1) / (e.speed * 25.0f) : 0.0f;
 }
-bool CustomAnim_IsLoop(int emote) { return emote >= 0 && emote < (int)s_emotes.size() && s_emotes[emote].loop; }
+bool CustomAnim_IsLoop(int emote)
+{
+    if (emote < 0 || emote >= (int)s_emotes.size()) return false;
+    const Emote& e = s_emotes[emote];
+    return e.loopOverride >= 0 ? e.loopOverride != 0 : e.loop;
+}
+void CustomAnim_SetLoopOverride(int emote, int value)
+{
+    if (emote >= 0 && emote < (int)s_emotes.size()) s_emotes[emote].loopOverride = value;
+}
 
 bool CustomAnim_EndsOnFinish(int action)
 {
     const int c = action - s_first;
     if (s_first < 0 || c < 0 || c >= kChannels) return false;
     const int e = s_channelEmote[c];
-    return e >= 0 && !s_emotes[e].loop;
+    return e >= 0 && !CustomAnim_IsLoop(e);
 }
 
 int CustomAnim_AppendToPlayer()
