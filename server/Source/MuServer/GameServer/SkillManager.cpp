@@ -1837,6 +1837,16 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		return;
 	}
 
+	// Triple Shot resuelve sus blancos en el 0x1E (SkillTripleShot, con el cono
+	// del ángulo) y no anota MultiSkillIndex: el 0x1D que el cliente manda al
+	// chocar la flecha sobra y siempre se descartó.  Se ignora sin avisarle al
+	// cliente, que si no muestra un rechazo por cada flecha.
+	if (lpObj->Type == OBJECT_USER && lpSkill->m_skill == SKILL_TRIPLE_SHOT && lpObj->MultiSkillIndex == 0)
+	{
+		TRACE_NOTE(aIndex, 0x1D, -1, "Triple Shot: 0x1D de la flecha, los blancos ya se resolvieron en el 0x1E");
+		return;
+	}
+
 	if (lpObj->Type == OBJECT_USER && (lpObj->MultiSkillIndex == 0 || lpObj->MultiSkillIndex != lpSkill->m_index || (lpObj->MultiSkillCount++) >= 5))
 	{
 		TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: sin 0x1E previo o fuera de cuenta (MultiSkillIndex=%d esperado=%d MultiSkillCount=%d)", lpSkill->m_skill, lpObj->MultiSkillIndex, lpSkill->m_index, lpObj->MultiSkillCount);
