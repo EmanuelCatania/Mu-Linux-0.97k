@@ -76,7 +76,11 @@ const Proto::PMSG_HEALTH_BAR* CHealthBar::FindEntity(const BYTE* entity) const
     const EntityView view(entity);
     if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.MonsterIndex() == EntityView::SoccerBall)
         return nullptr;
-    return Find(view.NetworkKey(), view.Kind());
+    // Muerto (ReceiveDie / 0x9C marcan Dead) o en 0 %: la barra se va enseguida,
+    // sin esperar a que termine la animación de muerte y se borre la entidad.
+    if (AsCharacter(entity)->Dead) return nullptr;
+    const Proto::PMSG_HEALTH_BAR* bar = Find(view.NetworkKey(), view.Kind());
+    return (bar && bar->rateHP == 0) ? nullptr : bar;
 }
 
 namespace {
