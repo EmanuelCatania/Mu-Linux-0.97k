@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include <vector>
+#include "UI/EventTimer.h"
 #include "Net/Recv/NetRecv.h"
 
 // ── 0x8E-0x99 — EVENTOS, no guild ─────────────────────────────
@@ -36,8 +38,36 @@ void NetRecv_90(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 }
 
 // 0x91
+// Fase 5 (C2, protocolo 9): C2:91 = horarios de eventos y vivos de las
+// invasiones en curso (antes F3:E6 y F3:F2).  Se arman los dos paquetes de antes
+// y se pasan a los mismos parsers.
+//   [C2][size][91] count, count x 40 bytes, invasiones, detalle
+static void Recv_EventSchedule(const BYTE* Msg, int Size)
+{
+    constexpr int kRow = 40;   // PMSG_EVENT_TIME: name[32], status, pad, time
+    if (Size < 6) return;
+    const int count = Msg[4];
+    const int eventsEnd = 5 + count * kRow;
+    if (eventsEnd + 1 > Size) return;
+    std::vector<BYTE> events(6 + count * kRow);
+    events[0] = 0xC2; events[1] = (BYTE)(events.size() >> 8); events[2] = (BYTE)events.size();
+    events[3] = 0xF3; events[4] = 0xE6; events[5] = (BYTE)count;
+    if (count) memcpy(&events[6], Msg + 5, count * kRow);
+    gEventTimer.Receive(events.data(), (int)events.size());
+    const int rest = Size - eventsEnd - 1;
+    std::vector<BYTE> invasions(6 + rest);
+    invasions[0] = 0xC2; invasions[1] = (BYTE)(invasions.size() >> 8); invasions[2] = (BYTE)invasions.size();
+    invasions[3] = 0xF3; invasions[4] = 0xF2; invasions[5] = Msg[eventsEnd];
+    if (rest > 0) memcpy(&invasions[6], Msg + eventsEnd + 1, rest);
+    gEventTimer.ReceiveInvasions(invasions.data(), (int)invasions.size());
+}
+
 void NetRecv_91(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
+    if (Msg[0] == 0xC2) {
+        Recv_EventSchedule(Msg, Size);
+        return;
+    }
     // ReceiveEventZoneOpenTime @ 0x00436CB0
     NetLog("NET:  -> 0x91 EventZoneOpenTime type=%u remain=%u",
            (unsigned)(Size > 3 ? Msg[3] : 0),
