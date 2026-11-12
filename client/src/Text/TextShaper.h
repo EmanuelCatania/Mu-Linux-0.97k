@@ -41,6 +41,7 @@ public:
     std::size_t FallbackCount();
 private:
     void LoadFallbacks();
+    Platform::SDLFont* SystemFontFor(char32_t codepoint);
     Platform::SDLFont* ColorEmojiFont();
     Platform::SDLFont* m_ColorEmoji = nullptr;
     bool m_ColorEmojiTried = false;
@@ -49,7 +50,8 @@ private:
     bool m_Bold = false;
     bool m_FallbacksLoaded = false;
     std::size_t m_SystemTried = 0;
-    std::vector<Platform::SDLFont*> m_Fallbacks;
+    std::vector<Platform::SDLFont*> m_Fallbacks;     // Data/Font
+    std::vector<Platform::SDLFont*> m_SystemFonts;   // del sistema, en el orden en que se abrieron
     struct Cache;
     Cache* m_Cache = nullptr;
 public:
