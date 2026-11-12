@@ -2,6 +2,7 @@
 
 #include "ContentCatalog.h"
 #include "User.h"
+#include "ItemExtras.h"
 
 // CustomPet (0.97.20): pets definidos por datos (Data/Custom/Pets/*.json).
 // El cliente recibe en el catálogo cómo se mueve y se ve el pet; el server
@@ -30,6 +31,9 @@ public:
 	CCustomPet();
 
 	void Load(const char* folder);
+
+	// Fase 5: los pets de Data/Items/NN-nombre.toml ([NNN.pet]).
+	void SetInfo(const std::vector<ItemExtraDef>& items);
 
 	const CUSTOM_PET_INFO* GetInfo(int item) const;
 

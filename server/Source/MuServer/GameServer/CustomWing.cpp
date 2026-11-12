@@ -2,6 +2,7 @@
 #include "CustomWing.h"
 #include "ItemManager.h"
 #include "ReadScript.h"
+#include "Util.h"
 
 CCustomWing gCustomWing;
 
@@ -23,8 +24,51 @@ void CCustomWing::Init()
 	}
 }
 
+void CCustomWing::SetInfo(const std::vector<ItemExtraDef>& items)
+{
+	this->Init();
+
+	int Index = 0;
+
+	for (const ItemExtraDef& d : items)
+	{
+		if (!d.HasWing)
+		{
+			continue;
+		}
+
+		if (Index >= MAX_CUSTOM_WING)
+		{
+			LogAdd(LOG_RED, "[CustomWing] Hay más de %d alas custom: el item %d,%d no se usa", MAX_CUSTOM_WING, d.Section, d.Index);
+
+			continue;
+		}
+
+		CUSTOM_WING_INFO info;
+
+		info.Index = Index++;
+
+		info.ItemIndex = GET_ITEM(d.Section, d.Index);
+
+		info.DefenseConstA = d.WingDefenseA;
+
+		info.IncDamageConstA = d.WingIncDamageA;
+
+		info.IncDamageConstB = d.WingIncDamageB;
+
+		info.DecDamageConstA = d.WingDecDamageA;
+
+		info.DecDamageConstB = d.WingDecDamageB;
+
+		this->SetInfo(info);
+	}
+}
+
 void CCustomWing::Load(const char* path)
 {
+	// Una recarga con menos filas dejaba las alas viejas.
+	this->Init();
+
 	CReadScript* lpReadScript = new CReadScript;
 
 	if (lpReadScript == NULL)

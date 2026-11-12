@@ -16,6 +16,29 @@ CItemStack::~CItemStack()
 
 }
 
+void CItemStack::SetInfo(const std::vector<ItemExtraDef>& items)
+{
+	this->m_ItemStackInfo.clear();
+
+	for (const ItemExtraDef& d : items)
+	{
+		for (const ItemExtraStack& s : d.Stack)
+		{
+			ITEM_STACK_INFO info;
+
+			info.ItemIndex = SafeGetItem(GET_ITEM(d.Section, d.Index));
+
+			info.Level = s.Level;
+
+			info.MaxStack = s.MaxStack;
+
+			info.CreateItemIndex = (s.CreateSection < 0) ? -1 : SafeGetItem(GET_ITEM(s.CreateSection, s.CreateIndex));
+
+			this->m_ItemStackInfo.push_back(info);
+		}
+	}
+}
+
 void CItemStack::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -130,6 +153,16 @@ void CItemStack::GCItemStackListSend(int aIndex)
 
 	for (std::vector<ITEM_STACK_INFO>::iterator it = this->m_ItemStackInfo.begin(); it != this->m_ItemStackInfo.end(); it++)
 	{
+		// El paquete entra en send[2048] y count es un BYTE: con más filas
+		// escribía fuera del buffer. Las que sobran no viajan (el server las
+		// sigue aplicando); el catálogo nuevo las va a partir en paquetes.
+		if (pMsg.count == 0xFF || size + (int)sizeof(info) > (int)sizeof(send))
+		{
+			LogAdd(LOG_RED, "[ItemStack] Demasiadas filas para el F3:E3: se mandan %d de %d", pMsg.count, (int)this->m_ItemStackInfo.size());
+
+			break;
+		}
+
 		info.ItemIndex = it->ItemIndex;
 
 		info.Level = it->Level;
