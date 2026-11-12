@@ -8,7 +8,7 @@ const mapFolders = require('../lib/map-folders');
 const DATA = path.join(__dirname, '..', '..', 'server', 'MuServer', 'Data');
 
 // Copia Data/Maps y Data/Items a una carpeta temporal y arma el `io` sobre ella.
-function fixture() {
+function fixture(options) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'map-folders-'));
   for (const dir of ['Maps', 'Items']) fs.cpSync(path.join(DATA, dir), path.join(root, 'Data', dir), { recursive: true });
   const abs = (rel) => path.join(root, rel);
@@ -28,7 +28,7 @@ function fixture() {
       return {};
     }
   };
-  return { root, abs, editor: mapFolders.create(io), done: () => fs.rmSync(root, { recursive: true, force: true }) };
+  return { root, abs, editor: mapFolders.create(io, options), done: () => fs.rmSync(root, { recursive: true, force: true }) };
 }
 
 test('map-folders: lista las carpetas con sus archivos y qué tipos ya están en TOML', async () => {
@@ -122,6 +122,40 @@ test('map-folders: no crea el primer archivo de un tipo que sigue en .txt', asyn
     await assert.rejects(f.editor.save('00-Lorencia', 'gates', ''), (err) => err.status === 409);
     await assert.rejects(f.editor.read('99-Nada', 'gates'), (err) => err.status === 404);
     await assert.rejects(f.editor.read('00-Lorencia', 'otro'), /desconocido/);
+  } finally {
+    f.done();
+  }
+});
+
+test('map-folders: modo visual de spawns, del texto a la lista y de vuelta', async () => {
+  const names = async () => ({ mapName: (id) => (id === 0 ? 'Lorencia' : undefined), monsterName: (id) => `Bicho ${id}` });
+  const f = fixture({ names });
+  try {
+    const { editor } = f;
+    const { content } = await editor.read('00-Lorencia', 'spawns');
+    const parsed = await editor.spawnEntries('00-Lorencia', content);
+    assert.equal(parsed.map, 0);
+    assert.ok(parsed.entries.length > 0);
+    assert.ok(parsed.entries.every((e) => mapFolders.MAP_SPAWN_SECTIONS.includes(e.section)));
+
+    // Ida y vuelta: el texto armado vuelve a dar la misma lista.
+    const built = await editor.spawnText('00-Lorencia', parsed.entries);
+    assert.match(built.content, /^# Lorencia \(mapa 0\)/);
+    assert.match(built.content, /# Bicho \d+/);
+    assert.deepEqual((await editor.spawnEntries('00-Lorencia', built.content)).entries, parsed.entries);
+
+    // Un spawn nuevo agregado desde el mapa.
+    const added = parsed.entries.concat({ section: 0, monster: 249, dis: 0, x: 130, y: 120, dir: 3 });
+    const withNew = await editor.spawnText('00-Lorencia', added);
+    assert.match(withNew.content, /\{ monster = 249, at = \[130, 120\], dir = 3 \}, # Bicho 249/);
+    // Y se guarda por el mismo camino que el modo texto.
+    assert.equal((await editor.save('00-Lorencia', 'spawns', withNew.content, true)).valid, true);
+
+    await assert.rejects(editor.spawnText('00-Lorencia', [{ section: 3, monster: 1, dis: 0, x: 1, y: 1, dir: 0 }]), /invasiones/);
+    await assert.rejects(editor.spawnText('00-Lorencia', [{ section: 0, monster: 1, dis: 0, x: 300, y: 1, dir: 0 }]), /0 a 255/);
+    await assert.rejects(editor.spawnText('00-Lorencia', [{ section: 0, monster: 'x', dis: 0, x: 1, y: 1, dir: 0 }]), /entero/);
+    await assert.rejects(editor.spawnEntries('00-Lorencia', 'npc = [ { monster = 1 } ]\n'), /at/);
+    await assert.rejects(editor.spawnEntries('99-Nada', ''), (err) => err.status === 404);
   } finally {
     f.done();
   }

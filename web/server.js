@@ -2350,7 +2350,7 @@ const mapFolders = mapFoldersLib.create({
   read: readEditorFile,
   write: (path, content) => editorRequest('POST', '/api/file', { path, content }),
   remove: (path) => editorRequest('POST', '/api/delete', { path })
-});
+}, { names: () => spawnNames() });
 
 function mapFolderRoute(handler) {
   return async (req, res) => {
@@ -2374,6 +2374,14 @@ app.get('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminP
 // { folder, kind, content, check } — con check sólo valida.
 app.post('/admin/server-editor/api/map-folders/file', requireAdmin, requireAdminPasswordChange,
   mapFolderRoute((req) => mapFolders.save(String(req.body?.folder || ''), String(req.body?.kind || ''), req.body?.content, !!req.body?.check)));
+
+// Modo visual del Spawns.toml: { folder, content } -> { entries } y
+// { folder, entries } -> { content }. No escriben nada.
+app.post('/admin/server-editor/api/map-folders/spawns/parse', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.spawnEntries(String(req.body?.folder || ''), req.body?.content)));
+
+app.post('/admin/server-editor/api/map-folders/spawns/build', requireAdmin, requireAdminPasswordChange,
+  mapFolderRoute((req) => mapFolders.spawnText(String(req.body?.folder || ''), req.body?.entries)));
 
 app.post('/admin/server-editor/api/map-folders/delete', requireAdmin, requireAdminPasswordChange,
   mapFolderRoute((req) => mapFolders.remove(String(req.body?.folder || ''), String(req.body?.kind || ''))));

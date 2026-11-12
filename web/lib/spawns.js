@@ -289,5 +289,6 @@ module.exports = {
   parseLegacy,
   buildLegacy,
   buildToml,
+  mapFileText,
   parseToml
 };
