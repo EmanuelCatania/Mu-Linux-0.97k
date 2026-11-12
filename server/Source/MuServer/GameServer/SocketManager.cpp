@@ -473,6 +473,27 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 
 	static BYTE send[MAX_MAIN_PACKET_SIZE];
 
+	// Un C3 que encriptado no entra en el byte de tamaño (más de 255) sale como
+	// C4, con el mismo contenido.  Pasa con el F3:03 desde que lleva el bloque
+	// de stats (Fase 5, C2): truncado, el cliente perdía el encuadre y se
+	// quedaba en "Loading".
+	static BYTE wide[MAX_MAIN_PACKET_SIZE];
+
+	if (lpMsg[0] == 0xC3 && size >= 3 && (gPacketManager.Encrypt(0, 0, (size - 1)) + 2) > 0xFF && (size + 1) <= MAX_MAIN_PACKET_SIZE)
+	{
+		wide[0] = 0xC4;
+
+		wide[1] = HIBYTE(size + 1);
+
+		wide[2] = LOBYTE(size + 1);
+
+		memcpy(&wide[3], &lpMsg[2], size - 2);
+
+		lpMsg = wide;
+
+		size = size + 1;
+	}
+
 	memcpy(send, lpMsg, size);
 
 	if (lpMsg[0] == 0xC3 || lpMsg[0] == 0xC4)
