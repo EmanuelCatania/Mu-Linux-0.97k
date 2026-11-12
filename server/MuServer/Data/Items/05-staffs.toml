@@ -1,0 +1,59 @@
+# Items de la sección 5 (staffs): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 5,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Skull Staff
+[000]
+glow = [255, 127, 0]
+
+# Angelic Staff
+[001]
+glow = [255, 127, 0]
+
+# Serpent Staff
+[002]
+glow = [255, 127, 0]
+
+# Thunder Staff
+[003]
+glow = [255, 127, 0]
+
+# Gorgon Staff
+[004]
+glow = [255, 127, 0]
+
+# Legendary Staff
+[005]
+glow = [0, 127, 255]
+
+# Staff of Resurrection
+[006]
+glow = [255, 127, 0]
+
+# Chaos Lightning Staff
+[007]
+glow = [255, 127, 0]
+
+# Staff of Destruction
+[008]
+glow = [255, 127, 0]
+
+# Dragon Soul Staff
+[009]
+glow = [255, 255, 255]
+
+# Divine Staff of Archangel
+[010]
+glow = [255, 127, 0]
+

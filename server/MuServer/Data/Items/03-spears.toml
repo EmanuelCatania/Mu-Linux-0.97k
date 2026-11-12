@@ -1,0 +1,62 @@
+# Items de la sección 3 (spears): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 3,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Light Spear (vanilla 3,0): el 0.97 lo dibuja corrido en su casilla.
+# Corrección del 5.2 (ZzzInventory.cpp, RenderObjectScreen MODEL_SPEAR+0):
+# Position[1] += 0.05 y ángulo (0, 90, 20).  Escala 0 = la vanilla.
+[000]
+glow = [255, 127, 0]
+inventory = { position = [0, 0.05], rotation = [0, 90, 20] }
+
+# Spear
+[001]
+glow = [255, 127, 0]
+
+# Dragon Lance
+[002]
+glow = [255, 127, 0]
+
+# Giant Trident
+[003]
+glow = [255, 127, 0]
+
+# Serpent Spear
+[004]
+glow = [255, 127, 0]
+
+# Double Poleaxe
+[005]
+glow = [255, 127, 0]
+
+# Halberd
+[006]
+glow = [255, 127, 0]
+
+# Berdysh
+[007]
+glow = [255, 127, 0]
+
+# Great Scythe
+[008]
+glow = [255, 127, 0]
+
+# Bill of Balrog
+[009]
+glow = [255, 51, 0]
+
+# Dragon Spear
+[010]
+glow = [127, 127, 204]
+

@@ -1,0 +1,21 @@
+# Items de la sección 12 (wings): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 12,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Jewel of Chaos
+[015]
+value = [
+	{ buy = 810000 },
+]
+

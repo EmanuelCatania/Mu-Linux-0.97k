@@ -1,0 +1,96 @@
+# Items de la sección 7 (helms): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 7,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Bronze Helm
+[000]
+glow = [255, 127, 0]
+
+# Dragon Helm
+[001]
+glow = [255, 51, 0]
+
+# Pad Helm
+[002]
+glow = [255, 127, 0]
+
+# Legendary Helm
+[003]
+glow = [0, 127, 255]
+
+# Bone Helm
+[004]
+glow = [255, 255, 255]
+
+# Leather Helm
+[005]
+glow = [255, 127, 0]
+
+# Scale Helm
+[006]
+glow = [153, 204, 102]
+
+# Sphinx Helm
+[007]
+glow = [204, 178, 102]
+
+# Brass Helm
+[008]
+glow = [255, 127, 0]
+
+# Plate Helm
+[009]
+glow = [0, 127, 255]
+
+# Vine Helm
+[010]
+glow = [255, 127, 0]
+
+# Silk Helm
+[011]
+glow = [255, 127, 0]
+
+# Wind Helm
+[012]
+glow = [0, 127, 255]
+
+# Spirit Helm
+[013]
+glow = [0, 204, 102]
+
+# Guardian Helm
+[014]
+glow = [255, 255, 255]
+
+# Black Dragon Helm
+[016]
+glow = [191, 165, 127]
+
+# Dark Phoenix Helm
+[017]
+glow = [127, 127, 204]
+
+# Grand Soul Helm
+[018]
+glow = [255, 76, 76]
+
+# Divine Helm
+[019]
+glow = [127, 127, 204]
+
+# Great Dragon Helm
+[021]
+model = { folder = "Player/Custom/21/", name = "HelmMale22" }
+glow = [204, 117, 63]
+

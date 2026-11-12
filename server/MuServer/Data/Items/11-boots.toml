@@ -1,0 +1,104 @@
+# Items de la sección 11 (boots): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 11,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Bronze Boots
+[000]
+glow = [255, 127, 0]
+
+# Dragon Boots
+[001]
+glow = [255, 51, 0]
+
+# Pad Boots
+[002]
+glow = [255, 127, 0]
+
+# Legendary Boots
+[003]
+glow = [0, 127, 255]
+
+# Bone Boots
+[004]
+glow = [255, 255, 255]
+
+# Leather Boots
+[005]
+glow = [255, 127, 0]
+
+# Scale Boots
+[006]
+glow = [153, 204, 102]
+
+# Sphinx Boots
+[007]
+glow = [204, 178, 102]
+
+# Brass Boots
+[008]
+glow = [255, 127, 0]
+
+# Plate Boots
+[009]
+glow = [0, 127, 255]
+
+# Vine Boots
+[010]
+glow = [255, 127, 0]
+
+# Silk Boots
+[011]
+glow = [255, 127, 0]
+
+# Wind Boots
+[012]
+glow = [0, 127, 255]
+
+# Spirit Boots
+[013]
+glow = [0, 204, 102]
+
+# Guardian Boots
+[014]
+glow = [255, 255, 255]
+
+# Storm Crow Boots
+[015]
+glow = [229, 204, 255]
+
+# Black Dragon Boots
+[016]
+glow = [191, 165, 127]
+
+# Dark Phoenix Boots
+[017]
+glow = [127, 127, 204]
+
+# Grand Soul Boots
+[018]
+glow = [255, 76, 76]
+
+# Divine Boots
+[019]
+glow = [127, 127, 204]
+
+# Thunder Hawk Boots
+[020]
+glow = [127, 127, 204]
+
+# Great Dragon Boots
+[021]
+model = { folder = "Player/Custom/21/", name = "BootMale22" }
+glow = [204, 117, 63]
+

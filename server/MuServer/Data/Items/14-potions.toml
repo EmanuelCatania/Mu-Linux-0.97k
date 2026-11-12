@@ -1,0 +1,141 @@
+# Items de la sección 14 (potions): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 14,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Apple
+[000]
+stack = 255
+
+# Small Healing Potion
+[001]
+stack = 255
+
+# Medium Healing Potion
+[002]
+stack = 255
+
+# Large Healing Potion
+[003]
+stack = 255
+
+# Small Mana Potion
+[004]
+stack = 255
+
+# Medium Mana Potion
+[005]
+stack = 255
+
+# Large Mana Potion
+[006]
+stack = 255
+
+# Antidote
+[008]
+stack = 255
+
+# Ale
+[009]
+value = [
+	{ level = 1, buy = 1000 },
+]
+
+# Jewel of Bless
+[013]
+value = [
+	{ buy = 9000000 },
+]
+
+# Jewel of Soul
+[014]
+value = [
+	{ buy = 6000000 },
+]
+
+# Jewel of Life
+[016]
+value = [
+	{ buy = 45000000 },
+]
+
+# Devil's Eye
+[017]
+value = [
+	{ level = 1, buy = 15000 },
+	{ level = 2, buy = 21000 },
+	{ level = 3, buy = 30000 },
+	{ level = 4, buy = 45000 },
+]
+
+# Devil's Key
+[018]
+value = [
+	{ level = 1, buy = 15000 },
+	{ level = 2, buy = 21000 },
+	{ level = 3, buy = 30000 },
+	{ level = 4, buy = 45000 },
+]
+
+# Devil's Invitation
+[019]
+value = [
+	{ level = 1, buy = 60000 },
+	{ level = 2, buy = 84000 },
+	{ level = 3, buy = 120000 },
+	{ level = 4, buy = 180000 },
+]
+
+# Remedy of Love
+[020]
+value = [
+	{ buy = 900 },
+]
+
+# Rena
+[021]
+stack = 255
+value = [
+	{ level = 0, buy = 9000 },
+]
+
+# Jewel of Creation
+[022]
+value = [
+	{ buy = 36000000 },
+]
+
+# Scroll of Emperor
+[023]
+value = [
+	{ buy = 9000 },
+]
+
+# Broken Sword
+[024]
+value = [
+	{ buy = 9000 },
+]
+
+# Tear of Elf
+[025]
+value = [
+	{ buy = 9000 },
+]
+
+# Soul Shard of Wizard
+[026]
+value = [
+	{ buy = 9000 },
+]
+

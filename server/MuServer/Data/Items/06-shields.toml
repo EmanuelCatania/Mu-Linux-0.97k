@@ -1,0 +1,83 @@
+# Items de la sección 6 (shields): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 6,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Small Shield
+[000]
+glow = [255, 127, 0]
+
+# Horn Shield
+[001]
+glow = [255, 127, 0]
+
+# Kite Shield
+[002]
+glow = [255, 127, 0]
+
+# Elven Shield
+[003]
+glow = [255, 127, 0]
+
+# Buckler
+[004]
+glow = [255, 127, 0]
+
+# Dragon Slayer Shield
+[005]
+glow = [255, 127, 0]
+
+# Skull Shield
+[006]
+glow = [255, 127, 0]
+
+# Spiked Shield
+[007]
+glow = [255, 127, 0]
+
+# Tower Shield
+[008]
+glow = [255, 127, 0]
+
+# Plate Shield
+[009]
+glow = [255, 127, 0]
+
+# Large Round Shield
+[010]
+glow = [255, 127, 0]
+
+# Serpent Shield
+[011]
+glow = [255, 127, 0]
+
+# Bronze Shield
+[012]
+glow = [255, 127, 0]
+
+# Dragon Shield
+[013]
+glow = [255, 127, 0]
+
+# Legendary Shield
+[014]
+glow = [255, 127, 0]
+
+# Grand Soul Shield
+[015]
+glow = [255, 76, 76]
+
+# Elemental Shield
+[016]
+glow = [153, 204, 102]
+

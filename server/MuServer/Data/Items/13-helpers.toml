@@ -1,0 +1,81 @@
+# Items de la sección 13 (helpers): lo que no está en Item/Item.txt.
+# Cada tabla es un item por su índice: [020] es el item 13,20.
+#
+#   model     = { name = "Sword21" }                          modelo propio en Data/Item/NN-sección/III/ del cliente
+#               (o { folder = "Player/Custom/21/", name = "..." } para otra carpeta bajo Data/)
+#   bow       = "bow" | "crossbow"                                 arco o ballesta custom
+#   glow      = [R, G, B]                                            color del brillo
+#   wing      = { defense = A, inc_damage = [A, B], dec_damage = [A, B] }   ala custom
+#   inventory = { position = [x, y], rotation = [x, y, z], scale = s }      pose en el inventario
+#   tooltip   = [ { text = "...", color = "gold" } ]                líneas propias del tooltip
+#   effects   = [ { on = "equipped", type = "sprite", ... } ]        efectos sobre los huesos
+#   stack     = 255  o  [ { level = 0, max = 255, create = "14,22" } ]   apilado (sólo server)
+#   value     = [ { level = 0, buy = 100, sell = 20 } ]              precio (sólo server)
+#   [NNN.pet]                                                        pet (el pickup es sólo server)
+
+# Horn of Dinorant
+[003]
+value = [
+	{ buy = 960000 },
+]
+
+# Loch's Feather
+[014]
+value = [
+	{ level = 0, buy = 180000 },
+]
+
+# Fruit
+[015]
+value = [
+	{ buy = 33000000 },
+]
+
+# Scroll of Archangel
+[016]
+value = [
+	{ level = 1, buy = 15000 },
+	{ level = 2, buy = 21000 },
+	{ level = 3, buy = 30000 },
+	{ level = 4, buy = 39000 },
+	{ level = 5, buy = 48000 },
+	{ level = 6, buy = 60000 },
+]
+
+# Blood Bone
+[017]
+value = [
+	{ level = 1, buy = 15000 },
+	{ level = 2, buy = 21000 },
+	{ level = 3, buy = 30000 },
+	{ level = 4, buy = 39000 },
+	{ level = 5, buy = 48000 },
+	{ level = 6, buy = 60000 },
+]
+
+# Cloak of Invisibility
+[018]
+value = [
+	{ level = 1, buy = 150000 },
+	{ level = 2, buy = 660000 },
+	{ level = 3, buy = 720000 },
+	{ level = 4, buy = 780000 },
+	{ level = 5, buy = 840000 },
+	{ level = 6, buy = 900000 },
+]
+
+# Pet Rudolph: ejemplo de pet custom. El modelo sale de Item.txt.
+# Pose del inventario del 5.2 (ZzzInventory.cpp MODEL_HELPER+67) y una línea
+# propia en el tooltip. Como pet da vueltas alrededor del dueño; cuando cae zen
+# cerca vuela hasta él, da vueltas encima y lo levanta (el Collecter del 5.2).
+# "delay" es lo que tarda en levantarlo desde que lo elige.
+[400]
+inventory = { position = [0, -0.05], rotation = [270, 40, 0], scale = 0.0015 }
+tooltip = [{ color = "gold", text = "Zen picker" }]
+
+[400.pet]
+abilities = [{ delay = 1500, interval = 1000, range = 3, type = "pickup", what = "zen" }]
+blendMesh = 0
+movement = { height = 20, period = 4000, radius = 50, type = "orbit" }
+scale = 1
+
