@@ -401,6 +401,7 @@ struct PMSG_CHARACTER_LIST
 	WORD Level;
 	BYTE CtlCode;
 	BYTE CharSet[11];
+	WORD ExtItem[9];    // CharSet expandido (protocolo 7): items >= 512, 0xFFFF = no.  Antes F3:ED.
 };
 
 struct PMSG_CHARACTER_CREATE_SEND
