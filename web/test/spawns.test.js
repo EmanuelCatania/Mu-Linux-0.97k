@@ -54,7 +54,7 @@ function tomlFiles(files) {
 
 test('spawns: el .txt del repo pasa a TOML y vuelve igual', () => {
   const legacy = spawns.parseLegacy(legacyText);
-  assert.equal(legacy.length, 2881);
+  assert.equal(legacy.length, 2882);
 
   const files = spawns.buildToml(legacy, { mapName: (id) => `Map${id}` });
   assert.ok(files[spawns.INVASIONS_FILE], 'las invasiones van a su propio archivo');
