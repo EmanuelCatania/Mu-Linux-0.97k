@@ -160,6 +160,7 @@ private:
     void ApplyMapMusic();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
+    int  LoadItemModel(int index, const char* folder, const char* name, int fixedSlot);
     int  LoadTexture(const char* path);
 
     bool m_Loaded = false;

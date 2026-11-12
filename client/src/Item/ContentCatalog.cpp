@@ -906,7 +906,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
     if (row.Flags & Proto::CATALOG_ITEM_HAS_ENTITY) {
         row.EntityFolder[sizeof(row.EntityFolder) - 1] = 0;
         row.EntityName[sizeof(row.EntityName) - 1] = 0;
-        extra.EntityModel = LoadModel(row.EntityFolder, row.EntityName, -1);
+        extra.EntityModel = LoadItemModel(row.Index, row.EntityFolder, row.EntityName, -1);
         if (extra.EntityModel >= MODEL_MAX_VANILLA && !s_DynamicModelItem.count(extra.EntityModel))
             s_DynamicModelItem[extra.EntityModel] = row.Index;
     }
@@ -916,10 +916,39 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
         // Un vanilla (o un índice libre por debajo de 512) usa su slot de
         // siempre, type + 400: así lo dibujan todos los caminos del binario.
         const int fixedSlot = (row.Index < ITEM_MAX_VANILLA) ? row.Index + ITEM_MODEL_BASE : -1;
-        extra.Model = LoadModel(row.ModelFolder, row.ModelName, fixedSlot);
+        extra.Model = LoadItemModel(row.Index, row.ModelFolder, row.ModelName, fixedSlot);
         if (extra.Model >= MODEL_MAX_VANILLA && !s_DynamicModelItem.count(extra.Model))
             s_DynamicModelItem[extra.Model] = row.Index;
     }
+}
+
+// Carpeta por defecto del modelo de un item: Item\NN-sección\III\ (la misma
+// que usa el server cuando el TOML no da `folder`).  Sirve de respaldo para un
+// server con datos viejos que todavía manda la ruta anterior (Item\Custom\...),
+// que ya no existe en el cliente.
+static bool DefaultItemFolder(int index, char* out, size_t size)
+{
+    static const char* const kSections[16] = {
+        "swords", "axes", "maces", "spears", "bows", "staffs", "shields", "helms",
+        "armors", "pants", "gloves", "boots", "wings", "helpers", "potions", "scrolls",
+    };
+    int section, sub;
+    if (index < 512) { section = index / 32; sub = index % 32; }
+    else             { section = (index - 512) / 480; sub = (index - 512) % 480 + 32; }
+    if (section < 0 || section >= 16) return false;
+    Platform::TextFormatTruncated(out, size, Platform::TruncateText, "Item\\%02d-%s\\%03d\\", section, kSections[section], sub);
+    return true;
+}
+
+int CContentCatalog::LoadItemModel(int index, const char* folder, const char* name, int fixedSlot)
+{
+    int slot = LoadModel(folder, name, fixedSlot);
+    char def[64];
+    if (slot < 0 && DefaultItemFolder(index, def, sizeof(def)) && Platform::TextCompareIgnoreCase(def, folder) != 0) {
+        slot = LoadModel(def, name, fixedSlot);
+        if (slot >= 0) Log("ContentCatalog: %s%s.bmd no está, se usó %s", folder, name, def);
+    }
+    return slot;
 }
 
 // Carga un BMD del catálogo.  `fixedSlot` >= 0 lo pone en ese slot; si no, va
