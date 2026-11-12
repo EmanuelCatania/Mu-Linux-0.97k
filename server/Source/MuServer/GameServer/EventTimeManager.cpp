@@ -28,7 +28,7 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 
 	PMSG_EVENT_TIME_SEND pMsg;
 
-	pMsg.header.set(0xF3, 0xE6, 0);
+	pMsg.header.set(0x91, 0);
 
 	int size = sizeof(pMsg);
 
@@ -210,36 +210,35 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 		pMsg.count++;
 	}
 
-	if (pMsg.count > 0)
-	{
-		pMsg.header.size[0] = SET_NUMBERHB(size);
+	const int eventsEnd = size;
 
-		pMsg.header.size[1] = SET_NUMBERLB(size);
+	size = this->AppendInvasionDetail(send, size, sizeof(send));
 
-		memcpy(send, &pMsg, sizeof(pMsg));
-
-		DataSend(aIndex, send, size);
-	}
-
-	this->GCInvasionDetailSend(aIndex);
-}
-
-void CEventTimeManager::GCInvasionDetailSend(int aIndex)
-{
-	if (gServerInfo.m_InvasionManagerSwitch == 0)
+	// Sin eventos ni invasiones no se manda nada.
+	if (pMsg.count == 0 && send[eventsEnd] == 0)
 	{
 		return;
 	}
 
-	BYTE send[4096];
+	pMsg.header.size[0] = SET_NUMBERHB(size);
 
-	PMSG_INVASION_DETAIL_SEND pMsg;
+	pMsg.header.size[1] = SET_NUMBERLB(size);
 
-	pMsg.header.set(0xF3, 0xF2, 0);
+	memcpy(send, &pMsg, sizeof(pMsg));
 
-	pMsg.count = 0;
+	DataSend(aIndex, send, size);
+}
 
-	int size = sizeof(pMsg);
+int CEventTimeManager::AppendInvasionDetail(BYTE* send, int size, int capacity)
+{
+	const int countAt = size;
+
+	send[size++] = 0;
+
+	if (gServerInfo.m_InvasionManagerSwitch == 0)
+	{
+		return size;
+	}
 
 	int alive[MAX_MAP];
 
@@ -247,9 +246,14 @@ void CEventTimeManager::GCInvasionDetailSend(int aIndex)
 
 	for (int i = 0; i < MAX_INVASION; i++)
 	{
-		if (gInvasionManager.GetMapStatus(i, alive, total) == 0)
+		if (gInvasionManager.GetMapStatus(i, alive, total) == 0 || send[countAt] == 0xFF)
 		{
 			continue;
+		}
+
+		if (size + (int)sizeof(PMSG_INVASION_DETAIL) > capacity)
+		{
+			break;
 		}
 
 		PMSG_INVASION_DETAIL info;
@@ -264,7 +268,7 @@ void CEventTimeManager::GCInvasionDetailSend(int aIndex)
 
 		for (int map = 0; map < MAX_MAP; map++)
 		{
-			if (total[map] == 0 || (size + (int)sizeof(PMSG_INVASION_DETAIL_MAP)) > (int)sizeof(send))
+			if (total[map] == 0 || (size + (int)sizeof(PMSG_INVASION_DETAIL_MAP)) > capacity || info.maps == 0xFF)
 			{
 				continue;
 			}
@@ -286,21 +290,8 @@ void CEventTimeManager::GCInvasionDetailSend(int aIndex)
 
 		memcpy(&send[start], &info, sizeof(info));
 
-		pMsg.count++;
+		send[countAt]++;
 	}
 
-	// Sin invasiones en curso no se manda nada: el cliente sólo muestra el
-	// detalle de las filas que el F3:E6 marca como en curso.
-	if (pMsg.count == 0)
-	{
-		return;
-	}
-
-	pMsg.header.size[0] = SET_NUMBERHB(size);
-
-	pMsg.header.size[1] = SET_NUMBERLB(size);
-
-	memcpy(send, &pMsg, sizeof(pMsg));
-
-	DataSend(aIndex, send, size);
+	return size;
 }

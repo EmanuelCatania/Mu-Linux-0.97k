@@ -407,37 +407,21 @@ static_assert(offsetof(PMSG_HEALTH_BAR, index) == 0, "F3:E2 index");
 static_assert(offsetof(PMSG_HEALTH_BAR, type) == 2, "F3:E2 type");
 static_assert(offsetof(PMSG_HEALTH_BAR, rateHP) == 3, "F3:E2 rateHP");
 
-// ── C2:F3:E3 ─ máximo de apilado ── ItemStack.h:9 / ItemStack.h:15 ────────────
-// Item/Item_ServerValue.cpp Recv_ItemStackList (encabezado de 6, entradas de 12).
-struct PMSG_ITEM_STACK_LIST_SEND
-{
-    PSWMSG_HEAD header;     // C2:F3:E3
-    std::uint8_t count;
-};
-static_assert(sizeof(PMSG_ITEM_STACK_LIST_SEND) == 6, "F3:E3");
-static_assert(offsetof(PMSG_ITEM_STACK_LIST_SEND, count) == 5, "F3:E3 count");
-
+// ── Catálogo F3:F8 ─ máximo de apilado ── ItemStack.h (ITEM_STACK) ───────────
+// Antes viajaba en la lista F3:E3 del DLL.  Item/Item_ServerValue.cpp.
 struct ITEM_STACK
 {
     std::int32_t ItemIndex;
     std::int32_t Level;
     std::int32_t MaxStack;
 };
-static_assert(sizeof(ITEM_STACK) == 12, "F3:E3 entrada");
-static_assert(offsetof(ITEM_STACK, ItemIndex) == 0, "F3:E3 ItemIndex");
-static_assert(offsetof(ITEM_STACK, Level) == 4, "F3:E3 Level");
-static_assert(offsetof(ITEM_STACK, MaxStack) == 8, "F3:E3 MaxStack");
+static_assert(sizeof(ITEM_STACK) == 12, "F3:F8 registro");
+static_assert(offsetof(ITEM_STACK, ItemIndex) == 0, "F3:F8 ItemIndex");
+static_assert(offsetof(ITEM_STACK, Level) == 4, "F3:F8 Level");
+static_assert(offsetof(ITEM_STACK, MaxStack) == 8, "F3:F8 MaxStack");
 
-// ── C2:F3:E4 ─ precios fijos ── ItemValue.h:10 / ItemValue.h:20 ───────────────
-// Item/Item_ServerValue.cpp Recv_ItemValueList (encabezado de 6, entradas de 16).
-struct PMSG_ITEM_VALUE_LIST_SEND
-{
-    PSWMSG_HEAD header;     // C2:F3:E4
-    std::uint8_t count;
-};
-static_assert(sizeof(PMSG_ITEM_VALUE_LIST_SEND) == 6, "F3:E4");
-static_assert(offsetof(PMSG_ITEM_VALUE_LIST_SEND, count) == 5, "F3:E4 count");
-
+// ── Catálogo F3:F9 ─ precios fijos ── ItemValue.h (ITEM_VALUE_INFO) ────────────
+// Antes viajaba en la lista F3:E4 del DLL.  Item/Item_ServerValue.cpp.
 struct ITEM_VALUE_INFO
 {
     std::int32_t Index;
@@ -445,24 +429,38 @@ struct ITEM_VALUE_INFO
     std::int32_t BuyValue;
     std::int32_t SellValue;
 };
-static_assert(sizeof(ITEM_VALUE_INFO) == 16, "F3:E4 entrada");
-static_assert(offsetof(ITEM_VALUE_INFO, Index) == 0, "F3:E4 Index");
-static_assert(offsetof(ITEM_VALUE_INFO, Level) == 4, "F3:E4 Level");
-static_assert(offsetof(ITEM_VALUE_INFO, BuyValue) == 8, "F3:E4 BuyValue");
-static_assert(offsetof(ITEM_VALUE_INFO, SellValue) == 12, "F3:E4 SellValue");
+static_assert(sizeof(ITEM_VALUE_INFO) == 16, "F3:F9 registro");
+static_assert(offsetof(ITEM_VALUE_INFO, Index) == 0, "F3:F9 Index");
+static_assert(offsetof(ITEM_VALUE_INFO, Level) == 4, "F3:F9 Level");
+static_assert(offsetof(ITEM_VALUE_INFO, BuyValue) == 8, "F3:F9 BuyValue");
+static_assert(offsetof(ITEM_VALUE_INFO, SellValue) == 12, "F3:F9 SellValue");
 
-// ── C2:F3:E5 ─ lista de /move ── Move.h:34 / Move.h:41 ────────────────────────
-// Consumido por UI/MoveList.cpp; la autorización final corresponde al server.
-struct PMSG_MOVE_LIST_SEND
+// ── Catálogo F3:F5 ─ lista de /move ── ContentCatalog.h (CATALOG_MOVE) ────────
+// Antes la lista F3:E5 del DLL.  UI/MoveList.cpp la pasa a MOVE_LIST_INFO; la
+// autorización final corresponde al server.
+constexpr std::uint8_t CATALOG_MOVE_PK_FREE = 0x01;
+
+struct CATALOG_MOVE
 {
-    PSWMSG_HEAD header;     // C2:F3:E5
-    std::uint8_t PKLimitFree;
-    std::uint8_t count;
+    std::uint8_t Map;
+    std::uint8_t Flags;     // CATALOG_MOVE_*
+    char Name[32];
+    std::uint16_t Reserved;
+    std::uint32_t Money;
+    std::int16_t MinLevel;  // -1 = sin mínimo; el Magic Gladiator usa 2/3
+    std::int16_t MaxLevel;
+    std::int16_t MinReset;
+    std::int16_t MaxReset;
+    std::int16_t AccountLevel;
+    std::uint16_t Reserved2;
 };
-static_assert(sizeof(PMSG_MOVE_LIST_SEND) == 7, "F3:E5");
-static_assert(offsetof(PMSG_MOVE_LIST_SEND, PKLimitFree) == 5, "F3:E5 PKLimitFree");
-static_assert(offsetof(PMSG_MOVE_LIST_SEND, count) == 6, "F3:E5 count");
+static_assert(sizeof(CATALOG_MOVE) == 52, "F3:F5 registro");
+static_assert(offsetof(CATALOG_MOVE, Name) == 2, "F3:F5 Name");
+static_assert(offsetof(CATALOG_MOVE, Money) == 36, "F3:F5 Money");
+static_assert(offsetof(CATALOG_MOVE, MinLevel) == 40, "F3:F5 MinLevel");
+static_assert(offsetof(CATALOG_MOVE, AccountLevel) == 48, "F3:F5 AccountLevel");
 
+// Fila del menú M (la forma de la vieja entrada del F3:E5).
 struct MOVE_LIST_INFO
 {
     std::uint8_t MapNumber;

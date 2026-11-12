@@ -209,6 +209,7 @@ struct PMSG_DAMAGE_SEND
 #if(GAMESERVER_EXTRA==1)
 	DWORD ViewCurHP;
 	DWORD ViewDamageHP;
+	BYTE rateHP;        // Fase 5 (C2): % de vida del blanco, para la barra
 #endif
 };
 
@@ -347,6 +348,25 @@ struct PMSG_CHARACTER_MAX_LEVEL_SEND
 	DWORD MaxCharacterLevel;
 };
 
+// C1:F3:FA — velocidad de ataque y de magia de un jugador, a los que lo tienen
+// en el viewport, cuando cambia (Fase 5, A5).  La inicial viaja en el 0x12.
+struct PMSG_PLAYER_SPEED_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:FA
+	BYTE index[2];
+	WORD PhysiSpeed;
+	WORD MagicSpeed;
+};
+
+// C1:F3:FB — el server descartó un pedido (Fase 5, A6).  Ver Common/RejectReason.h.
+struct PMSG_REJECT_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:FB
+	BYTE head;          // opcode del pedido rechazado
+	BYTE reason;        // REJECT_REASON
+	BYTE flags;         // 0x01 = cuenta GM: el cliente Release muestra el motivo
+};
+
 struct PMSG_CONNECT_CLIENT_SEND
 {
 	PSBMSG_HEAD header; // C1:F1:00
@@ -381,6 +401,7 @@ struct PMSG_CHARACTER_LIST
 	WORD Level;
 	BYTE CtlCode;
 	BYTE CharSet[11];
+	WORD ExtItem[9];    // CharSet expandido (protocolo 7): items >= 512, 0xFFFF = no.  Antes F3:ED.
 };
 
 struct PMSG_CHARACTER_CREATE_SEND
@@ -397,6 +418,56 @@ struct PMSG_CHARACTER_DELETE_SEND
 	PSBMSG_HEAD header; // C1:F3:02
 	BYTE result;
 };
+
+// Bloque de stats del personaje (Fase 5, C2, protocolo 8).  Une lo que antes
+// mandaban aparte F3:E0 (NewCharacterInfo) y F3:E1 (NewCharacterCalc), en 32
+// bits, y viaja al final de F3:03 (al entrar), F3:05 (subida de nivel) y F3:06
+// (puntos; con result = LEVEL_UP_POINT_RECALC es sólo el recálculo, por equipo,
+// buffs o comandos).
+#define LEVEL_UP_POINT_RECALC 0xFE
+
+struct VIEW_CHARACTER_STATS
+{
+	// Antes F3:E0
+	DWORD Level;
+	DWORD LevelUpPoint;
+	DWORD Experience;
+	DWORD NextExperience;
+	DWORD Strength;
+	DWORD Dexterity;
+	DWORD Vitality;
+	DWORD Energy;
+	DWORD Life;
+	DWORD MaxLife;
+	DWORD Mana;
+	DWORD MaxMana;
+	DWORD BP;
+	DWORD MaxBP;
+	DWORD FruitAddPoint;
+	DWORD MaxFruitAddPoint;
+	DWORD ViewReset;
+	DWORD ViewGrandReset;
+	// Antes F3:E1
+	DWORD ViewCurHP;
+	DWORD ViewMaxHP;
+	DWORD ViewCurMP;
+	DWORD ViewMaxMP;
+	DWORD ViewCurBP;
+	DWORD ViewMaxBP;
+	DWORD ViewPhysiSpeed;
+	DWORD ViewMagicSpeed;
+	DWORD ViewPhysiDamageMin;
+	DWORD ViewPhysiDamageMax;
+	DWORD ViewMagicDamageMin;
+	DWORD ViewMagicDamageMax;
+	DWORD ViewMagicDamageRate;
+	DWORD ViewAttackSuccessRate;
+	DWORD ViewDamageMultiplier;
+	DWORD ViewDefense;
+	DWORD ViewDefenseSuccessRate;
+};
+
+static_assert(sizeof(VIEW_CHARACTER_STATS) == 140, "VIEW_CHARACTER_STATS");
 
 struct PMSG_CHARACTER_INFO_SEND
 {
@@ -423,6 +494,9 @@ struct PMSG_CHARACTER_INFO_SEND
 	BYTE CtlCode;
 	WORD FruitAddPoint;
 	WORD MaxFruitAddPoint;
+#if(GAMESERVER_EXTRA==1)
+	VIEW_CHARACTER_STATS Stats;
+#endif
 };
 
 struct PMSG_CHARACTER_REGEN_SEND
@@ -463,6 +537,7 @@ struct PMSG_LEVEL_UP_SEND
 	DWORD ViewMaxBP;
 	DWORD ViewExperience;
 	DWORD ViewNextExperience;
+	VIEW_CHARACTER_STATS Stats;
 #endif
 };
 
@@ -481,6 +556,7 @@ struct PMSG_LEVEL_UP_POINT_SEND
 	DWORD ViewDexterity;
 	DWORD ViewVitality;
 	DWORD ViewEnergy;
+	VIEW_CHARACTER_STATS Stats;
 #endif
 };
 
@@ -542,51 +618,6 @@ struct PMSG_SERVER_COMMAND_SEND
 	BYTE cmd2;
 };
 
-struct PMSG_NEW_CHARACTER_INFO_SEND
-{
-	PSBMSG_HEAD header; // C1:F3:E0
-	DWORD Level;
-	DWORD LevelUpPoint;
-	DWORD Experience;
-	DWORD NextExperience;
-	DWORD Strength;
-	DWORD Dexterity;
-	DWORD Vitality;
-	DWORD Energy;
-	DWORD Life;
-	DWORD MaxLife;
-	DWORD Mana;
-	DWORD MaxMana;
-	DWORD BP;
-	DWORD MaxBP;
-	DWORD FruitAddPoint;
-	DWORD MaxFruitAddPoint;
-	DWORD ViewReset;
-	DWORD ViewGrandReset;
-};
-
-struct PMSG_NEW_CHARACTER_CALC_SEND
-{
-	PSBMSG_HEAD header; // C1:F3:E1
-	DWORD ViewCurHP;
-	DWORD ViewMaxHP;
-	DWORD ViewCurMP;
-	DWORD ViewMaxMP;
-	DWORD ViewCurBP;
-	DWORD ViewMaxBP;
-	DWORD ViewPhysiSpeed;
-	DWORD ViewMagicSpeed;
-	DWORD ViewPhysiDamageMin;
-	DWORD ViewPhysiDamageMax;
-	DWORD ViewMagicDamageMin;
-	DWORD ViewMagicDamageMax;
-	DWORD ViewMagicDamageRate;
-	DWORD ViewAttackSuccessRate;
-	DWORD ViewDamageMultiplier;
-	DWORD ViewDefense;
-	DWORD ViewDefenseSuccessRate;
-};
-
 struct PMSG_HEALTH_BAR_SEND
 {
 	PSWMSG_HEAD header; // C2:F3:E2
@@ -600,9 +631,14 @@ struct PMSG_HEALTH_BAR
 	BYTE rateHP;
 };
 
+// Horarios de eventos (Fase 5, C2, protocolo 9): antes F3:E6 + F3:F2, ahora un
+// solo C2:91.  El C1:91 sigue siendo la respuesta al click derecho sobre una
+// invitación (PMSG_EVENT_REMAIN_TIME_SEND); el cliente los distingue por el frame.
+//   BYTE count + count PMSG_EVENT_TIME
+//   BYTE invasiones + por cada una PMSG_INVASION_DETAIL y sus PMSG_INVASION_DETAIL_MAP
 struct PMSG_EVENT_TIME_SEND
 {
-	PSWMSG_HEAD header; // C2:F3:E6
+	PWMSG_HEAD header; // C2:91
 	BYTE count;
 };
 
@@ -617,12 +653,6 @@ struct PMSG_EVENT_TIME
 // por cada una, cuántos monstruos quedan vivos en cada mapa. Va después del
 // F3:E6 y se empareja con su fila por el nombre. Un cliente que no lo conoce
 // lo ignora.
-struct PMSG_INVASION_DETAIL_SEND
-{
-	PSWMSG_HEAD header; // C2:F3:F2
-	BYTE count;
-};
-
 struct PMSG_INVASION_DETAIL
 {
 	char name[32];
@@ -753,5 +783,9 @@ void GCServerCommandSend(int aIndex, BYTE type, BYTE cmd1, BYTE cmd2);
 void GCNewCharacterInfoSend(LPOBJ lpObj);
 
 void GCNewCharacterCalcSend(LPOBJ lpObj);
+void gObjFillViewStats(LPOBJ lpObj, VIEW_CHARACTER_STATS* lpStats);
 
-void GCHealthBarSend(int aIndex);
+BYTE gObjHealthRate(LPOBJ lpObj);
+void GCHealthBarUpdate(int aIndex);
+void GCPlayerSpeedSend(LPOBJ lpObj);
+void GCRejectSend(int aIndex, BYTE head, BYTE reason);

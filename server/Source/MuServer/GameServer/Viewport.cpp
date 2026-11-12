@@ -9,46 +9,21 @@
 
 CViewport gViewport;
 
-// 0.97.20: equipo agregado (índice >= 512) de un jugador del viewport.  El
-// CharSet de 11 bytes sólo lleva vanilla (y el ala custom), así que los demás
-// clientes no sabrían con qué modelo dibujar un arma, armadura, pet o montura
-// del catálogo.  Va justo después del 0x12; los cambios posteriores los
-// cubre el 0x25, que ya lleva el índice completo.
-struct PMSG_CUSTOM_EQUIPMENT_SEND
+// CharSet expandido (Fase 5, C2): equipo agregado (índice >= 512) de los
+// slots 0..8.  El CharSet de 11 bytes sólo lleva vanilla (y el ala custom); con
+// esto los demás clientes saben con qué modelo dibujar un arma, armadura, pet o
+// montura del catálogo.  Antes viajaba aparte en el F3:EB.
+void gObjFillExtItems(LPOBJ lpObj, WORD* item)
 {
-	PSBMSG_HEAD header; // C1:F3:EB
-	BYTE index[2];
-	WORD item[9];       // slots 0..8 del inventario; 0xFFFF = vanilla o vacío
-};
-
-static_assert(sizeof(PMSG_CUSTOM_EQUIPMENT_SEND) == 24, "F3:EB");
-
-static bool BuildCustomEquipment(LPOBJ lpObj, PMSG_CUSTOM_EQUIPMENT_SEND* pMsg)
-{
-	bool any = false;
-
 	for (int n = 0; n < 9; n++)
 	{
-		pMsg->item[n] = 0xFFFF;
+		item[n] = 0xFFFF;
 
 		if (lpObj->Inventory[n].IsItem() != 0 && lpObj->Inventory[n].m_Index >= MAX_ITEM_VANILLA)
 		{
-			pMsg->item[n] = (WORD)lpObj->Inventory[n].m_Index;
-
-			any = true;
+			item[n] = (WORD)lpObj->Inventory[n].m_Index;
 		}
 	}
-
-	if (any)
-	{
-		pMsg->header.set(0xF3, 0xEB, sizeof(PMSG_CUSTOM_EQUIPMENT_SEND));
-
-		pMsg->index[0] = SET_NUMBERHB(lpObj->Index);
-
-		pMsg->index[1] = SET_NUMBERLB(lpObj->Index);
-	}
-
-	return any;
 }
 
 CViewport::CViewport()
@@ -667,8 +642,6 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 	PMSG_VIEWPORT_PLAYER info;
 
-	int custom[MAX_VIEWPORT];
-
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer[n].state != VIEWPORT_SEND)
@@ -720,6 +693,12 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 		info.DirAndPkLevel = (lpTarget->Dir * 16) | (lpTarget->PKLevel & 0x0F);
 
+		info.PhysiSpeed = (WORD)lpTarget->PhysiSpeed;
+
+		info.MagicSpeed = (WORD)lpTarget->MagicSpeed;
+
+		gObjFillExtItems(lpTarget, info.ExtItem);
+
 		int InfoSize = sizeof(info);
 
 		info.ViewSkillState = lpTarget->ViewSkillState;
@@ -727,8 +706,6 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 		memcpy(&send[size], &info, sizeof(info));
 
 		size += InfoSize;
-
-		custom[pMsg.count] = lpTarget->Index;
 
 		pMsg.count++;
 	}
@@ -743,15 +720,6 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 		DataSend(aIndex, send, size);
 
-		for (int n = 0; n < pMsg.count; n++)
-		{
-			PMSG_CUSTOM_EQUIPMENT_SEND pCustom;
-
-			if (BuildCustomEquipment(&gObj[custom[n]], &pCustom))
-			{
-				DataSend(aIndex, (BYTE*)&pCustom, sizeof(pCustom));
-			}
-		}
 	}
 }
 
@@ -820,6 +788,8 @@ void CViewport::GCViewportMonsterSend(int aIndex)
 		info.ty = (BYTE)lpTarget->TY;
 
 		info.DirAndPkLevel = (lpTarget->Dir * 16) | (lpTarget->PKLevel & 0x0F);
+
+		info.rateHP = gObjHealthRate(lpTarget);
 
 		int InfoSize = sizeof(info);
 
@@ -1319,6 +1289,12 @@ void CViewport::GCViewportSimplePlayerSend(LPOBJ lpObj)
 
 	info.DirAndPkLevel = (lpObj->Dir * 16) | (lpObj->PKLevel & 0x0F);
 
+	info.PhysiSpeed = (WORD)lpObj->PhysiSpeed;
+
+	info.MagicSpeed = (WORD)lpObj->MagicSpeed;
+
+	gObjFillExtItems(lpObj, info.ExtItem);
+
 	int InfoSize = sizeof(info);
 
 	info.ViewSkillState = lpObj->ViewSkillState;
@@ -1338,13 +1314,6 @@ void CViewport::GCViewportSimplePlayerSend(LPOBJ lpObj)
 	DataSend(lpObj->Index, send, size);
 
 	MsgSendV2(lpObj, send, size);
-
-	PMSG_CUSTOM_EQUIPMENT_SEND pCustom;
-
-	if (BuildCustomEquipment(lpObj, &pCustom))
-	{
-		MsgSendV2(lpObj, (BYTE*)&pCustom, sizeof(pCustom));
-	}
 }
 
 void CViewport::GCViewportSimpleMonsterSend(LPOBJ lpObj)
@@ -1391,6 +1360,8 @@ void CViewport::GCViewportSimpleMonsterSend(LPOBJ lpObj)
 	info.ty = (BYTE)lpObj->TY;
 
 	info.DirAndPkLevel = (lpObj->Dir * 16) | (lpObj->PKLevel & 0x0F);
+
+	info.rateHP = gObjHealthRate(lpObj);
 
 	int InfoSize = sizeof(info);
 

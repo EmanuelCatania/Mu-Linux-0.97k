@@ -1,6 +1,7 @@
 // Combat_LegacyAnimation.cpp
 
 #include "stdafx.h"
+#include "Combat/PlayerAttackSpeed.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -81,6 +82,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   P+1444  HELL                     v34 + 0.5
 //   P+1460  RIDE_SKILL               v34 + 0.3
 extern DWORD CharacterAttribute_var;     // alias - already in our globals
+
+// Cuerpo de SetAttackSpeed sobre una tabla de acciones cualquiera: la del
+// modelo del jugador (el héroe) o una tabla aparte para otro jugador (A5).
+static void WritePlayerAttackSpeeds(char* P, int attackSpeed, int magicSpeed);
+
 void __cdecl SetAttackSpeed(void) {
     const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);
     if (ca == 0) return;
@@ -91,6 +97,15 @@ void __cdecl SetAttackSpeed(void) {
     int  attackSpeed = (int)(*(unsigned short*)(ca + 0x38));
     int  magicSpeed  = (int)(*(unsigned short*)(ca + 0x44));
 
+    // Models[Player(390)] base animation table pointer at offset 0x11E18
+    // (= 188*390 + 48 = entry +0x30 = animation array ptr).
+    // El campo BMD conserva 32 bits hasta la migración de su layout en B2.
+    char* P = (char*)AsModel(models + BMD_STRIDE * 390)->Actions;
+    if (!P) return;
+    WritePlayerAttackSpeeds(P, attackSpeed, magicSpeed);
+}
+
+static void WritePlayerAttackSpeeds(char* P, int attackSpeed, int magicSpeed) {
     float v34 = (float)attackSpeed * _DAT_005524bc;  // = AttackSpeed * 0.004
     float v39 = (float)magicSpeed  * _DAT_005524bc;  // = MagicSpeed  * 0.004
 
@@ -107,12 +122,6 @@ void __cdecl SetAttackSpeed(void) {
     // PLAYER_SKILL_ELF1 (+0.25), que es magia.
     float v33 = v34;   // AttackSpeed * 0.004
     float v38 = v39;   // MagicSpeed  * 0.004
-
-    // Models[Player(390)] base animation table pointer at offset 0x11E18
-    // (= 188*390 + 48 = entry +0x30 = animation array ptr).
-    // El campo BMD conserva 32 bits hasta la migración de su layout en B2.
-    char* P = (char*)AsModel(models + BMD_STRIDE * 390)->Actions;
-    if (!P) return;
 
     // FIST
     *(float*)(P + ModelActionByte(548)) = v33 + 0.6f;
@@ -181,4 +190,50 @@ void __cdecl SetAttackSpeed(void) {
     *(float*)(P + ModelActionByte(1428)) = v34 + 0.6f;          // INFERNO
     *(float*)(P + ModelActionByte(1444)) = v34 + 0.5f;          // HELL
     *(float*)(P + ModelActionByte(1460)) = teleportSpeed;       // RIDE_SKILL
+}
+
+// ── Velocidad de ataque de los demás jugadores (Fase 5, A5) ─────────────────
+namespace {
+struct PlayerSpeedSlot { std::uint16_t key; bool valid; int physi; int magic; };
+PlayerSpeedSlot s_PlayerSpeed[400];
+constexpr int kSpeedActions = 128;   // SetAttackSpeed escribe hasta la acción 91
+}
+
+void PlayerAttackSpeed_Set(int slot, std::uint16_t key, int physiSpeed, int magicSpeed)
+{
+    if (slot < 0 || slot >= 400) return;
+    s_PlayerSpeed[slot] = { key, true, physiSpeed, magicSpeed };
+}
+
+bool PlayerAttackSpeed_ForAction(const void* c, int action, float* speed)
+{
+    if (!c || !DAT_07abf5d0 || c == (const void*)DAT_07abf5d8) return false;
+    if (action < 0 || action >= kSpeedActions) return false;
+    const intptr_t off = (intptr_t)c - (intptr_t)DAT_07abf5d0;
+    if (off < 0 || off % CHARACTER_STRIDE != 0) return false;
+    const int slot = (int)(off / CHARACTER_STRIDE);
+    if (slot >= 400) return false;
+    const PlayerSpeedSlot& s = s_PlayerSpeed[slot];
+    if (!s.valid || s.key != (std::uint16_t)AsCharacter(c)->Key) return false;
+    // Tabla aparte con las velocidades de ese jugador; -1 = acción que
+    // SetAttackSpeed no toca (sigue la del modelo).
+    static char table[kSpeedActions * sizeof(ModelAnimationAction)];
+    for (int i = 0; i < kSpeedActions; ++i) ModelActionSpeed(table, i) = -1.0f;
+    WritePlayerAttackSpeeds(table, s.physi, s.magic);
+    const float v = ModelActionSpeed(table, action);
+    if (v < 0.0f) return false;
+    *speed = v;
+    return true;
+}
+
+void PlayerAttackSpeed_Receive(const std::uint8_t* msg, int size)
+{
+    // C1:F3:FA  index[2] (big-endian), PhysiSpeed, MagicSpeed (WORD).
+    if (!msg || size < 10) return;
+    const int key = ((msg[4] & 0x7F) << 8) | msg[5];
+    const int slot = FindCharacterIndex(key);
+    if (slot >= 400) return;
+    const int physi = msg[6] | (msg[7] << 8);
+    const int magic = msg[8] | (msg[9] << 8);
+    PlayerAttackSpeed_Set(slot, (std::uint16_t)key, physi, magic);
 }

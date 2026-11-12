@@ -130,4 +130,34 @@
 63	"Vida máxima +%d%%"
 //InvasionAlive
 64	"%s: %d de %d vivos"
+//RejectMove
+65	"O servidor rejeitou o movimento"
+//RejectAttackSpeed
+66	"Ataque rápido demais"
+//RejectSkillState
+67	"Não é possível usar skills agora"
+//RejectSkillSafeZone
+68	"Não é possível usar skills na zona segura"
+//RejectSkillNotLearned
+69	"Você não tem essa skill"
+//RejectSkillDelay
+70	"A skill ainda não está pronta"
+//RejectSkillClass
+71	"Sua classe não pode usar essa skill"
+//RejectSkillSequence
+72	"O servidor rejeitou a skill"
+//RejectSkillNoArrows
+73	"Triple Shot precisa de arco e flechas"
+//RejectDropRange
+74	"Longe demais para largar o item aí"
+//RejectNpcMissing
+75	"Nenhum NPC está te atendendo"
+//RejectNpcRange
+76	"O NPC está longe demais"
+//RejectNpcNoRepair
+77	"Esse NPC não conserta"
+//RejectTradeRange
+78	"Troca cancelada: longe demais"
+//RejectRepairNoShop
+79	"Abra a loja para consertar"
 end

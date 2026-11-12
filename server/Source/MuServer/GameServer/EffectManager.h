@@ -51,20 +51,24 @@ struct PMSG_EFFECT_STATE_SEND
 	BYTE index[2];
 };
 
-// Detalle de un efecto del propio personaje, para la barra de buffs del
-// cliente: tiempo que le queda, valores, quién lo lanzó y el skill del ícono.
-struct PMSG_EFFECT_INFO_SEND
+// 0x07 expandido (Fase 5, C2, protocolo 10): el que va al propio personaje lleva
+// además el detalle para la barra de buffs, que antes llegaba aparte en el
+// F3:F1.  Los demás reciben el 0x07 de siempre (PMSG_EFFECT_STATE_SEND).
+struct PMSG_EFFECT_STATE_EX_SEND
 {
-	PSBMSG_HEAD header; // C1:F3:F1
-	BYTE state; // 1 = activo, 0 = terminó
-	BYTE effect;
-	WORD skill; // skill cuyo ícono lo representa (0 = ninguno)
-	DWORD time; // segundos que le quedan (0 = sin límite)
+	PBMSG_HEAD header; // C1:07
+	BYTE state;
+	WORD effect;        // ViewSkillState, como el 0x07 original
+	BYTE index[2];
+	BYTE effectIndex;   // índice del efecto (Effect.txt)
+	BYTE reserved;
+	WORD skill;         // skill cuyo ícono lo representa (0 = ninguno)
+	DWORD time;         // segundos que le quedan (0 = sin límite)
 	WORD value[4];
 	char caster[10];
 	char name[32];
 };
-static_assert(sizeof(PMSG_EFFECT_INFO_SEND) == 64, "F3:F1");
+static_assert(sizeof(PMSG_EFFECT_STATE_EX_SEND) == 68, "0x07 expandido");
 
 struct PMSG_PERIODIC_EFFECT_SEND
 {

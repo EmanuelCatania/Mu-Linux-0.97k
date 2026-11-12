@@ -49,31 +49,40 @@ void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 }
 }
 
-bool CMoveList::Receive(const BYTE* packet, int size)
+bool CMoveList::SetCatalog(const BYTE* records, int recordSize, int count)
 {
-    const int header = sizeof(Proto::PMSG_MOVE_LIST_SEND);
-    const int stride = sizeof(Proto::MOVE_LIST_INFO);
-    if (!packet || size < header || packet[0] != 0xC2 ||
-        packet[3] != 0xF3 || packet[4] != 0xE5 ||
-        ((packet[1] << 8) | packet[2]) != size) return false;
-    const int count = packet[6];
-    if (size != header + count * stride) return false;
-    // Validar toda la lista antes de reemplazarla, incluido el bool en el wire.
+    const int stride = (int)sizeof(Proto::CATALOG_MOVE);
+    if (recordSize != stride || count < 0 || count > (int)(sizeof(m_Maps) / sizeof(m_Maps[0])) ||
+        (count > 0 && !records)) return false;
+    // Validar toda la lista antes de reemplazarla.
     for (int i = 0; i < count; ++i) {
-        const BYTE* row = packet + header + i * stride;
-        if (row[offsetof(Proto::MOVE_LIST_INFO, CanMove)] > 1 || row[1] == 0 ||
-            !memchr(row + 1, 0, 32)) return false;
-        for (int n = 1; n < 33 && row[n]; ++n)
-            if (row[n] < 32 || row[n] == 127) return false;
+        const BYTE* name = records + i * stride + offsetof(Proto::CATALOG_MOVE, Name);
+        if (name[0] == 0 || !memchr(name, 0, 32)) return false;
+        for (int n = 0; n < 32 && name[n]; ++n)
+            if (name[n] < 32 || name[n] == 127) return false;
     }
-    if (count) memcpy(m_Maps, packet + header, count * stride);
-    // DESVIACION (Fase 4, texto Unicode): nombres de mapa a UTF-8;
-    // lo que ya es UTF-8 se deja y el resto se
-    // toma como Windows-1252 (NormalizeTextFileInPlace).
-    for (int i = 0; i < count; ++i)
-        TextEngine::NormalizeTextFileInPlace(m_Maps[i].MapName, sizeof(m_Maps[i].MapName));
+    m_PKLimitFree = 0;
+    for (int i = 0; i < count; ++i) {
+        Proto::CATALOG_MOVE row;
+        memcpy(&row, records + i * stride, sizeof(row));
+        Proto::MOVE_LIST_INFO& map = m_Maps[i];
+        map = {};
+        map.MapNumber = row.Map;
+        memcpy(map.MapName, row.Name, sizeof(map.MapName));
+        map.CanMove = 1;
+        map.MinLevel = row.MinLevel;
+        map.MaxLevel = row.MaxLevel;
+        map.MinReset = row.MinReset;
+        map.MaxReset = row.MaxReset;
+        map.AccountLevel = row.AccountLevel;
+        map.Money = row.Money;
+        if (row.Flags & Proto::CATALOG_MOVE_PK_FREE) m_PKLimitFree = 1;
+        // DESVIACION (Fase 4, texto Unicode): nombres de mapa a UTF-8;
+        // lo que ya es UTF-8 se deja y el resto se
+        // toma como Windows-1252 (NormalizeTextFileInPlace).
+        TextEngine::NormalizeTextFileInPlace(map.MapName, sizeof(map.MapName));
+    }
     m_Count = count;
-    m_PKLimitFree = packet[5];
     m_Received = true;
     m_Page = 0;
     return true;
@@ -82,11 +91,27 @@ bool CMoveList::Receive(const BYTE* packet, int size)
 void CMoveList::Clear()
 {
     m_Count = 0;
-    m_Page = 0;
-    m_Open = false;
     m_Received = false;
     m_PKLimitFree = 0;
+    ResetCharacter();
+}
+
+void CMoveList::ResetCharacter()
+{
+    m_Page = 0;
+    m_Open = false;
     m_Resets = 0;
+}
+
+// CGate::GetMoveLevel del server: el Magic Gladiator necesita 2/3 del nivel.
+// Antes lo aplicaba el server al armar el F3:E5 de cada personaje; la lista del
+// catálogo es la misma para todos.
+int CMoveList::MinLevelFor(const Proto::MOVE_LIST_INFO& map) const
+{
+    if (map.MinLevel == -1) return -1;
+    const BYTE* attr = (const BYTE*)(uintptr_t)CharacterAttribute;
+    if (attr && (attr[11] & 7) == 3) return (map.MinLevel * 2) / 3;
+    return map.MinLevel;
 }
 
 const Proto::MOVE_LIST_INFO* CMoveList::Get(int index) const
@@ -110,7 +135,8 @@ bool CMoveList::CheckMove(const Proto::MOVE_LIST_INFO& map) const
     const BYTE* hero = (const BYTE*)(uintptr_t)Hero;
     if (!attr || !hero) return false;
     const WORD level = *(const WORD*)(attr + 0x0E);
-    if (map.MinLevel != -1 && level < map.MinLevel) return false;
+    const int minLevel = MinLevelFor(map);
+    if (minLevel != -1 && level < minLevel) return false;
     if (map.MaxLevel != -1 && level > map.MaxLevel) return false;
     if (map.MinReset != -1 && m_Resets < (DWORD)map.MinReset) return false;
     if (map.MaxReset != -1 && m_Resets > (DWORD)map.MaxReset) return false;
@@ -201,7 +227,8 @@ void CMoveList::Render()
         m_dwTextColor = CheckMove(map) ? 0xFFFFFFFF : 0xFF1127A4;
         Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
-        if (map.MinLevel == -1) Platform::TextCopySecure(text, "~"); else Platform::TextFormatSecure(text, "%d", map.MinLevel);
+        const int minLevel = MinLevelFor(map);
+        if (minLevel == -1) Platform::TextCopySecure(text, "~"); else Platform::TextFormatSecure(text, "%d", minLevel);
         Text(Layout::LevelX, y, text, Layout::LevelWidth);
         Platform::TextFormatSecure(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
         if (map.AccountLevel > 0) Text(Layout::VipX, y, "*", Layout::VipWidth);

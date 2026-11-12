@@ -2656,6 +2656,8 @@ void CItemManager::CGItemDropRecv(PMSG_ITEM_DROP_RECV* lpMsg, int aIndex)
 	{
 		TRACE_REJECT(aIndex, 0x23, -1, "tirar en %d,%d lejos de %d,%d (máximo %d)", lpMsg->x, lpMsg->y, lpObj->X, lpObj->Y, DropRange);
 
+		GCRejectSend(aIndex, 0x23, REJECT_DROP_RANGE);
+
 		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
 		return;
@@ -3431,6 +3433,8 @@ void CItemManager::CGItemRepairRecv(PMSG_ITEM_REPAIR_RECV* lpMsg, int aIndex)
 		{
 			TRACE_REJECT(aIndex, 0x34, -1, "reparar al precio del NPC sin la tienda abierta (interfaz %d)", lpObj->Interface.type);
 
+			GCRejectSend(aIndex, 0x34, REJECT_REPAIR_NO_SHOP);
+
 			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
 			return;
@@ -3446,6 +3450,8 @@ void CItemManager::CGItemRepairRecv(PMSG_ITEM_REPAIR_RECV* lpMsg, int aIndex)
 		if (gNpcTalk.IsRepairNpc(lpObj->InterfaceNpc) == 0)
 		{
 			TRACE_REJECT(aIndex, 0x34, -1, "el NPC %d (clase %d) no repara", lpObj->InterfaceNpc, gObj[lpObj->InterfaceNpc].Class);
+
+			GCRejectSend(aIndex, 0x34, REJECT_NPC_NO_REPAIR);
 
 			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -3609,6 +3615,8 @@ void CItemManager::GCItemEquipmentSend(int aIndex)
 	pMsg.index[1] = SET_NUMBERLB(aIndex);
 
 	memcpy(pMsg.CharSet, gObj[aIndex].CharSet, sizeof(pMsg.CharSet));
+
+	gObjFillExtItems(&gObj[aIndex], pMsg.ExtItem);
 
 	MsgSendV2(&gObj[aIndex], (BYTE*)&pMsg, pMsg.header.size);
 }

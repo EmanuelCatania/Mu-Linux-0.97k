@@ -476,6 +476,12 @@ struct OBJECTSTRUCT
 	int AttackSuccessRate;
 	int PhysiSpeed;
 	int MagicSpeed;
+	// Velocidades que vieron por última vez los demás jugadores (F3:FA); -1 =
+	// todavía no se mandaron.
+	int SentPhysiSpeed;
+	int SentMagicSpeed;
+	// % de vida que vieron por última vez los demás (F3:E2); -1 = ninguno.
+	int SentRateHP;
 	int Defense;
 	int MagicDefense;
 	int DefenseSuccessRate;

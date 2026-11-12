@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "UI/ChatListBox.h"
 #include "Net/Recv/NetRecv.h"
 #include "Entity/EntityName.h"
@@ -256,7 +257,7 @@ void __cdecl UI_InGameMenu(void)
                         // arranca el countdown — no envía nada al server.
                         if (SceneFlag == 5) {
                             SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
-                            FUN_0050f700("Data\\Macro.txt");  // IDA L611
+                            FUN_0050f700(Platform::UserMacroPath());  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             gNetwork.Send(pkt, 5);
                         }
@@ -294,7 +295,7 @@ void __cdecl UI_InGameMenu(void)
                             // mundo, cierra el socket y vuelve al login.
                             if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
                                 SaveOptionsToServer97k();
-                                FUN_0050f700("Data\\Macro.txt");  // IDA L1071
+                                FUN_0050f700(Platform::UserMacroPath());  // IDA L1071
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
@@ -331,7 +332,7 @@ void __cdecl UI_InGameMenu(void)
                             //      F3/00 char-list fresca
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
-                            FUN_0050f700("Data\\Macro.txt");  // IDA L1081
+                            FUN_0050f700(Platform::UserMacroPath());  // IDA L1081
                             gReconnect.MarkIntentional();
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             gNetwork.Send(pkt, 5);

@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/UserPath.h"
 #include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
@@ -274,9 +275,14 @@ void __cdecl Game_MainLoop(HDC param_1)
         {
             static int s_dirReady = -1;   // -1 sin probar, 1 lista, 0 fallback
             if (s_dirReady < 0) {
-                s_dirReady = Platform::GetFileSystem().EnsureDirectory("Screenshots") ? 1 : 0;
+                // Fase 5 (E1): dentro de User/ (Platform/UserPath.h).
+                char dir[64];
+                Platform::UserPath(dir, "Screenshots");
+                s_dirReady = Platform::GetFileSystem().EnsureDirectory(dir) ? 1 : 0;
             }
-            if (s_dirReady == 1) shotDir = "Screenshots/";
+            static char s_shotDir[64];
+            if (s_dirReady == 1 && !s_shotDir[0]) Platform::UserPath(s_shotDir, "Screenshots/");
+            if (s_dirReady == 1) shotDir = s_shotDir;
         }
 #endif
         crt_sprintf((char*)&GrabFileName, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",

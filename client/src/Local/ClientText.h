@@ -27,6 +27,22 @@ enum class ClientTextId {
     DrawDistance,
     BuffTimeLeft, BuffCaster, BuffDamage, BuffDefense, BuffDamageReduction, BuffMaxLife,
     InvasionAlive,
+    // Motivos del evento de rechazo F3:FB (Net/Protocol/RejectReason.h), en orden.
+    RejectMove,
+    RejectAttackSpeed,
+    RejectSkillState,
+    RejectSkillSafeZone,
+    RejectSkillNotLearned,
+    RejectSkillDelay,
+    RejectSkillClass,
+    RejectSkillSequence,
+    RejectSkillNoArrows,
+    RejectDropRange,
+    RejectNpcMissing,
+    RejectNpcRange,
+    RejectNpcNoRepair,
+    RejectTradeRange,
+    RejectRepairNoShop,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).

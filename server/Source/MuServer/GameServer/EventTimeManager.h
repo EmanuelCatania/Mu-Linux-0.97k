@@ -18,8 +18,10 @@ public:
 
 	void GCEventTimeSend(int aIndex);
 
-	// F3:F2: vivos por mapa de las invasiones en curso (tooltip del panel).
-	void GCInvasionDetailSend(int aIndex);
+	// Vivos por mapa de las invasiones en curso (tooltip del panel), al final
+	// del C2:91: escribe la cantidad y los registros desde `size` y devuelve el
+	// nuevo tamaño.  Antes era el F3:F2.
+	int AppendInvasionDetail(BYTE* send, int size, int capacity);
 };
 
 extern CEventTimeManager gEventTimeManager;

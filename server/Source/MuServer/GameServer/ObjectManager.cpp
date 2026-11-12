@@ -2544,6 +2544,9 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 	GCNewCharacterCalcSend(lpObj);
 
 #endif
+
+	// A los que lo tienen en el viewport, si cambió la velocidad (Fase 5, A5).
+	GCPlayerSpeedSend(lpObj);
 }
 
 bool CObjectManager::CharacterInfoSet(BYTE* aRecv, int aIndex)

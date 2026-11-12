@@ -3,6 +3,9 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Combat/PlayerAttackSpeed.h"
+#include "Net/Protocol/RejectReason.h"
+#include "Local/ClientText.h"
 #include "UI/BuffBar.h"
 #include "UI/ChatListBox.h"
 #include "Net/NetText.h"
@@ -103,6 +106,22 @@ void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     gServerCharacterStats.Apply(CA);
 }
 
+// Bloque de stats (Fase 5, C2, protocolo 8): VIEW_CHARACTER_STATS del server, 35
+// DWORD al final de F3:03, F3:05 y F3:06.  Los primeros 18 son lo que traía el
+// F3:E0 y los 17 siguientes lo del F3:E1: se aplican con los mismos handlers.
+constexpr int kViewStatsSize = 35 * 4;
+constexpr int kViewInfoSize  = 18 * 4;
+
+static void ApplyViewStats(const BYTE* block)
+{
+    BYTE info[4 + kViewInfoSize] = { 0xC1, (BYTE)sizeof(info), 0xF3, 0xE0 };
+    memcpy(info + 4, block, kViewInfoSize);
+    Recv_NewCharacterInfo(info, (int)sizeof(info));
+    BYTE calc[4 + kViewStatsSize - kViewInfoSize] = { 0xC1, (BYTE)sizeof(calc), 0xF3, 0xE1 };
+    memcpy(calc + 4, block + kViewInfoSize, kViewStatsSize - kViewInfoSize);
+    Recv_NewCharacterCalc(calc, (int)sizeof(calc));
+}
+
 // ── Globals del state machine de login (mapping IDA → nuestro codebase) ────
 // IDA                            | nuestro
 // -------------------------------|----------------------------
@@ -179,10 +198,11 @@ void Recv_CharList(const BYTE* Msg, int Size)
     if (count > MAX_PREVIEW) count = MAX_PREVIEW;
 
     // PMSG_CHARACTER_LIST (0.97.40): slot, Name[40], padding, Level, CtlCode,
-    // CharSet[11]; 56 bytes por registro.
+    // CharSet[11]; 56 bytes por registro.  Protocolo 7 (Fase 5, C2): +
+    // ExtItem[9] (WORD) = 74 bytes.
     const int NAME = (int)NetText::CharacterNameSize;
     const BYTE* rec = Msg + 5;
-    for (int i = 0; i < (int)count; ++i, rec += NAME + 16) {
+    for (int i = 0; i < (int)count; ++i, rec += NAME + 34) {
         BYTE  slot     = rec[0];
         WORD  level    = (WORD)(rec[NAME + 2] | (rec[NAME + 3] << 8));
         BYTE  ctlCode  = rec[NAME + 4];
@@ -219,6 +239,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // Equipment visuals: CharSet[1..10] (10 bytes packed).
         // Pipeline ya completo (LevelConvert + DeleteBug + CreateBug + ChangeCharacterExt).
         ChangeCharacterExt((int)slot, (BYTE*)&rec[NAME + 6]);
+        ApplyCustomEquipment(c, rec + NAME + 16);   // CharSet expandido (antes F3:ED)
 
         // CreateHero llamó SetPlayerStop con las alas todavía en -1, así que
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
@@ -892,6 +913,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0x03:
             NetLog("NET:  → F3/03 JoinMapServer world=%d", Msg[6]);
             Recv_JoinMapServer(Msg, (int)bEncrypted);
+            // Protocolo 8: el bloque de stats en +52 (antes el F3:E0 de después).
+            if (Size >= 52 + kViewStatsSize) ApplyViewStats(Msg + 52);
             break;
         case 0x04:
             // Respawn tras la muerte.  Ver Recv_Revival.
@@ -900,6 +923,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0x05:
             // Subida de nivel.  Ver Recv_LevelUp.
             Recv_LevelUp(Msg, Size);
+            // Protocolo 8: el bloque de stats en +48.
+            if (Size >= 48 + kViewStatsSize) ApplyViewStats(Msg + 48);
             break;
         case 0x06: {
             // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────
@@ -930,6 +955,12 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 break;
             }
             BYTE result = Msg[4];
+            // Protocolo 8: result 0xFE = sólo el recálculo (equipo, buffs,
+            // comandos): lo que antes eran F3:E0 / F3:E1.
+            if (result == 0xFE) {
+                if (Size >= 44 + kViewStatsSize) ApplyViewStats(Msg + 44);
+                break;
+            }
             if (result == 0) {
                 NetLog("NET:  → F3/06 AddPoint REJECTED");
                 break;
@@ -978,6 +1009,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // (CharData_RecalcStats).  Sin esto dano, defensa y
             // velocidad quedaban viejos hasta cambiar el equipo.
             CalculateAll(static_cast<BYTE*>(CharacterMachine), 0, 0);
+            // Protocolo 8: el bloque de stats en +44 (los valores del server
+            // mandan sobre el recálculo local, como antes con el F3:E1).
+            if (Size >= 44 + kViewStatsSize) ApplyViewStats(Msg + 44);
             break;
         }
 
@@ -1060,6 +1094,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             NetLog("NET:  -> F3/13 ItemEquipment key=%d idx=%d", eqKey, eqIdx);
             if (eqIdx < 0 || eqIdx >= 400) break;
             ChangeCharacterExt(eqIdx, (BYTE*)Msg + 7);
+            // CharSet expandido (protocolo 7): ExtItem[9] en +18.
+            if (Size >= 36)
+                ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)eqIdx * CHARACTER_STRIDE, Msg + 18);
             break;
         }
 
@@ -1262,43 +1299,10 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                    CA[92], CA[93], CA[94], CA[95], CA[96]);
             break;
         }
-        case 0xE0: {
-            // F3/E0 PMSG_NEW_CHARACTER_INFO_RECV: Level/Stats/HP/MP.
-            // Port FIEL desde DLL injection (Protocol.cpp:849).
-            NetLog("NET:  → F3/E0 NewCharacterInfo");
-            Recv_NewCharacterInfo(Msg, Size);
-            break;
-        }
-        case 0xE1: {
-            // F3/E1 PMSG_NEW_CHARACTER_CALC_RECV: HP/MP/Defense/Attack.
-            NetLog("NET:  → F3/E1 NewCharacterCalc");
-            Recv_NewCharacterCalc(Msg, Size);
-            break;
-        }
-        case 0xE3: {  // lista de apilado (DLL CItemStack)
-            extern void Recv_ItemStackList(const BYTE* Msg, int Size);
-            Recv_ItemStackList((const BYTE*)Msg, Size);
-            break;
-        }
-        case 0xE4: {  // precios fijos (DLL CItemValue)
-            extern void Recv_ItemValueList(const BYTE* Msg, int Size);
-            Recv_ItemValueList((const BYTE*)Msg, Size);
-            break;
-        }
         case 0xE2: {
             gHealthBar.Receive(Msg, Size);
             break;
         }
-        case 0xE5: {
-            gMoveList.Receive(Msg, Size);
-            break;
-        }
-        case 0xE6: {
-            gEventTimer.Receive(Msg, Size);
-            break;
-        }
-        // DESVIACION (Fase 5): invasiones en curso, vivos por mapa.
-        case 0xF2: gEventTimer.ReceiveInvasions((const BYTE*)Msg, Size); break;
         // DESVIACION (0.97.20): catálogo de contenido del server.
         case 0xE7: gContentCatalog.ReceiveItems((const BYTE*)Msg, Size); break;
         case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;
@@ -1312,19 +1316,12 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xF3: gContentCatalog.ReceiveGates((const BYTE*)Msg, Size); break;
         case 0xF4: gContentCatalog.ReceiveSkills((const BYTE*)Msg, Size); break;
         case 0xF7: gContentCatalog.ReceiveMapMusic((const BYTE*)Msg, Size); break;
+        case 0xF5: gContentCatalog.ReceiveMoveList((const BYTE*)Msg, Size); break;
+        case 0xF8: gContentCatalog.ReceiveItemStacks((const BYTE*)Msg, Size); break;
+        case 0xFA: PlayerAttackSpeed_Receive((const BYTE*)Msg, Size); break;
+        case 0xFB: Recv_Reject((const BYTE*)Msg, Size); break;
+        case 0xF9: gContentCatalog.ReceiveItemValues((const BYTE*)Msg, Size); break;
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
-        // DESVIACION (Fase 4): detalle de los efectos propios (barra de buffs).
-        case 0xF1: gBuffBar.Receive((const BYTE*)Msg, Size); break;
-        case 0xED: {
-            void Recv_CharacterListCustom(const BYTE* Msg, int Size);
-            Recv_CharacterListCustom((const BYTE*)Msg, Size);
-            break;
-        }
-        case 0xEB: {
-            void Recv_CustomEquipment(const BYTE* Msg, int Size);
-            Recv_CustomEquipment((const BYTE*)Msg, Size);
-            break;
-        }
         case 0x30: {
             // ── ReceiveOption (IDA 0x436FB0) — PORT FIEL ─────────────────
             // Layout autoritativo del server MuEmu (Protocol.h,
@@ -1770,4 +1767,43 @@ void NetRecv_DF(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetLog("NET:  → 0xDF MaxCharacterLevel=%u", maxLvl);
         g_MaxCharacterLevel = maxLvl;
     }
+}
+
+// F3:FB — el server descartó un pedido (Fase 5, A6).
+// [C1][07][F3][FB] head reason flags
+void Recv_Reject(const unsigned char* msg, int size)
+{
+    if (!msg || size < 7) return;
+    const int head = msg[4];
+    const int reason = msg[5];
+    const bool gm = (msg[6] & 0x01) != 0;
+    const char* text = (reason >= REJECT_MOVE && reason < REJECT_REASON_COUNT)
+        ? gClientText.Get((ClientTextId)((int)ClientTextId::RejectMove + reason - REJECT_MOVE))
+        : "?";
+    NetLog("NET:  -> F3/FB rechazo: opcode 0x%02X motivo %d (%s)", head, reason, text);
+
+    // Lo que el cliente dio por hecho y el server no: la tienda que el NPC ya
+    // no atiende.  El resto (posición, drop, trade) lo corrige el server con
+    // su propio paquete.
+    switch (reason) {
+        case REJECT_NPC_MISSING:
+        case REJECT_NPC_RANGE:
+        case REJECT_REPAIR_NO_SHOP:
+            CloseInventoryRelatedWindows();
+            break;
+        case REJECT_NPC_NO_REPAIR:
+            DAT_07eaa134 = 0;   // RepairEnable_0: sale del modo reparar
+            break;
+        default:
+            break;
+    }
+
+#ifdef NDEBUG
+    if (!gm) return;
+#else
+    (void)gm;
+#endif
+    char line[160];
+    Platform::TextFormat(line, "%s (0x%02X)", text, head);
+    UIChatLogWindow_AddText("", line, 2);
 }

@@ -3,6 +3,9 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Entity/EntityView.h"
+#include "UI/HealthBar.h"
+#include "Combat/PlayerAttackSpeed.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
 #include "Game/RenderSnapshots.h"
@@ -53,46 +56,28 @@ int Net_LevelConvert(BYTE Level)
     }
 }
 
-// 0.97.20: C1:F3:EB — equipo agregado (>= 512) de un jugador del viewport.
-// Llega después del 0x12, que sólo trae vanilla en el CharSet: deja dicho con
-// qué modelo propio se dibuja cada pieza.  La entidad conserva el modelo del
-// vanilla que imita (pet y montura incluidos), así que el bug ya creado por el
-// CharSet se dibuja con el modelo del helper custom.
-static void ApplyCustomEquipment(BYTE* c, const BYTE* items)
+// CharSet expandido (Fase 5, C2): equipo agregado (>= 512) de un jugador, en
+// los 9 WORD que siguen al CharSet del 0x12, F3:13 y F3:00 (antes F3:EB/F3:ED).
+// El CharSet sólo trae vanilla: esto deja dicho con qué modelo propio se dibuja
+// cada pieza.  La entidad conserva el modelo del vanilla que imita (pet y
+// montura incluidos), así que el bug ya creado por el CharSet se dibuja con el
+// modelo del helper custom.
+void ApplyCustomEquipment(BYTE* c, const BYTE* items)
 {
     static const int kPart[9] = { 5, 6, 0, 1, 2, 3, 4, 7, 8 };
     for (int slot = 0; slot < 9; ++slot) {
         const WORD item = *(const WORD*)(items + slot * 2);
-        if (item != 0xFFFF) gContentCatalog.SetEntityPart(c, kPart[slot], item);
+        if (item != 0xFFFF && item >= ITEM_MAX_VANILLA) gContentCatalog.SetEntityPart(c, kPart[slot], item);
     }
     // CustomPet: el CharSet lo trajo como "sin helper"; acá se crea su bug.
     const WORD helper = *(const WORD*)(items + 8 * 2);
-    if (helper != 0xFFFF && gContentCatalog.GetPet(helper)) {
+    if (helper != 0xFFFF && helper >= ITEM_MAX_VANILLA && gContentCatalog.GetPet(helper)) {
         *(WORD*)(c + EntityOffset(696)) = (WORD)ItemModel(helper);
         DeleteBug((intptr_t)c);
         CreateBug(ItemModel(helper), (void*)(c + 16), (void*)c, 0);
     }
 }
 
-void Recv_CustomEquipment(const BYTE* Msg, int Size)
-{
-    if (Size < 24 || !DAT_07abf5d0) return;
-    const int key = ((Msg[4] & 0x7F) << 8) | Msg[5];
-    const int idx = FindCharacterIndex(key);
-    if (idx < 0 || idx >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE, Msg + 6);
-}
-
-// 0.97.20: C1:F3:ED — lo mismo para un personaje de la lista del
-// char-select.  La entidad es la del slot (ChangeCharacterExt(slot, ...)),
-// y este paquete llega justo después del F3/00.
-void Recv_CharacterListCustom(const BYTE* Msg, int Size)
-{
-    if (Size < 24 || !DAT_07abf5d0) return;
-    const int slot = Msg[4];
-    if (slot >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * CHARACTER_STRIDE, Msg + 6);
-}
 
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
 {
@@ -321,9 +306,11 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
     // PMSG_VIEWPORT_PLAYER (0.97.40): index[2], x, y, CharSet[11], padding,
     // ViewSkillState, name[40], tx, ty, DirAndPkLevel, padding = 62 bytes.
+    // Protocolo 3 (Fase 5, A5): + PhysiSpeed, MagicSpeed (WORD) = 66 bytes.
+    // Protocolo 7 (Fase 5, C2): + ExtItem[9] (WORD) = 84 bytes.
     const int NAME = (int)NetText::CharacterNameSize;
     int entryStart = 4 + hdrOff;
-    const int entryStride = 22 + NAME;
+    const int entryStride = 44 + NAME;
     if ((entryStart + count * entryStride) > Size) {
         NetLog("NET:    0x12 SKIP - payload corto (count=%d, size=%d)", count, Size);
         return;
@@ -433,6 +420,9 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / CHARACTER_STRIDE);
         if (slot) {
             AsCharacter(slot)->Key = entityId;
+            PlayerAttackSpeed_Set(spawnSlot, entityId,
+                                  e[0x16 + NAME] | (e[0x17 + NAME] << 8),
+                                  e[0x18 + NAME] | (e[0x19 + NAME] << 8));
             // Combat_PacketDispatch (00429690) applies the packed
             // la clase/estado del jugador y después ChangeCharacterExt con
             // CharSet[1..10]. Sin esto la entidad existe pero
@@ -461,6 +451,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 break;
             }
             ChangeCharacterExt(spawnSlot, (BYTE*)e + 5);
+            ApplyCustomEquipment(slot, e + 0x1A + NAME);   // CharSet expandido (protocolo 7)
             EntityName::Set(slot, name);
             AsCharacter(slot)->Object.Kind = 1;     // type: player (1)
             AsCharacter(slot)->Object.Visible = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
@@ -607,7 +598,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         //   e[0]=KeyH|CREATE, e[1]=KeyL, e[2]=Class,
         //   e[3]=padding, e[4..5]=ViewSkillState (LE),
         //   e[6]=PosX, e[7]=PosY, e[8]=TargetX, e[9]=TargetY,
-        //   e[10]=Path|Dir, e[11]=padding.
+        //   e[10]=Path|Dir, e[11]=% de vida (protocolo 6; antes relleno).
         WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];
         BYTE type = e[2];
         BYTE x = e[6], y = e[7];
@@ -627,6 +618,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // El facing va por separado — CreateMonster no lo setea.
             AsCharacter(slot)->Object.Angle[2] = rot;
             AsCharacter(slot)->Key = entityId;
+            gHealthBar.Set(entityId, (BYTE)EntityView::MonsterKind, e[11]);
             // NO sobrescribir +0x84 (kind).  CreateMonster ya lo setea correcto por
             // Type: 2=monster, 4=NPC (type>200), 8=ground-item.  Forzarlo a 2 haría
             // que Target_Render muestre a los NPCs con el banner de monstruo
