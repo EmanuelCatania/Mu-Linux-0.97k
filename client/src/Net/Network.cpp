@@ -37,7 +37,6 @@ void CNetwork::ResetCharacterData()
     GoldenArcher_ResetCharacter();
     // DSProtocol::DGCharacterInfoRecv reenvía M y las tablas para el personaje.
     gMoveList.Clear();
-    ItemServerValue_ResetSession();
     gEventTimer.Close(); // El calendario pertenece a la misma conexión.
     gBuffBar.Clear();
 }
@@ -47,7 +46,9 @@ void CNetwork::ResetSessionData()
     ResetCharacterData();
     // El catálogo llega una vez por conexión (antes de la respuesta del
     // login), no por personaje: se limpia acá y no en ResetCharacterData.
+    // El apilado y los precios viajan en él (F3:F8 y F3:F9): se limpian juntos.
     gContentCatalog.Clear();
+    ItemServerValue_ResetSession();
     gPing.Reset();
     gEventTimer.Clear();
     GoldenArcher_ResetSession();
