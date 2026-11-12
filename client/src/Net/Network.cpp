@@ -7,6 +7,7 @@
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
+#include "Net/Protocol/ProtocolVersion.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "Net/Ping.h"
@@ -183,6 +184,11 @@ void CNetwork::SendLogin(const char* account, const char* password)
     // ClientSerial[16] — raw copy, plaintext.
     memcpy(pkt + pos, Serial, 16);
     pos += 16;
+
+    // DESVIACION (Fase 5, C1): versión de protocolo, big-endian.  Sin este campo
+    // el server rechaza el login con el código 6.
+    pkt[pos++] = (BYTE)(MU_PROTOCOL_VERSION >> 8);
+    pkt[pos++] = (BYTE)(MU_PROTOCOL_VERSION & 0xFF);
     // pkt[1] := serial is set later by gNetwork.Send
 
     // ── LoginKey chain XOR ──────────────────────────────────────

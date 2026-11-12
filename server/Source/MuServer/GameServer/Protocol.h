@@ -84,6 +84,7 @@ struct PMSG_CONNECT_ACCOUNT_RECV
 	DWORD TickCount;
 	BYTE ClientVersion[5];
 	BYTE ClientSerial[16];
+	BYTE ProtocolVersion[2]; // MU_PROTOCOL_VERSION; falta en clientes anteriores a la negociación
 #pragma pack()
 };
 
@@ -352,6 +353,7 @@ struct PMSG_CONNECT_CLIENT_SEND
 	BYTE result;
 	BYTE index[2];
 	BYTE ClientVersion[5];
+	BYTE ProtocolVersion[2]; // MU_PROTOCOL_VERSION (los clientes viejos no lo leen)
 };
 
 struct PMSG_CONNECT_ACCOUNT_SEND
@@ -656,7 +658,7 @@ void CGEventRemainTimeRecv(PMSG_EVENT_REMAIN_TIME_RECV* lpMsg, int aIndex);
 
 void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex);
 
-void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex);
+void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex, int size);
 
 void CGCloseClientRecv(PMSG_CLOSE_CLIENT_RECV* lpMsg, int aIndex);
 

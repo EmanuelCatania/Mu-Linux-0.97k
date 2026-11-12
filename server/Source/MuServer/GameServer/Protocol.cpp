@@ -469,7 +469,7 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 			{
 				case 0x01:
 				{
-					CGConnectAccountRecv((PMSG_CONNECT_ACCOUNT_RECV*)lpMsg, aIndex);
+					CGConnectAccountRecv((PMSG_CONNECT_ACCOUNT_RECV*)lpMsg, aIndex, size);
 
 					break;
 				}
@@ -1312,7 +1312,7 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 	}
 }
 
-void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex)
+void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex, int size)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
@@ -1333,6 +1333,26 @@ void CGConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg, int aIndex)
 	if (gBlackList.CheckIpAddress(lpObj->IpAddr) != 0)
 	{
 		GCConnectAccountSend(aIndex, 5);
+
+		return;
+	}
+
+	// Negociación de versión (Fase 5, C1): un cliente sin el campo es anterior a
+	// la negociación y cuenta como versión 0.  Se mide contra el offset del campo
+	// y no contra sizeof: con GCC el struct queda rellenado a 52 y el paquete
+	// trae 51.
+	int protocol = 0;
+
+	if (size >= (int)(offsetof(PMSG_CONNECT_ACCOUNT_RECV, ProtocolVersion) + sizeof(lpMsg->ProtocolVersion)))
+	{
+		protocol = MAKE_NUMBERW(lpMsg->ProtocolVersion[0], lpMsg->ProtocolVersion[1]);
+	}
+
+	if (protocol != MU_PROTOCOL_VERSION)
+	{
+		LogAdd(LOG_RED, "[%s] Protocolo del cliente %d, el server usa %d: login rechazado", lpObj->IpAddr, protocol, MU_PROTOCOL_VERSION);
+
+		GCConnectAccountSend(aIndex, 6);
 
 		return;
 	}
@@ -2078,6 +2098,10 @@ void GCConnectClientSend(int aIndex, BYTE result)
 	pMsg.ClientVersion[3] = gServerInfo.m_ServerVersion[3];
 
 	pMsg.ClientVersion[4] = gServerInfo.m_ServerVersion[4];
+
+	pMsg.ProtocolVersion[0] = SET_NUMBERHB(MU_PROTOCOL_VERSION);
+
+	pMsg.ProtocolVersion[1] = SET_NUMBERLB(MU_PROTOCOL_VERSION);
 
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 

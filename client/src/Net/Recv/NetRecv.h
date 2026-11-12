@@ -95,7 +95,7 @@ extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);
 void NetLog(const char* fmt, ...);
 // Recv_Account.cpp
 void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted);
-void Recv_JoinServer(const BYTE* Msg);
+void Recv_JoinServer(const BYTE* Msg, int Size);
 void Recv_LoginResult(const BYTE* Msg);
 void Recv_LogOut(const BYTE* Msg);
 void Recv_CustomServerList(const BYTE* Msg);
