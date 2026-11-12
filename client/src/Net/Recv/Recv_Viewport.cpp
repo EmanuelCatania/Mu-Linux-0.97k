@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Combat/PlayerAttackSpeed.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
 #include "Game/RenderSnapshots.h"
@@ -321,9 +322,10 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
     // PMSG_VIEWPORT_PLAYER (0.97.40): index[2], x, y, CharSet[11], padding,
     // ViewSkillState, name[40], tx, ty, DirAndPkLevel, padding = 62 bytes.
+    // Protocolo 3 (Fase 5, A5): + PhysiSpeed, MagicSpeed (WORD) = 66 bytes.
     const int NAME = (int)NetText::CharacterNameSize;
     int entryStart = 4 + hdrOff;
-    const int entryStride = 22 + NAME;
+    const int entryStride = 26 + NAME;
     if ((entryStart + count * entryStride) > Size) {
         NetLog("NET:    0x12 SKIP - payload corto (count=%d, size=%d)", count, Size);
         return;
@@ -433,6 +435,9 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / CHARACTER_STRIDE);
         if (slot) {
             AsCharacter(slot)->Key = entityId;
+            PlayerAttackSpeed_Set(spawnSlot, entityId,
+                                  e[0x16 + NAME] | (e[0x17 + NAME] << 8),
+                                  e[0x18 + NAME] | (e[0x19 + NAME] << 8));
             // Combat_PacketDispatch (00429690) applies the packed
             // la clase/estado del jugador y después ChangeCharacterExt con
             // CharSet[1..10]. Sin esto la entidad existe pero

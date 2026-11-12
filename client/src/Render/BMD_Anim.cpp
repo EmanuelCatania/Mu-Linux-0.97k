@@ -18,6 +18,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Entity/EntityView.h"
+#include "Combat/PlayerAttackSpeed.h"
 
 // BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (__thiscall, 7 args in original)
 // Advances animation frame counter (*AnimationFrame) by Speed each call. If the frame
@@ -112,6 +113,9 @@ extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o)
     if (actionCount > 0) {
         if (actionsBase) {
             speed = *(float*)(actionsBase + sizeof(ModelAnimationAction) * modelAction + 4);
+            // DESVIACION (Fase 5, A5): otro jugador se anima con su velocidad
+            // de ataque (la manda el server), no con la del héroe.
+            if (type == 390) PlayerAttackSpeed_ForAction((const void*)c, modelAction, &speed);
             if (speed < 0.0f) speed = 0.0f;
         }
         // c[847] (==entity[+0x34F]): "fast walk" flag → 1.5× for actions 3..4

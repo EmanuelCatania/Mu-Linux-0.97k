@@ -347,6 +347,16 @@ struct PMSG_CHARACTER_MAX_LEVEL_SEND
 	DWORD MaxCharacterLevel;
 };
 
+// C1:F3:FA — velocidad de ataque y de magia de un jugador, a los que lo tienen
+// en el viewport, cuando cambia (Fase 5, A5).  La inicial viaja en el 0x12.
+struct PMSG_PLAYER_SPEED_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:FA
+	BYTE index[2];
+	WORD PhysiSpeed;
+	WORD MagicSpeed;
+};
+
 struct PMSG_CONNECT_CLIENT_SEND
 {
 	PSBMSG_HEAD header; // C1:F1:00
@@ -755,3 +765,4 @@ void GCNewCharacterInfoSend(LPOBJ lpObj);
 void GCNewCharacterCalcSend(LPOBJ lpObj);
 
 void GCHealthBarSend(int aIndex);
+void GCPlayerSpeedSend(LPOBJ lpObj);
