@@ -62,6 +62,9 @@ public:
     void ReceiveSkills(const BYTE* msg, int size);
     // F3/F7: música por mapa (Map.toml del server); se aplica al llegar.
     void ReceiveMapMusic(const BYTE* msg, int size);
+    // F3/F8 y F3/F9: apilado y precios fijos de los items; se aplican al llegar.
+    void ReceiveItemStacks(const BYTE* msg, int size);
+    void ReceiveItemValues(const BYTE* msg, int size);
 
     // Caché del catálogo en disco (Cache/<ip>_<puerto>/<sección>.bin).
     // SetServer: al conectarse a un GameServer.  SendCacheList: F1:06 con lo
@@ -158,6 +161,8 @@ private:
     void ApplyGates();
     void ApplySkills();
     void ApplyMapMusic();
+    void ApplyItemStacks();
+    void ApplyItemValues();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
     int  LoadItemModel(int index, const char* folder, const char* name, int fixedSlot);

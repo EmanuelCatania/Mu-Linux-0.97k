@@ -7,6 +7,8 @@
 #include "CustomPet.h"
 #include "CustomWing.h"
 #include "ItemManager.h"
+#include "ItemStack.h"
+#include "ItemValue.h"
 #include "Log.h"
 #include "MonsterManager.h"
 #include "ReadScript.h"
@@ -847,6 +849,26 @@ void CContentCatalog::Build()
 	this->m_Packets.insert(this->m_Packets.end(), this->m_MapMusicPackets.begin(), this->m_MapMusicPackets.end());
 
 	this->MarkSection(0xF7, sectionBegin);
+
+	// Apilado (F3:F8) y precios fijos (F3:F9).  Antes eran las listas F3:E3 y
+	// F3:E4 del DLL, que no entraban en caché y cortaban en 255 filas.
+	std::vector<ITEM_STACK> stacks;
+
+	gItemStack.BuildCatalog(stacks);
+
+	sectionBegin = this->m_Packets.size();
+
+	this->BuildSection(0xF8, stacks.empty() ? 0 : (const BYTE*)&stacks[0], sizeof(ITEM_STACK), (int)stacks.size(), this->m_Packets);
+
+	this->MarkSection(0xF8, sectionBegin);
+
+	const std::vector<ITEM_VALUE_INFO>& values = gItemValue.GetCatalog();
+
+	sectionBegin = this->m_Packets.size();
+
+	this->BuildSection(0xF9, values.empty() ? 0 : (const BYTE*)&values[0], sizeof(ITEM_VALUE_INFO), (int)values.size(), this->m_Packets);
+
+	this->MarkSection(0xF9, sectionBegin);
 
 	// Los textos dependen del idioma de cada cliente: van aparte y no entran
 	// en el hash, que identifica el contenido compartido.

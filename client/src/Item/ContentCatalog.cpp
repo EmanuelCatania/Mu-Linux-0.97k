@@ -7,6 +7,7 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
+#include "Item/Item_ServerValue.h"
 #include "Game/MapManager.h"
 #include "Local/ClientText.h"
 #include <array>
@@ -64,6 +65,8 @@ bool s_HasVanillaSkillData = false;
 bool s_HasSkills = false;
 PendingSection s_PendingSkills;
 PendingSection s_PendingMapMusic;
+PendingSection s_PendingItemStacks;
+PendingSection s_PendingItemValues;
 
 // Textos traducidos del server (F3/F0).  Los nombres de items y skills se
 // escriben en sus tablas; los originales se guardan para volver a ellos.
@@ -293,7 +296,7 @@ SectionHash HashOf(std::uint16_t recordSize, const std::vector<BYTE>& records)
     return hash;
 }
 
-const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4, 0xF7 };
+const BYTE kCachedSections[] = { 0xE7, 0xE8, 0xE9, 0xEC, 0xEE, 0xEF, 0xF3, 0xF4, 0xF7, 0xF8, 0xF9 };
 std::string s_CacheDir;                   // "Cache/<ip>_<puerto>", vacío = sin caché
 std::map<int, SectionHash> s_SyncHash;    // hash de cada sección del último F3:F6
 
@@ -378,6 +381,8 @@ PendingSection* PendingFor(BYTE subh)
         case 0xF3: return &s_PendingGates;
         case 0xF4: return &s_PendingSkills;
         case 0xF7: return &s_PendingMapMusic;
+        case 0xF8: return &s_PendingItemStacks;
+        case 0xF9: return &s_PendingItemValues;
         default:   return nullptr;
     }
 }
@@ -474,6 +479,40 @@ void CContentCatalog::ApplyMapMusic()
     }
     s_PendingMapMusic = PendingSection();
     Log("ContentCatalog: música propia en %d mapas", count);
+}
+
+void CContentCatalog::ReceiveItemStacks(const BYTE* msg, int size)
+{
+    if (ReceiveSection(s_PendingItemStacks, 0xF8, msg, size)) ApplyItemStacks();
+}
+
+void CContentCatalog::ReceiveItemValues(const BYTE* msg, int size)
+{
+    if (ReceiveSection(s_PendingItemValues, 0xF9, msg, size)) ApplyItemValues();
+}
+
+void CContentCatalog::ApplyItemStacks()
+{
+    if (!SectionComplete(s_PendingItemStacks)) return;
+    const PendingSection& s = s_PendingItemStacks;
+    const int count = s.recordSize > 0 ? (int)(s.records.size() / s.recordSize) : 0;
+    if (!ItemServerValue_SetStacks(s.records.empty() ? nullptr : s.records.data(), s.recordSize, count))
+        Log("ContentCatalog: apilado no válido (registro de %d bytes), se conserva el anterior", s.recordSize);
+    else
+        Log("ContentCatalog: apilado de %d items", count);
+    s_PendingItemStacks = PendingSection();
+}
+
+void CContentCatalog::ApplyItemValues()
+{
+    if (!SectionComplete(s_PendingItemValues)) return;
+    const PendingSection& s = s_PendingItemValues;
+    const int count = s.recordSize > 0 ? (int)(s.records.size() / s.recordSize) : 0;
+    if (!ItemServerValue_SetValues(s.records.empty() ? nullptr : s.records.data(), s.recordSize, count))
+        Log("ContentCatalog: precios no válidos (registro de %d bytes), se conservan los anteriores", s.recordSize);
+    else
+        Log("ContentCatalog: precios de %d items", count);
+    s_PendingItemValues = PendingSection();
 }
 
 void CContentCatalog::ReceiveSkills(const BYTE* msg, int size)
@@ -580,6 +619,8 @@ void CContentCatalog::ReceiveSync(const BYTE* msg, int size)
         if (entry.subh == 0xF3) ApplyGates();
         if (entry.subh == 0xF4) ApplySkills();
         if (entry.subh == 0xF7) ApplyMapMusic();
+        if (entry.subh == 0xF8) ApplyItemStacks();
+        if (entry.subh == 0xF9) ApplyItemValues();
         ++loaded;
     }
     if (broken) {

@@ -4,20 +4,8 @@
 #include "ProtocolDefines.h"
 #include "ItemExtras.h"
 
-//**********************************************//
-//************ GameServer -> Client ************//
-//**********************************************//
-
-struct PMSG_ITEM_VALUE_LIST_SEND
-{
-	PSWMSG_HEAD header; // C2:F3:E4
-	BYTE count;
-};
-
-//**********************************************//
-//**********************************************//
-//**********************************************//
-
+// También es el registro de la sección F3:F9 del catálogo (antes, lista F3:E4
+// del DLL).
 struct ITEM_VALUE_INFO
 {
 	int Index;
@@ -43,7 +31,8 @@ public:
 
 	bool GetItemSellValue(CItem* lpItem, ULONGLONG* value);
 
-	void GCItemValueListSend(int aIndex);
+	// Las filas que viajan en el catálogo (sección F3:F9).
+	const std::vector<ITEM_VALUE_INFO>& GetCatalog() const { return this->m_ItemValueInfo; }
 
 private:
 

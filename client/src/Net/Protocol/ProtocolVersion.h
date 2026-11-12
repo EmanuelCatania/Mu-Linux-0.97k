@@ -9,4 +9,6 @@
 // negociación y cuenta como versión 0.  Si no coinciden, el cliente no manda la
 // cuenta y muestra el cartel de versión incorrecta (ErrorMessage 0x1A, el mismo
 // que el resultado 6 del login), que al confirmarlo cierra el juego.
-constexpr unsigned short MU_PROTOCOL_VERSION = 1;
+// 1: negociación (0.97.45).
+// 2: apilado y precios en el catálogo (F3:F8, F3:F9); se quitan F3:E3 y F3:E4.
+constexpr unsigned short MU_PROTOCOL_VERSION = 2;
