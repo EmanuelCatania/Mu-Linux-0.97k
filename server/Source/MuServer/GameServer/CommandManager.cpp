@@ -806,6 +806,12 @@ void CCommandManager::CommandAddPoint(LPOBJ lpObj, char* arg, int type)
 		gLog.Output(LOG_COMMAND, "[CommandAddPoint][%s][%s] - (Type: %d, Amount: %d)", lpObj->Account, lpObj->Name, type, amount);
 	}
 
+#if(GAMESERVER_EXTRA==1)
+
+	gObjFillViewStats(lpObj, &pMsg.Stats);
+
+#endif
+
 	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
 }
 

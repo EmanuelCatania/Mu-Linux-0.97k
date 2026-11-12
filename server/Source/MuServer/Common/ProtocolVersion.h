@@ -20,4 +20,5 @@
 // 5: lista de /move en el catálogo (F3:F5); se quita F3:E5.
 // 6: vida de monstruos en el 0x13 y el 0x15; F3:E2 sólo cuando cambia.
 // 7: CharSet expandido (ExtItem[9] en 0x12, F3:13 y F3:00); se quitan F3:EB y F3:ED.
-#define MU_PROTOCOL_VERSION 7
+// 8: stats en un bloque View* dentro de F3:03, F3:05 y F3:06; se quitan F3:E0 y F3:E1.
+#define MU_PROTOCOL_VERSION 8
