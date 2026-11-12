@@ -2,6 +2,8 @@
 #include "ContentCatalog.h"
 #include "Gate.h"
 #include "MapManager.h"
+#include "Move.h"
+#include "ServerInfo.h"
 #include "SkillManager.h"
 #include "Sha256.h"
 #include "CustomPet.h"
@@ -870,6 +872,46 @@ void CContentCatalog::Build()
 
 	this->MarkSection(0xF9, sectionBegin);
 
+	// Lista del menú M (F3:F5), antes F3:E5 por personaje.
+	std::vector<CATALOG_MOVE> moves;
+
+	for (const std::pair<const int, MOVE_INFO>& it : gMove.GetList())
+	{
+		CATALOG_MOVE entry;
+
+		memset(&entry, 0, sizeof(entry));
+
+		entry.Map = (BYTE)gGate.GetGateMap(it.second.Gate);
+
+		entry.Flags = (gServerInfo.m_PKLimitFree != 0) ? CATALOG_MOVE_PK_FREE : 0;
+
+		TextField::Copy(entry.Name, it.second.Name);
+
+		entry.Money = (DWORD)it.second.Money;
+
+		entry.MinLevel = (short)it.second.MinLevel;
+
+		entry.MaxLevel = (short)it.second.MaxLevel;
+
+		entry.MinReset = (short)it.second.MinReset;
+
+		entry.MaxReset = (short)it.second.MaxReset;
+
+		entry.AccountLevel = (short)it.second.AccountLevel;
+
+		moves.push_back(entry);
+	}
+
+	this->m_MoveListPackets.clear();
+
+	this->BuildSection(0xF5, moves.empty() ? 0 : (const BYTE*)&moves[0], sizeof(CATALOG_MOVE), (int)moves.size(), this->m_MoveListPackets);
+
+	sectionBegin = this->m_Packets.size();
+
+	this->m_Packets.insert(this->m_Packets.end(), this->m_MoveListPackets.begin(), this->m_MoveListPackets.end());
+
+	this->MarkSection(0xF5, sectionBegin);
+
 	// Los textos dependen del idioma de cada cliente: van aparte y no entran
 	// en el hash, que identifica el contenido compartido.
 	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
@@ -1002,6 +1044,19 @@ void CContentCatalog::SendMapMusic(int aIndex)
 	}
 
 	for (const std::vector<BYTE>& packet : this->m_MapMusicPackets)
+	{
+		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+	}
+}
+
+void CContentCatalog::SendMoveList(int aIndex)
+{
+	if (!this->m_Built)
+	{
+		this->Build();
+	}
+
+	for (const std::vector<BYTE>& packet : this->m_MoveListPackets)
 	{
 		DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
 	}

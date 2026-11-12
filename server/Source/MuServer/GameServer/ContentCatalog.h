@@ -255,6 +255,29 @@ struct PMSG_CATALOG_SYNC_SEND
 };
 
 // Música por mapa (Fase 5, `music` de Map.toml): sólo los mapas que la fijan.
+// Lista del menú M (Move.txt), sección F3:F5.  Antes viajaba en la lista F3:E5
+// del DLL, por personaje: el server bajaba el nivel mínimo a 2/3 para el Magic
+// Gladiator.  Ahora la lista es la misma para todos y esa regla la aplica el
+// cliente (CGate::GetMoveLevel); el server sigue validando el /move.
+#define CATALOG_MOVE_PK_FREE 0x01   // se puede mover con PK (PKLimitFree)
+
+struct CATALOG_MOVE
+{
+	BYTE Map;
+	BYTE Flags;         // CATALOG_MOVE_*
+	char Name[32];
+	WORD Reserved;
+	DWORD Money;
+	short MinLevel;     // -1 = sin mínimo
+	short MaxLevel;
+	short MinReset;
+	short MaxReset;
+	short AccountLevel;
+	WORD Reserved2;
+};
+
+static_assert(sizeof(CATALOG_MOVE) == 52, "CATALOG_MOVE");
+
 struct CATALOG_MAP_MUSIC
 {
 	BYTE Map;
@@ -326,6 +349,9 @@ public:
 	// Sólo la música por mapa (F3:F7), al recargar los Map.toml.
 	void SendMapMusic(int aIndex);
 
+	// Sólo la lista de /move (F3:F5), al recargar Move.txt.
+	void SendMoveList(int aIndex);
+
 	// F1:06: secciones que el cliente tiene en caché.
 	void SetClientCache(int aIndex, const PMSG_CATALOG_CACHE_RECV* lpMsg);
 
@@ -354,6 +380,8 @@ private:
 	std::vector<std::vector<BYTE>> m_SkillPackets;
 
 	std::vector<std::vector<BYTE>> m_MapMusicPackets;
+
+	std::vector<std::vector<BYTE>> m_MoveListPackets;
 
 	// Rango de m_Packets de cada sección y su hash (para la caché del cliente).
 	struct SectionRange
