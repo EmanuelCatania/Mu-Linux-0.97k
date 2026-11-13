@@ -450,6 +450,12 @@ it is in the same layer as the classic file or in one that wins: a pack can
 ship only `-hd` files, but the `-hd` in `Data` does not override what a pack
 replaced. Layers are read at startup and logged in `User/debug.log`.
 
+Monsters are already per entity: each one is a folder
+`Content/monster/<NN-Name>/` with its model, textures and a `monster.toml`
+(`source = "Monster"`, the model and the `Monster.txt` types that use it). At
+startup every file in those folders answers for `Data/<source>/<file>`, so no
+alias has to be written by hand.
+
 ---
 
 ## Text, languages and Unicode

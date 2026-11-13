@@ -1,0 +1,5 @@
+# Monstruo (registro de la Fase 5): los archivos de esta carpeta responden por
+# los de Data/Monster con el mismo nombre.
+source = "Monster"
+# Texturas que no usa ningún modelo de Data/Monster: las pide el código
+# directo o son restos de otras versiones.

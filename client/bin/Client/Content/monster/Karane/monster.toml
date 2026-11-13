@@ -1,0 +1,5 @@
+# Monstruo (registro de la Fase 5): los archivos de esta carpeta responden por
+# los de Data/Monster/Karane con el mismo nombre.
+source = "Monster/Karane"
+name = "Karane"
+# Custom del server: CustomMonster.txt lo pide como "Monster\\Karane\\".
