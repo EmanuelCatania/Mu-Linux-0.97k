@@ -497,7 +497,12 @@ bool IsVariant(const char* path)
 const char* Texture_HDAssetPath(const char* path, char* out, std::size_t size)
 {
     if (!Gfx::HDTextures() || !path || !out || size == 0 || IsVariant(path)) return path;
-    if (!VariantPath(path, "-hd", out, size) || !Platform::GetFileSystem().Exists(out)) return path;
+    if (!VariantPath(path, "-hd", out, size)) return path;
+    // La versión HD tiene que estar en la capa del clásico o en una que gane
+    // (Platform/ContentLayers.h): la de Data no pisa a un pack ni al server.
+    auto& files = Platform::GetFileSystem();
+    const int base = files.FindLayer(path, INT_MAX);
+    if (base < 0 || files.FindLayer(out, base) < 0) return path;
     static unsigned s_used = 0;
     if (++s_used <= 20 || s_used % 100 == 0) {
         char line[340];
@@ -514,6 +519,7 @@ struct HDJob {
     std::vector<unsigned char> bytes;
     int width = 0, height = 0, paddedWidth = 0, paddedHeight = 0, channels = 0, maxSize = 0;
     int k = 0, canvasWidth = 0, canvasHeight = 0;
+    int maxLayer = 0;      // capa del clásico: la HD sólo de ésa o de una que gane
     std::vector<unsigned char> canvas;
     char path[300]{};      // casa-hd.OZJ
 };
@@ -521,6 +527,7 @@ struct HDJob {
 // en frío tarda 10-50 ms y frenaba el juego.
 bool ReadHD(HDJob& job)
 {
+    if (Platform::GetFileSystem().FindLayer(job.path, job.maxLayer) < 0) return false;
     FILE* file = Platform::GetFileSystem().Open(job.path, "rb");
     if (!file) return false;
     long size = -1;
@@ -655,6 +662,8 @@ void UploadHD(int id, unsigned handle, const char* fullPath, int width, int heig
     job.id = id; job.handle = handle; job.generation = s_hdGeneration[size_t(id)];
     job.width = width; job.height = height; job.paddedWidth = paddedWidth; job.paddedHeight = paddedHeight;
     job.channels = channels; job.maxSize = tex_max_size();
+    job.maxLayer = Platform::GetFileSystem().FindLayer(fullPath, INT_MAX);
+    if (job.maxLayer < 0) return;
     Loader().Push(std::move(job));
 }
 }

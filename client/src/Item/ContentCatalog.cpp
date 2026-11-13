@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Platform/UserPath.h"
+#include "Platform/ContentLayers.h"
 #include "Model/ModelTypes.h"
 #include "Net/NetText.h"
 #include "Render/ResourceTables.h"
@@ -575,13 +576,17 @@ void CContentCatalog::ApplySkills()
 void CContentCatalog::SetServer(const char* ip, unsigned int port)
 {
     s_CacheDir.clear();
+    Platform::ContentLayers::SetServer("");
     if (!ip || !*ip) return;
-    std::string dir = std::string(Platform::UserDir()) + "Cache/";   // Fase 5 (E1): User/
+    std::string id;
     for (const char* p = ip; *p; ++p)
-        dir += (isalnum((unsigned char)*p) || *p == '.' || *p == '-') ? *p : '_';
+        id += (isalnum((unsigned char)*p) || *p == '.' || *p == '-') ? *p : '_';
     char suffix[16];
     Platform::TextFormat(suffix, "_%u", port);
-    s_CacheDir = dir + suffix;
+    id += suffix;
+    s_CacheDir = std::string(Platform::UserDir()) + "Cache/" + id;   // Fase 5 (E1): User/
+    // Fase 5 (E2): el contenido propio del server va en Servers/<mismo id>.
+    Platform::ContentLayers::SetServer(id);
 }
 
 void CContentCatalog::SendCacheList()

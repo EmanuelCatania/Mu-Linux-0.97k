@@ -432,6 +432,23 @@ pasta e no mesmo formato, com o sufixo `-hd` antes da extensão:
 São usadas com `HDTextures = 1`; com `0` nenhum arquivo extra é procurado.
 É só visual: o servidor não fica sabendo.
 
+### Camadas de dados
+
+Além de `Data/`, o cliente procura cada arquivo de dados em outras pastas ao
+lado do `main.exe`, nesta ordem (a primeira que tiver ganha):
+
+1. `Servers/<ip>_<porta>/`: conteúdo do servidor em que você está conectado.
+2. `Packs/<nome>/`: pacotes opcionais do jogador, em ordem alfabética.
+3. `Content/`: conteúdo do jogo na organização nova (em migração).
+4. `Data/`: a organização de sempre.
+
+As três primeiras espelham o interior de `Data`: `Packs/MeuPack/Object8/casa.OZJ`
+substitui `Data/Object8/casa.OZJ`. `Content/alias.toml` traduz pastas antigas
+para as novas (`"Object8" = "map/atlans/objects"`). Uma versão `-hd` só é usada
+se estiver na mesma camada do clássico ou em uma que ganhe: um pacote pode
+trazer só `-hd`, mas o `-hd` de `Data` não substitui o que um pacote trocou. As
+camadas são lidas ao iniciar e ficam no `User/debug.log`.
+
 ---
 
 ## Textos, idiomas e Unicode

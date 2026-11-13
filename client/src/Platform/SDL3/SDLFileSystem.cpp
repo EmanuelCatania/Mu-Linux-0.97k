@@ -1,4 +1,5 @@
 #include "Platform/IFileSystem.h"
+#include "Platform/ContentLayers.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstring>
@@ -115,7 +116,15 @@ std::vector<IniLine> ReadIni(const char* path) {
 class SDLFileSystem final : public IFileSystem {
 public:
     FILE* Open(const char* path, const char* mode) override {
-        const auto resolved = Resolve(path, mode && (std::strchr(mode, 'w') || std::strchr(mode, 'a')));
+        const bool write = mode && (std::strchr(mode, 'w') || std::strchr(mode, 'a') || std::strchr(mode, '+'));
+        // Lecturas de Data/: la primera capa que tenga el archivo (ContentLayers).
+        if (!write) {
+            for (const auto& candidate : ContentLayers::Candidates(path)) {
+                const auto resolved = Resolve(candidate.path.c_str());
+                if (!resolved.empty()) return std::fopen(resolved.string().c_str(), mode);
+            }
+        }
+        const auto resolved = Resolve(path, write);
         if (resolved.empty()) return nullptr;
         return std::fopen(resolved.string().c_str(), mode);
     }
@@ -130,7 +139,18 @@ public:
         return !error && fs::is_directory(resolved, error);
 #endif
     }
-    bool Exists(const char* path) override { return !Resolve(path).empty(); }
+    bool Exists(const char* path) override {
+        for (const auto& candidate : ContentLayers::Candidates(path))
+            if (!Resolve(candidate.path.c_str()).empty()) return true;
+        return !Resolve(path).empty();
+    }
+    int FindLayer(const char* path, int maxLayer) override {
+        const auto candidates = ContentLayers::Candidates(path);
+        if (candidates.empty()) return maxLayer >= 0 && !Resolve(path).empty() ? 0 : -1;
+        for (const auto& candidate : candidates)
+            if (candidate.layer <= maxLayer && !Resolve(candidate.path.c_str()).empty()) return candidate.layer;
+        return -1;
+    }
     bool SetWorkingDirectory(const char* path) override {
         auto resolved = Resolve(path);
         if (resolved.empty()) return false;
