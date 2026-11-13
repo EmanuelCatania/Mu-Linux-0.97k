@@ -1995,7 +1995,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         // The native branch uses the latched ItemKey, not SelectedItem.  It
         // has no SetPlayerStop nor queue cleanup side effect.
         const DWORD groundKey = ItemKey;                         // IDA: v114
-        const BYTE* const groundItem = &DAT_07e12840[0] + (size_t)groundKey * GROUND_ITEM_STRIDE;
+        BYTE* const groundItem = &DAT_07e12840[0] + (size_t)groundKey * GROUND_ITEM_STRIDE;
         const float deltaY = *(float*)(o + 20) - ((float)TargetY * 100.0f + 50.0f);
         const float deltaX = *(float*)(o + 16) - ((float)TargetX * 100.0f + 50.0f);
 
@@ -2008,15 +2008,19 @@ void __cdecl Action(intptr_t c, intptr_t o)
         const WORD itemType = *(const WORD*)(groundItem + 4);  // IDA: Items[ItemKey][4]
         if (itemType != 463 && !FindEmptySlot(itemType, reinterpret_cast<const BYTE*>(OffsetInventoryItems), 8, 8)) {
             // 0x48F5B7-0x48F61B: report the full inventory and restart the
-            // item's short fall animation.  `Items` is a 0x204-byte record;
-            // these are the original +0x58/+0x5c world position, +0x60 Z and
-            // +0x120 vertical-velocity fields.
+            // item's short fall animation.  `Items` is a 0x204-byte record
+            // (ITEM_t): +0x58/+0x5c/+0x60 is Object.Position and +0x120 is
+            // Object.Gravity, the vertical speed MoveItems integrates.
+            // Gravity (OBJECT+0xD8) sits before every pointer of OBJECT, so it
+            // has the same offset on x64; EntityOffset(288) translated a
+            // CHARACTER offset and wrote 4 bytes past it, and the item did not
+            // jump on x64.
             char message[256];
             sprintf(message, GlobalText[375]);                  // IDA: GlobalText + 0x1B774
             UIChatLogWindow_AddText("ERROR", message, 1);      // IDA: byte_7E11E00, MsgType 1
-            *(float*)(groundItem + 96) = RequestTerrainHeight(
-                *(const float*)(groundItem + 88), *(const float*)(groundItem + 92)) + 3.0f;
-            *(float*)(groundItem + EntityOffset(288)) = 50.0f;
+            OBJECT* const itemObject = &AsGroundItem(groundItem)->Object;
+            itemObject->Position[2] = RequestTerrainHeight(itemObject->Position[0], itemObject->Position[1]) + 3.0f;
+            itemObject->Gravity = 50.0f;
             return;
         }
         if (DAT_07e11998 != -1)                                // IDA: SendGetItem

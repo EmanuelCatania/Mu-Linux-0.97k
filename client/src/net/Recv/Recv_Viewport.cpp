@@ -267,6 +267,20 @@ void NetRecv_11(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         AsCharacter(h)->TargetX = gx;
         AsCharacter(h)->TargetY = gy;
         AsCharacter(h)->JumpTime = 1;
+        // DESVIACION (Fase 5, autoridad de movimiento): el server ahora
+        // corrige al héroe a mitad de un camino que rechazó.  El 0.97k nunca
+        // lo hace (sólo manda el 0x11 con el personaje quieto), así que el
+        // original no corta el camino: el andador seguía los pasos que
+        // quedaban, pisaba la grilla corregida y el camino siguiente volvía a
+        // salir lejos de la posición del server, rechazo tras rechazo.  Se
+        // corta el camino y el deslizamiento (JumpTime) lo lleva al lugar.
+        if (h == (BYTE*)DAT_07abf5d8 && AsCharacter(h)->Movement) {
+            AsCharacter(h)->PathCurrent = 0;
+            AsCharacter(h)->PathSubstep = 0;
+            AsCharacter(h)->PathNum = 0;
+            AsCharacter(h)->Movement = 0;
+            SetPlayerStop(AsCharacter(h));
+        }
     }
 }
 

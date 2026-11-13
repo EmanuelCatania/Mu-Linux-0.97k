@@ -1139,6 +1139,30 @@ void CGMoveRecv(PMSG_MOVE_RECV* lpMsg, int aIndex)
 
 	if (lpObj->RegenOk > 0)
 	{
+		// Fase 5: hasta que ObjectManager aplica el teleport (~1 s después del
+		// F3:12) el camino se descarta.  Con MoveCheck = 2 eso deja al server
+		// atrás: el cliente camina igual y todos los caminos siguientes salen
+		// lejos de la posición del server.  Se le devuelve la posición de
+		// llegada, que es donde el server lo va a poner.
+		if (gServerInfo.m_MoveCheck == 2 && lpObj->Type == OBJECT_USER)
+		{
+			TRACE_REJECT(aIndex, PROTOCOL_CODE1, -1, "mov: llega durante el cambio de mapa (RegenOk %d), se devuelve a (%d,%d)", lpObj->RegenOk, lpObj->RegenMapX, lpObj->RegenMapY);
+
+			PMSG_POSITION_SEND pMsg;
+
+			pMsg.header.set(PROTOCOL_CODE3, sizeof(pMsg));
+
+			pMsg.index[0] = SET_NUMBERHB(aIndex);
+
+			pMsg.index[1] = SET_NUMBERLB(aIndex);
+
+			pMsg.x = (BYTE)lpObj->RegenMapX;
+
+			pMsg.y = (BYTE)lpObj->RegenMapY;
+
+			DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+		}
+
 		return;
 	}
 
