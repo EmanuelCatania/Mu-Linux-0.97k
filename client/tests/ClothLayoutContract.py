@@ -22,7 +22,7 @@ def harness():
         for field, offset in zip(fields, offsets):
             before = sum(p < offset for p in pointers)
             assertions.append(f"static_assert(offsetof({name},{field})=={offset}+{before}*(sizeof(void*)-4));")
-    header = read_source("src/Physics/ClothTypes.h").replace("#pragma once", "")
+    header = read_source("src/game/physics/ClothTypes.h").replace("#pragma once", "")
     return header + "\n" + "\n".join(assertions) + r'''
 #include <cstdio>
 static_assert(offsetof(ClothMeshWidget,MeshIndex)==sizeof(ClothWidget));

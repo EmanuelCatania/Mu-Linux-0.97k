@@ -1,7 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"

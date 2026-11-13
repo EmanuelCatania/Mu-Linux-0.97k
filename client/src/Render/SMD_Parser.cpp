@@ -27,7 +27,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 
 extern void __cdecl operator_delete(void* ptr);
 

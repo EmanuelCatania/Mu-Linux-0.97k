@@ -36,7 +36,7 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"

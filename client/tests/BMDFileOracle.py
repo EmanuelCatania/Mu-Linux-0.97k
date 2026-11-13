@@ -66,7 +66,7 @@ def prepare(root,temp):
     for trial in range(27):
         for encrypted in [False,True]:cases.append((0,fixture(trial,encrypted)))
     for name in ['Player/Angel.bmd','Player/ArmorClass01.bmd','Logo/Face01.bmd','Object1/Beer03.bmd']:
-        cases.append((0,(root/'bin/Client/Data'/name).read_bytes()))
+        cases.append((0,__import__('data_paths').asset(root,name).read_bytes()))   # Fase 5: puede estar en Content/
     plain=fixture(0,False)
     cases.extend([(1,None),(1,b'BMD\x0a'),(1,b'BAD'+plain[3:]),(1,plain[:3]+b'\x7f'+plain[4:]),(1,b'BMD\x0c'+bytes(38)),(1,b'BMD\x0c'+struct.pack('<i',0)+bytes(38)),(1,b'BMD\x0c'+struct.pack('<i',9999)+bytes(38)),(2,plain[:36]+struct.pack('<3h',513,0,0)),(2,plain[:36]+struct.pack('<3h',0,-1,0))])
     out=bytearray(struct.pack('<I',len(cases)))

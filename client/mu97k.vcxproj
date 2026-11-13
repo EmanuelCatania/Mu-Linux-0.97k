@@ -152,7 +152,7 @@
     <ClInclude Include="src\Entity\CharacterEffects.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
     <ClInclude Include="src\Entity\ClothPresentation.h" />
-    <ClInclude Include="src\Physics\ClothTypes.h" />
+    <ClInclude Include="src\game\physics\ClothTypes.h" />
     <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
@@ -243,7 +243,7 @@
     <ClInclude Include="src\Net\HWID.h" />
     <ClInclude Include="src\Net\PacketFrame.h" />
     <ClInclude Include="src\Net\SecondPassword.h" />
-    <ClInclude Include="src\Party\Party.h" />
+    <ClInclude Include="src\game\party\Party.h" />
     <ClInclude Include="src\Render\Camera.h" />
     <ClInclude Include="src\Render\Entity_DrawAt.h" />
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
@@ -277,7 +277,7 @@
     <ClInclude Include="src\Scene\Scene_Login_ServerSelect.h" />
     <ClInclude Include="src\audio\Sound.h" />
     <ClInclude Include="src\Terrain\Terrain.h" />
-    <ClInclude Include="src\Trade\Trade.h" />
+    <ClInclude Include="src\game\trade\Trade.h" />
     <ClInclude Include="src\UI\UI.h" />
     <ClInclude Include="src\Game\GameEnums.h" />
   </ItemGroup>
@@ -402,7 +402,7 @@
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
-    <ClCompile Include="src\Math\Math_3D.cpp" />
+    <ClCompile Include="src\game\math\Math_3D.cpp" />
     <ClCompile Include="src\Render\Particle.cpp" />
     <ClCompile Include="src\Render\Particle_Move.cpp" />
     <ClCompile Include="src\Render\BMD_Anim.cpp" />
@@ -496,7 +496,7 @@
     <ClCompile Include="src\Core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
     <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
-    <ClCompile Include="src\Math\Math_LegacyTransforms.cpp" />
+    <ClCompile Include="src\game\math\Math_LegacyTransforms.cpp" />
     <ClCompile Include="src\Render\Render_LegacyLinker.cpp" />
     <ClCompile Include="src\Scene\Scene_LegacyCleanup.cpp" />
     <ClCompile Include="src\Scene\Scene_ObjectLegacy.cpp" />
@@ -504,10 +504,10 @@
     <ClCompile Include="src\UI\UI_LegacyText.cpp" />
     <ClCompile Include="src\Render\BMD_FilterData.cpp" />
     <ClCompile Include="src\Item\Quest_UIState.cpp" />
-    <ClCompile Include="src\Physics\Cloth_Simulation.cpp" />
+    <ClCompile Include="src\game\physics\Cloth_Simulation.cpp" />
     <ClCompile Include="src\Render\BMD_LegacyEffects.cpp" />
     <ClCompile Include="src\Scene\Scene_LegacyHelpers.cpp" />
-    <ClCompile Include="src\Path\Path_Legacy.cpp" />
+    <ClCompile Include="src\game\path\Path_Legacy.cpp" />
     <ClCompile Include="src\Core\Runtime_Externs.cpp" />
     <ClCompile Include="src\UI\UI_LegacyExterns.cpp" />
     <ClCompile Include="src\Entity\Entity_ActionLegacy.cpp" />
@@ -523,7 +523,7 @@
     <ClCompile Include="src\UI\UI_LegacyGameHelpers.cpp" />
     <ClCompile Include="src\Net\Net_LegacyAuth.cpp" />
     <ClCompile Include="src\Terrain\Terrain_LegacyLoad.cpp" />
-    <ClCompile Include="src\Path\Path_LegacyReset.cpp" />
+    <ClCompile Include="src\game\path\Path_LegacyReset.cpp" />
     <ClCompile Include="src\Render\Font_LegacyFactory.cpp" />
     <ClCompile Include="src\Render\SMD_Parser.cpp" />
     <ClCompile Include="src\Entity\CharacterEffects.cpp" />
@@ -539,7 +539,7 @@
     <ClCompile Include="src\Combat\Skills_WarriorLegacy.cpp" />
     <ClCompile Include="src\Render\Render_LegacyDamageNumbers.cpp" />
     <ClCompile Include="src\Render\GL_LegacyState.cpp" />
-    <ClCompile Include="src\Math\Math_LegacyAngle.cpp" />
+    <ClCompile Include="src\game\math\Math_LegacyAngle.cpp" />
     <ClCompile Include="src\Render\BMD_LegacyLoading.cpp" />
     <ClCompile Include="src\Input\Cursor_Render.cpp" />
     <ClCompile Include="src\Input\Input_Timing.cpp" />
@@ -600,7 +600,7 @@
     <ClCompile Include="src\Render\Font_Layout.cpp" />
     <ClCompile Include="src\Monster\Monster.cpp" />
     <ClCompile Include="src\Net\SecondPassword.cpp" />
-    <ClCompile Include="src\Party\Party.cpp" />
+    <ClCompile Include="src\game\party\Party.cpp" />
     <ClCompile Include="src\Game\Party_NameMatch.cpp" />
     <ClCompile Include="src\Render\Ambient_Particles.cpp" />
     <ClCompile Include="src\Render\Entity_DrawByType.cpp" />
@@ -644,7 +644,7 @@
     <ClCompile Include="src\Scene\Scene_Login_ServerSelect.cpp" />
     <ClCompile Include="src\audio\Sound.cpp" />
     <ClCompile Include="src\Terrain\Terrain.cpp" />
-    <ClCompile Include="src\Trade\Trade.cpp" />
+    <ClCompile Include="src\game\trade\Trade.cpp" />
     <ClCompile Include="src\UI\UI_InGameMenu.cpp" />
     <ClCompile Include="src\UI\UI_PanelInput.cpp" />
     <ClCompile Include="src\UI\UI_IME.cpp" />

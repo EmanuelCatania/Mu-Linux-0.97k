@@ -54,7 +54,7 @@ def harness(revision=None):
   bmd->Meshs=tables;bmd->IndexTexture=reinterpret_cast<short*>(tables+128);bmd->LightEnable=static_cast<BYTE>((frame/7)%2);bmd->StreamMesh=char(int((frame/13)%3)-1);for(unsigned i=0;i<3;++i)bmd->BodyLight[i]=float(i+1)*.25f;
   entry->TextureIndex=short(mesh);entry->NormalCount=4;entry->TriangleCount=short(polygons);entry->TexCoords=tables+256;entry->Triangles=tables+384;entry->TextureFlags=frame%7?tables+512:nullptr;tables[514]=static_cast<BYTE>((frame/19)%2);bmd->IndexTexture[mesh]=texture;'''+main[end:]
     main=main.replace('static_cast<signed char>(model[136])','static_cast<signed char>(bmd->StreamMesh)').replace('model[68]','bmd->LightEnable')
-    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/Physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+SERVICES+body+main
+    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+SERVICES+body+main
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

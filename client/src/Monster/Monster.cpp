@@ -485,7 +485,7 @@
 #include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Monster/Monster.h"
 
 // IDA: CreateMonster (0x0045CCF0).

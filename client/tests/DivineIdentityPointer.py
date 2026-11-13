@@ -48,7 +48,7 @@ def struct(source,name):
  a=source.index('struct '+name+' {');b=source.index('};',a)+2;return source[a:b]
 def harness(revision=None):
  entity=read_source('src/Entity/EntityTypes.h',revision);types='#pragma pack(push,1)\n'+struct(entity,'OBJECT')+struct(entity,'PART_t')+'\n#pragma pack(pop)\n'
- source=read_source('src/Physics/Cloth_Simulation.cpp',revision);start=source.index('namespace {',source.index('TELA POR MALLA'));source=source[start:]
+ source=read_source('src/game/physics/Cloth_Simulation.cpp',revision);start=source.index('namespace {',source.index('TELA POR MALLA'));source=source[start:]
  if revision:
   wrappers=r'''uintptr_t Key(const MeshCloth& c){return static_cast<DWORD>(c.part);}MeshCloth* Find(PART_t* p){return FindSlot(static_cast<int>(reinterpret_cast<uintptr_t>(p)));}void Tick(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Tick(static_cast<int>(reinterpret_cast<uintptr_t>(o)),type,static_cast<int>(reinterpret_cast<uintptr_t>(p)),model);}void Apply(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Apply(static_cast<int>(reinterpret_cast<uintptr_t>(o)),type,static_cast<int>(reinterpret_cast<uintptr_t>(p)),model);}'''
  else:

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Entity/CharacterCloth.h"
 #include "Entity/ObjectPose.h"
 #include "Render/EquipmentVisuals.h"

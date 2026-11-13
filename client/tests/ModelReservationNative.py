@@ -34,7 +34,7 @@ def loader():
     import BMDLoaderNative as test
     from ModelReleaseLifecycle import PREFIX
     original=test.prefix
-    test.prefix=lambda:PREFIX+'\n#include "Model/ModelTypes.h"\n#include "Physics/ClothTypes.h"\n#include "Render/ResourceTables.h"\n'
+    test.prefix=lambda:PREFIX+'\n#include "Model/ModelTypes.h"\n#include "game/physics/ClothTypes.h"\n#include "Render/ResourceTables.h"\n'
     try:code=test.harness()
     finally:test.prefix=original
     before='static GuardModel storage;'

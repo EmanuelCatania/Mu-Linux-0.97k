@@ -13,7 +13,7 @@ constexpr unsigned W(unsigned offset){unsigned n=offset;for(unsigned p:{0u,4u,52
 
 
 def prefix():
-    return "\n#include <initializer_list>\n"+read_source("src/Physics/ClothTypes.h").replace("#pragma once","")+PREFIX
+    return "\n#include <initializer_list>\n"+read_source("src/game/physics/ClothTypes.h").replace("#pragma once","")+PREFIX
 
 
 def helper(main):

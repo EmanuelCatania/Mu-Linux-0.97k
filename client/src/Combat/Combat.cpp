@@ -415,7 +415,7 @@
 //   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"

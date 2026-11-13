@@ -27,7 +27,7 @@
 #include "UI/ChatListBox.h"
 #include "UI/ChatHistory.h"
 #include "Text/TextCore.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"

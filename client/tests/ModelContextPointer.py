@@ -40,7 +40,7 @@ static_assert(alignof(BMD)==1&&std::is_standard_layout_v<BMD>&&std::is_trivially
     pose=read_source("src/Entity/ObjectPose.cpp")
     prepare=function(pose,"PrepareContext")
     simulation=function(pose,"ObjectPose_PrepareSimulation")
-    math=read_source("src/Math/Math_3D.cpp")
+    math=read_source("src/game/math/Math_3D.cpp")
     constants=""
     for name in ["_DAT_0055290c","_DAT_00552908","_DAT_005524f8"]:
         constants+=re.search(r'^float\s+'+name+r'\s*=\s*[^;]+;',read_source("src/globals.cpp"),re.M).group()+"\n"
@@ -59,7 +59,7 @@ void ObjectPose_PrepareBones(OBJECT* o,void* m,float* b,char t){Require(o==wante
 void ObjectPose_PrepareBounds(OBJECT* o,char t){Require(o==wantedOwner&&t==wantedTranslate);++boundsCalls;}
 void Calc_RenderObject(OBJECT* o,char t,int flag){Require(o==wantedOwner&&t==wantedTranslate&&flag==0);++editorCalls;}
 '''
-    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Rotate")+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/Math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+function(read_source("src/Render/BMD_SetupRender.cpp"),"BMD__RotationPosition")+simulation+"\n#undef DAT_06989c9c\n#define DAT_06989c9c referenceParent[0]\nnamespace Legacy {\nfloat referenceParent[12];\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
+    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Rotate")+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/game/math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+function(read_source("src/Render/BMD_SetupRender.cpp"),"BMD__RotationPosition")+simulation+"\n#undef DAT_06989c9c\n#define DAT_06989c9c referenceParent[0]\nnamespace Legacy {\nfloat referenceParent[12];\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
 
 
 MAIN=r'''

@@ -110,7 +110,7 @@ def harness(revision=None):
     prefix += re.search(r"extern [^;\n]*\bCharactersClient\s*;", header).group()
     prefix += re.search(r"^[^/\n]*\bCharactersClient\s*=\s*[^;]+;", globals_source, re.M).group()
     prefix += function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CreateAngle")
-    prefix += function(read_source("src/Path/Path_Legacy.cpp", revision), "FarAngle")
+    prefix += function(read_source("src/game/path/Path_Legacy.cpp", revision), "FarAngle")
     source = read_source("src/Entity/Entity_HeadMotion.cpp", revision)
     look, move = function(source, "LookAtTarget"), function(source, "MoveHead").replace("rand()", "NextRandom()")
     call_head = "character" if "CHARACTER* character" in move else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"

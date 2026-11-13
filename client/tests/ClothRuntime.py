@@ -8,7 +8,7 @@ from SceneObjectPointer import build_and_run, read_source
 from ObjectLayoutContract import record
 
 SOURCES = {
-    "src/Physics/Cloth_Simulation.cpp": "Vec3_Length SpringNode_Delta Cloth_SpringRange Cloth_SpringEqual ClothNode_ApplyForces VerletSystem_Flush SpringNode_ZeroFields SpringNode_SetPos SpringNode_GetPos VerletNode_AddAccel ClothNode_Integrate ClothNode_AddCorrection SpringNode_Ctor VerletNode_SetTarget VerletNode_GetPos VerletNode_ZeroFields VerletNode_CtorBase VerletNode_CtorExt ClothAnchor_Ctor ClothAnchor_SetParams ClothAnchor_Collide Cloth_CollideAnchors Cloth_PinTopRow Cloth_Wind Cloth_Integrate Spring_StoreEdge ClothAnchor_VSlot0 ClothAnchor_VSlot1",
+    "src/game/physics/Cloth_Simulation.cpp": "Vec3_Length SpringNode_Delta Cloth_SpringRange Cloth_SpringEqual ClothNode_ApplyForces VerletSystem_Flush SpringNode_ZeroFields SpringNode_SetPos SpringNode_GetPos VerletNode_AddAccel ClothNode_Integrate ClothNode_AddCorrection SpringNode_Ctor VerletNode_SetTarget VerletNode_GetPos VerletNode_ZeroFields VerletNode_CtorBase VerletNode_CtorExt ClothAnchor_Ctor ClothAnchor_SetParams ClothAnchor_Collide Cloth_CollideAnchors Cloth_PinTopRow Cloth_Wind Cloth_Integrate Spring_StoreEdge ClothAnchor_VSlot0 ClothAnchor_VSlot1",
     "src/UI/UI_LegacyWidgetSystem.cpp": "Widget_NodeInit Widget_CtorBase Widget_Release Widget_CheckState GridSpring_Create L_YGXPAXIHP6EX0_Z1_Z Cloth_VSlot0",
     "src/Net/Crypto.cpp": "VerletNode_AddToSystem Cloth_Solve Widget_Ctor SpringMesh_Create FUN_00408ff0 FUN_004090b0 FUN_004091d0",
     "src/Core/Runtime_Small.cpp": "FUN_00407970 FUN_00407de0 FUN_00407ec0 FUN_00407ea0",
@@ -17,7 +17,7 @@ SOURCES = {
     "src/Entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
     "src/Entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
     "src/Render/Render_LegacyBillboards.cpp": "DeleteCloth",
-    "src/Math/Math_3D.cpp": "Vector_Transform BMD_TransformPosition",
+    "src/game/math/Math_3D.cpp": "Vector_Transform BMD_TransformPosition",
 }
 
 def function(source,name):
@@ -212,7 +212,7 @@ def harness(revision=None):
     units.append(re.search(r'EquipmentModelContext::EquipmentModelContext\(.*?\n\}',equipment,re.S).group())
     units.append(re.search(r'EquipmentModelContext::~EquipmentModelContext\(\)[^\n]*',equipment).group())
     code="\n".join(units)
-    cloth=read_source("src/Physics/ClothTypes.h").replace("#pragma once","")
+    cloth=read_source("src/game/physics/ClothTypes.h").replace("#pragma once","")
     declarations="\n".join(u[:u.index("{")].strip()+";" for u in units if not u.startswith('EquipmentModelContext::'))
     globals_h=read_source("src/globals.h",revision);globals_cpp=read_source("src/globals.cpp",revision)
     constants=""
@@ -225,7 +225,7 @@ def harness(revision=None):
     presentation=presentation[presentation.index("namespace {"):]
     decl_presentation="void ClothPresentation_BeginStep();void ClothPresentation_Forget(const void*);void ClothPresentation_Before(void*);void ClothPresentation_After(void*);void ClothPresentation_Vertex(const void*,int,float*);\n"
     tables=""
-    for path,names in [("src/Physics/Cloth_Simulation.cpp",["g_ClothNodeVTable","g_ClothAnchorVTable"]),("src/UI/UI_LegacyWidgetSystem.cpp",["g_ClothVTable"])]:
+    for path,names in [("src/game/physics/Cloth_Simulation.cpp",["g_ClothNodeVTable","g_ClothAnchorVTable"]),("src/UI/UI_LegacyWidgetSystem.cpp",["g_ClothVTable"])]:
         text=read_source(path,revision)
         for name in names:
             tables+=re.search(r'(?:static\s+)?void\s*\*\s*'+name+r'\[[^\]]*\]\s*=\s*\{.*?\};',text,re.S).group()+"\n"

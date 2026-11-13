@@ -1,7 +1,7 @@
 // Entity_LegacyEffects.cpp
 
 #include "stdafx.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"

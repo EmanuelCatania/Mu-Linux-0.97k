@@ -30,7 +30,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Physics/Cloth_Simulation.cpp',revision)
+    source=read_source('src/game/physics/Cloth_Simulation.cpp',revision)
     body=function(source,'Cloth_Wind').replace('ClothNode_ApplyForces(','ObserveForces(')
     extra='';observer,main=OBSERVER,MAIN
     if 'ClothSystem(' in body:

@@ -16,7 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Render/BufferedDraw.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"

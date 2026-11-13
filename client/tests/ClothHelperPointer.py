@@ -106,7 +106,7 @@ int main(){
 
 
 def harness(revision=None):
-    source=read_source('src/Physics/Cloth_Simulation.cpp',revision)
+    source=read_source('src/game/physics/Cloth_Simulation.cpp',revision)
     names=['Vec3_Length','SpringNode_Delta','Cloth_SpringRange','Cloth_SpringEqual','ClothNode_ApplyForces','VerletSystem_Flush','SpringNode_ZeroFields','SpringNode_SetPos','SpringNode_GetPos','VerletNode_AddAccel','ClothNode_Integrate','ClothNode_AddCorrection']
     code='\n'.join(function(source,name) for name in names)
     header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)

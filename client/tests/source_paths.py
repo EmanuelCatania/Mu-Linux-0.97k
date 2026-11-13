@@ -7,6 +7,11 @@ import subprocess
 
 # nueva -> vieja, como prefijos de ruta relativos a client/.
 MOVED = {
+    "src/game/math/": "src/Math/",
+    "src/game/trade/": "src/Trade/",
+    "src/game/physics/": "src/Physics/",
+    "src/game/path/": "src/Path/",
+    "src/game/party/": "src/Party/",
     "src/audio/": "src/Sound/",
 }
 

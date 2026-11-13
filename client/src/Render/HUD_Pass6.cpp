@@ -33,7 +33,7 @@
 #include "UI/ChatListBox.h"
 #include "UI/MoveList.h"
 #include "Net/NetText.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
