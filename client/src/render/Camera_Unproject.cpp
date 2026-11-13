@@ -2,7 +2,7 @@
 // Rayo del mouse en coordenadas de mundo (Camera_BuildMouseRay).
 
 #include "stdafx.h"
-#include "Core/Window.h"
+#include "app/core/Window.h"
 #include "globals.h"
 #include "functions.h"
 

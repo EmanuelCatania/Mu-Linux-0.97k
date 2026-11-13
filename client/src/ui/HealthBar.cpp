@@ -2,7 +2,7 @@
 #include "render/Gfx.h"
 #include "platform/Text.h"
 #include "ui/HealthBar.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/entity/EntityView.h"
 
 extern "C" SIZE* __cdecl RenderCenteredText(int x, int y, const char* text);

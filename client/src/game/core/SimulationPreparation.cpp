@@ -13,7 +13,7 @@
 #include "Item/ContentCatalog.h"
 #include "render/Terrain_Render.h"
 #include "render/Camera.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "render/EquipmentVisuals.h"
 #include "render/WorldEffects.h"

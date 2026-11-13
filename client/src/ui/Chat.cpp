@@ -22,7 +22,7 @@
 #include "Text/TextCore.h"
 #include "render/Gfx.h"
 #include "platform/Text.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ScaleGlobalTextSize — corrige el patrón `lVar = __ftol();` de Ghidra.

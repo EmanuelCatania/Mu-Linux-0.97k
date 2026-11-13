@@ -85,7 +85,7 @@ def harness(writer=False):
     source=read_source('src/render/SMD_Legacy.cpp')
     for h in ('stdafx.h','globals.h','functions.h','Render/ResourceTables.h'):source=source.replace('#include "'+h+'"','')
     source=source.replace('"Model/SmdImport.h"',json.dumps((ROOT/'src/Model/SmdImport.h').as_posix()))
-    runtime=function(read_source('src/Core/Runtime_Medium.cpp'),'OpenSMDFile')
+    runtime=function(read_source('src/app/core/Runtime_Medium.cpp'),'OpenSMDFile')
     wrapper='extern "C" bool __cdecl OpenSMDFile(const char* p,int t,char f){return OpenSMDFile(const_cast<char*>(p),t,f!=0);}\n'
     entry=read_source('src/render/BMD_LegacyLoading.cpp')
     main=MAIN.replace('MODEL_PATH',json.dumps((ROOT/'tests/fixtures/smd/reference.smd').as_posix())).replace('ANIM_PATH',json.dumps((ROOT/'tests/fixtures/smd/walk.smd').as_posix()))

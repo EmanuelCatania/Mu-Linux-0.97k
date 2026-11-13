@@ -2,7 +2,7 @@
 #include "platform/Text.h"
 #include "platform/IFileSystem.h"
 #include "Local/ClientText.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "Text/TextCore.h"
 #include <string>
 

@@ -62,7 +62,7 @@ int main() {
 
 def harness(revision=None):
     prefix = special_harness(revision).split("void CallPlus(unsigned short* value", 1)[0]
-    percent = function(read_source("src/Core/Runtime_Small.cpp", revision), "PlusSpecialPercent")
+    percent = function(read_source("src/app/core/Runtime_Small.cpp", revision), "PlusSpecialPercent")
     call = "return reinterpret_cast<std::uintptr_t>(PlusSpecialPercent(value, special, item, factor));" if "const ITEM* a3" in percent else "return static_cast<std::uint32_t>(PlusSpecialPercent(value, special, static_cast<int>(reinterpret_cast<std::uintptr_t>(item)), factor));"
     return prefix + percent + MAIN.replace("CALL_PERCENT", call)
 

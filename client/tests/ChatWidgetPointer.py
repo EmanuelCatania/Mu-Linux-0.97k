@@ -107,9 +107,9 @@ def harness(revision=None, legacy_function=None):
     def body(path,name):
         selected=legacy_function[1] if legacy_function and legacy_function[0]==name else revision
         return function(read_source(path,selected),name)
-    rect=body("src/Util/Misc.cpp","Object_SetRectFields")
-    clear=body("src/Util/Misc.cpp","Object_ClearMembers")
-    resize=body("src/Core/Runtime_Externs.cpp","ChatListBox_ScrollByN")
+    rect=body("src/app/util/Misc.cpp","Object_SetRectFields")
+    clear=body("src/app/util/Misc.cpp","Object_ClearMembers")
+    resize=body("src/app/core/Runtime_Externs.cpp","ChatListBox_ScrollByN")
     clear_arg="object" if re.search(r"Object_ClearMembers\(void\s*\*",clear) else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     size_arg="object" if "void* val" in resize else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix+rect+clear+resize+MAIN.replace("CLEAR_ARG",clear_arg).replace("SIZE_ARG",size_arg)

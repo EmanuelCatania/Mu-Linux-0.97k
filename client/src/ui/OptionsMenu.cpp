@@ -3,9 +3,9 @@
 #include "platform/Text.h"
 #include <climits>
 #include "ui/OptionsMenu.h"
-#include "Config/UserSettings.h"
-#include "Core/Font.h"
-#include "Core/Window.h"
+#include "app/config/UserSettings.h"
+#include "app/core/Font.h"
+#include "app/core/Window.h"
 #include "Local/ClientText.h"
 #include "net/HWID.h"
 #include "audio/SoundManager.h"

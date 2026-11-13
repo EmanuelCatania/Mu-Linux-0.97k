@@ -34,7 +34,7 @@
 #include "render/Gfx.h"
 #include "render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 
 void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,

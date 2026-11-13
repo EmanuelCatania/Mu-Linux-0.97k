@@ -180,7 +180,7 @@
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
 #include "render/Gfx.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"
 #include "scenes/Scene_CharSelect.h"

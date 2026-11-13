@@ -23,7 +23,7 @@ void Terrain_EndBatch();
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "render/Camera3D.h"
 #include "game/core/MapManager.h"
 #include "structs.h"

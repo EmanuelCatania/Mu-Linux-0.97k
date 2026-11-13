@@ -3,7 +3,7 @@
 #include "scenes/ObjectRegistry.h"
 #include "platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "render/Terrain_Render.h"
 #include "game/entity/ObjectPose.h"
 #include "render/WorldEffects.h"

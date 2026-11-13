@@ -8,7 +8,7 @@
 #include "render/Gfx.h"
 #include "render/BMDDevice.h"
 #include "render/MeshDraw.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
 

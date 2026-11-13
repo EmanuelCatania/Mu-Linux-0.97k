@@ -18,7 +18,7 @@
 #include <initializer_list>
 #include "Model/Model_CustomAnim.h"
 #include "audio/EmoteSound.h"
-#include "Core/Window.h"
+#include "app/core/Window.h"
 #include <cstdio>
 #include <cstdlib>
 

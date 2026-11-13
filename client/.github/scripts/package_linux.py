@@ -15,7 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("build", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--version", help="por defecto, el tag de la Release o ClientVersion de src/Config/ServerConfig.h")
+    parser.add_argument("--version", help="por defecto, el tag de la Release o ClientVersion de src/app/config/ServerConfig.h")
     parser.add_argument("--arch", choices=("x64", "x86"), default="x86")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
@@ -27,10 +27,10 @@ def main():
     if args.version is None:
         # Fuera de un tag, la versión que el cliente le manda al server: así el
         # nombre del paquete no queda atrasado respecto del protocolo.
-        config = (repo / "src/Config/ServerConfig.h").read_text(encoding="utf-8")
+        config = (repo / "src/app/config/ServerConfig.h").read_text(encoding="utf-8")
         found = re.search(r'ClientVersion\[\]\s*=\s*"([^"]+)"', config)
         if not found:
-            parser.error("No se encontró ClientVersion en src/Config/ServerConfig.h")
+            parser.error("No se encontró ClientVersion en src/app/config/ServerConfig.h")
         args.version = found[1]
     if not re.fullmatch(r"[A-Za-z0-9._-]+", args.version):
         parser.error("Versión inválida")

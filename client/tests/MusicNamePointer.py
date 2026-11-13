@@ -140,7 +140,7 @@ def harness(revision=None):
     source=read_source("src/audio/Music.cpp",revision)
     for name in ("CSound::StopTrack","CSound::PlayTrack","Music_PlayTrack","Music_StopTrack"):
         prefix+=function(source,name)
-    prefix+=function(read_source("src/Core/Runtime_Linker.cpp",revision),"StopMp3")
+    prefix+=function(read_source("src/app/core/Runtime_Linker.cpp",revision),"StopMp3")
     arg="name" if "const char* name" in function(source,"Music_PlayTrack").split("{",1)[0] else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(name))"
     return prefix+MAIN.replace("NAME_ARG",arg)
 

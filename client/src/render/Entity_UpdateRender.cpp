@@ -2,7 +2,7 @@
 #include "render/Gfx.h"
 #include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "render/EquipmentVisuals.h"
 #include "game/entity/CharacterEffects.h"

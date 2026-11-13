@@ -43,7 +43,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Core/Runtime_Small.cpp',revision)
+    source=read_source('src/app/core/Runtime_Small.cpp',revision)
     helper=function(source,'FUN_00405290_impl')
     public=function(source,'FUN_00405290')
     constructor=function(source,'FUN_00405240_init')

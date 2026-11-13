@@ -84,7 +84,7 @@ def harness(revision=None):
     for name in ("_g_bEventChipDialogEnable", "InventoryOpened", "CharacterOpened"):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", header, re.M).group() + "\n"
     prefix += SERVICES
-    prefix += function(read_source("src/Core/Runtime_Medium.cpp", revision), "CSQuest__ShowQuestNpcWindow")
+    prefix += function(read_source("src/app/core/Runtime_Medium.cpp", revision), "CSQuest__ShowQuestNpcWindow")
     return prefix + MAIN
 
 

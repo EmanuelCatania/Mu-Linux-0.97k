@@ -64,7 +64,7 @@ int main(){
 def harness(revision=None):
     header=read_source('src/globals.h',revision)
     anchor=re.search(r'^#define DAT_07c608b8\s+[^\n]+',header,re.M).group(0)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+SERVICES.replace('ANCHOR',anchor)+function(read_source('src/Core/Runtime_Small.cpp',revision),'MoveBlurs')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+SERVICES.replace('ANCHOR',anchor)+function(read_source('src/app/core/Runtime_Small.cpp',revision),'MoveBlurs')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

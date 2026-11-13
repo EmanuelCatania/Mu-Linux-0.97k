@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/ResourceLimits.h"
+#include "app/core/ResourceLimits.h"
 // ItemDefines.h — numeración y formato de item compartidos con el server
 // (0.97.20, ver Source/MuServer/GameServer/ItemManager.h del server).
 //

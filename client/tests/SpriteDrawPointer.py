@@ -122,7 +122,7 @@ int main() {
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0].replace("0x10000","0x100000")
     prefix+='\n#define Require(...) do { if(!(__VA_ARGS__)) { std::fprintf(stderr,"sprite assertion line %d\\n",__LINE__); std::exit(1); } } while(false)\n'
-    prefix+=re.search(r"enum eAntilag\s*\{.*?\};",read_source("src/Config/UserSettings.h",revision),re.S).group()+SERVICES
+    prefix+=re.search(r"enum eAntilag\s*\{.*?\};",read_source("src/app/config/UserSettings.h",revision),re.S).group()+SERVICES
     entities=read_source("src/game/entity/EntityTypes.h",revision)
     helpers=re.findall(r"^inline (?:const )?OBJECT\* AsObject[^\n]+",entities,re.M)
     if len(helpers)!=3: raise ValueError("Se esperaban tres overloads de AsObject")

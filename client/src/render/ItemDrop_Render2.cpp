@@ -30,7 +30,7 @@
 //   RenderSprite_0(type, pos, scale_x, scale_y, uv_base, frame, u0, v0, u_size, v_size)
 
 #include "stdafx.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
 

@@ -26,7 +26,7 @@
 #include "ui/ChatListBox.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/Game_CharSelectTick.h"
 #include "net/Net.h"
 #include "net/MuEmu.h"

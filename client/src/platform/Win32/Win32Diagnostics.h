@@ -2,7 +2,7 @@
 #pragma once
 #include "platform/IDiagnostics.h"
 #include "platform/IWindow.h"
-#include "Debug/MiniDump.h"
+#include "app/debug/MiniDump.h"
 #include <windows.h>
 
 // SEH: cada paso del filtro de crash va protegido para que un fallo al

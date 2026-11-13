@@ -90,10 +90,10 @@ set(MU_SOURCES
     src/game/core/Player_InputTick.cpp
     src/render/Render_Frame.cpp
     src/net/Net_Process.cpp
-    src/Config/Config_Load.cpp
+    src/app/config/Config_Load.cpp
     src/ui/UIState.cpp
     src/Local/ClientText.cpp
-    src/Core/Window.cpp
+    src/app/core/Window.cpp
     src/platform/Win32/Win32NativeBridge.cpp
     src/platform/SDL3/SDLWindow.cpp
     src/platform/SDL3/SDLInput.cpp
@@ -135,7 +135,7 @@ set(MU_SOURCES
     src/net/Recv/Recv_Viewport.cpp
     src/net/Recv/Recv_World.cpp
     src/platform/input/Input_WndProc.cpp
-    src/Config/UserSettings.cpp
+    src/app/config/UserSettings.cpp
     src/audio/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
@@ -200,8 +200,8 @@ set(MU_SOURCES
     src/render/HUD_Pass5.cpp
     src/render/HUD_Pass6.cpp
     src/ui/UI_StatsPanel.cpp
-    src/Util/Misc.cpp
-    src/Core/Legacy_Runtime.cpp
+    src/app/util/Misc.cpp
+    src/app/core/Legacy_Runtime.cpp
     src/game/entity/EntityName.cpp
     src/game/entity/Entity_Lookup.cpp
     src/net/Net_Disconnect.cpp
@@ -215,10 +215,10 @@ set(MU_SOURCES
     src/Terrain/Terrain_RayCollision.cpp
     src/platform/Win32/MiniDump.cpp
     src/game/combat/Combat_AttackEffect.cpp
-    src/Core/Runtime_Small.cpp
-    src/Core/Runtime_Medium.cpp
+    src/app/core/Runtime_Small.cpp
+    src/app/core/Runtime_Medium.cpp
     src/ui/Quest_Legacy.cpp
-    src/Core/System_Legacy.cpp
+    src/app/core/System_Legacy.cpp
     src/GameGuard/GameGuard_Packet.cpp
     src/render/SMD_Legacy.cpp
     src/ui/UI_LegacyWidgets.cpp
@@ -229,9 +229,9 @@ set(MU_SOURCES
     src/Item/Item_Durability.cpp
     src/Item/Item_ServerValue.cpp
     src/render/BMD_LegacyDraw.cpp
-    src/Config/Config_TokenParser.cpp
+    src/app/config/Config_TokenParser.cpp
     src/game/entity/Entity_BoneEffects.cpp
-    src/Core/Runtime_Linker.cpp
+    src/app/core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
     src/game/math/Math_LegacyTransforms.cpp
@@ -246,12 +246,12 @@ set(MU_SOURCES
     src/render/BMD_LegacyEffects.cpp
     src/scenes/Scene_LegacyHelpers.cpp
     src/game/path/Path_Legacy.cpp
-    src/Core/Runtime_Externs.cpp
+    src/app/core/Runtime_Externs.cpp
     src/ui/UI_LegacyExterns.cpp
     src/game/entity/Entity_ActionLegacy.cpp
     src/render/Render_LegacyRotatedRect.cpp
     src/ui/UI_GuildLegacy.cpp
-    src/Core/String_ResourceLegacy.cpp
+    src/app/core/String_ResourceLegacy.cpp
     src/game/entity/Entity_LegacyEffects.cpp
     src/game/combat/Combat_LegacyAnimation.cpp
     src/render/Render_LegacyTransforms.cpp
@@ -281,7 +281,7 @@ set(MU_SOURCES
     src/render/BMD_LegacyLoading.cpp
     src/platform/input/Cursor_Render.cpp
     src/platform/input/Input_Timing.cpp
-    src/Util/Process_Exit.cpp
+    src/app/util/Process_Exit.cpp
     src/net/Net_Bux.cpp
     src/scenes/Scene_EntityLifecycle.cpp
     src/scenes/Scene_OpenWorld.cpp
@@ -385,7 +385,7 @@ set(MU_SOURCES
     src/ui/EventTimer.cpp
     src/ui/BuffBar.cpp
     src/ui/ChatHistory.cpp
-    src/Core/DataPrefetch.cpp
+    src/app/core/DataPrefetch.cpp
     src/ui/MiniMap.cpp
     src/render/Camera3D.cpp
     src/ui/OptionsMenu.cpp
@@ -399,7 +399,7 @@ set(MU_SOURCES
     src/scenes/Scene_ObjectInteraction.cpp
     src/scenes/Scene_ObjectUpdate.cpp
     src/render/BMD_SkinUpdate.cpp
-    src/Debug/Benchmark.cpp
+    src/app/debug/Benchmark.cpp
 )
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
@@ -428,9 +428,9 @@ set(MU_HEADERS
     src/structs.h
     src/ghidra_compat.h
     src/types.h
-    src/Config/Config.h
-    src/Config/ServerConfig.h
-    src/Config/UserSettings.h
+    src/app/config/Config.h
+    src/app/config/ServerConfig.h
+    src/app/config/UserSettings.h
     src/ui/UIState.h
     src/ui/ChatTypes.h
     src/game/entity/EntityView.h
@@ -456,7 +456,7 @@ set(MU_HEADERS
     src/game/core/PathContext.h
     src/Model/ModelTypes.h
     src/Model/SmdImport.h
-    src/Core/ResourceLimits.h
+    src/app/core/ResourceLimits.h
     src/Model/BMDFileTypes.h
     src/game/entity/CharacterAttributeView.h
     src/Local/ClientText.h
@@ -465,7 +465,7 @@ set(MU_HEADERS
     src/Item/ItemDefines.h
     src/Item/Item_ServerValue.h
     src/ui/GoldenArcher.h
-    src/Core/Window.h
+    src/app/core/Window.h
     src/platform/CompilerCompat.h
     src/platform/NativeBridge.h
     src/platform/SDL3/SDLPlatform.h
@@ -505,12 +505,12 @@ set(MU_HEADERS
     src/platform/GLFunctions.h
     src/platform/GL/glad.h
     src/platform/Win32/Win32GLContext.h
-    src/Core/Font.h
+    src/app/core/Font.h
     src/ui/PanelAnchor.h
     src/ui/EventTimer.h
     src/ui/BuffBar.h
     src/ui/ChatHistory.h
-    src/Core/DataPrefetch.h
+    src/app/core/DataPrefetch.h
     src/ui/MiniMap.h
     src/render/Camera3D.h
     src/ui/OptionsMenu.h
@@ -577,8 +577,8 @@ set(MU_HEADERS
     src/game/trade/Trade.h
     src/ui/UI.h
     src/game/core/GameEnums.h
-    src/Debug/MiniDump.h
-    src/Debug/Benchmark.h
+    src/app/debug/MiniDump.h
+    src/app/debug/Benchmark.h
     src/resource.h
     src/net/Protocol/ProtocolBase.h
     src/net/Protocol/GameServerProtocol.h
@@ -637,7 +637,7 @@ target_include_directories(mu97k PRIVATE
     ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
-# Modo benchmark (src/Debug/Benchmark.h): siempre en Debug; en Release sólo si
+# Modo benchmark (src/app/debug/Benchmark.h): siempre en Debug; en Release sólo si
 # se configura con -DMU_BENCHMARK=ON.  Las Releases publicadas no lo traen.
 option(MU_BENCHMARK "Incluir el modo benchmark tambien en Release" OFF)
 

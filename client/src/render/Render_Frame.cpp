@@ -212,7 +212,7 @@
 #include "render/BufferedDraw.h"
 #include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "render/Camera3D.h"
 #include "ui/HealthBar.h"
 #include "render/Render.h"

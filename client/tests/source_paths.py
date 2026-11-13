@@ -7,6 +7,10 @@ import subprocess
 
 # nueva -> vieja, como prefijos de ruta relativos a client/.
 MOVED = {
+    "src/app/util/": "src/Util/",
+    "src/app/debug/": "src/Debug/",
+    "src/app/core/": "src/Core/",
+    "src/app/config/": "src/Config/",
     "src/scenes/": "src/Scene/",
     "src/ui/": "src/UI/",
     "src/render/": "src/Render/",

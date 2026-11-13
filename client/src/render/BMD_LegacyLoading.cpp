@@ -365,7 +365,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         model->BodyLight[2] = 1.0f;
     }
 }
-// Forward-declare FindTextureByName (implementada en src/Core/Runtime_Medium.cpp).
+// Forward-declare FindTextureByName (implementada en src/app/core/Runtime_Medium.cpp).
 int __cdecl FindTextureByName(char *Name, char **dwTexture);
 
 // IDA: OpenTexture (0x00505C80)

@@ -315,7 +315,7 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
 // RenderBugs — implemented in src/render/Entity_Render.cpp
 // Weather_Update — implemented in src/render/Weather.cpp (Weather_Update)
 // AmbientParticles_Update (IDA: Ambient_ParticleUpdate) — implemented in src/render/Ambient_Particles.cpp
-// MoveItems — implemented in src/Util/Misc.cpp
+// MoveItems — implemented in src/app/util/Misc.cpp
 // Entity_SetGravity — implemented in src/render/Entity_Render.cpp
 // RenderPartObjectEffect — implemented in src/render/Entity_DrawSetup.cpp (Entity_SetColorAndRender)
 // Entity_RenderSlotWith — implemented in src/render/Entity_Render.cpp

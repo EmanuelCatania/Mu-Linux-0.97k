@@ -1,6 +1,6 @@
 #include "render/ResourceTables.h"
 #include "Model/ModelTypes.h"
-#include "Core/ResourceLimits.h"
+#include "app/core/ResourceLimits.h"
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>

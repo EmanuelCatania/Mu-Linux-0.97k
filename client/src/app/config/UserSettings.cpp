@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "platform/Text.h"
 #include "platform/IFileSystem.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/FrameLimiter.h"
 #include "platform/IGLContext.h"
 #include "render/Gfx.h"
