@@ -173,7 +173,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     obj = re.search(r"struct OBJECT\s*\{.*?\};", types, re.S).group()
     # Son campos opacos de 32 bits en este fixture; no se certifican como punteros.
     obj = re.sub(r"OBJECT\*\s+Owner", "std::uint32_t Owner", obj)
@@ -192,7 +192,7 @@ def harness(revision=None):
         definitions += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     catalog = re.search(r"struct CatalogMonster\s*\{.*?\};", read_source("src/Item/ContentCatalog.h", revision), re.S).group()
     prefix += SERVICES.replace("RECORDS", records).replace("CONSTANTS", constants).replace("GLOBALS", definitions).replace("CATALOG_RECORD", catalog)
-    prefix += function(read_source("src/Entity/Entity_ActionLegacy.cpp", revision), "SetAction")
+    prefix += function(read_source("src/game/entity/Entity_ActionLegacy.cpp", revision), "SetAction")
     prefix += function(read_source("src/Render/SMD_Parser.cpp", revision), "SetCharacterScale")
     monster = read_source("src/Monster/Monster.cpp", revision)
     factory = monster[monster.index("// IDA: CreateCharacter (0x0045BFA0)"):]

@@ -11,7 +11,7 @@
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
 #include "Model/ModelTypes.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -19,7 +19,7 @@
 #include "Platform/IInput.h"
 #include "Render/Camera3D.h"
 #include "Render/EquipmentVisuals.h"
-#include "Entity/ObjectPose.h"
+#include "game/entity/ObjectPose.h"
 #include "Config/UserSettings.h"
 #include "Render/DrawDistance.h"
 #include "UI/HealthBar.h"
@@ -1150,9 +1150,9 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // MoveCharacterClient — implemented in src/Render/Entity_Render.cpp
 // RenderCharacter — implemented in src/Render/Entity_UpdateRender.cpp (Entity_UpdateRender, 2195 lines)
 // Entity_RenderAll_3D — implemented in src/Render/Entity_Render.cpp
-// CreateCharacterPointer — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
-// CreateHero — implemented in src/Entity/Entity_Init.cpp
-// SaveMonsters (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
+// CreateCharacterPointer — implemented in src/game/entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
+// CreateHero — implemented in src/game/entity/Entity_Init.cpp
+// SaveMonsters (Monster_SaveSetBase) — implemented in src/game/entity/Entity_Init.cpp
 // Effect_TickAll (IDA: MoveEffects) — implemented in src/Render/Effect_Tick.cpp
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
 // WeatherParticles_Update (IDA: MoveLeaves) — implemented in src/Render/Weather_Particles.cpp
@@ -1172,7 +1172,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // Chat_TickMessageTimer — implemented in src/audio/Sound_Queue.cpp
 // UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
-// Player_InputTick — implemented in src/Game/Player_InputTick.cpp
+// Player_InputTick — implemented in src/game/core/Player_InputTick.cpp
 // Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
 
 // DESVIACION: fauna y luces de skills se preparan con pose SIM a 25 Hz.

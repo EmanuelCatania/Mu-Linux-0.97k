@@ -23,7 +23,7 @@
 //   +0x64  float[3] prev_xyz     (copy of world_xyz for some types)
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #include <array>
 #include "globals.h"
 #include "functions.h"

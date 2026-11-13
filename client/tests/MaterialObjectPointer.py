@@ -112,7 +112,7 @@ def harness(revision=None):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",globals_header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     prefix+=SERVICES
-    reset=read_source("src/Entity/Entity_Reset.cpp",revision)
+    reset=read_source("src/game/entity/Entity_Reset.cpp",revision)
     for name in ("ItemObjectAttributeImpl","ItemObjectAttributeForRender"):
         prefix+=function(reset,name)
     prepare=function(source,"MaterialVisuals_PrepareWeaponObject"); tick=function(source,"MaterialVisuals_TickObjectDraw")

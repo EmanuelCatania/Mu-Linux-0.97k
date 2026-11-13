@@ -49,7 +49,7 @@ int main(){for(int i=0;i<32;++i)CNetwork::XorKey[i]=BYTE(i*53+19);auto* low=stat
  }std::printf("Send move:9216 casos/ruta %016llx\n",(unsigned long long)expected);}
 '''
 def harness(revision=None):
- body=function(read_source('src/Combat/Combat.cpp',revision),'Combat_SendMovePathPacket')
+ body=function(read_source('src/game/combat/Combat.cpp',revision),'Combat_SendMovePathPacket')
  call='Combat_SendMovePathPacket(reinterpret_cast<CHARACTER*>(actor),reinterpret_cast<OBJECT*>(object))' if not revision else 'Combat_SendMovePathPacket(static_cast<int>(reinterpret_cast<uintptr_t>(actor)),static_cast<int>(reinterpret_cast<uintptr_t>(object)))'
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+body+'\nvoid Invoke(BYTE* actor,BYTE* object){'+call+';}\n'+MAIN
 

@@ -14,14 +14,14 @@ def record(source,name):
     return re.search(r'struct '+name+r'\s*\{.*?\n\};',source,re.S).group()
 
 def object_types():
-    header=read_source('src/Entity/EntityTypes.h')
+    header=read_source('src/game/entity/EntityTypes.h')
     return '#pragma pack(push,1)\n'+''.join(record(header,name) for name in ['OBJECT','PART_t','CHARACTER'])+'\n#pragma pack(pop)\n'
 
 def core(source):
     return source.split('// common initialisation',1)[1].split('// login/char-select scene type overrides',1)[0]
 
 def harness(args):
-    header=read_source('src/Entity/EntityTypes.h')
+    header=read_source('src/game/entity/EntityTypes.h')
     fields=re.findall(r'MU_ASSERT_FIELD\(OBJECT,\s*(\w+),\s*(0x[0-9a-fA-F]+)\)',header)
     assertions='\n'.join(f'static_assert(offsetof(OBJECT,{name})==NativeOffset({offset}),"{name}");' for name,offset in fields)
     prefix=r'''

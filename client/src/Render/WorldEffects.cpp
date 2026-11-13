@@ -1,14 +1,14 @@
 #include "stdafx.h"
 #include "Model/ModelTypes.h"
-#include "Game/RenderInterpolation.h"
-#include "Game/RenderInterpolationMath.h"
+#include "game/core/RenderInterpolation.h"
+#include "game/core/RenderInterpolationMath.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Render/WorldEffects.h"
 #include "Render/EquipmentVisuals.h"
-#include "Entity/ObjectPose.h"
+#include "game/entity/ObjectPose.h"
 #include "Scene/ObjectRegistry.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include <unordered_map>
 #include <vector>
 

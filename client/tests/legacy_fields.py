@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-h=(ROOT/'src/Entity/EntityTypes.h').read_text(encoding='utf-8',errors='replace')
+h=(ROOT/'src/game/entity/EntityTypes.h').read_text(encoding='utf-8',errors='replace')
 size={'BYTE':1,'char':1,'short':2,'WORD':2,'int':4,'float':4,'vec3_t':12}
 def parse(block):
     out=[]

@@ -48,7 +48,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000));Require(low);auto e
 def harness(revision=None):
     s=read_source('src/Scene/Scene_ObjectInteraction.cpp',revision).replace('char* __stdcall PickObject_Mouse','BYTE* __cdecl PickObject_Mouse').replace('char*','BYTE*').replace('char *','BYTE *')
     body=function(s,'PickObject_Mouse')
-    prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/Entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
+    prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/game/entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
     prefix+=read_source('src/Scene/SceneObjectCell.h').replace('#pragma once','')+read_source('src/Scene/ObjectRegistry.h').replace('#pragma once','')
     prefix+=read_source('src/Platform/GuardedOperation.h').replace('#pragma once','').replace('#include "Platform/PlatformHeaders.h"','')
     prefix+='static_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));static_assert(offsetof(OBJECT,Angle)==28);static_assert(offsetof(OBJECT,OBB)==(sizeof(void*)==4?304:312));\n'

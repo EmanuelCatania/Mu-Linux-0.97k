@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Entity/CharacterAttributeView.h"
+#include "game/entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 
 CServerCharacterStats gServerCharacterStats;

@@ -1,6 +1,6 @@
 #pragma once
 #include "types.h"
-#include "Entity/EntityTypes.h"
+#include "game/entity/EntityTypes.h"
 #include <cstddef>
 #include <cstdint>
 

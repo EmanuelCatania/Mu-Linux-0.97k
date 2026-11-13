@@ -2,7 +2,7 @@
 // Scene_EntityLifecycle.cpp
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"

@@ -79,15 +79,15 @@ set(MU_SOURCES
     src/Render/MaterialVisuals.cpp
     src/Render/LooseWingVisuals.cpp
     src/Render/EquipmentVisuals.cpp
-    src/Game/RenderDerivedState.cpp
-    src/Game/RenderSnapshots.cpp
-    src/Game/RenderInterpolation.cpp
-    src/Game/RenderInterpolationMath.cpp
-    src/Game/RenderFxSnapshots.cpp
-    src/Game/SimulationPreparation.cpp
-    src/Game/Game_MainLoop.cpp
-    src/Game/HeroVitals.cpp
-    src/Game/Player_InputTick.cpp
+    src/game/core/RenderDerivedState.cpp
+    src/game/core/RenderSnapshots.cpp
+    src/game/core/RenderInterpolation.cpp
+    src/game/core/RenderInterpolationMath.cpp
+    src/game/core/RenderFxSnapshots.cpp
+    src/game/core/SimulationPreparation.cpp
+    src/game/core/Game_MainLoop.cpp
+    src/game/core/HeroVitals.cpp
+    src/game/core/Player_InputTick.cpp
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
     src/Config/Config_Load.cpp
@@ -114,7 +114,7 @@ set(MU_SOURCES
     src/Platform/Win32/Win32GLContext.cpp
     src/Platform/FontFrontend.cpp
     src/audio/SoundManager.cpp
-    src/Game/MapManager.cpp
+    src/game/core/MapManager.cpp
     src/Platform/Win32/ClientWndProc.cpp
     src/Net/Network.cpp
     src/Net/Reconnect.cpp
@@ -150,9 +150,9 @@ set(MU_SOURCES
     src/Render/MoveEffect_Helpers.cpp
     src/Render/MoveJoint.cpp
     src/Render/BMD_SetupRender.cpp
-    src/Game/PathFinder.cpp
-    src/Entity/Entity_Reset.cpp
-    src/Entity/Entity_HeadMotion.cpp
+    src/game/core/PathFinder.cpp
+    src/game/entity/Entity_Reset.cpp
+    src/game/entity/Entity_HeadMotion.cpp
     src/Render/GL_State.cpp
     src/Render/Effect_Create.cpp
     src/Render/Effect_Combat.cpp
@@ -163,8 +163,8 @@ set(MU_SOURCES
     src/Render/Camera_Movement.cpp
     src/Render/Entity_Render.cpp
     src/Net/Crypto.cpp
-    src/Game/Timer.cpp
-    src/Game/FrameLimiter.cpp
+    src/game/core/Timer.cpp
+    src/game/core/FrameLimiter.cpp
     src/audio/Music.cpp
     src/audio/EmoteSound.cpp
     src/Terrain/Terrain_Tile.cpp
@@ -180,10 +180,10 @@ set(MU_SOURCES
     src/Net/PacketFrame.cpp
     src/Net/Net_Events.cpp
     src/Net/HWID.cpp
-    src/Entity/Entity_Init.cpp
-    src/Entity/Entity_MoveClient.cpp
-    src/Entity/Character_Motion.cpp
-    src/Entity/Entity_Spawn.cpp
+    src/game/entity/Entity_Init.cpp
+    src/game/entity/Entity_MoveClient.cpp
+    src/game/entity/Character_Motion.cpp
+    src/game/entity/Entity_Spawn.cpp
     src/Render/Scene_CharPreview.cpp
     src/Scene/Scene_Resources.cpp
     src/Scene/Scene_MapTick.cpp
@@ -202,8 +202,8 @@ set(MU_SOURCES
     src/UI/UI_StatsPanel.cpp
     src/Util/Misc.cpp
     src/Core/Legacy_Runtime.cpp
-    src/Entity/EntityName.cpp
-    src/Entity/Entity_Lookup.cpp
+    src/game/entity/EntityName.cpp
+    src/game/entity/Entity_Lookup.cpp
     src/Net/Net_Disconnect.cpp
     src/Render/Render_MatrixStack.cpp
     src/Scene/Scene_ObjectTick.cpp
@@ -214,7 +214,7 @@ set(MU_SOURCES
     src/UI/EmoteMenu.cpp
     src/Terrain/Terrain_RayCollision.cpp
     src/Platform/Win32/MiniDump.cpp
-    src/Combat/Combat_AttackEffect.cpp
+    src/game/combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
     src/UI/Quest_Legacy.cpp
@@ -230,7 +230,7 @@ set(MU_SOURCES
     src/Item/Item_ServerValue.cpp
     src/Render/BMD_LegacyDraw.cpp
     src/Config/Config_TokenParser.cpp
-    src/Entity/Entity_BoneEffects.cpp
+    src/game/entity/Entity_BoneEffects.cpp
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
@@ -248,12 +248,12 @@ set(MU_SOURCES
     src/game/path/Path_Legacy.cpp
     src/Core/Runtime_Externs.cpp
     src/UI/UI_LegacyExterns.cpp
-    src/Entity/Entity_ActionLegacy.cpp
+    src/game/entity/Entity_ActionLegacy.cpp
     src/Render/Render_LegacyRotatedRect.cpp
     src/UI/UI_GuildLegacy.cpp
     src/Core/String_ResourceLegacy.cpp
-    src/Entity/Entity_LegacyEffects.cpp
-    src/Combat/Combat_LegacyAnimation.cpp
+    src/game/entity/Entity_LegacyEffects.cpp
+    src/game/combat/Combat_LegacyAnimation.cpp
     src/Render/Render_LegacyTransforms.cpp
     src/Render/Render_LegacyBillboards.cpp
     src/UI/UI_LegacyWidgetSystem.cpp
@@ -264,17 +264,17 @@ set(MU_SOURCES
     src/game/path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
     src/Render/SMD_Parser.cpp
-    src/Entity/CharacterEffects.cpp
-    src/Entity/CharacterCloth.cpp
-    src/Entity/ClothPresentation.cpp
-    src/Entity/ObjectPose.cpp
+    src/game/entity/CharacterEffects.cpp
+    src/game/entity/CharacterCloth.cpp
+    src/game/entity/ClothPresentation.cpp
+    src/game/entity/ObjectPose.cpp
     src/Render/Entity_AnimationLegacy.cpp
-    src/Combat/Combat_LegacyAttackEffects.cpp
-    src/Entity/Entity_LegacyPoolCleanup.cpp
+    src/game/combat/Combat_LegacyAttackEffects.cpp
+    src/game/entity/Entity_LegacyPoolCleanup.cpp
     src/Item/Item_LegacyGridInsert.cpp
     src/Item/Item_TypeLegacy.cpp
-    src/Entity/Entity_LegacyTeleport.cpp
-    src/Combat/Skills_WarriorLegacy.cpp
+    src/game/entity/Entity_LegacyTeleport.cpp
+    src/game/combat/Skills_WarriorLegacy.cpp
     src/Render/Render_LegacyDamageNumbers.cpp
     src/Render/GL_LegacyState.cpp
     src/game/math/Math_LegacyAngle.cpp
@@ -300,17 +300,17 @@ set(MU_SOURCES
     src/Model/Model_Misc.cpp
     src/Model/Model_SkillEffects.cpp
     src/Model/Model_Gates.cpp
-    src/Combat/Combat.cpp
-    src/Combat/Combat_AttackStage.cpp
-    src/Combat/Combat_Projectiles.cpp
-    src/Combat/Combat_Targeting.cpp
-    src/Combat/Skills.cpp
-    src/Combat/Skills_WizardElf.cpp
-    src/Game/Game_CharSelectTick.cpp
-    src/Game/Game_EnterWorldTick.cpp
-    src/Game/Game_SceneUpdate.cpp
-    src/Game/Movement.cpp
-    src/Game/CheckGate.cpp
+    src/game/combat/Combat.cpp
+    src/game/combat/Combat_AttackStage.cpp
+    src/game/combat/Combat_Projectiles.cpp
+    src/game/combat/Combat_Targeting.cpp
+    src/game/combat/Skills.cpp
+    src/game/combat/Skills_WizardElf.cpp
+    src/game/core/Game_CharSelectTick.cpp
+    src/game/core/Game_EnterWorldTick.cpp
+    src/game/core/Game_SceneUpdate.cpp
+    src/game/core/Movement.cpp
+    src/game/core/CheckGate.cpp
     src/Input/Input.cpp
     src/Input/Mouse_Hover.cpp
     src/Item/Item_Equip.cpp
@@ -339,7 +339,7 @@ set(MU_SOURCES
     src/Monster/Monster.cpp
     src/Net/SecondPassword.cpp
     src/game/party/Party.cpp
-    src/Game/Party_NameMatch.cpp
+    src/game/core/Party_NameMatch.cpp
     src/Render/Ambient_Particles.cpp
     src/Render/Entity_DrawByType.cpp
     src/Render/Entity_DrawAt.cpp
@@ -433,32 +433,32 @@ set(MU_HEADERS
     src/Config/UserSettings.h
     src/UI/UIState.h
     src/UI/ChatTypes.h
-    src/Entity/EntityView.h
-    src/Entity/EntityName.h
+    src/game/entity/EntityView.h
+    src/game/entity/EntityName.h
     src/Render/WorldEffects.h
     src/Render/MaterialVisuals.h
     src/Render/LooseWingVisuals.h
     src/Render/EquipmentVisuals.h
-    src/Game/FramePointerSet.h
-    src/Game/RenderDerivedState.h
-    src/Game/RenderSnapshots.h
-    src/Game/RenderInterpolation.h
-    src/Game/RenderInterpolationMath.h
-    src/Game/RenderFxSnapshots.h
-    src/Game/SimulationPreparation.h
-    src/Entity/CharacterEffects.h
-    src/Entity/CharacterCloth.h
-    src/Entity/ClothPresentation.h
+    src/game/core/FramePointerSet.h
+    src/game/core/RenderDerivedState.h
+    src/game/core/RenderSnapshots.h
+    src/game/core/RenderInterpolation.h
+    src/game/core/RenderInterpolationMath.h
+    src/game/core/RenderFxSnapshots.h
+    src/game/core/SimulationPreparation.h
+    src/game/entity/CharacterEffects.h
+    src/game/entity/CharacterCloth.h
+    src/game/entity/ClothPresentation.h
     src/game/physics/ClothTypes.h
-    src/Entity/ObjectPose.h
-    src/Entity/ObjectBounds.h
-    src/Entity/EntityTypes.h
-    src/Game/PathContext.h
+    src/game/entity/ObjectPose.h
+    src/game/entity/ObjectBounds.h
+    src/game/entity/EntityTypes.h
+    src/game/core/PathContext.h
     src/Model/ModelTypes.h
     src/Model/SmdImport.h
     src/Core/ResourceLimits.h
     src/Model/BMDFileTypes.h
-    src/Entity/CharacterAttributeView.h
+    src/game/entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
     src/Item/ContentCatalog.h
@@ -516,8 +516,8 @@ set(MU_HEADERS
     src/UI/OptionsMenu.h
     src/UI/MoveList.h
     src/audio/SoundManager.h
-    src/Game/MapManager.h
-    src/Game/HeroVitals.h
+    src/game/core/MapManager.h
+    src/game/core/HeroVitals.h
     src/Net/Network.h
     src/Net/Reconnect.h
     src/Net/Ping.h
@@ -525,14 +525,14 @@ set(MU_HEADERS
     src/Item/ChaosMixRates.h
     src/UI/HealthBar.h
     src/Net/Recv/NetRecv.h
-    src/Combat/Combat.h
-    src/Combat/Skills.h
-    src/Game/Game_CharSelectTick.h
-    src/Game/Game_EnterWorldTick.h
-    src/Game/Game_MainLoop.h
-    src/Game/FrameLimiter.h
-    src/Game/Game_SceneUpdate.h
-    src/Game/Movement.h
+    src/game/combat/Combat.h
+    src/game/combat/Skills.h
+    src/game/core/Game_CharSelectTick.h
+    src/game/core/Game_EnterWorldTick.h
+    src/game/core/Game_MainLoop.h
+    src/game/core/FrameLimiter.h
+    src/game/core/Game_SceneUpdate.h
+    src/game/core/Movement.h
     src/Input/Input.h
     src/Item/Item_Equip.h
     src/Monster/Monster.h
@@ -576,7 +576,7 @@ set(MU_HEADERS
     src/Terrain/Terrain.h
     src/game/trade/Trade.h
     src/UI/UI.h
-    src/Game/GameEnums.h
+    src/game/core/GameEnums.h
     src/Debug/MiniDump.h
     src/Debug/Benchmark.h
     src/resource.h

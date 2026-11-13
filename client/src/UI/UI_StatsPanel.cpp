@@ -2,7 +2,7 @@
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/OptionsMenu.h"

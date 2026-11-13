@@ -107,10 +107,10 @@ def harness(revision=None):
  prefix=animation_harness();prefix=prefix[:re.search(r'(?:static )?void AnimateWithScratch\(',prefix).start()]
  prefix+='\nusing vec34_t=float[3][4];\n'+object_types()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\nstatic_assert(sizeof(ClothModelMesh)==(sizeof(void*)==4?40:60));\n'
  prefix+='\n#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"\n'
- source=read_source('src/Entity/ObjectPose.cpp',revision);source=re.sub(r'^#include[^\n]*\n','',source,flags=re.M)
+ source=read_source('src/game/entity/ObjectPose.cpp',revision);source=re.sub(r'^#include[^\n]*\n','',source,flags=re.M)
  existing=set(re.findall(r'\bfloat\s+(\w+)\s*=',prefix,re.M));names=set(re.findall(r'\b_DAT_[0-9a-f]+\b',source));globals=read_source('src/globals.cpp')
  constants='\n'.join(re.search(r'^float\s+'+n+r'\s*=\s*[^;]+;',globals,re.M).group()for n in sorted(names-existing))
- return prefix+SERVICES+constants+function(read_source('src/game/math/Math_3D.cpp'),'Vector_InverseRotate')+function(read_source('src/Entity/ObjectBounds.h'),'ObjectBounds_Build')+source+MAIN
+ return prefix+SERVICES+constants+function(read_source('src/game/math/Math_3D.cpp'),'Vector_InverseRotate')+function(read_source('src/game/entity/ObjectBounds.h'),'ObjectBounds_Build')+source+MAIN
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');a=p.parse_args()

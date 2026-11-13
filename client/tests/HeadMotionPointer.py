@@ -97,7 +97,7 @@ int main() {
 
 def harness(revision=None):
     prefix = position_harness(revision).split("void CallPosition(CHARACTER* character)", 1)[0]
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     head = " ".join(re.search(rf"vec3_t\s+{name}\s*;", types).group() for name in ("HeadAngle", "HeadTargetAngle"))
     prefix = prefix.replace("BYTE beforeTimer[128 - 40];", head + " BYTE beforeTimer[128 - 64];", 1)
     prefix = prefix.replace("randomValues[2]", "randomValues[4]").replace("randomDraws < 2", "randomDraws < 4")
@@ -111,7 +111,7 @@ def harness(revision=None):
     prefix += re.search(r"^[^/\n]*\bCharactersClient\s*=\s*[^;]+;", globals_source, re.M).group()
     prefix += function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CreateAngle")
     prefix += function(read_source("src/game/path/Path_Legacy.cpp", revision), "FarAngle")
-    source = read_source("src/Entity/Entity_HeadMotion.cpp", revision)
+    source = read_source("src/game/entity/Entity_HeadMotion.cpp", revision)
     look, move = function(source, "LookAtTarget"), function(source, "MoveHead").replace("rand()", "NextRandom()")
     call_head = "character" if "CHARACTER* character" in move else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     call_look = "&character->Object, target" if "OBJECT* o" in look else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(character)), static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(target))"

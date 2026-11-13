@@ -7,7 +7,7 @@
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
 #include "Render/Skinning.h"
-#include "Game/RenderDerivedState.h"
+#include "game/core/RenderDerivedState.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"

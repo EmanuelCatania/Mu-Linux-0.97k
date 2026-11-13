@@ -107,7 +107,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Combat/Combat_Projectiles.cpp',revision)
+    source=read_source('src/game/combat/Combat_Projectiles.cpp',revision)
     # Sólo la referencia histórica conserva el cast32,con sintaxis aceptada
     # por GCC. El cuerpo actual se compila sin esta adaptación.
     legacy='(DWORD)DAT_07abf5d8'

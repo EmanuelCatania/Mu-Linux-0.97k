@@ -32,7 +32,7 @@
 #include "stdafx.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
-#include "Game/HeroVitals.h"
+#include "game/core/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"

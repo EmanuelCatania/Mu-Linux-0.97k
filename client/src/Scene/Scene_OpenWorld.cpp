@@ -1,7 +1,7 @@
 // Scene_OpenWorld.cpp
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #include "globals.h"
 #include "functions.h"
 

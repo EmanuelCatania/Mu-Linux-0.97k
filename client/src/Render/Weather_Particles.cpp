@@ -42,7 +42,7 @@
 //          DAT_07c74ae4 = current intensity (interpolated toward ae0 each frame)
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #pragma warning(disable: 4244 4101)
 #include "globals.h"
 #include "functions.h"

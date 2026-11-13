@@ -3,12 +3,12 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
-#include "Entity/EntityView.h"
+#include "game/entity/EntityView.h"
 #include "UI/HealthBar.h"
-#include "Combat/PlayerAttackSpeed.h"
+#include "game/combat/PlayerAttackSpeed.h"
 #include "Net/NetText.h"
-#include "Entity/EntityName.h"
-#include "Game/RenderSnapshots.h"
+#include "game/entity/EntityName.h"
+#include "game/core/RenderSnapshots.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"

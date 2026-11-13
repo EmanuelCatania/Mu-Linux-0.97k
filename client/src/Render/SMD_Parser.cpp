@@ -8,7 +8,7 @@
 #include "stdafx.h"
 #include "Model/SmdImport.h"
 #include "Render/JointTypes.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
 #include "Render/ResourceTables.h"

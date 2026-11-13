@@ -24,7 +24,7 @@
 #include "Scene/Scene_Dispatch.h"
 #include "Scene/Scene_Intro.h"
 #include "Scene/Scene_Loading.h"
-#include "Game/Game_MainLoop.h"
+#include "game/core/Game_MainLoop.h"
 #include "Net/Net.h"
 #include <stdlib.h>   // for rand()
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)

@@ -34,20 +34,20 @@
 #include "UI/MoveList.h"
 #include "Net/NetText.h"
 #include "game/party/Party.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
-#include "Game/HeroVitals.h"
+#include "game/core/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
 #include "Local/ClientText.h"
 #include "UI/BuffBar.h"
 
 // Color de las líneas de buffs del panel C (lo que suman mientras duran).
 static constexpr DWORD kBuffBonusColor = 0xFF64E664u;
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"

@@ -14,14 +14,14 @@
 // =============================================================================
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
-#include "Game/HeroVitals.h"
-#include "Entity/EntityView.h"
+#include "game/core/HeroVitals.h"
+#include "game/entity/EntityView.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"

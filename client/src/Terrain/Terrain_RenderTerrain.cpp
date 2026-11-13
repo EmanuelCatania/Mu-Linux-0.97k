@@ -6,7 +6,7 @@
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "game/party/Party.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Gfx.h"
@@ -14,8 +14,8 @@ void Terrain_BeginBufferedPass();
 void Terrain_BeginBatch();
 void Terrain_EndBatch();
 #include "Render/BufferedDraw.h"
-#include "Game/RenderFxSnapshots.h"
-#include "Entity/ObjectBounds.h"
+#include "game/core/RenderFxSnapshots.h"
+#include "game/entity/ObjectBounds.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -25,7 +25,7 @@ void Terrain_EndBatch();
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
 #include "Render/Camera3D.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "structs.h"
 #include "globals.h"
 #include "functions.h"
@@ -46,7 +46,7 @@ extern "C" BYTE OffsetMixItems[];
 
 // Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
 // Combat_UseElfSkill (UseSkillElf), Action (Action big switch):
-// viven en src/Combat/Combat.cpp.
+// viven en src/game/combat/Combat.cpp.
 
 // IDA: TERRAIN_INDEX (0x004F6C30)
 int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + param_1; }

@@ -178,7 +178,7 @@
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "Platform/Text.h"

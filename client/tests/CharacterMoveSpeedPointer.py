@@ -74,7 +74,7 @@ int main() {
 
 def harness(revision=None):
     prefix = stop_harness(revision).split("void Call(CHARACTER* character)", 1)[0]
-    kind = re.search(r"BYTE\s+Kind\s*;", read_source("src/Entity/EntityTypes.h", revision)).group()
+    kind = re.search(r"BYTE\s+Kind\s*;", read_source("src/game/entity/EntityTypes.h", revision)).group()
     prefix = prefix.replace("BYTE beforeAction[261 - 28];", "BYTE beforeKind[132 - 28]; " + kind + " BYTE beforeAction[261 - 133];", 1)
     prefix += "\nstatic_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Kind) == 132 && offsetof(CHARACTER, MoveSpeed) == 762));\n"
     speed = function(read_source("src/Terrain/Terrain.cpp", revision), "CharacterMoveSpeed")

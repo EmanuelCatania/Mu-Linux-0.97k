@@ -1,7 +1,7 @@
 // Path_LegacyReset.cpp
 
 #include "stdafx.h"
-#include "Game/PathContext.h"
+#include "game/core/PathContext.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"

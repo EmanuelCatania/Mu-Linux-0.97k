@@ -19,7 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"

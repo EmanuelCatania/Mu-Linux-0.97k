@@ -4,7 +4,7 @@
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
-#include "Game/FrameLimiter.h"
+#include "game/core/FrameLimiter.h"
 #include "Platform/IGLContext.h"
 #include "Render/Gfx.h"
 #include <cerrno>

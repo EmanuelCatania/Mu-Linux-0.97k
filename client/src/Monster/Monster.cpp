@@ -481,7 +481,7 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"

@@ -100,7 +100,7 @@
 //   Math_Fabs   — terrain height at angle
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 
 // Campos float del slot (OBJECT de 444 bytes).  Las macros DAT_0839bXXX
 // estan tipadas como unsigned int; WSF reinterpreta los bits.  Leerlos con

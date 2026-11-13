@@ -45,7 +45,7 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 

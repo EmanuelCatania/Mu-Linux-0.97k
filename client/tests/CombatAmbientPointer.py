@@ -73,7 +73,7 @@ def harness(revision=None):
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    body = function(read_source("src/Combat/Combat_AttackStage.cpp", revision), "Combat_SpawnIdleAmbientParticle")
+    body = function(read_source("src/game/combat/Combat_AttackStage.cpp", revision), "Combat_SpawnIdleAmbientParticle")
     arg = "object" if "OBJECT* object" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix + SERVICES + body + MAIN.replace("ARG", arg)
 

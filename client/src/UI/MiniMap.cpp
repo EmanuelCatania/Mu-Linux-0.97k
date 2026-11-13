@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
@@ -10,7 +10,7 @@
 #include "Config/UserSettings.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "Local/ClientText.h"
 #include <math.h>
 

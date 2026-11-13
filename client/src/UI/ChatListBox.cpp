@@ -79,7 +79,7 @@
 #include "Net/Recv/NetRecv.h"
 #include "Text/TextCore.h"
 #include "Net/NetText.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"

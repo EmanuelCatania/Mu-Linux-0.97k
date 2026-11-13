@@ -71,7 +71,7 @@ def harness(revision=None):
  prefix+=re.search(r'std::uint64_t MoltEdgeKey\([^)]*\)\s*\{.*?\n\}',source,re.S).group()
  for name in ('_DAT_005524f8','_DAT_005597c8'):
   if not re.search(r'^float\s+'+name+r'\b',prefix,re.M):prefix+=re.search(r'^float\s+'+name+r'\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()
- prefix+=SERVICES+function(read_source('src/Game/RenderInterpolationMath.cpp',revision),'RenderBlend')
+ prefix+=SERVICES+function(read_source('src/game/core/RenderInterpolationMath.cpp',revision),'RenderBlend')
  for name in ('MoltSilhouette_BeginStep','MoltSilhouette_Invalidate','MoltSilhouette_Tick','MoltSilhouette_Render'):prefix+=function(source,name)
  tick=function(source,'MoltSilhouette_Tick');arg='activeObject' if 'OBJECT* entity' in tick else 'static_cast<int>(reinterpret_cast<uintptr_t>(activeObject))'
  return prefix+MAIN.replace('ARG',arg)

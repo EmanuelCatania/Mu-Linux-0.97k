@@ -91,7 +91,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0] + "\n#include <cmath>\n"
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     obj = re.search(r"struct OBJECT\s*\{.*?\};", types, re.S).group()
     obj = re.sub(r"OBJECT\*\s+Owner", "std::uint32_t Owner", obj)
     obj = re.sub(r"vec34_t\*\s+BoneMatrices", "std::uint32_t BoneMatrices", obj)
@@ -101,7 +101,7 @@ def harness(revision=None):
     prefix += "\nusing vec3_t=float[3];\n#pragma pack(push,1)\n" + obj + "\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)==444);\n"
     prefix += re.search(r"struct MaterialVisualSample\s*\{.*?\n\};", read_source("src/Render/MaterialVisuals.h", revision), re.S).group()
     prefix += SERVICES
-    source = read_source("src/Entity/Entity_Reset.cpp", revision)
+    source = read_source("src/game/entity/Entity_Reset.cpp", revision)
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     for name in sorted(set(re.findall(r"_DAT_\w+|\bWorldTime\b", source))):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()

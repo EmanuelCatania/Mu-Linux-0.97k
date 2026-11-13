@@ -6,7 +6,7 @@
 
 #include "stdafx.h"
 #include "Net/Ping.h"
-#include "Game/FrameLimiter.h"
+#include "game/core/FrameLimiter.h"
 
 void OpenGL_Release(void);        // WinMain.cpp
 void GameGuard_TickCheck(void);   // WinMain.cpp

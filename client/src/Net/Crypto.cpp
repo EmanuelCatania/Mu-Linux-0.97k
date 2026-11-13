@@ -18,7 +18,7 @@
 #include "stdafx.h"
 #include "game/physics/ClothTypes.h"
 #include "Render/BufferedDraw.h"
-#include "Entity/ClothPresentation.h"
+#include "game/entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"

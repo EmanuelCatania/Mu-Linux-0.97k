@@ -3,7 +3,7 @@
 #include "Platform/Text.h"
 #include "UI/HealthBar.h"
 #include "Config/UserSettings.h"
-#include "Entity/EntityView.h"
+#include "game/entity/EntityView.h"
 
 extern "C" SIZE* __cdecl RenderCenteredText(int x, int y, const char* text);
 

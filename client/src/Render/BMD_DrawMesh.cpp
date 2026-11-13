@@ -78,7 +78,7 @@
 #include "Render/BMDDevice.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "../globals.h"
 #include "../functions.h"
 

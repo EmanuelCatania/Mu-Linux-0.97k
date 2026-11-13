@@ -40,26 +40,27 @@ def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
     old, new = sys.argv[1].strip('/'), sys.argv[2].strip('/')
-    src_old, src_new = ROOT / 'src' / old, ROOT / 'src' / new
-    if not src_old.is_dir():
-        sys.exit(f'no existe src/{old}')
-    src_new.parent.mkdir(parents=True, exist_ok=True)
-    if src_new.exists():
-        # Destino ya creado por otra tanda: mover archivo por archivo.
-        for f in sorted(src_old.rglob('*')):
-            if f.is_file():
-                target = src_new / f.relative_to(src_old)
-                if target.exists():
-                    sys.exit(f'ya existe {target}')
-                target.parent.mkdir(parents=True, exist_ok=True)
-                subprocess.check_call(['git', 'mv', str(f), str(target)], cwd=ROOT)
-    else:
-        subprocess.check_call(['git', 'mv', f'src/{old}', f'src/{new}'], cwd=ROOT)
+    # Archivo por archivo, con la lista de git y las mayúsculas exactas: en
+    # Windows src/Game y src/game son la misma carpeta, así que recorrer el
+    # disco mezclaría carpetas distintas para git y "Game" -> "game/core"
+    # sería mover una carpeta adentro de sí misma.
+    listed = subprocess.check_output(['git', 'ls-files', '-z', '--', f'src/{old}/'], cwd=ROOT).decode('utf-8')
+    tracked = [p for p in listed.split('\0') if p.startswith(f'src/{old}/')]
+    if not tracked:
+        sys.exit(f'git no tiene archivos en src/{old}/')
+    for path in tracked:
+        target = f'src/{new}/' + path[len(f'src/{old}/'):]
+        if subprocess.run(['git', 'ls-files', '--error-unmatch', target], cwd=ROOT,
+                          capture_output=True).returncode == 0:
+            sys.exit(f'ya existe {target}')
+        (ROOT / target).parent.mkdir(parents=True, exist_ok=True)
+        subprocess.check_call(['git', 'mv', path, target], cwd=ROOT)
 
     include = re.compile(r'^(\s*#\s*include\s*["<])' + re.escape(old) + r'/', re.M)
     changed = 0
     slash = re.compile(r'src/' + re.escape(old) + r'/')
-    for f in files(['src/**/*.cpp', 'src/**/*.h', 'src/**/*.c', 'src/**/*.hpp', 'src/**/*.rc']):
+    for f in files(['src/**/*.cpp', 'src/**/*.h', 'src/**/*.c', 'src/**/*.hpp', 'src/**/*.rc',
+                    'tests/**/*.cpp', 'tests/**/*.h']):
         # includes y las menciones "src/Vieja/..." de los comentarios
         changed += rewrite(f, lambda t: slash.sub(f'src/{new}/', include.sub(r'\g<1>' + new + '/', t)))
     back = re.compile(r'src\\' + re.escape(old.replace('/', '\\')) + r'\\')

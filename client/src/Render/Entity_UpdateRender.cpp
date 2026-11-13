@@ -3,9 +3,9 @@
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "Render/EquipmentVisuals.h"
-#include "Entity/CharacterEffects.h"
+#include "game/entity/CharacterEffects.h"
 
 extern "C" const char* Guild_GetMarkName(int row);
 #pragma warning(disable: 4244 4305 4701 4702 4700)

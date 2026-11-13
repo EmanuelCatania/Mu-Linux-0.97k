@@ -85,7 +85,7 @@ int main(){
 
 
 def harness():
-    header = read_source("src/Entity/EntityTypes.h")
+    header = read_source("src/game/entity/EntityTypes.h")
     types = ("#include <cstdint>\n#include <cstddef>\n#include <algorithm>\n"
              "using BYTE=std::uint8_t; using vec3_t=float[3]; using vec34_t=float[3][4];\n"
              "#pragma pack(push,1)\n" + record(header, "OBJECT") +

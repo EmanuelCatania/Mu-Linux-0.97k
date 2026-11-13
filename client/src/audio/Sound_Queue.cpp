@@ -7,7 +7,7 @@
 // +0 flag activo, +4 modo de blend), más los timers de avisos y de chat.
 
 #include "stdafx.h"
-#include "Game/RenderInterpolation.h"
+#include "game/core/RenderInterpolation.h"
 #include "Config/UserSettings.h"
 
 namespace {

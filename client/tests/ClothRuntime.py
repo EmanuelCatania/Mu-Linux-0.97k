@@ -14,8 +14,8 @@ SOURCES = {
     "src/Core/Runtime_Small.cpp": "FUN_00407970 FUN_00407de0 FUN_00407ec0 FUN_00407ea0",
     "src/Core/Runtime_Medium.cpp": "FUN_00408070",
     "src/UI/UI_LegacyWidgets.cpp": "FUN_00408680 FUN_0045aaa0_impl",
-    "src/Entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
-    "src/Entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
+    "src/game/entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
+    "src/game/entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
     "src/Render/Render_LegacyBillboards.cpp": "DeleteCloth",
     "src/game/math/Math_3D.cpp": "Vector_Transform BMD_TransformPosition",
 }
@@ -198,9 +198,9 @@ int main(){
 def harness(revision=None):
     units=[function(read_source(path,revision),name) for path,names in SOURCES.items() for name in names.split()]
     legacy_abi='float entity,' in function(read_source("src/UI/UI_LegacyWidgetSystem.cpp",revision),"GridSpring_Create")
-    if legacy_abi:units.append(function(read_source("src/Entity/CharacterCloth.cpp",revision),"PtrAsFloatBits"))
+    if legacy_abi:units.append(function(read_source("src/game/entity/CharacterCloth.cpp",revision),"PtrAsFloatBits"))
     code="\n".join(units)
-    header=read_source("src/Entity/EntityTypes.h",revision)
+    header=read_source("src/game/entity/EntityTypes.h",revision)
     types="\n#pragma pack(push,1)\n"+"\n".join(record(header,n) for n in ["OBJECT","PART_t","CHARACTER"])+"\n#pragma pack(pop)\n"
     if legacy_abi:
         types=types.replace("BYTE     _unk180[0x30];","BYTE ClothCount; BYTE pad181[3]; void* Cloth; BYTE pad188[40];")
@@ -221,7 +221,7 @@ def harness(revision=None):
         m=re.search(rf'^[^/\n]*\b{name}\s*=\s*[^;]+;',globals_cpp,re.M)
         if not m:raise RuntimeError("Global sin servicio: "+name)
         constants+=m.group()+"\n"
-    presentation=read_source("src/Entity/ClothPresentation.cpp",revision)
+    presentation=read_source("src/game/entity/ClothPresentation.cpp",revision)
     presentation=presentation[presentation.index("namespace {"):]
     decl_presentation="void ClothPresentation_BeginStep();void ClothPresentation_Forget(const void*);void ClothPresentation_Before(void*);void ClothPresentation_After(void*);void ClothPresentation_Vertex(const void*,int,float*);\n"
     tables=""

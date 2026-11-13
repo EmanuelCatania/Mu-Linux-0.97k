@@ -88,7 +88,7 @@ def harness(revision=None):
     initialize = initialize.replace("malloc(529 * CHARACTER_STRIDE)", "AllocatePool(529 * CHARACTER_STRIDE)")
     assert "AllocatePool(" in initialize, "la reserva del pool no se pudo interceptar"
     initialize = initialize.replace("rand()", "SelectedOffset()")
-    lookup = function(read_source("src/Entity/Entity_Lookup.cpp", revision), "Entity_FindById")
+    lookup = function(read_source("src/game/entity/Entity_Lookup.cpp", revision), "Entity_FindById")
     legacy = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "FindCharacterIndex")
     return (PREAMBLE.split("BYTE* reservation;")[0].replace("0x10000", "0x100000")
             + declarations + "\n" + alias + "\n" + SUPPORT

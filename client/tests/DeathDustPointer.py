@@ -77,7 +77,7 @@ int main() {
 
 def harness(revision=None):
     prefix = reset_harness(revision).split("int ItemObjectAttributeImpl(", 1)[0]
-    body = function(read_source("src/Combat/Combat_AttackStage.cpp", revision), "Combat_SpawnDeathDustParticles")
+    body = function(read_source("src/game/combat/Combat_AttackStage.cpp", revision), "Combat_SpawnDeathDustParticles")
     arg = "object" if "OBJECT* object" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix + SERVICES + body + MAIN.replace("ARG", arg)
 

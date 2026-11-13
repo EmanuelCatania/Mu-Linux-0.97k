@@ -157,8 +157,8 @@ def harness(revision=None):
     prefix = stop_harness(revision).split("void Call(CHARACTER* character)", 1)[0]
     prefix = prefix.replace("HRESULT __cdecl PlayBuffer(", "HRESULT __cdecl PlayBufferReal(", 1)
     prefix = prefix.replace("struct PART_t {", "HRESULT __cdecl PlayBuffer(int, const OBJECT*, BOOL);\nstruct PART_t {", 1)
-    action = function(read_source("src/Entity/Entity_ActionLegacy.cpp", revision), "SetAction").replace("SetAction(", "SetActionReal(", 1)
-    walk = function(read_source("src/Entity/Character_Motion.cpp", revision), "SetPlayerWalk").replace("rand()", "NextRandom()")
+    action = function(read_source("src/game/entity/Entity_ActionLegacy.cpp", revision), "SetAction").replace("SetAction(", "SetActionReal(", 1)
+    walk = function(read_source("src/game/entity/Character_Motion.cpp", revision), "SetPlayerWalk").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* param_1" in walk else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + action + SERVICES + walk + MAIN.replace("CALL_WALK", f"SetPlayerWalk({arg})")
 
