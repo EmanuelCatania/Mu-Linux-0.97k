@@ -130,7 +130,8 @@ public:
     bool GetAntialiasing() const { return m_Antialiasing == 1 || m_Antialiasing == 3; }   // FXAA
     int Multisample() const { return m_StartupAntialiasing >= 2 ? 4 : 0; }
     void SetAntialiasingLevel(int level);
-    // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
+    // DESVIACION: versiones -hd al lado de los archivos ([Window] HDTextures);
+    // se aplica al reiniciar.
     bool GetHDTextures() const { return m_HDTextures; }
     void SetHDTextures(bool enabled);
     // DESVIACION: sombras proyectadas ([Window] Shadows): 0 apagadas (sombra

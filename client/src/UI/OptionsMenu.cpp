@@ -607,6 +607,7 @@ void COptionsMenu::RenderGraphics()
     const int texture = gUserSettings.GetTextureQuality();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
     RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
+    // DESVIACION: versiones -hd al lado de los archivos clásicos.
     RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::HDTextures), gUserSettings.GetHDTextures());
     // DESVIACION: nitidez de la imagen 3D.
     static const char* const sharpnessNames[4] = { "Off", "1", "2", "3" };
