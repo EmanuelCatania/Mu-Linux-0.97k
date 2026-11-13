@@ -897,6 +897,26 @@ bool CSkillManager::RunningSkill(int aIndex, int bIndex, CSkill* lpSkill, BYTE x
 			return this->SkillSummon(aIndex, bIndex, lpSkill);
 		}
 
+		case SKILL_SUMMON8:
+		{
+			return this->SkillSummon(aIndex, bIndex, lpSkill);
+		}
+
+		case SKILL_SUMMON9:
+		{
+			return this->SkillSummon(aIndex, bIndex, lpSkill);
+		}
+
+		case SKILL_SUMMON10:
+		{
+			return this->SkillSummon(aIndex, bIndex, lpSkill);
+		}
+
+		case SKILL_SUMMON11:
+		{
+			return this->SkillSummon(aIndex, bIndex, lpSkill);
+		}
+
 		case SKILL_TWISTING_SLASH:
 		{
 			return this->SkillTwistingSlash(aIndex, bIndex, lpSkill);
@@ -1354,64 +1374,22 @@ bool CSkillManager::SkillSummon(int aIndex, int bIndex, CSkill* lpSkill)
 		return false;
 	}
 
-	int monster = 0;
+	// Mu-Linux: el monstruo sale de una tabla (orbe +0..+10 = skills 30..40).
+	const int monsters[] = {
+		gServerInfo.m_SummonMonster1, gServerInfo.m_SummonMonster2, gServerInfo.m_SummonMonster3,
+		gServerInfo.m_SummonMonster4, gServerInfo.m_SummonMonster5, gServerInfo.m_SummonMonster6,
+		gServerInfo.m_SummonMonster7, gServerInfo.m_SummonMonster8, gServerInfo.m_SummonMonster9,
+		gServerInfo.m_SummonMonster10, gServerInfo.m_SummonMonster11,
+	};
 
-	switch (lpSkill->m_index)
+	const int slot = lpSkill->m_index - SKILL_SUMMON1;
+
+	if (slot < 0 || slot >= (int)(sizeof(monsters) / sizeof(monsters[0])) || monsters[slot] <= 0)
 	{
-		case SKILL_SUMMON1:
-		{
-			monster = gServerInfo.m_SummonMonster1;
-
-			break;
-		}
-
-		case SKILL_SUMMON2:
-		{
-			monster = gServerInfo.m_SummonMonster2;
-
-			break;
-		}
-
-		case SKILL_SUMMON3:
-		{
-			monster = gServerInfo.m_SummonMonster3;
-
-			break;
-		}
-
-		case SKILL_SUMMON4:
-		{
-			monster = gServerInfo.m_SummonMonster4;
-
-			break;
-		}
-
-		case SKILL_SUMMON5:
-		{
-			monster = gServerInfo.m_SummonMonster5;
-
-			break;
-		}
-
-		case SKILL_SUMMON6:
-		{
-			monster = gServerInfo.m_SummonMonster6;
-
-			break;
-		}
-
-		case SKILL_SUMMON7:
-		{
-			monster = gServerInfo.m_SummonMonster7;
-
-			break;
-		}
-
-		default:
-		{
-			return false;
-		}
+		return false;
 	}
+
+	int monster = monsters[slot];
 
 	if (OBJECT_RANGE(lpObj->SummonIndex) != 0)
 	{
@@ -1462,6 +1440,52 @@ bool CSkillManager::SkillSummon(int aIndex, int bIndex, CSkill* lpSkill)
 	lpSummon->PathCount = 0;
 
 	lpSummon->MoveRange = 15;
+
+	// Mu-Linux: la invocación escala con la elfa.  En el original quedaba con
+	// los stats planos de Monster.txt y a nivel alto no servía.
+	// Rate = SummonConstA + Energy / SummonConstB + Level / SummonConstC
+	//      + Reset * SummonResetRate (%), con tope SummonMaxRate.  El término de
+	// resets compensa que el nivel vuelve a 1 al resetear.  Sube vida, daño, defensas y tasas de ataque y
+	// defensa en ese porcentaje.
+	int rate = gServerInfo.m_SummonConstA;
+
+	if (gServerInfo.m_SummonConstB > 0)
+	{
+		rate += lpObj->Energy / gServerInfo.m_SummonConstB;
+	}
+
+	if (gServerInfo.m_SummonConstC > 0)
+	{
+		rate += lpObj->Level / gServerInfo.m_SummonConstC;
+	}
+
+	if (gServerInfo.m_SummonResetRate > 0 && lpObj->Reset > 0)
+	{
+		rate += lpObj->Reset * gServerInfo.m_SummonResetRate;
+	}
+
+	rate = ((rate > gServerInfo.m_SummonMaxRate) ? gServerInfo.m_SummonMaxRate : rate);
+
+	if (rate > 0)
+	{
+		lpSummon->MaxLife += (lpSummon->MaxLife * rate) / 100;
+
+		lpSummon->Life = lpSummon->MaxLife;
+
+		lpSummon->ScriptMaxLife += (lpSummon->ScriptMaxLife * rate) / 100;
+
+		lpSummon->PhysiDamageMin += (lpSummon->PhysiDamageMin * rate) / 100;
+
+		lpSummon->PhysiDamageMax += (lpSummon->PhysiDamageMax * rate) / 100;
+
+		lpSummon->Defense += (lpSummon->Defense * rate) / 100;
+
+		lpSummon->MagicDefense += (lpSummon->MagicDefense * rate) / 100;
+
+		lpSummon->AttackSuccessRate += (lpSummon->AttackSuccessRate * rate) / 100;
+
+		lpSummon->DefenseSuccessRate += (lpSummon->DefenseSuccessRate * rate) / 100;
+	}
 
 	GCSummonLifeSend(lpSummon->SummonIndex, (int)lpSummon->Life, (int)lpSummon->MaxLife);
 

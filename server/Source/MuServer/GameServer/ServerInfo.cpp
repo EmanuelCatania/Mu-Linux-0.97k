@@ -1985,6 +1985,24 @@ void CServerInfo::ReadSkillInfo(const char* section, const char* path)
 
 	this->m_SummonMonster7 = GetPrivateProfileInt(section, "SummonMonster7", 0, path);
 
+	this->m_SummonMonster8 = GetPrivateProfileInt(section, "SummonMonster8", 52, path);
+
+	this->m_SummonMonster9 = GetPrivateProfileInt(section, "SummonMonster9", 48, path);
+
+	this->m_SummonMonster10 = GetPrivateProfileInt(section, "SummonMonster10", 58, path);
+
+	this->m_SummonMonster11 = GetPrivateProfileInt(section, "SummonMonster11", 61, path);
+
+	this->m_SummonConstA = GetPrivateProfileInt(section, "SummonConstA", 0, path);
+
+	this->m_SummonConstB = GetPrivateProfileInt(section, "SummonConstB", 20, path);
+
+	this->m_SummonConstC = GetPrivateProfileInt(section, "SummonConstC", 2, path);
+
+	this->m_SummonMaxRate = GetPrivateProfileInt(section, "SummonMaxRate", 300, path);
+
+	this->m_SummonResetRate = GetPrivateProfileInt(section, "SummonResetRate", 0, path);
+
 	this->m_GreaterLifeConstA = GetPrivateProfileInt(section, "GreaterLifeConstA", 0, path);
 
 	this->m_GreaterLifeConstB = GetPrivateProfileInt(section, "GreaterLifeConstB", 0, path);

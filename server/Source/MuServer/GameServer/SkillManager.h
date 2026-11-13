@@ -47,6 +47,11 @@ enum eSkillNumber
 	SKILL_SUMMON5 = 34,
 	SKILL_SUMMON6 = 35,
 	SKILL_SUMMON7 = 36,
+	// Mu-Linux: orbe de invocación +7..+10 (las skills 37..40 estaban libres).
+	SKILL_SUMMON8 = 37,
+	SKILL_SUMMON9 = 38,
+	SKILL_SUMMON10 = 39,
+	SKILL_SUMMON11 = 40,
 	SKILL_TWISTING_SLASH = 41,
 	SKILL_RAGEFUL_BLOW = 42,
 	SKILL_DEATH_STAB = 43,
