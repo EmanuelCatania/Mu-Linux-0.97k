@@ -1,0 +1,4 @@
+# Efecto (registro de la Fase 5): los archivos de esta carpeta responden por
+# los de Data/Skill con el mismo nombre.
+source = "Skill"
+model = "Bone01.bmd"

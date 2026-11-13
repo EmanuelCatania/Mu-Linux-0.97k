@@ -45,3 +45,6 @@
 "Logo" = "ui/login"
 "Interface" = "ui/interface"
 "Sound" = "audio/sound"
+
+# Sprites de efectos (los modelos de Data/Skill van por entidad en effect/model).
+"Effect" = "effect/sprite"
