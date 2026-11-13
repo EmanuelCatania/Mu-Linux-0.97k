@@ -74,7 +74,7 @@ def harness(revision=None):
     color=function(body,'RenderPartObjectBodyColor')+function(body,'Entity_SetModelColorAlt')
     effect=function(read_source('src/render/Entity_DrawSetup.cpp',revision),'RenderPartObjectEffect')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')
-    prefix+=re.search(r'enum eAntilag\s*\{.*?\};',read_source('src/Config/UserSettings.h',revision),re.S).group()+SERVICES+EXTRA
+    prefix+=re.search(r'enum eAntilag\s*\{.*?\};',read_source('src/app/config/UserSettings.h',revision),re.S).group()+SERVICES+EXTRA
     header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     names=set(re.findall(r'_DAT_[0-9a-f]+',setup+effect));names.add('DAT_083a45d4')
     for name in sorted(names):

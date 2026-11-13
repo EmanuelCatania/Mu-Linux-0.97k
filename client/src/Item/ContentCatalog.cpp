@@ -14,7 +14,7 @@
 #include "game/core/MapManager.h"
 #include "Local/ClientText.h"
 #include <array>
-#include "Util/Sha256.h"
+#include "app/util/Sha256.h"
 #include "Item/ItemDefines.h"
 #include "net/Protocol/GameServerProtocol.h"
 #include <map>

@@ -111,7 +111,7 @@ int main() {
 
 def harness(revision=None):
     prefix = base_harness(revision).split("int CallBase(BYTE* machine)", 1)[0]
-    core, scene = read_source("src/Core/Runtime_Small.cpp", revision), read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
+    core, scene = read_source("src/app/core/Runtime_Small.cpp", revision), read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     for name in ("FUN_0047cfe0", "FUN_0047d000"):
         prefix += function(core, name)
     names = ("Stats_CalcBase", "Stats_CalcMagicDmgRange", "Stats_CalcAddStrength", "CalculateAttackSpeed", "Stats_CalcDefense", "Stats_CalcDefenseRate", "Stats_ExtraOptionEquip6", "Stats_ExtraOptionGlovesWings")

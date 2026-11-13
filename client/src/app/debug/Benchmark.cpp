@@ -1,7 +1,7 @@
 // Benchmark.cpp — modo benchmark de render.  Ver Debug/Benchmark.h.
 
 #include "stdafx.h"
-#include "Debug/Benchmark.h"
+#include "app/debug/Benchmark.h"
 
 #if defined(MU_BENCHMARK)
 

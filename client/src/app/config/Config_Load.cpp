@@ -47,10 +47,10 @@
 #include "platform/ClientSettings.h"
 #include "platform/Text.h"
 #include "platform/IFileSystem.h"
-#include "Config/Config.h"
+#include "app/config/Config.h"
 #include "net/MuEmu.h"
-#include "Config/ServerConfig.h"
-#include "Config/UserSettings.h"
+#include "app/config/ServerConfig.h"
+#include "app/config/UserSettings.h"
 #include "audio/SoundManager.h"
 
 extern "C" void DbgLogPublic(const char* msg);

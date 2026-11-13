@@ -53,7 +53,7 @@ int main() {
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0]+"\n#ifndef _WIN32\nusing HFONT=void*; using HGDIOBJ=void*;\n#endif\nusing std::uintptr_t;\n"
-    header=read_source("src/Core/Font.h",revision)
+    header=read_source("src/app/core/Font.h",revision)
     prefix+=re.search(r"enum eFontTypes\s*\{.*?\};",header,re.S).group()
     getter=re.search(r"HFONT GetFont\(eFontTypes type\) const\s*\{.*?\n    \}",header,re.S).group()
     prefix+="\nstruct TestFont { HFONT m_Fonts[MAX_FONT_TYPES]; "+getter+" }; TestFont gFont;\n"

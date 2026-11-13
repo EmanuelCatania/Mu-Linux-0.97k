@@ -117,7 +117,7 @@ def harness(revision=None):
     for name in ("DAT_07cf1ff4", "DAT_07d78068"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
-    prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "CalcDurabilityPercent")
+    prefix += function(read_source("src/app/core/Runtime_Small.cpp", revision), "CalcDurabilityPercent")
     rate = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Stats_CalcDefenseRate")
     arg = "machine" if "BYTE* param_1" in rate else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + SERVICES + rate + MAIN.replace("CALL_RATE", f"Stats_CalcDefenseRate({arg})")

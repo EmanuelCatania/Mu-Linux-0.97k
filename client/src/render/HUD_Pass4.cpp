@@ -21,7 +21,7 @@
 #include "stdafx.h"
 #include "Text/TextCore.h"
 #include "render/Gfx.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"

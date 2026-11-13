@@ -8,7 +8,7 @@
 
 #include "stdafx.h"
 #include "game/core/RenderInterpolation.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 
 namespace {
 char simulationSprites[sizeof(DAT_07c85890)] = {};

@@ -8,8 +8,8 @@
 #include "platform/ITimer.h"
 #include "net/Reconnect.h"
 #include "net/Network.h"
-#include "Core/Font.h"
-#include "Core/Window.h"
+#include "app/core/Font.h"
+#include "app/core/Window.h"
 #include "Local/ClientText.h"
 
 extern "C" void DbgLogPublic(const char* msg);

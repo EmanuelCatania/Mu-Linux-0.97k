@@ -6,7 +6,7 @@
 #include "ui/MoveList.h"
 #include "platform/ITimer.h"
 #include "Local/ClientText.h"
-#include "Core/Window.h"
+#include "app/core/Window.h"
 #include "ui/PanelAnchor.h"
 #include <cstring>
 

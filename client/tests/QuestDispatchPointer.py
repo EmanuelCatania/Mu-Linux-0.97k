@@ -50,7 +50,7 @@ int main() {
 
 
 def dispatch(revision=None):
-    return function(read_source("src/Util/Misc.cpp",revision),"Packet_ParseReceived")
+    return function(read_source("src/app/util/Misc.cpp",revision),"Packet_ParseReceived")
 
 
 def harness(revision=None):

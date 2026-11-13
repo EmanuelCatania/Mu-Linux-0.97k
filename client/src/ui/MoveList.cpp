@@ -5,8 +5,8 @@
 #include "ui/MiniMap.h"
 #include "ui/MoveList.h"
 #include "ui/EventTimer.h"
-#include "Core/Font.h"
-#include "Core/Window.h"
+#include "app/core/Font.h"
+#include "app/core/Window.h"
 #include "ui/UIState.h"
 #include "Local/ClientText.h"
 

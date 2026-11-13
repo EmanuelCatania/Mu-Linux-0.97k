@@ -118,8 +118,8 @@ def harness(revision=None):
     for name in ("DAT_07abf5d8", "CharacterAttribute"):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", header + read_source("src/structs.h", revision), re.M).group() + "\n"
     prefix += SERVICES
-    lists = function(read_source("src/Core/Runtime_Medium.cpp", revision), "CSQuest__setQuestLists")
-    entry = function(read_source("src/Core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
+    lists = function(read_source("src/app/core/Runtime_Medium.cpp", revision), "CSQuest__setQuestLists")
+    entry = function(read_source("src/app/core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
     prefix += lists + entry
     source = read_source("src/net/Recv/Recv_Quest.cpp", revision)
     for name in ("NetRecv_A0", "NetRecv_A1", "NetRecv_A2"):

@@ -38,9 +38,9 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // g_hInst 0x055CA000, g_hDC 0x055CA004, WindowWidth/Height 0x0056156C/70.
 // Fuentes y DC de memoria del texto: CFont (Core/Font.h), a través de gFont.
 // El DC de OpenGL NO es el DC de memoria del texto (gFont.GetTextDC()).
-#include "Core/Window.h"
+#include "app/core/Window.h"
 #include "net/Network.h"
-#include "Core/Font.h"
+#include "app/core/Font.h"
 #include "game/core/MapManager.h"
 
 // ── Primitive type aliases (Ghidra pseudo-types) ─────────────────────────────

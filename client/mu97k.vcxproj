@@ -131,9 +131,9 @@
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\ghidra_compat.h" />
     <ClInclude Include="src\types.h" />
-    <ClInclude Include="src\Config\Config.h" />
-    <ClInclude Include="src\Config\ServerConfig.h" />
-    <ClInclude Include="src\Config\UserSettings.h" />
+    <ClInclude Include="src\app\config\Config.h" />
+    <ClInclude Include="src\app\config\ServerConfig.h" />
+    <ClInclude Include="src\app\config\UserSettings.h" />
     <ClInclude Include="src\ui\UIState.h" />
     <ClInclude Include="src\ui\ChatTypes.h" />
     <ClInclude Include="src\game\entity\EntityView.h" />
@@ -159,7 +159,7 @@
     <ClInclude Include="src\game\core\PathContext.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
     <ClInclude Include="src\Model\SmdImport.h" />
-    <ClInclude Include="src\Core\ResourceLimits.h" />
+    <ClInclude Include="src\app\core\ResourceLimits.h" />
     <ClInclude Include="src\Model\BMDFileTypes.h" />
     <ClInclude Include="src\game\entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
@@ -168,7 +168,7 @@
     <ClInclude Include="src\Item\ItemDefines.h" />
     <ClInclude Include="src\Item\Item_ServerValue.h" />
     <ClInclude Include="src\ui\GoldenArcher.h" />
-    <ClInclude Include="src\Core\Window.h" />
+    <ClInclude Include="src\app\core\Window.h" />
     <ClInclude Include="src\platform\CompilerCompat.h" />
     <ClInclude Include="src\platform\NativeBridge.h" />
     <ClInclude Include="src\platform\SDL3\SDLPlatform.h" />
@@ -208,12 +208,12 @@
     <ClInclude Include="src\platform\GLFunctions.h" />
     <ClInclude Include="src\platform\GL\glad.h" />
     <ClInclude Include="src\platform\Win32\Win32GLContext.h" />
-    <ClInclude Include="src\Core\Font.h" />
+    <ClInclude Include="src\app\core\Font.h" />
     <ClInclude Include="src\ui\PanelAnchor.h" />
     <ClInclude Include="src\ui\EventTimer.h" />
     <ClInclude Include="src\ui\BuffBar.h" />
     <ClInclude Include="src\ui\ChatHistory.h" />
-    <ClInclude Include="src\Core\DataPrefetch.h" />
+    <ClInclude Include="src\app\core\DataPrefetch.h" />
     <ClInclude Include="src\ui\MiniMap.h" />
     <ClInclude Include="src\render\Camera3D.h" />
     <ClInclude Include="src\ui\OptionsMenu.h" />
@@ -352,10 +352,10 @@
     <ClCompile Include="src\game\core\Player_InputTick.cpp" />
     <ClCompile Include="src\render\Render_Frame.cpp" />
     <ClCompile Include="src\net\Net_Process.cpp" />
-    <ClCompile Include="src\Config\Config_Load.cpp" />
+    <ClCompile Include="src\app\config\Config_Load.cpp" />
     <ClCompile Include="src\ui\UIState.cpp" />
     <ClCompile Include="src\Local\ClientText.cpp" />
-    <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\app\core\Window.cpp" />
     <ClCompile Include="src\platform\Win32\Win32NativeBridge.cpp" />
     <ClCompile Include="src\platform\SDL3\SDLWindow.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\platform\SDL3\SDLInput.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
@@ -397,7 +397,7 @@
     <ClCompile Include="src\net\Recv\Recv_Viewport.cpp" />
     <ClCompile Include="src\net\Recv\Recv_World.cpp" />
     <ClCompile Include="src\platform\input\Input_WndProc.cpp" />
-    <ClCompile Include="src\Config\UserSettings.cpp" />
+    <ClCompile Include="src\app\config\UserSettings.cpp" />
     <ClCompile Include="src\audio\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
@@ -462,8 +462,8 @@
     <ClCompile Include="src\render\HUD_Pass5.cpp" />
     <ClCompile Include="src\render\HUD_Pass6.cpp" />
     <ClCompile Include="src\ui\UI_StatsPanel.cpp" />
-    <ClCompile Include="src\Util\Misc.cpp" />
-    <ClCompile Include="src\Core\Legacy_Runtime.cpp" />
+    <ClCompile Include="src\app\util\Misc.cpp" />
+    <ClCompile Include="src\app\core\Legacy_Runtime.cpp" />
     <ClCompile Include="src\game\entity\EntityName.cpp" />
     <ClCompile Include="src\game\entity\Entity_Lookup.cpp" />
     <ClCompile Include="src\net\Net_Disconnect.cpp" />
@@ -477,10 +477,10 @@
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
     <ClCompile Include="src\platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\game\combat\Combat_AttackEffect.cpp" />
-    <ClCompile Include="src\Core\Runtime_Small.cpp" />
-    <ClCompile Include="src\Core\Runtime_Medium.cpp" />
+    <ClCompile Include="src\app\core\Runtime_Small.cpp" />
+    <ClCompile Include="src\app\core\Runtime_Medium.cpp" />
     <ClCompile Include="src\ui\Quest_Legacy.cpp" />
-    <ClCompile Include="src\Core\System_Legacy.cpp" />
+    <ClCompile Include="src\app\core\System_Legacy.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_Packet.cpp" />
     <ClCompile Include="src\render\SMD_Legacy.cpp" />
     <ClCompile Include="src\ui\UI_LegacyWidgets.cpp" />
@@ -491,9 +491,9 @@
     <ClCompile Include="src\Item\Item_Durability.cpp" />
     <ClCompile Include="src\Item\Item_ServerValue.cpp" />
     <ClCompile Include="src\render\BMD_LegacyDraw.cpp" />
-    <ClCompile Include="src\Config\Config_TokenParser.cpp" />
+    <ClCompile Include="src\app\config\Config_TokenParser.cpp" />
     <ClCompile Include="src\game\entity\Entity_BoneEffects.cpp" />
-    <ClCompile Include="src\Core\Runtime_Linker.cpp" />
+    <ClCompile Include="src\app\core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
     <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
     <ClCompile Include="src\game\math\Math_LegacyTransforms.cpp" />
@@ -508,12 +508,12 @@
     <ClCompile Include="src\render\BMD_LegacyEffects.cpp" />
     <ClCompile Include="src\scenes\Scene_LegacyHelpers.cpp" />
     <ClCompile Include="src\game\path\Path_Legacy.cpp" />
-    <ClCompile Include="src\Core\Runtime_Externs.cpp" />
+    <ClCompile Include="src\app\core\Runtime_Externs.cpp" />
     <ClCompile Include="src\ui\UI_LegacyExterns.cpp" />
     <ClCompile Include="src\game\entity\Entity_ActionLegacy.cpp" />
     <ClCompile Include="src\render\Render_LegacyRotatedRect.cpp" />
     <ClCompile Include="src\ui\UI_GuildLegacy.cpp" />
-    <ClCompile Include="src\Core\String_ResourceLegacy.cpp" />
+    <ClCompile Include="src\app\core\String_ResourceLegacy.cpp" />
     <ClCompile Include="src\game\entity\Entity_LegacyEffects.cpp" />
     <ClCompile Include="src\game\combat\Combat_LegacyAnimation.cpp" />
     <ClCompile Include="src\render\Render_LegacyTransforms.cpp" />
@@ -543,7 +543,7 @@
     <ClCompile Include="src\render\BMD_LegacyLoading.cpp" />
     <ClCompile Include="src\platform\input\Cursor_Render.cpp" />
     <ClCompile Include="src\platform\input\Input_Timing.cpp" />
-    <ClCompile Include="src\Util\Process_Exit.cpp" />
+    <ClCompile Include="src\app\util\Process_Exit.cpp" />
     <ClCompile Include="src\net\Net_Bux.cpp" />
     <ClCompile Include="src\scenes\Scene_EntityLifecycle.cpp" />
     <ClCompile Include="src\scenes\Scene_OpenWorld.cpp" />
@@ -655,7 +655,7 @@
     <ClCompile Include="src\ui\EventTimer.cpp" />
     <ClCompile Include="src\ui\BuffBar.cpp" />
     <ClCompile Include="src\ui\ChatHistory.cpp" />
-    <ClCompile Include="src\Core\DataPrefetch.cpp" />
+    <ClCompile Include="src\app\core\DataPrefetch.cpp" />
     <ClCompile Include="src\ui\MiniMap.cpp" />
     <ClCompile Include="src\render\Camera3D.cpp" />
     <ClCompile Include="src\ui\OptionsMenu.cpp" />
@@ -669,12 +669,12 @@
     <ClCompile Include="src\scenes\Scene_ObjectInteraction.cpp" />
     <ClCompile Include="src\scenes\Scene_ObjectUpdate.cpp" />
     <ClCompile Include="src\render\BMD_SkinUpdate.cpp" />
-    <ClCompile Include="src\Debug\Benchmark.cpp" />
+    <ClCompile Include="src\app\debug\Benchmark.cpp" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="src\Debug\MiniDump.h" />
-    <ClInclude Include="src\Debug\Benchmark.h" />
+    <ClInclude Include="src\app\debug\MiniDump.h" />
+    <ClInclude Include="src\app\debug\Benchmark.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\net\Protocol\ProtocolBase.h" />
     <ClInclude Include="src\net\Protocol\GameServerProtocol.h" />

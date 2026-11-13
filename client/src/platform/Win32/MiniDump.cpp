@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "platform/ITimer.h"
 #include "platform/Text.h"
-#include "Debug/MiniDump.h"
+#include "app/debug/MiniDump.h"
 
 #include <dbghelp.h>
 

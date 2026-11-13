@@ -2,7 +2,7 @@
 #include "game/entity/CharacterEffects.h"
 #include "render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 
 #define local_60 (scratch.light[0])

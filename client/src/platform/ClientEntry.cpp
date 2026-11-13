@@ -28,7 +28,7 @@
 
 #include "stdafx.h"
 #include "platform/UserPath.h"
-#include "Core/DataPrefetch.h"
+#include "app/core/DataPrefetch.h"
 #include "render/ResourceTables.h"
 #include "platform/Diagnostics.h"
 #include "platform/Text.h"
@@ -41,7 +41,7 @@
 #include "Item/ItemDefines.h"
 #include "resource.h"
 #ifdef _WIN32
-#include "Debug/MiniDump.h"
+#include "app/debug/MiniDump.h"
 #else
 #include "platform/SDL3/SDLPlatform.h"
 #include "net/Ping.h"
@@ -50,7 +50,7 @@
 #include "net/HWID.h"
 #include "scenes/Scene.h"
 #include "audio/SoundManager.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #if defined(_DEBUG) && defined(_WIN32)
 #  define _CRTDBG_MAP_ALLOC
 #  include <crtdbg.h>

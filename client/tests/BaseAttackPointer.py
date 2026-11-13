@@ -108,7 +108,7 @@ def harness(revision=None):
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     prefix += "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", read_source("src/Item/ItemDefines.h", revision), re.M))
     prefix += re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}", header, re.M | re.S).group()
-    base = function(read_source("src/Core/Runtime_Small.cpp", revision), "Stats_CalcBase")
+    base = function(read_source("src/app/core/Runtime_Small.cpp", revision), "Stats_CalcBase")
     arg = "machine" if "BYTE* a1" in base else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + base + MAIN.replace("CALL_BASE", f"Stats_CalcBase({arg})")
 

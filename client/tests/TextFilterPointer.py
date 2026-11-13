@@ -54,7 +54,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/Core/Runtime_Medium.cpp',revision),'FUN_0040e730')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/app/core/Runtime_Medium.cpp',revision),'FUN_0040e730')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

@@ -3,7 +3,7 @@
 #include "render/MaterialVisuals.h"
 #include "render/LooseWingVisuals.h"
 #include "Item/ContentCatalog.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include <unordered_map>
 #include <vector>

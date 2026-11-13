@@ -7,8 +7,8 @@
 #include <strings.h>
 #define _stricmp strcasecmp
 #endif
-#include "Core/Font.h"
-#include "Config/UserSettings.h"
+#include "app/core/Font.h"
+#include "app/config/UserSettings.h"
 #include "Text/TextCore.h"
 #ifdef MU_SDL_FONTS
 #include "platform/SDL3/SDLFont.h"

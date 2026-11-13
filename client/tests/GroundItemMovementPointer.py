@@ -106,7 +106,7 @@ def harness(revision=None):
     for name in ("_DAT_005527d0", "_DAT_005528e4", "_DAT_00552a28"):
         prefix += re.search(rf"^float\s+{name}\s*=[^;]+;", globals_source, re.M).group() + "\n"
     sparkle = function(read_source("src/game/entity/Entity_LegacyEffects.cpp", revision), "Entity_UpdateSparkleEffect").replace("_rand()", "SparkleRandom()")
-    move = function(read_source("src/Util/Misc.cpp", revision), "MoveItems")
+    move = function(read_source("src/app/util/Misc.cpp", revision), "MoveItems")
     arg = "object" if "OBJECT* object" in sparkle else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix + SERVICES + sparkle + move + MAIN.replace("CALL_SPARKLE", f"Entity_UpdateSparkleEffect({arg})")
 

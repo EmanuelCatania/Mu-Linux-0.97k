@@ -20,7 +20,7 @@
 #include "render/Camera3D.h"
 #include "render/EquipmentVisuals.h"
 #include "game/entity/ObjectPose.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "render/DrawDistance.h"
 #include "ui/HealthBar.h"
 #include "globals.h"

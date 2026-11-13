@@ -21,7 +21,7 @@ void Terrain_BeginBufferedPass();
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "structs.h"
 #include "globals.h"

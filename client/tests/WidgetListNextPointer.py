@@ -28,7 +28,7 @@ def harness(revision=None):
   // El cuerpo corta el enlace del último nodo antes de empezar a liberar.''')
     main=replace_once(main,'LinkedList_DestroyAll(header);','FUN_00408070(header);Require(forgetCalls==1);')
     main=replace_once(main,'List next:','Widget list next:')
-    source=read_source('src/Core/Runtime_Medium.cpp',revision)
+    source=read_source('src/app/core/Runtime_Medium.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+services+function(source,'FUN_00408070')+main
 
 def main():

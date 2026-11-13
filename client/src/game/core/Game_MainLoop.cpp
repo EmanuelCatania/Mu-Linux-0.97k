@@ -40,7 +40,7 @@
 #include "render/RenderProfile.h"
 #include "render/TerrainDraw.h"
 #include "render/Materials.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
@@ -60,7 +60,7 @@ void ItemNames_TickInput();
 #include "net/Ping.h"
 #include "audio/EmoteSound.h"
 #include "game/core/MapManager.h"
-#include "Debug/Benchmark.h"
+#include "app/debug/Benchmark.h"
 #include "game/core/Game_MainLoop.h"
 #include "game/core/SimulationPreparation.h"
 #include "game/core/RenderSnapshots.h"

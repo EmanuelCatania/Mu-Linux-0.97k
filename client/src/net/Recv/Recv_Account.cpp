@@ -14,7 +14,7 @@
 #include "ui/HealthBar.h"
 #include "net/Recv/NetRecv.h"
 #include "net/ServerCharacterStats.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "net/HWID.h"
 #include "Item/ContentCatalog.h"
 #include "net/Protocol/ProtocolVersion.h"

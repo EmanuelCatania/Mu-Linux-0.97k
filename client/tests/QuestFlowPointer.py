@@ -133,9 +133,9 @@ def harness(revision=None):
     for name in ("CSQuest_GetQuestState", "CSQuest_FindQuestContext", "CSQuest_CheckActCondition", "CSQuest_CheckRequestCondition", "CSQuest_CheckQuestState"):
         prefix += function(scene, name)
     prefix += function(read_source("src/scenes/Scene_LegacyCleanup.cpp", revision), "CSQuest__CheckQuestState")
-    medium = read_source("src/Core/Runtime_Medium.cpp", revision)
+    medium = read_source("src/app/core/Runtime_Medium.cpp", revision)
     prefix += function(medium, "CSQuest__ShowQuestNpcWindow") + function(medium, "CSQuest__setQuestLists")
-    prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
+    prefix += function(read_source("src/app/core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
     recv = read_source("src/net/Recv/Recv_Quest.cpp", revision)
     for name in ("NetRecv_A0", "NetRecv_A1", "NetRecv_A2"):
         prefix += function(recv, name)

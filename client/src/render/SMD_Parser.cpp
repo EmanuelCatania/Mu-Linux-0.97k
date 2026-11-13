@@ -17,7 +17,7 @@
 #include "platform/ISocket.h"
 #include "platform/IInput.h"
 #include "platform/IFileSystem.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include "ui/HealthBar.h"
 #include "ui/MoveList.h"
 #include "ui/EventTimer.h"

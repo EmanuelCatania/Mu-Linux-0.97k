@@ -4,7 +4,7 @@
 #include "Text/TextShaper.h"
 #include "platform/SDL3/SDLFont.h"
 #include "render/BufferedDraw.h"
-#include "Config/UserSettings.h"
+#include "app/config/UserSettings.h"
 #include <unordered_map>
 #include <vector>
 

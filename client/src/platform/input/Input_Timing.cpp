@@ -12,7 +12,7 @@
 #include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
-#include "Debug/Benchmark.h"
+#include "app/debug/Benchmark.h"
 
 namespace { bool showFps=false; }
 void ToggleFpsCounter() {

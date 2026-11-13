@@ -68,7 +68,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    runtime=read_source('src/Core/Runtime_Small.cpp',revision).replace('int /*edx*/','int edx')
+    runtime=read_source('src/app/core/Runtime_Small.cpp',revision).replace('int /*edx*/','int edx')
     cloth=read_source('src/game/physics/Cloth_Simulation.cpp',revision)
     base=function(runtime,'FUN_00407de0').replace('FUN_00407de0','ActualBase')
     derived=function(runtime,'FUN_00407ec0').replace('FUN_00407ec0','ActualDerived')

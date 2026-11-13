@@ -3,8 +3,8 @@
 #include "render/BufferedDraw.h"
 #include "platform/Text.h"
 #include "Text/TextCore.h"
-#include "Core/Font.h"
-#include "Core/Window.h"
+#include "app/core/Font.h"
+#include "app/core/Window.h"
 #include <string>
 #include <vector>
 

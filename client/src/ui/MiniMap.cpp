@@ -7,9 +7,9 @@
 #include "ui/EventTimer.h"
 #include "ui/MoveList.h"
 #include "ui/UIState.h"
-#include "Config/UserSettings.h"
-#include "Core/Font.h"
-#include "Core/Window.h"
+#include "app/config/UserSettings.h"
+#include "app/core/Font.h"
+#include "app/core/Window.h"
 #include "game/core/MapManager.h"
 #include "Local/ClientText.h"
 #include <math.h>
