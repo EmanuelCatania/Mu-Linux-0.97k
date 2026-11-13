@@ -222,6 +222,8 @@
     <ClInclude Include="src\game\core\MapManager.h" />
     <ClInclude Include="src\game\core\HeroVitals.h" />
     <ClInclude Include="src\net\Network.h" />
+    <ClInclude Include="src\net\ServerTrust.h" />
+    <ClInclude Include="src\net\crypto\monocypher.h" />
     <ClInclude Include="src\net\Reconnect.h" />
     <ClInclude Include="src\net\Ping.h" />
     <ClInclude Include="src\net\ServerCharacterStats.h" />
@@ -379,6 +381,13 @@
     <ClCompile Include="src\game\core\MapManager.cpp" />
     <ClCompile Include="src\platform\Win32\ClientWndProc.cpp" />
     <ClCompile Include="src\net\Network.cpp" />
+    <ClCompile Include="src\net\ServerTrust.cpp" />
+    <ClCompile Include="src\net\ServerTrustCore.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\net\crypto\monocypher.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\net\Reconnect.cpp" />
     <ClCompile Include="src\net\Ping.cpp" />
     <ClCompile Include="src\net\ServerCharacterStats.cpp" />

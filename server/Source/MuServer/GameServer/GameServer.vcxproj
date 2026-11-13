@@ -123,6 +123,9 @@
     <ClInclude Include="CustomPkFree.h" />
     <ClInclude Include="CustomSafeZone.h" />
     <ClInclude Include="ContentCatalog.h" />
+    <ClInclude Include="ServerIdentity.h" />
+    <ClInclude Include="..\Common\SecureRandom.h" />
+    <ClInclude Include="..\Common\monocypher\monocypher.h" />
     <ClInclude Include="CustomPet.h" />
     <ClInclude Include="CustomWing.h" />
     <ClInclude Include="JsonLite.h" />
@@ -233,6 +236,10 @@
     <ClCompile Include="CustomPkFree.cpp" />
     <ClCompile Include="CustomSafeZone.cpp" />
     <ClCompile Include="ContentCatalog.cpp" />
+    <ClCompile Include="ServerIdentity.cpp" />
+    <ClCompile Include="..\Common\monocypher\monocypher.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="CustomPet.cpp" />
     <ClCompile Include="CustomWing.cpp" />
     <ClCompile Include="DefaultClassInfo.cpp" />

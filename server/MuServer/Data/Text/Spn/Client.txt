@@ -160,4 +160,6 @@
 78	"Trade cancelado: están demasiado lejos"
 //RejectRepairNoShop
 79	"Abrí la tienda para reparar"
+//ServerKeyMismatch
+80	"Este server no pudo demostrar su identidad. Se cerró la conexión."
 end

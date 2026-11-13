@@ -49,6 +49,10 @@ services:
       # ConnectServer inside the container. On Windows it often falls in an
       # excluded port range, and publishing it keeps the container from starting.
       - "55901:55901/tcp"
+    volumes:
+      # Clave de identidad del server (docs/identidad-del-server.md): tiene que
+      # sobrevivir a reconstruir la imagen, o los clientes dejan de reconocerlo.
+      - mu_keys:/opt/mu/Data/Keys
     networks:
       - default
 
@@ -90,6 +94,7 @@ services:
 
 volumes:
   mu_mysql:
+  mu_keys:
 
 networks:
   proxy_net:

@@ -74,6 +74,7 @@ public:
     // no va a mandar.
     void SetServer(const char* ip, unsigned int port);
     void SendCacheList();
+    void ReceiveSignature(const BYTE* msg, int size);   // F3/FC, antes del F3/F6
     void ReceiveSync(const BYTE* msg, int size);   // F3/F6
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 

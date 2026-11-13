@@ -1321,6 +1321,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xFA: PlayerAttackSpeed_Receive((const BYTE*)Msg, Size); break;
         case 0xFB: Recv_Reject((const BYTE*)Msg, Size); break;
         case 0xF9: gContentCatalog.ReceiveItemValues((const BYTE*)Msg, Size); break;
+        case 0xFC: gContentCatalog.ReceiveSignature((const BYTE*)Msg, Size); break;
         case 0xF6: gContentCatalog.ReceiveSync((const BYTE*)Msg, Size); break;
         case 0x30: {
             // ── ReceiveOption (IDA 0x436FB0) — PORT FIEL ─────────────────
