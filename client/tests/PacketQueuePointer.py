@@ -65,7 +65,7 @@ int main(){
 
 
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
+    source=read_source('src/scenes/Scene_CharSelect_Nav.cpp',revision)
     clear=function(source,'NetContext_ClearSendBuffer');push=function(source,'CPacketQueue_PushPacket');pop=function(source,'CWsctlc_GetReadMsg')
     current='uintptr_t param_1' in clear
     arg='reinterpret_cast<uintptr_t>(context)' if current else 'static_cast<int>(reinterpret_cast<uintptr_t>(context))'

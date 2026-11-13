@@ -1,8 +1,8 @@
 // Input.cpp
 // Sistema de input del cliente — análisis completo
 #include "stdafx.h"
-#include "UI/PanelAnchor.h"
-#include "UI/ChatListBox.h"
+#include "ui/PanelAnchor.h"
+#include "ui/ChatListBox.h"
 #include "platform/IInput.h"
 #include "platform/input/Input.h"
 

@@ -22,7 +22,7 @@
 #include "game/entity/ObjectPose.h"
 #include "Config/UserSettings.h"
 #include "render/DrawDistance.h"
-#include "UI/HealthBar.h"
+#include "ui/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -1165,13 +1165,13 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // Effect_TickFlare (IDA: MovePointers) — implemented in src/render/Effect_Tick.cpp
 // Render_DrawSpritePool — implemented in src/audio/Sound_Queue.cpp (Sound_UpdateQueue)
 // ClearInput — implemented in src/platform/input/Input.cpp
-// UI_RenderInputField — implemented in src/UI/Chat.cpp
-// UI_RenderText — implemented in src/UI/Chat.cpp
+// UI_RenderInputField — implemented in src/ui/Chat.cpp
+// UI_RenderText — implemented in src/ui/Chat.cpp
 // Chat_TickNoticeTimer — implemented in src/audio/Sound_Queue.cpp
-// UI_RenderNotices — implemented in src/UI/Chat.cpp
+// UI_RenderNotices — implemented in src/ui/Chat.cpp
 // Chat_TickMessageTimer — implemented in src/audio/Sound_Queue.cpp
-// UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
-// UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
+// UI_RenderChatLogOverlay — implemented in src/ui/Chat.cpp
+// UI_TickHoverBubbles — implemented in src/ui/Chat.cpp
 // Player_InputTick — implemented in src/game/core/Player_InputTick.cpp
 // Mouse_UpdateHoverTargets — implemented in src/platform/input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
 

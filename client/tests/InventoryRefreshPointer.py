@@ -114,7 +114,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/UI/UI_PanelInput.cpp',revision)
+    source=read_source('src/ui/UI_PanelInput.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'Inventory_HitTest')+MAIN
 
 def main():

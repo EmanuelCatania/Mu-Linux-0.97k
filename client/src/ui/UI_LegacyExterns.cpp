@@ -1,0 +1,1057 @@
+#include <cstdint>
+// UI_LegacyExterns.cpp
+
+#include "stdafx.h"
+#include "Text/TextAtlas.h"
+#include "Text/TextCore.h"
+#include "render/Gfx.h"
+#include "render/BufferedDraw.h"
+#include "render/Materials.h"
+#include "render/GlyphAtlas.h"
+#include "platform/Text.h"
+#include "platform/GuardedOperation.h"
+#include "platform/ITimer.h"
+void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
+void __cdecl    FUN_00408680(void *_this, char flags);
+#include "globals.h"
+#include "functions.h"
+
+// -- Declaraciones de funciones definidas en otros modulos ------------------
+// Cloth_Integrate esta en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
+
+#include "net/Net.h"
+
+extern "C" BYTE OffsetInventoryItems[];
+extern void __cdecl operator_delete(void* ptr);
+extern void MapFileDecrypt(BYTE* buf, int size);
+
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+#ifndef __OFSUB__
+#define __OFSUB__(x,y)       (0)
+#endif
+
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+
+
+// RenderItemInfo and RenderRepairInfo — implemented in src/ui/RenderItemInfo.cpp
+
+// RenderSkillTooltip @ 0x004C9730 — UI_CommandPanel_BuildEntry(chardata, slot)
+// Real logic: calls CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage) and GetSkillInformation for the
+// skill in CharacterAttribute->Skill[param_2+4], then sprintf's skill name, damage, mana cost,
+// distance, and class-specific descriptions into the Items[999] text buffer (stride 100 bytes).
+// Class 0 (Dark Wizard): skill 0x10 gets 3 extra stat lines (MaxMana, Energy, Dexterity).
+// Class 2 (Fairy Elf): skills 0x1A/0x1B/0x1C get special description lines.
+// Class 1 (Dark Knight): skill 0x2F gets extra combo line.
+// Finally calls CharMenu_RenderTextList (CharMenu_RenderTextList) with unaff_retaddr as Y position.
+// STUB: unaff_retaddr carries screen Y position from caller — cannot resolve without
+// call-site disassembly. Also uses CharacterAttribute (undeclared typed struct).
+// RenderSkillTooltip @ 0x004C9730 — Skill_RenderTooltip(float a1, int a2, int hoveredSkillIdx)
+// Ported from IDA `sub_4C9730` decompile (1844 bytes).
+//
+// Builds a tooltip text-list for the hovered skill (TextList[0..n]) describing
+// name / damage / distance / mana / skillMana, then calls CharMenu_RenderTextList
+// (CharMenu_RenderTextList) to draw it at (a1, a2).
+//
+// Skipped (per anti-tamper policy):
+//   - Hash-table ref-count dance on CharacterMachine (start + end)
+//   - XOR encryption pass over the CharacterMachine buffer (end of function)
+//
+// Ported game logic:
+//   1. Read SkillTable[a3].Skill = *(BYTE*)(CharacterAttribute + a3 + 87)
+//   2. CHARACTER_MACHINE::GetMagicSkillDamage → piMinDamage / piMaxDamage
+//   3. GetSkillInformation → szName, piMana, piDistance, piSkillMana
+//   4. Class-specific damage formulas (DW skill 16 / Elf 0x1A/0x1B/0x1C / DK 47)
+//   5. Distance / Mana / SkillMana lines
+//   6. CharMenu_RenderTextList with computed Y / count
+extern "C++" {
+extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
+extern char    lpString_07e90798[];
+extern int     DAT_07e91708[30];
+extern int     DAT_07ea7b10[30];
+}
+
+static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int count)
+{
+    if (count <= 0 || !gFont.GetTextDC()) return;
+
+    TEXTMETRICA tm = {};
+    gFont.TextMetrics(gFont.GetTextDC(), &tm);
+    const int lineH = tm.tmHeight + tm.tmExternalLeading;
+    const int padX = 4;
+    const int padY = 3;
+
+    int maxWidth = 0;
+    for (int i = 0; i < count; ++i) {
+        SIZE sz = {};
+        gFont.MeasureText(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
+        if (sz.cx > maxWidth) maxWidth = sz.cx;
+    }
+
+    int boxW = maxWidth + padX * 2;
+    int boxH = count * lineH + padY * 2;
+    int drawX = sx - boxW / 2;
+    int drawY = sy - boxH - 8;
+    if (drawY < 0) drawY = sy + 8;
+    // Pantalla ancha: los bordes son los de la ventana (off = 0 en 4:3).
+    const int edge = gWindow.GetUiOffsetX();
+    if (drawX < -edge) drawX = -edge;
+    if (drawX + boxW > (int)gWindow.GetWidth() + edge) drawX = (int)gWindow.GetWidth() + edge - boxW;
+    if (drawX < -edge) drawX = -edge;
+
+    EnableAlphaTest(true);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
+    GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
+    GL_DrawRect((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
+    GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
+    GL_DrawRect((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.82f);
+    GL_DrawRect((float)drawX, (float)drawY, (float)boxW, (float)boxH);
+
+    int lineY = drawY + padY;
+    for (int i = 0; i < count; ++i) {
+        DAT_00559c78 = (i == 0) ? 0xFFFFFF00 : 0xFFFFFFFF;
+        m_dwBackColor = 0;
+        CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8, drawX + padX, lineY, lines[i], 0);
+        lineY += lineH;
+    }
+}
+
+static void FUN_004c9730_old(float a1, int a2, int a3)
+{
+    // Version simplificada y SIN USO (no tiene callers; la activa es
+    // RenderSkillTooltip, mas abajo): solo muestra el nombre de la skill y
+    // distancia/mana.
+    //
+    // Bounds check: a3 (slot index hovered) debe ser 0..63 para evitar OOB
+    // read en CharacterAttribute[87 + a3].
+    if (a3 < 0 || a3 >= 60 || !CharacterAttribute) return;
+
+    unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
+    if (skillType == 0 || skillType >= 64) return;  // empty slot or OOB type
+
+    char szName[256];
+    szName[0] = 0;
+    int piMana = 0, piDistance = 0, piSkillMana = 0;
+    GetSkillInformation((int)skillType, 1, szName, &piMana, &piDistance, &piSkillMana);
+    if (szName[0] == 0) return;  // no name → don't render
+
+    char lines[5][100] = {};
+    int count = 0;
+    Platform::TextFormatSecure(lines[count++], 100, "%s", szName);
+    if (piDistance > 0) Platform::TextFormatSecure(lines[count++], 100, "Distance: %d", piDistance);
+    Platform::TextFormatSecure(lines[count++], 100, "Mana: %d", piMana);
+    if (piSkillMana > 0) Platform::TextFormatSecure(lines[count++], 100, "Skill Mana: %d", piSkillMana);
+    SkillTooltip_RenderLines((int)a1, a2, lines, count);
+    return;
+
+    // Original full impl preserved below for reference but disabled.
+#if 0
+    int  piMinDamage = 0, piMaxDamage = 0;
+    int  piMana = 0, piDistance = 0, piSkillMana = 0;
+    (void)piMinDamage; (void)piMaxDamage; (void)piMana; (void)piDistance; (void)piSkillMana;
+
+    // Get min/max damage range — CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage, ~700 bytes, IDA-only
+    // and gated behind IDA_PORT_0047E4F0). Without it we leave piMin/piMaxDamage at 0;
+    // the damage line will show "0~0" until the helper is unconditionally ported.
+
+    // Skill name + mana / distance / mana costs
+    GetSkillInformation(skillType, 1, szName, &piMana, &piDistance, &piSkillMana);
+
+    // ── Build TextList lines ────────────────────────────────────────────────
+    char* TextList0 = lpString_07e90798;
+    auto TextListN = [&](int i) -> char* { return lpString_07e90798 + i * 100; };
+    int* TextListColor = DAT_07e91708;
+    int* TextBold = DAT_07ea7b10;
+
+    Platform::TextFormatSecure(TextList0, 100, "\n");
+    Platform::TextFormatSecure(TextListN(1), 100, "%s", szName);
+    TextListColor[1] = 1;
+    TextBold[1] = 1;
+    Platform::TextFormatSecure(TextListN(2), 100, "\n");
+
+    int v10 = 3;
+    int heroClassFlag = *(unsigned char*)(Hero + EntityOffset(444)) & 7;
+
+    // Class 0 (Dark Wizard / magic class): damage line
+    if (heroClassFlag == 0) {
+        if (skillType == 16) {
+            // Twister-style: derived from Strength (CA+34), Energy (CA+26), Agility (CA+22)
+            int agi = *(unsigned short*)((char*)CharacterAttribute + 22);
+            int ene = *(unsigned short*)((char*)CharacterAttribute + 26);
+            int str = *(unsigned short*)((char*)CharacterAttribute + 34);
+            int dmg = (int)((double)agi * 0.02 + (double)ene * 0.0049999999 + 10.0);
+            int strBoost = (int)((double)str * 0.02);
+            int dur = (int)((double)ene * 0.025 + 60.0);
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[578], (unsigned int)dmg);
+            TextListColor[3] = 0; TextBold[3] = 0;
+            Platform::TextFormatSecure(TextListN(4), 100, GlobalText[880], strBoost);
+            TextListColor[4] = 0; TextBold[4] = 0;
+            Platform::TextFormatSecure(TextListN(5), 100, GlobalText[881], (unsigned int)dur);
+            TextListColor[5] = 0; TextBold[5] = 0;
+            v10 = 6;
+        } else {
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[170], piMinDamage, piMaxDamage);
+            TextListColor[3] = 0; TextBold[3] = 0;
+            v10 = 4;
+        }
+    }
+
+    // Class 2 (Elf): buff strength preview
+    if (heroClassFlag == 2) {
+        int ene = *(unsigned short*)((char*)CharacterAttribute + 26);
+        bool emitted = true;
+        switch (skillType) {
+        case 0x1A:
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[171], ene / 5 + 5);
+            break;
+        case 0x1B:
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[172], (ene >> 3) + 2);
+            break;
+        case 0x1C:
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[173], ene / 7 + 3);
+            break;
+        default:
+            emitted = false;
+            break;
+        }
+        if (emitted) {
+            TextListColor[v10] = 0;
+            TextBold[v10] = 0;
+            v10++;
+        }
+    }
+
+    // Distance line
+    if (piDistance) {
+        Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[174], piDistance);
+        TextListColor[v10] = 0;
+        TextBold[v10] = 0;
+        v10++;
+    }
+
+    // Mana line
+    Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[175], piMana);
+    TextListColor[v10] = 0;
+    TextBold[v10] = 0;
+    int v15 = v10 + 1;
+
+    // SkillMana (if > 0)
+    if (piSkillMana > 0) {
+        Platform::TextFormatSecure(TextListN(v15), 100, GlobalText[360], piSkillMana);
+        TextListColor[v15] = 0;
+        TextBold[v15] = 0;
+        v15++;
+    }
+
+    // Class 1 (DK) + skill 47 → "cannot use" message
+    if (heroClassFlag == 1 && skillType == 47) {
+        Platform::TextFormatSecure(TextListN(v15), 100, "%s", GlobalText[96]);
+        TextListColor[v15] = 5;
+        TextBold[v15] = 0;
+        v15++;
+    }
+
+    Platform::TextFormatSecure(TextListN(v15), 100, "\n");
+    int v16 = v15 + 1;
+
+    // Anti-tamper XOR encryption pass on CharacterMachine — skipped (anti-tamper).
+
+    // Compute Y position from text height
+    SIZE sz; sz.cx = 0; sz.cy = 0;
+    gFont.MeasureText(gFont.GetTextDC(), TextList0, 1, &sz);
+    int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
+    float yPos = (float)v31 / gWindow.GetScreenRateY();
+
+    // Render. Our CharMenu_RenderTextList has 6-int signature (mode, startIdx, count, x, layout, border).
+    // Best-effort mapping of IDA's 7-arg float-mixed call:
+    //   mode=2 (boxed), startIdx=0, count=v16, x=a2-yPos, layout=0, border=1
+    CharMenu_RenderTextList(2, 0, v16, a2 - (int)yPos, 0, 1);
+    (void)a1;  // a1 (float Y) not used by our simplified render path
+#endif
+}
+
+// IDA: sub_4C9730 (0x004C9730)
+void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
+{
+    int skillTipX = *(int*)&a1;
+    // Skill[60] comienza en +87 dentro de la reserva de 0x584 bytes.
+    if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero ||
+        CharacterAttribute != DAT_07cf1ffc) return;
+
+    unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
+    if (skillType == 0 || skillType >= 64) return;
+
+    unsigned char* skillBaseTbl = DAT_07d29d20;
+    unsigned char* skillStatTbl = DAT_07cf1ff8 ? DAT_07cf1ff8 : skillBaseTbl;
+    if (!skillBaseTbl && !skillStatTbl) return;
+
+    char szName[256] = {};
+    int piMinDamage = 0, piMaxDamage = 0;
+    int piMana = 0, piDistance = 0, piSkillMana = 0;
+
+    unsigned char* skillBaseRec = skillBaseTbl ? skillBaseTbl + (int)skillType * 0x28 : nullptr;
+    unsigned char* skillStatRec = skillStatTbl ? skillStatTbl + (int)skillType * 0x28 : skillBaseRec;
+    const char* skillName = "";
+    if (skillBaseRec && ((const char*)skillBaseRec)[0] != '\0')
+        skillName = (const char*)skillBaseRec;
+    else if (skillStatRec && ((const char*)skillStatRec)[0] != '\0')
+        skillName = (const char*)skillStatRec;
+    if (skillName && skillName[0]) {
+        Platform::TextCopySecure(szName, sizeof(szName), skillName, 31);
+        szName[31] = '\0';
+    }
+    GetSkillInformation((int)skillType, 1, szName[0] ? NULL : szName, &piMana, &piDistance, &piSkillMana);
+
+    if (skillStatRec) {
+        int rangeVal = (int)skillStatRec[0x27];
+        if (rangeVal > 0 && rangeVal < 50) {
+            piDistance = rangeVal;
+        } else if (piDistance < 0 || piDistance > 50) {
+            piDistance = 0;
+        }
+    }
+
+    if (piMana < 0 || piMana > 5000) piMana = 0;
+    if (piSkillMana < 0 || piSkillMana > 5000) piSkillMana = 0;
+
+    // La fila ya esta acotada a 64 * 0x28; Damage ocupa +0x24..25.
+    // Los bonus +70/+72 pertenecen al CharacterMachine reservado en WinMain.
+    if (CharacterMachine && CharacterMachine == DAT_07cf1ffc && skillStatRec) {
+        if (!Platform::RunValidatedOperation([&]() {
+            int baseDamage = (int)*(WORD*)(skillStatRec + 0x24);
+            if (baseDamage > 0 && baseDamage < 5000) {
+                piMinDamage = baseDamage + *(unsigned short*)((char*)CharacterMachine + 70);
+                piMaxDamage = baseDamage + (baseDamage >> 1) + *(unsigned short*)((char*)CharacterMachine + 72);
+            }
+        })) {
+            piMinDamage = 0;
+            piMaxDamage = 0;
+        }
+    }
+
+    // ── Build TextList lines ────────────────────────────────────────────────
+    // Estructura del binario (0x004C97xx, y el volcado de IDA que quedo en
+    // FUN_004c9730_old bajo `#if 0`):
+    //   slot 0 = "\n"                       (separador de media altura)
+    //   slot 1 = nombre de la skill         color 1 (azul claro), NEGRITA
+    //   slot 2 = "\n"
+    //   slot 3+ = dano / rango / mana / AG  color 0 (blanco)
+    //   opcional "no puede usarla"          color 5 (blanco con franja)
+    //   ultimo  = "\n"
+    //
+    // Usa lpString_07e90798 + CharMenu_RenderTextList, igual que el binario —
+    // misma rutina que el tooltip de item y el menu de personaje.
+    auto  TextListN     = [](int i) -> char* { return lpString_07e90798 + i * 100; };
+    auto  GlobalTextOr  = [](int idx, const char* fallback) -> const char* {
+        if (idx >= 0 && idx < GLOBALTEXT_ROWS && GlobalText[idx][0])
+            return GlobalText[idx];
+        return fallback;
+    };
+
+    int idx = 0;
+    for (int i = 0; i < 30; ++i) {
+        lpString_07e90798[i * 100] = 0;
+    }
+
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
+
+    Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", szName);
+    DAT_07e91708[idx] = 1;
+    DAT_07ea7b10[idx] = 1;
+    idx++;
+
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
+
+    if (piMinDamage > 0 || piMaxDamage > 0) {
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
+                    GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    if (piDistance > 0) {
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
+                    GlobalTextOr(174, "Range: %d"), piDistance);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    {
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
+                    GlobalTextOr(175, "Mana: %d"), piMana);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    if (piSkillMana > 0) {
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
+                    GlobalTextOr(360, "AG: %d"), piSkillMana);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+
+    // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
+    // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
+    if (Hero && ((*(BYTE*)((char*)Hero + EntityOffset(0x1BC)) & 7) == 1) && skillType == 47) {
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
+        DAT_07e91708[idx] = 5;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
+
+    // Posicion Y — port literal de 0x004C9DF7..0x004C9E36:
+    //   v31 = (count - 3) * cy + (3 * cy) / 2
+    //   y   = a2 - (int)(v31 / g_fScreenRate_y)
+    //   DrawItemInfoBox(x, y, count, 0, 2, 1)
+    {
+        SIZE sz;
+        sz.cx = 0;
+        sz.cy = 0;
+        gFont.MeasureText(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
+        int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
+        int yBox = a2 - (int)((float)v31 / gWindow.GetScreenRateY());
+        CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
+    }
+}
+
+extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abajo
+
+// FUN_0047F7A0 @ 0x0047F7A0 (IDA)
+// UI_DrawText — Text_Draw(x, y, text, maxw, iSort, extra)
+// Draws text via Font vtable dispatch (CUIRenderText_RenderText) if non-empty or maxw!=0.
+// Return type is void per functions.h declaration.
+//
+// `param_5` (iSort) determina la alineación:
+//   1 = left-align (default)
+//   2 = center within [x, x+maxw]
+// IDA original delega al `CUIRenderText::RenderText` que maneja iSort
+// internamente; lo replicamos inline acá.
+// IDA: FUN_0047F7A0
+void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6, size_t textCapacity) {
+    (void)param_6;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+    if (!param_3 || textCapacity == 0) return;
+    // El caller entrega la capacidad de su array/slot, o la longitud ya
+    // medida por su API de cadena. No inferir validez de direcciones virtuales.
+    bool valid = false;
+    bool empty = false;
+    if (!Platform::RunValidatedOperation([&]() {
+        valid = memchr(param_3, 0, textCapacity) != nullptr;
+        if (valid) empty = param_3[0] == 0;
+    }) || !valid || (empty && param_4 == 0)) return;
+
+    int x = param_1;
+
+    // Aplicar centrado dentro del box [param_1, param_1+param_4].
+    // `param_4` (iBoxWidth) llega en PIXELES: los callers lo calculan como
+    // `N * WindowWidth / 640`, igual que el original (p.ej.
+    // RenderCharacterInfoWindow 0x4ECC60 L279:
+    // `RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * WindowWidth / 0x280, ...)`).
+    // `param_1` y `Text_MeasureOrthoWidth` son LOGICOS, asi que el box se pasa a
+    // logico antes de centrar:
+    //
+    //   param_4  -> pixel -> / g_fScreenRate_x -> logico
+    //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
+    //   x        -> logico + logico  -> lo convierte CUIRenderText_RenderText
+    if (param_5 >= 2 && param_4 > 0 && gFont.GetTextDC()) {
+        const float rateX  = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
+        const int   boxLog = (int)((float)param_4 / rateX);
+        int textW = Text_MeasureOrthoWidth(param_3);
+        if (textW > 0 && textW < boxLog) {
+            x = param_1 + (boxLog - textW) / 2;
+        }
+    }
+
+    CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8, x, param_2,
+                 (const char*)param_3, (DWORD)param_4);
+}
+
+// IDA: FindText (0x004977F0)
+// DBCS-aware strstr. param_3!=0 forces search from position 0 only.
+// Returns 1 if found, 0 otherwise.
+bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
+    int iVar5 = (int)strlen(pat);
+    // DESVIACIÓN: patrón vacío = no-match.  IDA devuelve 1, pero en el original
+    // los strings de filtro nunca llegan vacíos; en nuestro build algunos sí
+    // (ej. GlobalText[457/458] si el Text.bmd no tiene esas filas) y
+    // FindText(nombre,"")=1 rechazaría todo nombre en el create-char.
+    if (iVar5 < 1) return 0;
+    int iVar6 = (int)strlen(param_1) - iVar5;
+    if (param_3 != '\0') iVar6 = 0;
+    if (iVar6 < 0) return 0;
+    for (int iVar8 = 0; iVar8 <= iVar6; ) {
+        int iVar2 = 0;
+        if (iVar5 < 1) return 1;
+        while ((param_1 + iVar8)[iVar2] == pat[iVar2]) {
+            if (++iVar2 >= iVar5) return 1;
+        }
+        char c = mbclen((byte*)(param_1 + iVar8));
+        iVar8 += (unsigned int)(unsigned char)c;
+    }
+    return 0;
+}
+
+// CutText @ 0x0047FE30 — Text_SplitAtMiddle(src, dstB_ptr, dstA, len)
+// Splits src at middle: first half → dstA (param_3), second half → *(char*)param_2.
+// Split point: first space near len/2, or forced at len/2+2.
+// DESVIACION (Fase 4, cortes UAX #14): ademas del espacio vale cualquier punto
+// de corte de libunibreak (entre ideogramas, despues de un guion...).
+// IDA: CutText (0x0047FE30)
+void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_4) {
+    char *param_1 = (char*)param_1_v;
+    char *param_3 = (char*)param_3_v;
+    unsigned int uVar4 = 0, uVar3 = 0;
+    const std::vector<unsigned char> breaks =
+        TextEngine::LineBreaks(std::string_view(param_1, param_4 > 0 ? (std::size_t)param_4 : 0));
+    if (param_4 > 0) {
+        do {
+            uVar3 = uVar4;
+            if ((param_4/2 - 2 <= (int)uVar4 && (param_1[uVar4] == ' ' || breaks[uVar4])) ||
+                (param_4/2 + 2 <= (int)uVar4)) break;
+            char c = mbclen((byte*)(param_1 + uVar4));
+            uVar4 += (unsigned int)(unsigned char)c;
+            uVar3 = 0;
+        } while ((int)uVar4 < param_4);
+    }
+    if ((int)uVar3 > 0) memcpy(param_3, param_1, uVar3);
+    param_3[uVar3] = '\0';
+    for (unsigned int i = uVar3; (int)i < param_4; i++)
+        ((char*)param_2)[i - uVar3] = param_1[i];
+    ((char*)param_2)[param_4 - uVar3] = '\0';
+}
+
+// CUIRenderText_RenderText @ 0x0040F610 — CUIRenderText::RenderText (vtable dispatcher)
+// Original IDA: `(*(vtable[0]+4))(this, x, y, text, ...)` — thiscall through
+// CUIRenderText->pSubclass->vtable[1]. El subclass se instancia en OpenFont
+// (0x0050f690) vía sub_40F570 y puede ser tipo-0 (simple, TGA font) o tipo-1
+// (compleja, bitmap font procesada). El subclass tipo-0 usa `Bitmaps[0/1]`
+// (Interface/FontInput.tga) para renderizar cada glyph como un quad.
+//
+// Port: implementación autónoma con los glifos de la HFONT GDI ya
+// seleccionada en m_hFontDC: 256 bitmaps en un atlas (GlyphAtlas), dibujados
+// con la semántica de glRasterPos + glBitmap. Suficiente para UI (login,
+// char-select, chat) — el look no matchea la fuente TGA original píxel a
+// píxel pero los textos aparecen en su posición con el color y layout
+// correctos.
+//
+// Coordenadas: callers pasan Y con origen TOP-LEFT (convención game). La GL
+// ortho es `gluOrtho2D(0, vw, 0, vh)` Y-bottom (ver GL_Begin2D en
+// Render/GL_2D.cpp). GL_DrawTexture Y-flipa via `vh - param_3`. Acá hacemos
+// lo mismo para raster pos.
+//
+// Color: DAT_00559c78 es el COLORREF GDI (0x00BBGGRR). Se convierte a glColor.
+// El Alpha del byte alto (cuando está seteado, ej 0xffd2e6ff) se respeta.
+// ── Escala "píxeles de framebuffer" → "unidades del ortho 2D" ───────────────
+//   · La GEOMETRÍA 2D (RenderColor / RenderBitmap) se emite en unidades del
+//     ortho y la GPU la estira hasta el viewport.
+//   · Los GLIFOS se pintan como glBitmap, un blit 1:1 EN
+//     PÍXELES DE FRAMEBUFFER desde el raster position, y `GetTextExtentPointA`
+//     mide en esos mismos píxeles.
+// O sea que el ancho del texto y el ancho de su fondo viven en unidades
+// distintas: para que el recuadro cubra exactamente las letras el extent se
+// divide por esta escala, que es `g_fScreenRate_x/y` (lo mismo que usa el
+// binario en sus seis sitios: `TextSize.cx / g_fScreenRate_x`).
+static void Text_PixelToOrthoScale(float* outX, float* outY)
+{
+    *outX = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
+    *outY = (gWindow.GetScreenRateY() > 0.0f) ? gWindow.GetScreenRateY() : 1.0f;
+}
+
+// Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
+// Equivale al `sz.cx / g_fScreenRate_x` que hace IDA en RenderText (0x47F650)
+// y RenderTipText (0x47F7F0).
+// Text_GetOrthoScaleX: escala pixeles-de-framebuffer -> unidades del ortho en
+// las que dibuja el stack de texto (la misma que aplica
+// CUIRenderText_RenderText a los glifos).  Sale de Text_PixelToOrthoScale, o
+// sea g_fScreenRate_x.  Todo ancho medido con GetTextExtentPointA se divide
+// por este factor antes de mezclarlo con el layout (ver CharMenu_Build.cpp).
+extern "C" float Text_GetOrthoScaleX(void)
+{
+    float sx, sy;
+    Text_PixelToOrthoScale(&sx, &sy);
+    (void)sy;
+    return sx;
+}
+
+extern "C" int Text_MeasureOrthoWidth(const char* text)
+{
+    if (!text || !*text) return 0;
+    HDC hFontDC = gFont.GetTextDC();
+    if (!hFontDC) return 0;
+    SIZE sz = {0, 0};
+    if (!gFont.MeasureText(hFontDC, text, (int)strlen(text), &sz)) return 0;
+    float sx, sy;
+    Text_PixelToOrthoScale(&sx, &sy);
+    return (int)((float)sz.cx / sx);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Marcadores de estilo embebidos:  "\x02" <byte-de-estilo>
+// ---------------------------------------------------------------------------
+// Port de sub_4104B0 (parser) + sub_4102E0 (tabla estilo→colores) + la regla de
+// selección de color por columna de sub_4105F0.
+//
+// Dónde viven en el binario:  CUIRenderText (0x40F610) es SOLO un dispatcher
+// (`(*pSubclass->vtable[1])(...)`).  El subclass lo instancia `sub_40F570` desde
+// OpenFont según `g_iRenderTextType` (registro SOFTWARE\Webzen\Mu\Config
+// "TextOut"):
+//   · type != 1 → sub_410A90, objeto de 4 bytes (solo vtable).  Su RenderText
+//                 (0x410AF0) NO conoce marcadores: rasteriza el string entero
+//                 con TextOutA y lo sube como una textura de un solo color.
+//   · type == 1 → sub_40F730, objeto de 0x2C4 bytes.  Su RenderText (0x40FB70)
+//                 va a sub_40FCD0 → sub_4104B0 (parsea y ELIMINA los
+//                 marcadores) → sub_4105F0 (pinta cada columna con el color del
+//                 tramo activo), con caché de texturas por string.
+//
+// DESVIACIÓN CONSCIENTE: nuestro CUIRenderText_RenderText es una reimplementación propia
+// basada en glifos GDI (GlyphAtlas), sin la partición type-0/type-1 del
+// original ni su caché de texturas.  Aplicamos siempre el comportamiento del
+// type-1, porque el alternativo es dibujar los bytes de control como glifos
+// basura.  Consecuencia: un cliente vanilla con "TextOut" != 1 muestra esa
+// basura y el nuestro no.
+//
+// Layout del objeto original (para poder volver a cruzarlo con IDA):
+//   this+36 + 16*i → charIndex   (índice en el texto YA limpio)
+//   this+40 + 16*i → pixelX      (extent del prefijo − 1; umbral de columna)
+//   this+44 + 16*i → fg
+//   this+48 + 16*i → bg
+//   this+196       → cantidad de marcadores
+//   memset(this+36, 0, 0xA0)  ⇒ 10 entradas de 16 bytes
+// ═══════════════════════════════════════════════════════════════════════════
+
+#define TEXT_STYLE_MAX_MARKERS 10   // 0xA0 / 16
+
+struct TextStyleMarker {
+    int   charIndex;    // this+36+16*i
+    int   pixelX;       // this+40+16*i  (tal cual lo guarda el binario)
+    int   pixelStart;   // NO está en el binario: el extent crudo (pixelX+1),
+                        // que es donde arranca el tramo.  El original solo
+                        // necesita el umbral, nosotros necesitamos posicionar.
+    DWORD fg;           // this+44+16*i
+    DWORD bg;           // this+48+16*i
+};
+
+// sub_4102E0 — tabla estilo→colores.  Port literal, incluidas las constantes
+// tal como las muestra el decompile (decimales con signo).  Los DWORD están en
+// orden de memoria RGBA (0xAABBGGRR), igual que m_dwTextColor/m_dwBackColor.
+static void Text_StyleColors(char style, DWORD *fg, DWORD *bg)
+{
+    DWORD result = 0;
+    DWORD v4;
+    switch (style) {
+        case 1:
+        case -12: v4 = (DWORD)-16776961; break;                 // 0xFF0000FF
+        case -16: v4 = m_dwTextColor; result = m_dwBackColor; break;  // reset
+        case -15: v4 = m_dwBackColor; result = m_dwTextColor; break;  // invertido
+        case -14: v4 = (DWORD)-14116;    break;                 // 0xFFFFC8DC
+        case -13: v4 = (DWORD)-16711736; break;                 // 0xFF00FFC8
+        case -11: v4 = (DWORD)-11521516; break;                 // 0xFF503214
+        case -10: v4 = (DWORD)-16751556; break;                 // 0xFF00643C
+        case -9:  v4 = (DWORD)-16777116; break;                 // 0xFF000064
+        case -8:
+            v4 = (DWORD)-3613466;                               // 0xFFC8DCE6
+            if (!g_bUseChatListBox /* g_bUseChatListBox */)
+                result = (DWORD)-1778384896;                    // 0x96000000
+            break;
+        default:  v4 = 0xFFFFFFFFu; break;
+    }
+    *fg = v4;
+    *bg = result;
+}
+
+// sub_4104B0 — extrae los marcadores y devuelve el texto sin ellos.
+// El original limpia el string IN PLACE sobre el buffer del caller; acá el
+// caller nos pasa `const char*`, así que escribimos en `dst` (que debe tener
+// al menos 0x100 bytes, igual que el `Destination[292]` de sub_40FCD0).
+static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
+                                  TextStyleMarker *out)
+{
+    memset(out, 0, TEXT_STYLE_MAX_MARKERS * sizeof(TextStyleMarker));
+
+    int len = (int)strlen(src);
+    int rd = 0;          // v5 — índice de lectura
+    int consumed = 0;    // v6 — bytes de marcador ya consumidos
+    int n = 0;           // v3 — cantidad de marcadores
+
+    while (rd < len) {
+        if (consumed >= 18) break;          // tope del original: 9 marcadores
+        if (src[rd] == 2) {
+            out[n].charIndex = rd - consumed;
+            ++rd;
+            if (rd >= len) break;           // marcador truncado al final
+            Text_StyleColors(src[rd], &out[n].fg, &out[n].bg);
+            ++n;
+            consumed += 2;
+        }
+        ++rd;
+    }
+
+    if (n == 0) return 0;
+
+    // Strip: copia todo menos los pares "\x02 <estilo>".
+    size_t w = 0;
+    for (int r = 0; r < len && w + 1 < dstCap; ) {
+        char ch = src[r];
+        if (ch == 2) { r += 2; continue; }
+        dst[w++] = ch;
+        ++r;
+    }
+    dst[w] = '\0';
+
+    // pixelX = GetTextExtentPointA(texto limpio, charIndex).cx − 1  (o 0).
+    HDC hFontDC = gFont.GetTextDC();
+    for (int i = 0; i < n; ++i) {
+        SIZE sz = {0, 0};
+        int  nch = out[i].charIndex;
+        if (nch > (int)w) nch = (int)w;
+        if (hFontDC && nch > 0) gFont.MeasureText(hFontDC, dst, nch, &sz);
+        out[i].pixelStart = sz.cx;
+        out[i].pixelX     = sz.cx ? sz.cx - 1 : 0;
+    }
+    return n;
+}
+
+// IDA: CUIRenderText::RenderText (0x0040F610)
+void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const char *text, DWORD /*color_unused*/)
+{
+    if (text == NULL || *text == '\0') return;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+    bool profiledString=false;
+
+    // ── Espacio de coordenadas: logico 640x480 -> pixel fisico ──────────────
+    //
+    // Los callers pasan `x`/`y` en layout logico 640x480, igual que en el
+    // binario: `RenderText_1` (0x47F7A0) llama
+    //     CUIRenderText::RenderText(g_pRenderText, iPos_x, iPos_y, ..., 640)
+    // y ese 640 es el ancho del espacio de referencia. Quien convierte a pixel
+    // es el subclass, `sub_410AF0` (L101-103):
+    //     sub_47F4C0((std::int64_t)(v22 * g_fScreenRate_x + (v15 << 8)),
+    //                (std::int64_t)(v24 * g_fScreenRate_y), Width, Height, ...);
+    // o sea logico * escala = pixel. `sub_47F4C0` ya recibe TODO en pixeles y
+    // por eso compara contra WindowWidth directamente.
+    //
+    // Nuestro pipeline no tenia esta conversion: dibujaba con glRasterPos2f en
+    // coordenadas de layout dentro de un ortho `0..WindowWidth`. A 640x480
+    // coincide (ortho 0..640 == layout) y por eso nunca se noto; a cualquier
+    // otra resolucion el texto quedaba comprimido hacia arriba-izquierda
+    // mientras los sprites (que si pasan por Screen_ToGLX) escalaban bien.
+    //
+    // Nota: `Screen_ToGLX(v)` es `WindowWidth * v / 640`, identico a
+    // `v * g_fScreenRate_x`. Se usa la escala directamente para dejar a la
+    // vista que es la misma relacion logico<->fisico que la de los sprites.
+    //
+    // La conversion NO asume las 5 resoluciones del original: sale de
+    // WindowWidth/WindowHeight, asi que cualquier tamano fisico de ventana
+    // funciona.
+    const float kRateX = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
+    const float kRateY = (gWindow.GetScreenRateY() > 0.0f) ? gWindow.GetScreenRateY() : 1.0f;
+    x = (int)((float)x * kRateX);
+    y = (int)((float)y * kRateY);
+    // A partir de aca TODO el cuerpo trabaja en PIXELES: los extents de GDI,
+    // el clamp contra WindowWidth/Height, glRasterPos2f y los quads de fondo.
+
+    // ── DIAG: log first call per second to see what text is being requested
+    {
+        static DWORD s_lastTxt = 0;
+        DWORD now = Platform::GetTimer().Ticks();
+        if (now - s_lastTxt > 1000) {
+            s_lastTxt = now;
+        }
+    }
+
+    // ── Marcadores de estilo "\x02<estilo>" (ver bloque de arriba) ───────────
+    // El guard `strlen <= 0xFF` es el de sub_40FCD0 (el original solo parsea
+    // strings que entran en su Destination[292]).
+    char             strippedBuf[0x100];
+    TextStyleMarker  markers[TEXT_STYLE_MAX_MARKERS];
+    int              nMarkers = 0;
+    const char      *drawText = text;
+    if (strchr(text, 2) != NULL && strlen(text) <= 0xFF) {
+        nMarkers = Text_ParseStyleMarkers(text, strippedBuf, sizeof(strippedBuf), markers);
+        if (nMarkers > 0) drawText = strippedBuf;
+        if (*drawText == '\0') return;
+    }
+
+    void* hRC = gWindow.RenderIdentity();
+    if (!hRC) return;
+
+    HDC hFontDC = gFont.GetTextDC();
+    if (hFontDC == NULL) return;
+
+    // ── FUENTE ACTIVA ───────────────────────────────────────────────────────
+    // La fuente sale del DC: los callers seleccionan fuentes DISTINTAS en este
+    // mismo DC antes de llamarnos (g_hFontBold: chat, HUD_Pass2/3/4, sub_40CE20
+    // vía CUIRenderText::SetFont; g_hFontBig: HUD_Pass3, doble tamaño) y miden el
+    // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
+    // se cachean POR fuente.
+    HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
+    if (hFont == NULL) hFont = gFont.GetFont(FONT_NORMAL);
+    if (hFont == NULL) return;
+
+#ifdef MU_SDL_FONTS
+    // DESVIACION (Fase 4, texto Unicode): SDL3 arma el texto con el layout
+    // nuevo y lo dibuja por el atlas (TextAtlas); no hay listas de glifos.
+    int s_ascent = 11;
+    {
+        TEXTMETRICA tm;
+        if (gFont.TextMetrics(hFontDC, &tm)) s_ascent = tm.tmAscent;
+    }
+#else
+    // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
+    // reconstruir los 256 glifos al alternar fuentes entre llamadas.
+    // DESVIACION (Fase 4): los glifos que armaba wglUseFontBitmapsA (display
+    // lists de glBitmap) van a un atlas con los mismos bitmaps, origen y
+    // avance; se dibujan como quads con la semántica de glRasterPos/glBitmap.
+    struct FontAtlas { void* rc; HFONT font; unsigned key; int ascent; unsigned generation; };
+    static FontAtlas s_cache[4] = { {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0} };
+    static int       s_next = 0;
+    static unsigned  s_nextKey = 1;
+
+    int slot = -1;
+    for (int i = 0; i < 4; ++i) {
+        if (s_cache[i].key != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
+            slot = i;
+            break;
+        }
+    }
+    if (slot < 0) {
+        slot = s_next;
+        s_next = (s_next + 1) & 3;
+        if (s_cache[slot].key != 0) {
+            GlyphAtlas::Forget(s_cache[slot].key);
+            s_cache[slot].key = 0;
+        }
+        // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
+        // hace falta SelectObject: uno acá pisaba la elección del caller.
+        static GlyphAtlas::Bitmap s_glyphs[256];
+        if (!gFont.BuildGlyphs(hFontDC, 0, 256, s_glyphs)) return;
+        const unsigned key = s_nextKey++;
+        if (!GlyphAtlas::Build(key, s_glyphs, 256)) return;
+        TEXTMETRICA tm;
+        int ascent = 11;
+        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
+        s_cache[slot].rc     = hRC;
+        s_cache[slot].font   = hFont;
+        s_cache[slot].key    = key;
+        s_cache[slot].ascent = ascent;
+        s_cache[slot].generation = gFont.Generation();
+    }
+    const unsigned int s_fontAtlas = s_cache[slot].key;
+    const int    s_ascent       = s_cache[slot].ascent;
+#endif
+
+    // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
+    // El binario NO deja que la caja de texto se salga: antes de dibujarla
+    // corre el origen para que entre.  Con a7 = 0 (que es como la llama
+    // sub_410AF0) las ramas que aplican son:
+    //     if (x < 0) x = 0;
+    //     if (Width + x > WindowWidth)  x = WindowWidth - Width;
+    //     if (byte_7E11D6E) {
+    //         if (y < 0) y = 0;
+    //         v12 = WindowHeight - 47 * WindowHeight / 640;
+    //         if (Height + y > v12) y = v12 - Height;
+    //     }
+    // Width/Height son el extent en píxeles; acá los pasamos a unidades del
+    // ortho con la misma escala que ya usa el fondo.
+    DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
+    DWORD vw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
+    {
+        // `x`/`y` ya vienen convertidos a pixel (ver arriba) y el extent de
+        // GDI tambien es pixel, asi que el clamp es homogeneo y se compara
+        // contra WindowWidth/Height directamente — igual que `sub_47F4C0` con
+        // a7 = 0:  `else if (Width + x > WindowWidth) x = WindowWidth - Width;`
+        SIZE tot = {0, 0};
+        gFont.MeasureText(hFontDC, drawText, (int)strlen(drawText), &tot);
+        float wOrtho = (float)tot.cx;
+        float hOrtho = (float)tot.cy;
+        // DESVIACION (Fase 4, pantalla ancha): el borde es el de la ventana
+        // (la interfaz ocupa un 4:3 centrado con `off` píxeles a cada lado).
+        const int off = gWindow.GetUiOffsetX();
+        if (x < -off) x = -off;
+        if ((float)x + wOrtho > (float)vw + (float)off) x = (int)((float)vw + (float)off - wOrtho);
+        if (DAT_07e11d6e) {
+            if (y < 0) y = 0;
+            float bottom = (float)vh - (47.0f * (float)vh) / 640.0f;
+            if ((float)y + hOrtho > bottom) y = (int)(bottom - hOrtho);
+        }
+        if (x < -off) x = -off;
+        if (y < 0) y = 0;
+    }
+
+    // Y-flip: game pasa y con top=0, ortho GL usa bottom=0.
+    int   rasterY = (int)vh - y - s_ascent;
+
+    // Color base desde DAT_00559c78 (COLORREF 0x00BBGGRR + opcional alpha en
+    // byte 3).  Con marcadores presentes esto es solo el color del PRIMER tramo;
+    // el resto sale de markers[].fg (ver el loop de abajo).
+    //
+    // Se respeta el alpha que el CALLER setea via glColor4f(...,α) antes de
+    // RenderText (lo usa p.ej. el cross-fade del banner clase/zona): se
+    // multiplican el alpha del texto-color (DAT_00559c78 byte 3) y el del caller.
+    float curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    Gfx::CurrentColor(curColor);
+    unsigned char callerA = (unsigned char)(curColor[3] * 255.0f + 0.5f);
+
+    // El color del caller (glColor3f) también MODULA el RGB, no
+    // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
+    // (sub_410AF0, g_iRenderTextType != 1) hace TextOut a un DIB, copia los
+    // píxeles a una textura pintándolos con m_dwTextColor / m_dwBackColor
+    // (sub_40F6C0) y dibuja el quad con RenderBitmap (0x5125A0) — que NO llama
+    // a glColor, así que la textura sale modulada por el color que dejó el
+    // caller.  O sea: color final = m_dwTextColor × glColor.
+    //
+    // Sin esto, los `glColor3f` de RenderItemName (0x4C9E70) no hacían nada y
+    // los nombres del suelo salían todos con m_dwTextColor: el Zen sin su
+    // dorado y los items +N sin su color por nivel.
+    float callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
+
+    // DESVIACION R4k: texto conserva su dibujo, pero no filtra factores de
+    // mezcla al siguiente productor. Materiales Off mantiene la referencia.
+    const bool scopedText=Materials::BeginText();
+    if(!scopedText){
+        Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent);
+        Gfx::Disable(Gfx::Cap::Texture2D);
+        Gfx::Disable(Gfx::Cap::DepthTest);
+        Gfx::Enable(Gfx::Cap::Blend);
+        Gfx::BlendFunc(Gfx::Factor::SrcAlpha, Gfx::Factor::OneMinusSrcAlpha);
+    }
+
+    // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
+    // Sin marcadores hay un único tramo con (m_dwTextColor, m_dwBackColor), o
+    // sea un solo color de texto y de fondo.
+    //
+    // El original (sub_4105F0) resuelve el color por COLUMNA de píxel: busca el
+    // último marcador cuyo pixelX sea menor que la columna.  Como pixelX es el
+    // extent del prefijo, ese corte cae justo en el borde del carácter, así que
+    // partir por charIndex — que es lo natural para un renderer de glifos — da
+    // el mismo resultado.
+    //
+    // FONDO: en el original el subclass
+    // pinta el fondo (m_dwBackColor / bg del marcador) en los píxeles NO-texto
+    // del tramo (p.ej. el recuadro de los mensajes del chat).
+    // Formato 0xAABBGGRR igual que el color de texto.  Alpha 0 = sin fondo.
+    {
+        // Los offsets de tramo (`markers[].pixelStart`) y los extents salen de
+        // GetTextExtentPointA, o sea PIXELES, igual que `x`/`y` a esta altura.
+        // No hay conversion que aplicar: mezclarlos con una escala seria
+        // corregir dos veces.
+        const int drawLen = (int)strlen(drawText);
+        const int nRuns   = nMarkers + 1;
+
+        for (int run = 0; run < nRuns; ++run) {
+            int startChar = (run == 0)        ? 0        : markers[run - 1].charIndex;
+            int endChar   = (run == nMarkers) ? drawLen  : markers[run].charIndex;
+            if (startChar < 0)        startChar = 0;
+            if (startChar > drawLen)  startChar = drawLen;
+            if (endChar   > drawLen)  endChar   = drawLen;
+            if (endChar <= startChar) continue;
+
+            DWORD fg    = (run == 0) ? DAT_00559c78 : markers[run - 1].fg;
+            DWORD bc    = (run == 0) ? SetBackgroundTextColor : markers[run - 1].bg;
+            int   runPx = (run == 0) ? 0            : markers[run - 1].pixelStart;
+            float runX  = (float)x + (float)runPx;   // pixel + pixel
+
+            SIZE bsz = {0, 0};
+            BOOL haveExtent = gFont.MeasureText(hFontDC, drawText + startChar,
+                                                  endChar - startChar, &bsz);
+
+            unsigned char bA = (unsigned char)((bc >> 24) & 0xFF);
+            if (bA != 0 && haveExtent && bsz.cx > 0) {
+                unsigned char bR = (unsigned char)( bc        & 0xFF);
+                unsigned char bG = (unsigned char)((bc >>  8) & 0xFF);
+                unsigned char bB = (unsigned char)((bc >> 16) & 0xFF);
+                unsigned char bFinal = (unsigned char)((unsigned)bA * (unsigned)callerA / 255u);
+                bR = (unsigned char)((float)bR * callerR + 0.5f);
+                bG = (unsigned char)((float)bG * callerG + 0.5f);
+                bB = (unsigned char)((float)bB * callerB + 0.5f);
+                // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
+                // texto ocupa [rasterY - descent, rasterY + ascent]. descent = cy - ascent.
+                int descent = (int)bsz.cy - s_ascent;
+                if (descent < 0) descent = 0;
+                // bsz está en píxeles de framebuffer (así mide GDI y así
+                // blitea glBitmap); el quad se emite en unidades del ortho y la
+                // GPU lo estira.  Sin esta división el fondo salía más ancho
+                // que las letras exactamente por la relación viewport/ortho.
+                float wOrtho    = (float)bsz.cx;
+                float ascOrtho  = (float)s_ascent;
+                float descOrtho = (float)descent;
+                float x0 = runX - 1.0f;
+                float x1 = runX + wOrtho + 1.0f;
+                float y0 = (float)rasterY - descOrtho;
+                float y1 = (float)rasterY + ascOrtho;
+                BufferedDraw::Color4ub(bR, bG, bB, bFinal);
+                BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+                    BufferedDraw::Vertex2f(x0, y0);
+                    BufferedDraw::Vertex2f(x1, y0);
+                    BufferedDraw::Vertex2f(x1, y1);
+                    BufferedDraw::Vertex2f(x0, y1);
+                BufferedDraw::End();
+            }
+
+            unsigned char R = (unsigned char)( fg        & 0xFF);
+            unsigned char G = (unsigned char)((fg >>  8) & 0xFF);
+            unsigned char B = (unsigned char)((fg >> 16) & 0xFF);
+            unsigned char A = (unsigned char)((fg >> 24) & 0xFF);
+            if (A == 0) A = 0xFF;
+            unsigned char finalA = (unsigned char)((unsigned)A * (unsigned)callerA / 255u);
+
+            // Modulación por el color del caller (ver la nota de arriba).
+            R = (unsigned char)((float)R * callerR + 0.5f);
+            G = (unsigned char)((float)G * callerG + 0.5f);
+            B = (unsigned char)((float)B * callerB + 0.5f);
+
+#ifdef MU_SDL_FONTS
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                if (const auto* shaped = gFont.Shape(hFontDC, drawText + startChar, endChar - startChar))
+                    TextAtlas::Draw(*shaped, runX, (float)rasterY, R, G, B, finalA);
+            }
+#else
+            BufferedDraw::Color4ub(R, G, B, finalA);
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                // DESVIACION (Fase 4): el texto está en UTF-8 y los glifos de
+                // GDI son los 256 de 1252.
+                const std::string legacy = TextEngine::ToWindows1252(
+                    std::string_view(drawText + startChar, size_t(endChar - startChar)));
+                GlyphAtlas::Draw(s_fontAtlas, runX, (float)rasterY, legacy.c_str(), (int)legacy.size(), vw, vh);
+            }
+#endif
+        }
+    }
+    if(scopedText)Materials::EndText();else Gfx::PopAttrib();
+}

@@ -58,7 +58,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0]
     prefix += re.search(r"^float\s+_DAT_005528a8\s*=[^;]+;", read_source("src/globals.cpp", revision), re.M).group()
-    quad = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "Terrain_QuadEqual")
+    quad = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Terrain_QuadEqual")
     args = "a, b" if "const float* param_1" in quad else "static_cast<int>(reinterpret_cast<std::uintptr_t>(a)), static_cast<int>(reinterpret_cast<std::uintptr_t>(b))"
     return prefix + quad + MAIN.replace("CALL_QUAD", f"Terrain_QuadEqual({args}, 123, -456)")
 

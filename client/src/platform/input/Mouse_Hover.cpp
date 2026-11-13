@@ -631,4 +631,4 @@ char __cdecl Party_HPBar_HoverCheck(void)
     }
     return result;
 }
-// Chat_InputTick — implemented in src/UI/Chat_InputTick.cpp
+// Chat_InputTick — implemented in src/ui/Chat_InputTick.cpp

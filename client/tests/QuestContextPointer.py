@@ -82,7 +82,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
-    return prefix + SERVICES + function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CSQuest_FindQuestContext") + MAIN
+    return prefix + SERVICES + function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CSQuest_FindQuestContext") + MAIN
 
 
 def main():

@@ -38,7 +38,7 @@ int main(){
 }
 '''
 def harness(revision=None):
- terrain=read_source('src/Terrain/Terrain_LegacyLoad.cpp',revision);scene=read_source('src/Scene/Scene_Resources.cpp',revision)
+ terrain=read_source('src/Terrain/Terrain_LegacyLoad.cpp',revision);scene=read_source('src/scenes/Scene_Resources.cpp',revision)
  world=function(read_source('src/render/SMD_Parser.cpp',revision),'DeleteObjects');world=world[:world.index('SceneObjectCell* puVar5')]+"}\n";world=world.replace('DeleteObjects(','ReleaseWorldModels(',1)
  return prefix()+SERVICES+function(terrain,'DeleteNpcs')+function(terrain,'DeleteMonsters')+world+function(scene,'ReleaseCharacterSceneData')+function(scene,'Scene_RefreshCharSelectBackdrop')+MAIN
 

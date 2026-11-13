@@ -15,7 +15,7 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "UI/ChatTypes.h"
+#include "ui/ChatTypes.h"
 #include "render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "platform/Text.h"

@@ -15,7 +15,7 @@
 // La ventana nativa y su contexto OpenGL viven en Platform/Win32.
 
 #include "platform/PlatformHeaders.h"
-#include "UI/PanelAnchor.h"
+#include "ui/PanelAnchor.h"
 
 class CWindow {
 public:

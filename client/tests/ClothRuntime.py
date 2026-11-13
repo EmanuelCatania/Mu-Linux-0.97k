@@ -9,11 +9,11 @@ from ObjectLayoutContract import record
 
 SOURCES = {
     "src/game/physics/Cloth_Simulation.cpp": "Vec3_Length SpringNode_Delta Cloth_SpringRange Cloth_SpringEqual ClothNode_ApplyForces VerletSystem_Flush SpringNode_ZeroFields SpringNode_SetPos SpringNode_GetPos VerletNode_AddAccel ClothNode_Integrate ClothNode_AddCorrection SpringNode_Ctor VerletNode_SetTarget VerletNode_GetPos VerletNode_ZeroFields VerletNode_CtorBase VerletNode_CtorExt ClothAnchor_Ctor ClothAnchor_SetParams ClothAnchor_Collide Cloth_CollideAnchors Cloth_PinTopRow Cloth_Wind Cloth_Integrate Spring_StoreEdge ClothAnchor_VSlot0 ClothAnchor_VSlot1",
-    "src/UI/UI_LegacyWidgetSystem.cpp": "Widget_NodeInit Widget_CtorBase Widget_Release Widget_CheckState GridSpring_Create L_YGXPAXIHP6EX0_Z1_Z Cloth_VSlot0",
+    "src/ui/UI_LegacyWidgetSystem.cpp": "Widget_NodeInit Widget_CtorBase Widget_Release Widget_CheckState GridSpring_Create L_YGXPAXIHP6EX0_Z1_Z Cloth_VSlot0",
     "src/net/Crypto.cpp": "VerletNode_AddToSystem Cloth_Solve Widget_Ctor SpringMesh_Create FUN_00408ff0 FUN_004090b0 FUN_004091d0",
     "src/Core/Runtime_Small.cpp": "FUN_00407970 FUN_00407de0 FUN_00407ec0 FUN_00407ea0",
     "src/Core/Runtime_Medium.cpp": "FUN_00408070",
-    "src/UI/UI_LegacyWidgets.cpp": "FUN_00408680 FUN_0045aaa0_impl",
+    "src/ui/UI_LegacyWidgets.cpp": "FUN_00408680 FUN_0045aaa0_impl",
     "src/game/entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
     "src/game/entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
     "src/render/Render_LegacyBillboards.cpp": "DeleteCloth",
@@ -197,7 +197,7 @@ int main(){
 
 def harness(revision=None):
     units=[function(read_source(path,revision),name) for path,names in SOURCES.items() for name in names.split()]
-    legacy_abi='float entity,' in function(read_source("src/UI/UI_LegacyWidgetSystem.cpp",revision),"GridSpring_Create")
+    legacy_abi='float entity,' in function(read_source("src/ui/UI_LegacyWidgetSystem.cpp",revision),"GridSpring_Create")
     if legacy_abi:units.append(function(read_source("src/game/entity/CharacterCloth.cpp",revision),"PtrAsFloatBits"))
     code="\n".join(units)
     header=read_source("src/game/entity/EntityTypes.h",revision)
@@ -225,7 +225,7 @@ def harness(revision=None):
     presentation=presentation[presentation.index("namespace {"):]
     decl_presentation="void ClothPresentation_BeginStep();void ClothPresentation_Forget(const void*);void ClothPresentation_Before(void*);void ClothPresentation_After(void*);void ClothPresentation_Vertex(const void*,int,float*);\n"
     tables=""
-    for path,names in [("src/game/physics/Cloth_Simulation.cpp",["g_ClothNodeVTable","g_ClothAnchorVTable"]),("src/UI/UI_LegacyWidgetSystem.cpp",["g_ClothVTable"])]:
+    for path,names in [("src/game/physics/Cloth_Simulation.cpp",["g_ClothNodeVTable","g_ClothAnchorVTable"]),("src/ui/UI_LegacyWidgetSystem.cpp",["g_ClothVTable"])]:
         text=read_source(path,revision)
         for name in names:
             tables+=re.search(r'(?:static\s+)?void\s*\*\s*'+name+r'\[[^\]]*\]\s*=\s*\{.*?\};',text,re.S).group()+"\n"

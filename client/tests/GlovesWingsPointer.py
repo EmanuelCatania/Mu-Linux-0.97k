@@ -56,7 +56,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0]
     prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "FUN_0047d000")
-    options = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "Stats_ExtraOptionGlovesWings")
+    options = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Stats_ExtraOptionGlovesWings")
     arg = "machine" if "BYTE* param_1" in options else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + options + MAIN.replace("CALL_OPTIONS", f"Stats_ExtraOptionGlovesWings({arg})")
 

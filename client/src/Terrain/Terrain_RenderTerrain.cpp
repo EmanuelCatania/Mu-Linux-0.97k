@@ -2,7 +2,7 @@
 // Dibujo del terreno (RenderTerrain), agua y frustum 2D del terreno.
 #include <cstdint>
 #include "stdafx.h"
-#include "UI/ChatListBox.h"
+#include "ui/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "game/party/Party.h"

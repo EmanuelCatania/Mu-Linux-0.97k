@@ -29,7 +29,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_LegacyHelpers.cpp',revision)
+    source=read_source('src/scenes/Scene_LegacyHelpers.cpp',revision)
     body=function(source,'Entity_GridUnlink')
     args='node,cell' if 'void* cell' in body else 'node,(int)cell'
     wrapper='\nvoid Unlink(void* node,void* cell){Entity_GridUnlink('+args+');}\n'

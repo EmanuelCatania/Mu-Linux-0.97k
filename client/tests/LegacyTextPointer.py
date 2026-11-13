@@ -39,7 +39,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
+    source=read_source('src/scenes/Scene_CharSelect_Nav.cpp',revision)
     header=read_source('src/globals.h',revision)
     entry=re.search(r'struct _SkillAttrEntry\s*\{[^}]+\};',header).group(0)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ENTRY',entry)+'\n'+function(source,'SkillAttribute_LoadNames')+'\n'+function(source,'SkillAttribute_SaveBin')+MAIN

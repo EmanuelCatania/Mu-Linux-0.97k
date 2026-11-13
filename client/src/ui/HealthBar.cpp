@@ -1,0 +1,168 @@
+#include "stdafx.h"
+#include "render/Gfx.h"
+#include "platform/Text.h"
+#include "ui/HealthBar.h"
+#include "Config/UserSettings.h"
+#include "game/entity/EntityView.h"
+
+extern "C" SIZE* __cdecl RenderCenteredText(int x, int y, const char* text);
+
+CHealthBar gHealthBar;
+
+void CHealthBar::Clear()
+{
+    m_Count = 0;
+}
+
+void CHealthBar::Remove(WORD index)
+{
+    for (int i = 0; i < m_Count; ++i)
+        if (m_Entries[i].index == index) m_Entries[i].index = 0xFFFF;
+}
+
+bool CHealthBar::Receive(const BYTE* packet, int size)
+{
+    // Protocol.h del server: PMSG_HEALTH_BAR_SEND + count PMSG_HEALTH_BAR.
+    if (!packet || size < (int)sizeof(Proto::PMSG_HEALTH_BAR_SEND)) return false;
+    Proto::PMSG_HEALTH_BAR_SEND header;
+    memcpy(&header, packet, sizeof(header));
+    if (header.count > (size - sizeof(header)) / sizeof(Proto::PMSG_HEALTH_BAR)) return false;
+    // Validar primero: no reservar una copia del viewport en el stack.
+    Proto::PMSG_HEALTH_BAR entry;
+    for (int i = 0; i < header.count; ++i) {
+        memcpy(&entry, packet + sizeof(header) + i * sizeof(entry), sizeof(entry));
+        if (entry.rateHP > 100) return false;
+    }
+    // Fase 5 (C2): el server ya no manda la foto completa cada segundo, sólo
+    // las filas que cambiaron; se mezclan con las que ya hay.
+    for (int i = 0; i < header.count; ++i) {
+        memcpy(&entry, packet + sizeof(header) + i * sizeof(entry), sizeof(entry));
+        Set(entry.index, entry.type, entry.rateHP);
+    }
+    return true;
+}
+
+void CHealthBar::Set(WORD index, BYTE type, BYTE rateHP)
+{
+    if (index == 0xFFFF || rateHP > 100) return;
+    int freeSlot = -1;
+    for (int i = 0; i < m_Count; ++i) {
+        if (m_Entries[i].index == index) {
+            m_Entries[i].type = type;
+            m_Entries[i].rateHP = rateHP;
+            return;
+        }
+        if (freeSlot < 0 && m_Entries[i].index == 0xFFFF) freeSlot = i;
+    }
+    if (freeSlot < 0) {
+        if (m_Count >= (int)(sizeof(m_Entries) / sizeof(m_Entries[0]))) return;
+        freeSlot = m_Count++;
+    }
+    m_Entries[freeSlot].index = index;
+    m_Entries[freeSlot].type = type;
+    m_Entries[freeSlot].rateHP = rateHP;
+}
+
+const Proto::PMSG_HEALTH_BAR* CHealthBar::Find(WORD index, BYTE type) const
+{
+    if (index == 0xFFFF) return nullptr;
+    for (int i = 0; i < m_Count; ++i)
+        if (m_Entries[i].index == index && m_Entries[i].type == type) return &m_Entries[i];
+    return nullptr;
+}
+
+const Proto::PMSG_HEALTH_BAR* CHealthBar::FindEntity(const BYTE* entity) const
+{
+    const EntityView view(entity);
+    if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.MonsterIndex() == EntityView::SoccerBall)
+        return nullptr;
+    // Muerto (ReceiveDie / 0x9C marcan Dead) o en 0 %: la barra se va enseguida,
+    // sin esperar a que termine la animación de muerte y se borre la entidad.
+    if (AsCharacter(entity)->Dead) return nullptr;
+    const Proto::PMSG_HEALTH_BAR* bar = Find(view.NetworkKey(), view.Kind());
+    return (bar && bar->rateHP == 0) ? nullptr : bar;
+}
+
+namespace {
+struct HealthBarLayout {
+    static constexpr int Width = 70, Height = 6, LabelOffset = 8;
+    static constexpr float WorldOffset = 100.0f;
+    static constexpr int TargetX = 220, TargetY = 10, TargetWidth = 200, TargetHeight = 12;
+};
+
+void DrawBar(int x, int y, float width, float height, BYTE percent, bool selected)
+{
+    EnableAlphaTest(true);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, selected ? 1.0f : 0.5f);
+    GL_DrawRect((float)x, (float)y, width, height);
+    Gfx::Color4f(selected ? 0.5f : 0.8f, 0.0f, 0.0f, 1.0f);
+    const float pad = height >= 6.0f ? 2.0f : 1.0f;
+    GL_DrawRect((float)x + pad, (float)y + pad, (width - 2 * pad) * percent / 100.0f, height - 2 * pad);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
+    GL_ResetState();
+}
+
+void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD background)
+{
+    char text[64];
+    Platform::TextFormatSecure(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
+    const DWORD savedBack = m_dwBackColor;
+    const DWORD savedText = m_dwTextColor;
+    HGDIOBJ oldFont = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    EnableAlphaTest(true);
+    Gfx::Color4f(1, 1, 1, 1);
+    m_dwBackColor = background;
+    m_dwTextColor = 0xFFFFFFFFu;
+    RenderCenteredText(center, y, text);
+    m_dwBackColor = savedBack;
+    m_dwTextColor = savedText;
+    gFont.SelectFont(gFont.GetTextDC(), oldFont);
+    GL_ResetState();
+}
+
+} // namespace
+
+// DESVIACION DLL HealthBar.cpp: HealthBarType=3, como Encoder/MainInfo.ini.
+// IDA: Render_GameFrame (0x004BBFB0), después de RenderPartyHP (0x004BCA20).
+void CHealthBar::DrawViewport() const
+{
+    if (SceneFlag != 5 || gUserSettings.GetDeleteHealthBar() || !CharactersClient) return;
+    const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
+    for (int i = 0; i < EntityView::Capacity; ++i) {
+        const BYTE* entity = base + i * EntityView::Stride;
+        const auto* bar = FindEntity(entity);
+        if (!bar) continue;
+        const EntityView view(entity);
+        float position[3] = { view.X(), view.Y(), view.Z() + view.Height() + HealthBarLayout::WorldOffset };
+        int x, y;
+        Camera_ProjectWorldToScreen(position, &x, &y);
+        // DESVIACION: el tamaño sigue a la distancia de la cámara (el DLL lo
+        // dejaba fijo y con la cámara 3D alejada las barras quedaban enormes).
+        // 100 unidades verticales miden ~31 px con la cámara normal.
+        float above[3] = { position[0], position[1], position[2] + 100.0f };
+        int ax, ay;
+        Camera_ProjectWorldToScreen(above, &ax, &ay);
+        const float span = sqrtf(float((ax - x) * (ax - x) + (ay - y) * (ay - y)));
+        float scale = span / 31.0f;
+        scale = scale < 0.4f ? 0.4f : scale > 1.0f ? 1.0f : scale;
+        const int width = int(HealthBarLayout::Width * scale + 0.5f);
+        const int height = int(HealthBarLayout::Height * scale + 0.5f) < 3 ? 3 : int(HealthBarLayout::Height * scale + 0.5f);
+        x -= width / 2;
+        if (MouseX >= x && MouseX < x + width && MouseY >= y && MouseY < y + height)
+            DrawLabel(entity, bar->rateHP, x + width / 2, y - HealthBarLayout::LabelOffset, 0x80000000u);
+        DrawBar(x, y, (float)width, (float)height, bar->rateHP, false);
+    }
+}
+
+// IDA: RenderMonsterName (0x004CB6F0); DLL DrawPointingHealthBar (0x004CB7AD).
+bool CHealthBar::DrawSelected(const BYTE* entity) const
+{
+    if (SceneFlag != 5 || gUserSettings.GetDeleteHealthBar()) return false;
+    const auto* bar = FindEntity(entity);
+    if (!bar) return false;  // Sin extensión, conservar el nombre del binario.
+    DrawBar(HealthBarLayout::TargetX, HealthBarLayout::TargetY,
+        (float)HealthBarLayout::TargetWidth, (float)HealthBarLayout::TargetHeight, bar->rateHP, true);
+    DrawLabel(entity, bar->rateHP, HealthBarLayout::TargetX + HealthBarLayout::TargetWidth / 2,
+        HealthBarLayout::TargetY + 2, 0);
+    return true;
+}

@@ -83,9 +83,9 @@ def harness(revision=None):
     constants='\n'.join(re.search(r'^(?:DWORD|char)\s+'+name+r'\s*(?:\[\])?\s*=\s*[^;]+;',globals_source,re.M).group(0) for name in names)
     aliases='\n'.join(re.search(r'^#define '+name+r'\s+[^\n]+',header,re.M).group(0) for name in ('DAT_07d4b4b0','DAT_07d4b5dc'))
     concat=re.search(r'^#define CONCAT31[^\n]+',read_source('src/types.h',revision),re.M).group(0)
-    find=function(read_source('src/UI/UI_LegacyExterns.cpp',revision),'FindTextA').replace('FindTextA','ActualFind')
+    find=function(read_source('src/ui/UI_LegacyExterns.cpp',revision),'FindTextA').replace('FindTextA','ActualFind')
     services=SERVICES.replace('ALIASES',aliases).replace('CONSTANTS',constants).replace('CONCAT',concat).replace('FIND',find)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+services+function(read_source('src/UI/Chat.cpp',revision),'Chat_ValidateInputCommand')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+services+function(read_source('src/ui/Chat.cpp',revision),'Chat_ValidateInputCommand')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

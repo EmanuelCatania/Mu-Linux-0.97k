@@ -1,7 +1,7 @@
 // Entity_LegacyPoolCleanup.cpp — DeleteCharacter y DeleteEffect.
 
 #include "stdafx.h"
-#include "UI/HealthBar.h"
+#include "ui/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 #include "net/Net.h"

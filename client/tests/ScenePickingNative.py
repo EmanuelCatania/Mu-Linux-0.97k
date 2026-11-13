@@ -46,10 +46,10 @@ std::uint64_t Run(BYTE* objectMem,BYTE* modelMem,BYTE* gridMem){nodes=reinterpre
 int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000));Require(low);auto expected=Run(low+256,low+4096,low+8192);if(sizeof(void*)==8){auto* high=static_cast<BYTE*>(Reserve(0x126000000ull));Require(high);for(unsigned mask=1;mask<8;++mask){std::memset(low,0x7b,65536);Require(Run((mask&1?high:low)+256,(mask&2?high:low)+4096,(mask&4?high:low)+8192)==expected);}}std::printf("ScenePicking:1024 escenas, filtros/orden/memoria %016llx\n",(unsigned long long)expected);}
 '''
 def harness(revision=None):
-    s=read_source('src/Scene/Scene_ObjectInteraction.cpp',revision).replace('char* __stdcall PickObject_Mouse','BYTE* __cdecl PickObject_Mouse').replace('char*','BYTE*').replace('char *','BYTE *')
+    s=read_source('src/scenes/Scene_ObjectInteraction.cpp',revision).replace('char* __stdcall PickObject_Mouse','BYTE* __cdecl PickObject_Mouse').replace('char*','BYTE*').replace('char *','BYTE *')
     body=function(s,'PickObject_Mouse')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/game/entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
-    prefix+=read_source('src/Scene/SceneObjectCell.h').replace('#pragma once','')+read_source('src/Scene/ObjectRegistry.h').replace('#pragma once','')
+    prefix+=read_source('src/scenes/SceneObjectCell.h').replace('#pragma once','')+read_source('src/scenes/ObjectRegistry.h').replace('#pragma once','')
     prefix+=read_source('src/platform/GuardedOperation.h').replace('#pragma once','').replace('#include "platform/PlatformHeaders.h"','')
     prefix+='static_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));static_assert(offsetof(OBJECT,Angle)==28);static_assert(offsetof(OBJECT,OBB)==(sizeof(void*)==4?304:312));\n'
     return prefix+SERVICES+body+MAIN

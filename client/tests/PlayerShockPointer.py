@@ -139,7 +139,7 @@ def harness(revision=None):
     prefix = die_harness(revision).split("void CallDie(CHARACTER* character)", 1)[0]
     prefix = prefix.replace("randomValues[2]", "randomValues[32]").replace("Require(randomDraws < 2)", "Require(randomDraws < 32)")
     prefix = prefix.replace("owner == AsObject(activeCharacter) && loop == 0", "(owner == AsObject(activeCharacter) || (slot == 105 && !owner)) && loop == 0")
-    shock = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "SetPlayerShock").replace("rand()", "NextRandom()")
+    shock = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "SetPlayerShock").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* c" in shock else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + SERVICES + shock + MAIN.replace("CALL_SHOCK", f"SetPlayerShock({arg}, hit)")
 

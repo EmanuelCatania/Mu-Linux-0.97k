@@ -65,7 +65,7 @@ def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0]
     prefix += re.search(r"struct _SkillAttrEntry\s*\{.*?\};", read_source("src/globals.h", revision), re.S).group()
     prefix += "\n_SkillAttrEntry SkillAttribute{};\nstatic_assert(sizeof(SkillAttribute.Raw) == 64 * 40);\n"
-    damage = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "GetMagicSkillDamage")
+    damage = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "GetMagicSkillDamage")
     arg = "machine" if "const BYTE* This" in damage else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + damage + MAIN.replace("CALL_DAMAGE", f"GetMagicSkillDamage({arg}, type, low, high)")
 

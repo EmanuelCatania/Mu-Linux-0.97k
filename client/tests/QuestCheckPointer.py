@@ -83,7 +83,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000") + SERVICES
-    source = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
+    source = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     for name in ("CSQuest_GetQuestState", "CSQuest_FindQuestContext", "CSQuest_CheckQuestState"):
         prefix += function(source, name)
     return prefix + MAIN

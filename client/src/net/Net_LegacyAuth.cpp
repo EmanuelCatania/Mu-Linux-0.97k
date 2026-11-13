@@ -93,7 +93,7 @@ char __cdecl Chat_Validate(char *param_1) {
     return 0;
 }
 // 0x00497C70 no es un key schedule: es CheckChatText (gestos por texto del
-// chat). Portado en src/UI/Chat_Gestures.cpp.
+// chat). Portado en src/ui/Chat_Gestures.cpp.
 // SecondPassword_Shuffle @ 0x004E9250 — SecondPassword_Shuffle(mode)
 // Initializes a 10-element short array at DAT_07e91394 with values 0..9,
 // then performs 20 random XOR swaps. Stores mode in DAT_07eaa14c.

@@ -89,7 +89,7 @@ def harness(revision=None):
     prefix = prefix.replace("unsigned short serverRate;", "unsigned short serverRate, serverMaximum;")
     prefix = prefix.replace("std::memcpy(activeMachine + 78, &serverRate, 2);", "{ std::memcpy(activeMachine + 70, &serverRate, 2); std::memcpy(activeMachine + 72, &serverMaximum, 2); }")
     prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "PlusSpecialPercent")
-    magic = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "Stats_CalcMagicDmgRange")
+    magic = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Stats_CalcMagicDmgRange")
     arg = "machine" if "BYTE* param_1" in magic else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + magic + MAIN.replace("CALL_MAGIC", f"Stats_CalcMagicDmgRange({arg})")
 

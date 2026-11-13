@@ -22,8 +22,8 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
-#include "UI/EmoteMenu.h"
-#include "UI/ChatListBox.h"
+#include "ui/EmoteMenu.h"
+#include "ui/ChatListBox.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "Config/UserSettings.h"

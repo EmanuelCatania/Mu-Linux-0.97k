@@ -2,7 +2,7 @@
 #include "render/ResourceTables.h"
 #include "game/core/RenderDerivedState.h"
 #include "game/core/RenderFxSnapshots.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include "Item/ItemDefines.h"
 #include "game/core/MapManager.h"
 #include <vector>

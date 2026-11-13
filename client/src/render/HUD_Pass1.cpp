@@ -20,10 +20,10 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "UI/ChatTypes.h"
+#include "ui/ChatTypes.h"
 #include "render/Gfx.h"
 #include "platform/Text.h"
-#include "UI/MiniMap.h"
+#include "ui/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"

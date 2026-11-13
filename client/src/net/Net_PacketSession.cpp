@@ -5,9 +5,9 @@
 // IDA: UpdateWindowsMouse (0x004ECB00)
 
 #include "stdafx.h"
-#include "UI/MiniMap.h"
-#include "UI/EventTimer.h"
-#include "UI/MoveList.h"
+#include "ui/MiniMap.h"
+#include "ui/EventTimer.h"
+#include "ui/MoveList.h"
 
 
 // IDA: ClearInventory (0x004CBDF0).  El nombre viejo del port

@@ -173,7 +173,7 @@ def harness(revision=None):
     definition = re.search(r"^[^/\n]*\bDAT_05828d58\s*=\s*[^;]+;", globals_source, re.M).group()
     declaration += re.search(r"extern [^;\n]*\bCharactersClient\s*;", header).group()
     definition += re.search(r"^[^/\n]*\bCharactersClient\s*=\s*[^;]+;", globals_source, re.M).group()
-    all_actions = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "Characters_SetActionAll")
+    all_actions = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Characters_SetActionAll")
     types = read_source("src/game/entity/EntityTypes.h", revision)
     support = SUPPORT
     for token, name, kind in (("TYPE_FIELD", "Type", "short"),
@@ -183,7 +183,7 @@ def harness(revision=None):
                               ("PRIOR_FRAME_FIELD", "PriorAnimationFrame", "float")):
         support = re.sub(rf"\b{token}\b", re.search(rf"\b{kind}\s+{name}\s*;", types).group(), support)
     action = function(read_source("src/game/entity/Entity_ActionLegacy.cpp", revision), "SetAction")
-    casting = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "SetPlayerTeleport")
+    casting = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "SetPlayerTeleport")
     call = "SetAction(object, action)" if "OBJECT* entity_ptr" in action else "SetAction(static_cast<int>(reinterpret_cast<std::uintptr_t>(object)), action)"
     cast_arg = "object" if "OBJECT* param_1" in casting else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return (PREAMBLE.split("BYTE* reservation;")[0].replace("0x10000", "0x100000") + declaration + definition

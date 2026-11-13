@@ -66,5 +66,5 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
 // GL_End2D — implemented in src/render/GL_2D.cpp
 // GL_DrawRect — implemented in src/render/GL_2D.cpp
 // SetErrorMessage — implemented in src/render/GL_State.cpp
-// UI_InGameMenu — implemented in src/UI/UI_InGameMenu.cpp (UI_InGameMenu state machine)
+// UI_InGameMenu — implemented in src/ui/UI_InGameMenu.cpp (UI_InGameMenu state machine)
 

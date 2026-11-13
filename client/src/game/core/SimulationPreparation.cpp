@@ -6,7 +6,7 @@
 #include "render/LooseWingVisuals.h"
 #include "render/Entity_Render_3D.h"
 #include "game/core/SimulationPreparation.h"
-#include "Scene/Scene_CharSelect.h"
+#include "scenes/Scene_CharSelect.h"
 #include "game/entity/CharacterCloth.h"
 #include "game/entity/CharacterEffects.h"
 #include "game/entity/ObjectPose.h"

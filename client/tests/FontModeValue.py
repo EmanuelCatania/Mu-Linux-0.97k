@@ -26,7 +26,7 @@ def harness(revision=None):
  source=read_source('src/globals.cpp',revision);match=re.search(r'(DWORD|LPBYTE)\s+lpData_055ca044\s*=\s*(?:0|NULL);',source);assert match;declaration=match.group();assertion='' if revision else 'static_assert(std::is_same<decltype(lpData_055ca044),DWORD>::value,"TextOut es valor32");'
  set_mode='lpData_055ca044=reinterpret_cast<LPBYTE>(uintptr_t(mode));' if revision else 'lpData_055ca044=mode;';get_mode='static_cast<DWORD>(reinterpret_cast<uintptr_t>(lpData_055ca044))' if revision else 'lpData_055ca044'
  factory=function(read_source('src/render/Font_LegacyFactory.cpp',revision),'Font_CreateRenderer');condition=re.search(r'if \((param_1 == 1)\)',factory);assert condition
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('MODE_CONDITION',condition[1])+declaration+assertion+'void SetMode(DWORD mode){'+set_mode+'}DWORD GetMode(){return '+get_mode+';}'+function(read_source('src/Scene/Scene_OpenWorld.cpp',revision),'OpenFont')+MAIN
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('MODE_CONDITION',condition[1])+declaration+assertion+'void SetMode(DWORD mode){'+set_mode+'}DWORD GetMode(){return '+get_mode+';}'+function(read_source('src/scenes/Scene_OpenWorld.cpp',revision),'OpenFont')+MAIN
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

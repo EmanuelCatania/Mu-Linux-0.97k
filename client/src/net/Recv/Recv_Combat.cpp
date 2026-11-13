@@ -4,9 +4,9 @@
 
 #include "stdafx.h"
 #include "net/Protocol/GameServerProtocol.h"
-#include "UI/BuffBar.h"
+#include "ui/BuffBar.h"
 #include "game/entity/EntityView.h"
-#include "UI/HealthBar.h"
+#include "ui/HealthBar.h"
 #include "game/core/HeroVitals.h"
 #include "net/Recv/NetRecv.h"
 #include "Model/Model_CustomAnim.h"

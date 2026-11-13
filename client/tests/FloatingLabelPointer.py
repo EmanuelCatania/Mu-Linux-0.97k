@@ -56,7 +56,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    header=read_source('src/UI/ChatTypes.h',revision)
+    header=read_source('src/ui/ChatTypes.h',revision)
     record=re.search(r'struct CHAT\s*\{.*?\};',header,re.S).group()
     # Vista x86 de prueba: Owner no se lee en esta función y permanece opaco.
     record=re.sub(r'CHARACTER\*\s+Owner;', 'BYTE opaqueOwner[4];',record)

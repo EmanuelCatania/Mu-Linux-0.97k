@@ -84,7 +84,7 @@ def harness(revision=None):
     prefix += "\nstatic_assert(sizeof(void*) != 4 || (sizeof(CHARACTER) == 916 && offsetof(CHARACTER, Weapon) == 624 && offsetof(CHARACTER, BodyPart) == 480));\n"
     prefix += "\nCHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }\nCHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }\n"
     prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "PlusSpecialPercent")
-    defense = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "Stats_CalcDefense")
+    defense = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "Stats_CalcDefense")
     arg = "machine" if "BYTE* param_1" in defense else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + defense + MAIN.replace("CALL_DEFENSE", f"Stats_CalcDefense({arg})")
 

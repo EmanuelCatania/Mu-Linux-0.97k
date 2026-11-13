@@ -27,7 +27,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_LegacyHelpers.cpp',revision)
+    source=read_source('src/scenes/Scene_LegacyHelpers.cpp',revision)
     body=function(source,'VTable_Release')
     args='obj,vertices' if 'float* vertices' in body else 'obj,(int)vertices'
     wrapper='\nvoid Draw(void* obj,float* vertices){VTable_Release('+args+');}\n'

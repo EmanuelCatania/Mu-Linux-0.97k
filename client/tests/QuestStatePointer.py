@@ -47,7 +47,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
     prefix += "\n#ifndef _WIN32\n#define __fastcall\n#endif\nusing uint=unsigned int;\n"
-    return prefix + function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CSQuest_GetQuestState") + MAIN
+    return prefix + function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CSQuest_GetQuestState") + MAIN
 
 
 def main():

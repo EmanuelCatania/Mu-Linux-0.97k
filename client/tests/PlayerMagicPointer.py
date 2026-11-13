@@ -91,7 +91,7 @@ int main() {
 
 def harness(revision=None):
     prefix = walk_harness(revision).split("void CallWalk(CHARACTER* character)", 1)[0]
-    magic = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "SetPlayerMagic").replace("rand()", "NextRandom()")
+    magic = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "SetPlayerMagic").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* c" in magic else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + SERVICES + magic + MAIN.replace("CALL_MAGIC", f"SetPlayerMagic({arg})")
 

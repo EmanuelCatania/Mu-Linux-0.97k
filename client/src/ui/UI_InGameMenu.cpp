@@ -1,0 +1,1037 @@
+// UI_InGameMenu.cpp — UI_InGameMenu @ 0x00514310
+// Secondary in-game UI state machine (DAT_083a7c24).
+// Handles: escape menu, NPC shop, buy confirmation, item lists, server/char transitions.
+// Called every frame from Game_MainLoop.
+// Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
+
+#include "stdafx.h"
+#include "platform/UserPath.h"
+#include "ui/ChatListBox.h"
+#include "net/Recv/NetRecv.h"
+#include "game/entity/EntityName.h"
+#include "net/NetText.h"
+#include "platform/Text.h"
+#include "platform/ISocket.h"
+#include "net/Reconnect.h"
+#include "ui/OptionsMenu.h"
+#include "globals.h"
+#include "functions.h"
+
+#include "net/MuEmu.h"
+#include "net/Net.h"  // gNetwork.Send (proper C3 wrap with serial)
+
+// byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
+// dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
+#define DAT_07ea5249_byte  (DAT_07ea5240[9])
+// Los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
+extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
+extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
+extern "C" void Net_SendNpcTalkClose(void);
+extern "C" BOOL ChaosBoxRequestClose(void);
+
+
+extern "C" {
+    // IDA FUN_00423DB0: clear only Guild War state and restore the normal
+    // guild relation markers.  It is deliberately not the legacy Trade reset
+    // that still carries the same historical label elsewhere in the port.
+    void GuildWar_ResetClientState(void);
+    // 0x81 PMSG_WAREHOUSE_MONEY_RECV (Render/Render_WorldHelpers.cpp)
+    void Net_SendWarehouseMoney(BYTE type, DWORD money);
+}
+// g_iCurrentDialogScript es un macro sobre DAT_005615dc (globals.h)
+// g_lpszDialogAnswer es un macro sobre DAT_083a4348 (globals.h): 10 x 38.
+
+// ---------------------------------------------------------------------------
+// Local helpers
+// ---------------------------------------------------------------------------
+
+// XOR login key (32 bytes), used to encrypt outbound logout/transition packets.
+// Same key as Net/Crypto.cpp login XOR.
+
+// IDA: sub_50F7A0 (0x0050F7A0) -- guarda las opciones del personaje en el server.
+//
+// PMSG_OPTION_DATA_RECV (Protocol.h:134 del server, #pragma pack(1)), 19 bytes:
+//   +4..13    SkillKey[10]  numero de tecla -> tipo de skill
+//   +14       GameOption    bit0/bit1 auto-ataque on/off, bit2/bit3 susurro on/off
+//   +15..17   QKey/WKey/EKey  BYTE(tipo_de_item) + 64, o sea tipo - 448
+//   +18       ChatWindow    (lineas_visibles / 3) << 4 | transparencia * 10
+// El mapa del cliente es slot -> numero (CA+215, 64 bytes por personaje); aca
+// se invierte a numero -> skill, que es lo que el handler de entrada vuelve a
+// dar vuelta.  El lado de la ventana de chat usa los mismos dos datos que
+// escribe ReceiveOption (self[35] y el float en +188), asi el ida-y-vuelta es
+// simetrico.
+//
+// Se descartan los numeros >= 10: en IDA los 10..14 caerian sobre los bytes de
+// opciones y se pisan acto seguido (mismo paquete final), y >= 15 escribiria
+// fuera del arreglo.
+static void SaveOptionsToServer97k(void)
+{
+    BYTE* CA = (BYTE*)CharacterAttribute;
+    if (!CA) return;
+
+    BYTE opt[15];
+    memset(opt, 0, sizeof(opt));
+
+    const int hero = (int)DAT_005616ac;                 // SelectedHero
+    if (hero >= 0 && hero <= 4) {
+        const BYTE* keyMap = CA + 215 + (hero << 6);
+        for (int slot = 0; slot < 64; ++slot) {
+            const BYTE num = keyMap[slot];
+            if (num != 0xFF && num < 10)
+                opt[num] = CA[slot + 87];               // tipo de skill del slot
+        }
+    }
+
+    opt[10] |= m_bAutoAttack ? 1 : 2;                    // m_bAutoAttack
+    opt[10] |= m_bWhisperSound ? 4 : 8;                    // m_bWhisperSound
+    opt[11] = (BYTE)((BYTE)DAT_00559c60 + 64);          // QKey
+    opt[12] = (BYTE)((BYTE)DAT_00559c64 + 64);          // WKey
+    opt[13] = (BYTE)((BYTE)DAT_00559c68 + 64);          // EKey
+
+    int lines = 0, transp = 0;
+    if (DAT_055c9ff0) {
+        DWORD* cobj = (DWORD*)DAT_055c9ff0;
+        lines  = (int)cobj[35] / 3;                     // vtable[13] getVisibleCnt
+        transp = (int)(*(float*)((BYTE*)cobj + 188) * 10.0f);
+    }
+    if (!g_bUseChatListBox) lines = 0;                       // g_bUseChatListBox
+    opt[14] = (BYTE)(transp | (16 * lines));
+
+    // HackPacketCheck: 0xF3 acepta cualquier frame (`*`); C1 no toca el serial.
+    BYTE pkt[4 + sizeof(opt)] = { 0xC1, (BYTE)sizeof(pkt), 0xF3, 0x30 };
+    memcpy(pkt + 4, opt, sizeof(opt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
+
+    {   // queda en el log: es el unico rastro de que las opciones se guardaron
+    }
+}
+
+// ---------------------------------------------------------------------------
+// UI_InGameMenu — UI_InGameMenu
+// ---------------------------------------------------------------------------
+// IDA: UI_InGameMenu (0x00514310)
+void __cdecl UI_InGameMenu(void)
+{
+    // Mouse coordinates (updated by input layer)
+    int mouseX = (int)DAT_083a427c;
+    int mouseY = (int)DAT_083a4278;
+
+    DWORD state = DAT_083a7c24;
+    DWORD pending = DAT_083a7c28;
+
+    // ── ESC key toggle (IDA 00514310 lines 534-572) ─────────────────────────
+    // v2 = PressKey(27);  // VK_ESCAPE
+    // if (v2 && !EquipmentItem) {
+    //     if (ErrorMessage == 110 || 150) { close → NextErrorMessage }
+    //     else if (!ErrorMessage) ErrorMessage = 110;   // open ESC menu
+    //     PlayBuffer(25);
+    // }
+    // DAT_083a7c24 ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
+    // EquipmentItem (0x07EAA165) = movimiento de equipo pendiente con el server.
+    int escHit = PressKey(27);  // PressKey(27)
+    if (escHit && !DAT_07eaa165) {            // EquipmentItem
+        if (DAT_083a7c24) {                   // ErrorMessage
+            if (DAT_083a7c24 == 110 || DAT_083a7c24 == 150) {
+                DAT_083a7c24 = DAT_083a7c28;  // ErrorMessage = NextErrorMessage
+                DAT_083a7c28 = 0;
+            }
+        } else {
+            DAT_083a7c24 = 110;
+            if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+        }
+        state = DAT_083a7c24;
+        PlayBuffer(0x19, 0, 0);             // PlayBuffer(25), siempre
+    }
+
+    // ── Exit-countdown (IDA 00514310 L536-550) ──────────────────────────────
+    // Cuando el botón Exit del login setea DAT_083a7c1c=1 y DAT_083a7c20=50,
+    // este bloque decrementa el contador cada frame. Al llegar a 0 manda
+    // WM_DESTROY a la ventana principal → WndProc limpia y PostQuitMessage.
+    // Sin este bloque el botón Exit del login sólo bajaba el diálogo sin
+    // terminar el proceso.
+    if (DAT_083a7c1c) {
+        DWORD v3 = DAT_083a7c20;
+        if ((v3 % 10) == 0) {
+            // IDA L541-542: sprintf(Buffer, GlobalText[380], v3/10);
+            //               UIChatLogWindow_AddText(byte_83A7C5C, Buffer, 1);
+            // GlobalText[380] contains the language-specific format string
+            // (e.g. "Saldrás del juego en %d segundos."), loaded from
+            // Data/Local/Text.bmd by OpenTextData() at boot.
+            char buf[300];
+            Platform::TextFormat(buf, GlobalText[380], (int)(v3 / 10));
+            UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, buf, 1);
+        }
+        DAT_083a7c20 = v3 - 1;
+        if ((int)(v3 - 1) <= 0) {
+            DAT_083a7c1c = 0;
+            gWindow.RequestCloseApplication();
+        }
+    }
+
+    // ── Fast exits ──────────────────────────────────────────────────────────
+    if (state == 0)
+        return;
+
+    // ── Outer state switch ──────────────────────────────────────────────────
+    switch (state)
+    {
+    // ── Quit game (fiel al IDA) ───────────────────────────────────────────
+    // Codes 0x1a (result=6) / 0x1c (result=8 "demasiados intentos") /
+    // 0x70/0x71 (fallo de conexión). El IDA (0x514310 L1396-1414) muestra el
+    // cartel y SOLO hace SendMessageA(WM_DESTROY) cuando hacés click en el botón
+    // OK (rect 284-354 × 98-119) — no cierra directo. El cartel persiste hasta
+    // el click.
+    case 0x1a:
+    case 0x1c:
+    case 0x70:
+    case 0x71:
+    {
+        // OK vía click en el botón (284-354 × 98-119) O tecla Enter
+        // (DAT_055ca038). Consumimos el flag de Enter para que el login-trigger
+        // de Game_SceneUpdate (que corre DESPUÉS) no lo tome como reintento.
+        bool enterHit = (DAT_055ca038 != '\0');
+        bool okClick = (mouseX >= 284 && mouseX < 354 &&
+                        mouseY >= 98 && mouseY < 119 && IsClickPushed());
+        if (okClick || enterHit) {
+            DAT_083a4124 = 0;
+            DAT_055ca038 = '\0';                     // consume Enter
+            gWindow.RequestCloseApplication();  // cierra el cliente
+            DAT_083a7c24 = DAT_083a7c28;             // ErrorMessage = NextErrorMessage
+            DAT_083a7c28 = 0;
+        }
+        return;   // persiste hasta OK (click o Enter)
+    }
+
+    // ── Escape / in-game menu ────────────────────────────────────────────
+    // N buttons (3/4/5 según g_GameState) en X=[0x103..0x17b], Y=(3*i+6)*10.
+    //
+    // Render order (UI_StatsPanel RenderErrorMessage):
+    //   Login (state 2, 3 btns):     Salir • Opciones • Cancelar
+    //   CharSelect (state 4, 4 btns): Salir • IrOtroSrv • Opciones • Cancelar
+    //   Ingame (state 5, 5 btns):     Salir • IrOtroSrv • IrOtroChar • Opciones • Cancelar
+    //
+    // Click routing (IDA 0x00514310 L600-1320): el índice i tiene acción distinta
+    // según g_GameState — case 0 siempre Exit, case 1 Options(login)|JoinServer(cs/in),
+    // case 2 Close(login)|Options(cs)|JoinChar(in), case 3 Close(cs)|Options(in),
+    // case 4 Close(in).
+    case 0x6e:
+    {
+        if (mouseX >= gWindow.PanelOrigin(Ui::Menu) - 1 && mouseX < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width && IsClickPushed())
+        {
+            DWORD gs = SceneFlag;              // g_GameState
+            int btnCount = (gs == 5) ? 5 : ((gs == 4) ? 4 : 3);
+
+            for (int i = 0; i < btnCount; ++i)
+            {
+                int btnY = (3 * i + 6) * 10;
+                if (mouseY >= btnY && mouseY < btnY + 0x16)
+                {
+                    DAT_083a4124 = 0;  // consume click
+
+                    // Decide acción semántica según (estado, índice).
+                    // semantic: 0=Exit 1=JoinSrv 2=JoinChar 3=Options 4=Close
+                    int action;
+                    if (gs == 5) {                 // ingame
+                        const int map[5] = { 0, 1, 2, 3, 4 };
+                        action = map[i];
+                    } else if (gs == 4) {          // charselect
+                        const int map[4] = { 0, 1, 3, 4 };
+                        action = map[i];
+                    } else {                       // login / loading
+                        const int map[3] = { 0, 3, 4 };
+                        action = map[i];
+                    }
+
+                    switch (action)
+                    {
+                    case 0:  // Exit / Salir del juego
+                    {
+                        // DESVIACION (DLL Reconnect.cpp MenuExitGame, 0x005144DC):
+                        // salir mientras reconecta cierra el cliente; si no, el
+                        // cierre que sigue es voluntario y no reconecta.
+                        if (gReconnect.ExitIfActive()) return;
+                        gReconnect.MarkIntentional();
+                        // IDA 00514310 L605-825: el packet F1/02/00 SOLO se manda
+                        // cuando estamos in-game (gs==5). En login/char-select
+                        // (gs==2/4) la rama de L823-825 solo cierra el socket y
+                        // arranca el countdown — no envía nada al server.
+                        if (SceneFlag == 5) {
+                            SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
+                            FUN_0050f700(Platform::UserMacroPath());  // IDA L611
+                            BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
+                            gNetwork.Send(pkt, 5);
+                        }
+                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+                            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+                            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+                        }
+                        DAT_083a7c1c = 1;
+                        DAT_083a7c20 = 50;   // 50 ticks = 5 s at 10 FPS refresh
+                    }
+                    break;
+
+                    // ── case 1/2: el menú-índice NO coincide con el sub-byte F1/02 ──
+                    // Protocolo F1/02: sub=0 Exit, sub=1 JoinChar, sub=2 JoinSrv.
+                    // Layout del menú según g_GameState:
+                    //   gs=2 login    : { Options, Close }
+                    //                   case1=Options  case2=Close
+                    //   gs=4 cs       : { Exit, JoinSrv, Options, Close }
+                    //                   case1=JoinSrv  case2=Options  case3=Close
+                    //   gs=5 ingame   : { Exit, JoinSrv, JoinChar, Options, Close }
+                    //                   case1=JoinSrv  case2=JoinChar case3=Options
+                    //
+                    // MuEmu NO hace echo de F1/02 (server cierra el socket o ignora),
+                    // por lo que la transición de escena se hace localmente acá
+                    // emulando lo que ReceiveLogOut@0x004247D0 haría con la respuesta.
+                    case 1:
+                    {
+                        if (SceneFlag == 4 || SceneFlag == 5) {
+                            // IDA 00514310 L843-1074 (menu "seleccionar servidor"):
+                            // con la Chaos Machine abierta avisa GlobalText[592];
+                            // si no, LogOut = 1 y manda F1/02/02 y cierra el menu.
+                            // NO hay transicion local: el server hace la cuenta
+                            // regresiva (avisos de 5 s) y contesta F1/02/02, y es
+                            // ReceiveLogOut (Recv_LogOut sub 2) quien libera el
+                            // mundo, cierra el socket y vuelve al login.
+                            if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
+                                SaveOptionsToServer97k();
+                                FUN_0050f700(Platform::UserMacroPath());  // IDA L1071
+                            if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
+                                UIChatLogWindow_AddText("", GlobalText[592], 2);
+                            } else {
+                                gReconnect.MarkIntentional();
+                                BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
+                                gNetwork.Send(pkt, 5);
+                            }
+                        } else if (SceneFlag == 2) {
+                            // Login: case 1 = Options
+                            DAT_083a7c28 = 0x96;
+                        }
+                    }
+                    break;
+
+                    case 2:
+                    {
+                        if (SceneFlag == 5) {
+                            // JoinChar — volver a char-select.
+                            //
+                            // El server tarda ~5 s en procesar el F1/02/01 (tick async); mientras tanto
+                            // Connected sigue OBJECT_ONLINE y CGCharacterListRecv hace early-return, asi
+                            // que NO se manda F3/00 en el mismo tick.
+                            //
+                            // Flujo:
+                            //   1. Cliente manda F1/02/01 (C3-wrapped)
+                            //   2. ESPERAMOS sin transition local
+                            //   3. Server tick procesa CloseCount=1 →
+                            //      CharacterGameClose → Connected=OBJECT_LOGGED
+                            //      → manda F1/02/01 ack
+                            //   4. Cliente recibe F1/02 ack → Recv_LogOut runs:
+                            //      transitions state=4 + manda F3/00 (ahora
+                            //      server YA está OBJECT_LOGGED → procesa OK)
+                            //   5. Server GDCharacterListSend → DataServer →
+                            //      F3/00 char-list fresca
+                            //   6. Cliente Recv_CharList puebla slots 0-4
+                            SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
+                            FUN_0050f700(Platform::UserMacroPath());  // IDA L1081
+                            gReconnect.MarkIntentional();
+                            BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
+                            gNetwork.Send(pkt, 5);
+                            // NO transición local. NO F3/00 send. Dejamos
+                            // que Recv_LogOut maneje todo cuando llegue el ack.
+                        } else if (SceneFlag == 4) {
+                            // Char-select: case 2 = Options
+                            DAT_083a7c28 = 0x96;
+                        } else {
+                            // Login: case 2 = Close
+                            DAT_083a7c28 = 0;
+                        }
+                    }
+                    break;
+
+                    case 3:  // Opciones → abre submenú 0x96
+                        DAT_083a7c28 = 0x96;
+                        break;
+
+                    case 4:  // Cancelar → cerrar menú
+                        DAT_083a7c28 = 0;
+                        break;
+                    }
+                    goto tail;
+                }
+            }
+        }
+        // No click on a button — stay in state 0x6e
+        return;
+    }
+
+    // ── 114 — confirmar BORRAR PERSONAJE (char-select) ─────────────────────
+    // Lo abre Game_EnterWorldTick (IDA 0x521D80 L479-483) para personajes de
+    // nivel < 40, con InputText[0] capturando el codigo personal.
+    // IDA UI_InGameMenu L1383: el 114 comparte el gate de 126/152 (LABEL_494),
+    // Si = [323,363) -> sub_513C10; No = [373,413) o Esc -> L2183.
+    case 0x72:
+    {
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = escHit ||
+                         (mouseX >= 373 && mouseX < 413 &&
+                          mouseY >= 98 && mouseY < 119 && IsClickPushed());
+        if (!yes && !no) return;
+        DAT_083a4124 = 0;
+
+        if (yes) {
+            // IDA: sub_513C10 (0x00513C10).  PMSG_CHARACTER_DELETE_RECV =
+            // [C1][54][F3][02][name:40][PersonalCode:10] (0.97.40); el nombre
+            // sale del personaje elegido, rellenado con ceros.
+            const int hero = (int)DAT_005616ac;          // SelectedHero
+            DAT_005616ac = (DWORD)-1;
+            DAT_005615e0 = (DWORD)hero;                  // dword_5615E0
+            DAT_05826cb0 = 56;                           // CurrentProtocolState
+            const int NAME = (int)NetText::CharacterNameSize;
+            BYTE pkt[4 + NetText::CharacterNameSize + 10];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = (BYTE)sizeof(pkt);
+            pkt[2] = 0xF3;
+            pkt[3] = 0x02;
+            if (hero >= 0 && DAT_07abf5d0) {
+                const char* name = EntityName::Get(DAT_07abf5d0 + hero * CHARACTER_STRIDE);
+                NetText::ToServer(pkt + 4, NAME, name);
+            }
+            NetText::ToServer(pkt + 4 + NAME, 10, (const char*)DAT_07db8710);   // InputText[0]
+            gNetwork.Send(pkt, sizeof(pkt));
+        }
+        // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
+        DAT_083a7c14 = 0x18;
+        DAT_083a7c18 = 0x15;
+        PlayBuffer(0x1b, 0, 0);                        // PlayBuffer(27)
+        if (yes) {
+            ClearInput(1);
+            DAT_00559c84 = 0;                            // InputEnable
+        }
+        goto tail;
+    }
+
+    // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
+    // Per IDA 0x514310 L1400-1406: para ErrorMessage==116 el rect del botón OK
+    // NO cuenta — la única confirmación es Enter (byte_55CA038). Y L1420-1432:
+    // El original limita a 50.000.000; el límite compatible con el server es 2.000.000.000.
+    //
+    // StorageGoldFlag (StorageGoldFlag) lo setea quien abrió el diálogo:
+    //   0 = guardar zen en el baúl     (sub_4EB5D0 case 0)
+    //   1 = sacar zen del baúl         (sub_4EB5D0 case 1)
+    //   2 = poner zen en el trade      (sub_4EB7F0)
+    // Warehouse: C1:81 [type][money:4]. Trade: C1:3A [padding][money:4].
+    case 0x74:
+    {
+        bool enterHit = (DAT_055ca038 != '\0');
+        if (!enterHit) return;          // el cartel persiste hasta Enter
+        DAT_055ca038 = '\0';            // consumimos Enter
+
+        const int gold = InputGold; // Validado por WndProc antes de la conversión.
+        // IDA: UI_InGameMenu (0x00514310).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00515BF3/0x00515BFB/0x0051667C): máximo del server y errores en el cartel activo.
+        const bool invalidGold = gold < 0 || gold > 2000000000;
+        const bool insufficientTradeGold = !invalidGold && StorageGoldFlag == 2 &&
+            (unsigned long long)gold > (unsigned long long)DAT_07eaa0f4 +
+                *(DWORD*)((BYTE*)CharacterMachine + 1352);
+        if (invalidGold || insufficientTradeGold) {
+            DAT_083a7c24 = invalidGold ? 118 : 117;
+            DAT_083a7c28 = 0;
+            ClearInput(0);
+            Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);   // InputTextMax[0]
+            InputNumber = 2;           // InputNumber
+            GoldInputEnable = 0;           // GoldInputEnable
+            DAT_00559c84 = 0;           // InputEnable
+            DAT_07e11d28 = 0;           // MouseUpdateTime
+            DAT_00559bec = 6;           // MouseUpdateTimeMax
+            InputGold = 0;
+            PlayBuffer(0x19, 0, 0);
+            return; // Conservar el cartel activo; tail lo reemplazaría por el estado pendiente.
+        }
+
+        if (StorageGoldFlag == 2) {
+            // IDA: UI_InGameMenu 0x515D64 — cambiar la oferta cancela la
+            // confirmación local mediante el mismo C3(C1:04:3C:00) que usa
+            // el binario antes de enviar el nuevo importe.
+            if (m_bMyConfirm != 0) {
+                const BYTE resetConfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
+                m_bMyConfirm = 0;
+                gNetwork.Send(resetConfirm, sizeof(resetConfirm));
+            }
+
+            // IDA: UI_InGameMenu 0x51628F/0x5162A2 — el ACK 0x3A no trae el
+            // importe: confirma este temporal. Si ya había Zen local, activa
+            // durante 150 ticks el indicador rojo de oferta modificada.
+            if (DAT_07eaa0f4 != 0)
+                TradeMyWait = 150;
+            m_nTempMyTradeGold = (DWORD)gold; // IDA: m_nTempMyTradeGold
+
+            // IDA: UI_InGameMenu 0x5162A2 — C1:08:3A:00:<DWORD LE>.
+            // El DWORD empieza en +4 por el relleno de PBMSG_HEAD antes de
+            // PMSG_TRADE_MONEY_RECV::money; Protocol.cpp de MuEmu despacha 0x3A.
+            BYTE pkt[8] = { 0xC1, 0x08, 0x3A, 0, 0, 0, 0, 0 };
+            memcpy(pkt + 4, &gold, sizeof(DWORD));
+            gNetwork.SendC1(pkt, sizeof(pkt));
+        } else if (gold > 0) {
+            Net_SendWarehouseMoney((BYTE)(StorageGoldFlag & 1), (DWORD)gold);
+        }
+
+        ClearInput(0);
+        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);
+        InputNumber = 2;
+        GoldInputEnable = 0;               // GoldInputEnable = 0
+        DAT_00559c84 = 0;               // InputEnable = 0
+        InputGold = 0;               // InputGold = 0
+        goto tail;
+    }
+
+    // (Aca habia un `case 0x75` que mandaba un F3/10 inventado.  En IDA el 117
+    //  es el aviso "no alcanza el zen" que abre el 116 y no tiene case propio:
+    //  cae al default y se cierra con OK o Enter.)
+
+    // Guild invitation (ProtocolCore 0x50 -> ErrorMessage 119). The source
+    // client emits PMSG_GUILD_RESULT_RECV C1:51 with the original inviter key.
+    // Button geometry is the standard two-button dialog: left=yes, right=no.
+    case 0x77:
+    {
+        const bool yes = mouseX >= 234 && mouseX < 304 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = mouseX >= 334 && mouseX < 404 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        if (!yes && !no)
+            return;
+
+        // IDA: el diálogo modal consume el ciclo completo del click; de otro
+        // modo el estado sostenido llega a MoveHero en el mismo frame.
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        const WORD key = (WORD)DAT_07eaa0d8;
+        // 0x51 pide Encrypt=0 (C1 plano). Acá el chain-XOR sí importa: el
+        // paquete tiene payload, y el server lo descifra con XorData.
+        BYTE pkt[6] = { 0xC1, 0x06, 0x51, (BYTE)(yes ? 1 : 0),
+                        (BYTE)(key >> 8), (BYTE)key };
+        gNetwork.SendC1(pkt, sizeof(pkt));
+        goto tail;
+    }
+
+    // ── 121 — responder una solicitud de Trade ────────────────────────────
+    case 0x79:
+    {
+        // IDA: ProtocolCore 0x43B32D abre ErrorMessage 121 y RenderErrorMessage
+        // 0x51C940 usa DAT_07EA9834 para el texto visible. MuEmu conserva el
+        // diálogo original y extiende la respuesta C1:37 con nombre/nivel/guild.
+        const bool yes = mouseX >= 234 && mouseX < 304 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = mouseX >= 334 && mouseX < 404 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        if (!yes && !no)
+            return;
+
+        // IDA: el click del modal Trade se consume completo antes de MoveHero.
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        // PMSG_TRADE_RESPONSE_RECV de MuEmu usa C1 plano y conserva los
+        // campos de identidad desde +4; el binario original ya los guarda en
+        // DAT_07EA9834 al recibir 0x36.
+        // PMSG_TRADE_RESPONSE_RECV (0.97.40): response, name[40], level, GuildNumber.
+        BYTE pkt[12 + NetText::CharacterNameSize] = { 0xC1, (BYTE)(12 + NetText::CharacterNameSize), 0x37, (BYTE)(yes ? 1 : 0) };
+        NetText::ToServer(pkt + 4, NetText::CharacterNameSize, DAT_07ea9834);
+        gNetwork.SendC1(pkt, sizeof(pkt));
+        goto tail;
+    }
+
+    // ── 126 — confirmar salida/expulsión/disolución de Guild ──────────────
+    // IDA `UI_InGameMenu` L3343 `case 126:` arma y envía el paquete de expulsión,
+    // y NUNCA toca InputText[1].  Limpiar el input es la rama de CANCELAR
+    // (`case 126: case 152:` del segundo switch, L2706), que está más abajo.
+    //
+    // PMSG_GUILD_DELETE_RECV (MuEmu Guild.h:205):
+    //     [C1][0x35][0x53][name:40][PersonalCode:10]      sizeof = 53 (0.97.40)
+    // `name` sale de la tabla de miembros `byte_7E91790`, indexada
+    // por `dword_5615E4` (lo fija el click de `sub_40F320`). Para un miembro
+    // normal esa fila sólo puede ser la propia; para el Master puede ser la de
+    // otro miembro o la propia. El servidor decide si corresponde expulsar,
+    // abandonar o disolver. `PersonalCode` es el valor de InputText[0].
+    //
+    // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN serial.
+    // El original hace el XOR en dos pasadas porque appendea el PersonalCode
+    // después; como la cadena es secuencial y los rangos son disjuntos y
+    // contiguos, una sola pasada da el mismo resultado.
+    case 0x7e:
+    {
+        // Gate de botones.  IDA L2142-2168: para ErrorMessage 126 y 152 los dos
+        // botones NO están en el rect estándar (234/334) sino corridos:
+        //   Sí  → x ∈ [323, 363), y ∈ [98, 119)
+        //   No  → x ∈ [373, 413), y ∈ [98, 119)
+        // Sin este gate el `case` corría en CADA frame mientras el cartel
+        // estuviera abierto → spam del paquete 0x53 → desconexión.
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        if (!yes) {
+            // El "No" lo atiende el SEGUNDO switch (su gate es el rect
+            // x ∈ [373, 413), igual al botón derecho renderizado); ahí el
+            // `case 0x7e` limpia el input y cae al `tail` (dismiss).  Salimos
+            // con `break` para que ese switch lo vea.  Sin click en ninguno de
+            // los dos, `return`: el cartel persiste.
+            const bool no = mouseX >= 373 && mouseX < 413 &&
+                            mouseY >= 98 && mouseY < 119 && IsClickPushed();
+            if (no) break;
+            return;
+        }
+        // IDA: la rama de aceptación consume MouseLButtonPush antes de
+        // construir C1:53; consumimos también los latches del tick para que
+        // el mismo click modal no llegue al movimiento del mundo.
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+
+        int memberIdx = dword_5615E4;
+        if (memberIdx < 0 || memberIdx >= kGuildMemberRecordCount) goto tail;
+
+        const int NAME = (int)NetText::CharacterNameSize;
+        BYTE pkt[3 + NetText::CharacterNameSize + 10];
+        memset(pkt, 0, sizeof(pkt));
+        pkt[0] = 0xC1;
+        pkt[1] = (BYTE)sizeof(pkt);
+        pkt[2] = 0x53;
+        NetText::ToServer(pkt + 3, NAME, &byte_7E91790[kGuildMemberRecordSize * memberIdx]);
+        NetText::ToServer(pkt + 3 + NAME, 10, (const char*)DAT_07db8710);
+        gNetwork.SendC1(pkt, (int)sizeof(pkt));
+        goto tail;
+    }
+
+    // IDA UI_InGameMenu (0x514310) L3857-3963: carteles 139 (CreateOkMessageBox),
+    // 140, 141 (CreateDialogInterface, con paginas) y 154.  No cerrarlos con un
+    // `goto tail` incondicional: `tail` hace ErrorMessage = NextErrorMessage y el
+    // cartel se cerraria en el primer frame.
+    case 0x8b:
+    case 0x8c:
+    case 0x8d:
+    case 0x9a:
+    {
+        // Hover de los dos botones de DAT_083a42f8 (5 ints: estado, x, y, w, h).
+        int  clicked = -1;
+        bool push    = (DAT_083a4124 != 0);
+        int* entry   = (int*)&DAT_083a42f8[0];
+        for (int i = 0; i < 2; ++i, entry += 5) {
+            if (entry[0] < 1) continue;
+            if (entry[1] + 213 > mouseX || entry[2] + 60 > mouseY
+                || mouseX > entry[1] + entry[3] + 213
+                || mouseY > entry[4] + entry[2] + 60) {
+                entry[0] = 1;
+            } else {
+                entry[0] = 2;
+                if (push) {
+                    push = false;
+                    clicked = i;
+                    DAT_083a42c4 = 0;                    // MouseLButton
+                }
+            }
+        }
+        DAT_083a4124 = push ? 1 : 0;                     // MouseLButtonPush
+
+        if (state == 0x8d) {
+            int page = -1;
+            if (mouseX >= 249 && mouseY >= 202 && mouseX <= 264 && mouseY <= 222 && DAT_083a4124) {
+                page = (int)(signed char)(BYTE)DAT_083a7c08 - 1;
+                if (page <= 0) page = 0;
+            } else if (mouseX >= 377 && mouseY >= 202 && mouseX <= 392 && mouseY <= 222 && DAT_083a4124) {
+                page = (int)(signed char)(BYTE)DAT_083a7c08 + 1;
+                if (page >= (int)(BYTE)DAT_083a7c09) page = (BYTE)DAT_083a7c09;
+            }
+            if (page >= 0) {
+                // Una pulsación cambia una página, aunque haya varios renders por tick.
+                DAT_083a4124 = 0;
+                DAT_083a42c4 = 0;
+                DAT_083a7c08 = (DWORD)page;
+                const char* src = (const char*)
+                    ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + page));
+                g_iNumLineMessageBoxCustom = SeparateTextIntoLines(
+                    src, &DAT_083a44c4[0], 7, 38);
+            }
+        }
+
+        if (DAT_055ca038) {
+            DAT_055ca038 = '\0';                         // Enter cierra
+        } else if (clicked < 0) {
+            return;                                      // persiste
+        }
+        DAT_00559bec = 6;                                // MouseUpdateTimeMax
+        DAT_083a7c24 = DAT_083a7c28;                     // ErrorMessage = NextErrorMessage
+        DAT_083a7c28 = 0;
+        DAT_07e11d28 = 0;                                // MouseUpdateTime
+        PlayBuffer(0x19, 0, 0);
+        return;
+    }
+
+    // ── State 142 (0x8e) — NPC multi-answer dialog ──────────────────────
+    // Per IDA L3891-3936. NPC shows up to N answer lines at fixed Y positions.
+    // Click on answer N → look up DialogScript.LinkForAnswer[N] →
+    //   if < 0: pop NextErrorMessage as new ErrorMessage (close dialog)
+    //   if >= 0: invoke sub_51D840(link) to advance dialog tree.
+    //
+    // Layout (per 97k IDA / render companion):
+    //   v350 = 18 * (7 - g_iNumAnswer - g_iNumLineMessageBoxCustom) / 2 + 66;
+    //   v351 = v350 + 18 * g_iNumLineMessageBoxCustom;
+    //   answer_idx = (mouseY - v351) / 18 if mouseY in [v351..v351+18*g_iNumAnswer)
+    //   AND |556 - mouseX| <= 106 AND clicked.
+    case 0x8e:
+    {
+        if (!IsClickPushed()) goto tail;
+        int numAnswer = g_iNumAnswer;
+        int numLines  = g_iNumLineMessageBoxCustom;
+        int v350 = 18 * (7 - numAnswer - numLines) / 2 + 66;
+        int v351 = v350 + 18 * numLines;
+        if (mouseY < v351) goto tail;
+        int v352 = mouseY - v351;
+        int absDx = mouseX - Ui::QuestAnswerCenter(gWindow.GetRightShift());
+        if (absDx < 0) absDx = -absDx;
+        if (v352 < 18 * numAnswer && absDx <= 106) {
+            int v353 = v352 / 18;
+            if (v353 >= 0) {
+                if (numAnswer <= 1) numAnswer = 1;   // IDA L3910-3912
+                if (v353 < numAnswer) {
+                    DAT_083a4124 = 0;
+                    DAT_07e11d28 = 0;
+                    DAT_00559bec = 6;
+                    PlayBuffer(25, 0, 0);   // IDA L3917: un solo sonido, el 25
+
+                    // IDA L3918-3931:
+                    //   v355 = v353 + (g_iCurrentDialogScript << 8);
+                    //   if (g_DialogScript[0].m_iLinkForAnswer[v355] < 0) { cerrar }
+                    //   else { sub_51D840(m_iLinkForAnswer[v355]); }
+                    // `<< 8` son 256 ints = 0x400 bytes = el stride de entrada,
+                    // o sea `g_DialogScript[curScript].m_iLinkForAnswer[v353]`.
+                    int cur  = g_iCurrentDialogScript;
+                    int link = -1;
+                    if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && v353 < 10)
+                        link = g_DialogScript[cur].m_iLinkForAnswer[v353];
+
+                    if (link < 0) {
+                        int prev = (int)DAT_083a7c28;      // NextErrorMessage
+                        DAT_083a7c28 = 0;
+                        DAT_083a7c24 = (DWORD)prev;        // ErrorMessage
+                    } else {
+                        DAT_083a7c24 = DAT_083a7c28;
+                        DAT_083a7c28 = 0;
+                        ItemList_Select(link);
+                    }
+                }
+            }
+        }
+        goto tail;
+    }
+
+    // ── Chaos Machine: selector de tipo local (ErrorMessage 143 / 0x8f) ──
+    //
+    // IDA UI.cpp 0x00514310, tail exclusivo de ErrorMessage==143:
+    // dos botones de 150x35, en Y=180 y Y=265.  El click NO emite ningún
+    // paquete ni decide una receta; sólo guarda la categoría elegida en
+    // DAT_083a7c2c (0=general, 1=arma chaos) y cierra el modal.  La receta
+    // efectiva se sigue derivando de la Chaos Box en Inventory_DropDispatch.
+    case 0x8f:
+    {
+        if (!IsClickPushed()) return;
+
+        int choice = -1;
+        if (mouseX >= 245 && mouseX <= 395) {
+            if (mouseY >= 180 && mouseY <= 215) choice = 0;
+            else if (mouseY >= 265 && mouseY <= 300) choice = 1;
+        }
+        if (choice < 0) return; // el modal no se cierra al click exterior
+
+        DAT_083a4124 = 0;
+        DAT_083a7c2c = (DWORD)choice;
+        DAT_083a7c24 = DAT_083a7c28;
+        DAT_083a7c28 = 0;
+        DAT_07e11d28 = 0;
+        DAT_00559bec = 6;
+        PlayBuffer(0x19, 0, 0);
+        return;
+    }
+
+    // ── Options submenu (0x96) ────────────────────────────────────────────
+    // IDA 0x00514310 case 150: 4 botones (volver, ataque automático, susurros,
+    // cerrar).  DESVIACION (DLL OptionsMenu, hook 0x00515954): lo atiende el menú
+    // expandido; un click fuera de él se descarta, como hacía el DLL.
+    case 0x96:
+        if (!gOptionsMenu.UpdateMouse()) {
+            DAT_083a42c4 = 0;   // MouseLButton
+            DAT_083a4124 = 0;   // MouseLButtonPush
+            DAT_07e11d28 = 0;   // MouseUpdateTime
+            DAT_00559bec = 6;   // MouseUpdateTimeMax
+        }
+        return;
+
+    // ── Yes/No checkbox (sell/drop confirm) — ErrorMessage 151 ─────────────
+    // ErrorMessage 151 es un cartel Yes/No. Port IDA UI_InGameMenu L1798-1856:
+    // hit-test de los 2 botones (DAT_083a42f8, stride 5 ints [id][x][y][w][h];
+    // Yes=btn0 id1, No=btn1 id3, render en +213/+100) y seteo de
+    // DAT_00559f5e = 1 (Yes) / 2 (No), que el drop-dispatcher
+    // (Inventory_DropDispatch) consume para enviar/cancelar el sell.
+    case 0x97:
+    {
+        int clickResult[2] = { -1, -1 };
+        int* rect = (int*)&DAT_083a42f8;     // &id del botón 0
+        for (int bi = 0; bi < 2; ++bi) {
+            int id = bi * 2 + 1;             // 1 (Yes), 3 (No)
+            rect[0] = id;
+            int bx = rect[1], by = rect[2], bw = rect[3], bh = rect[4];
+            if (bx + 213 <= mouseX && by + 100 <= mouseY &&
+                mouseX <= bx + bw + 213 && mouseY <= by + bh + 100) {
+                if (IsClickPushed()) clickResult[bi] = bi;
+                rect[0] = id + 1;            // highlight (hover bitmap)
+            }
+            rect += 5;
+        }
+        DAT_083a4124 = 0;                    // consume MouseLButtonPush
+
+        if (clickResult[0] == 0 || clickResult[1] == 1) {
+            DAT_00559f5e = (clickResult[1] == 1) ? (char)2 : (char)1;  // No=2, Yes=1
+            DAT_083a7c24 = DAT_083a7c28;     // ErrorMessage = NextErrorMessage
+            DAT_083a7c28 = 0;
+            PlayBuffer(0x19, 0, 0);        // PlayBuffer(25)
+        }
+        return;
+    }
+
+    // ── Clear input buffers ───────────────────────────────────────────────
+    // Party invitation (ErrorMessage 120).  UI_InGameMenu @ 00514310
+    // sends C3(C1:06:41:01:key) for the primary button and the plain
+    // C1:06:41:00:key form when Escape/secondary cancel is used.
+    case 120:
+    {
+        const bool accept = mouseX >= 234 && mouseX < 304 &&
+                            mouseY >= 98  && mouseY < 119 && IsClickPushed();
+        const bool reject = escHit ||
+                            (mouseX >= 334 && mouseX < 404 &&
+                             mouseY >= 98  && mouseY < 119 && IsClickPushed());
+        if (!accept && !reject) return;
+
+        const WORD partyKey = (WORD)DAT_07eaa0e4;
+        BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
+                        (BYTE)(partyKey >> 8), (BYTE)partyKey };
+        // El 0x41 pide Encrypt=1 (HackPacketCheck.txt indice 65): aceptar y rechazar
+        // van por C3 (gNetwork.Send).  Un C1 crudo hace que el server responda
+        // "Packet encryption error" y cierre la conexion.
+        //
+        //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
+        //       PBMSG_HEAD header;   // C1 : 6 : 0x41
+        //       BYTE result;         // +3
+        //       BYTE index[2];       // +4, +5  (index[0] = byte ALTO)
+        //   };
+        gNetwork.Send(pkt, sizeof(pkt));
+
+        DAT_083a4124 = 0;
+        DAT_083a7c24 = DAT_083a7c28;
+        DAT_083a7c28 = 0;
+        PlayBuffer(0x19, 0, 0);
+        return;
+    }
+
+    // Guild War declaration (ErrorMessage 128).  IDA sends exactly
+    // C1:04:61:01 or C1:04:61:00 and then clears the local pending-war state.
+    // MuEmu receives this as PMSG_GUILD_WAR_REQUEST_RESULT_RECV; its packet
+    // policy marks opcode 0x61 as Encrypt=0, so this must stay on the C1 path.
+    case 128:
+    {
+        const bool accept = mouseX >= 234 && mouseX < 304 &&
+                            mouseY >= 98  && mouseY < 119 && IsClickPushed();
+        const bool reject = escHit ||
+                            (mouseX >= 334 && mouseX < 404 &&
+                             mouseY >= 98  && mouseY < 119 && IsClickPushed());
+        if (!accept && !reject) return;
+
+        const BYTE pkt[4] = { 0xC1, 0x04, 0x61, (BYTE)(accept ? 1 : 0) };
+        gNetwork.SendC1(pkt, sizeof(pkt));
+        GuildWar_ResetClientState();
+
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        goto tail;
+    }
+
+    // ── 152 — codigo personal del candado del baul ──────────────────────────
+    // IDA UI_InGameMenu L3582-3784: Si = [323,363) -> PMSG_WAREHOUSE_PASSWORD_RECV
+    // [C1][16][83][type=1][WORD password][PersonalCode:10] (MuEmu Warehouse.h:19)
+    // con password = atoi(dword_7EA9814); despues limpia InputText[0].
+    // No = [373,413) o Esc -> solo limpia el input (L2706).
+    case 0x98:
+    {
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = escHit ||
+                         (mouseX >= 373 && mouseX < 413 &&
+                          mouseY >= 98 && mouseY < 119 && IsClickPushed());
+        if (!yes && !no) return;
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        if (yes) {
+            char pinText[11];
+            memcpy(pinText, (const char*)&DAT_07ea9814, 10);   // dword_7EA9814
+            pinText[10] = '\0';
+            const WORD pin = (WORD)atoi(pinText);
+            BYTE pkt[16];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = 16;
+            pkt[2] = 0x83;
+            pkt[3] = 1;
+            memcpy(pkt + 4, &pin, 2);
+            NetText::ToServer(pkt + 6, 10, (const char*)DAT_07db8710);    // InputText[0]
+            gNetwork.SendC1(pkt, sizeof(pkt));
+        }
+        memset(DAT_07db8710, 0, 10);                           // InputText[0][0..9]
+        *(DWORD*)DAT_07d780a8 = 0;                             // InputLength[0]
+        goto tail;
+    }
+
+    // Confirmacion Si/No de ShowCheckBox (usar fruta / renombrar mascota).
+    // IDA 0x514310 L1798-1824 (hit-test) + L1862-2135 (accion).
+    //
+    // Lo abre `FUN_004d23b0` con ShowCheckBox(1, 376, 153) al hacer click
+    // derecho sobre el item 431 (Fruit) con Level >= 10.
+    case 0x99:
+    {
+        // Los descriptores de los botones viven en DAT_083a42f8: 2 entradas de
+        // 5 ints ([0]=bitmapId [1]=x [2]=y [3]=w [4]=h) que ShowCheckBox llena
+        // con Si=(21,90,70,21) id 1 y No=(120,90,70,21) id 3.  El hit-test los
+        // desplaza a (x+213, y+100).
+        int clickResult[2] = { -1, -1 };
+        int* rect = (int*)&DAT_083a42f8;
+        for (int bi = 0; bi < 2; ++bi) {
+            int id = bi * 2 + 1;             // 1 (Si), 3 (No)
+            rect[0] = id;
+            int bx = rect[1], by = rect[2], bw = rect[3], bh = rect[4];
+            if (bx + 213 <= mouseX && by + 100 <= mouseY &&
+                mouseX <= bx + bw + 213 && mouseY <= by + bh + 100) {
+                if (IsClickPushed()) clickResult[bi] = bi;
+                rect[0] = id + 1;            // bitmap "pressed"
+            }
+            rect += 5;
+        }
+        DAT_083a4124 = 0;                    // consume MouseLButtonPush
+
+        if (clickResult[0] == 0) {
+            // ── SI: usar el item ────────────────────────────────────────────
+            const BYTE slot = DAT_07ea5249_byte;
+            if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
+                // Baul o trade abiertos: no se puede usar.
+                UIChatLogWindow_AddText("", GlobalText[474], 2);
+            } else if ((int)EnableUse <= 0) {
+                EnableUse = 10;
+                // PMSG_ITEM_USE_RECV: [C1][05][26][SourceSlot][TargetSlot].
+                // El slot de inventario va +12 (los 12 wear slots van primero).
+                BYTE pkt[5];
+                pkt[0] = 0xC1;
+                pkt[1] = 5;
+                pkt[2] = 0x26;
+                pkt[3] = (BYTE)(slot + 12);
+                pkt[4] = 0;
+                gNetwork.Send(pkt, 5);
+
+                // Sonido por tipo de item, igual que el resto de los usos.
+                short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slot];
+                if (t == 448)                  PlayBuffer(33, 0, 0);
+                else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
+            }
+            goto tail;                       // IDA cae a LABEL_488: cierra + sonido 25
+        }
+        if (clickResult[1] == 1) {
+            goto tail;                       // NO: cierra + sonido 25
+        }
+        return;                              // sin click: el cartel PERSISTE
+    }
+
+    default:
+        // Los estados no manejados (incluidos los códigos de ErrorMessage del login
+        // — 0x16 wrong-pass, 0x65 sin-pass, etc., que comparten el global
+        // DAT_083a7c24) NO deben caer al `tail` cada frame: el `tail` hace
+        // `DAT_083a7c24 = DAT_083a7c28` (dismissea el cartel) + PlayBuffer(25).  El
+        // dismiss pasa SOLO con el click en el botón OK, que RenderErrorMessage
+        // dibuja en (284,98)-(354,119), o con Enter.  Sin eso el cartel persiste,
+        // fiel al original.
+        {
+            // OK vía click en el botón O tecla Enter (DAT_055ca038). El Enter se
+            // consume acá para que el login-trigger de Game_SceneUpdate no lo
+            // tome como reintento (fiel al IDA 0x514310 L1391).
+            bool enterHit = (DAT_055ca038 != '\0');
+            bool okClick = (mouseX >= 284 && mouseX < 354 &&
+                            mouseY >= 98 && mouseY < 119 && IsClickPushed());
+
+            // El rect fijo de arriba sirve para los carteles del login, pero los que
+            // arma `CreateOkMessageBox` (139) y compania traen su propio descriptor de
+            // boton en DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
+            // `RenderErrorMessage` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
+            // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21}: el OK
+            // cae en (284..354, 200..221).
+            //
+            // Se aceptan los dos rects: el original usa el descriptor, pero el rect fijo
+            // cubre los estados del login que hoy dependen de el.
+            if (!okClick && IsClickPushed()) {
+                const int* desc = (const int*)&DAT_083a42f8[0];
+                for (int b = 0; b < 2 && !okClick; ++b, desc += 5) {
+                    if (desc[0] <= 0) continue;          // entrada vacia
+                    const int bx = desc[1] + (int)_DAT_00552d40;
+                    const int by = desc[2] + (int)_DAT_0055290c;
+                    if (mouseX >= bx && mouseX < bx + desc[3] &&
+                        mouseY >= by && mouseY < by + desc[4])
+                        okClick = true;
+                }
+            }
+
+            if (okClick || enterHit) {
+                DAT_083a4124 = 0;     // consume click
+                DAT_055ca038 = '\0';  // consume Enter
+                // IDA L1786 `case 144`: igual que el default, mas sub_4E9250(6)
+                // (re-baraja el teclado del segundo password, modo 6).
+                if (state == 0x90)
+                    SecondPassword_Shuffle(6);
+                goto tail;            // dismiss: shift ErrorMessage + PlayBuffer(25)
+            }
+        }
+        return;
+    }
+
+    // ── Second outer switch: close-button hit test at X=0x175 ────────────
+    // This runs after the main switch for some states that also have a
+    // close button overlay. Requires click — not hover.
+    if (mouseX >= 0x175 && mouseX <= 0x185 && IsClickPushed())
+    {
+        DAT_083a4124 = 0;
+        switch (state)
+        {
+        // (Los cases 0x72/0x77/0x79 que habia aca no se alcanzaban: el primer
+        //  switch los resuelve y sale por `tail`.  Ademas mandaban paquetes que
+        //  no son los del binario: 0x36 para el 119 y 0x30 para el 121.)
+
+        case 0x7e:
+            memset(DAT_07db8710, 0, 0x100);
+            *(DWORD*)DAT_07d780a8 = 0;
+            DAT_07d552e4  = 0;
+            // IDA consume MouseLButtonPush al cancelar. Estos dos latches son
+            // el equivalente del pump reconstruido y evitan propagar el click
+            // del modal al movimiento en el mismo frame.
+            DAT_083a42c4 = 0;
+            DAT_083a413c = 0;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+tail:
+    // ── Apply queued state transition ────────────────────────────────────
+    // Pattern: DAT_083a7c24 = DAT_083a7c28; DAT_083a7c28 = 0
+    DAT_083a7c24  = DAT_083a7c28;
+    DAT_083a7c28  = 0;
+    DAT_07e11d28  = 0;
+    DAT_00559bec  = 6;
+    PlayBuffer(0x19, 0, 0);
+}

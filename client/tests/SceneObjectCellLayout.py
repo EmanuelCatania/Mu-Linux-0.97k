@@ -7,7 +7,7 @@ from SceneObjectPointer import build_and_run, read_source
 
 
 def harness():
-    header = read_source("src/Scene/SceneObjectCell.h").replace("#pragma once", "")
+    header = read_source("src/scenes/SceneObjectCell.h").replace("#pragma once", "")
     return header + r'''
 #include <array>
 #include <cstdio>

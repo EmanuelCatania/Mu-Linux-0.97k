@@ -10,8 +10,8 @@ def variants(source):
     return source.split('// login/char-select scene type overrides',1)[1].split('\n',1)[1].split('\n}\n// IDA: DeleteBug',1)[0]
 
 def harness(args):
-    source=read_source('src/Scene/Scene_EntityLifecycle.cpp',args.current_ref)
-    reference=variants(read_source('src/Scene/Scene_EntityLifecycle.cpp',args.reference_ref)) if args.reference_ref else read_source('tests/fixtures/object-scene-variants-x86.inc')
+    source=read_source('src/scenes/Scene_EntityLifecycle.cpp',args.current_ref)
+    reference=variants(read_source('src/scenes/Scene_EntityLifecycle.cpp',args.reference_ref)) if args.reference_ref else read_source('tests/fixtures/object-scene-variants-x86.inc')
     helper=function(source,'SceneObject_StoreFloatBits') if 'void SceneObject_StoreFloatBits(' in source else ''
     prefix=r'''
 #include <cstddef>

@@ -50,7 +50,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
  std::printf("Chat lines: 62400 casos, bytes/orden/canarios %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
- code=function(read_source('src/UI/ChatListBox.cpp',revision),'FUN_0040c2a0')
+ code=function(read_source('src/ui/ChatListBox.cpp',revision),'FUN_0040c2a0')
  arg='destination' if 'char* dst' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(destination))'
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+code+MAIN.replace('ARG',arg)
 def main():

@@ -50,11 +50,11 @@ set(MU_SOURCES
     src/platform/ContentLayers.cpp
     src/platform/GLFunctions.cpp
     src/Local/Text_Data.cpp
-    src/Scene/Scene_Dispatch.cpp
-    src/Scene/Scene_Intro.cpp
-    src/Scene/Scene_Login.cpp
-    src/Scene/Scene_Loading.cpp
-    src/Scene/Scene_CharSelect.cpp
+    src/scenes/Scene_Dispatch.cpp
+    src/scenes/Scene_Intro.cpp
+    src/scenes/Scene_Login.cpp
+    src/scenes/Scene_Loading.cpp
+    src/scenes/Scene_CharSelect.cpp
     src/render/GlyphAtlas.cpp
     src/render/BufferedDraw.cpp
     src/render/Skinning.cpp
@@ -91,7 +91,7 @@ set(MU_SOURCES
     src/render/Render_Frame.cpp
     src/net/Net_Process.cpp
     src/Config/Config_Load.cpp
-    src/UI/UIState.cpp
+    src/ui/UIState.cpp
     src/Local/ClientText.cpp
     src/Core/Window.cpp
     src/platform/Win32/Win32NativeBridge.cpp
@@ -121,7 +121,7 @@ set(MU_SOURCES
     src/net/Ping.cpp
     src/net/ServerCharacterStats.cpp
     src/Item/ChaosMixRates.cpp
-    src/UI/HealthBar.cpp
+    src/ui/HealthBar.cpp
     src/net/Recv/Recv_Account.cpp
     src/net/Recv/Recv_Character.cpp
     src/net/Recv/Recv_Chat.cpp
@@ -185,47 +185,47 @@ set(MU_SOURCES
     src/game/entity/Character_Motion.cpp
     src/game/entity/Entity_Spawn.cpp
     src/render/Scene_CharPreview.cpp
-    src/Scene/Scene_Resources.cpp
-    src/Scene/Scene_MapTick.cpp
-    src/Scene/Scene_ServerSelect_Input.cpp
-    src/UI/Chat.cpp
-    src/UI/Chat_Bubbles.cpp
-    src/UI/Chat_CommandParser.cpp
-    src/UI/ChatListBox.cpp
-    src/UI/CharMenu_Build.cpp
+    src/scenes/Scene_Resources.cpp
+    src/scenes/Scene_MapTick.cpp
+    src/scenes/Scene_ServerSelect_Input.cpp
+    src/ui/Chat.cpp
+    src/ui/Chat_Bubbles.cpp
+    src/ui/Chat_CommandParser.cpp
+    src/ui/ChatListBox.cpp
+    src/ui/CharMenu_Build.cpp
     src/render/HUD_Pass1.cpp
     src/render/HUD_Pass2.cpp
     src/render/HUD_Pass3.cpp
     src/render/HUD_Pass4.cpp
     src/render/HUD_Pass5.cpp
     src/render/HUD_Pass6.cpp
-    src/UI/UI_StatsPanel.cpp
+    src/ui/UI_StatsPanel.cpp
     src/Util/Misc.cpp
     src/Core/Legacy_Runtime.cpp
     src/game/entity/EntityName.cpp
     src/game/entity/Entity_Lookup.cpp
     src/net/Net_Disconnect.cpp
     src/render/Render_MatrixStack.cpp
-    src/Scene/Scene_ObjectTick.cpp
+    src/scenes/Scene_ObjectTick.cpp
     src/render/Particle_Legacy.cpp
     src/render/Camera_Login.cpp
-    src/UI/Chat_Log.cpp
-    src/UI/EmojiPicker.cpp
-    src/UI/EmoteMenu.cpp
+    src/ui/Chat_Log.cpp
+    src/ui/EmojiPicker.cpp
+    src/ui/EmoteMenu.cpp
     src/Terrain/Terrain_RayCollision.cpp
     src/platform/Win32/MiniDump.cpp
     src/game/combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
-    src/UI/Quest_Legacy.cpp
+    src/ui/Quest_Legacy.cpp
     src/Core/System_Legacy.cpp
     src/GameGuard/GameGuard_Packet.cpp
     src/render/SMD_Legacy.cpp
-    src/UI/UI_LegacyWidgets.cpp
+    src/ui/UI_LegacyWidgets.cpp
     src/net/Net_LegacyRuntime.cpp
-    src/Scene/Scene_CharSelect_Nav.cpp
+    src/scenes/Scene_CharSelect_Nav.cpp
     src/Item/Item_LegacyHelpers.cpp
-    src/UI/UI_DialogInterface.cpp
+    src/ui/UI_DialogInterface.cpp
     src/Item/Item_Durability.cpp
     src/Item/Item_ServerValue.cpp
     src/render/BMD_LegacyDraw.cpp
@@ -236,29 +236,29 @@ set(MU_SOURCES
     src/Item/Item_LegacyLinker.cpp
     src/game/math/Math_LegacyTransforms.cpp
     src/render/Render_LegacyLinker.cpp
-    src/Scene/Scene_LegacyCleanup.cpp
-    src/Scene/Scene_ObjectLegacy.cpp
+    src/scenes/Scene_LegacyCleanup.cpp
+    src/scenes/Scene_ObjectLegacy.cpp
     src/Terrain/Terrain_LegacyRender.cpp
-    src/UI/UI_LegacyText.cpp
+    src/ui/UI_LegacyText.cpp
     src/render/BMD_FilterData.cpp
     src/Item/Quest_UIState.cpp
     src/game/physics/Cloth_Simulation.cpp
     src/render/BMD_LegacyEffects.cpp
-    src/Scene/Scene_LegacyHelpers.cpp
+    src/scenes/Scene_LegacyHelpers.cpp
     src/game/path/Path_Legacy.cpp
     src/Core/Runtime_Externs.cpp
-    src/UI/UI_LegacyExterns.cpp
+    src/ui/UI_LegacyExterns.cpp
     src/game/entity/Entity_ActionLegacy.cpp
     src/render/Render_LegacyRotatedRect.cpp
-    src/UI/UI_GuildLegacy.cpp
+    src/ui/UI_GuildLegacy.cpp
     src/Core/String_ResourceLegacy.cpp
     src/game/entity/Entity_LegacyEffects.cpp
     src/game/combat/Combat_LegacyAnimation.cpp
     src/render/Render_LegacyTransforms.cpp
     src/render/Render_LegacyBillboards.cpp
-    src/UI/UI_LegacyWidgetSystem.cpp
+    src/ui/UI_LegacyWidgetSystem.cpp
     src/render/Render_LegacyTrails.cpp
-    src/UI/UI_LegacyGameHelpers.cpp
+    src/ui/UI_LegacyGameHelpers.cpp
     src/net/Net_LegacyAuth.cpp
     src/Terrain/Terrain_LegacyLoad.cpp
     src/game/path/Path_LegacyReset.cpp
@@ -283,9 +283,9 @@ set(MU_SOURCES
     src/platform/input/Input_Timing.cpp
     src/Util/Process_Exit.cpp
     src/net/Net_Bux.cpp
-    src/Scene/Scene_EntityLifecycle.cpp
-    src/Scene/Scene_OpenWorld.cpp
-    src/Scene/Scene_AssetLoad.cpp
+    src/scenes/Scene_EntityLifecycle.cpp
+    src/scenes/Scene_OpenWorld.cpp
+    src/scenes/Scene_AssetLoad.cpp
     src/render/Camera_Unproject.cpp
     src/net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
@@ -371,33 +371,33 @@ set(MU_SOURCES
     src/render/Trail_Render.cpp
     src/render/Weather.cpp
     src/render/Weather_Particles.cpp
-    src/Scene/Scene_Login_ServerSelect.cpp
+    src/scenes/Scene_Login_ServerSelect.cpp
     src/audio/Sound.cpp
     src/Terrain/Terrain.cpp
     src/game/trade/Trade.cpp
-    src/UI/UI_InGameMenu.cpp
-    src/UI/UI_PanelInput.cpp
-    src/UI/UI_IME.cpp
-    src/UI/UI_TextBitmap.cpp
-    src/UI/UI_Tooltip.cpp
-    src/UI/Chat_Gestures.cpp
-    src/UI/GoldenArcher.cpp
-    src/UI/EventTimer.cpp
-    src/UI/BuffBar.cpp
-    src/UI/ChatHistory.cpp
+    src/ui/UI_InGameMenu.cpp
+    src/ui/UI_PanelInput.cpp
+    src/ui/UI_IME.cpp
+    src/ui/UI_TextBitmap.cpp
+    src/ui/UI_Tooltip.cpp
+    src/ui/Chat_Gestures.cpp
+    src/ui/GoldenArcher.cpp
+    src/ui/EventTimer.cpp
+    src/ui/BuffBar.cpp
+    src/ui/ChatHistory.cpp
     src/Core/DataPrefetch.cpp
-    src/UI/MiniMap.cpp
+    src/ui/MiniMap.cpp
     src/render/Camera3D.cpp
-    src/UI/OptionsMenu.cpp
-    src/UI/MoveList.cpp
-    src/UI/Chat_InputTick.cpp
-    src/UI/Chat_Send.cpp
-    src/UI/UI_SkillHotkeys.cpp
-    src/UI/UI_GuildMark.cpp
-    src/UI/RenderItemInfo.cpp
-    src/Scene/Scene_Objects.cpp
-    src/Scene/Scene_ObjectInteraction.cpp
-    src/Scene/Scene_ObjectUpdate.cpp
+    src/ui/OptionsMenu.cpp
+    src/ui/MoveList.cpp
+    src/ui/Chat_InputTick.cpp
+    src/ui/Chat_Send.cpp
+    src/ui/UI_SkillHotkeys.cpp
+    src/ui/UI_GuildMark.cpp
+    src/ui/RenderItemInfo.cpp
+    src/scenes/Scene_Objects.cpp
+    src/scenes/Scene_ObjectInteraction.cpp
+    src/scenes/Scene_ObjectUpdate.cpp
     src/render/BMD_SkinUpdate.cpp
     src/Debug/Benchmark.cpp
 )
@@ -417,8 +417,8 @@ set(MU_HEADERS
     src/platform/LocalTime.h
     src/platform/Text.h
     src/platform/GuardedOperation.h
-    src/Scene/ObjectRegistry.h
-    src/Scene/SceneObjectCell.h
+    src/scenes/ObjectRegistry.h
+    src/scenes/SceneObjectCell.h
     src/platform/PlatformHeaders.h
     src/platform/DebugHeaders.h
     src/platform/Posix/WinTypes.h
@@ -431,8 +431,8 @@ set(MU_HEADERS
     src/Config/Config.h
     src/Config/ServerConfig.h
     src/Config/UserSettings.h
-    src/UI/UIState.h
-    src/UI/ChatTypes.h
+    src/ui/UIState.h
+    src/ui/ChatTypes.h
     src/game/entity/EntityView.h
     src/game/entity/EntityName.h
     src/render/WorldEffects.h
@@ -464,7 +464,7 @@ set(MU_HEADERS
     src/Item/ContentCatalog.h
     src/Item/ItemDefines.h
     src/Item/Item_ServerValue.h
-    src/UI/GoldenArcher.h
+    src/ui/GoldenArcher.h
     src/Core/Window.h
     src/platform/CompilerCompat.h
     src/platform/NativeBridge.h
@@ -506,15 +506,15 @@ set(MU_HEADERS
     src/platform/GL/glad.h
     src/platform/Win32/Win32GLContext.h
     src/Core/Font.h
-    src/UI/PanelAnchor.h
-    src/UI/EventTimer.h
-    src/UI/BuffBar.h
-    src/UI/ChatHistory.h
+    src/ui/PanelAnchor.h
+    src/ui/EventTimer.h
+    src/ui/BuffBar.h
+    src/ui/ChatHistory.h
     src/Core/DataPrefetch.h
-    src/UI/MiniMap.h
+    src/ui/MiniMap.h
     src/render/Camera3D.h
-    src/UI/OptionsMenu.h
-    src/UI/MoveList.h
+    src/ui/OptionsMenu.h
+    src/ui/MoveList.h
     src/audio/SoundManager.h
     src/game/core/MapManager.h
     src/game/core/HeroVitals.h
@@ -523,7 +523,7 @@ set(MU_HEADERS
     src/net/Ping.h
     src/net/ServerCharacterStats.h
     src/Item/ChaosMixRates.h
-    src/UI/HealthBar.h
+    src/ui/HealthBar.h
     src/net/Recv/NetRecv.h
     src/game/combat/Combat.h
     src/game/combat/Skills.h
@@ -565,17 +565,17 @@ set(MU_HEADERS
     src/Text/TextShaper.h
     src/Text/TextAtlas.h
     src/render/Texture/Texture.h
-    src/Scene/Scene.h
-    src/Scene/Scene_CharSelect.h
-    src/Scene/Scene_Dispatch.h
-    src/Scene/Scene_Intro.h
-    src/Scene/Scene_Loading.h
-    src/Scene/Scene_Login.h
-    src/Scene/Scene_Login_ServerSelect.h
+    src/scenes/Scene.h
+    src/scenes/Scene_CharSelect.h
+    src/scenes/Scene_Dispatch.h
+    src/scenes/Scene_Intro.h
+    src/scenes/Scene_Loading.h
+    src/scenes/Scene_Login.h
+    src/scenes/Scene_Login_ServerSelect.h
     src/audio/Sound.h
     src/Terrain/Terrain.h
     src/game/trade/Trade.h
-    src/UI/UI.h
+    src/ui/UI.h
     src/game/core/GameEnums.h
     src/Debug/MiniDump.h
     src/Debug/Benchmark.h

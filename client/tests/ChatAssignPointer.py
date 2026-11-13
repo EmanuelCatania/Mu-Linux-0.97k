@@ -81,12 +81,12 @@ int main(){
 }
 '''
 def harness(revision=None):
-    header=read_source('src/UI/ChatTypes.h',revision)
+    header=read_source('src/ui/ChatTypes.h',revision)
     chat=header[header.index('#pragma pack(push, 1)'):header.index('#pragma pack(pop)')+len('#pragma pack(pop)')]
     accessors='\n'.join(re.findall(r'^inline (?:const )?CHAT\* AsChat[^\n]+',header,re.M))
-    assign=function(read_source('src/UI/Chat_Bubbles.cpp',revision),'FUN_00481a40')
+    assign=function(read_source('src/ui/Chat_Bubbles.cpp',revision),'FUN_00481a40')
     argument='reinterpret_cast<CHAT*>(entry+16)' if 'CHAT* param_1' in assign else 'static_cast<int>(reinterpret_cast<std::uintptr_t>(entry+16))'
-    cut=function(read_source('src/UI/UI_LegacyExterns.cpp',revision),'CutText')
+    cut=function(read_source('src/ui/UI_LegacyExterns.cpp',revision),'CutText')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('CHAT_TYPE',chat).replace('CHAT_ACCESSORS',accessors)+cut+assign+MAIN.replace('ARG',argument)
 
 def main():

@@ -7,7 +7,7 @@
 #include "render/WorldEffects.h"
 #include "render/EquipmentVisuals.h"
 #include "game/entity/ObjectPose.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include "game/core/MapManager.h"
 #include <unordered_map>
 #include <vector>

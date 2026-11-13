@@ -45,8 +45,8 @@ int main(){unsigned cases=0;
 }
 '''
 def harness():
-    render=block(read_source('src/UI/UI_StatsPanel.cpp'),'if (DAT_083a7c24 == 0x8d)')
-    source=read_source('src/UI/UI_InGameMenu.cpp');start=source.index('    case 0x8b:');end=source.index('    // ── State 142',start)
+    render=block(read_source('src/ui/UI_StatsPanel.cpp'),'if (DAT_083a7c24 == 0x8d)')
+    source=read_source('src/ui/UI_InGameMenu.cpp');start=source.index('    case 0x8b:');end=source.index('    // ── State 142',start)
     tick='void Tick(){int state=DAT_083a7c24,mouseX=DAT_083a427c,mouseY=DAT_083a4278;switch(state){'+source[start:end]+'}}'
     return PRE+'void Draw(){unsigned uVar10,uVar15,uVar16;'+render+'}'+tick+MAIN
 def main():

@@ -109,7 +109,7 @@ def harness(revision=None):
             "malloc(0xa00)", "AllocateSkills(0xa00)")
     raw = re.search(r"struct _SkillAttrEntry\s*\{.*?\};", header, re.S).group()
     raw += "\n_SkillAttrEntry SkillAttribute{};\n"
-    scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
+    scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     data = read_source("src/Item/Skill_Data.cpp", revision)
     warrior = read_source("src/game/combat/Skills_WarriorLegacy.cpp", revision)
     sample = ROOT / "bin/Client/Content/table/skill.bmd"

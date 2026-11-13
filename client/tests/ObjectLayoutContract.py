@@ -49,8 +49,8 @@ OBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}
 void Require(bool ok){if(!ok){std::fputs("Contrato OBJECT o escritura incorrecta\n",stderr);std::exit(1);}}
 '''+assertions
     parameters='int param_1,float* param_2,float* param_3,float param_4,BYTE bVar4'
-    current=core(read_source('src/Scene/Scene_EntityLifecycle.cpp',args.current_ref))
-    reference=core(read_source('src/Scene/Scene_EntityLifecycle.cpp',args.reference_ref)) if args.reference_ref else read_source('tests/fixtures/object-create-core-x86.inc')
+    current=core(read_source('src/scenes/Scene_EntityLifecycle.cpp',args.current_ref))
+    reference=core(read_source('src/scenes/Scene_EntityLifecycle.cpp',args.reference_ref)) if args.reference_ref else read_source('tests/fixtures/object-create-core-x86.inc')
     functions='\nvoid Current(UINT* puVar3,'+parameters+'){'+current+'}\nvoid Reference(UINT* puVar3,'+parameters+'){'+reference+'}\n'
     main=r'''
 int main(){

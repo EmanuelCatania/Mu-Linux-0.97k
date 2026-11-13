@@ -109,7 +109,7 @@ def harness(revision=None):
     header = read_source("src/globals.h", revision)
     prefix += re.search(r"extern [^;\n]*\bCharactersClient\s*;", header).group()
     prefix += re.search(r"^[^/\n]*\bCharactersClient\s*=\s*[^;]+;", globals_source, re.M).group()
-    prefix += function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CreateAngle")
+    prefix += function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CreateAngle")
     prefix += function(read_source("src/game/path/Path_Legacy.cpp", revision), "FarAngle")
     source = read_source("src/game/entity/Entity_HeadMotion.cpp", revision)
     look, move = function(source, "LookAtTarget"), function(source, "MoveHead").replace("rand()", "NextRandom()")

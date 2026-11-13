@@ -6,7 +6,7 @@ import tempfile
 from SceneObjectPointer import build_and_run,function,read_source
 
 def harness(revision=None):
-    source=read_source('src/UI/OptionsMenu.cpp',revision)
+    source=read_source('src/ui/OptionsMenu.cpp',revision)
     toggle=''
     if 'const char* ToggleValue(' in source:
         start=source.index('const char* ToggleValue(');end=source.index('\n}',start)+2

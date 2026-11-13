@@ -100,7 +100,7 @@ def harness(revision=None):
     globals_source=read_source('src/globals.cpp',revision)
     definitions='\n'.join(re.search(r'^(?:int|float)\s+'+name+r'\s*=\s*[^;]+;',globals_source,re.M).group(0) for name in ('DAT_0055a7b0','DAT_0055a7b4','DAT_0055a7b8','_DAT_0055a7bc'))
     alias=re.search(r'^#define DAT_0055a7bc\s+[^\n]+',read_source('src/globals.h',revision),re.M).group(0)
-    clear=function(read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision),'ClearActionObject').replace('ClearActionObject','ActualClear')
+    clear=function(read_source('src/scenes/Scene_CharSelect_Nav.cpp',revision),'ClearActionObject').replace('ClearActionObject','ActualClear')
     special=function(read_source('src/render/Render_LegacyLinker.cpp',revision),'MoveObject_Special')
     arg='reinterpret_cast<OBJECT*>(p)' if 'OBJECT* object' in special else 'static_cast<int>(reinterpret_cast<std::uintptr_t>(p))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('GLOBALS',definitions).replace('ALIAS',alias).replace('CLEAR',clear)+special+MAIN.replace('ARG',arg)

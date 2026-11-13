@@ -2,7 +2,7 @@
 #include "platform/ITimer.h"
 #include "Item/ChaosMixRates.h"
 #include "net/Network.h"
-#include "UI/UIState.h"
+#include "ui/UIState.h"
 
 CChaosMixRates gChaosMixRates;
 

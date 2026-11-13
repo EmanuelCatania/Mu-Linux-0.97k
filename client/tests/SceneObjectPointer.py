@@ -202,12 +202,12 @@ def harness(revision=None):
                   'DAT_06f42a58 = models;' + initializers[0] + validate
                   + 'DAT_05828d58 = 0;' + initializers[1] + validate + '}\n')
     preamble = PREAMBLE.replace("DWORD DAT_05828d58;", declaration + definition)
-    scene = read_source("src/Scene/Scene_ObjectUpdate.cpp", revision)
+    scene = read_source("src/scenes/Scene_ObjectUpdate.cpp", revision)
     tick = function(scene, "FUN_004fdc00")
     alpha = function(read_source("src/render/Particle.cpp", revision), "Alpha")
-    physics = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),
+    physics = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision),
                        "Effect_PhysicsTick")
-    ambient = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),
+    ambient = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision),
                        "FUN_0046c7f0")
     angles = function(read_source("src/game/math/Math_LegacyTransforms.cpp", revision), "AngleMatrix")
     rotate = function(read_source("src/game/math/Math_3D.cpp", revision), "Vector_Rotate")

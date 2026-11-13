@@ -65,7 +65,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 def harness(revision=None):
  prefix=reset_harness(revision).split('int ItemObjectAttributeImpl(',1)[0].replace('0x10000','0x100000')
- source=read_source('src/render/Entity_DrawByType.cpp',revision);prefix+=read_source('src/Scene/ObjectRegistry.h',revision).replace('#pragma once','')
+ source=read_source('src/render/Entity_DrawByType.cpp',revision);prefix+=read_source('src/scenes/ObjectRegistry.h',revision).replace('#pragma once','')
  for name in ('MoltSilhouette','MoltEdgeSample','MoltSample'):prefix+=re.search(r'struct '+name+r'\s*\{.*?\};',source,re.S).group()
  prefix+=re.search(r'^std::unordered_map<const void \*, MoltSample>[^;]+;',source,re.M).group()+re.search(r'^int moltScene[^;]+;',source,re.M).group()
  prefix+=re.search(r'std::uint64_t MoltEdgeKey\([^)]*\)\s*\{.*?\n\}',source,re.S).group()

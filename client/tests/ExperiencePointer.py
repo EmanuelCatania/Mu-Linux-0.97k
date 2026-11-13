@@ -35,7 +35,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    code=function(read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision),'CalculateNextExperince')
+    code=function(read_source('src/scenes/Scene_CharSelect_Nav.cpp',revision),'CalculateNextExperince')
     arg='machine' if 'void* machine' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(machine))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+MAIN.replace('FUNCTION',code).replace('ARG',arg)
 
