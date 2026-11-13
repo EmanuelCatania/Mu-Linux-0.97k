@@ -414,7 +414,7 @@ valores por defecto se ve como el 0.97k. Se cambian desde el mismo submenú, **O
 | `Shadows` | `0` sombra plana del original, `1` suaves, `2` fuertes | Sombras proyectadas con mapa de sombras. |
 | `DepthFog` | `0` / `1` | Niebla por profundidad con la cámara 3D. |
 | `DrawDistance` | `0` a `3` (×1, ×1,5, ×2, ×3) | Alcance de dibujado con la cámara 3D. Lejos sólo se dibuja el terreno. |
-| `HDTextures` | `0` clásicos, `1` HD, `2` UHD | Usa las versiones `-hd` / `-uhd` que estén al lado de los archivos (ver [Pack HD](#pack-hd)). No vienen en el repo; se aplica al reiniciar. |
+| `HDTextures` | `0` / `1` | Usa las versiones `-hd` que estén al lado de los archivos (ver [Pack HD](#pack-hd)). No vienen en el repo; se aplica al reiniciar. |
 
 La **cámara 3D** (tecla **F10**, **F11** la vuelve a la normal) es la del DLL de
 inyección. La distancia de dibujado y la niebla por profundidad sólo se aplican
@@ -425,19 +425,16 @@ reemplaza la niebla por profundidad.
 ### Pack HD
 
 Las versiones de alta definición van **al lado del archivo clásico**, en la
-misma carpeta y con el mismo formato, con el sufijo `-hd` o `-uhd` antes de la
-extensión:
+misma carpeta y con el mismo formato, con el sufijo `-hd` antes de la extensión:
 
-- **Texturas.** `Data/Object1/casa.OZJ` → `casa-hd.OZJ` / `casa-uhd.OZJ`, y lo
-  mismo con `.OZT`. Son la misma imagen ampliada un múltiplo entero (×2, ×4…),
+- **Texturas.** `Data/Object1/casa.OZJ` → `casa-hd.OZJ`, y lo mismo con `.OZT`. Son la misma imagen ampliada un múltiplo entero (×2, ×4…),
   así los UV del modelo no cambian; si no mide un múltiplo entero se ignora. Se
   carga la clásica y la HD la reemplaza unos frames después.
 - **Modelos.** `Data/Player/ArmorMale04.bmd` → `ArmorMale04-hd.bmd`. Un modelo
   rehecho puede pedir texturas propias: van al lado con su nombre normal y a su
   vez pueden tener su `-hd`.
 
-`HDTextures` elige el nivel: `0` sólo clásicos, `1` usa los `-hd`, `2` usa los
-`-uhd` y, donde no haya, los `-hd`. Con `0` no se busca ningún archivo extra.
+Se activan con `HDTextures = 1`; con `0` no se busca ningún archivo extra.
 Es sólo visual: el server no se entera.
 
 ---

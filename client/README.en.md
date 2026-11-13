@@ -411,7 +411,7 @@ Advanced → Graphics**, and saved under `[Window]`.
 | `Shadows` | `0` the original's flat shadow, `1` soft, `2` strong | Cast shadows with a shadow map. |
 | `DepthFog` | `0` / `1` | Depth fog with the 3D camera. |
 | `DrawDistance` | `0` to `3` (×1, ×1.5, ×2, ×3) | Draw range with the 3D camera. Far away only the terrain is drawn. |
-| `HDTextures` | `0` classic, `1` HD, `2` UHD | Uses the `-hd` / `-uhd` versions found next to the files (see [HD pack](#hd-pack)). They are not in the repo; applies on restart. |
+| `HDTextures` | `0` / `1` | Uses the `-hd` versions found next to the files (see [HD pack](#hd-pack)). They are not in the repo; applies on restart. |
 
 The **3D camera** (**F10**, **F11** puts it back to normal) is the injection
 DLL's. Draw distance and depth fog only apply with it: the normal camera sees
@@ -421,10 +421,9 @@ the same as the original. Each map's fog is defined by the server
 ### HD pack
 
 High-definition versions go **next to the classic file**, in the same folder
-and the same format, with a `-hd` or `-uhd` suffix before the extension:
+and the same format, with a `-hd` suffix before the extension:
 
-- **Textures.** `Data/Object1/house.OZJ` → `house-hd.OZJ` / `house-uhd.OZJ`, and
-  the same with `.OZT`. They are the same image upscaled by an integer factor
+- **Textures.** `Data/Object1/house.OZJ` → `house-hd.OZJ`, and the same with `.OZT`. They are the same image upscaled by an integer factor
   (×2, ×4…), so the model's UVs do not change; one that is not an integer
   multiple is ignored. The classic one loads first and the HD one replaces it a
   few frames later.
@@ -432,9 +431,7 @@ and the same format, with a `-hd` or `-uhd` suffix before the extension:
   model can ask for its own textures: they go next to it with a normal name and
   can have their own `-hd` in turn.
 
-`HDTextures` picks the level: `0` classic only, `1` uses the `-hd` files, `2`
-uses the `-uhd` files and, where there is none, the `-hd` ones. With `0` no
-extra file is looked up. It is visual only: the server is not involved.
+They are used with `HDTextures = 1`; with `0` no extra file is looked up. It is visual only: the server is not involved.
 
 ---
 

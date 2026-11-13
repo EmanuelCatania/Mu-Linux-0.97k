@@ -459,12 +459,11 @@ void Texture_Draw2D(int id,
 // ============================================================
 // (Implementation not reproduced — same pipeline as Texture_Load above)
 
-// ── Versiones HD y UHD ───────────────────────────────────────────────────
+// ── Versiones HD ─────────────────────────────────────────────────────────
 // DESVIACION: la versión de alta definición de un archivo va al lado del
-// clásico, con el mismo formato y el sufijo -hd o -uhd antes de la extensión:
-// "Data\Object1\casa.OZJ" -> "casa-hd.OZJ" / "casa-uhd.OZJ". La opción de
-// texturas elige el nivel (0 = clásicas, 1 = HD, 2 = UHD); con UHD, lo que no
-// tenga -uhd usa su -hd. Una textura HD es la misma imagen ampliada un factor
+// clásico, con el mismo formato y el sufijo -hd antes de la extensión:
+// "Data\Object1\casa.OZJ" -> "casa-hd.OZJ". Se usa con la opción de alta
+// definición (HDTextures = 1). Una textura HD es la misma imagen ampliada un factor
 // entero k; se sube sobre un lienzo k veces el de potencia de 2 del original,
 // así los UV no cambian y las medidas del slot y la copia en CPU (Buffer)
 // quedan las originales.
@@ -486,28 +485,19 @@ bool VariantPath(const char* path, const char* suffix, char* out, size_t size)
 bool IsVariant(const char* path)
 {
     const char* dot = path ? strrchr(path, '.') : nullptr;
-    if (!dot) return false;
-    for (const char* suffix : { "-hd", "-uhd" }) {
-        const size_t n = strlen(suffix);
-        if (size_t(dot - path) >= n && !Platform::TextCompareIgnoreCaseN(dot - n, suffix, n)) return true;
-    }
-    return false;
+    return dot && dot - path >= 3 && !Platform::TextCompareIgnoreCaseN(dot - 3, "-hd", 3);
 }
 } // namespace
 
-// Archivos enteros (modelos .bmd, CustomAnim.txt): con el nivel elegido, si
-// existe la versión -uhd / -hd se abre esa en lugar del clásico. Un modelo
+// Archivos enteros (modelos .bmd, CustomAnim.txt): con la opción de alta
+// definición, si existe la versión -hd se abre esa en lugar del clásico. Un modelo
 // rehecho puede pedir texturas propias, que van con nombre normal al lado y a
 // su vez pueden tener su -hd. Las texturas no pasan por acá: se cargan
 // clásicas y la versión HD las reemplaza en la GPU (UploadHD).
 const char* Texture_HDAssetPath(const char* path, char* out, std::size_t size)
 {
-    const int level = Gfx::HDTextures();
-    if (level <= 0 || !path || !out || size == 0 || IsVariant(path)) return path;
-    bool found = false;
-    if (level >= 2 && VariantPath(path, "-uhd", out, size)) found = Platform::GetFileSystem().Exists(out);
-    if (!found && VariantPath(path, "-hd", out, size)) found = Platform::GetFileSystem().Exists(out);
-    if (!found) return path;
+    if (!Gfx::HDTextures() || !path || !out || size == 0 || IsVariant(path)) return path;
+    if (!VariantPath(path, "-hd", out, size) || !Platform::GetFileSystem().Exists(out)) return path;
     static unsigned s_used = 0;
     if (++s_used <= 20 || s_used % 100 == 0) {
         char line[340];
@@ -525,20 +515,13 @@ struct HDJob {
     int width = 0, height = 0, paddedWidth = 0, paddedHeight = 0, channels = 0, maxSize = 0;
     int k = 0, canvasWidth = 0, canvasHeight = 0;
     std::vector<unsigned char> canvas;
-    char path[300]{};      // la versión que se leyó (para el log)
-    char uhdPath[300]{};   // casa-uhd.OZJ, sólo con el nivel UHD
-    char hdPath[300]{};    // casa-hd.OZJ
+    char path[300]{};      // casa-hd.OZJ
 };
-// Lee la versión -uhd si se pidió y existe, si no la -hd. Corre en el hilo de
-// carga: en disco mecánico una lectura en frío tarda 10-50 ms y frenaba el juego.
+// Lee la versión -hd. Corre en el hilo de carga: en disco mecánico una lectura
+// en frío tarda 10-50 ms y frenaba el juego.
 bool ReadHD(HDJob& job)
 {
-    FILE* file = nullptr;
-    for (const char* candidate : { job.uhdPath, job.hdPath }) {
-        if (!candidate[0] || !(file = Platform::GetFileSystem().Open(candidate, "rb"))) continue;
-        memcpy(job.path, candidate, sizeof(job.path));
-        break;
-    }
+    FILE* file = Platform::GetFileSystem().Open(job.path, "rb");
     if (!file) return false;
     long size = -1;
     if (fseek(file, 0, SEEK_END) == 0) size = ftell(file);
@@ -668,8 +651,7 @@ void UploadHD(int id, unsigned handle, const char* fullPath, int width, int heig
     // El archivo lo abre y lo lee el hilo de carga (ReadHD), que lo cierra
     // enseguida: los trabajos en cola no tienen archivos abiertos (el CRT tiene
     // un tope de ~512 y al agotarse fallaba la apertura de Item.bmd).
-    if (IsVariant(fullPath) || !VariantPath(fullPath, "-hd", job.hdPath, sizeof(job.hdPath))) return;
-    if (Gfx::HDTextures() >= 2) VariantPath(fullPath, "-uhd", job.uhdPath, sizeof(job.uhdPath));
+    if (IsVariant(fullPath) || !VariantPath(fullPath, "-hd", job.path, sizeof(job.path))) return;
     job.id = id; job.handle = handle; job.generation = s_hdGeneration[size_t(id)];
     job.width = width; job.height = height; job.paddedWidth = paddedWidth; job.paddedHeight = paddedHeight;
     job.channels = channels; job.maxSize = tex_max_size();
@@ -742,7 +724,7 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     }
 
     // --- Open file ---
-    // De full_path sale también la versión -hd / -uhd (UploadHD).
+    // De full_path sale también la versión -hd (UploadHD).
     FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
     // DIAG: registrar cada intento. Cap general 60 + cap adicional para Logo/Ship
     // (los archivos que nos interesan para diagnosticar el login scene caen

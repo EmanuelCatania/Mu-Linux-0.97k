@@ -607,11 +607,8 @@ void COptionsMenu::RenderGraphics()
     const int texture = gUserSettings.GetTextureQuality();
     Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::TextureQuality), textureNames[texture]);
     RenderSelector((float)RowY(row++), text, texture > 0, texture < 2);
-    // DESVIACION: versiones -hd / -uhd al lado de los archivos clásicos.
-    static const char* const hdNames[3] = { "Off", "HD", "UHD" };
-    const int hd = gUserSettings.GetHDTextures();
-    Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::HDTextures), hdNames[hd]);
-    RenderSelector((float)RowY(row++), text, hd > 0, hd < 2);
+    // DESVIACION: versiones -hd al lado de los archivos clásicos.
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::HDTextures), gUserSettings.GetHDTextures());
     // DESVIACION: nitidez de la imagen 3D.
     static const char* const sharpnessNames[4] = { "Off", "1", "2", "3" };
     const int sharpness = gUserSettings.GetSharpness();
@@ -697,10 +694,8 @@ bool COptionsMenu::UpdateGraphics()
         if (textureStep) gUserSettings.SetTextureQuality(texture + (textureStep > 0 ? 1 : -1));
         return true;
     }
-    const int hd = gUserSettings.GetHDTextures();
-    const int hdStep = UpdateSelector(RowY(row++), hd > 0, hd < 2);
-    if (hdStep != INT_MIN) {
-        if (hdStep) gUserSettings.SetHDTextures(hd + (hdStep > 0 ? 1 : -1));
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetHDTextures(!gUserSettings.GetHDTextures());
         return true;
     }
     const int sharpness = gUserSettings.GetSharpness();

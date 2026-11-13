@@ -409,7 +409,7 @@ Tela → Avançado → Gráficos**, e salvas em `[Window]`.
 | `Shadows` | `0` sombra plana do original, `1` suaves, `2` fortes | Sombras projetadas com mapa de sombras. |
 | `DepthFog` | `0` / `1` | Névoa por profundidade com a câmera 3D. |
 | `DrawDistance` | `0` a `3` (×1, ×1,5, ×2, ×3) | Alcance de desenho com a câmera 3D. Ao longe só o terreno é desenhado. |
-| `HDTextures` | `0` clássicos, `1` HD, `2` UHD | Usa as versões `-hd` / `-uhd` que estiverem ao lado dos arquivos (veja [Pacote HD](#pacote-hd)). Não vêm no repo; aplicado ao reiniciar. |
+| `HDTextures` | `0` / `1` | Usa as versões `-hd` que estiverem ao lado dos arquivos (veja [Pacote HD](#pacote-hd)). Não vêm no repo; aplicado ao reiniciar. |
 
 A **câmera 3D** (tecla **F10**; **F11** a volta ao normal) é a do DLL de
 injeção. A distância de desenho e a névoa por profundidade só valem com ela: a
@@ -420,18 +420,16 @@ profundidade a substitui.
 ### Pacote HD
 
 As versões de alta definição ficam **ao lado do arquivo clássico**, na mesma
-pasta e no mesmo formato, com o sufixo `-hd` ou `-uhd` antes da extensão:
+pasta e no mesmo formato, com o sufixo `-hd` antes da extensão:
 
-- **Texturas.** `Data/Object1/casa.OZJ` → `casa-hd.OZJ` / `casa-uhd.OZJ`, e o
-  mesmo com `.OZT`. São a mesma imagem ampliada por um múltiplo inteiro (×2,
+- **Texturas.** `Data/Object1/casa.OZJ` → `casa-hd.OZJ`, e o mesmo com `.OZT`. São a mesma imagem ampliada por um múltiplo inteiro (×2,
   ×4…), assim os UV do modelo não mudam; se não medir um múltiplo inteiro, é
   ignorada. A clássica carrega primeiro e a HD a substitui alguns frames depois.
 - **Modelos.** `Data/Player/ArmorMale04.bmd` → `ArmorMale04-hd.bmd`. Um modelo
   refeito pode pedir texturas próprias: ficam ao lado com o nome normal e
   podem ter o seu `-hd`.
 
-`HDTextures` escolhe o nível: `0` só clássicos, `1` usa os `-hd`, `2` usa os
-`-uhd` e, onde não houver, os `-hd`. Com `0` nenhum arquivo extra é procurado.
+São usadas com `HDTextures = 1`; com `0` nenhum arquivo extra é procurado.
 É só visual: o servidor não fica sabendo.
 
 ---
