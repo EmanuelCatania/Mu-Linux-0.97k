@@ -35,7 +35,10 @@
     <ClInclude Include="..\Common\MiniDump.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ServerDisplayer.h">
+    <ClInclude Include="..\Common\ServerDisplayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\ServerDisplayerHooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\Log.h">
@@ -56,10 +59,16 @@
     <ClInclude Include="Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Common\UtilCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Common\SocketManagerUdp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IpManager.h">
+    <ClInclude Include="..\Common\IpManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IpManagerServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ClientManager.h">
@@ -91,7 +100,10 @@
     <ClCompile Include="..\Common\MiniDump.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ServerDisplayer.cpp">
+    <ClCompile Include="..\Common\ServerDisplayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerDisplayerServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Common\Log.cpp">
@@ -109,10 +121,16 @@
     <ClCompile Include="Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\UtilProtocolLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\UtilCommon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SocketManagerUdp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IpManager.cpp">
+    <ClCompile Include="..\Common\IpManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ClientManager.cpp">
@@ -127,7 +145,7 @@
     <ClCompile Include="ConnectServerProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console.cpp">
+    <ClCompile Include="..\Common\Console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

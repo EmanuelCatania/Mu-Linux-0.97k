@@ -290,6 +290,12 @@ bool InitInstance(HINSTANCE hInstance)
 
 	ShowWindow(hWnd, SW_SHOW);
 
+	// La consola arranca oculta; los canales de protocolo, apagados (se
+	// prenden desde el menu). Common/Console arranca con todos prendidos.
+	gConsole.EnableOutput[CON_PROTO_TCP_RECV] = false;
+
+	gConsole.EnableOutput[CON_PROTO_TCP_SEND] = false;
+
 	ShowWindow(GetConsoleWindow(), (gConsole.HideConsole) ? SW_HIDE : SW_SHOW);
 
 	UpdateWindow(hWnd);

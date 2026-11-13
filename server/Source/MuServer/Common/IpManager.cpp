@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "IpManager.h"
+#include "IpManagerServer.h"
 
 CIpManager gIpManager;
 
@@ -19,11 +20,11 @@ bool CIpManager::CheckIpAddress(char* IpAddress)
 
 	if (it == this->m_IpAddressInfo.end())
 	{
-		return ((MaxIpConnection == 0) ? false : true);
+		return ((IpManagerMaxConnection() == 0) ? false : true);
 	}
 	else
 	{
-		return ((it->second.IpAddressCount >= MaxIpConnection) ? false : true);
+		return ((it->second.IpAddressCount >= IpManagerMaxConnection()) ? false : true);
 	}
 }
 

@@ -1,11 +1,8 @@
 #pragma once
 
 #include "ServerDisplayer.h"
+#include "UtilCommon.h"
 #include "ServerManager.h"
-
-void ErrorMessageBox(const char* message, ...);
-
-void LogAdd(eLogColor color, const char* text, ...);
 
 void ConsoleProtocolLog(int type, BYTE* lpMsg, int size);
 

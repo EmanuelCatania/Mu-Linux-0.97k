@@ -1,10 +1,7 @@
 #include "stdafx.h"
 #include "ServerDisplayer.h"
-#include "AccountManager.h"
-#include "JoinServerProtocol.h"
 #include "Log.h"
-#include "ServerManager.h"
-#include "SocketManager.h"
+#include "ServerDisplayerHooks.h"
 
 CServerDisplayer gServerDisplayer;
 
@@ -47,15 +44,7 @@ void CServerDisplayer::Init(HWND hWnd)
 {
 	this->m_hwnd = hWnd;
 
-	gLog.AddLog(GetPrivateProfileInt("Log", "LOG", 1, ".\\JoinServer.ini") != 0, "LOG");
-
-	gLog.AddLog(GetPrivateProfileInt("Log", "LOG_ACCOUNT", 1, ".\\JoinServer.ini") != 0, "LOG_ACCOUNT");
-
-#ifdef MYSQL
-
-	gLog.AddLog(GetPrivateProfileInt("Log", "LOG_QUERY", 1, ".\\JoinServer.ini") != 0, "LOG_QUERY");
-
-#endif
+	ServerDisplayerAddLogs();
 }
 
 void CServerDisplayer::Run()
@@ -74,7 +63,7 @@ void CServerDisplayer::SetWindowName()
 {
 	char buff[256];
 
-	wsprintf(buff, "MuEmu JoinServer Ex097 (QueueSize : %d) (AccountCount : %d/%d)", gSocketManager.GetQueueSize(), gAccountManager.GetAccountCount(), MAX_ACCOUNT);
+	ServerDisplayerWindowName(buff);
 
 	SetWindowText(this->m_hwnd, buff);
 }
@@ -95,24 +84,7 @@ void CServerDisplayer::PaintAllInfo()
 
 	HFONT OldFont = (HFONT)SelectObject(hdc, this->m_font);
 
-	bool state = false;
-
-	for (int n = 0; n < MAX_SERVER; n++)
-	{
-		if (gServerManager[n].CheckState() == false)
-		{
-			continue;
-		}
-
-		if ((GetTickCount() - gServerManager[n].m_PacketTime) <= 60000)
-		{
-			state = true;
-
-			break;
-		}
-	}
-
-	if (state == false)
+	if (ServerDisplayerIsActive() == false)
 	{
 		SetTextColor(hdc, RGB(200, 200, 200));
 
@@ -263,9 +235,7 @@ CServerDisplayer::~CServerDisplayer()
 
 void CServerDisplayer::Init(HWND)
 {
-	gLog.AddLog((GetPrivateProfileInt("Log", "LOG", 1, "./JoinServer.ini") != 0), "LOG");
-	gLog.AddLog((GetPrivateProfileInt("Log", "LOG_ACCOUNT", 1, "./JoinServer.ini") != 0), "LOG_ACCOUNT");
-	gLog.AddLog((GetPrivateProfileInt("Log", "LOG_QUERY", 1, "./JoinServer.ini") != 0), "LOG_QUERY");
+	ServerDisplayerAddLogs();
 }
 
 void CServerDisplayer::Run()
