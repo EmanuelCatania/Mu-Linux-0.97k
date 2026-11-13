@@ -40,3 +40,8 @@
 "Object11" = "map/10-Icarus/objects"
 "World12" = "map/11-BloodCastle/terrain"
 "Object12" = "map/11-BloodCastle/objects"
+
+# Interfaz: login y seleccion de personaje, HUD y ventanas; sonidos.
+"Logo" = "ui/login"
+"Interface" = "ui/interface"
+"Sound" = "audio/sound"
