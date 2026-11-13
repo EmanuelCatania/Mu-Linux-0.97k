@@ -7,7 +7,7 @@
 // pickup / drop / sell / right-click-use / hotkey-assign / pet-renaming.
 //
 // La llaman los paneles de UI/UI_PanelInput.cpp (4-7 sitios) en cada tick:
-//   - Main inventory: `FUN_004d23b0(InventoryStartX+15, InventoryStartY+200,
+//   - Main inventory: `InventoryGrid_Tick(InventoryStartX+15, InventoryStartY+200,
 //     OffsetInventoryItems, 8, 8, 0)`
 //   - Trade slots (own/peer): grids 8x4
 //   - Warehouse: 8x15 con flag=1 (sell mode) o flag=0 (open mode)
@@ -43,7 +43,7 @@
 //   - Right-click default: pickup with WarehouseOpened auto-drop logic
 //   - Ctrl+Q/W/E hotkey assignment: dword_559C60[slot] = item type
 //
-// Cadena: FUN_004d23b0 → pPickedItem set → Inventory_DropDispatch (drop
+// Cadena: InventoryGrid_Tick → pPickedItem set → Inventory_DropDispatch (drop
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
@@ -582,10 +582,11 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004d23b0 — port FIEL desde IDA `004D23B0_sub_4D23B0.c` (14783 bytes).
+// InventoryGrid_Tick — port FIEL desde IDA `004D23B0_sub_4D23B0.c` (14783 bytes).
 // Inventory grid render + click dispatcher.  See file header for signature.
 // ─────────────────────────────────────────────────────────────────────────────
-void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
+// IDA: sub_4D23B0 (0x004D23B0); Ghidra: FUN_004d23b0
+void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                           int grid_w, int grid_h, char mode_flag)
 {
 
@@ -1115,7 +1116,7 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
                                                   short* inv_base, int grid_w,
                                                   int grid_h, char mode_flag)
 {
-    FUN_004d23b0(origin_x, origin_y, inv_base, grid_w, grid_h, mode_flag);
+    InventoryGrid_Tick(origin_x, origin_y, inv_base, grid_w, grid_h, mode_flag);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1305,7 +1306,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // maneja las casillas de equipo (cubre las 4 grillas) y devuelve 0 apenas la
         // celda calculada da negativa, que es toda la zona arriba del grid
         // (mouseY < InventoryStartY+200). Esa región la maneja sub_4CDC70
-        // (FUN_004cdc70, desde sub_4E6550), así que acá se sale SIN consumir el click
+        // (Equipment_SlotHitTest, desde sub_4E6550), así que acá se sale SIN consumir el click
         // para que le llegue.
         if (!dropMain && !dropTrade && !dropWH && !dropMix &&
             InventoryOpened != 0 &&

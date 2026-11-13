@@ -23,8 +23,8 @@ void operator_delete(void* address) {
 '''
 
 MAIN = r'''
-void Destroy(void* quest,BYTE flags) { FUN_00403f10(ARG,0,flags); }
-void Reset(void* quest) { FUN_00403ef0(RESETARG); }
+void Destroy(void* quest,BYTE flags) { Quest_ScalarDtor(ARG,0,flags); }
+void Reset(void* quest) { Quest_SetVTable(RESETARG); }
 std::uint64_t RunDestructor(BYTE* memory,BYTE* tableMemory) {
     constexpr std::size_t size=0x40000;
     BYTE* quest=memory+16; BYTE* other=memory+0x20000; table=tableMemory; activeQuest=quest;
@@ -67,7 +67,7 @@ def harness(revision=None):
     prefix = init_harness(revision).split("std::uint64_t RunInit(", 1)[0]
     prefix = prefix.replace(function(prefix, "operator_delete"), "void operator_delete(void*);")
     source = read_source("src/net/Crypto.cpp", revision)
-    reset, destructor = function(source, "FUN_00403ef0"), function(source, "FUN_00403f10")
+    reset, destructor = function(source, "Quest_SetVTable"), function(source, "Quest_ScalarDtor")
     arg = "quest" if "void* ecx" in destructor else "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"
     resetarg = "quest" if "void* param_1" in reset else "static_cast<int*>(quest)"
     return prefix + SERVICES + reset + destructor + MAIN.replace("RESETARG", resetarg).replace("ARG", arg)

@@ -4,7 +4,7 @@
 #include "game/core/PathContext.h"
 #include "platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
-void __cdecl    FUN_00408680(void *_this, char flags);
+void __cdecl    ClothNode_ScalarDtor(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 

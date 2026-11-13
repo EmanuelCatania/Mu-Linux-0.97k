@@ -127,7 +127,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     {
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (intptr_t)param_3);
-        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
+        if (AsObject(param_1)->Cloth) ClothWidget_Render((void *)AsObject(param_1)->Cloth);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (intptr_t)param_3, '\0');
         break;
@@ -226,7 +226,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // Los sprites se reproducen desde la muestra SIM de esta entidad.
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
-        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
+        if (AsObject(param_1)->Cloth) ClothWidget_Render((void *)AsObject(param_1)->Cloth);
     }
     else if (bVar7 == 0x49) {
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
@@ -264,7 +264,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, (intptr_t)param_3, 0);
 
 
-        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
+        if (AsObject(param_1)->Cloth) ClothWidget_Render((void *)AsObject(param_1)->Cloth);
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
@@ -508,7 +508,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // que era incorrecta: la capita de atras se movia pegada al
                 // cuerpo en vez de simularse.
                 if (iVar9 == 706 && piVar16->Cloth && *(float *)((int *)((char *)puVar13 + EntityOffset(0x5a * 4))) > 0.01f)
-                    FUN_00408ff0(piVar16->Cloth);
+                    ClothWidget_Render(piVar16->Cloth);
 
             }
             ++piVar16;   // advance to next slot (+0x18 bytes)
@@ -575,7 +575,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             }
 
             if (bCape && AsObject(param_1)->Cloth)
-                FUN_00408ff0((void *)AsObject(param_1)->Cloth);
+                ClothWidget_Render((void *)AsObject(param_1)->Cloth);
         }
     }
     RenderAttackBuffSparkles((BYTE*)param_1);

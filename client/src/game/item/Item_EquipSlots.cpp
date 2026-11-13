@@ -31,7 +31,7 @@ void Terrain_BeginBufferedPass();
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/render/HUD_Pass3.cpp.
-// Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
+// Lo usan los llamadores de InventoryGrid_Tick de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BOOL ChaosBoxRequestClose(void);
 extern "C" BYTE Inventory[];
@@ -123,7 +123,7 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     return !invalid;
 }
 
-// FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
+// Equipment_HitTestAll @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
 // skipped per project policy.
@@ -150,7 +150,8 @@ bool Equip_CanPlace(const ITEM* item, int a5)
 //     dos manos, flechas, stats, nivel, restricciones de mapa), pinta la casilla
 //     (Color 2 = valido, 3 = invalido) y con click manda el 0x24.
 extern "C" void __cdecl SyncPickedItemVisualState(void);
-extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx)
+// IDA: sub_4CDC70 (0x004CDC70); Ghidra: FUN_004cdc70
+extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float h, int slotIdx)
 {
     if ((int)EnableUse > 0 || DAT_07eaa165 /* EquipmentItem */) return;
     if (!CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return;
@@ -298,27 +299,28 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     SendRequestEquipmentItem(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 
-void __cdecl FUN_004d1fc0(void) {
+// IDA: sub_4D1FC0 (0x004D1FC0); Ghidra: FUN_004d1fc0
+void __cdecl Equipment_HitTestAll(void) {
     if (!CharacterAttribute) return;
-    FUN_004cdc70(15.0f,  46.0f,  40.0f, 40.0f, 8);
-    FUN_004cdc70(115.0f, 46.0f,  60.0f, 40.0f, 7);
+    Equipment_SlotHitTest(15.0f,  46.0f,  40.0f, 40.0f, 8);
+    Equipment_SlotHitTest(115.0f, 46.0f,  60.0f, 40.0f, 7);
 
     BYTE classByte = *(BYTE*)((BYTE*)CharacterAttribute + 11);
     if ((classByte & 7) != 3) {  // not SM (Soul Master)
-        FUN_004cdc70(75.0f,  46.0f,  40.0f, 40.0f, 2);
+        Equipment_SlotHitTest(75.0f,  46.0f,  40.0f, 40.0f, 2);
     }
-    FUN_004cdc70(75.0f,  89.0f,  40.0f, 60.0f, 3);
-    FUN_004cdc70(75.0f,  152.0f, 40.0f, 40.0f, 4);
-    FUN_004cdc70(15.0f,  89.0f,  40.0f, 60.0f, 0);
-    FUN_004cdc70(134.0f, 89.0f,  40.0f, 60.0f, 1);
-    FUN_004cdc70(15.0f,  152.0f, 40.0f, 40.0f, 5);
-    FUN_004cdc70(134.0f, 152.0f, 40.0f, 40.0f, 6);
-    FUN_004cdc70(55.0f,  89.0f,  20.0f, 20.0f, 9);
-    FUN_004cdc70(55.0f,  152.0f, 20.0f, 20.0f, 10);
-    FUN_004cdc70(115.0f, 152.0f, 20.0f, 20.0f, 11);
+    Equipment_SlotHitTest(75.0f,  89.0f,  40.0f, 60.0f, 3);
+    Equipment_SlotHitTest(75.0f,  152.0f, 40.0f, 40.0f, 4);
+    Equipment_SlotHitTest(15.0f,  89.0f,  40.0f, 60.0f, 0);
+    Equipment_SlotHitTest(134.0f, 89.0f,  40.0f, 60.0f, 1);
+    Equipment_SlotHitTest(15.0f,  152.0f, 40.0f, 40.0f, 5);
+    Equipment_SlotHitTest(134.0f, 152.0f, 40.0f, 40.0f, 6);
+    Equipment_SlotHitTest(55.0f,  89.0f,  20.0f, 20.0f, 9);
+    Equipment_SlotHitTest(55.0f,  152.0f, 20.0f, 20.0f, 10);
+    Equipment_SlotHitTest(115.0f, 152.0f, 20.0f, 20.0f, 11);
 }
 
-// FUN_004d23b0 @ 0x004D23B0 — Inventory grid render + click dispatcher.
+// InventoryGrid_Tick @ 0x004D23B0 — Inventory grid render + click dispatcher.
 // Vive en `Item/Item_ClickHandler.cpp`. Signatura real (per IDA):
-//   void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
+//   void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
 //                             int grid_w, int grid_h, char mode_flag);

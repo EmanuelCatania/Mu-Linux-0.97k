@@ -77,7 +77,7 @@ struct MoltSilhouette {
     unsigned char *edges;      // +28
 };
 
-extern void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);   // sub_40A8F0
+extern void __cdecl MoltSilhouette_DrawEdgeRandom(void *obj, float *p1, float *p2);   // sub_40A8F0
 
 // IDA sub_40A110 (0x40A110): agrega la arista `edge` del triangulo `triIdx` si
 // es de borde (sin vecino, o el vecino no mira a la luz).

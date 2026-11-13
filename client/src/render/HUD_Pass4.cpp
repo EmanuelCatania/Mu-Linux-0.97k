@@ -401,7 +401,7 @@ void Render_QuickButtons_(void)
     // Render del panel de quest.  IDA sub_4F5820 L38:
     // `sub_403F30((_BYTE *)g_csQuest);` entre RenderGoldenArcherWindow y
     // RenderServerDivision.
-    FUN_00403f30((void*)(uintptr_t)g_csQuest);
+    Quest_RenderPanel((void*)(uintptr_t)g_csQuest);
 
     // El drop se despacha sólo desde UpdateWindowsMouse en SIM (IDA).
     RenderServerDivision();

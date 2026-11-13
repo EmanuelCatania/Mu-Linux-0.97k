@@ -34,7 +34,7 @@ void __fastcall Dispatch(DWORD* object,int edx,const char* id,const char* text,i
 }
 '''
 MAIN=r'''
-void Assign(char* text,int flag){FUN_00481a40(ARG,text,flag);}
+void Assign(char* text,int flag){Chat_SetEntryText(ARG,text,flag);}
 std::uint64_t Run(BYTE* e,BYTE* s,BYTE* h){
  entry=e;input=s;history=h;std::uint64_t hash=14695981039346656037ull;unsigned queries=0;
  const int flags[]={0,1,2,-1};
@@ -84,7 +84,7 @@ def harness(revision=None):
     header=read_source('src/ui/ChatTypes.h',revision)
     chat=header[header.index('#pragma pack(push, 1)'):header.index('#pragma pack(pop)')+len('#pragma pack(pop)')]
     accessors='\n'.join(re.findall(r'^inline (?:const )?CHAT\* AsChat[^\n]+',header,re.M))
-    assign=function(read_source('src/ui/Chat_Bubbles.cpp',revision),'FUN_00481a40')
+    assign=function(read_source('src/ui/Chat_Bubbles.cpp',revision),'Chat_SetEntryText')
     argument='reinterpret_cast<CHAT*>(entry+16)' if 'CHAT* param_1' in assign else 'static_cast<int>(reinterpret_cast<std::uintptr_t>(entry+16))'
     cut=function(read_source('src/ui/UI_LegacyExterns.cpp',revision),'CutText')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('CHAT_TYPE',chat).replace('CHAT_ACCESSORS',accessors)+cut+assign+MAIN.replace('ARG',argument)

@@ -47,18 +47,20 @@ HRESULT __cdecl FillBuffer(int Buffer, int MaxChannel, BOOL Enable) { return 0; 
 // FUN_00403310 @ 0x00403310 (7 bytes)
 void __fastcall FUN_00403310(int *param_1) { *param_1 = (intptr_t)&PTR_LAB_00552460; }
 
-// FUN_00407970 @ 0x00407970 (7 bytes)
-// FUN_00407970 (IDA-activated)
-void __cdecl FUN_00407970(void *_this)
+// ClothNode_SetVTable @ 0x00407970 (7 bytes)
+// ClothNode_SetVTable (IDA-activated)
+// IDA: sub_407970 (0x00407970); Ghidra: FUN_00407970
+void __cdecl ClothNode_SetVTable(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
   ClothPoint(_this).VTable = g_ClothNodeVTable;
 }
 
 
-// FUN_00407de0 @ 0x00407DE0 (7 bytes)
-// FUN_00407de0 (IDA-activated)
-void __cdecl FUN_00407de0(DWORD *_this)
+// ClothBody_SetBaseVTable @ 0x00407DE0 (7 bytes)
+// ClothBody_SetBaseVTable (IDA-activated)
+// IDA: sub_407DE0 (0x00407DE0); Ghidra: FUN_00407de0
+void __cdecl ClothBody_SetBaseVTable(DWORD *_this)
 {
   ClothBody(_this).VTable = reinterpret_cast<void**>(&DAT_00552508);
 }
@@ -83,13 +85,14 @@ void __fastcall FUN_0040f680(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005
 
 
 
-// FUN_00407ec0 @ 0x00407EC0 (11 bytes)
-// FUN_00407ec0 (IDA-activated)
-void __cdecl FUN_00407ec0(DWORD *_this)
+// ClothAnchor_Destruct @ 0x00407EC0 (11 bytes)
+// ClothAnchor_Destruct (IDA-activated)
+// IDA: sub_407EC0 (0x00407EC0); Ghidra: FUN_00407ec0
+void __cdecl ClothAnchor_Destruct(DWORD *_this)
 {
   extern void *g_ClothAnchorVTable[3];
   ClothBody(_this).VTable = g_ClothAnchorVTable;
-  FUN_00407de0(_this);
+  ClothBody_SetBaseVTable(_this);
 }
 
 
@@ -152,8 +155,9 @@ void __fastcall FUN_00406de0_impl(int *param_1) {
 }
 
 
-// FUN_0053d580 @ 0x0053D580 (18 bytes) — GameGuard query wrapper
-int __stdcall FUN_0053d580(void) {
+// GameGuard_QueryHealth @ 0x0053D580 (18 bytes) — GameGuard query wrapper
+// IDA: sub_53D580 (0x0053D580); Ghidra: FUN_0053d580
+int __stdcall GameGuard_QueryHealth(void) {
     if (lpParameter == NULL) return 0;
     return GameGuard_HealthCheck(lpParameter);
 }
@@ -472,8 +476,9 @@ void __fastcall CUIRenderText_SetFont(intptr_t ecx, int /*edx*/, int param_1) {
 
 
 
-// FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
-void __fastcall FUN_00406d20(intptr_t param_1) {
+// HashWidget_InitFields @ 0x00406D20 (22 bytes) — initialize hash table fields
+// IDA: sub_406D20 (0x00406D20); Ghidra: FUN_00406d20
+void __fastcall HashWidget_InitFields(intptr_t param_1) {
     *(int *)(param_1 + 0x1c) = 0x83;
     *(int *)(param_1 + 0xc) = 0;
     *(int *)(param_1 + 4) = 0;
@@ -523,21 +528,24 @@ void __cdecl ReleaseMainData(void) {
 // waveIO__CloseWaveFile @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
 
 
-// FUN_00406cb0 @ 0x00406CB0 — HashWidget ~dtor
-void __fastcall FUN_00406cb0(intptr_t ecx, int /*edx*/, BYTE param_1) {
-    FUN_00406cd0((void *)ecx);
+// HashWidget_ScalarDtor @ 0x00406CB0 — HashWidget ~dtor
+// IDA: sub_406CB0 (0x00406CB0); Ghidra: FUN_00406cb0
+void __fastcall HashWidget_ScalarDtor(intptr_t ecx, int /*edx*/, BYTE param_1) {
+    HashWidget_Deinit((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// FUN_00407dc0 @ 0x00407DC0 — destructor base con liberación opcional.
-void __fastcall FUN_00407dc0(void* ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407de0(static_cast<DWORD*>(ecx));
+// ClothBody_ScalarDtor @ 0x00407DC0 — destructor base con liberación opcional.
+// IDA: sub_407DC0 (0x00407DC0); Ghidra: FUN_00407dc0
+void __fastcall ClothBody_ScalarDtor(void* ecx, int /*edx*/, BYTE param_1) {
+    ClothBody_SetBaseVTable(static_cast<DWORD*>(ecx));
     if (param_1 & 1) operator_delete(ecx);
 }
 
-// FUN_00407ea0 @ 0x00407EA0 — destructor usado por el slot 0 del ancla de tela.
-void __fastcall FUN_00407ea0(void* ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407ec0(static_cast<DWORD*>(ecx));
+// ClothAnchor_ScalarDtor @ 0x00407EA0 — destructor usado por el slot 0 del ancla de tela.
+// IDA: sub_407EA0 (0x00407EA0); Ghidra: FUN_00407ea0
+void __fastcall ClothAnchor_ScalarDtor(void* ecx, int /*edx*/, BYTE param_1) {
+    ClothAnchor_Destruct(static_cast<DWORD*>(ecx));
     if (param_1 & 1) operator_delete(ecx);
 }
 
@@ -585,7 +593,7 @@ void __fastcall FUN_0040f840(intptr_t ecx, int /*edx*/, BYTE param_1) {
 
 // ── 30-byte: other ──────────────────────────────────────────────────────────
 
-// FUN_00405240 @ 0x00405240 (30 bytes) — ErrorReport init (vtable + open log)
+// Xor_ConvertStream @ 0x00405240 (30 bytes) — ErrorReport init (vtable + open log)
 // NOTE: FUN_004052b0 opens the log file — stub it as nop for now
 void __fastcall FUN_00405240_init(void *This) {
     *(int *)This = (intptr_t)&PTR_FUN_005524c4;
@@ -685,8 +693,9 @@ void __cdecl FreeDirectSound(void) {
 
 // ── 43-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00406ec0 @ 0x00406EC0 (43 bytes) — hash table destructor (zero fields + set vtable + conditional delete)
-void __fastcall FUN_00406ec0(intptr_t ecx, int /*edx*/, BYTE param_1) {
+// HashWidget_BaseScalarDtor @ 0x00406EC0 (43 bytes) — hash table destructor (zero fields + set vtable + conditional delete)
+// IDA: sub_406EC0 (0x00406EC0); Ghidra: FUN_00406ec0
+void __fastcall HashWidget_BaseScalarDtor(intptr_t ecx, int /*edx*/, BYTE param_1) {
     *(int *)(ecx + 0xc) = 0;
     *(int *)(ecx + 4) = 0;
     *(int *)(ecx + 8) = 0;
@@ -711,8 +720,9 @@ void __fastcall FUN_0040f540(void *This) {
 
 // ── 48-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00406db0 @ 0x00406DB0 (48 bytes) — thiscall: set fields + random hash prime
-void __fastcall FUN_00406db0(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
+// HashWidget_Seed @ 0x00406DB0 (48 bytes) — thiscall: set fields + random hash prime
+// IDA: sub_406DB0 (0x00406DB0); Ghidra: FUN_00406db0
+void __fastcall HashWidget_Seed(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x10) = param_1;
     *(int *)(ecx + 0x14) = param_2;
     int r = rand();
@@ -794,8 +804,9 @@ char *__cdecl getMonsterName(int type) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH: ~80 functions implemented (1-52 bytes range)
 
-// ── FUN_00405240 (IDA-activated, absent in Ghidra) ──
-int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
+// ── Xor_ConvertStream (IDA-activated, absent in Ghidra) ──
+// IDA: sub_405240 (0x00405240); Ghidra: FUN_00405240
+int __cdecl Xor_ConvertStream(void *lpBuffer, int iSize, int iKey)
 {
   int iConvertSize; // esi
   int v4; // edi

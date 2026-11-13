@@ -663,7 +663,8 @@ LABEL_12:
 
 // Entrada legacy para la vtable; la ruta activa de Molt usa su muestra SIM.
 void MoltSilhouette_DrawEdge(void *, float *, float *, float);
-void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
+// IDA: sub_40A8F0 (0x0040A8F0); Ghidra: FUN_0040a8f0
+void __cdecl MoltSilhouette_DrawEdgeRandom(void *obj, float *p1, float *p2) {
     MoltSilhouette_DrawEdge(obj, p1, p2, (float)((double)(rand() % 100) * 0.0099999998));
 }
 

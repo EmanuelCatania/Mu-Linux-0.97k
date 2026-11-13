@@ -14,7 +14,7 @@ BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn) {
     return CSimpleModulus_LoadKey(self, fn, 0x1112, 1, 0, 1, 1);
 }
 
-// FUN_004070d0 @ 0x004070D0 (~379 lines) — GameGuard packet handler (anti-tamper dispatch)
+// GameGuard_Callback @ 0x004070D0 (~379 lines) — GameGuard packet handler (anti-tamper dispatch)
 // Handles GameGuard message IDs 0x3E9..0x3F8. Key behaviors:
 //   0x3E9/0x3EA: format param_2 into error string, show MessageBox
 //   0x3F3: show error MessageBox, call CloseHack
@@ -24,7 +24,8 @@ BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn) {
 //           build C1 packet, lookup serial in MAIN_HASH_CLASS, send via socket
 //   default: return 1
 // Contains anti-tamper patterns: repeated key init forward+reverse, dead code.
-int __stdcall FUN_004070d0(int param_1, int param_2) {
+// IDA: sub_4070D0 (0x004070D0); Ghidra: FUN_004070d0
+int __stdcall GameGuard_Callback(int param_1, int param_2) {
     (void)param_1; (void)param_2;
     // switch(param_1):
     //   case 0x3E9/0x3EA: Platform::TextFormat(buf, param_2_template, param_2); MessageBoxA; CloseHack

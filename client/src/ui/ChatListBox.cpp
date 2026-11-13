@@ -28,7 +28,7 @@
 //                                                  GL globals; safe in our
 //                                                  build (deps stubbed)
 //    8    +20  0x403A30   nullsub                 full
-//    9    +24  0x411A20   key-handler            re-uses FUN_00411a20
+//    9    +24  0x411A20   key-handler            re-uses ListBox_HandleInput
 //                                                  (al final de este archivo)
 //   10    +28  0x4118D0   clear list             full
 //   11    +2C  0x410D70   nullsub                 full
@@ -98,8 +98,8 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 // extern "C").
 int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
 void __fastcall ChatListBox_DequeueFront(DWORD* self); // IDA: ChatListBox_DequeueFront (0x0040C580)
-int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
-int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
+int  __cdecl    ListBox_HandleInput(DWORD* self);                            // key-handler (slot 9)
+int  __cdecl    ListBox_ScrollBy(DWORD* self, int v);                     // scroll-up helper
 int  __cdecl    FUN_0040c930(BYTE* slot);                               // ++[slot+0x114]
 
 // FUN_0040c490 — hit-test de bbox, port de sub_40C490 de IDA (lo referencian
@@ -851,8 +851,8 @@ LABEL_53:
     return v17;
 }
 
-// slot 9 — sub_411A20 — reusa FUN_00411a20, definida al final de este archivo.
-static int __fastcall ChatLB_keyHandler(DWORD* self) { return FUN_00411a20(self); }
+// slot 9 — sub_411A20 — reusa ListBox_HandleInput, definida al final de este archivo.
+static int __fastcall ChatLB_keyHandler(DWORD* self) { return ListBox_HandleInput(self); }
 
 // slot 10 — sub_4118D0 — wipe entire list, decrement count per node.
 static void __fastcall ChatLB_clearList(DWORD* self)
@@ -1668,8 +1668,8 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
             // (this+200, hasta 5 entradas de 256).  sub_40E730 devuelve 1 si la
             // lista esta vacia.  Con lista y m_bWhisperSound (0x07E11D80) suena
             // el aviso 38.
-            extern int __fastcall FUN_0040e730(void* This, int edx, char* param_1);
-            if (!FUN_0040e730(self, 0, src) && !FUN_0040e730(self, 0, msg))
+            extern int __fastcall ChatFilter_Matches(void* This, int edx, char* param_1);
+            if (!ChatFilter_Matches(self, 0, src) && !ChatFilter_Matches(self, 0, msg))
                 return;
             if (*((BYTE*)self + 200) && m_bWhisperSound)
                 PlayBuffer(38, 0, 0);
@@ -1699,10 +1699,10 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
         // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
         // dos lineas de 180 px (buffers de 0x100); la primera va con el
         // remitente y la segunda con el nombre vacio.
-        extern int __cdecl FUN_0040c2a0(LPCSTR, char*, int, int, size_t, UINT, int);
+        extern int __cdecl ChatText_SplitLines(LPCSTR, char*, int, int, size_t, UINT, int);
         char lines[2][0x100];
         memset(lines, 0, sizeof(lines));
-        FUN_0040c2a0(msg, &lines[0][0], 180, 2, 0x100, 0, 0);
+        ChatText_SplitLines(msg, &lines[0][0], 180, 2, 0x100, 0, 0);
         for (int ln = 0; ln < 2; ln++) {
             if (!lines[ln][0]) {
                 if (ln == 0) continue;     // IDA: `if (v24[0])` salta solo el alta
@@ -2300,7 +2300,8 @@ char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DW
 // DESVIACION (Fase 4, cortes UAX #14): el binario corta en cualquier punto de
 // la palabra. Ahora, si hay un punto de corte en la segunda mitad de lo que
 // entra, la linea termina ahi (despues de un espacio, entre ideogramas...).
-int __cdecl FUN_0040c2a0(LPCSTR text, char* dst, int width, int maxLines,
+// IDA: sub_40C2A0 (0x0040C2A0); Ghidra: FUN_0040c2a0
+int __cdecl ChatText_SplitLines(LPCSTR text, char* dst, int width, int maxLines,
                          size_t lineSize, UINT firstIndent, int reverse) {
     const char* cur = text;                        // IDA: v7
     int lines = 0;                                 // IDA: v8
@@ -2465,40 +2466,45 @@ void __fastcall FUN_00410ad0(void *This) {
 
 // ── 14-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00410e50 @ 0x00410E50 (~295 lines) — BST_EraseNode: red-black tree node removal with
+// RbTree_EraseNode @ 0x00410E50 (~295 lines) — BST_EraseNode: red-black tree node removal with
 // full rebalancing (left/right rotations, color fixup). Frees node via delete, decrements
 // el tamaño del árbol en this+0xC. Internals estándar estilo map::erase de la STL.
-void __cdecl FUN_00410e50(void* self, DWORD* param_1, int* param_2) {
+// IDA: sub_410E50 (0x00410E50); Ghidra: FUN_00410e50
+void __cdecl RbTree_EraseNode(void* self, DWORD* param_1, int* param_2) {
     (void)self; (void)param_1; (void)param_2;
 }
 
-// FUN_00411360 @ 0x00411360 (~16 lines) — BST_UnlinkNode: unlinks doubly-linked node
+// DList_EraseNode @ 0x00411360 (~16 lines) — BST_UnlinkNode: unlinks doubly-linked node
 // (punteros prev/next en [0]/[1]), llama a delete sobre el nodo, decrementa el contador en this+8.
-void __cdecl FUN_00411360(void* self, int* param_1, int* param_2) {
+// IDA: sub_411360 (0x00411360); Ghidra: FUN_00411360
+void __cdecl DList_EraseNode(void* self, int* param_1, int* param_2) {
     (void)self; (void)param_1; (void)param_2;
 }
 
 // ── BST / STL map operations ────────────────────────────────────────────────
 
-// FUN_00411460 @ 0x00411460 (~164 lines) — BST_InsertNode: allocates 0x138-byte node,
+// RbTree_InsertNode @ 0x00411460 (~164 lines) — BST_InsertNode: allocates 0x138-byte node,
 // copia la clave vía FUN_004124d0, inserta en el árbol rojo-negro con rebalanceo completo
 // (rotaciones vía FUN_00411700/FUN_00411760). Incrementa el contador en this+0xC.
-void __cdecl FUN_00411460(void* self, DWORD* param_1, int param_2, int* param_3, int* param_4) {
+// IDA: sub_411460 (0x00411460); Ghidra: FUN_00411460
+void __cdecl RbTree_InsertNode(void* self, DWORD* param_1, int param_2, int* param_3, int* param_4) {
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
 }
 
-// FUN_00411920 @ 0x00411920 (~31 líneas) — ListBox_RenderItems: llama a métodos de la vtable para
+// ListBox_RenderItems @ 0x00411920 (~31 líneas) — ListBox_RenderItems: llama a métodos de la vtable para
 // empezar el render, después itera los ítems llamando a vtable[0x5C](índice) por cada fila visible,
 // ajustando el índice según el retorno negativo/cero. Llama a vtable[0x60] para terminar el render.
-void __fastcall FUN_00411920(int* param_1) {
+// IDA: sub_411920 (0x00411920); Ghidra: FUN_00411920
+void __fastcall ListBox_RenderItems(int* param_1) {
     (void)param_1;
 }
 
-// FUN_004119a0 @ 0x004119A0 (~29 lines) — ListBox_ScrollUp: decrements scroll offset
+// ListBox_ScrollBy @ 0x004119A0 (~29 lines) — ListBox_ScrollUp: decrements scroll offset
 // (this+0x88) en param_1, clampeado a [0, itemCount - visibleCount]. Chequea la capacidad
 // en this+0x80 o this+0x60 según el flag de modo en this+0x74.
-// FUN_004119a0 (IDA-activated)
-int __cdecl FUN_004119a0(DWORD *_this, int a2)
+// ListBox_ScrollBy (IDA-activated)
+// IDA: sub_4119A0 (0x004119A0); Ghidra: FUN_004119a0
+int __cdecl ListBox_ScrollBy(DWORD *_this, int a2)
 {
   int result; // eax
 
@@ -2536,11 +2542,12 @@ int __cdecl FUN_004119a0(DWORD *_this, int a2)
   return result;
 }
 
-// FUN_00411a20 @ 0x00411A20 (~66 lines) — ListBox_HandleInput: processes key events
+// ListBox_HandleInput @ 0x00411A20 (~66 lines) — ListBox_HandleInput: processes key events
 // (7=click, 0xC=page-scroll, 0xD/0xE=selection up/down) on a doubly-linked item list.
 // Ajusta la posición del scroll vía vtable[0x30] y actualiza el puntero al ítem seleccionado en this[0x1C].
-// FUN_00411a20 (IDA-activated)
-int __cdecl FUN_00411a20(DWORD *_this)
+// ListBox_HandleInput (IDA-activated)
+// IDA: sub_411A20 (0x00411A20); Ghidra: FUN_00411a20
+int __cdecl ListBox_HandleInput(DWORD *_this)
 {
   typedef void (__fastcall *FnVoid)(DWORD*);
   typedef int  (__fastcall *FnScroll)(DWORD*, int, int);

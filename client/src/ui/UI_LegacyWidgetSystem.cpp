@@ -4,7 +4,7 @@
 #include "game/physics/ClothTypes.h"
 #include "game/entity/ClothPresentation.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
-void __cdecl    FUN_00408680(void *_this, char flags);
+void __cdecl    ClothNode_ScalarDtor(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
@@ -104,7 +104,7 @@ void __cdecl Widget_Release(void* param_1, int, int) {
     w.Tail->Previous = w.Head;
     w.AnchorCount = 0;
     operator_delete(w.Springs);
-    if (w.Nodes) FUN_00408680(w.Nodes,3);
+    if (w.Nodes) ClothNode_ScalarDtor(w.Nodes,3);
     Widget_NodeInit(param_1);
 }
 
@@ -124,7 +124,7 @@ void __cdecl Cloth_Wind(void *_this);
 static void __cdecl Cloth_VSlot0(int a)  { (void)a; }  // dtor: se llama directo
 static void *g_ClothVTable[4] = {
     (void *)Cloth_VSlot0,  (void *)Cloth_PinTopRow,
-    (void *)Cloth_Wind,  (void *)FUN_00408ff0
+    (void *)Cloth_Wind,  (void *)ClothWidget_Render
 };
 
 void* __fastcall Widget_CtorBase(void *param_1)

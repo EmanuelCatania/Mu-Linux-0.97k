@@ -108,7 +108,7 @@ extern "C" {
     BYTE  OffsetTradeItems[64 * 68]       = {0};
     BYTE  OffsetMixItems[64 * 68]         = {0};
     // Warehouse grid is 8x15 = 120 slots * 0x44 = 8160 bytes.
-    // Used by FUN_004d23b0 (Inventory click handler) when WarehouseOpened.
+    // Used by InventoryGrid_Tick (Inventory click handler) when WarehouseOpened.
     BYTE  OffsetWarehouseItems[120 * 68]  = {0};
     // Pool de la TIENDA (8×15 = 120 slots), con array propio: en el binario
     // original son direcciones distintas, y como overlay dentro de Inventory
@@ -379,7 +379,7 @@ void AntiTamper_HashMaintain_D(void) { Render_HudPass_4BCD20_(); }
 // sub_4F6050 (esta función) NO se llama in-world: el render por frame del
 // inventario in-world es RenderInventoryWindow (sub_4F0A50), invocado desde
 // Render_QuickButtons_ (sub_4F5820, HUD_Pass4.cpp). El hook del click-handler
-// (FUN_004d23b0) vive en HUD_Pass6.cpp:RenderInventoryWindow.
+// (InventoryGrid_Tick) vive en HUD_Pass6.cpp:RenderInventoryWindow.
 
 extern "C" void __cdecl Render_HudPass_4F6050_(void);
 void Render_HudPass_4F6050_(void)

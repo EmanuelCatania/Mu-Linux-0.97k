@@ -70,8 +70,9 @@ void __fastcall FUN_0040f860(void* param_1) { (void)param_1; }
 // FUN_0040f950 @ 0x0040F950 (~97 lines) — UI list widget destructor
 void __fastcall FUN_0040f950(void* param_1) { (void)param_1; }
 
-// FUN_0040fb70 @ 0x0040FB70 (~65 lines) — Text render: single line with alignment
-float __fastcall FUN_0040fb70(void* ecx, void* /*edx*/, int p2, int p3, char* p4,
+// Font_RenderLineAligned @ 0x0040FB70 (~65 lines) — Text render: single line with alignment
+// IDA: sub_40FB70 (0x0040FB70); Ghidra: FUN_0040fb70
+float __fastcall Font_RenderLineAligned(void* ecx, void* /*edx*/, int p2, int p3, char* p4,
                               int p5, LONG p6, int p7, DWORD p8, int p9) {
     (void)ecx; (void)p2; (void)p3; (void)p4; (void)p5; (void)p6; (void)p7; (void)p8; (void)p9;
     return 0.0f;
@@ -86,26 +87,29 @@ float __fastcall FUN_0040fb70(void* ecx, void* /*edx*/, int p2, int p3, char* p4
 //            GenerateCheckSum, DestroyWindow, WinMain (0x0041E8A0 variant)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_0040fcd0 @ 0x0040FCD0 (~305 lines) — Font_RenderText: render string to GL texture,
+// Font_RenderTextToTexture @ 0x0040FCD0 (~305 lines) — Font_RenderText: render string to GL texture,
 // measures text extent, clears pixel buffer, calls TextOutA, builds GL tex via glTexImage2D,
 // inserts into BST cache (red-black tree) keyed by first-4-byte checksum.
-void __cdecl FUN_0040fcd0(void* self, byte* param_1, int param_2, LONG param_3, int param_4) {
+// IDA: sub_40FCD0 (0x0040FCD0); Ghidra: FUN_0040fcd0
+void __cdecl Font_RenderTextToTexture(void* self, byte* param_1, int param_2, LONG param_3, int param_4) {
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
 }
 
-// FUN_004102e0 @ 0x004102E0 (~58 lines) — Font_SetColorCode: interprets color-code byte
+// Font_SetColorCode @ 0x004102E0 (~58 lines) — Font_SetColorCode: interprets color-code byte
 // (0xF0..0xF8, 1, 0xF4) and writes foreground/background DWORD colors into per-segment
 // slot at this+0x2C + param_1*0x10.  Used by chat color markup (\x02 escape).
-void __cdecl FUN_004102e0(void* self, int param_1, unsigned char param_2) {
+// IDA: sub_4102E0 (0x004102E0); Ghidra: FUN_004102e0
+void __cdecl Font_SetColorCode(void* self, int param_1, unsigned char param_2) {
     (void)self; (void)param_1; (void)param_2;
 }
 
-// FUN_004104b0 @ 0x004104B0 (~111 lines) — Font_ParseColorMarkup: scans string for \x02
+// Font_ParseColorMarkup @ 0x004104B0 (~111 lines) — Font_ParseColorMarkup: scans string for \x02
 // escape codes, builds segment table (up to 0x11 segments) at this+0x24, strips markup
-// bytes from output, measures each segment via GetTextExtentPointA. Calls FUN_004102e0
+// bytes from output, measures each segment via GetTextExtentPointA. Calls Font_SetColorCode
 // per segment.
-// FUN_004104b0 (IDA-activated)
-void __cdecl FUN_004104b0(LONG _this, char *Source)
+// Font_ParseColorMarkup (IDA-activated)
+// IDA: sub_4104B0 (0x004104B0); Ghidra: FUN_004104b0
+void __cdecl Font_ParseColorMarkup(LONG _this, char *Source)
 {
   DWORD *cx; // edx
   int v3; // ebx
@@ -151,7 +155,7 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
           v7 = v5 - v6;
           ++v5;
           *v15 = v7;
-          FUN_004102e0(cx, v3, Source[v5]);
+          Font_SetColorCode(cx, v3, Source[v5]);
           cx = (DWORD *)sz.cx;
           v4 = v17;
           ++v3;
@@ -219,25 +223,28 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
 }
 
 
-// FUN_004105f0 @ 0x004105F0 (~55 lines) — Font_BuildColorBitmap: reads ppvBits pixel buffer
+// Font_BuildColorBitmap @ 0x004105F0 (~55 lines) — Font_BuildColorBitmap: reads ppvBits pixel buffer
 // (DAT_005590bc stride * 0x100 * 3 bpp), maps white(0xFF) pixels to m_dwTextColor and
 // non-white to m_dwBackColor, applying per-segment color overrides from the segment table.
 // Output goes to param_1 as DWORD array 0x100 wide per row.
-void __cdecl FUN_004105f0(void* self, DWORD* param_1, int param_2, int param_3, int param_4) {
+// IDA: sub_4105F0 (0x004105F0); Ghidra: FUN_004105f0
+void __cdecl Font_BuildColorBitmap(void* self, DWORD* param_1, int param_2, int param_3, int param_4) {
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
 }
 
-// FUN_004106d0 @ 0x004106D0 (~110 lines) — Font_CacheLookupAndRender: looks up cached text
+// Font_CacheLookupAndRender @ 0x004106D0 (~110 lines) — Font_CacheLookupAndRender: looks up cached text
 // entry by first-4-byte checksum + string match + color match. If found, decrements age
-// counter and calls FUN_004108b0 (RenderBitmap) per texture page. Returns 1 on hit, 0 miss.
-int __cdecl FUN_004106d0(void* self, byte* param_1, int param_2, int param_3, float param_4) {
+// counter and calls Font_RenderCachedBitmap (RenderBitmap) per texture page. Returns 1 on hit, 0 miss.
+// IDA: sub_4106D0 (0x004106D0); Ghidra: FUN_004106d0
+int __cdecl Font_CacheLookupAndRender(void* self, byte* param_1, int param_2, int param_3, float param_4) {
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
     return 0;
 }
 
-// FUN_004108b0 @ 0x004108B0 (~19 lines) — Font_RenderCachedBitmap: clamps X to [0,WindowWidth-w],
+// Font_RenderCachedBitmap @ 0x004108B0 (~19 lines) — Font_RenderCachedBitmap: clamps X to [0,WindowWidth-w],
 // calls RenderBitmap with DAT_055c9b90 texture handle, screen coords, and UV from Bitmaps[8..9].
-void __stdcall FUN_004108b0(int param_1, int param_2, int param_3, int param_4) {
+// IDA: sub_4108B0 (0x004108B0); Ghidra: FUN_004108b0
+void __stdcall Font_RenderCachedBitmap(int param_1, int param_2, int param_3, int param_4) {
     (void)param_1; (void)param_2; (void)param_3; (void)param_4;
 }
 
@@ -356,25 +363,26 @@ void Game_DestroyWindow(void) {
 //     DAT_005524e8 (nodo)  = { 0x00408680 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-void __cdecl    FUN_00407970(void *_this);   // dtor de nodo   (0x407970, __cdecl)
+void __cdecl    ClothNode_SetVTable(void *_this);   // dtor de nodo   (0x407970, __cdecl)
 
-// FUN_00408680 @ 0x00408680 — dtor "scalar deleting" del NODO (vtable[0] de
+// ClothNode_ScalarDtor @ 0x00408680 — dtor "scalar deleting" del NODO (vtable[0] de
 // DAT_005524e8). Port FIEL de IDA `sub_408680`:
 //   flags & 2 → array: el count vive en el DWORD previo al puntero, y se
 //               destruye hacia atrás (`eh vector destructor iterator`).
 //   flags & 1 → además libera la memoria.
 // El iterador se despliega inline porque los dtors de elemento de las dos
 // clases tienen convenciones distintas (__cdecl acá, __fastcall en el widget).
-void __cdecl FUN_00408680(void *_this, char flags)
+// IDA: sub_408680 (0x00408680); Ghidra: FUN_00408680
+void __cdecl ClothNode_ScalarDtor(void *_this, char flags)
 {
     char *lpMem = (char *)_this;
     if (!lpMem) return;
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
-        for (int i = count - 1; i >= 0; --i) FUN_00407970(lpMem + sizeof(ClothNode) * i);
+        for (int i = count - 1; i >= 0; --i) ClothNode_SetVTable(lpMem + sizeof(ClothNode) * i);
         if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
-        FUN_00407970(lpMem);
+        ClothNode_SetVTable(lpMem);
         if (flags & 1) operator_delete((unsigned char *)lpMem);
     }
 }
@@ -387,10 +395,10 @@ void __fastcall FUN_0045aaa0_impl(void *_this, char flags)
     if (!lpMem) return;
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
-        for (int i = count - 1; i >= 0; --i) FUN_00408070(lpMem + sizeof(ClothWidget) * i);
+        for (int i = count - 1; i >= 0; --i) ClothWidget_Destruct(lpMem + sizeof(ClothWidget) * i);
         if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
-        FUN_00408070(lpMem);
+        ClothWidget_Destruct(lpMem);
         if (flags & 1) operator_delete((unsigned char *)lpMem);
     }
 }

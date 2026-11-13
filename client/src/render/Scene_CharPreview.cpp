@@ -2,7 +2,7 @@
 // 3D character preview rendering during login and character selection screens.
 //
 // RenderInfomation3D @ 0x0051e0c0 - Scene_CharPreview
-// FUN_005239a0 @ 0x005239a0 - UI_DrawLoginBg
+// CharScene_RenderFrame @ 0x005239a0 - UI_DrawLoginBg
 
 #include "stdafx.h"
 #include "render/Gfx.h"
@@ -55,7 +55,8 @@ void RenderInfomation3D(void)
   Gfx::MatrixMode(Gfx::Matrix::ModelView);
 }
 
-void FUN_005239a0(void)
+// IDA: sub_5239A0 (0x005239A0); Ghidra: FUN_005239a0
+void CharScene_RenderFrame(void)
 {
   GL_SetBlendSrcOver('\x01');
   Gfx::Color3f(1.0f, 1.0f, 1.0f);

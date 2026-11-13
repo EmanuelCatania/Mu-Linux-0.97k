@@ -57,8 +57,9 @@ void __stdcall MoveCharactersClient(void) {
     MoveBlurs();
 }
 
-// FUN_0045fae0 @ 0x0045FAE0 (~175 lines) — hash table: read 1-byte encrypted value
-unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* param_1) {
+// HashTable_ReadByte @ 0x0045FAE0 (~175 lines) — hash table: read 1-byte encrypted value
+// IDA: sub_45FAE0 (0x0045FAE0); Ghidra: FUN_0045fae0
+unsigned char __cdecl HashTable_ReadByte(DWORD ecx, unsigned char* param_1) {
     // 0x0045FAE0 — anti-tamper hash table: read 1-byte encrypted value
     // Original is __thiscall on the hash table object (ecx = this).
     // Looks up param_1 key in hash table, allocates+decrypts a 1-byte node,

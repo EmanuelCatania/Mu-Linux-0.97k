@@ -59,10 +59,10 @@ void __cdecl AttackEffect(intptr_t entity)
     float* angle = (float*)(entity + 0x1c);  // world angle
     float* light = (float*)(entity + 0xe8);  // light/color
 
-    // 00445230 reads the queued skill through FUN_0045fae0. +770 is a
+    // 00445230 reads the queued skill through HashTable_ReadByte. +770 is a
     // hash-table protected byte in the original client; comparing its storage
     // directly made this path depend on the encoded value instead of the skill.
-    const BYTE queuedSkill = FUN_0045fae0((DWORD)&MAIN_HASH_CLASS,
+    const BYTE queuedSkill = HashTable_ReadByte((DWORD)&MAIN_HASH_CLASS,
                                           (BYTE*)(entity + EntityOffset(770)));
 
     // First switch of 00445230 (lines 293..1689): this selector is +747,

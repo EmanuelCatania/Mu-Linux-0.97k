@@ -32,7 +32,7 @@ std::uint64_t Run(BYTE* memory,BYTE* input){
   BYTE before[1536],beforeText[320];std::memcpy(before,memory,1536);std::memcpy(beforeText,input,320);
   unsigned expectedCalls=0;int expected=empty==0?1:0;
   if(empty!=0)for(unsigned i=0;i<5 && i<empty;++i){++expectedCalls;if(matchMask&(1u<<i)){expected=1;break;}}
-  calls=0;const int result=FUN_0040e730(context,static_cast<int>(pattern),text);
+  calls=0;const int result=ChatFilter_Matches(context,static_cast<int>(pattern),text);
   Require(result==expected && calls==expectedCalls && std::memcmp(memory,before,1536)==0 && std::memcmp(input,beforeText,320)==0);
   hash^=static_cast<unsigned>(result);hash*=1099511628211ull;hash^=calls;hash*=1099511628211ull;++queries;
  }
@@ -54,7 +54,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/app/core/Runtime_Medium.cpp',revision),'FUN_0040e730')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/app/core/Runtime_Medium.cpp',revision),'ChatFilter_Matches')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

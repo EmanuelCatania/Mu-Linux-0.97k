@@ -26,10 +26,10 @@ def harness(revision=None):
   BYTE* expectedHeader=(highHeader?expectedHigh:expectedLow)+2048+alignment*8;
   const DWORD descriptor=0x00552520;std::memcpy(expectedHeader,&descriptor,4);
   // El cuerpo corta el enlace del último nodo antes de empezar a liberar.''')
-    main=replace_once(main,'LinkedList_DestroyAll(header);','FUN_00408070(header);Require(forgetCalls==1);')
+    main=replace_once(main,'LinkedList_DestroyAll(header);','ClothWidget_Destruct(header);Require(forgetCalls==1);')
     main=replace_once(main,'List next:','Widget list next:')
     source=read_source('src/app/core/Runtime_Medium.cpp',revision)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+services+function(source,'FUN_00408070')+main
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+services+function(source,'ClothWidget_Destruct')+main
 
 def main():
     import sys

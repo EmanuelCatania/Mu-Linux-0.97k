@@ -53,7 +53,7 @@ void ClearInventory(void)
 // Processes queued incoming network packets for the current scene.
 // Guards against map 0x6e. Calls sub-scene packet handlers in sequence:
 //   GuildCreator_HitTest, Party_MemberClickHandler, CharacterInfo_HitTest (always)
-//   Inventory_HitTest..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
+//   Inventory_HitTest..Shop_InputTick (if DAT_07eaa117 != 0 — extended scene)
 //   Inventory_DropDispatch (if DAT_07eaa164 == 0 — not in special mode)
 //   CheckGoldenArcherWindow, ServerTransfer_HitTest (always)
 void UpdateWindowsMouse(void)
@@ -92,8 +92,8 @@ void UpdateWindowsMouse(void)
     EventEntrance_HitTest();
     ChaosMix_HitTest();
     Warehouse_HitTest();
-    FUN_004eb7f0();
-    FUN_004ec330();
+    Trade_InputTick();
+    Shop_InputTick();
     uVar1 = extraout_ECX_00;
     uVar2 = extraout_EDX_00;
   }

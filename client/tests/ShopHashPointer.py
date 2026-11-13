@@ -49,7 +49,7 @@ std::uint64_t Run(BYTE* memory){
    const bool cancel=(x==45 || x==68) && (y==415 || y==428 || y==429 || y==438);
    if(cancel){expected.push_back(4);if(pushed){expectedClick=0;expectedOpen=0;expected.push_back(7);expectedWindow=0;expectedState=6;}}
   }
-  events.clear();FUN_004ec330();
+  events.clear();Shop_InputTick();
   Require(events==expected && factoryCalls==absent && DAT_07eaa150==expectedMode && DAT_07eaa134==expectedRepair && DAT_083a4124==expectedClick && DAT_07eaa117==expectedOpen && DAT_07e11d28==expectedWindow && DAT_00559bec==expectedState && std::memcmp(memory,expectedMemory,1445)==0);
   Require(DAT_07eaa118==static_cast<char>(flags[pattern%4]) && DAT_07eaa132==static_cast<char>(flags[(pattern/4)%4]) && DAT_07eaa0c8==100 && DAT_07eaa0cc==40 && DAT_07ea5288==20 && DAT_07ea5284==20 && DAT_083a427c==x && DAT_083a4278==y);
   for(unsigned value:events){hash^=value;hash*=1099511628211ull;}
@@ -66,7 +66,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/ui/UI_PanelInput.cpp',revision),'FUN_004ec330')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/ui/UI_PanelInput.cpp',revision),'Shop_InputTick')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

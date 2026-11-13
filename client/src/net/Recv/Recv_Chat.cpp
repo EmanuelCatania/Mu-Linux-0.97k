@@ -69,7 +69,7 @@ void NetRecv_02(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetText::FromServer(wmsg, sizeof(wmsg), Msg + MSG, wlen);
         // IDA ProtocolCore case 2: RegistWhisperID(10, strID) — con el
         // heroe de nivel < 10 anota al remitente para que despues se le
-        // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
+        // pueda contestar (ver Whisper_CanSendTo) — y el sonido SOLO con
         // m_bWhisperSound (0x07E11D80).
         RegistWhisperID(10, wname);
         if (m_bWhisperSound)

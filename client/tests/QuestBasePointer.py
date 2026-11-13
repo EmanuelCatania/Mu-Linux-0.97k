@@ -56,7 +56,7 @@ def harness(revision=None):
     source = read_source("src/net/Crypto.cpp", revision)
     init = function(source, "Quest_FullInit")
     publish = re.search(r"if \(g_csQuest == 0\) g_csQuest = [^;]+;", init).group()
-    reset = re.search(r"g_csQuest = 0;", function(source, "FUN_00403ef0")).group()
+    reset = re.search(r"g_csQuest = 0;", function(source, "Quest_SetVTable")).group()
     prefix += "void PublishBase(void* param_1) { " + publish + " }\nvoid ResetBase() { " + reset + " }\n"
     prefix += function(read_source("src/ui/UIState.cpp", revision), "IsQuestPanelOpen")
     return prefix + MAIN

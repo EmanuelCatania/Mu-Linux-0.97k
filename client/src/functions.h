@@ -45,7 +45,7 @@ extern "C" void EquipWipe_Tick(int op, int sub);  // diagnostico: ver Render_Pla
 void  __cdecl Packet_DecryptByte(void *a, void *b); // IDA: Packet_DecryptByte (0x00404330)
 void* __cdecl HashTable_GetNode(void *ctx, void *key); // IDA: HashTable_GetNode (0x00404280)
 uint  __cdecl HashTable_GetIndex(void *ctx, void *key);       // Returns slot index (0xffffffff = not found)
-void  __cdecl FUN_00403f30(void *a, void *b);
+void  __cdecl Quest_RenderPanel(void *a, void *b);
 void  __cdecl CWsctlc__LogPrintOn(void);   // IDA: CWsctlc__LogPrintOn (0x00403A30)
 void  __cdecl Packet_DecryptBuffer(void *node, void *key); // IDA: Packet_DecryptBuffer (0x00404370)
 void  __cdecl Packet_EncryptBuffer(void *a, void *b); // IDA: Packet_EncryptBuffer (0x00404400)
@@ -80,7 +80,7 @@ void  __cdecl Sound_Update3DPositions(void);// IDA: FUN_00404CD0
 
 // ── Config / net connect ──────────────────────────────────────────────────────
 undefined4 __cdecl Packet_ParseReceived(void *);
-char  __fastcall FUN_00403150(void *pThis, int edx, char a2, char a3);   // lista de items de la quest (0x403150)
+char  __fastcall Quest_RenderRequiredItems(void *pThis, int edx, char a2, char a3);   // lista de items de la quest (0x403150)
 void  __cdecl CErrorReport_Write(void* ht, const char* msg, ...); // IDA: CErrorReport::Write (0x00405540)
 void  __cdecl CErrorReport_WriteCurrentTime(int verbose); // IDA: FUN_004055A0
 void  __cdecl FUN_004058b0(void);
@@ -255,7 +255,7 @@ void* __fastcall WidgetB_Ctor(void *param_1);                      // WidgetB_Ct
 void  __fastcall WidgetB_SetVtable(void *param_1);                      // WidgetB_SetVtable
 void  __fastcall WidgetB_ZeroFields(void* widget);                        // WidgetB_ZeroFields
 void  __cdecl VTable_Release(void *obj, float* vertices);              // VTable_Release
-void  __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);      // VTable_DrawEdge
+void  __cdecl MoltSilhouette_DrawEdgeRandom(void *obj, float *p1, float *p2);      // VTable_DrawEdge
 
 // ── Sprite / Animation ────────────────────────────────────────────────────────
 // IDA: BMD_Animation (0x00440060)
@@ -546,7 +546,7 @@ void  __cdecl OpenWorldModels(void);                                  // Map_Ini
 void  __cdecl ClearCharacters(int map_id);                            // Map_SetupEntities
 // ── Font / UI init ───────────────────────────────────────────────────────────────
 void  __cdecl PathFinder_ResetContext(void);                                  // IDA: FUN_0043f2d0
-void  __cdecl FUN_0050f700(const char *FileName);                  // SaveMacro (Data/Macro.txt)
+void  __cdecl SaveMacroText(const char *FileName);                  // SaveMacro (Data/Macro.txt)
 void  __cdecl OpenMacro(char *FileName);                            // 0x0050F750
 // FUN_0050f7a0 NO es "Map_Unload": es sub_50F7A0, el envio de opciones F3/30.
 // Portada como SaveOptionsToServer97k en UI/UI_InGameMenu.cpp.
@@ -651,7 +651,7 @@ void  __cdecl RenderInfomation3D(void); // IDA: RenderInfomation3D (0x0051E0C0)
 void  __cdecl CServerSelWin_UpdateWhileActive(void); // IDA: CServerSelWin::UpdateWhileActive (0x0051E7E0)
 
 // ── Scene functions ───────────────────────────────────────────────────────────
-void  __cdecl FUN_005239a0(void);                                  // CharSelect_UpdateInput
+void  __cdecl CharScene_RenderFrame(void);                                  // CharSelect_UpdateInput
 bool  __cdecl MoveMainCamera(void);   // MoveMainCamera (per-frame camera follow + Hero offset)
 void  __cdecl SaveImage(int, int, int, int);   // IDA: SaveImage (0x00529130)
 int   __cdecl OpenJPG(const char *path, int id,               // Texture_Load (OZJ/JPEG)
@@ -797,17 +797,17 @@ void  __cdecl CheckGoldenArcherWindow(void); // IDA: CheckGoldenArcherWindow (0x
 void  __cdecl ServerTransfer_HitTest(void);
 void  __cdecl ChaosMix_HitTest(void);
 void  __cdecl Warehouse_HitTest(void);
-void  __cdecl FUN_004eb7f0(void);
-void  __cdecl FUN_004ec330(void);
+void  __cdecl Trade_InputTick(void);
+void  __cdecl Shop_InputTick(void);
 // SecondPassword UI helper calls
 void  __cdecl ShowCheckBox(int num, int index, int message);  // IDA: ShowCheckBox (0x0051E240)
 uint  __cdecl Inventory_HasFreeSpace(uintptr_t ctx, int p1, int p2, int p3, int p4);   // IDA: sub_4E3DB0 — 1 si hay espacio libre en la grilla
 undefined4 __cdecl ChaosMix_Close(void);        // IDA: sub_4F6850 — cierra el Chaos Mix
 uint  __cdecl Net_Disconnect_Clean(void);             // Net_Disconnect_Clean (sends disconnect + returns)
-void  __cdecl FUN_004d1fc0(void);             // SecondPassword_RenderGrid_Empty
+void  __cdecl Equipment_HitTestAll(void);             // SecondPassword_RenderGrid_Empty
 // Firma real per IDA sub_4D23B0 (Inventory grid render + click dispatcher).
 // See Item/Item_ClickHandler.cpp for the port.
-void  __cdecl FUN_004d23b0(char *origin_x, int origin_y, short *inv_base,
+void  __cdecl InventoryGrid_Tick(char *origin_x, int origin_y, short *inv_base,
                             int grid_w, int grid_h, char mode_flag);
 
 // ── Scene_MapTick helpers ─────────────────────────────────────────────────────
@@ -944,17 +944,17 @@ void  __cdecl CErrorReport__Write(intptr_t This, char *lpszFormat, ...); // 0x00
 // ── Forward declarations for small unmapped functions ─────────────────────────
 // CRT internals
 void  __cdecl crt_atexit(void *pFunc);                             // CRT atexit registration
-void  __cdecl FUN_00543c98(void *ptr);                               // CRT free wrapper
-void  __cdecl FUN_0053d430(BYTE *gameName);                          // GameGuard: PreInitNPGameMon(gameName)
+void  __cdecl Crt_Free(void *ptr);                               // CRT free wrapper
+void  __cdecl PreInitNPGameMon(BYTE *gameName);                          // GameGuard: PreInitNPGameMon(gameName)
 int   __cdecl GameGuard_HealthCheck(void *ptr);                               // GameGuard query
 
 // Vtable init / class chains (thiscall emulated as fastcall)
 int   __cdecl    FUN_00405290(void* param_1);                        // Inicializa campos de CErrorReport.
 void  __cdecl    FUN_004052b0(void *This, const char *filename);     // CErrorReport open log
-void  __cdecl    FUN_00407de0(DWORD *This);                          // CWaveFile vtable set
-void  __cdecl    FUN_00407ec0(DWORD *This);                          // CWaveFile vtable+chain
+void  __cdecl    ClothBody_SetBaseVTable(DWORD *This);                          // CWaveFile vtable set
+void  __cdecl    ClothAnchor_Destruct(DWORD *This);                          // CWaveFile vtable+chain
 void  __fastcall FUN_004093c0(void *This);                           // SoundWidget vtable+chain
-void  __fastcall FUN_00408070(void *This);                           // SoundWidget base init
+void  __fastcall ClothWidget_Destruct(void *This);                           // SoundWidget base init
 void  __fastcall FUN_0040a6e0(void *This);                           // WidgetC vtable+chain
 void  __fastcall FUN_00410ad0(void *This);                           // StreamBase vtable+chain
 void  __fastcall FUN_0040f680(void *This);                           // StreamBase vtable set (dup)
@@ -965,7 +965,7 @@ void  __fastcall Quest_FullInit(void *This);                           // Quest 
 void  __fastcall LinkedList_InitSentinels(void *This);                           // Sound device init B
 
 // Destructor chains (virtual ~dtor pattern: call deinit, conditional delete)
-void  __fastcall FUN_00406cd0(void *This);                           // HashWidget deinit
+void  __fastcall HashWidget_Deinit(void *This);                           // HashWidget deinit
 void  __fastcall Locimp_dtor(void *This);                           // SoundWidgetB deinit
 void  __fastcall FUN_0040dba0(void *This);                           // DSBuffer deinit
 void  __fastcall FUN_0040eae0(void *This);                           // DSBufferB deinit
@@ -1009,7 +1009,7 @@ char* __cdecl getMonsterName(int type);                              // 0x0047d2
 bool  __cdecl getEqualMonster(int addV);                             // 0x0047ebd1
 void  __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster); // 0x0047eba0
 void  __cdecl Quest_InitializeStaticState(void); // IDA: FUN_00401010
-char  __fastcall FUN_00403f30(void *pCSQuest);   // dispatcher del render de quest (0x403F30)
+char  __fastcall Quest_RenderPanel(void *pCSQuest);   // dispatcher del render de quest (0x403F30)
 void  __fastcall CSQuest__setQuestList(BYTE* quest, int edx, int index, int result); // IDA: 0x004011b0
 void  __fastcall CSQuest__setQuestLists(BYTE* quest, int edx, BYTE *byList, int num, int Class); // IDA: 0x00401160
 
@@ -1045,10 +1045,10 @@ void  __cdecl VectorIRotate(float in1[3], float in2[3][4], float out[3]); // 0x0
 // BMD transform
 void  __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float *Pos, float *WorldPos, bool Translate); // 0x004409a0
 
-// Sound helpers (FUN_0040a0a0 chain)
+// Sound helpers (ShadowVolume_SetLightDirection chain)
 void  __cdecl Vec3_Normalize(float *param);                            // float init
-// int   __fastcall FUN_00409f30(void *This, int p1, int p2, int p3, char p4); // open file — duplicate, correct 6-param version
-// void  __fastcall FUN_0040a300(void *This, int p1);                   // cleanup after open — duplicate, correct 3-param version
+// int   __fastcall ShadowVolume_BuildTriangles(void *This, int p1, int p2, int p3, char p4); // open file — duplicate, correct 6-param version
+// void  __fastcall ShadowVolume_BuildGeometry(void *This, int p1);                   // cleanup after open — duplicate, correct 3-param version
 
 // Render helpers
 void  __cdecl EnableAlphaBlend(void);                                // 0x004f8830
@@ -1073,8 +1073,8 @@ void  __fastcall FUN_004118d0(int param_1);                          // list cle
 void  __fastcall FUN_004122c0(int param_1);                          // list trim excess
 void  __fastcall FUN_00410d90(int param_1);                          // list destroy + free sentinel
 
-// Hash cleanup (already have FUN_00406d40 as cdecl)
-void  __cdecl FUN_00406d40(intptr_t param_1);                             // free hash buckets
+// Hash cleanup (already have HashWidget_FreeBuckets as cdecl)
+void  __cdecl HashWidget_FreeBuckets(intptr_t param_1);                             // free hash buckets
 
 // ── Batch 5-7 forward declarations (codec marker read/write, setup) ──
 
@@ -1082,10 +1082,10 @@ void  __cdecl FUN_00406d40(intptr_t param_1);                             // fre
 // Sub-functions called by batch 8 init functions
 
 // Batch 10 — Sound/BST/Misc range: Quest UI, ErrorReport, SystemInfo, HashTable, GameGuard
-void  __fastcall FUN_00402ff0(const BYTE* param_1);                  // quest dialog answers render
-void  __fastcall FUN_00403320(void* param_1);                        // quest NPC dialog render
-UINT  __fastcall FUN_00403700(void* ecx, void* edx, UINT param_1);  // quest list by state
-void  __fastcall FUN_00403a40(void* param_1);                        // quest UI main panel
+void  __fastcall Quest_RenderDialogText(const BYTE* param_1);                  // quest dialog answers render
+void  __fastcall Quest_RenderNpcWindow(void* param_1);                        // quest NPC dialog render
+UINT  __fastcall Quest_RenderList(void* ecx, void* edx, UINT param_1);  // quest list by state
+void  __fastcall Quest_RenderListPanel(void* param_1);                        // quest UI main panel
 UINT  __fastcall HashTable_GetIndex(void* ecx, void* edx, DWORD param_1); // IDA: FUN_004041e0
 HRESULT __cdecl InitDirectSound(HWND hDlg);                          // 0x004044A0 — DirectSound8 init (src/audio/Sound.cpp)
 HRESULT __cdecl CreateStaticBuffer(int Buffer, const char* strFileName, int MaxChannel, bool Enable); // 0x00404650
@@ -1101,30 +1101,30 @@ void  __stdcall CErrorReport_DumpCallStack(void);                    // IDA: FUN
 // PacketCipher_Initialize (IDA: FUN_00406bd0) is declared above.
 UINT  __fastcall PacketCipher_HashKey83(int param_1);                // IDA: FUN_00406e90
 UINT  __fastcall PacketCipher_HashKeyConfigured(int param_1);        // IDA: FUN_00406ef0
-int   __stdcall FUN_004070d0(int param_1, int param_2);              // GameGuard packet handler
+int   __stdcall GameGuard_Callback(int param_1, int param_2);              // GameGuard packet handler
 
 // Batch 11 — BMD/SMD model loading, mesh rendering, shadow volumes, quest list
-void  __fastcall FUN_00408ff0(void* param_1);                        // BMD mesh render prepare+draw
-void  __fastcall FUN_004090b0(void* ecx, void* edx, int p1, float p2, const float* p3); // Emite quads de la tela.
-void  __fastcall FUN_004091d0(void* ecx, void* edx, const float* p1, int p2, float p3); // Emite un vértice de la tela.
-void* __fastcall FUN_00409ad0(void* param_1);                        // IDA: sub_409AD0 (0x00409AD0), ctor de CPhysicsManager
+void  __fastcall ClothWidget_Render(void* param_1);                        // BMD mesh render prepare+draw
+void  __fastcall ClothWidget_EmitQuads(void* ecx, void* edx, int p1, float p2, const float* p3); // Emite quads de la tela.
+void  __fastcall ClothWidget_EmitVertex(void* ecx, void* edx, const float* p1, int p2, float p3); // Emite un vértice de la tela.
+void* __fastcall PhysicsManager_Construct(void* param_1);                        // IDA: sub_409AD0 (0x00409AD0), ctor de CPhysicsManager
 void  __fastcall Locimp_dtor(void* param_1);                        // CSQuest destructor
-void  __fastcall FUN_00409d20(intptr_t param_1);                          // CSQuest clear all nodes
-int   __fastcall FUN_00409f30(void* ecx, void* edx, int p1, int p2, int p3, char p4); // BMD visible tri list
-void  __fastcall FUN_0040a110(void* ecx, void* edx, short p1, short p2, short p3, int p4, int p5, int p6); // shadow edge add
-void  __fastcall FUN_0040a1c0(void* ecx, void* edx, short p1, int p2, short p3, int p4); // shadow backface cull
-void  __fastcall FUN_0040a300(void* ecx, void* edx, intptr_t param_1);   // shadow volume build
+void  __fastcall PhysicsManager_Clear(intptr_t param_1);                          // CSQuest clear all nodes
+int   __fastcall ShadowVolume_BuildTriangles(void* ecx, void* edx, int p1, int p2, int p3, char p4); // BMD visible tri list
+void  __fastcall ShadowVolume_AddEdge(void* ecx, void* edx, short p1, short p2, short p3, int p4, int p5, int p6); // shadow edge add
+void  __fastcall ShadowVolume_CullAndExtractEdges(void* ecx, void* edx, short p1, int p2, short p3, int p4); // shadow backface cull
+void  __fastcall ShadowVolume_BuildGeometry(void* ecx, void* edx, intptr_t param_1);   // shadow volume build
 
 // ─── Batch 12: JPEG codec (declaraciones heredadas) ───────────────────
 // IAT thunks at 0x0052A0D0-0x0052A100 are linker-generated (IMM32 + dsound), no decl needed.
 
 // Batch 13 — GameGuard / Crypto / IAT thunks (0x0053CB86–0x005406F0)
 // IAT thunks (0x0053CB86..0x0053CBA4) resolved by linker — no declarations needed.
-unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param_2); // Crypto decrypt block
+unsigned int __cdecl SimpleModulus_DecryptBlock(void *self, unsigned short *param_1, int param_2); // Crypto decrypt block
 int   __stdcall CSimpleModulus_AddBits(void* param_1, unsigned int param_2, const void* param_3, unsigned int param_4, int param_5); // IDA: FUN_0053CF90 (0x0053CF90)
 void  __stdcall CSimpleModulus_Shift(unsigned char *param_1, int param_2, int param_3); // IDA: FUN_0053D0D0 (0x0053D0D0)
 int   __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic, int k0, int k1, int k2, int k3); // IDA: FUN_0053D1C0 (0x0053D1C0)
-// FUN_0053d430 — declarada arriba (PreInitNPGameMon)
+// PreInitNPGameMon — declarada arriba (PreInitNPGameMon)
 void  __fastcall FUN_0053d620(DWORD param_1);                           // GameGuard cleanup
 int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuard: InitNPGameMon(hWnd) —
                                                                      // registra hWnd + callback y devuelve
@@ -1142,23 +1142,23 @@ int   __stdcall FUN_0053fcf0(void);                                     // Toolh
 void  __cdecl FUN_0053fdd0(void);                                       // GG process snapshot
 void  __cdecl FUN_0053feb0(void);                                       // GG module snapshot
 unsigned int __stdcall FUN_005400d0(int param_1, unsigned int param_2);  // GG error dispatch
-// FUN_005404c0, FUN_00540a70, FUN_00540ac0 — already implemented in batch 10/11
+// GameGuard_SeedRandom, FUN_00540a70, FUN_00540ac0 — already implemented in batch 10/11
 int   __fastcall FUN_005406f0(int param_1);                             // GG pipe/handle cleanup
 
 // Batch 15 — Font/Text rendering, BST cache, ListBox, KillGLWindow, GenerateCheckSum, DestroyWindow
-void  __cdecl FUN_0040fcd0(void *self, unsigned char *param_1, int param_2, LONG param_3, int param_4); // Font_RenderText (GL texture)
-void  __cdecl FUN_004102e0(void *self, int param_1, unsigned char param_2);  // Font_SetColorCode
-void  __cdecl FUN_004104b0(void *self, char *param_1);               // Font_ParseColorMarkup
-void  __cdecl FUN_004105f0(void *self, DWORD *param_1, int param_2, int param_3, int param_4); // Font_BuildColorBitmap
-int   __cdecl FUN_004106d0(void *self, unsigned char *param_1, int param_2, int param_3, float param_4); // Font_CacheLookupAndRender
-void  __stdcall  FUN_004108b0(int param_1, int param_2, int param_3, int param_4); // Font_RenderCachedBitmap
-void  __cdecl FUN_00410e50(void *self, DWORD *param_1, int *param_2); // BST_EraseNode (red-black tree)
-void  __cdecl FUN_00411360(void *self, int *param_1, int *param_2);   // BST_UnlinkNode
-void  __cdecl FUN_00411460(void *self, DWORD *param_1, int param_2, int *param_3, int *param_4); // BST_InsertNode
-void  __fastcall FUN_00411920(int *param_1);                             // ListBox_RenderItems
-void  __cdecl FUN_004119a0(void *self, int param_1);                  // ListBox_ScrollUp
-int   __fastcall FUN_00411a20(int *param_1);                             // ListBox_HandleInput
-int   __fastcall FUN_00412180(int *param_1);                             // ListBox_HandleInput2
+void  __cdecl Font_RenderTextToTexture(void *self, unsigned char *param_1, int param_2, LONG param_3, int param_4); // Font_RenderText (GL texture)
+void  __cdecl Font_SetColorCode(void *self, int param_1, unsigned char param_2);  // Font_SetColorCode
+void  __cdecl Font_ParseColorMarkup(void *self, char *param_1);               // Font_ParseColorMarkup
+void  __cdecl Font_BuildColorBitmap(void *self, DWORD *param_1, int param_2, int param_3, int param_4); // Font_BuildColorBitmap
+int   __cdecl Font_CacheLookupAndRender(void *self, unsigned char *param_1, int param_2, int param_3, float param_4); // Font_CacheLookupAndRender
+void  __stdcall  Font_RenderCachedBitmap(int param_1, int param_2, int param_3, int param_4); // Font_RenderCachedBitmap
+void  __cdecl RbTree_EraseNode(void *self, DWORD *param_1, int *param_2); // BST_EraseNode (red-black tree)
+void  __cdecl DList_EraseNode(void *self, int *param_1, int *param_2);   // BST_UnlinkNode
+void  __cdecl RbTree_InsertNode(void *self, DWORD *param_1, int param_2, int *param_3, int *param_4); // BST_InsertNode
+void  __fastcall ListBox_RenderItems(int *param_1);                             // ListBox_RenderItems
+void  __cdecl ListBox_ScrollBy(void *self, int param_1);                  // ListBox_ScrollUp
+int   __fastcall ListBox_HandleInput(int *param_1);                             // ListBox_HandleInput
+int   __fastcall GuildList_HandleInput(int *param_1);                             // ListBox_HandleInput2
 void  __fastcall FUN_00412510(DWORD *param_1);                           // ListBox_Destructor_A
 void  __fastcall FUN_00412610(DWORD *param_1);                           // ListBox_Destructor_B
 // KillGLWindow @ 0x00412AF0 — already in WinMain.cpp as OpenGL_Release
@@ -1220,7 +1220,7 @@ void  __cdecl Combat_SpawnDeathDustParticles(OBJECT* entity);
 // IDA: FUN_00452030
 void  __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* entity);
 void  __stdcall MoveCharactersClient(void);                         // 0x00455010
-unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char *param_1);   // hash read 1-byte (0x0045FAE0)
+unsigned char __cdecl HashTable_ReadByte(DWORD ecx, unsigned char *param_1);   // hash read 1-byte (0x0045FAE0)
 void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300
 // Puente de compatibilidad (nombre de IDA) sobre Effect_SpawnBombRing; lo usa
 // Combat/Combat_AttackEffect.cpp.
@@ -1230,9 +1230,9 @@ void  __cdecl ItemDrop_RenderGroundWeapon(intptr_t param_1); // IDA: FUN_0046b98
 // sin usos en el código compilado (lo usaban ports de IDA ya retirados).
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
 void  __cdecl RenderWheelWeapon(intptr_t o); // IDA: RenderWheelWeapon (0x0046B7C0)
-void  __cdecl FUN_0046c5a0(int p1, intptr_t p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
+void  __cdecl Effect_SkillImpactBurst(int p1, intptr_t p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
 void  __cdecl CreateBlood(intptr_t o);                                 // 0x0046C680
-void  __cdecl FUN_0046c7f0(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
+void  __cdecl WorldObject_EmitFireSmoke(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
 void  __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
 void  __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles(void);                                // 0x00477090
@@ -1245,9 +1245,9 @@ void  __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5,
 // FUN_0047f4c0 @ 0x0047F4C0 (IDA)
 void  __cdecl Font_RenderBitmapText(int p1, int p2, float p3, float p4, int p5, int p6, float p7, int p8);
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char *Text);   // IDA: RenderTipText (0x0047F7F0)
-int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
+int   __cdecl Whisper_CanSendTo(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
 void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
-void  __cdecl FUN_00481a40(CHAT* param_1, char *param_2, int param_3); // Texto de burbuja; inline en IDA CreateChat (0x00481BA0).
+void  __cdecl Chat_SetEntryText(CHAT* param_1, char *param_2, int param_3); // Texto de burbuja; inline en IDA CreateChat (0x00481BA0).
 void  __cdecl AssignChat(char *ID, char *Text, int Flag);          // 0x00482090
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850

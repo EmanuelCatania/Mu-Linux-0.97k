@@ -83,7 +83,7 @@ std::uint64_t RunInput(BYTE* memory,BYTE* attributes,BYTE* machine) {
         std::memcpy(before,memory,size); std::memcpy(allowed,memory,size); std::memcpy(beforeAttributes,attributes,64); std::memcpy(beforeMachine,machine,1412);
         const BYTE oldState=quest[0x1c882]; const int oldScript=g_iCurrentDialogScript;
         events.clear(); const bool proceed=(trial/4)%2!=0;
-        if(proceed) Require(CSQuest_ProceedButton(quest)==1); else FUN_00401af0(quest);
+        if(proceed) Require(CSQuest_ProceedButton(quest)==1); else Quest_AnswerHitTest(quest);
         for(int offset : {0x1c87f,0x1c880,0x1c881,0x1c882,0x1c884,0x1c885,0x1c886,0x1c887}) allowed[16+offset]=quest[offset];
         Require(std::memcmp(allowed,memory,size)==0 && std::memcmp(beforeAttributes,attributes,64)==0 && std::memcmp(beforeMachine,machine,1412)==0);
         Require(std::memcmp(&beforeFirst,&g_DialogScript[0],sizeof(DIALOG_SCRIPT))==0 && std::memcmp(&beforeLast,&g_DialogScript[199],sizeof(DIALOG_SCRIPT))==0);
@@ -134,7 +134,7 @@ def harness(revision=None):
     scene=read_source("src/scenes/Scene_CharSelect_Nav.cpp",revision)
     prefix += function(scene,"CSQuest_CheckRequestCondition")
     prefix += function(read_source("src/ui/Quest_UIState.cpp",revision),"CSQuest_clearQuest")
-    for name in ("Quest_SendState","FUN_00401af0"):
+    for name in ("Quest_SendState","Quest_AnswerHitTest"):
         prefix += function(scene,name)
     prefix += function(read_source("src/net/Crypto.cpp",revision),"CSQuest_ProceedButton")
     return prefix+MAIN

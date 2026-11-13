@@ -62,7 +62,7 @@ static inline unsigned int AE_ht_capacity() { return 0; }
 static inline void  AE_ht_noop2(const void*, uintptr_t)        {}
 static inline void  AE_ht_noop3(const void*, uintptr_t, uintptr_t) {}
 static inline unsigned char AE_SkillRead(const void* ctx, const void* p)
-{ return FUN_0045fae0((DWORD)(uintptr_t)ctx, (unsigned char*)p); }
+{ return HashTable_ReadByte((DWORD)(uintptr_t)ctx, (unsigned char*)p); }
 
 // Wrappers de tipo: Hex-Rays pasa enteros/DWORD donde functions.h declara
 // float*/void*. Se castea aca en vez de tocar los ~50 call sites.
@@ -93,7 +93,7 @@ static inline void AE_TransformPosition(uintptr_t model, const void* mat,
 #define HashTable_Insert(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
 #define Packet_EncryptByte(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
 #define PACKET_ENCRYPT(ctx, key)      AE_ht_noop2((const void*)(ctx), (DWORD)(uintptr_t)(key))
-#define FUN_0045fae0(ctx, p)          AE_SkillRead((const void*)(ctx), (const void*)(p))
+#define HashTable_ReadByte(ctx, p)          AE_SkillRead((const void*)(ctx), (const void*)(p))
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
 #define TransformPosition(a,b,c,d,e)  AE_TransformPosition((uintptr_t)(a), (const void*)(b), (c), (d), (e))
@@ -1778,7 +1778,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 50 )
+      if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
         v198 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
@@ -1799,7 +1799,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + CHARACTER_STRIDE * v202;
-    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 17 )
+    if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 17 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {
@@ -2016,7 +2016,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 3 )
+    else if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 3 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {
@@ -2175,7 +2175,7 @@ LABEL_75:
 #undef HashTable_Insert
 #undef Packet_EncryptByte
 #undef PACKET_ENCRYPT
-#undef FUN_0045fae0
+#undef HashTable_ReadByte
 #undef FUN_00466300
 #undef CreateJoint
 #undef TransformPosition

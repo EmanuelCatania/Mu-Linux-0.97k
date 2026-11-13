@@ -2501,10 +2501,10 @@ extern DWORD   DAT_00590b00;       // Sound device context
 extern DWORD   DAT_055c9b78;       // RefCount / tick counter
 
 extern int     PTR_LAB_00552460;   // vtable for FUN_00403310
-extern int     PTR_LAB_005524e8;   // vtable for FUN_00407970
-extern int     PTR_FUN_00552508;   // vtable for FUN_00407de0
+extern int     PTR_LAB_005524e8;   // vtable for ClothNode_SetVTable
+extern int     PTR_FUN_00552508;   // vtable for ClothBody_SetBaseVTable
 extern int     PTR_LAB_005527e4;   // vtable for FUN_0040f690
-extern int     PTR_LAB_005524b8;   // vtable for FUN_00403ef0
+extern int     PTR_LAB_005524b8;   // vtable for Quest_SetVTable
 extern int     PTR_FUN_005524c0;   // vtable for CWaveFile
 extern int     PTR_FUN_005524c4;   // vtable for CErrorReport
 extern int     PTR_FUN_005524d8;   // vtable for HashTable

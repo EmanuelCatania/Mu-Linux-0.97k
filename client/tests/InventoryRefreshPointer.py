@@ -31,8 +31,8 @@ bool Missing(unsigned slot){return profile%4==0?false:profile%4==1?true:profile%
 uint HashTable_GetIndex(int* table,void* key){Require(table==&MAIN_HASH_CLASS && key==machine && hashSlot<12);events.push_back(200+int(hashSlot));return Missing(hashSlot++)?0xffffffffu:17;}
 void* AntiTamper_HashNode(){Require(hashSlot && Missing(hashSlot-1));events.push_back(300);return node;}
 void HashTable_Insert(int* table,void* value,void* key){Require(table==&MAIN_HASH_CLASS && value==node && key==machine && node[0x584]==1);events.push_back(301);}
-void FUN_004d1fc0(){Check();events.push_back(400);}
-void FUN_004d23b0(char* x,int y,short* pool,int width,int height,char mode){
+void Equipment_HitTestAll(){Check();events.push_back(400);}
+void InventoryGrid_Tick(char* x,int y,short* pool,int width,int height,char mode){
  Check();Require(width==8);unsigned id=0;while(id<6 && reinterpret_cast<BYTE*>(pool)!=grids+offsets[id])++id;Require(id<6);
  const int expectedX=id==0?int(DAT_07ea5288)+15:id==1||id==5?int(DAT_07ea5290)+15:Origin(Ui::InventoryPair)+15;
  const int expectedY=id==0?200:id==1?int(DAT_07ea528c)+270:id==5?int(DAT_07ea528c)+70:id==3?110:50;

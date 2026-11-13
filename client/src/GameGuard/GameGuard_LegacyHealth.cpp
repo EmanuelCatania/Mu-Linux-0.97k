@@ -37,7 +37,7 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// FUN_0053d430 @ 0x0053D430 (325 bytes) — PreInitNPGameMon(gameName)
+// PreInitNPGameMon @ 0x0053D430 (325 bytes) — PreInitNPGameMon(gameName)
 //
 // Arranca nProtect GameGuard. Singleton: sale si lpParameter ya esta seteado.
 // Aloca el contexto de 0x34C bytes, instala su propio TopLevelExceptionFilter,
@@ -50,7 +50,8 @@ extern void ClearActionObject(void);
 //
 // Desactivada a proposito: los .des son binarios propietarios de nProtect que no
 // estan (ni pueden estar) en el repo, y sin ellos la cadena real aborta el arranque.
-void __cdecl FUN_0053d430(unsigned char *gameName) {
+// IDA: sub_53D430 (0x0053D430); Ghidra: FUN_0053d430
+void __cdecl PreInitNPGameMon(unsigned char *gameName) {
     (void)gameName;
 }
 

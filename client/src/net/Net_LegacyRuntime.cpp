@@ -13,7 +13,7 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 extern void __cdecl operator_delete(void* ptr);
 extern void ClearActionObject(void);
 extern void __cdecl Effect_PhysicsTick(std::uintptr_t Object);
-extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
+extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float h, int slotIdx);
 
 // En el binario original `OffsetInventoryItems` y `DAT_07ea8410` son el mismo
 // símbolo (idem para Mix/Warehouse). En nuestra build son globals separados,

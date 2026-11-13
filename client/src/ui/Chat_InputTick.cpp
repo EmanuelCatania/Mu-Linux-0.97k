@@ -280,7 +280,7 @@ extern "C" void Chat_SendChatLine(const char* text)
         // IDA WndProc L2079: `if (sub_47FED0(6, InputText[1]) == 1)`; si falla
         // salta a LABEL_589 sin mandar nada (tampoco como chat normal).  Con
         // nivel < 6 solo se le contesta a quien ya te susurro.
-        if (FUN_0047fed0(6, whisperTarget) != 1)
+        if (Whisper_CanSendTo(6, whisperTarget) != 1)
             return;
         pkt[2] = 0x02;                        // headcode = whisper
         NetText::ToServer(pkt + 3, NAME, whisperTarget);   // name[40] = DESTINATARIO

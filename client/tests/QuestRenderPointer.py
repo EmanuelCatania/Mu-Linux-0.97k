@@ -66,10 +66,10 @@ void RenderItem3D(float x,float y,float w,float h,int type,int level,int option,
 void GL_DrawTexture(int id,float x,float y,float w,float h,float u,float v,float uw,float vh,int a,int b) {
     Record(10,{id,Bits(x),Bits(y),Bits(w),Bits(h),Bits(u),Bits(v),Bits(uw),Bits(vh),a,b});
 }
-int FUN_004c3dd0(int zen) { Record(11,{zen}); return zen<0?static_cast<int>(0xff010203u):static_cast<int>(0xffa0b0c0u); }
+int GetGoldTextColor(int zen) { Record(11,{zen}); return zen<0?static_cast<int>(0xff010203u):static_cast<int>(0xffa0b0c0u); }
 char npcName[40];
 char* getMonsterName(int type) { Record(12,{type}); std::snprintf(npcName,40,"NPC%03d",type); return trialNumber%3?npcName:nullptr; }
-UINT __fastcall FUN_00403700(void* ptr,void* edx,UINT state) {
+UINT __fastcall Quest_RenderList(void* ptr,void* edx,UINT state) {
     Require(ptr==activeQuest && edx==nullptr && (state==1 || state==2)); Record(13,{state}); return 0;
 }
 void CWsctlc__LogPrintOn() { Record(14,{}); }
@@ -123,10 +123,10 @@ std::uint64_t RunRender(BYTE* memory,BYTE* tableMemory) {
         char beforeMessages[7*38],beforeAnswers[10*38]; std::memcpy(beforeMessages,DAT_083a44c4,sizeof(beforeMessages)); std::memcpy(beforeAnswers,DAT_083a4348,sizeof(beforeAnswers));
         events.clear(); int result=-1;
         if(path==0) CallAnswers(quest);
-        else if(path==1 || path==2) result=FUN_00403150(quest,0,wanted,path==1?1:0);
-        else if(path==3) FUN_00403320(quest);
-        else if(path==4) FUN_00403a40(quest);
-        else Require(FUN_00403f30(quest)==1);
+        else if(path==1 || path==2) result=Quest_RenderRequiredItems(quest,0,wanted,path==1?1:0);
+        else if(path==3) Quest_RenderNpcWindow(quest);
+        else if(path==4) Quest_RenderListPanel(quest);
+        else Require(Quest_RenderPanel(quest)==1);
         coverage|=1u<<path;
         Require(std::memcmp(before,memory,size)==0 && std::memcmp(beforeMessages,DAT_083a44c4,sizeof(beforeMessages))==0 && std::memcmp(beforeAnswers,DAT_083a4348,sizeof(beforeAnswers))==0);
         const bool npc=path==3 || (path==5 && quest[0x1c87f]==1);
@@ -252,10 +252,10 @@ def harness(revision=None):
     prefix+=function(read_source("src/ui/inventory/Item_Display.cpp",revision),"ConvertGold64")
     source=read_source("src/ui/Quest_Legacy.cpp",revision)
     prefix+=function(source,"QuestX")
-    answers=function(source,"FUN_00402ff0"); prefix+=answers
+    answers=function(source,"Quest_RenderDialogText"); prefix+=answers
     argument="quest" if "const BYTE*" in answers.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"
-    prefix+="\nvoid CallAnswers(BYTE* quest) { FUN_00402ff0("+argument+"); }\n"
-    for name in ("FUN_00403150","FUN_00403320","FUN_00403a40","FUN_00403f30"):
+    prefix+="\nvoid CallAnswers(BYTE* quest) { Quest_RenderDialogText("+argument+"); }\n"
+    for name in ("Quest_RenderRequiredItems","Quest_RenderNpcWindow","Quest_RenderListPanel","Quest_RenderPanel"):
         prefix+=function(source,name)
     return prefix+MAIN
 

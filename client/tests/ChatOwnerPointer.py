@@ -20,7 +20,7 @@ const char* Guild_GetMarkName(int row){Require(row==0||row==2);return row==0?"G0
 '''
 AFTER=r'''
 char DAT_07e016f8[100*0x254];CHAT* AsChat(void* p){return static_cast<CHAT*>(p);}unsigned assigned;int assignedFlag;
-void FUN_00481a40(CHAT* slot,char* text,int flag){++assigned;assignedFlag=flag;std::strcpy(slot->Text[0],text);slot->LifeTime[0]=1000+flag;}
+void Chat_SetEntryText(CHAT* slot,char* text,int flag){++assigned;assignedFlag=flag;std::strcpy(slot->Text[0],text);slot->LifeTime[0]=1000+flag;}
 '''
 MAIN=r'''
 std::uint64_t Run(BYTE* memory,uintptr_t alias){auto* actor=reinterpret_cast<CHARACTER*>(memory+16);std::uint64_t hash=14695981039346656037ull;unsigned cases=0;
