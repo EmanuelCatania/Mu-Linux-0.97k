@@ -161,6 +161,9 @@ struct SDLFont::Impl {
     FontMetrics metrics;
     bool underline = false;
     bool strikeOut = false;
+    // La familia no trae variante Bold (SimSun, MS Gothic...): se engrosa la
+    // normal, como hace GDI.
+    bool syntheticBold = false;
     std::unordered_map<uint32_t, FontGlyph> glyphs;
     std::unordered_map<uint32_t, FontGlyph> glyphIds;
     hb_font_t* shaping = nullptr;
@@ -304,7 +307,11 @@ bool RasterizeColor(FT_Face face, FT_UInt glyphIndex, FontGlyph& out)
 // Rasterizado de 1 bit con el intérprete v35: el mismo aspecto que GDI.
 // Lo comparten la búsqueda por carácter (texto 1252) y por id de glifo
 // (texto ya pasado por HarfBuzz), así un mismo glifo sale idéntico.
-FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut, bool antialias)
+// `syntheticBold`: negrita simulada de GDI, el glifo repetido un píxel a la
+// derecha y un píxel más de avance. Sirve igual para contornos y para los
+// mapas de bits embebidos de las fuentes CJK.
+FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut,
+    bool antialias, bool syntheticBold)
 {
     FontGlyph glyph;
     if (RasterizeColor(face, glyphIndex, glyph)) return glyph;
@@ -322,6 +329,23 @@ FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics
             const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : glyph.height - 1 - y) * std::abs(bitmap.pitch);
             for (int x = 0; x < glyph.width; ++x)
                 glyph.coverage[size_t(y) * glyph.width + x] = gray ? row[x] : ((row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0);
+        }
+        if (syntheticBold) {
+            if (glyph.width > 0 && glyph.height > 0) {
+                const int width = glyph.width + 1;
+                std::vector<uint8_t> bold(size_t(width) * glyph.height, 0);
+                for (int y = 0; y < glyph.height; ++y) {
+                    const uint8_t* source = glyph.coverage.data() + size_t(y) * glyph.width;
+                    uint8_t* target = bold.data() + size_t(y) * width;
+                    for (int x = 0; x < glyph.width; ++x) {
+                        target[x] = std::max(target[x], source[x]);
+                        target[x + 1] = source[x];
+                    }
+                }
+                glyph.width = width;
+                glyph.coverage.swap(bold);
+            }
+            if (glyph.advance > 0) ++glyph.advance;
         }
     }
     if (face && (underline || strikeOut) && glyph.advance > 0) {
@@ -412,7 +436,7 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
     const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
     if (impl->cbdtScale > 0.0f) return impl->glyphs.emplace(codepoint, RasterizeBitmapColor(index)).first->second;
     return impl->glyphs.emplace(codepoint,
-        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
+        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias, impl->syntheticBold)).first->second;
 }
 const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
 {
@@ -420,7 +444,7 @@ const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
     if (existing != impl->glyphIds.end()) return existing->second;
     if (impl->cbdtScale > 0.0f) return impl->glyphIds.emplace(glyph, RasterizeBitmapColor(glyph)).first->second;
     return impl->glyphIds.emplace(glyph,
-        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
+        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias, impl->syntheticBold)).first->second;
 }
 bool SDLFont::HasCodepoint(uint32_t codepoint) const
 {
@@ -588,10 +612,22 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     const std::string name = LowerFamily(requested) == "system" ? "arial" : LowerFamily(requested);
     std::string path;
     InstalledFace installedFace;
+    // Familia sin la variante pedida: se usa otra de la misma familia antes
+    // que cambiar de fuente. Una negrita que falta se simula sobre la normal
+    // (GDI hace lo mismo); si no, los caracteres que la fuente de respaldo no
+    // tiene salen de una tercera fuente, con otro tamaño.
+    bool syntheticBold = false;
     if (name != "liberation sans") {
         const auto& installed = InstalledFonts().paths;
-        const auto found = installed.find(name + (bold ? "/b" : "/r") + (italic ? "i" : "n"));
-        if (found != installed.end()) { installedFace = found->second; path = installedFace.path; }
+        struct Try { bool bold, italic; };
+        const Try order[] = { { bold, italic }, { false, italic }, { bold, false }, { false, false } };
+        for (const Try& variant : order) {
+            const auto found = installed.find(name + (variant.bold ? "/b" : "/r") + (variant.italic ? "i" : "n"));
+            if (found == installed.end()) continue;
+            installedFace = found->second; path = installedFace.path;
+            syntheticBold = bold && !variant.bold;
+            break;
+        }
     }
     // Una familia instalada puede ser de símbolos (Webdings/Wingdings) o
     // resultar incompatible. El respaldo depende de cargarla, no sólo de leerla.
@@ -604,6 +640,7 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
         loaded = !bytes.empty() && Load(std::move(bytes), height, error);
     }
     const bool fallback = !loaded;
+    if (fallback) syntheticBold = false;
     if (fallback) {
         const char* root = assetRoot && *assetRoot ? assetRoot : std::getenv("MU_ASSET_ROOT");
         // Igual que el resto de los assets: relativo a la carpeta del cliente.
@@ -619,6 +656,7 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     }
     impl->underline = underline;
     impl->strikeOut = strikeOut;
+    impl->syntheticBold = syntheticBold;
     if (width != 0) {
         width = std::abs(width);
         const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(impl->face, ft_sfnt_os2));
@@ -631,7 +669,8 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     SDL_Log("Fuente %s -> %s, altura %d%s", requested.c_str(), path.c_str(), height, fallback ? " (respaldo)" : "");
     // Log persistente junto al resto de logs del cliente, también si no hay consola.
     if (FILE* log = std::fopen("fonts.log", "a")) {
-        std::fprintf(log, "%s -> %s; altura=%d; bold=%d; italic=%d%s\n", requested.c_str(), path.c_str(), height, bold, italic, fallback ? "; respaldo" : "");
+        std::fprintf(log, "%s -> %s; altura=%d; bold=%d; italic=%d%s%s\n", requested.c_str(), path.c_str(), height, bold, italic,
+            fallback ? "; respaldo" : "", syntheticBold ? "; negrita simulada" : "");
         std::fclose(log);
     }
     return true;
