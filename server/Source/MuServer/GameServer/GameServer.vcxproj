@@ -161,7 +161,8 @@
     <ClInclude Include="ItemStack.h" />
     <ClInclude Include="ItemValue.h" />
     <ClInclude Include="JSProtocol.h" />
-    <ClInclude Include="Log.h" />
+    <ClInclude Include="..\Common\Log.h" />
+    <ClInclude Include="LogTypes.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="MapItem.h" />
     <ClInclude Include="MapManager.h" />
@@ -170,7 +171,7 @@
     <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="MemoryAllocatorInfo.h" />
     <ClInclude Include="Message.h" />
-    <ClInclude Include="MiniDump.h" />
+    <ClInclude Include="..\Common\MiniDump.h" />
     <ClInclude Include="Monster.h" />
     <ClInclude Include="MonsterManager.h" />
     <ClInclude Include="MonsterSetBase.h" />
@@ -190,7 +191,7 @@
     <ClInclude Include="Queue.h" />
     <ClInclude Include="QueueTimer.h" />
     <ClInclude Include="RandomManager.h" />
-    <ClInclude Include="ReadScript.h" />
+    <ClInclude Include="..\Common\ReadScript.h" />
     <ClInclude Include="Reconnect.h" />
     <ClInclude Include="ResetTable.h" />
     <ClInclude Include="Resource.h" />
@@ -266,7 +267,7 @@
     <ClCompile Include="ItemStack.cpp" />
     <ClCompile Include="ItemValue.cpp" />
     <ClCompile Include="JSProtocol.cpp" />
-    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapItem.cpp" />
     <ClCompile Include="MapManager.cpp" />
@@ -275,7 +276,7 @@
     <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="MemoryAllocatorInfo.cpp" />
     <ClCompile Include="Message.cpp" />
-    <ClCompile Include="MiniDump.cpp" />
+    <ClCompile Include="..\Common\MiniDump.cpp" />
     <ClCompile Include="Monster.cpp" />
     <ClCompile Include="MonsterManager.cpp" />
     <ClCompile Include="MonsterSetBase.cpp" />
@@ -291,10 +292,10 @@
     <ClCompile Include="Quest.cpp" />
     <ClCompile Include="QuestObjective.cpp" />
     <ClCompile Include="QuestReward.cpp" />
-    <ClCompile Include="Queue.cpp" />
+    <ClCompile Include="..\Common\Queue.cpp" />
     <ClCompile Include="QueueTimer.cpp" />
     <ClCompile Include="RandomManager.cpp" />
-    <ClCompile Include="ReadScript.cpp" />
+    <ClCompile Include="..\Common\ReadScript.cpp" />
     <ClCompile Include="Reconnect.cpp" />
     <ClCompile Include="ResetTable.cpp" />
     <ClCompile Include="ScheduleManager.cpp" />

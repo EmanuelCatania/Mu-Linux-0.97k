@@ -193,11 +193,12 @@
     <ClInclude Include="..\Common\CriticalSection.h" />
     <ClInclude Include="JoinServer.h" />
     <ClInclude Include="JoinServerProtocol.h" />
-    <ClInclude Include="Log.h" />
+    <ClInclude Include="..\Common\Log.h" />
+    <ClInclude Include="LogTypes.h" />
     <ClInclude Include="MD5.h" />
     <ClInclude Include="MD5_KEYVAL.H" />
-    <ClInclude Include="ReadScript.h" />
-    <ClInclude Include="MiniDump.h" />
+    <ClInclude Include="..\Common\ReadScript.h" />
+    <ClInclude Include="..\Common\MiniDump.h" />
     <ClInclude Include="..\Common\ProtocolDefines.h" />
     <ClInclude Include="..\Common\QueryManager.h" />
     <ClInclude Include="Queue.h" />
@@ -216,15 +217,15 @@
     <ClCompile Include="..\Common\CriticalSection.cpp" />
     <ClCompile Include="JoinServer.cpp" />
     <ClCompile Include="JoinServerProtocol.cpp" />
-    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="..\Common\Log.cpp" />
     <ClCompile Include="MD5.cpp" />
-    <ClCompile Include="ReadScript.cpp" />
-    <ClCompile Include="MiniDump.cpp" />
+    <ClCompile Include="..\Common\ReadScript.cpp" />
+    <ClCompile Include="..\Common\MiniDump.cpp" />
     <ClCompile Include="..\Common\QueryManager.cpp" />
     <ClCompile Include="..\Common\SqlFormat.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Queue.cpp" />
+    <ClCompile Include="..\Common\Queue.cpp" />
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />

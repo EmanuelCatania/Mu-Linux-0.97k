@@ -132,10 +132,13 @@
     <ClInclude Include="MonsterSetBase.h">
       <Filter>Monsters</Filter>
     </ClInclude>
-    <ClInclude Include="Log.h">
+    <ClInclude Include="..\Common\Log.h">
       <Filter>Util Files</Filter>
     </ClInclude>
-    <ClInclude Include="MiniDump.h">
+    <ClInclude Include="LogTypes.h">
+      <Filter>Util Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\MiniDump.h">
       <Filter>Util Files</Filter>
     </ClInclude>
     <ClInclude Include="QueueTimer.h">
@@ -363,7 +366,7 @@
     <ClInclude Include="Resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="ReadScript.h">
+    <ClInclude Include="..\Common\ReadScript.h">
       <Filter>Util Files</Filter>
     </ClInclude>
     <ClInclude Include="ContentCatalog.h">
@@ -446,10 +449,10 @@
     <ClCompile Include="MonsterSetBase.cpp">
       <Filter>Monsters</Filter>
     </ClCompile>
-    <ClCompile Include="Log.cpp">
+    <ClCompile Include="..\Common\Log.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
-    <ClCompile Include="MiniDump.cpp">
+    <ClCompile Include="..\Common\MiniDump.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="QueueTimer.cpp">
@@ -638,7 +641,7 @@
     <ClCompile Include="PacketTrace.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
-    <ClCompile Include="Queue.cpp">
+    <ClCompile Include="..\Common\Queue.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="Reconnect.cpp">
@@ -671,7 +674,7 @@
     <ClCompile Include="EventTimeManager.cpp">
       <Filter>Events</Filter>
     </ClCompile>
-    <ClCompile Include="ReadScript.cpp">
+    <ClCompile Include="..\Common\ReadScript.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="ContentCatalog.cpp">
