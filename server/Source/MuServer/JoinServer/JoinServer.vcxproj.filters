@@ -35,10 +35,10 @@
     <ClInclude Include="JoinServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AllowableIpList.h">
+    <ClInclude Include="..\Common\AllowableIpList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CriticalSection.h">
+    <ClInclude Include="..\Common\CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="JoinServerProtocol.h">
@@ -47,7 +47,7 @@
     <ClInclude Include="ReadScript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QueryManager.h">
+    <ClInclude Include="..\Common\QueryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Queue.h">
@@ -62,7 +62,7 @@
     <ClInclude Include="SocketManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SocketManagerUdp.h">
+    <ClInclude Include="..\Common\SocketManagerUdp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
@@ -83,10 +83,10 @@
     <ClInclude Include="MD5_KEYVAL.H">
       <Filter>Util Files</Filter>
     </ClInclude>
-    <ClInclude Include="ProtocolDefines.h">
+    <ClInclude Include="..\Common\ProtocolDefines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Console.h">
+    <ClInclude Include="..\Common\Console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -97,10 +97,10 @@
     <ClCompile Include="JoinServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AllowableIpList.cpp">
+    <ClCompile Include="..\Common\AllowableIpList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CriticalSection.cpp">
+    <ClCompile Include="..\Common\CriticalSection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JoinServerProtocol.cpp">
@@ -109,7 +109,7 @@
     <ClCompile Include="ReadScript.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QueryManager.cpp">
+    <ClCompile Include="..\Common\QueryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Queue.cpp">

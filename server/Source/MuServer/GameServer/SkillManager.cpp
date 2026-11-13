@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "SkillManager.h"
-#include "Math.h"
+#include "GameMath.h"
 #include "Attack.h"
 #include "EffectManager.h"
 #include "Fruit.h"

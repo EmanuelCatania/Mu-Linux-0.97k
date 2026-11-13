@@ -54,6 +54,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
+      <AdditionalIncludeDirectories>.;..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -70,6 +71,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
+      <AdditionalIncludeDirectories>.;..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -96,19 +98,19 @@
     <ClInclude Include="ClientManager.h" />
     <ClInclude Include="ConnectServer.h" />
     <ClInclude Include="ConnectServerProtocol.h" />
-    <ClInclude Include="Console.h" />
-    <ClInclude Include="CriticalSection.h" />
+    <ClInclude Include="..\Common\Console.h" />
+    <ClInclude Include="..\Common\CriticalSection.h" />
     <ClInclude Include="IpManager.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="ReadScript.h" />
     <ClInclude Include="MiniDump.h" />
-    <ClInclude Include="ProtocolDefines.h" />
+    <ClInclude Include="..\Common\ProtocolDefines.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ServerDisplayer.h" />
     <ClInclude Include="ServerList.h" />
     <ClInclude Include="SocketManager.h" />
-    <ClInclude Include="SocketManagerUdp.h" />
+    <ClInclude Include="..\Common\SocketManagerUdp.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
@@ -117,7 +119,7 @@
     <ClCompile Include="ConnectServer.cpp" />
     <ClCompile Include="ConnectServerProtocol.cpp" />
     <ClCompile Include="Console.cpp" />
-    <ClCompile Include="CriticalSection.cpp" />
+    <ClCompile Include="..\Common\CriticalSection.cpp" />
     <ClCompile Include="IpManager.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="ReadScript.cpp" />

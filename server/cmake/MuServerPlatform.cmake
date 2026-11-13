@@ -16,7 +16,9 @@ function(mu_add_server target directory)
     endforeach()
   endif()
   add_executable(${target} ${sources})
-  target_include_directories(${target} PRIVATE "${directory}/../Common")
+  # La carpeta del server va explícita: los .cpp compartidos de Common incluyen
+  # el stdafx.h, Util.h y Log.h propios de cada server.
+  target_include_directories(${target} PRIVATE "${directory}" "${directory}/../Common")
   target_compile_features(${target} PRIVATE cxx_std_17)
   if(MSVC)
     target_compile_options(${target} PRIVATE /W4 /w14311 /w14312 /w14302 /w14244)
