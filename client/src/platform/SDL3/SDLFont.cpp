@@ -10,7 +10,7 @@
 #include <limits>
 #include <unordered_map>
 #include "platform/IFileSystem.h"
-#include "Render/Texture/ImageCodec.h"
+#include "render/Texture/ImageCodec.h"
 #include FT_TRUETYPE_TAGS_H
 #include <SDL3/SDL.h>
 #include <filesystem>

@@ -108,9 +108,9 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);auto 
 '''
 
 def harness(revision=None):
-    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p)) for p in ['src/Render/Materials.h','src/Render/BufferedDraw.h','src/Render/BMDDevice.h','src/Render/MeshDraw.h','src/Render/Skinning.h'])
-    effects=read_source('src/Render/BMD_LegacyEffects.cpp',revision)
-    bodies='namespace MeshDraw{'+function(read_source('src/Render/Backend/GL/MeshDraw.cpp',revision),'DrawShadow')+'}\n'+''.join(function(effects,n)for n in ['BMD__BeginRender','BMD__RenderMeshEffect','BMD__RenderBodyShadow'])
+    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p)) for p in ['src/render/Materials.h','src/render/BufferedDraw.h','src/render/BMDDevice.h','src/render/MeshDraw.h','src/render/Skinning.h'])
+    effects=read_source('src/render/BMD_LegacyEffects.cpp',revision)
+    bodies='namespace MeshDraw{'+function(read_source('src/rhi/GL/MeshDraw.cpp',revision),'DrawShadow')+'}\n'+''.join(function(effects,n)for n in ['BMD__BeginRender','BMD__RenderMeshEffect','BMD__RenderBodyShadow'])
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+headers+SERVICES+bodies+MAIN
 
 def main():

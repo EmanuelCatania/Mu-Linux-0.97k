@@ -99,7 +99,7 @@ def harness(revision=None):
                               ("CHANGE_FIELD", "Change", "BYTE")):
         support = re.sub(rf"\b{token}\b", re.search(rf"\b{kind}\s+{name}\s*;", types).group(), support)
     support = support.replace("BODY_FIELD", re.search(r"PART_t\s+BodyPart\[6\]\s*;", types).group())
-    scale = function(read_source("src/Render/SMD_Parser.cpp", revision), "SetCharacterScale")
+    scale = function(read_source("src/render/SMD_Parser.cpp", revision), "SetCharacterScale")
     call = "SetCharacterScale(character)" if "CHARACTER* param_1" in scale else "SetCharacterScale(static_cast<int>(reinterpret_cast<std::uintptr_t>(character)))"
     return PREAMBLE.split("BYTE* reservation;")[0] + support + scale + MAIN.replace("CALL_SCALE", call)
 

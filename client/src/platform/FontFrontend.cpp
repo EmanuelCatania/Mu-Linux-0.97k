@@ -1,7 +1,7 @@
 // Font.cpp — CFont. Ver Font.h.
 
 #include "stdafx.h"
-#include "Render/GlyphAtlas.h"
+#include "render/GlyphAtlas.h"
 #include <algorithm>
 #ifndef _WIN32
 #include <strings.h>

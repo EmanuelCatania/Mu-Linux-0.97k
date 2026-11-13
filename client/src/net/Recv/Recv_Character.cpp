@@ -581,7 +581,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // (9) entity+459 = 0 (status flag) + teleport-in effect 1265.
     heroPtr[EntityOffset(459)] = 0;
     // CreateEffect(1265, Hero.Position, Hero.Angle, Hero+232, 0, Hero, -1, 0, 0)
-    // Effect_Spawn signature: see src/Render/Particle_Spawn.cpp / Particle_Spawn.
+    // Effect_Spawn signature: see src/render/Particle_Spawn.cpp / Particle_Spawn.
     // Wire-up TODO: nuestro Effect_Spawn aún no está parameterizado igual; la
     // entrada al mundo funciona sin el efecto visual.
 

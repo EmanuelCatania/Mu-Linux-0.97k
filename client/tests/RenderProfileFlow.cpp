@@ -1,10 +1,10 @@
-#include "Render/RenderProfile.h"
+#include "render/RenderProfile.h"
 // Sonda sin contexto: sólo la instrumentación consulta estos bindings.
 static int fakeTexture=17;
 static unsigned bindingReads=0;
 void glGetIntegerv(unsigned query,int* value){++bindingReads;*value=query==0x88EF?0:fakeTexture;}
-#include "Render/Backend/GL/ProfileUploads.h"
-#include "Render/Backend/GL/ProfileQueries.h"
+#include "rhi/GL/ProfileUploads.h"
+#include "rhi/GL/ProfileQueries.h"
 #include "platform/ITimer.h"
 #include <cstdio>
 #include <cstdlib>

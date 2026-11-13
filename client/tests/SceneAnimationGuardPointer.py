@@ -57,7 +57,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Render/Entity_Render_3D.cpp',revision)
+    source=read_source('src/render/Entity_Render_3D.cpp',revision)
     source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S)
     start=source.index('if ((pfVar3 == (float *)0x67)');first=source.index('(',start)+1;end=first;depth=1
     while depth:depth+=(source[end]=='(')-(source[end]==')');end+=1

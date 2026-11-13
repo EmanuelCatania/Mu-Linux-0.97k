@@ -57,7 +57,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Render/HUD_Pass1.cpp',revision)
+    source=read_source('src/render/HUD_Pass1.cpp',revision)
     body=function(source,'RenderMainFrameWindow_');start=body.index('if (CharacterMachine)');brace=body.index('{',start);end=brace+1;depth=1
     while depth:
         depth+=(body[end]=='{')-(body[end]=='}');end+=1

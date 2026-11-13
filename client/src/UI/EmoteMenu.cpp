@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "UI/EmoteMenu.h"
 #include "Model/Model_CustomAnim.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "platform/Text.h"
 #include "Core/Font.h"
 #include "Core/Window.h"

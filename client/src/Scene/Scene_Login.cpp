@@ -56,7 +56,7 @@
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"

@@ -73,7 +73,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0] + "\n#include <cmath>\n"
     prefix += re.search(r"^float\s+_DAT_00552d00\s*=[^;]+;", read_source("src/globals.cpp", revision), re.M).group()
-    slerp = function(read_source("src/Render/Render_LegacyTransforms.cpp", revision), "QuatSlerp")
+    slerp = function(read_source("src/render/Render_LegacyTransforms.cpp", revision), "QuatSlerp")
     call = "QuatSlerp(a, b, t, output);" if "const float* q1" in slerp else "int bits; std::memcpy(&bits, &t, 4); QuatSlerp(static_cast<int>(reinterpret_cast<std::uintptr_t>(a)), static_cast<int>(reinterpret_cast<std::uintptr_t>(b)), bits, static_cast<int>(reinterpret_cast<std::uintptr_t>(output)));"
     return prefix + slerp + MAIN.replace("CALL_SLERP", call)
 

@@ -38,7 +38,7 @@ endif()
     return subprocess.check_output([str(binary)],text=True)
 
 def harness(revision, coupled_only=False):
-    source = read_source('src/Render/EquipmentVisuals.cpp', revision)
+    source = read_source('src/render/EquipmentVisuals.cpp', revision)
     draw = source[source.index('void Equipment_Draw('):]
     start = draw.index('        if (!command.mesh) {')
     end = draw.index('        const Mesh &mesh', start)

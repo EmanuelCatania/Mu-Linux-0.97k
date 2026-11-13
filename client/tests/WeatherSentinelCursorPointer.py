@@ -13,7 +13,7 @@ from SceneObjectPointer import build_and_run, read_source
 from WeatherCompareCursorPointer import SERVICES, MAIN
 
 def harness(revision=None):
-    source=read_source('src/Render/Weather.cpp',revision);comparisons=[]
+    source=read_source('src/render/Weather.cpp',revision);comparisons=[]
     starts=list(re.finditer(r'^\s*puVar16\s*=[^\n]*&uStack_48[^\n]*$',source,re.M))
     if len(starts)!=2:raise ValueError('Recorridos de centinela inesperados')
     for index,start in enumerate(starts):

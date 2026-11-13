@@ -5,7 +5,7 @@
 #include "functions.h"
 #include "net/MuEmu.h"
 #include "net/Net.h"
-#include "Render/Camera.h"
+#include "render/Camera.h"
 
 // CollisionDetectLineToFace @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
 //   xf → DAT_083a4130  (cursor billboard screen X / picked world X)

@@ -2,7 +2,7 @@
 #include "game/physics/ClothTypes.h"
 #include "game/entity/CharacterCloth.h"
 #include "game/entity/ObjectPose.h"
-#include "Render/EquipmentVisuals.h"
+#include "render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 
 extern "C" const char* Guild_GetMarkName(int row);

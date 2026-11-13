@@ -93,7 +93,7 @@ int main(){
 def struct(source,name):
     return re.search(r'^struct '+name+r'\s*\{[\s\S]*?^\};',source,re.M).group()
 def harness(revision=None):
-    source=read_source('src/Render/EquipmentVisuals.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
+    source=read_source('src/render/EquipmentVisuals.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
     draw=function(source,'Equipment_Draw');brace=draw.index('{');end=draw.index('char savedBones')
     draw=draw[:brace].replace('void Equipment_Draw','bool CheckDraw')+'{'+draw[brace+1:end].replace('return;','return false;')+'return true;}'
     native='Equipment_BeginCharacter(const CHARACTER*' in source

@@ -103,7 +103,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Render/SMD_Parser.cpp',revision)
+    source=read_source('src/render/SMD_Parser.cpp',revision)
     preamble=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x80000')
     return preamble+SERVICES+'\n#define rand ControlledRand\n'+function(source,'Effect_CollisionCheck')+'\n#undef rand\n'+MAIN
 

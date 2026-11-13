@@ -5,7 +5,7 @@
 #include "functions.h"
 #include "net/MuEmu.h"
 #include "net/Net.h"
-#include "Render/Camera.h"
+#include "render/Camera.h"
 
 // ── Named aliases ────────────────────────────────────────────────────────────
 

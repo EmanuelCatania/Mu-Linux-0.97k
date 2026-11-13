@@ -1,5 +1,5 @@
-#include "Render/TransformWorkers.h"
-#include "Render/TransformMath.h"
+#include "render/TransformWorkers.h"
+#include "render/TransformMath.h"
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>

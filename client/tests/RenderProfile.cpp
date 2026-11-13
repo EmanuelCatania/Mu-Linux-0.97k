@@ -1,7 +1,7 @@
 #define GLAD_GL_IMPLEMENTATION
 #include "platform/GL/glad.h"
-#include "Render/Backend/GL/ProfileQueries.h"
-#include "Render/ProfileStats.h"
+#include "rhi/GL/ProfileQueries.h"
+#include "render/ProfileStats.h"
 #include <array>
 #include <cstdio>
 #include <cstdlib>

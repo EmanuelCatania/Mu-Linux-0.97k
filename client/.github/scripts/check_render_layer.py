@@ -1,8 +1,8 @@
 """Verifica que el código del juego no use OpenGL directamente.
 
-Sólo src/Render/Backend/** y src/platform/** pueden llamar a gl*/wgl*/glu*,
-usar constantes GL_* o tipos GL*. El resto pasa por Render/Gfx.h y
-Render/BufferedDraw.h. Se ignoran comentarios y literales de texto.
+Sólo src/rhi/** y src/platform/** pueden llamar a gl*/wgl*/glu*,
+usar constantes GL_* o tipos GL*. El resto pasa por render/Gfx.h y
+render/BufferedDraw.h. Se ignoran comentarios y literales de texto.
 
 En todo src/ (backend incluido) tampoco se admite el pipeline fijo de
 OpenGL 1.1: el contexto es 3.3 core y glad.h se genera sin compatibility.
@@ -12,7 +12,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-ALLOWED = ('src/Render/Backend/', 'src/platform/')
+ALLOWED = ('src/rhi/', 'src/platform/')
 ALLOWED_FILES = set()
 
 PATTERN = re.compile(
@@ -80,7 +80,7 @@ def main():
     if hits:
         print(f'\n{hits} usos de OpenGL fuera del backend o del pipeline fijo.')
         return 1
-    print('OK: sin OpenGL fuera de src/Render/Backend y src/Platform, ni pipeline fijo.')
+    print('OK: sin OpenGL fuera de src/rhi y src/platform, ni pipeline fijo.')
     return 0
 
 

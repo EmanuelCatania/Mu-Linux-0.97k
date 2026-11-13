@@ -6,7 +6,7 @@ from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run,read_source
 
 def harness(revision=None):
- source=read_source('src/Render/Entity_Render_3D.cpp',revision);source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S);wrappers=[]
+ source=read_source('src/render/Entity_Render_3D.cpp',revision);source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S);wrappers=[]
  for name,needle,last in [('Smoke','uVar4 = _rand();',False),('Burst','uVar4 = _rand() & 0x80000007;',False),('Light','uVar4 = _rand() & 0x80000001;',True)]:
   start=source.rindex(needle) if last else source.index(needle);part=source[start:];match=re.search(r'if \((?:pfVar3 == \(float \*\)0x0|randomRemainder == 0)\) \{',part);assert match
   setup=part[:match.start()];condition=match.group()[4:-3]

@@ -82,7 +82,7 @@ def harness(revision=None):
  wrapper='\n#if INTPTR_MAX == INT32_MAX\nbool PickingCall(void* model){return '+expression+';}\n#endif\n'
  from AnimationBonesPointer import layouts
  from ObjectLayoutContract import record
- body=extract(read('src/Render/BMD_Collision.cpp',revision),'BMD__CollisionDetectLineToMesh')
+ body=extract(read('src/render/BMD_Collision.cpp',revision),'BMD__CollisionDetectLineToMesh')
  code=re.sub(r'\b188\b','sizeof(BMD)',MAIN);code=re.sub(r'\b120\b','(3*sizeof(ClothModelMesh))',code).replace('m*40','m*sizeof(ClothModelMesh)')
  code=code.replace('Put(model,40,DWORD(reinterpret_cast<uintptr_t>(meshes)));','reinterpret_cast<BMD*>(model)->Meshs=meshes;')
  code=code.replace('Put(meshes,m*sizeof(ClothModelMesh)+28,DWORD(reinterpret_cast<uintptr_t>(triangles+m*72)));','reinterpret_cast<ClothModelMesh*>(meshes)[m].Triangles=triangles+m*72;')

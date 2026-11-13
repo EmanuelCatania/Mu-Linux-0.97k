@@ -6,7 +6,7 @@ from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run,read_source
 
 def harness(revision=None):
- source=read_source('src/Render/Entity_Render_3D.cpp',revision)
+ source=read_source('src/render/Entity_Render_3D.cpp',revision)
  source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S)
  wrappers=[]
  for name,marker,kind in [('Range','case 4:', 'if'),('Map8','case 8:', 'switch'),('Map10','case 0xa:', 'switch')]:

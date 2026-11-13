@@ -155,7 +155,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 def harness(revision=None):
     close=function(read_source('src/net/Crypto.cpp',revision),'CWsctlc_Close')
     getter=function(read_source('src/net/Crypto.cpp',revision),'CWsctlc_GetSocket')
-    startup=function(read_source('src/Render/SMD_Parser.cpp',revision),'CWsctlc_Startup')
+    startup=function(read_source('src/render/SMD_Parser.cpp',revision),'CWsctlc_Startup')
     scene=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
     send=function(scene,'CWsctlc_FDWriteSend');recv=function(scene,'CWsctlc_nRecv')
     disconnect=function(read_source('src/net/Net_Disconnect.cpp',revision),'Net_Disconnect')

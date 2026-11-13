@@ -36,12 +36,12 @@
 #include "stdafx.h"
 #include "platform/UserPath.h"
 #include "game/entity/EntityName.h"
-#include "Render/Gfx.h"
-#include "Render/RenderProfile.h"
-#include "Render/TerrainDraw.h"
-#include "Render/Materials.h"
+#include "render/Gfx.h"
+#include "render/RenderProfile.h"
+#include "render/TerrainDraw.h"
+#include "render/Materials.h"
 #include "Config/UserSettings.h"
-#include "Render/MaterialVisuals.h"
+#include "render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
 void Chat_TickPresentation();
@@ -69,7 +69,7 @@ void ItemNames_TickInput();
 #include "game/core/Game_CharSelectTick.h"
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_CharSelect.h"
-#include "Render/Render.h"
+#include "render/Render.h"
 #include "net/Net.h"
 #include "net/MuEmu.h"
 #include <stdlib.h>

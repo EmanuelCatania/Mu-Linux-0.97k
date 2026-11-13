@@ -65,7 +65,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0]
     prefix += re.search(r"^float\s+_DAT_00552cf0\s*=[^;]+;", read_source("src/globals.cpp", revision), re.M).group()
-    matrix = function(read_source("src/Render/Render_LegacyTransforms.cpp", revision), "QuatToMatrix")
+    matrix = function(read_source("src/render/Render_LegacyTransforms.cpp", revision), "QuatToMatrix")
     args = "q, m" if "const float* q" in matrix else "static_cast<int>(reinterpret_cast<std::uintptr_t>(q)), static_cast<int>(reinterpret_cast<std::uintptr_t>(m))"
     return prefix + matrix + MAIN.replace("CALL_MATRIX", f"QuatToMatrix({args}, 123, -456)")
 

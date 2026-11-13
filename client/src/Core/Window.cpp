@@ -2,8 +2,8 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Render/RenderProfile.h"
-#include "Render/TerrainDraw.h"
+#include "render/RenderProfile.h"
+#include "render/TerrainDraw.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"
 #include "Core/Font.h"
@@ -16,15 +16,15 @@
 #include "platform/IGLContext.h"
 #include "Config/UserSettings.h"
 #include "game/core/FrameLimiter.h"
-#include "Render/BufferedDraw.h"
-#include "Render/MeshDraw.h"
-#include "Render/GlyphAtlas.h"
-#include "Render/Gfx.h"
-#include "Render/Texture/Texture.h"
-#include "Render/RenderBackend.h"
+#include "render/BufferedDraw.h"
+#include "render/MeshDraw.h"
+#include "render/GlyphAtlas.h"
+#include "render/Gfx.h"
+#include "render/Texture/Texture.h"
+#include "render/RenderBackend.h"
 #ifdef MU_RENDER_WEBGPU
-#include "Render/Backend/WebGPU/Device.h"
-#include "Render/Backend/WebGPU/Renderer.h"
+#include "rhi/WebGPU/Device.h"
+#include "rhi/WebGPU/Renderer.h"
 #endif
 
 CWindow gWindow;

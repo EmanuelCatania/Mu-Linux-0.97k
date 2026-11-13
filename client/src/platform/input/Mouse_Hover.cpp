@@ -38,7 +38,7 @@
 #include "stdafx.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "platform/ITimer.h"
 #include "platform/IInput.h"
 #include "globals.h"

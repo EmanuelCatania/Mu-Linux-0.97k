@@ -11,7 +11,7 @@
 #include "stdafx.h"
 #include "game/physics/ClothTypes.h"
 #include "Item/ContentCatalog.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "game/core/MapManager.h"

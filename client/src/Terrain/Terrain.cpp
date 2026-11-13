@@ -390,8 +390,8 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
-#include "Render/BufferedDraw.h"
-#include "Render/Texture/ImageCodec.h"
+#include "render/BufferedDraw.h"
+#include "render/Texture/ImageCodec.h"
 #include "platform/IWindow.h"
 #include "platform/IFileSystem.h"
 #include "Terrain/Terrain.h"

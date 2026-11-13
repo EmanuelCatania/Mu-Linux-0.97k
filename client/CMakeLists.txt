@@ -55,30 +55,30 @@ set(MU_SOURCES
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
-    src/Render/GlyphAtlas.cpp
-    src/Render/BufferedDraw.cpp
-    src/Render/Skinning.cpp
-    src/Render/MeshTopology.cpp
-    src/Render/Gfx.cpp
-    src/Render/Backend/GL/GfxDevice.cpp
-    src/Render/Backend/Dispatch.cpp
-    src/Render/ResourceTables.cpp
-    src/Render/Backend/GL/Skinning.cpp
-    src/Render/Backend/GL/MeshDraw.cpp
-    src/Render/Backend/GL/ShadowMap.cpp
-    src/Render/ShadowLight.cpp
-    src/Render/TerrainDraw.cpp
-    src/Render/Backend/GL/TerrainRenderer.cpp
-    src/Render/Materials.cpp
-    src/Render/Backend/GL/FragmentPipeline.cpp
-    src/Render/RenderProfile.cpp
-    src/Render/RenderState.cpp
-    src/Render/Backend/GL/ProfileQueries.cpp
-    src/Render/Backend/GL/BufferedDraw.cpp
-    src/Render/WorldEffects.cpp
-    src/Render/MaterialVisuals.cpp
-    src/Render/LooseWingVisuals.cpp
-    src/Render/EquipmentVisuals.cpp
+    src/render/GlyphAtlas.cpp
+    src/render/BufferedDraw.cpp
+    src/render/Skinning.cpp
+    src/render/MeshTopology.cpp
+    src/render/Gfx.cpp
+    src/rhi/GL/GfxDevice.cpp
+    src/rhi/Dispatch.cpp
+    src/render/ResourceTables.cpp
+    src/rhi/GL/Skinning.cpp
+    src/rhi/GL/MeshDraw.cpp
+    src/rhi/GL/ShadowMap.cpp
+    src/render/ShadowLight.cpp
+    src/render/TerrainDraw.cpp
+    src/rhi/GL/TerrainRenderer.cpp
+    src/render/Materials.cpp
+    src/rhi/GL/FragmentPipeline.cpp
+    src/render/RenderProfile.cpp
+    src/render/RenderState.cpp
+    src/rhi/GL/ProfileQueries.cpp
+    src/rhi/GL/BufferedDraw.cpp
+    src/render/WorldEffects.cpp
+    src/render/MaterialVisuals.cpp
+    src/render/LooseWingVisuals.cpp
+    src/render/EquipmentVisuals.cpp
     src/game/core/RenderDerivedState.cpp
     src/game/core/RenderSnapshots.cpp
     src/game/core/RenderInterpolation.cpp
@@ -88,7 +88,7 @@ set(MU_SOURCES
     src/game/core/Game_MainLoop.cpp
     src/game/core/HeroVitals.cpp
     src/game/core/Player_InputTick.cpp
-    src/Render/Render_Frame.cpp
+    src/render/Render_Frame.cpp
     src/net/Net_Process.cpp
     src/Config/Config_Load.cpp
     src/UI/UIState.cpp
@@ -141,35 +141,35 @@ set(MU_SOURCES
     src/Terrain/Terrain_Utils.cpp
     src/Terrain/Terrain_RenderTerrain.cpp
     src/game/math/Math_3D.cpp
-    src/Render/Particle.cpp
-    src/Render/Particle_Move.cpp
-    src/Render/BMD_Anim.cpp
-    src/Render/BMD_DrawMesh.cpp
-    src/Render/BMD_Collision.cpp
-    src/Render/MoveEffect.cpp
-    src/Render/MoveEffect_Helpers.cpp
-    src/Render/MoveJoint.cpp
-    src/Render/BMD_SetupRender.cpp
+    src/render/Particle.cpp
+    src/render/Particle_Move.cpp
+    src/render/BMD_Anim.cpp
+    src/render/BMD_DrawMesh.cpp
+    src/render/BMD_Collision.cpp
+    src/render/MoveEffect.cpp
+    src/render/MoveEffect_Helpers.cpp
+    src/render/MoveJoint.cpp
+    src/render/BMD_SetupRender.cpp
     src/game/core/PathFinder.cpp
     src/game/entity/Entity_Reset.cpp
     src/game/entity/Entity_HeadMotion.cpp
-    src/Render/GL_State.cpp
-    src/Render/Effect_Create.cpp
-    src/Render/Effect_Combat.cpp
-    src/Render/Joint_Create.cpp
-    src/Render/Joint_Render.cpp
-    src/Render/Sprite.cpp
-    src/Render/Camera.cpp
-    src/Render/Camera_Movement.cpp
-    src/Render/Entity_Render.cpp
+    src/render/GL_State.cpp
+    src/render/Effect_Create.cpp
+    src/render/Effect_Combat.cpp
+    src/render/Joint_Create.cpp
+    src/render/Joint_Render.cpp
+    src/render/Sprite.cpp
+    src/render/Camera.cpp
+    src/render/Camera_Movement.cpp
+    src/render/Entity_Render.cpp
     src/net/Crypto.cpp
     src/game/core/Timer.cpp
     src/game/core/FrameLimiter.cpp
     src/audio/Music.cpp
     src/audio/EmoteSound.cpp
     src/Terrain/Terrain_Tile.cpp
-    src/Render/GL_2D.cpp
-    src/Render/Effect_Tick.cpp
+    src/render/GL_2D.cpp
+    src/render/Effect_Tick.cpp
     src/Terrain/Terrain_Light.cpp
     src/Terrain/Terrain_RenderFace.cpp
     src/Terrain/Terrain_RenderBlocks.cpp
@@ -184,7 +184,7 @@ set(MU_SOURCES
     src/game/entity/Entity_MoveClient.cpp
     src/game/entity/Character_Motion.cpp
     src/game/entity/Entity_Spawn.cpp
-    src/Render/Scene_CharPreview.cpp
+    src/render/Scene_CharPreview.cpp
     src/Scene/Scene_Resources.cpp
     src/Scene/Scene_MapTick.cpp
     src/Scene/Scene_ServerSelect_Input.cpp
@@ -193,22 +193,22 @@ set(MU_SOURCES
     src/UI/Chat_CommandParser.cpp
     src/UI/ChatListBox.cpp
     src/UI/CharMenu_Build.cpp
-    src/Render/HUD_Pass1.cpp
-    src/Render/HUD_Pass2.cpp
-    src/Render/HUD_Pass3.cpp
-    src/Render/HUD_Pass4.cpp
-    src/Render/HUD_Pass5.cpp
-    src/Render/HUD_Pass6.cpp
+    src/render/HUD_Pass1.cpp
+    src/render/HUD_Pass2.cpp
+    src/render/HUD_Pass3.cpp
+    src/render/HUD_Pass4.cpp
+    src/render/HUD_Pass5.cpp
+    src/render/HUD_Pass6.cpp
     src/UI/UI_StatsPanel.cpp
     src/Util/Misc.cpp
     src/Core/Legacy_Runtime.cpp
     src/game/entity/EntityName.cpp
     src/game/entity/Entity_Lookup.cpp
     src/net/Net_Disconnect.cpp
-    src/Render/Render_MatrixStack.cpp
+    src/render/Render_MatrixStack.cpp
     src/Scene/Scene_ObjectTick.cpp
-    src/Render/Particle_Legacy.cpp
-    src/Render/Camera_Login.cpp
+    src/render/Particle_Legacy.cpp
+    src/render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
     src/UI/EmojiPicker.cpp
     src/UI/EmoteMenu.cpp
@@ -220,7 +220,7 @@ set(MU_SOURCES
     src/UI/Quest_Legacy.cpp
     src/Core/System_Legacy.cpp
     src/GameGuard/GameGuard_Packet.cpp
-    src/Render/SMD_Legacy.cpp
+    src/render/SMD_Legacy.cpp
     src/UI/UI_LegacyWidgets.cpp
     src/net/Net_LegacyRuntime.cpp
     src/Scene/Scene_CharSelect_Nav.cpp
@@ -228,57 +228,57 @@ set(MU_SOURCES
     src/UI/UI_DialogInterface.cpp
     src/Item/Item_Durability.cpp
     src/Item/Item_ServerValue.cpp
-    src/Render/BMD_LegacyDraw.cpp
+    src/render/BMD_LegacyDraw.cpp
     src/Config/Config_TokenParser.cpp
     src/game/entity/Entity_BoneEffects.cpp
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
     src/game/math/Math_LegacyTransforms.cpp
-    src/Render/Render_LegacyLinker.cpp
+    src/render/Render_LegacyLinker.cpp
     src/Scene/Scene_LegacyCleanup.cpp
     src/Scene/Scene_ObjectLegacy.cpp
     src/Terrain/Terrain_LegacyRender.cpp
     src/UI/UI_LegacyText.cpp
-    src/Render/BMD_FilterData.cpp
+    src/render/BMD_FilterData.cpp
     src/Item/Quest_UIState.cpp
     src/game/physics/Cloth_Simulation.cpp
-    src/Render/BMD_LegacyEffects.cpp
+    src/render/BMD_LegacyEffects.cpp
     src/Scene/Scene_LegacyHelpers.cpp
     src/game/path/Path_Legacy.cpp
     src/Core/Runtime_Externs.cpp
     src/UI/UI_LegacyExterns.cpp
     src/game/entity/Entity_ActionLegacy.cpp
-    src/Render/Render_LegacyRotatedRect.cpp
+    src/render/Render_LegacyRotatedRect.cpp
     src/UI/UI_GuildLegacy.cpp
     src/Core/String_ResourceLegacy.cpp
     src/game/entity/Entity_LegacyEffects.cpp
     src/game/combat/Combat_LegacyAnimation.cpp
-    src/Render/Render_LegacyTransforms.cpp
-    src/Render/Render_LegacyBillboards.cpp
+    src/render/Render_LegacyTransforms.cpp
+    src/render/Render_LegacyBillboards.cpp
     src/UI/UI_LegacyWidgetSystem.cpp
-    src/Render/Render_LegacyTrails.cpp
+    src/render/Render_LegacyTrails.cpp
     src/UI/UI_LegacyGameHelpers.cpp
     src/net/Net_LegacyAuth.cpp
     src/Terrain/Terrain_LegacyLoad.cpp
     src/game/path/Path_LegacyReset.cpp
-    src/Render/Font_LegacyFactory.cpp
-    src/Render/SMD_Parser.cpp
+    src/render/Font_LegacyFactory.cpp
+    src/render/SMD_Parser.cpp
     src/game/entity/CharacterEffects.cpp
     src/game/entity/CharacterCloth.cpp
     src/game/entity/ClothPresentation.cpp
     src/game/entity/ObjectPose.cpp
-    src/Render/Entity_AnimationLegacy.cpp
+    src/render/Entity_AnimationLegacy.cpp
     src/game/combat/Combat_LegacyAttackEffects.cpp
     src/game/entity/Entity_LegacyPoolCleanup.cpp
     src/Item/Item_LegacyGridInsert.cpp
     src/Item/Item_TypeLegacy.cpp
     src/game/entity/Entity_LegacyTeleport.cpp
     src/game/combat/Skills_WarriorLegacy.cpp
-    src/Render/Render_LegacyDamageNumbers.cpp
-    src/Render/GL_LegacyState.cpp
+    src/render/Render_LegacyDamageNumbers.cpp
+    src/render/GL_LegacyState.cpp
     src/game/math/Math_LegacyAngle.cpp
-    src/Render/BMD_LegacyLoading.cpp
+    src/render/BMD_LegacyLoading.cpp
     src/platform/input/Cursor_Render.cpp
     src/platform/input/Input_Timing.cpp
     src/Util/Process_Exit.cpp
@@ -286,11 +286,11 @@ set(MU_SOURCES
     src/Scene/Scene_EntityLifecycle.cpp
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
-    src/Render/Camera_Unproject.cpp
+    src/render/Camera_Unproject.cpp
     src/net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
-    src/Render/Render_WorldHelpers.cpp
-    src/Render/BMD_Load.cpp
+    src/render/Render_WorldHelpers.cpp
+    src/render/BMD_Load.cpp
     src/globals.cpp
     src/Model/Model_Items.cpp
     src/Model/Model_CustomAnim.cpp
@@ -335,42 +335,42 @@ set(MU_SOURCES
     src/Item/Quest_Data.cpp
     src/Item/NPC_Data.cpp
     src/Item/NPC_ModelLoad.cpp
-    src/Render/Font_Layout.cpp
+    src/render/Font_Layout.cpp
     src/Monster/Monster.cpp
     src/net/SecondPassword.cpp
     src/game/party/Party.cpp
     src/game/core/Party_NameMatch.cpp
-    src/Render/Ambient_Particles.cpp
-    src/Render/Entity_DrawByType.cpp
-    src/Render/Entity_DrawAt.cpp
-    src/Render/Entity_DrawSetup.cpp
-    src/Render/Entity_PrepareRender.cpp
-    src/Render/Entity_Render_3D.cpp
-    src/Render/Entity_RenderAll_3D.cpp
-    src/Render/Entity_UpdateRender.cpp
-    src/Render/Render_PlayerEquipment.cpp
-    src/Render/HUD_Render.cpp
-    src/Render/ItemDrop_Render.cpp
-    src/Render/ItemDrop_Render2.cpp
-    src/Render/Particle_Draw.cpp
-    src/Render/Particle_Render.cpp
-    src/Render/Particle_Spawn.cpp
-    src/Render/Player_Render.cpp
-    src/Render/RenderLinkObject.cpp
-    src/Render/SkillEffect_Render.cpp
-    src/Render/Sprite_Draw.cpp
-    src/Render/Render_SpriteHelpers.cpp
-    src/Render/Terrain_Render.cpp
-    src/Render/Terrain_Water.cpp
-    src/Render/Texture/ImageCodec.cpp
+    src/render/Ambient_Particles.cpp
+    src/render/Entity_DrawByType.cpp
+    src/render/Entity_DrawAt.cpp
+    src/render/Entity_DrawSetup.cpp
+    src/render/Entity_PrepareRender.cpp
+    src/render/Entity_Render_3D.cpp
+    src/render/Entity_RenderAll_3D.cpp
+    src/render/Entity_UpdateRender.cpp
+    src/render/Render_PlayerEquipment.cpp
+    src/render/HUD_Render.cpp
+    src/render/ItemDrop_Render.cpp
+    src/render/ItemDrop_Render2.cpp
+    src/render/Particle_Draw.cpp
+    src/render/Particle_Render.cpp
+    src/render/Particle_Spawn.cpp
+    src/render/Player_Render.cpp
+    src/render/RenderLinkObject.cpp
+    src/render/SkillEffect_Render.cpp
+    src/render/Sprite_Draw.cpp
+    src/render/Render_SpriteHelpers.cpp
+    src/render/Terrain_Render.cpp
+    src/render/Terrain_Water.cpp
+    src/render/Texture/ImageCodec.cpp
     src/Text/TextCore.cpp
     src/Text/TextAtlas.cpp
     src/Text/UniBreak.c
     src/Text/Utf8Proc.c
-    src/Render/Texture/Texture.cpp
-    src/Render/Trail_Render.cpp
-    src/Render/Weather.cpp
-    src/Render/Weather_Particles.cpp
+    src/render/Texture/Texture.cpp
+    src/render/Trail_Render.cpp
+    src/render/Weather.cpp
+    src/render/Weather_Particles.cpp
     src/Scene/Scene_Login_ServerSelect.cpp
     src/audio/Sound.cpp
     src/Terrain/Terrain.cpp
@@ -387,7 +387,7 @@ set(MU_SOURCES
     src/UI/ChatHistory.cpp
     src/Core/DataPrefetch.cpp
     src/UI/MiniMap.cpp
-    src/Render/Camera3D.cpp
+    src/render/Camera3D.cpp
     src/UI/OptionsMenu.cpp
     src/UI/MoveList.cpp
     src/UI/Chat_InputTick.cpp
@@ -398,7 +398,7 @@ set(MU_SOURCES
     src/Scene/Scene_Objects.cpp
     src/Scene/Scene_ObjectInteraction.cpp
     src/Scene/Scene_ObjectUpdate.cpp
-    src/Render/BMD_SkinUpdate.cpp
+    src/render/BMD_SkinUpdate.cpp
     src/Debug/Benchmark.cpp
 )
 
@@ -435,10 +435,10 @@ set(MU_HEADERS
     src/UI/ChatTypes.h
     src/game/entity/EntityView.h
     src/game/entity/EntityName.h
-    src/Render/WorldEffects.h
-    src/Render/MaterialVisuals.h
-    src/Render/LooseWingVisuals.h
-    src/Render/EquipmentVisuals.h
+    src/render/WorldEffects.h
+    src/render/MaterialVisuals.h
+    src/render/LooseWingVisuals.h
+    src/render/EquipmentVisuals.h
     src/game/core/FramePointerSet.h
     src/game/core/RenderDerivedState.h
     src/game/core/RenderSnapshots.h
@@ -479,28 +479,28 @@ set(MU_HEADERS
     src/platform/UserPath.h
     src/platform/ISocket.h
     src/platform/SDL3/SDLFont.h
-    src/Render/GlyphAtlas.h
-    src/Render/Gfx.h
-    src/Render/ResourceTables.h
-    src/Render/Skinning.h
-    src/Render/MeshDraw.h
-    src/Render/TerrainDraw.h
-    src/Render/BMDDevice.h
-    src/Render/Materials.h
-    src/Render/RenderBackend.h
-    src/Render/Backend/Api.h
-    src/Render/Backend/GfxDevice.h
-    src/Render/MeshTopology.h
-    src/Render/Backend/GL/FragmentPipeline.h
-    src/Render/Backend/GL/TerrainRenderer.h
-    src/Render/RenderProfile.h
-    src/Render/RenderState.h
-    src/Render/ProfileStats.h
-    src/Render/Backend/GL/ProfileUploads.h
-    src/Render/Backend/GL/ProfileQueries.h
-    src/Render/BufferedDraw.h
-    src/Render/TransformMath.h
-    src/Render/TransformWorkers.h
+    src/render/GlyphAtlas.h
+    src/render/Gfx.h
+    src/render/ResourceTables.h
+    src/render/Skinning.h
+    src/render/MeshDraw.h
+    src/render/TerrainDraw.h
+    src/render/BMDDevice.h
+    src/render/Materials.h
+    src/render/RenderBackend.h
+    src/rhi/Api.h
+    src/rhi/GfxDevice.h
+    src/render/MeshTopology.h
+    src/rhi/GL/FragmentPipeline.h
+    src/rhi/GL/TerrainRenderer.h
+    src/render/RenderProfile.h
+    src/render/RenderState.h
+    src/render/ProfileStats.h
+    src/rhi/GL/ProfileUploads.h
+    src/rhi/GL/ProfileQueries.h
+    src/render/BufferedDraw.h
+    src/render/TransformMath.h
+    src/render/TransformWorkers.h
     src/platform/IGLContext.h
     src/platform/GLFunctions.h
     src/platform/GL/glad.h
@@ -512,7 +512,7 @@ set(MU_HEADERS
     src/UI/ChatHistory.h
     src/Core/DataPrefetch.h
     src/UI/MiniMap.h
-    src/Render/Camera3D.h
+    src/render/Camera3D.h
     src/UI/OptionsMenu.h
     src/UI/MoveList.h
     src/audio/SoundManager.h
@@ -541,30 +541,30 @@ set(MU_HEADERS
     src/net/PacketFrame.h
     src/net/SecondPassword.h
     src/game/party/Party.h
-    src/Render/Camera.h
-    src/Render/Entity_DrawAt.h
-    src/Render/Entity_PrepareRender.h
-    src/Render/Entity_Render.h
-    src/Render/DamagePointTypes.h
+    src/render/Camera.h
+    src/render/Entity_DrawAt.h
+    src/render/Entity_PrepareRender.h
+    src/render/Entity_Render.h
+    src/render/DamagePointTypes.h
     src/Item/ItemTypes.h
-    src/Render/JointTypes.h
-    src/Render/Entity_Render_3D.h
-    src/Render/Entity_RenderAll_3D.h
-    src/Render/HUD_Render.h
-    src/Render/ItemDrop_Render.h
-    src/Render/Particle_Draw.h
-    src/Render/Particle_Render.h
-    src/Render/Player_Render.h
-    src/Render/Render.h
-    src/Render/SkillEffect_Render.h
-    src/Render/Sprite_Draw.h
-    src/Render/Terrain_Render.h
-    src/Render/Texture/ImageCodec.h
+    src/render/JointTypes.h
+    src/render/Entity_Render_3D.h
+    src/render/Entity_RenderAll_3D.h
+    src/render/HUD_Render.h
+    src/render/ItemDrop_Render.h
+    src/render/Particle_Draw.h
+    src/render/Particle_Render.h
+    src/render/Player_Render.h
+    src/render/Render.h
+    src/render/SkillEffect_Render.h
+    src/render/Sprite_Draw.h
+    src/render/Terrain_Render.h
+    src/render/Texture/ImageCodec.h
     src/Text/TextCore.h
     src/net/NetText.h
     src/Text/TextShaper.h
     src/Text/TextAtlas.h
-    src/Render/Texture/Texture.h
+    src/render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
     src/Scene/Scene_Dispatch.h
@@ -675,11 +675,11 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp src/platform/ContentLayers.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/rhi/GL/FragmentPipeline.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp src/rhi/Dispatch.cpp src/render/RenderState.cpp src/render/TerrainDraw.cpp src/rhi/GL/TerrainRenderer.cpp src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp src/stdafx.cpp src/render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/platform/GLFunctions.cpp src/rhi/GL/BufferedDraw.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp src/rhi/GL/MeshDraw.cpp src/rhi/GL/Skinning.cpp src/render/ResourceTables.cpp src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp src/platform/ContentLayers.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
-set_source_files_properties(src/Render/Materials.cpp PROPERTIES
+set_source_files_properties(src/render/Materials.cpp PROPERTIES
     COMPILE_OPTIONS "$<$<STREQUAL:$<TARGET_PROPERTY:NAME>,mu97k>:/Yustdafx.h>")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
@@ -756,16 +756,16 @@ find_package(Threads REQUIRED)
 target_link_libraries(mu97k PRIVATE Threads::Threads)
 if(MU_RENDER_WEBGPU)
     target_sources(mu97k PRIVATE
-        src/Render/Backend/WebGPU/Device.cpp src/Render/Backend/WebGPU/Renderer.cpp
-        src/Render/Backend/WebGPU/MeshDraw.cpp
-        src/Render/Backend/WebGPU/Stubs.cpp src/Render/Backend/WebGPU/Device.h
-        src/Render/Backend/WebGPU/Renderer.h)
+        src/rhi/WebGPU/Device.cpp src/rhi/WebGPU/Renderer.cpp
+        src/rhi/WebGPU/MeshDraw.cpp
+        src/rhi/WebGPU/Stubs.cpp src/rhi/WebGPU/Device.h
+        src/rhi/WebGPU/Renderer.h)
     target_link_libraries(mu97k PRIVATE dawn::webgpu_dawn)
     target_compile_definitions(mu97k PRIVATE MU_RENDER_WEBGPU)
 endif()
 enable_testing()
 add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
-    tests/ResourceTables.cpp src/Render/ResourceTables.cpp)
+    tests/ResourceTables.cpp src/render/ResourceTables.cpp)
 target_include_directories(mu_resource_tables_test PRIVATE src)
 target_compile_features(mu_resource_tables_test PRIVATE cxx_std_17)
 if(MSVC)
@@ -798,19 +798,19 @@ add_test(NAME transform_workers COMMAND mu_transform_workers_test)
 
 # DESVIACION: R1 valida percentiles y queries asincronas sin driver/contexto.
 add_executable(mu_render_profile_test EXCLUDE_FROM_ALL
-    tests/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp)
+    tests/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp)
 target_include_directories(mu_render_profile_test PRIVATE src)
 target_compile_features(mu_render_profile_test PRIVATE cxx_std_17)
 add_test(NAME render_profile COMMAND mu_render_profile_test)
 
 add_executable(mu_render_profile_flow_test EXCLUDE_FROM_ALL
-    tests/RenderProfileFlow.cpp src/Render/RenderProfile.cpp)
+    tests/RenderProfileFlow.cpp src/render/RenderProfile.cpp)
 target_include_directories(mu_render_profile_flow_test PRIVATE src)
 target_compile_features(mu_render_profile_flow_test PRIVATE cxx_std_17)
 add_test(NAME render_profile_flow COMMAND mu_render_profile_flow_test)
 
 # DESVIACION R3a: contrato de captura/fallback sin necesitar un driver GL.
-add_executable(mu_terrain_draw_flow_test EXCLUDE_FROM_ALL tests/TerrainDrawFlow.cpp src/Render/TerrainDraw.cpp)
+add_executable(mu_terrain_draw_flow_test EXCLUDE_FROM_ALL tests/TerrainDrawFlow.cpp src/render/TerrainDraw.cpp)
 target_include_directories(mu_terrain_draw_flow_test PRIVATE src)
 target_compile_features(mu_terrain_draw_flow_test PRIVATE cxx_std_17)
 add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)
@@ -820,13 +820,13 @@ add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     add_executable(mu_bmd_device_test EXCLUDE_FROM_ALL
         tests/BMDDevice.cpp
-        src/platform/GLFunctions.cpp src/Render/ResourceTables.cpp
-        src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
-        src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp
-        src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
-        src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp
-        src/Render/Backend/GL/Skinning.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp
-        src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp)
+        src/platform/GLFunctions.cpp src/render/ResourceTables.cpp
+        src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp
+        src/render/Materials.cpp src/rhi/GL/FragmentPipeline.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp
+        src/rhi/GL/BufferedDraw.cpp src/rhi/GL/MeshDraw.cpp
+        src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp
+        src/rhi/GL/Skinning.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp
+        src/rhi/Dispatch.cpp src/render/RenderState.cpp)
     target_include_directories(mu_bmd_device_test PRIVATE src ${MU_MINIAUDIO_INCLUDE_DIR})
     target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
     target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)
@@ -845,7 +845,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
     add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
         tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c
-        src/Render/Texture/ImageCodec.cpp)
+        src/render/Texture/ImageCodec.cpp)
     target_include_directories(mu_text_shaper_test PRIVATE src)
     target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
     target_compile_definitions(mu_text_shaper_test PRIVATE

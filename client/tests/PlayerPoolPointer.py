@@ -32,8 +32,8 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    plane=function(read_source('src/Render/Render_LegacyBillboards.cpp',revision),'RenderPlane')
-    player=function(read_source('src/Render/Player_Render.cpp',revision),'Player_Render')
+    plane=function(read_source('src/render/Render_LegacyBillboards.cpp',revision),'RenderPlane')
+    player=function(read_source('src/render/Player_Render.cpp',revision),'Player_Render')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+plane+player+MAIN
 
 def main():

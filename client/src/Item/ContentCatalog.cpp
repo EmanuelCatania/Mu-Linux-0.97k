@@ -3,8 +3,8 @@
 #include "platform/ContentLayers.h"
 #include "Model/ModelTypes.h"
 #include "net/NetText.h"
-#include "Render/ResourceTables.h"
-#include "Render/EquipmentVisuals.h"
+#include "render/ResourceTables.h"
+#include "render/EquipmentVisuals.h"
 #include <algorithm>
 #include "platform/Text.h"
 #include "platform/ITimer.h"

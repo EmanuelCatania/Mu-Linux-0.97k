@@ -3,7 +3,7 @@
 // Culling/render de bloques de terreno y la variante de luz dinámica clampeada.
 
 #include "stdafx.h"
-#include "Render/DrawDistance.h"
+#include "render/DrawDistance.h"
 #include "globals.h"
 #include "functions.h"
 // AddTerrainLightClip @ 0x004F7800 (~74 lines) — adds clamped light to terrain buffer

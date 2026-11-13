@@ -36,6 +36,27 @@ def rewrite(path, fn):
     return 0
 
 
+def fix_disk_case(old, new):
+    """En Windows `git mv` de Net/x a net/x deja la carpeta del disco como
+    "Net"; los scripts que recorren el disco ven la ruta vieja.  Renombrar la
+    carpeta y borrar la vieja si quedó vacía."""
+    parent = ROOT / 'src' / Path(old).parent
+    leaf = Path(old).name
+    on_disk = [d for d in parent.iterdir() if d.is_dir() and d.name.lower() == leaf.lower()]
+    for d in on_disk:
+        if old.lower() == new.lower():
+            if d.name != Path(new).name:
+                tmp = d.with_name(d.name + '__case')
+                d.rename(tmp)
+                tmp.rename(ROOT / 'src' / new)
+        else:
+            for sub in sorted(d.rglob('*'), key=lambda p: len(p.parts), reverse=True):
+                if sub.is_dir() and not any(sub.iterdir()):
+                    sub.rmdir()
+            if not any(d.iterdir()):
+                d.rmdir()
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
@@ -55,6 +76,7 @@ def main():
             sys.exit(f'ya existe {target}')
         (ROOT / target).parent.mkdir(parents=True, exist_ok=True)
         subprocess.check_call(['git', 'mv', path, target], cwd=ROOT)
+    fix_disk_case(old, new)
 
     include = re.compile(r'^(\s*#\s*include\s*["<])' + re.escape(old) + r'/', re.M)
     changed = 0
@@ -63,12 +85,15 @@ def main():
                     'tests/**/*.cpp', 'tests/**/*.h']):
         # includes y las menciones "src/Vieja/..." de los comentarios
         changed += rewrite(f, lambda t: slash.sub(f'src/{new}/', include.sub(r'\g<1>' + new + '/', t)))
+    quoted = re.compile(r'''(["'])src/''' + re.escape(old) + r'''(["'])''')
     back = re.compile(r'src\\' + re.escape(old.replace('/', '\\')) + r'\\')
     for f in files(['CMakeLists.txt', 'src/platform/SDL3/CMakeLists.txt', 'mu97k.vcxproj', 'mu97k.vcxproj.filters',
                     '.github/scripts/*.py', 'tests/*.py']):
         if f.name == 'source_paths.py':
             continue
         changed += rewrite(f, lambda t: back.sub('src\\\\' + new.replace('/', '\\\\') + '\\\\', slash.sub(f'src/{new}/', t)))
+        # La carpeta sola entre comillas: root / "src/Vieja"
+        changed += rewrite(f, lambda t: quoted.sub(r'\g<1>src/' + new + r'\g<2>', t))
     # Los tests arman código C++ con #include "Vieja/..." dentro de strings.
     embedded = re.compile(r'(#include \\?")' + re.escape(old) + r'/')
     for f in files(['tests/*.py']):

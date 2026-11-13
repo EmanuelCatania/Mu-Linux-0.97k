@@ -59,7 +59,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0] + "\n#include <cmath>\n"
     prefix += re.search(r"^float\s+_DAT_00552ce0\s*=[^;]+;", read_source("src/globals.cpp", revision), re.M).group()
-    euler = function(read_source("src/Render/Render_LegacyTransforms.cpp", revision), "EulerToQuat")
+    euler = function(read_source("src/render/Render_LegacyTransforms.cpp", revision), "EulerToQuat")
     args = "input, output" if "const float* param_1" in euler else "static_cast<int>(reinterpret_cast<std::uintptr_t>(input)), static_cast<int>(reinterpret_cast<std::uintptr_t>(output))"
     return prefix + euler + MAIN.replace("CALL_EULER", f"EulerToQuat({args}, 123, -456)")
 

@@ -5,7 +5,7 @@
 #include "functions.h"
 #include "net/MuEmu.h"
 #include "net/Net.h"
-#include "Render/Camera.h"
+#include "render/Camera.h"
 
 // ── Entity_FindById @ 0x0045ac80 ─────────────────────────────────────────────
 // Linear scan of entity array (stride 0x394, count 400) for entity_id at +476.

@@ -39,7 +39,7 @@ def harness():
     needle='++bonesCalls;PrepareContext(o,m);';assert needle in source
     source=source.replace(needle,'++bonesCalls;RecordBones();PrepareContext(o,m);')
     source=source.replace('void ObjectPose_PrepareBones(OBJECT* o,','void RecordBones();\nvoid ObjectPose_PrepareBones(OBJECT* o,',1)
-    return source+SERVICES+'\nvoid RecordBones(){events.push_back(2);}\n'+function(read_source('src/Render/Entity_AnimationLegacy.cpp'),'Calc_RenderObject')+MAIN
+    return source+SERVICES+'\nvoid RecordBones(){events.push_back(2);}\n'+function(read_source('src/render/Entity_AnimationLegacy.cpp'),'Calc_RenderObject')+MAIN
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');a=p.parse_args()

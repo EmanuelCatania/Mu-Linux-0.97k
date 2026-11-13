@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "UI/BuffBar.h"
 #include "net/Protocol/GameServerProtocol.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "UI/MoveList.h"
 #include "platform/ITimer.h"

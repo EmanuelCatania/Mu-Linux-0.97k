@@ -19,7 +19,7 @@ def build(directory,args,source=None,contracts=False,resource_source=None):
     directory.mkdir()
     if source is not None:(directory/'main.cpp').write_text(source,encoding='utf-8')
     units=['main.cpp']if source is not None else [str(ROOT/'tests/ResourceTables.cpp')]
-    if not contracts:units.append(str(resource_source or ROOT/'src/Render/ResourceTables.cpp'))
+    if not contracts:units.append(str(resource_source or ROOT/'src/render/ResourceTables.cpp'))
     cmake='cmake_minimum_required(VERSION 3.25)\nproject(ModelReservation LANGUAGES CXX)\nadd_executable(reservation '+' '.join('"'+u.replace('\\','/')+'"' for u in units)+')\n'
     cmake+='target_include_directories(reservation PRIVATE "'+(ROOT/'src').as_posix()+'")\ntarget_compile_features(reservation PRIVATE cxx_std_17)\nif(MSVC)\ntarget_compile_options(reservation PRIVATE /EHsc /fp:precise /utf-8)\nelse()\ntarget_compile_options(reservation PRIVATE -fno-strict-aliasing)\nendif()\n'
     (directory/'CMakeLists.txt').write_text(cmake,encoding='utf-8')
@@ -34,7 +34,7 @@ def loader():
     import BMDLoaderNative as test
     from ModelReleaseLifecycle import PREFIX
     original=test.prefix
-    test.prefix=lambda:PREFIX+'\n#include "Model/ModelTypes.h"\n#include "game/physics/ClothTypes.h"\n#include "Render/ResourceTables.h"\n'
+    test.prefix=lambda:PREFIX+'\n#include "Model/ModelTypes.h"\n#include "game/physics/ClothTypes.h"\n#include "render/ResourceTables.h"\n'
     try:code=test.harness()
     finally:test.prefix=original
     before='static GuardModel storage;'
@@ -59,7 +59,7 @@ def main():
         from BMDFileOracle import prepare
         prepare(ROOT,root);code=loader();loaded=build(root/'loader',a,code);print(loaded,end='')
         if a.reference_ref:
-            resource=root/'reference-resource.cpp';resource.write_text(read_source('src/Render/ResourceTables.cpp',a.reference_ref),encoding='utf-8')
+            resource=root/'reference-resource.cpp';resource.write_text(read_source('src/render/ResourceTables.cpp',a.reference_ref),encoding='utf-8')
             if build(root/'reference-growth',a,resource_source=resource)!=growth or build(root/'reference-loader',a,code,resource_source=resource)!=loaded:raise RuntimeError('Diferencia de reserva frente a x86')
             print('Equivalencia del gestor con '+a.reference_ref+': OK')
         print('ModelReservation: carga/postcarga/baja sobre pool real, vecinos intactos OK')

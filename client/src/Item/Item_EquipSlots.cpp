@@ -8,9 +8,9 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
-#include "Render/TerrainDraw.h"
+#include "render/TerrainDraw.h"
 void Terrain_BeginBufferedPass();
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "game/entity/ObjectBounds.h"
 #include "platform/Text.h"
@@ -30,7 +30,7 @@ void Terrain_BeginBufferedPass();
 // El rango de guild pide C1 plano (Encrypt=0).
 extern "C" void GuildCreator_CloseFromResult(void);
 
-// Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
+// Inventory pool bases — defined in src/render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BOOL ChaosBoxRequestClose(void);

@@ -93,10 +93,10 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);auto 
 '''
 
 def harness(revision=None):
-    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p)) for p in ['src/Render/Materials.h','src/Render/BufferedDraw.h','src/Render/BMDDevice.h','src/Render/MeshDraw.h'])
+    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p)) for p in ['src/render/Materials.h','src/render/BufferedDraw.h','src/render/BMDDevice.h','src/render/MeshDraw.h'])
     constants='\n'.join(re.findall(r'^float\s+_DAT_(?:00552868|00552544|00552580|005528c0|005528b4|00552504|0055256c|005526e4|00552540|00552530|005528c4|00552644)\s*=\s*[^;]+;',read_source('src/globals.cpp'),re.M))
-    source=read_source('src/Render/BMD_DrawMesh.cpp',revision)
-    funcs=function(read_source('src/Render/BMD_LegacyDraw.cpp',revision),'BMD__RenderMeshTranslate')+function(source,'DecodeMeshIndex')+function(source,'BMD__RenderMesh')
+    source=read_source('src/render/BMD_DrawMesh.cpp',revision)
+    funcs=function(read_source('src/render/BMD_LegacyDraw.cpp',revision),'BMD__RenderMeshTranslate')+function(source,'DecodeMeshIndex')+function(source,'BMD__RenderMesh')
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+headers+SERVICES+constants+funcs+MAIN
 
 def main():

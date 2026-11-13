@@ -4,9 +4,9 @@
 #include "game/entity/ObjectBounds.h"
 #include "functions.h"
 #include "globals.h"
-#include "Render/TransformWorkers.h"
-#include "Render/TransformMath.h"
-#include "Render/ResourceTables.h"
+#include "render/TransformWorkers.h"
+#include "render/TransformMath.h"
+#include "render/ResourceTables.h"
 #include "game/physics/ClothTypes.h"
 #include <array>
 #include <vector>

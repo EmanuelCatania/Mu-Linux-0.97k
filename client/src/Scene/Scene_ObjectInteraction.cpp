@@ -3,7 +3,7 @@
 // Updates de objetos especiales de la escena y mouse picking.
 
 #include "stdafx.h"
-#include "Render/ResourceTables.h"
+#include "render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
 #include "platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"

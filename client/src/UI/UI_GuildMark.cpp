@@ -1,7 +1,7 @@
 // UI_GuildMark.cpp
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 

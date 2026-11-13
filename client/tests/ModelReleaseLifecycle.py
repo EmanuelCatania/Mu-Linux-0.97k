@@ -74,7 +74,7 @@ int main(){
 def prefix():
  return PREFIX+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\nstatic_assert(sizeof(ClothModelMesh)==(sizeof(void*)==4?40:60));static_assert(offsetof(ClothModelMesh,TextureIndex)==2);\n'
 def harness(revision=None):
- body=function(read_source('src/Render/SMD_Parser.cpp',revision),'BMD__Release');arg='m' if 'BMD* model' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(m))'
+ body=function(read_source('src/render/SMD_Parser.cpp',revision),'BMD__Release');arg='m' if 'BMD* model' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(m))'
  return prefix()+SERVICES+body+MAIN.replace('CALL_RELEASE','BMD__Release('+arg+')').replace('CALL_MODEL',arg)
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');a=p.parse_args()

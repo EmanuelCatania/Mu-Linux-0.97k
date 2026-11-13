@@ -41,7 +41,7 @@
 
 
 // Inventory grid base — used by section 11 (Q/W/E quick-use sound feedback).
-// Defined in src/Render/HUD_Pass3.cpp.
+// Defined in src/render/HUD_Pass3.cpp.
 extern "C" BYTE OffsetInventoryItems[];
 
 // ---------------------------------------------------------------------------

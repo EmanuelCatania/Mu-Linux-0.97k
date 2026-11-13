@@ -44,7 +44,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);BYTE*
 '''
 
 def harness(revision=None):
-    source=read_source('src/Render/Render_LegacyTrails.cpp',revision)
+    source=read_source('src/render/Render_LegacyTrails.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+SERVICES+function(source,'Particle_Update')+MAIN
 
 def main():

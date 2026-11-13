@@ -4,7 +4,7 @@
 // GlobalText[120..159]; 3 es la tabla de valores del item DAT_07e11d24.
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"

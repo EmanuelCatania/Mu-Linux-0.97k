@@ -1,4 +1,4 @@
-#include "Render/ResourceTables.h"
+#include "render/ResourceTables.h"
 #include "Model/ModelTypes.h"
 #include "Core/ResourceLimits.h"
 #include <cstdlib>

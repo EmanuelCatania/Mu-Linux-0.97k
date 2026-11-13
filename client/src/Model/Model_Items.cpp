@@ -5,8 +5,8 @@
 // for every class/tier), item slots, and shadow model.  Ends by calling
 // SetAttackSpeed (Entity_LockAnim) and setting scale tables in the model block.
 #include "stdafx.h"
-#include "Render/ResourceTables.h"
-#include "Render/Skinning.h"
+#include "render/ResourceTables.h"
+#include "render/Skinning.h"
 #include "game/core/RenderDerivedState.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"

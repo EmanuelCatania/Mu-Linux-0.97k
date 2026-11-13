@@ -37,7 +37,7 @@ int main(){auto* models=static_cast<BYTE*>(Reserve(0x30000000u));auto* low=stati
  }std::printf("BMD paths:204 casos/ruta %016llx\n",(unsigned long long)expected);}
 '''
 def harness(revision=None,native=False):
- source=read_source('src/Render/BMD_Load.cpp',revision);body=function(source,'BMD__Open');signature=body[:body.index('{')+1];a=body.index('const char *path');b=body.index('char local_4c');decl='\n'.join(line for line in body[a:b].splitlines() if line.strip().startswith('const char *'))
+ source=read_source('src/render/BMD_Load.cpp',revision);body=function(source,'BMD__Open');signature=body[:body.index('{')+1];a=body.index('const char *path');b=body.index('char local_4c');decl='\n'.join(line for line in body[a:b].splitlines() if line.strip().startswith('const char *'))
  fragment=body[b:body.index('fseek(fp,')];receiver=signature+decl+'\n'+fragment+'}\n'
  globals_source=read_source('src/globals.cpp',revision);constants=[]
  for name in ['DAT_005580ac','s__s_bmd_0055a7f8','s__s0_d_bmd_0055a7ec','s__s_d_bmd_0055a7e0']:
@@ -52,7 +52,7 @@ def harness(revision=None,native=False):
  if 'BMD* param_1' in signature:receiver=receiver.replace('{','{if(wantedSlot)Require(param_1==wantedSlot);',1)
  if native:
   main=main.replace('slot*188','slot*sizeof(BMD)').replace('188','sizeof(BMD)').replace('for(int offset:{0x48,0x4c,0x50})','for(int offset:{int(offsetof(BMD,BodyLight)),int(offsetof(BMD,BodyLight)+4),int(offsetof(BMD,BodyLight)+8)})').replace('   auto* model=', '   if(mode==0&&bones>0)continue;auto* model=').replace('cases==204','cases==156').replace('BMD paths:204','BMD paths:156').replace('Reserve(0x30000000u)','Reserve(sizeof(void*)==8?uintptr_t(0x130000000ull):uintptr_t(0x30000000u))')
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+view+SERVICES+'\n'.join(constants)+receiver+'void Receive(char* path,char* name){'+call+';}\n'+function(read_source('src/Render/BMD_LegacyLoading.cpp',revision),'AccessModel')+main
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+view+SERVICES+'\n'.join(constants)+receiver+'void Receive(char* path,char* name){'+call+';}\n'+function(read_source('src/render/BMD_LegacyLoading.cpp',revision),'AccessModel')+main
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--native-layout',action='store_true');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

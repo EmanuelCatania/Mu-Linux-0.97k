@@ -2,11 +2,11 @@
 // UI_TextBitmap.cpp
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #ifdef MU_SDL_FONTS
 #include "Text/TextAtlas.h"
 #include <string>

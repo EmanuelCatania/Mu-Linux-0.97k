@@ -16,7 +16,7 @@ SOURCES = {
     "src/UI/UI_LegacyWidgets.cpp": "FUN_00408680 FUN_0045aaa0_impl",
     "src/game/entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
     "src/game/entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
-    "src/Render/Render_LegacyBillboards.cpp": "DeleteCloth",
+    "src/render/Render_LegacyBillboards.cpp": "DeleteCloth",
     "src/game/math/Math_3D.cpp": "Vector_Transform BMD_TransformPosition",
 }
 
@@ -207,8 +207,8 @@ def harness(revision=None):
         types=types.replace("BYTE     _unk14[4];","void* Cloth;")
     model=record(read_source("src/Model/ModelTypes.h",revision),"BMD")
     types+="\n#pragma pack(push,1)\n"+model+"\n#pragma pack(pop)\n"
-    types+=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/Render/EquipmentVisuals.h",revision),re.S).group()+"\n"
-    equipment=read_source("src/Render/EquipmentVisuals.cpp",revision)
+    types+=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/render/EquipmentVisuals.h",revision),re.S).group()+"\n"
+    equipment=read_source("src/render/EquipmentVisuals.cpp",revision)
     units.append(re.search(r'EquipmentModelContext::EquipmentModelContext\(.*?\n\}',equipment,re.S).group())
     units.append(re.search(r'EquipmentModelContext::~EquipmentModelContext\(\)[^\n]*',equipment).group())
     code="\n".join(units)

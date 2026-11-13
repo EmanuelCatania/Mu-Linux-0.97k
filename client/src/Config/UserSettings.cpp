@@ -6,7 +6,7 @@
 #include "Config/UserSettings.h"
 #include "game/core/FrameLimiter.h"
 #include "platform/IGLContext.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include <cerrno>
 #include <climits>
 #include <cctype>

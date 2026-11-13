@@ -68,7 +68,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Render/Particle_Move.cpp',revision)
+    source=read_source('src/render/Particle_Move.cpp',revision)
     begin=source.index('case 2:',source.index('if (iVar5 == 0x498)'));end=source.index('case 3:',begin)
     macros='\n'.join(re.findall(r'^#define P_[A-Z0-9]+(?:\([^)]*\))?\s+[^\n]+',source,re.M))
     if '#define P_ENT(o)' not in macros:raise ValueError('Macros de partículas incompletas')

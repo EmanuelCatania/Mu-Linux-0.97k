@@ -8,12 +8,12 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
-#include "Render/TerrainDraw.h"
-#include "Render/Gfx.h"
+#include "render/TerrainDraw.h"
+#include "render/Gfx.h"
 void Terrain_BeginBufferedPass();
 void Terrain_BeginBatch();
 void Terrain_EndBatch();
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "game/entity/ObjectBounds.h"
 #include "platform/Text.h"
@@ -24,7 +24,7 @@ void Terrain_EndBatch();
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
-#include "Render/Camera3D.h"
+#include "render/Camera3D.h"
 #include "game/core/MapManager.h"
 #include "structs.h"
 #include "globals.h"
@@ -34,7 +34,7 @@ void Terrain_EndBatch();
 // El rango de guild pide C1 plano (Encrypt=0).
 extern "C" void GuildCreator_CloseFromResult(void);
 
-// Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
+// Inventory pool bases — defined in src/render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BOOL ChaosBoxRequestClose(void);
@@ -309,7 +309,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // FrustrumX/218 (X/Y respectivamente) en tile coords (×0.01 = ÷100).
 //
 // Esta versión SÍ funciona para in-game. La duplicada Camera_SetMatrix en
-// src/Render/Camera.cpp es código muerto que opera sobre DAT_07eab1bc..1e8
+// src/render/Camera.cpp es código muerto que opera sobre DAT_07eab1bc..1e8
 // (corners ya transformadas por Camera_SetupFrustum a world coords), lo cual
 // duplicaría la transformación si se invocara — no se llama desde ningún
 // lado y no debe wirearse.

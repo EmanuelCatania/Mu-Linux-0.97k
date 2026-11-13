@@ -8,7 +8,7 @@
 #include "net/NetText.h"
 #include "Text/TextCore.h"
 #include "platform/Text.h"
-#include "Render/Camera3D.h"
+#include "render/Camera3D.h"
 #include "platform/input/Input.h"
 
 // Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat

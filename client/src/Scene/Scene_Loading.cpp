@@ -58,7 +58,7 @@
 //   ClearInput  → CharList_Init(mode)
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "Scene/Scene_Loading.h"
 
 // Scene_Loading @ 0x00524B20 (34 lines)

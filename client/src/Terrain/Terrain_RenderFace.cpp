@@ -24,10 +24,10 @@
 //   TerrainIndex1..4 = DAT_07eab1ec/f0/f4/f8
 
 #include "stdafx.h"
-#include "Render/BufferedDraw.h"
-#include "Render/TerrainDraw.h"
-#include "Render/Materials.h"
-#include "Render/DrawDistance.h"
+#include "render/BufferedDraw.h"
+#include "render/TerrainDraw.h"
+#include "render/Materials.h"
+#include "render/DrawDistance.h"
 #include <map>
 #include <optional>
 #include <vector>
