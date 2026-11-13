@@ -450,10 +450,10 @@ it is in the same layer as the classic file or in one that wins: a pack can
 ship only `-hd` files, but the `-hd` in `Data` does not override what a pack
 replaced. Layers are read at startup and logged in `User/debug.log`.
 
-Monsters, NPCs and armor sets are already per entity: each one is a folder
-(`Content/monster/01-BullFighter/`, `Content/npc/Smith/`, `Content/set/01-Dragon/`)
-with its model, textures and a `.toml` of its type (`monster.toml`, `npc.toml`,
-`set.toml`) naming the Data folder it replaces (`source`). The skeleton, class
+Items, monsters, NPCs and armor sets are already per entity: each one is a folder
+(`Content/item/00-swords/000/`, `Content/monster/01-BullFighter/`, `Content/npc/Smith/`,
+`Content/set/01-Dragon/`) with its model, textures and a `.toml` of its type
+(`item.toml`, `monster.toml`, `npc.toml`, `set.toml`) naming the Data folder it replaces (`source`). The skeleton, class
 bodies, wings and helpers are in `Content/player/base/`. At
 startup every file in those folders answers for `Data/<source>/<file>`, so no
 alias has to be written by hand.

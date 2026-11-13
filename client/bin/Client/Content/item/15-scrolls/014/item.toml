@@ -1,0 +1,7 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Item con el mismo nombre.
+source = "Item"
+section = 15
+index = 14
+name = "Scroll of Teleport Ally"
+model = "Book15.bmd"

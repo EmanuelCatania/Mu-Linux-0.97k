@@ -1,0 +1,6 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Item/02-maces/008 con el mismo nombre.
+source = "Item/02-maces/008"
+section = 2
+index = 8
+# Item custom del server (catálogo).
