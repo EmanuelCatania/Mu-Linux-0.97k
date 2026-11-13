@@ -103,8 +103,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,8 +142,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -185,12 +183,12 @@
     <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AllowableIpList.h" />
+    <ClInclude Include="..\Common\AllowableIpList.h" />
     <ClInclude Include="BadSyntax.h" />
     <ClInclude Include="CharacterManager.h" />
     <ClInclude Include="CommandManager.h" />
-    <ClInclude Include="Console.h" />
-    <ClInclude Include="CriticalSection.h" />
+    <ClInclude Include="..\Common\Console.h" />
+    <ClInclude Include="..\Common\CriticalSection.h" />
     <ClInclude Include="DataServer.h" />
     <ClInclude Include="DataServerProtocol.h" />
     <ClInclude Include="Guild.h" />
@@ -199,7 +197,7 @@
     <ClInclude Include="ReadScript.h" />
     <ClInclude Include="MiniDump.h" />
     <ClInclude Include="GoldenArcher.h" />
-    <ClInclude Include="QueryManager.h" />
+    <ClInclude Include="..\Common\QueryManager.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ServerDisplayer.h" />
@@ -210,12 +208,12 @@
     <ClInclude Include="Warehouse.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AllowableIpList.cpp" />
+    <ClCompile Include="..\Common\AllowableIpList.cpp" />
     <ClCompile Include="BadSyntax.cpp" />
     <ClCompile Include="CharacterManager.cpp" />
     <ClCompile Include="CommandManager.cpp" />
     <ClCompile Include="Console.cpp" />
-    <ClCompile Include="CriticalSection.cpp" />
+    <ClCompile Include="..\Common\CriticalSection.cpp" />
     <ClCompile Include="DataServer.cpp" />
     <ClCompile Include="DataServerProtocol.cpp" />
     <ClCompile Include="Guild.cpp" />
@@ -224,7 +222,7 @@
     <ClCompile Include="ReadScript.cpp" />
     <ClCompile Include="MiniDump.cpp" />
     <ClCompile Include="GoldenArcher.cpp" />
-    <ClCompile Include="QueryManager.cpp" />
+    <ClCompile Include="..\Common\QueryManager.cpp" />
     <ClCompile Include="..\Common\SqlFormat.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

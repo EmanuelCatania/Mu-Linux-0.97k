@@ -72,7 +72,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Math.h">
+    <ClInclude Include="GameMath.h">
       <Filter>Util Files</Filter>
     </ClInclude>
     <ClInclude Include="BloodCastle.h">
@@ -306,7 +306,7 @@
     <ClInclude Include="Connection.h">
       <Filter>Connection</Filter>
     </ClInclude>
-    <ClInclude Include="CriticalSection.h">
+    <ClInclude Include="..\Common\CriticalSection.h">
       <Filter>Connection</Filter>
     </ClInclude>
     <ClInclude Include="HackCheck.h">
@@ -336,7 +336,7 @@
     <ClInclude Include="SocketManager.h">
       <Filter>Connection</Filter>
     </ClInclude>
-    <ClInclude Include="SocketManagerUdp.h">
+    <ClInclude Include="..\Common\SocketManagerUdp.h">
       <Filter>Connection</Filter>
     </ClInclude>
     <ClInclude Include="DSProtocol.h">
@@ -348,10 +348,10 @@
     <ClInclude Include="Protocol.h">
       <Filter>Connection\Protocols</Filter>
     </ClInclude>
-    <ClInclude Include="ProtocolDefines.h">
+    <ClInclude Include="..\Common\ProtocolDefines.h">
       <Filter>Connection\Protocols</Filter>
     </ClInclude>
-    <ClInclude Include="Console.h">
+    <ClInclude Include="..\Common\Console.h">
       <Filter>Util Files</Filter>
     </ClInclude>
     <ClInclude Include="Blacklist.h">
@@ -386,7 +386,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Math.cpp">
+    <ClCompile Include="GameMath.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="EventSpawnMonster.cpp">
@@ -620,7 +620,7 @@
     <ClCompile Include="Connection.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
-    <ClCompile Include="CriticalSection.cpp">
+    <ClCompile Include="..\Common\CriticalSection.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="HackCheck.cpp">

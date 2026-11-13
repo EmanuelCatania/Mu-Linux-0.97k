@@ -1,5 +1,5 @@
-#ifndef MU_GAMESERVER_MATH_H
-#define MU_GAMESERVER_MATH_H
+#ifndef MU_GAMESERVER_GAMEMATH_H
+#define MU_GAMESERVER_GAMEMATH_H
 
 #ifdef __cplusplus
 extern "C"

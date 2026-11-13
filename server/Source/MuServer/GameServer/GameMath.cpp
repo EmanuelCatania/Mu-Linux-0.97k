@@ -9,7 +9,7 @@
 ****/
 
 #include "stdafx.h"
-#include "Math.h"
+#include "GameMath.h"
 
 vec3_t vec3_origin = { 0, 0, 0 };
 

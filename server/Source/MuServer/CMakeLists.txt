@@ -11,6 +11,14 @@ foreach(service ConnectServer JoinServer DataServer GameServer)
 endforeach()
 mu_link_mysql(JoinServer DataServer)
 
+# Código idéntico en varios servers (Fase 5, E5). Cada server lo compila con su
+# propio stdafx.h, igual que cuando tenía la copia en su carpeta.
+foreach(service ConnectServer JoinServer DataServer GameServer)
+  target_sources(${service} PRIVATE Common/CriticalSection.cpp)
+endforeach()
+target_sources(JoinServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
+target_sources(DataServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
+
 # Texto de las consultas con los valores escapados (Common/SqlFormat).
 target_sources(JoinServer PRIVATE Common/SqlFormat.cpp)
 target_sources(DataServer PRIVATE Common/SqlFormat.cpp)
