@@ -43,7 +43,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_Login_ServerSelect.cpp',revision)
+    source=read_source('src/scenes/Scene_Login_ServerSelect.cpp',revision)
     start=source.index('    // ── PASS 2:');end=source.index('    // ── PASS 3:',start)
     alias=re.search(r'^#define DAT_083a45ec[^\n]+',read_source('src/globals.h',revision),re.M).group()
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x20000')+MAIN.replace('ALIAS',alias).replace('PASS',source[start:end])

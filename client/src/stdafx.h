@@ -47,7 +47,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "types.h"
 #include "game/entity/EntityTypes.h"
 #include "Model/ModelTypes.h"
-#include "UI/ChatTypes.h"
+#include "ui/ChatTypes.h"
 #include "render/JointTypes.h"
 
 // ── Game type definitions (structs, enums, constants) ────────────────────────

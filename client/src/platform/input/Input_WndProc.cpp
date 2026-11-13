@@ -3,7 +3,7 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
-#include "UI/EmoteMenu.h"
+#include "ui/EmoteMenu.h"
 #include "platform/IInput.h"
 #include "net/NetText.h"
 #include "Text/TextCore.h"
@@ -11,11 +11,11 @@
 #include "render/Camera3D.h"
 #include "platform/input/Input.h"
 
-// Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
+// Helper de src/ui/Chat_InputTick.cpp — envía una línea de chat
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
-#include "UI/ChatHistory.h"
+#include "ui/ChatHistory.h"
 void ChatListBox_AddWheel(int notches);
 extern "C" BYTE InputTextHide[10];
 

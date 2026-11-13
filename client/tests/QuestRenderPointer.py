@@ -230,7 +230,7 @@ int main() {
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0].replace("0x10000","0x100000")
-    prefix+=read_source("src/UI/PanelAnchor.h",revision).replace("#pragma once","")
+    prefix+=read_source("src/ui/PanelAnchor.h",revision).replace("#pragma once","")
     structs=read_source("src/structs.h",revision)
     for name in ("MAX_CLASS","MAX_RESISTANCE"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",structs,re.M).group()+"\n"
@@ -250,7 +250,7 @@ def harness(revision=None):
     prefix+="\nchar GlobalText[4000][300];\n"+SERVICES
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()
     prefix+=function(read_source("src/Item/Item_Display.cpp",revision),"ConvertGold64")
-    source=read_source("src/UI/Quest_Legacy.cpp",revision)
+    source=read_source("src/ui/Quest_Legacy.cpp",revision)
     prefix+=function(source,"QuestX")
     answers=function(source,"FUN_00402ff0"); prefix+=answers
     argument="quest" if "const BYTE*" in answers.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"

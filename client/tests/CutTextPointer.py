@@ -68,7 +68,7 @@ int main() {
 
 
 def harness(revision=None):
-    code=function(read_source('src/UI/UI_LegacyExterns.cpp',revision),'CutText')
+    code=function(read_source('src/ui/UI_LegacyExterns.cpp',revision),'CutText')
     arg='second' if 'char* param_2' in code else 'static_cast<int>(reinterpret_cast<std::uintptr_t>(second))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+code+MAIN.replace('ARG',arg)
 

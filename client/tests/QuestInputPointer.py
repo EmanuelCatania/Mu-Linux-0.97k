@@ -118,7 +118,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("char DAT_00559bb4", 1)[0].replace("0x10000", "0x100000")
-    prefix += read_source("src/UI/PanelAnchor.h", revision).replace("#pragma once", "")
+    prefix += read_source("src/ui/PanelAnchor.h", revision).replace("#pragma once", "")
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     prefix += "\n" + re.search(r"^#define DIALOG_SCRIPT_COUNT[^\n]+", header, re.M).group() + "\n"
     prefix += re.search(r"struct DIALOG_SCRIPT\s*\{.*?\n\};", header, re.S).group() + "\nstatic_assert(sizeof(DIALOG_SCRIPT)==0x400);\n"
@@ -131,7 +131,7 @@ def harness(revision=None):
     for name in ("g_DialogScript","g_iCurrentDialogScript","MouseX","MouseY"):
         prefix += "\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",aliases,re.M).group()+"\n"
     prefix += SERVICES + function(header,"IsClickPushed")
-    scene=read_source("src/Scene/Scene_CharSelect_Nav.cpp",revision)
+    scene=read_source("src/scenes/Scene_CharSelect_Nav.cpp",revision)
     prefix += function(scene,"CSQuest_CheckRequestCondition")
     prefix += function(read_source("src/Item/Quest_UIState.cpp",revision),"CSQuest_clearQuest")
     for name in ("Quest_SendState","FUN_00401af0"):

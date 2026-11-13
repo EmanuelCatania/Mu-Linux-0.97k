@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityView.h"
-#include "UI/HealthBar.h"
+#include "ui/HealthBar.h"
 #include "game/combat/PlayerAttackSpeed.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"

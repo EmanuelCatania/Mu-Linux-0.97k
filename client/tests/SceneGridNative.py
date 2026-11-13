@@ -90,7 +90,7 @@ def harness():
              "using BYTE=std::uint8_t; using vec3_t=float[3]; using vec34_t=float[3][4];\n"
              "#pragma pack(push,1)\n" + record(header, "OBJECT") +
              "\n#pragma pack(pop)\nOBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}\n")
-    cell = read_source("src/Scene/SceneObjectCell.h").replace("#pragma once", "")
+    cell = read_source("src/scenes/SceneObjectCell.h").replace("#pragma once", "")
     services = PREAMBLE.split("using Snapshot", 1)[0].replace("444", "sizeof(OBJECT)")
     return types + cell + services + "\nextern SceneObjectCell g_ObjectBucketGrid[256];\n" + production() + MAIN
 

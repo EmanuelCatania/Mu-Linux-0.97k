@@ -97,7 +97,7 @@ def harness(revision=None):
     name = "DAT_07cf1ff4"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
-    speed = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CalculateAttackSpeed")
+    speed = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CalculateAttackSpeed")
     arg = "machine" if "BYTE* param_1" in speed else "static_cast<int>(reinterpret_cast<std::uintptr_t>(machine))"
     return prefix + SERVICES + speed + MAIN.replace("CALL_SPEED", f"CalculateAttackSpeed({arg})")
 

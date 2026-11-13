@@ -13,7 +13,7 @@ void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "net/Net.h"
-#include "UI/ChatListBox.h"
+#include "ui/ChatListBox.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);

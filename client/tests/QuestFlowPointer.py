@@ -129,10 +129,10 @@ def harness(revision=None):
     for name in ("DAT_07abf5d8", "CharacterAttribute", "_g_bEventChipDialogEnable", "InventoryOpened", "CharacterOpened"):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", aliases, re.M).group() + "\n"
     prefix += SERVICES
-    scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
+    scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     for name in ("CSQuest_GetQuestState", "CSQuest_FindQuestContext", "CSQuest_CheckActCondition", "CSQuest_CheckRequestCondition", "CSQuest_CheckQuestState"):
         prefix += function(scene, name)
-    prefix += function(read_source("src/Scene/Scene_LegacyCleanup.cpp", revision), "CSQuest__CheckQuestState")
+    prefix += function(read_source("src/scenes/Scene_LegacyCleanup.cpp", revision), "CSQuest__CheckQuestState")
     medium = read_source("src/Core/Runtime_Medium.cpp", revision)
     prefix += function(medium, "CSQuest__ShowQuestNpcWindow") + function(medium, "CSQuest__setQuestLists")
     prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")

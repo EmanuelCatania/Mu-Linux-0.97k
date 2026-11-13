@@ -58,7 +58,7 @@ def harness(revision=None):
     publish = re.search(r"if \(g_csQuest == 0\) g_csQuest = [^;]+;", init).group()
     reset = re.search(r"g_csQuest = 0;", function(source, "FUN_00403ef0")).group()
     prefix += "void PublishBase(void* param_1) { " + publish + " }\nvoid ResetBase() { " + reset + " }\n"
-    prefix += function(read_source("src/UI/UIState.cpp", revision), "IsQuestPanelOpen")
+    prefix += function(read_source("src/ui/UIState.cpp", revision), "IsQuestPanelOpen")
     return prefix + MAIN
 
 

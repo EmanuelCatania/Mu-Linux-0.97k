@@ -18,10 +18,10 @@
 #include "platform/IInput.h"
 #include "platform/IFileSystem.h"
 #include "Config/UserSettings.h"
-#include "UI/HealthBar.h"
-#include "UI/MoveList.h"
-#include "UI/EventTimer.h"
-#include "UI/GoldenArcher.h"
+#include "ui/HealthBar.h"
+#include "ui/MoveList.h"
+#include "ui/EventTimer.h"
+#include "ui/GoldenArcher.h"
 #include "Item/ChaosMixRates.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
@@ -875,7 +875,7 @@ unsigned int __cdecl CheckAttack(void) {
 }
 // GetScreenWidth @ 0x004CB520 vive en src/render/HUD_Pass2.cpp.
 // SecondPassword_Handler vive en src/net/SecondPassword.cpp y los hit-tests de
-// los paneles (004e4760-004ec330) en src/UI/UI_PanelInput.cpp.
+// los paneles (004e4760-004ec330) en src/ui/UI_PanelInput.cpp.
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.
 // ctx layout:  +0x00 = HWND (msg target)   +0x08 = SOCKET

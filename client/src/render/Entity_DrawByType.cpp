@@ -48,7 +48,7 @@
 #include <unordered_map>
 #include <vector>
 #include "render/Entity_Render_3D.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 
 
 // fsin is an x87 FPU intrinsic declared in math.h — no separate extern needed

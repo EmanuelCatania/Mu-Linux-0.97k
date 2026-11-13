@@ -88,7 +88,7 @@ def harness(revision=None):
     definitions = read_source("src/globals.cpp", revision)
     prefix += re.search(r"^char\s+bBuxCode\[3\]\s*=\s*[^;]+;", definitions, re.M).group()
     prefix += SERVICES
-    prefix += function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "BuxConvert_1")
+    prefix += function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "BuxConvert_1")
     body = function(read_source("src/Item/Quest_Data.cpp", revision), "CSQuest_OpenQuestScript")
     sample = ROOT / "bin/Client/Content/table/quest.bmd"
     if not sample.is_file():

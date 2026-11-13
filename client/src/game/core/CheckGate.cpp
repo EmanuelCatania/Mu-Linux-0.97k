@@ -2,7 +2,7 @@
 // Entrada a los gates (portales) del mapa.
 #include <cstdint>
 #include "stdafx.h"
-#include "UI/ChatListBox.h"
+#include "ui/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "game/party/Party.h"

@@ -206,7 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
-#include "UI/ChatListBox.h"
+#include "ui/ChatListBox.h"
 #include "render/Gfx.h"
 #include "render/RenderProfile.h"
 #include "render/BufferedDraw.h"
@@ -214,7 +214,7 @@
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "render/Camera3D.h"
-#include "UI/HealthBar.h"
+#include "ui/HealthBar.h"
 #include "render/Render.h"
 #include "render/Camera.h"
 #include "render/Player_Render.h"

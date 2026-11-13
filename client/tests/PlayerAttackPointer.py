@@ -100,7 +100,7 @@ def harness(revision=None):
     record = "\n".join(re.findall(r"^#define\s+(?:MAX_CLASS|MAX_RESISTANCE)\s+[^\n]+", structs, re.M))
     record += "\n" + re.search(r"struct ITEM_ATTRIBUTE\b.*?\n\};", structs, re.S).group()
     record += "\nstatic_assert(sizeof(ITEM_ATTRIBUTE) == 64 && offsetof(ITEM_ATTRIBUTE, TwoHand) == 30);\n"
-    attack = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "SetPlayerAttack").replace("rand()", "NextRandom()")
+    attack = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "SetPlayerAttack").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* character" in attack else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     # La definición de SetAttackSpeed precede a la función extraída.
     services, main = MAIN.split("void CallAttack", 1)

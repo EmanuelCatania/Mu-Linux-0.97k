@@ -43,8 +43,8 @@ std::uint64_t Run(BYTE* memory,uintptr_t alias){auto* actor=reinterpret_cast<CHA
 int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);auto expected=Run(low,0x28000000u);if(sizeof(void*)>4){auto* high=static_cast<BYTE*>(Reserve(uintptr_t(0x126000000ull)));auto* sign=static_cast<BYTE*>(Reserve(0x8a000000u));Require(high&&sign);BYTE alias[960];std::memcpy(alias,low,960);Require(Run(high,0x26000010u)==expected&&std::memcmp(alias,low,960)==0);Require(Run(sign,0x28000000u)==expected);}std::printf("Chat owner:3024 casos/ruta %016llx\n",(unsigned long long)expected);}
 '''
 def harness(revision=None):
- source=read_source('src/UI/ChatTypes.h',revision);a=source.index('struct CHAT {');b=source.index('};',a)+2;chat='#pragma pack(push,1)\n'+source[a:b]+'\n#pragma pack(pop)\n'
- source=read_source('src/UI/Chat_Bubbles.cpp',revision);body=function(source,'CreateChat');format_guild=function(source,'ChatFormatGuild');call='CreateChat(id,text,actor,flag,color)' if not revision else 'CreateChat(id,text,static_cast<DWORD>(reinterpret_cast<uintptr_t>(actor)),flag,color)'
+ source=read_source('src/ui/ChatTypes.h',revision);a=source.index('struct CHAT {');b=source.index('};',a)+2;chat='#pragma pack(push,1)\n'+source[a:b]+'\n#pragma pack(pop)\n'
+ source=read_source('src/ui/Chat_Bubbles.cpp',revision);body=function(source,'CreateChat');format_guild=function(source,'ChatFormatGuild');call='CreateChat(id,text,actor,flag,color)' if not revision else 'CreateChat(id,text,static_cast<DWORD>(reinterpret_cast<uintptr_t>(actor)),flag,color)'
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+chat+AFTER+format_guild+body+'\nvoid Invoke(char* id,char* text,CHARACTER* actor,int flag,int color){'+call+';}\n'+MAIN
 
 def main():

@@ -20,7 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
-#include "UI/EmojiPicker.h"
+#include "ui/EmojiPicker.h"
 extern "C" const char* Guild_GetMarkName(int row);
 int GuildMark_FindRecordByName(const char* name);
 #include "render/Gfx.h"
@@ -31,7 +31,7 @@ int GuildMark_FindRecordByName(const char* name);
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include "UI/EventTimer.h"
+#include "ui/EventTimer.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 

@@ -12,7 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
-#include "UI/BuffBar.h"
+#include "ui/BuffBar.h"
 #include "Model/SmdImport.h"
 #include "game/physics/ClothTypes.h"
 #include "Text/TextCore.h"
@@ -21,8 +21,8 @@
 #include "platform/IInput.h"
 #include "platform/IFileSystem.h"
 #include "net/Reconnect.h"
-#include "UI/MiniMap.h"
-#include "UI/MoveList.h"
+#include "ui/MiniMap.h"
+#include "ui/MoveList.h"
 #include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"

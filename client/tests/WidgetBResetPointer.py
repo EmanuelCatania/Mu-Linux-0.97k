@@ -22,7 +22,7 @@ def harness(revision=None):
     args='widget' if 'void* widget' in reset else '(int)widget'
     wrapper='\nvoid* Call(unsigned route,void* widget){if(route==0){WidgetB_ZeroFields('+args+');return widget;}return route==1?WidgetB_Ctor(widget):WidgetB_CtorFull(widget);}\n'
     fastcall='\n#ifndef _WIN32\n#define __fastcall\n#endif\n'
-    body=reset+function(source,'WidgetB_SetVtable')+function(source,'WidgetB_Ctor')+function(read_source('src/Scene/Scene_LegacyHelpers.cpp',revision),'WidgetB_CtorFull')
+    body=reset+function(source,'WidgetB_SetVtable')+function(source,'WidgetB_Ctor')+function(read_source('src/scenes/Scene_LegacyHelpers.cpp',revision),'WidgetB_CtorFull')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+fastcall+body+wrapper+MAIN
 
 def main():

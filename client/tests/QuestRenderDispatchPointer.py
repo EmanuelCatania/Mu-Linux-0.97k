@@ -25,7 +25,7 @@ void __fastcall FUN_00403a40(void* ptr) { Require(ptr==activeQuest); ++calls; la
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0].replace("0x10000","0x100000")+SERVICES
-    render=function(read_source("src/UI/Quest_Legacy.cpp",revision),"FUN_00403f30")
+    render=function(read_source("src/ui/Quest_Legacy.cpp",revision),"FUN_00403f30")
     main=DISPATCH_MAIN.replace("Packet_ParseReceived","FUN_00403f30").replace("RunDispatch","RunRenderDispatch")
     main=main.replace(" handlerResult=static_cast<int>(trial*0x78563412u);","")
     main=main.replace("int main() {","int main() {\n    calls=0; Require(FUN_00403f30(nullptr)==1 && calls==0);")

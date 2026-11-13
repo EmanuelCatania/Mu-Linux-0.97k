@@ -412,7 +412,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
 // CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) vive en
 // src/net/Crypto.cpp.
 
-// Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp
+// Chat_ValidateInputCommand — implemented in src/ui/Chat.cpp
 // GL_DrawTexture — implemented in src/render/GL_2D.cpp
 // RenderSprite_0 — implemented in src/render/Sprite.cpp (Sprite_DrawTexturedQuad)
 

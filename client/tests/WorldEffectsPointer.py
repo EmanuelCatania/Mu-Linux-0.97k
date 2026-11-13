@@ -123,7 +123,7 @@ int main() {
 
 def harness(revision=None):
     prefix=reset_harness(revision).split("int ItemObjectAttributeImpl(",1)[0]
-    prefix+=read_source("src/Scene/ObjectRegistry.h",revision).replace("#pragma once","")
+    prefix+=read_source("src/scenes/ObjectRegistry.h",revision).replace("#pragma once","")
     source=read_source("src/render/WorldEffects.cpp",revision)
     for name in ("Sprite","Frame"):
         prefix+=re.search(rf"struct {name}\s*\{{.*?\n\}};",source,re.S).group()

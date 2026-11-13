@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "render/ResourceTables.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include "platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"

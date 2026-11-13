@@ -29,7 +29,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include "UI/EventTimer.h"
+#include "ui/EventTimer.h"
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);

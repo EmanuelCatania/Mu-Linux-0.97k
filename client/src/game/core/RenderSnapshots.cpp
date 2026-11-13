@@ -7,7 +7,7 @@
 #include "game/core/RenderFxSnapshots.h"
 #include "game/core/SimulationPreparation.h"
 #include "game/core/MapManager.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include <cmath>
 #include <cstdint>
 

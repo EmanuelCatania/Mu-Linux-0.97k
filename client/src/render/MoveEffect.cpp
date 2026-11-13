@@ -64,7 +64,7 @@
 
 #include "stdafx.h"
 #include "render/ResourceTables.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include "platform/Text.h"
 extern "C" void DbgLogPublic(const char*);
 

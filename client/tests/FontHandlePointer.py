@@ -17,15 +17,15 @@ from SceneObjectPointer import build_and_run, read_source
 SITES = {
     "src/platform/input/Input_Timing.cpp": [0],
     "src/Item/Item_Display.cpp": [0],
-    "src/Scene/Scene_CharSelect.cpp": [0,1,2,3,4],
-    "src/Scene/Scene_Intro.cpp": [0],
-    "src/Scene/Scene_Login.cpp": [0],
-    "src/UI/CharMenu_Build.cpp": [0,1,2,3],
-    "src/UI/Chat.cpp": [1,2,3],
-    "src/UI/Quest_Legacy.cpp": [2,3,4],
-    "src/UI/UI_GuildLegacy.cpp": [0],
-    "src/UI/UI_LegacyExterns.cpp": [0],
-    "src/UI/UI_StatsPanel.cpp": [0,1,2,3,4,5,6,7,8],
+    "src/scenes/Scene_CharSelect.cpp": [0,1,2,3,4],
+    "src/scenes/Scene_Intro.cpp": [0],
+    "src/scenes/Scene_Login.cpp": [0],
+    "src/ui/CharMenu_Build.cpp": [0,1,2,3],
+    "src/ui/Chat.cpp": [1,2,3],
+    "src/ui/Quest_Legacy.cpp": [2,3,4],
+    "src/ui/UI_GuildLegacy.cpp": [0],
+    "src/ui/UI_LegacyExterns.cpp": [0],
+    "src/ui/UI_StatsPanel.cpp": [0,1,2,3,4,5,6,7,8],
 }
 OLD = r"\((?:HGDIOBJ|HFONT)\)\((?:uintptr_t|DWORD)\)\(\(DWORD\)\(uintptr_t\)gFont\.GetFont\(FONT_\w+\)\)"
 EXPRESSION = re.compile(OLD+r"|(?:\((?:HGDIOBJ|HFONT)\))?gFont\.GetFont\(FONT_\w+\)")

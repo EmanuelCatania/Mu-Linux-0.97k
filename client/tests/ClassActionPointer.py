@@ -64,7 +64,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    source=read_source('src/UI/Chat_Gestures.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
+    source=read_source('src/ui/Chat_Gestures.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
     prefix+='\n'.join(re.findall(r'^inline (?:const )?(?:OBJECT|CHARACTER)\* As(?:Object|Character)[^\n]+',header,re.M))
     code=function(source,'SendRequestAction')+function(source,'SetActionClass')+function(source,'Gesture')

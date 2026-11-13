@@ -37,7 +37,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x20000')+'\n#include <initializer_list>\n'
-    return prefix+object_view(['Owner'],revision)+MAIN.replace('FUNCTION',function(read_source('src/Scene/Scene_EntityLifecycle.cpp',revision),'DeleteBug'))
+    return prefix+object_view(['Owner'],revision)+MAIN.replace('FUNCTION',function(read_source('src/scenes/Scene_EntityLifecycle.cpp',revision),'DeleteBug'))
 
 
 def main():

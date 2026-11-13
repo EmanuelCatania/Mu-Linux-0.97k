@@ -113,7 +113,7 @@ def harness(revision=None):
     for name in ("DAT_07cf1ff4", "DAT_07cf1ffc"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    return prefix + function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "CSQuest_CheckRequestCondition") + MAIN
+    return prefix + function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CSQuest_CheckRequestCondition") + MAIN
 
 
 def main():

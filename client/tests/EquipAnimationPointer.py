@@ -56,7 +56,7 @@ def harness(revision=None):
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\nstruct OBJECT{BYTE opaque0[2];short Type;BYTE opaque4[257];BYTE CurrentAction;BYTE remainder[182];};\n'
     prefix+=part+character+'BYTE remainder[244];};\nstatic_assert(sizeof(OBJECT)==444);static_assert(offsetof(OBJECT,CurrentAction)==261);static_assert(sizeof(CHARACTER)==916);static_assert(offsetof(CHARACTER,BodyPart)==480);static_assert(offsetof(CHARACTER,Weapon)==624);\n'
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))+SERVICES
-    code=function(read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision),'Character_UpdateEquipSlotAnimations')
+    code=function(read_source('src/scenes/Scene_CharSelect_Nav.cpp',revision),'Character_UpdateEquipSlotAnimations')
     arg='character' if 'CHARACTER* param_1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(character))'
     return prefix+code+MAIN.replace('ARG',arg)
 

@@ -117,7 +117,7 @@ void ValidatePrimary() {
                            read_source("src/platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(0x8000)", "AllocateShadow(0x8000)")
     data = read_source("src/Item/Item_Data.cpp", revision)
-    scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
+    scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     sample = ROOT / "bin/Client/Content/table/item.bmd"
     if not sample.is_file():
         raise FileNotFoundError(sample)

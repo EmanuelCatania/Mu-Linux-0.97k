@@ -72,7 +72,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Scene/Scene_ObjectUpdate.cpp',revision)
+    source=read_source('src/scenes/Scene_ObjectUpdate.cpp',revision)
     # Adapta la extracción sin cambiar el __stdcall del cuerpo compilado.
     move=function(source.replace('void __stdcall MoveObjects','void __cdecl MoveObjects'),'MoveObjects').replace('void __cdecl MoveObjects','void __stdcall MoveObjects')
     # Tres casts de owner ajenos a esta causa siguen en producción; sus ramas

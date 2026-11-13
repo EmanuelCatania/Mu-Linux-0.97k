@@ -3,7 +3,7 @@
 #include "game/core/RenderInterpolationMath.h"
 #include "game/core/RenderSnapshots.h"
 #include "game/core/RenderFxSnapshots.h"
-#include "Scene/ObjectRegistry.h"
+#include "scenes/ObjectRegistry.h"
 #include "game/core/RenderDerivedState.h"
 #include <algorithm>
 

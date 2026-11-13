@@ -1,15 +1,15 @@
 #include <cstdint>
 #include "stdafx.h"
-#include "UI/EmojiPicker.h"
-#include "UI/EmoteMenu.h"
+#include "ui/EmojiPicker.h"
+#include "ui/EmoteMenu.h"
 #include "game/entity/EntityName.h"
 #include "platform/ISocket.h"
 #include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "render/Camera3D.h"
-#include "UI/MiniMap.h"
-#include "UI/EventTimer.h"
-#include "UI/MoveList.h"
+#include "ui/MiniMap.h"
+#include "ui/EventTimer.h"
+#include "ui/MoveList.h"
 #include "globals.h"
 #include "functions.h"
 #include "net/Net.h"
@@ -64,7 +64,7 @@ static bool HUD_IsCharacterInfoRuntime(void);
 #define g_Attacking Attacking
 
 // El ChatListBox publica su propio hit-test acá (definido en
-// src/UI/ChatListBox.cpp). Su tick corre ANTES que esta función dentro del
+// src/ui/ChatListBox.cpp). Su tick corre ANTES que esta función dentro del
 // mismo frame, así que el latch está fresco. Sin esto, clickear dentro del
 // recuadro del chat mandaría a caminar al personaje.
 extern "C" int g_ChatLB_MouseOnWindow;

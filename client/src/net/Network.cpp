@@ -1,7 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
-#include "UI/BuffBar.h"
+#include "ui/BuffBar.h"
 #include "net/NetText.h"
 #include "platform/Text.h"
 #include "platform/ISocket.h"
@@ -16,10 +16,10 @@
 #include "net/MuEmu.h"
 #include "net/PacketFrame.h"
 #include "net/ServerCharacterStats.h"
-#include "UI/HealthBar.h"
-#include "UI/MoveList.h"
-#include "UI/EventTimer.h"
-#include "UI/GoldenArcher.h"
+#include "ui/HealthBar.h"
+#include "ui/MoveList.h"
+#include "ui/EventTimer.h"
+#include "ui/GoldenArcher.h"
 #include "Item/ChaosMixRates.h"
 #include "Item/Item_ServerValue.h"
 

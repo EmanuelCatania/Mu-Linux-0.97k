@@ -39,7 +39,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     wrappers=[]
-    for path,var in [('src/Scene/Scene_Intro.cpp','pvVar5'),('src/net/Net_Connect.cpp','pvVar4')]:
+    for path,var in [('src/scenes/Scene_Intro.cpp','pvVar5'),('src/net/Net_Connect.cpp','pvVar4')]:
         source=read_source(path,revision)
         pattern=rf'{var}\s*=\s*AntiTamper_HashNode\(\);\s*[^\n]+\n\s*HashTable_Insert\([^\n]+;'
         blocks=re.findall(pattern,source)
@@ -49,7 +49,7 @@ def harness(revision=None):
             setup='undefined4* puVar1=static_cast<undefined4*>(key);wantedKey=key;' if var=='pvVar5' else ('byte m_SendSerial=0,m_ReceiveSerial=0;wantedKey='+('&m_SendSerial;' if n==2 else '&m_ReceiveSerial;'))
             wrappers.append(f'void Block{n}(void* key){{void* {var};{setup}{block}}}')
     dispatcher='void Block(unsigned which,void* key){switch(which){'+''.join(f'case {n}:Block{n}(key);break;' for n in range(4))+'}}'
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/Scene/Scene_MapTick.cpp',revision),'Scene_MapTick')+'\n'.join(wrappers)+dispatcher+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/scenes/Scene_MapTick.cpp',revision),'Scene_MapTick')+'\n'.join(wrappers)+dispatcher+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

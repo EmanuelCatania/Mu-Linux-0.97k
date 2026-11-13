@@ -110,7 +110,7 @@ int main() {
 
 
 def harness(revision=None):
-    scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
+    scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     code0 = function(scene, "BuxConvert_0")
     code1 = function(scene, "BuxConvert_1")
     terrain = function(read_source("src/net/Net_Bux.cpp", revision), "BuxConvert")
