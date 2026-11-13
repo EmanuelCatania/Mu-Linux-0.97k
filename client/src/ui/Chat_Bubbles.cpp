@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "ui/ChatListBox.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
 #include "ui/ChatTypes.h"

@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "platform/GuardedOperation.h"
 #include "platform/IFileSystem.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
-#include "Item/Item_ServerValue.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
+#include "game/item/Item_ServerValue.h"
 
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)

@@ -5,7 +5,7 @@
 #include "game/entity/EntityName.h"
 #include "platform/ISocket.h"
 #include "platform/IInput.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "render/Camera3D.h"
 #include "ui/MiniMap.h"
 #include "ui/EventTimer.h"

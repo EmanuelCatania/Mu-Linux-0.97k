@@ -6,7 +6,7 @@ import re
 from SceneObjectPointer import read_source
 from ObjectLayoutContract import record
 
-header=read_source('src/Model/ModelTypes.h')
+header=read_source('src/assets/model/ModelTypes.h')
 records='\n'.join(record(header,name)for name in ('ModelAnimationKeys','ModelAnimationBone','ModelAnimationAction','BMD'))
 records=re.sub(r'\b(?:float|BYTE|std::uint8_t|short|ModelAnimationKeys)\s*\*\s*(\w+)\s*;',r'std::uint32_t \1;',records)
 VIEW='\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+records+'\n#pragma pack(pop)\n'+r'''

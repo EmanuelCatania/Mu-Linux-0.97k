@@ -40,11 +40,11 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "render/EquipmentVisuals.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"

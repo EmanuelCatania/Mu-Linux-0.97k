@@ -9,12 +9,12 @@
 #endif
 #include "app/core/Font.h"
 #include "app/config/UserSettings.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #ifdef MU_SDL_FONTS
 #include "platform/SDL3/SDLFont.h"
-#include "Text/TextCore.h"
-#include "Text/TextShaper.h"
-#include "Text/TextAtlas.h"
+#include "render/text/TextCore.h"
+#include "render/text/TextShaper.h"
+#include "render/text/TextAtlas.h"
 #include <stdexcept>
 namespace {
 Platform::SDLFont portableFonts[MAX_FONT_TYPES];

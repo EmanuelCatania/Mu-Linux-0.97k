@@ -133,7 +133,7 @@ def harness(revision=None):
     prefix += SERVICES + function(header,"IsClickPushed")
     scene=read_source("src/scenes/Scene_CharSelect_Nav.cpp",revision)
     prefix += function(scene,"CSQuest_CheckRequestCondition")
-    prefix += function(read_source("src/Item/Quest_UIState.cpp",revision),"CSQuest_clearQuest")
+    prefix += function(read_source("src/ui/Quest_UIState.cpp",revision),"CSQuest_clearQuest")
     for name in ("Quest_SendState","FUN_00401af0"):
         prefix += function(scene,name)
     prefix += function(read_source("src/net/Crypto.cpp",revision),"CSQuest_ProceedButton")

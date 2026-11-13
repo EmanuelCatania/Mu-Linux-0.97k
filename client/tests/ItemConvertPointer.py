@@ -122,14 +122,14 @@ def harness(revision=None):
     structs=read_source("src/structs.h",revision)
     for name in ("MAX_SPECIAL_OPTION","MAX_CLASS","MAX_RESISTANCE"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",structs,re.M).group()+"\n"
-    item_header = '#include "Item/ItemTypes.h"' in structs
+    item_header = '#include "game/item/ItemTypes.h"' in structs
     if item_header:
-        prefix += read_source("src/Item/ItemTypes.h", revision)
+        prefix += read_source("src/game/item/ItemTypes.h", revision)
     for name in (("ITEM_ATTRIBUTE",) if item_header else ("ITEM","ITEM_ATTRIBUTE")):
         prefix+=re.search(rf"struct {name}\b.*?\n\}};",structs,re.S).group()
     prefix+="\nstatic_assert(sizeof(ITEM)==68 && sizeof(ITEM_ATTRIBUTE)==64);\n"
-    prefix+="\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;",read_source("src/Item/ItemDefines.h",revision),re.M))
-    catalog=read_source("src/Item/ContentCatalog.h",revision)
+    prefix+="\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;",read_source("src/game/item/ItemDefines.h",revision),re.M))
+    catalog=read_source("src/assets/data/ContentCatalog.h",revision)
     prefix+=re.search(r"struct CatalogWing\s*\{.*?\n\};",catalog,re.S).group()
     header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
     for name in ("DAT_07d78068","DAT_07cf1ff4"):
@@ -137,7 +137,7 @@ def harness(revision=None):
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     prefix+="\n"+re.search(r"^#define\s+CharacterAttribute\s+[^\n]+",header,re.M).group()+"\n"
     prefix+=SERVICES+function(catalog,"ItemBehaviorType")
-    convert=function(read_source("src/Item/Item_LegacyLinker.cpp",revision),"ItemConvert")
+    convert=function(read_source("src/game/item/Item_LegacyLinker.cpp",revision),"ItemConvert")
     arg="item" if "ITEM* ip" in convert.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(item))"
     return prefix+convert+MAIN.replace("ARG",arg)
 

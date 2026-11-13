@@ -89,7 +89,7 @@
 //   DAT_06970a9c  → root bone data (pose matrix, usado como fallback)
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "render/Entity_DrawAt.h"
 
 // Entity_DrawAt @ 0x00505A10 (73 lines)

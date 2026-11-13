@@ -49,7 +49,7 @@ set(MU_SOURCES
     src/platform/ClientEntry.cpp
     src/platform/ContentLayers.cpp
     src/platform/GLFunctions.cpp
-    src/Local/Text_Data.cpp
+    src/assets/text/Text_Data.cpp
     src/scenes/Scene_Dispatch.cpp
     src/scenes/Scene_Intro.cpp
     src/scenes/Scene_Login.cpp
@@ -92,7 +92,7 @@ set(MU_SOURCES
     src/net/Net_Process.cpp
     src/app/config/Config_Load.cpp
     src/ui/UIState.cpp
-    src/Local/ClientText.cpp
+    src/assets/text/ClientText.cpp
     src/app/core/Window.cpp
     src/platform/Win32/Win32NativeBridge.cpp
     src/platform/SDL3/SDLWindow.cpp
@@ -104,7 +104,7 @@ set(MU_SOURCES
     src/platform/SDL3/SDLAudio.cpp
     src/platform/SDL3/SDLSocket.cpp
     src/platform/SDL3/SDLFont.cpp
-    src/Text/TextShaper.cpp
+    src/render/text/TextShaper.cpp
     src/platform/Win32/Win32Audio.cpp
     src/platform/Win32/Win32Timer.cpp
     src/platform/Win32/Win32Input.cpp
@@ -120,7 +120,7 @@ set(MU_SOURCES
     src/net/Reconnect.cpp
     src/net/Ping.cpp
     src/net/ServerCharacterStats.cpp
-    src/Item/ChaosMixRates.cpp
+    src/game/item/ChaosMixRates.cpp
     src/ui/HealthBar.cpp
     src/net/Recv/Recv_Account.cpp
     src/net/Recv/Recv_Character.cpp
@@ -137,9 +137,9 @@ set(MU_SOURCES
     src/platform/input/Input_WndProc.cpp
     src/app/config/UserSettings.cpp
     src/audio/Sound_Queue.cpp
-    src/Monster/Monster_Data.cpp
-    src/Terrain/Terrain_Utils.cpp
-    src/Terrain/Terrain_RenderTerrain.cpp
+    src/assets/data/Monster_Data.cpp
+    src/game/terrain/Terrain_Utils.cpp
+    src/render/Terrain_RenderTerrain.cpp
     src/game/math/Math_3D.cpp
     src/render/Particle.cpp
     src/render/Particle_Move.cpp
@@ -167,12 +167,12 @@ set(MU_SOURCES
     src/game/core/FrameLimiter.cpp
     src/audio/Music.cpp
     src/audio/EmoteSound.cpp
-    src/Terrain/Terrain_Tile.cpp
+    src/game/terrain/Terrain_Tile.cpp
     src/render/GL_2D.cpp
     src/render/Effect_Tick.cpp
-    src/Terrain/Terrain_Light.cpp
-    src/Terrain/Terrain_RenderFace.cpp
-    src/Terrain/Terrain_RenderBlocks.cpp
+    src/game/terrain/Terrain_Light.cpp
+    src/render/Terrain_RenderFace.cpp
+    src/render/Terrain_RenderBlocks.cpp
     src/audio/Sound_DS3D.cpp
     src/net/Net_Connect.cpp
     src/net/Net_PacketSession.cpp
@@ -212,7 +212,7 @@ set(MU_SOURCES
     src/ui/Chat_Log.cpp
     src/ui/EmojiPicker.cpp
     src/ui/EmoteMenu.cpp
-    src/Terrain/Terrain_RayCollision.cpp
+    src/game/terrain/Terrain_RayCollision.cpp
     src/platform/Win32/MiniDump.cpp
     src/game/combat/Combat_AttackEffect.cpp
     src/app/core/Runtime_Small.cpp
@@ -224,24 +224,24 @@ set(MU_SOURCES
     src/ui/UI_LegacyWidgets.cpp
     src/net/Net_LegacyRuntime.cpp
     src/scenes/Scene_CharSelect_Nav.cpp
-    src/Item/Item_LegacyHelpers.cpp
+    src/game/item/Item_LegacyHelpers.cpp
     src/ui/UI_DialogInterface.cpp
-    src/Item/Item_Durability.cpp
-    src/Item/Item_ServerValue.cpp
+    src/game/item/Item_Durability.cpp
+    src/game/item/Item_ServerValue.cpp
     src/render/BMD_LegacyDraw.cpp
     src/app/config/Config_TokenParser.cpp
     src/game/entity/Entity_BoneEffects.cpp
     src/app/core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
-    src/Item/Item_LegacyLinker.cpp
+    src/game/item/Item_LegacyLinker.cpp
     src/game/math/Math_LegacyTransforms.cpp
     src/render/Render_LegacyLinker.cpp
     src/scenes/Scene_LegacyCleanup.cpp
     src/scenes/Scene_ObjectLegacy.cpp
-    src/Terrain/Terrain_LegacyRender.cpp
+    src/render/Terrain_LegacyRender.cpp
     src/ui/UI_LegacyText.cpp
     src/render/BMD_FilterData.cpp
-    src/Item/Quest_UIState.cpp
+    src/ui/Quest_UIState.cpp
     src/game/physics/Cloth_Simulation.cpp
     src/render/BMD_LegacyEffects.cpp
     src/scenes/Scene_LegacyHelpers.cpp
@@ -260,7 +260,7 @@ set(MU_SOURCES
     src/render/Render_LegacyTrails.cpp
     src/ui/UI_LegacyGameHelpers.cpp
     src/net/Net_LegacyAuth.cpp
-    src/Terrain/Terrain_LegacyLoad.cpp
+    src/game/terrain/Terrain_LegacyLoad.cpp
     src/game/path/Path_LegacyReset.cpp
     src/render/Font_LegacyFactory.cpp
     src/render/SMD_Parser.cpp
@@ -271,8 +271,8 @@ set(MU_SOURCES
     src/render/Entity_AnimationLegacy.cpp
     src/game/combat/Combat_LegacyAttackEffects.cpp
     src/game/entity/Entity_LegacyPoolCleanup.cpp
-    src/Item/Item_LegacyGridInsert.cpp
-    src/Item/Item_TypeLegacy.cpp
+    src/game/item/Item_LegacyGridInsert.cpp
+    src/game/item/Item_TypeLegacy.cpp
     src/game/entity/Entity_LegacyTeleport.cpp
     src/game/combat/Skills_WarriorLegacy.cpp
     src/render/Render_LegacyDamageNumbers.cpp
@@ -292,14 +292,14 @@ set(MU_SOURCES
     src/render/Render_WorldHelpers.cpp
     src/render/BMD_Load.cpp
     src/globals.cpp
-    src/Model/Model_Items.cpp
-    src/Model/Model_CustomAnim.cpp
-    src/Model/Model_Monsters.cpp
-    src/Model/Model_Players.cpp
-    src/Model/Model_Effects.cpp
-    src/Model/Model_Misc.cpp
-    src/Model/Model_SkillEffects.cpp
-    src/Model/Model_Gates.cpp
+    src/assets/model/Model_Items.cpp
+    src/assets/model/Model_CustomAnim.cpp
+    src/assets/model/Model_Monsters.cpp
+    src/assets/model/Model_Players.cpp
+    src/assets/model/Model_Effects.cpp
+    src/assets/model/Model_Misc.cpp
+    src/assets/model/Model_SkillEffects.cpp
+    src/assets/model/Model_Gates.cpp
     src/game/combat/Combat.cpp
     src/game/combat/Combat_AttackStage.cpp
     src/game/combat/Combat_Projectiles.cpp
@@ -313,30 +313,30 @@ set(MU_SOURCES
     src/game/core/CheckGate.cpp
     src/platform/input/Input.cpp
     src/platform/input/Mouse_Hover.cpp
-    src/Item/Item_Equip.cpp
-    src/Item/Item_EquipSlots.cpp
-    src/Item/Item_Move.cpp
-    src/Item/Item_Display.cpp
-    src/Item/Item_SpecialOption.cpp
-    src/Item/Item_Data.cpp
-    src/Item/Item_Inventory.cpp
-    src/Item/Item_EquipmentQueries.cpp
-    src/Item/Item_EquipmentAutoSwap.cpp
-    src/Item/Item_InventoryGrid.cpp
-    src/Item/Item_InventoryRender.cpp
-    src/Item/Item_ChaosMix.cpp
-    src/Item/Item_ClickHandler.cpp
-    src/Item/RightClickMove.cpp
-    src/Item/ContentCatalog.cpp
-    src/Item/Skill_Data.cpp
-    src/Item/Gate_Data.cpp
-    src/Item/Filter_Data.cpp
-    src/Item/Dialog_Data.cpp
-    src/Item/Quest_Data.cpp
-    src/Item/NPC_Data.cpp
-    src/Item/NPC_ModelLoad.cpp
+    src/game/item/Item_Equip.cpp
+    src/game/item/Item_EquipSlots.cpp
+    src/game/item/Item_Move.cpp
+    src/ui/inventory/Item_Display.cpp
+    src/game/item/Item_SpecialOption.cpp
+    src/assets/data/Item_Data.cpp
+    src/game/item/Item_Inventory.cpp
+    src/game/item/Item_EquipmentQueries.cpp
+    src/game/item/Item_EquipmentAutoSwap.cpp
+    src/game/item/Item_InventoryGrid.cpp
+    src/ui/inventory/Item_InventoryRender.cpp
+    src/game/item/Item_ChaosMix.cpp
+    src/ui/inventory/Item_ClickHandler.cpp
+    src/game/item/RightClickMove.cpp
+    src/assets/data/ContentCatalog.cpp
+    src/assets/data/Skill_Data.cpp
+    src/assets/data/Gate_Data.cpp
+    src/assets/data/Filter_Data.cpp
+    src/assets/data/Dialog_Data.cpp
+    src/assets/data/Quest_Data.cpp
+    src/assets/data/NPC_Data.cpp
+    src/assets/model/NPC_ModelLoad.cpp
     src/render/Font_Layout.cpp
-    src/Monster/Monster.cpp
+    src/game/monster/Monster.cpp
     src/net/SecondPassword.cpp
     src/game/party/Party.cpp
     src/game/core/Party_NameMatch.cpp
@@ -363,17 +363,17 @@ set(MU_SOURCES
     src/render/Terrain_Render.cpp
     src/render/Terrain_Water.cpp
     src/render/Texture/ImageCodec.cpp
-    src/Text/TextCore.cpp
-    src/Text/TextAtlas.cpp
-    src/Text/UniBreak.c
-    src/Text/Utf8Proc.c
+    src/render/text/TextCore.cpp
+    src/render/text/TextAtlas.cpp
+    src/render/text/UniBreak.c
+    src/render/text/Utf8Proc.c
     src/render/Texture/Texture.cpp
     src/render/Trail_Render.cpp
     src/render/Weather.cpp
     src/render/Weather_Particles.cpp
     src/scenes/Scene_Login_ServerSelect.cpp
     src/audio/Sound.cpp
-    src/Terrain/Terrain.cpp
+    src/game/terrain/Terrain.cpp
     src/game/trade/Trade.cpp
     src/ui/UI_InGameMenu.cpp
     src/ui/UI_PanelInput.cpp
@@ -454,16 +454,16 @@ set(MU_HEADERS
     src/game/entity/ObjectBounds.h
     src/game/entity/EntityTypes.h
     src/game/core/PathContext.h
-    src/Model/ModelTypes.h
-    src/Model/SmdImport.h
+    src/assets/model/ModelTypes.h
+    src/assets/model/SmdImport.h
     src/app/core/ResourceLimits.h
-    src/Model/BMDFileTypes.h
+    src/assets/model/BMDFileTypes.h
     src/game/entity/CharacterAttributeView.h
-    src/Local/ClientText.h
-    src/Item/RightClickMove.h
-    src/Item/ContentCatalog.h
-    src/Item/ItemDefines.h
-    src/Item/Item_ServerValue.h
+    src/assets/text/ClientText.h
+    src/game/item/RightClickMove.h
+    src/assets/data/ContentCatalog.h
+    src/game/item/ItemDefines.h
+    src/game/item/Item_ServerValue.h
     src/ui/GoldenArcher.h
     src/app/core/Window.h
     src/platform/CompilerCompat.h
@@ -522,7 +522,7 @@ set(MU_HEADERS
     src/net/Reconnect.h
     src/net/Ping.h
     src/net/ServerCharacterStats.h
-    src/Item/ChaosMixRates.h
+    src/game/item/ChaosMixRates.h
     src/ui/HealthBar.h
     src/net/Recv/NetRecv.h
     src/game/combat/Combat.h
@@ -534,8 +534,8 @@ set(MU_HEADERS
     src/game/core/Game_SceneUpdate.h
     src/game/core/Movement.h
     src/platform/input/Input.h
-    src/Item/Item_Equip.h
-    src/Monster/Monster.h
+    src/game/item/Item_Equip.h
+    src/game/monster/Monster.h
     src/net/Net.h
     src/net/HWID.h
     src/net/PacketFrame.h
@@ -546,7 +546,7 @@ set(MU_HEADERS
     src/render/Entity_PrepareRender.h
     src/render/Entity_Render.h
     src/render/DamagePointTypes.h
-    src/Item/ItemTypes.h
+    src/game/item/ItemTypes.h
     src/render/JointTypes.h
     src/render/Entity_Render_3D.h
     src/render/Entity_RenderAll_3D.h
@@ -560,10 +560,10 @@ set(MU_HEADERS
     src/render/Sprite_Draw.h
     src/render/Terrain_Render.h
     src/render/Texture/ImageCodec.h
-    src/Text/TextCore.h
+    src/render/text/TextCore.h
     src/net/NetText.h
-    src/Text/TextShaper.h
-    src/Text/TextAtlas.h
+    src/render/text/TextShaper.h
+    src/render/text/TextAtlas.h
     src/render/Texture/Texture.h
     src/scenes/Scene.h
     src/scenes/Scene_CharSelect.h
@@ -573,7 +573,7 @@ set(MU_HEADERS
     src/scenes/Scene_Login.h
     src/scenes/Scene_Login_ServerSelect.h
     src/audio/Sound.h
-    src/Terrain/Terrain.h
+    src/game/terrain/Terrain.h
     src/game/trade/Trade.h
     src/ui/UI.h
     src/game/core/GameEnums.h
@@ -602,7 +602,7 @@ endif()
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/platform/SDL3/")
 # El shaping (HarfBuzz/SheenBidi) vive en la biblioteca de plataforma SDL3.
-list(REMOVE_ITEM MU_SOURCES src/Text/TextShaper.cpp)
+list(REMOVE_ITEM MU_SOURCES src/render/text/TextShaper.cpp)
 if(NOT WIN32)
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/platform/Win32/")
 endif()
@@ -675,7 +675,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/rhi/GL/FragmentPipeline.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp src/rhi/Dispatch.cpp src/render/RenderState.cpp src/render/TerrainDraw.cpp src/rhi/GL/TerrainRenderer.cpp src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp src/stdafx.cpp src/render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/platform/GLFunctions.cpp src/rhi/GL/BufferedDraw.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp src/rhi/GL/MeshDraw.cpp src/rhi/GL/Skinning.cpp src/render/ResourceTables.cpp src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp src/platform/ContentLayers.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/rhi/GL/FragmentPipeline.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp src/rhi/Dispatch.cpp src/render/RenderState.cpp src/render/TerrainDraw.cpp src/rhi/GL/TerrainRenderer.cpp src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp src/stdafx.cpp src/render/Texture/ImageCodec.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c src/platform/GLFunctions.cpp src/rhi/GL/BufferedDraw.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp src/rhi/GL/MeshDraw.cpp src/rhi/GL/Skinning.cpp src/render/ResourceTables.cpp src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp src/platform/ContentLayers.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -778,7 +778,7 @@ target_include_directories(mu_frame_pointer_set_test PRIVATE src)
 target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
 add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
 
-add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c)
+add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c)
 target_include_directories(mu_text_core_test PRIVATE src)
 target_compile_features(mu_text_core_test PRIVATE cxx_std_17)
 if(MSVC)
@@ -844,7 +844,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
 
     # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
     add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
-        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c
+        tests/TextShaper.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c
         src/render/Texture/ImageCodec.cpp)
     target_include_directories(mu_text_shaper_test PRIVATE src)
     target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)

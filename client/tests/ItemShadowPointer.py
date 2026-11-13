@@ -111,12 +111,12 @@ void ValidatePrimary() {
     SetPrimary(allocation, base);
 }
 """
-    constants = read_source("src/Item/ItemDefines.h", revision)
+    constants = read_source("src/game/item/ItemDefines.h", revision)
     item_max = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", constants, re.M))
     allocation = re.search(r"^[ \t]*DAT_07cf1ff0\s*=\s*[^;]+;",
                            read_source("src/platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(0x8000)", "AllocateShadow(0x8000)")
-    data = read_source("src/Item/Item_Data.cpp", revision)
+    data = read_source("src/assets/data/Item_Data.cpp", revision)
     scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
     sample = ROOT / "bin/Client/Content/table/item.bmd"
     if not sample.is_file():

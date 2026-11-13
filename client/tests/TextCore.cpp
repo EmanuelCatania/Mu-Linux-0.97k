@@ -1,6 +1,6 @@
 // Contrato del núcleo de texto. Las cadenas usan escapes \u para no depender
 // de la página de códigos con la que el compilador lee el fuente.
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include <cstdio>
 #include <cstring>
 #include <string>

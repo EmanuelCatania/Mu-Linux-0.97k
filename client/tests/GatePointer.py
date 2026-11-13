@@ -113,7 +113,7 @@ def harness(revision=None):
                            read_source("src/platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(900)", "AllocateTable(900)")
     initialize = "void InitializeTable() { " + allocation + " }\n"
-    gate = read_source("src/Item/Gate_Data.cpp", revision)
+    gate = read_source("src/assets/data/Gate_Data.cpp", revision)
     cipher = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "BuxConvert_0")
     sample = ROOT / "bin/Client/Content/table/Gate.bmd"
     if not sample.is_file():

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Model/SmdImport.h"
+#include "assets/model/SmdImport.h"
 #include "globals.h"
 #include "functions.h"
 #include "render/ResourceTables.h"

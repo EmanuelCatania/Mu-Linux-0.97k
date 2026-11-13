@@ -77,7 +77,7 @@ def harness(revision=None):
     for name in ("DAT_07ea9504","DAT_07ea9328"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",header,re.M).group()+"\n"
     prefix+="\nvoid InitializeAliases() {"+"".join(initializers)+"}\n"
-    return prefix+function(read_source("src/Item/Item_EquipmentQueries.cpp",revision),"Item_CountWeaponGroupItems")+MAIN
+    return prefix+function(read_source("src/game/item/Item_EquipmentQueries.cpp",revision),"Item_CountWeaponGroupItems")+MAIN
 
 
 def main():

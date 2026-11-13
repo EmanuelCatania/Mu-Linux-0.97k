@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
 #include "render/Gfx.h"
@@ -10,7 +10,7 @@
 #include "net/Network.h"
 #include "app/core/Font.h"
 #include "app/core/Window.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 bool CreateSocketNoExit(const char* ip, unsigned int port);

@@ -3,7 +3,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "render/BufferedDraw.h"
 #include "render/MeshDraw.h"
 #include "render/BMDDevice.h"
@@ -11,7 +11,7 @@
 #include "render/MaterialVisuals.h"
 #include "platform/ITimer.h"
 #include <array>
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 

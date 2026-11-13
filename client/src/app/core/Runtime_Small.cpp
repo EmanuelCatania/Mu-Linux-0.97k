@@ -10,10 +10,10 @@
 
 #include "stdafx.h"
 #include "game/physics/ClothTypes.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "render/Gfx.h"
 #include "platform/IAudio.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"

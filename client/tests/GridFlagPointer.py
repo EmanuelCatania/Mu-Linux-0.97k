@@ -63,9 +63,9 @@ def harness(revision=None):
     structs = read_source("src/structs.h", revision)
     prefix += re.search(r"^#define MAX_SPECIAL_OPTION[^\n]+", structs, re.M).group() + "\n"
     prefix += "\n".join(re.findall(r"^#define\s+(?:MAX_CLASS|MAX_RESISTANCE)\s+[^\n]+", structs, re.M)) + "\n"
-    item_header = '#include "Item/ItemTypes.h"' in structs
+    item_header = '#include "game/item/ItemTypes.h"' in structs
     if item_header:
-        prefix += read_source("src/Item/ItemTypes.h", revision)
+        prefix += read_source("src/game/item/ItemTypes.h", revision)
     for name in (("ITEM_ATTRIBUTE",) if item_header else ("ITEM", "ITEM_ATTRIBUTE")):
         prefix += re.search(rf"struct {name}\b.*?\n\}};", structs, re.S).group()
     prefix += "\nstatic_assert(sizeof(ITEM)==68 && offsetof(ITEM,x)==62 && offsetof(ITEM,y)==63 && sizeof(ITEM_ATTRIBUTE)==64);\n"
@@ -74,7 +74,7 @@ def harness(revision=None):
     name = "DAT_07d78068"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    body = function(read_source("src/Item/Item_InventoryGrid.cpp", revision), "SetItemGridFlag")
+    body = function(read_source("src/game/item/Item_InventoryGrid.cpp", revision), "SetItemGridFlag")
     arg = "pool" if "BYTE* param_2" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(pool))"
     return prefix + body + MAIN.replace("ARG", arg)
 

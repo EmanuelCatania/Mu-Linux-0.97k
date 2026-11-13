@@ -157,16 +157,16 @@
     <ClInclude Include="src\game\entity\ObjectBounds.h" />
     <ClInclude Include="src\game\entity\EntityTypes.h" />
     <ClInclude Include="src\game\core\PathContext.h" />
-    <ClInclude Include="src\Model\ModelTypes.h" />
-    <ClInclude Include="src\Model\SmdImport.h" />
+    <ClInclude Include="src\assets\model\ModelTypes.h" />
+    <ClInclude Include="src\assets\model\SmdImport.h" />
     <ClInclude Include="src\app\core\ResourceLimits.h" />
-    <ClInclude Include="src\Model\BMDFileTypes.h" />
+    <ClInclude Include="src\assets\model\BMDFileTypes.h" />
     <ClInclude Include="src\game\entity\CharacterAttributeView.h" />
-    <ClInclude Include="src\Local\ClientText.h" />
-    <ClInclude Include="src\Item\RightClickMove.h" />
-    <ClInclude Include="src\Item\ContentCatalog.h" />
-    <ClInclude Include="src\Item\ItemDefines.h" />
-    <ClInclude Include="src\Item\Item_ServerValue.h" />
+    <ClInclude Include="src\assets\text\ClientText.h" />
+    <ClInclude Include="src\game\item\RightClickMove.h" />
+    <ClInclude Include="src\assets\data\ContentCatalog.h" />
+    <ClInclude Include="src\game\item\ItemDefines.h" />
+    <ClInclude Include="src\game\item\Item_ServerValue.h" />
     <ClInclude Include="src\ui\GoldenArcher.h" />
     <ClInclude Include="src\app\core\Window.h" />
     <ClInclude Include="src\platform\CompilerCompat.h" />
@@ -225,7 +225,7 @@
     <ClInclude Include="src\net\Reconnect.h" />
     <ClInclude Include="src\net\Ping.h" />
     <ClInclude Include="src\net\ServerCharacterStats.h" />
-    <ClInclude Include="src\Item\ChaosMixRates.h" />
+    <ClInclude Include="src\game\item\ChaosMixRates.h" />
     <ClInclude Include="src\ui\HealthBar.h" />
     <ClInclude Include="src\net\Recv\NetRecv.h" />
     <ClInclude Include="src\game\combat\Combat.h" />
@@ -237,8 +237,8 @@
     <ClInclude Include="src\game\core\Game_SceneUpdate.h" />
     <ClInclude Include="src\game\core\Movement.h" />
     <ClInclude Include="src\platform\input\Input.h" />
-    <ClInclude Include="src\Item\Item_Equip.h" />
-    <ClInclude Include="src\Monster\Monster.h" />
+    <ClInclude Include="src\game\item\Item_Equip.h" />
+    <ClInclude Include="src\game\monster\Monster.h" />
     <ClInclude Include="src\net\Net.h" />
     <ClInclude Include="src\net\HWID.h" />
     <ClInclude Include="src\net\PacketFrame.h" />
@@ -249,7 +249,7 @@
     <ClInclude Include="src\render\Entity_PrepareRender.h" />
     <ClInclude Include="src\render\Entity_Render.h" />
     <ClInclude Include="src\render\DamagePointTypes.h" />
-    <ClInclude Include="src\Item\ItemTypes.h" />
+    <ClInclude Include="src\game\item\ItemTypes.h" />
     <ClInclude Include="src\render\JointTypes.h" />
     <ClInclude Include="src\render\Entity_Render_3D.h" />
     <ClInclude Include="src\render\Entity_RenderAll_3D.h" />
@@ -263,10 +263,10 @@
     <ClInclude Include="src\render\Sprite_Draw.h" />
     <ClInclude Include="src\render\Terrain_Render.h" />
     <ClInclude Include="src\render\Texture\ImageCodec.h" />
-    <ClInclude Include="src\Text\TextCore.h" />
+    <ClInclude Include="src\render\text\TextCore.h" />
     <ClInclude Include="src\net\NetText.h" />
-    <ClInclude Include="src\Text\TextShaper.h" />
-    <ClInclude Include="src\Text\TextAtlas.h" />
+    <ClInclude Include="src\render\text\TextShaper.h" />
+    <ClInclude Include="src\render\text\TextAtlas.h" />
     <ClInclude Include="src\render\Texture\Texture.h" />
     <ClInclude Include="src\scenes\Scene.h" />
     <ClInclude Include="src\scenes\Scene_CharSelect.h" />
@@ -276,7 +276,7 @@
     <ClInclude Include="src\scenes\Scene_Login.h" />
     <ClInclude Include="src\scenes\Scene_Login_ServerSelect.h" />
     <ClInclude Include="src\audio\Sound.h" />
-    <ClInclude Include="src\Terrain\Terrain.h" />
+    <ClInclude Include="src\game\terrain\Terrain.h" />
     <ClInclude Include="src\game\trade\Trade.h" />
     <ClInclude Include="src\ui\UI.h" />
     <ClInclude Include="src\game\core\GameEnums.h" />
@@ -291,7 +291,7 @@
     <ClCompile Include="src\platform\GLFunctions.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Local\Text_Data.cpp" />
+    <ClCompile Include="src\assets\text\Text_Data.cpp" />
     <ClCompile Include="src\scenes\Scene_Dispatch.cpp" />
     <ClCompile Include="src\scenes\Scene_Intro.cpp" />
     <ClCompile Include="src\scenes\Scene_Login.cpp" />
@@ -354,7 +354,7 @@
     <ClCompile Include="src\net\Net_Process.cpp" />
     <ClCompile Include="src\app\config\Config_Load.cpp" />
     <ClCompile Include="src\ui\UIState.cpp" />
-    <ClCompile Include="src\Local\ClientText.cpp" />
+    <ClCompile Include="src\assets\text\ClientText.cpp" />
     <ClCompile Include="src\app\core\Window.cpp" />
     <ClCompile Include="src\platform\Win32\Win32NativeBridge.cpp" />
     <ClCompile Include="src\platform\SDL3\SDLWindow.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
@@ -366,7 +366,7 @@
     <ClCompile Include="src\platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
-    <ClCompile Include="src\Text\TextShaper.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\render\text\TextShaper.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\platform\Win32\Win32Audio.cpp" />
     <ClCompile Include="src\platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\platform\Win32\Win32Input.cpp" />
@@ -382,7 +382,7 @@
     <ClCompile Include="src\net\Reconnect.cpp" />
     <ClCompile Include="src\net\Ping.cpp" />
     <ClCompile Include="src\net\ServerCharacterStats.cpp" />
-    <ClCompile Include="src\Item\ChaosMixRates.cpp" />
+    <ClCompile Include="src\game\item\ChaosMixRates.cpp" />
     <ClCompile Include="src\ui\HealthBar.cpp" />
     <ClCompile Include="src\net\Recv\Recv_Account.cpp" />
     <ClCompile Include="src\net\Recv\Recv_Character.cpp" />
@@ -399,9 +399,9 @@
     <ClCompile Include="src\platform\input\Input_WndProc.cpp" />
     <ClCompile Include="src\app\config\UserSettings.cpp" />
     <ClCompile Include="src\audio\Sound_Queue.cpp" />
-    <ClCompile Include="src\Monster\Monster_Data.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
+    <ClCompile Include="src\assets\data\Monster_Data.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain_Utils.cpp" />
+    <ClCompile Include="src\render\Terrain_RenderTerrain.cpp" />
     <ClCompile Include="src\game\math\Math_3D.cpp" />
     <ClCompile Include="src\render\Particle.cpp" />
     <ClCompile Include="src\render\Particle_Move.cpp" />
@@ -429,12 +429,12 @@
     <ClCompile Include="src\game\core\FrameLimiter.cpp" />
     <ClCompile Include="src\audio\Music.cpp" />
     <ClCompile Include="src\audio\EmoteSound.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain_Tile.cpp" />
     <ClCompile Include="src\render\GL_2D.cpp" />
     <ClCompile Include="src\render\Effect_Tick.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_Light.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_RenderFace.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_RenderBlocks.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain_Light.cpp" />
+    <ClCompile Include="src\render\Terrain_RenderFace.cpp" />
+    <ClCompile Include="src\render\Terrain_RenderBlocks.cpp" />
     <ClCompile Include="src\audio\Sound_DS3D.cpp" />
     <ClCompile Include="src\net\Net_Connect.cpp" />
     <ClCompile Include="src\net\Net_PacketSession.cpp" />
@@ -474,7 +474,7 @@
     <ClCompile Include="src\ui\Chat_Log.cpp" />
     <ClCompile Include="src\ui\EmojiPicker.cpp" />
     <ClCompile Include="src\ui\EmoteMenu.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain_RayCollision.cpp" />
     <ClCompile Include="src\platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\game\combat\Combat_AttackEffect.cpp" />
     <ClCompile Include="src\app\core\Runtime_Small.cpp" />
@@ -486,24 +486,24 @@
     <ClCompile Include="src\ui\UI_LegacyWidgets.cpp" />
     <ClCompile Include="src\net\Net_LegacyRuntime.cpp" />
     <ClCompile Include="src\scenes\Scene_CharSelect_Nav.cpp" />
-    <ClCompile Include="src\Item\Item_LegacyHelpers.cpp" />
+    <ClCompile Include="src\game\item\Item_LegacyHelpers.cpp" />
     <ClCompile Include="src\ui\UI_DialogInterface.cpp" />
-    <ClCompile Include="src\Item\Item_Durability.cpp" />
-    <ClCompile Include="src\Item\Item_ServerValue.cpp" />
+    <ClCompile Include="src\game\item\Item_Durability.cpp" />
+    <ClCompile Include="src\game\item\Item_ServerValue.cpp" />
     <ClCompile Include="src\render\BMD_LegacyDraw.cpp" />
     <ClCompile Include="src\app\config\Config_TokenParser.cpp" />
     <ClCompile Include="src\game\entity\Entity_BoneEffects.cpp" />
     <ClCompile Include="src\app\core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
-    <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
+    <ClCompile Include="src\game\item\Item_LegacyLinker.cpp" />
     <ClCompile Include="src\game\math\Math_LegacyTransforms.cpp" />
     <ClCompile Include="src\render\Render_LegacyLinker.cpp" />
     <ClCompile Include="src\scenes\Scene_LegacyCleanup.cpp" />
     <ClCompile Include="src\scenes\Scene_ObjectLegacy.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_LegacyRender.cpp" />
+    <ClCompile Include="src\render\Terrain_LegacyRender.cpp" />
     <ClCompile Include="src\ui\UI_LegacyText.cpp" />
     <ClCompile Include="src\render\BMD_FilterData.cpp" />
-    <ClCompile Include="src\Item\Quest_UIState.cpp" />
+    <ClCompile Include="src\ui\Quest_UIState.cpp" />
     <ClCompile Include="src\game\physics\Cloth_Simulation.cpp" />
     <ClCompile Include="src\render\BMD_LegacyEffects.cpp" />
     <ClCompile Include="src\scenes\Scene_LegacyHelpers.cpp" />
@@ -522,7 +522,7 @@
     <ClCompile Include="src\render\Render_LegacyTrails.cpp" />
     <ClCompile Include="src\ui\UI_LegacyGameHelpers.cpp" />
     <ClCompile Include="src\net\Net_LegacyAuth.cpp" />
-    <ClCompile Include="src\Terrain\Terrain_LegacyLoad.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain_LegacyLoad.cpp" />
     <ClCompile Include="src\game\path\Path_LegacyReset.cpp" />
     <ClCompile Include="src\render\Font_LegacyFactory.cpp" />
     <ClCompile Include="src\render\SMD_Parser.cpp" />
@@ -533,8 +533,8 @@
     <ClCompile Include="src\render\Entity_AnimationLegacy.cpp" />
     <ClCompile Include="src\game\combat\Combat_LegacyAttackEffects.cpp" />
     <ClCompile Include="src\game\entity\Entity_LegacyPoolCleanup.cpp" />
-    <ClCompile Include="src\Item\Item_LegacyGridInsert.cpp" />
-    <ClCompile Include="src\Item\Item_TypeLegacy.cpp" />
+    <ClCompile Include="src\game\item\Item_LegacyGridInsert.cpp" />
+    <ClCompile Include="src\game\item\Item_TypeLegacy.cpp" />
     <ClCompile Include="src\game\entity\Entity_LegacyTeleport.cpp" />
     <ClCompile Include="src\game\combat\Skills_WarriorLegacy.cpp" />
     <ClCompile Include="src\render\Render_LegacyDamageNumbers.cpp" />
@@ -554,14 +554,14 @@
     <ClCompile Include="src\render\Render_WorldHelpers.cpp" />
     <ClCompile Include="src\render\BMD_Load.cpp" />
     <ClCompile Include="src\globals.cpp" />
-    <ClCompile Include="src\Model\Model_Items.cpp" />
-    <ClCompile Include="src\Model\Model_CustomAnim.cpp" />
-    <ClCompile Include="src\Model\Model_Monsters.cpp" />
-    <ClCompile Include="src\Model\Model_Players.cpp" />
-    <ClCompile Include="src\Model\Model_Effects.cpp" />
-    <ClCompile Include="src\Model\Model_Misc.cpp" />
-    <ClCompile Include="src\Model\Model_SkillEffects.cpp" />
-    <ClCompile Include="src\Model\Model_Gates.cpp" />
+    <ClCompile Include="src\assets\model\Model_Items.cpp" />
+    <ClCompile Include="src\assets\model\Model_CustomAnim.cpp" />
+    <ClCompile Include="src\assets\model\Model_Monsters.cpp" />
+    <ClCompile Include="src\assets\model\Model_Players.cpp" />
+    <ClCompile Include="src\assets\model\Model_Effects.cpp" />
+    <ClCompile Include="src\assets\model\Model_Misc.cpp" />
+    <ClCompile Include="src\assets\model\Model_SkillEffects.cpp" />
+    <ClCompile Include="src\assets\model\Model_Gates.cpp" />
     <ClCompile Include="src\game\combat\Combat.cpp" />
     <ClCompile Include="src\game\combat\Combat_AttackStage.cpp" />
     <ClCompile Include="src\game\combat\Combat_Projectiles.cpp" />
@@ -575,30 +575,30 @@
     <ClCompile Include="src\game\core\CheckGate.cpp" />
     <ClCompile Include="src\platform\input\Input.cpp" />
     <ClCompile Include="src\platform\input\Mouse_Hover.cpp" />
-    <ClCompile Include="src\Item\Item_Equip.cpp" />
-    <ClCompile Include="src\Item\Item_EquipSlots.cpp" />
-    <ClCompile Include="src\Item\Item_Move.cpp" />
-    <ClCompile Include="src\Item\Item_Display.cpp" />
-    <ClCompile Include="src\Item\Item_SpecialOption.cpp" />
-    <ClCompile Include="src\Item\Item_Data.cpp" />
-    <ClCompile Include="src\Item\Item_Inventory.cpp" />
-    <ClCompile Include="src\Item\Item_EquipmentQueries.cpp" />
-    <ClCompile Include="src\Item\Item_EquipmentAutoSwap.cpp" />
-    <ClCompile Include="src\Item\Item_InventoryGrid.cpp" />
-    <ClCompile Include="src\Item\Item_InventoryRender.cpp" />
-    <ClCompile Include="src\Item\Item_ChaosMix.cpp" />
-    <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
-    <ClCompile Include="src\Item\RightClickMove.cpp" />
-    <ClCompile Include="src\Item\ContentCatalog.cpp" />
-    <ClCompile Include="src\Item\Skill_Data.cpp" />
-    <ClCompile Include="src\Item\Gate_Data.cpp" />
-    <ClCompile Include="src\Item\Filter_Data.cpp" />
-    <ClCompile Include="src\Item\Dialog_Data.cpp" />
-    <ClCompile Include="src\Item\Quest_Data.cpp" />
-    <ClCompile Include="src\Item\NPC_Data.cpp" />
-    <ClCompile Include="src\Item\NPC_ModelLoad.cpp" />
+    <ClCompile Include="src\game\item\Item_Equip.cpp" />
+    <ClCompile Include="src\game\item\Item_EquipSlots.cpp" />
+    <ClCompile Include="src\game\item\Item_Move.cpp" />
+    <ClCompile Include="src\ui\inventory\Item_Display.cpp" />
+    <ClCompile Include="src\game\item\Item_SpecialOption.cpp" />
+    <ClCompile Include="src\assets\data\Item_Data.cpp" />
+    <ClCompile Include="src\game\item\Item_Inventory.cpp" />
+    <ClCompile Include="src\game\item\Item_EquipmentQueries.cpp" />
+    <ClCompile Include="src\game\item\Item_EquipmentAutoSwap.cpp" />
+    <ClCompile Include="src\game\item\Item_InventoryGrid.cpp" />
+    <ClCompile Include="src\ui\inventory\Item_InventoryRender.cpp" />
+    <ClCompile Include="src\game\item\Item_ChaosMix.cpp" />
+    <ClCompile Include="src\ui\inventory\Item_ClickHandler.cpp" />
+    <ClCompile Include="src\game\item\RightClickMove.cpp" />
+    <ClCompile Include="src\assets\data\ContentCatalog.cpp" />
+    <ClCompile Include="src\assets\data\Skill_Data.cpp" />
+    <ClCompile Include="src\assets\data\Gate_Data.cpp" />
+    <ClCompile Include="src\assets\data\Filter_Data.cpp" />
+    <ClCompile Include="src\assets\data\Dialog_Data.cpp" />
+    <ClCompile Include="src\assets\data\Quest_Data.cpp" />
+    <ClCompile Include="src\assets\data\NPC_Data.cpp" />
+    <ClCompile Include="src\assets\model\NPC_ModelLoad.cpp" />
     <ClCompile Include="src\render\Font_Layout.cpp" />
-    <ClCompile Include="src\Monster\Monster.cpp" />
+    <ClCompile Include="src\game\monster\Monster.cpp" />
     <ClCompile Include="src\net\SecondPassword.cpp" />
     <ClCompile Include="src\game\party\Party.cpp" />
     <ClCompile Include="src\game\core\Party_NameMatch.cpp" />
@@ -627,14 +627,14 @@
     <ClCompile Include="src\render\Texture\ImageCodec.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Text\TextCore.cpp">
+    <ClCompile Include="src\render\text\TextCore.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Text\TextAtlas.cpp" />
-    <ClCompile Include="src\Text\UniBreak.c">
+    <ClCompile Include="src\render\text\TextAtlas.cpp" />
+    <ClCompile Include="src\render\text\UniBreak.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Text\Utf8Proc.c">
+    <ClCompile Include="src\render\text\Utf8Proc.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\render\Texture\Texture.cpp" />
@@ -643,7 +643,7 @@
     <ClCompile Include="src\render\Weather_Particles.cpp" />
     <ClCompile Include="src\scenes\Scene_Login_ServerSelect.cpp" />
     <ClCompile Include="src\audio\Sound.cpp" />
-    <ClCompile Include="src\Terrain\Terrain.cpp" />
+    <ClCompile Include="src\game\terrain\Terrain.cpp" />
     <ClCompile Include="src\game\trade\Trade.cpp" />
     <ClCompile Include="src\ui\UI_InGameMenu.cpp" />
     <ClCompile Include="src\ui\UI_PanelInput.cpp" />

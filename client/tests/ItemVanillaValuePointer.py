@@ -75,7 +75,7 @@ def harness(revision=None):
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()
     prefix+="\n".join(re.findall(r"^inline (?:const )?ITEM\* AsItem[^\n]+",read_source("src/structs.h",revision),re.M))
     prefix+="\nunsigned int Item_CalculateMaxDurability(void*,ITEM_ATTRIBUTE*,int) { Require(false); return 0; }\n"
-    return prefix+function(read_source("src/Item/Item_Durability.cpp",revision),"ItemValue_Vanilla")+MAIN
+    return prefix+function(read_source("src/game/item/Item_Durability.cpp",revision),"ItemValue_Vanilla")+MAIN
 
 
 def main():

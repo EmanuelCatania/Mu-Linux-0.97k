@@ -145,11 +145,11 @@ def harness(revision=None):
     for name in ("DAT_07ea9800","g_ItemMoveSourcePool","g_ItemMoveTargetPool","DAT_07ea5b18"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    move=read_source("src/Item/Item_Move.cpp",revision)
+    move=read_source("src/game/item/Item_Move.cpp",revision)
     prefix+=re.search(r"^int g_ItemMoveTargetDurBefore[^;]+;",move,re.M).group()+SERVICES
-    for namespace,path in (("FromMove","src/Item/Item_Move.cpp"),("FromDisplay","src/Item/Item_Display.cpp")):
+    for namespace,path in (("FromMove","src/game/item/Item_Move.cpp"),("FromDisplay","src/ui/inventory/Item_Display.cpp")):
         prefix+="\nnamespace "+namespace+" {"+function(read_source(path,revision),"InventoryMove_SetPendingPools")+"}\n"
-    click=read_source("src/Item/Item_ClickHandler.cpp",revision)
+    click=read_source("src/ui/inventory/Item_ClickHandler.cpp",revision)
     setter=re.search(r"\bdword_7EA9800\s*=\s*[^;]*\binv_base[^;]*;",click).group()
     getter=re.search(r"BYTE\* srcPool\s*=\s*[^;]+;",function(click,"RestorePickedItemToSource")).group()
     prefix+="\nvoid SetContext(BYTE* inv_base) {"+setter+"}\nBYTE* ReadContext() {"+getter+" return srcPool; }\n"

@@ -9,7 +9,7 @@
 #include "platform/IInput.h"
 #include "platform/ITimer.h"
 #include "platform/Text.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 #include "globals.h"
 #include "functions.h"
 #include "app/debug/Benchmark.h"

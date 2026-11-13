@@ -6,7 +6,7 @@
 #include "app/config/UserSettings.h"
 #include "app/core/Font.h"
 #include "app/core/Window.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 #include "net/HWID.h"
 #include "audio/SoundManager.h"
 

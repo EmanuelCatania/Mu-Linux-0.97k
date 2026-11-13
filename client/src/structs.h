@@ -1,6 +1,6 @@
 #pragma once
-#include "Item/ItemDefines.h"
-#include "Item/ItemTypes.h"
+#include "game/item/ItemDefines.h"
+#include "game/item/ItemTypes.h"
 #include <cstdint>
 #include <cstddef>
 // structs.h — Game type definitions for Mu Online 0.97k reconstruction.

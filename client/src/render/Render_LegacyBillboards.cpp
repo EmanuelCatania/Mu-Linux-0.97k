@@ -5,7 +5,7 @@
 #include "render/Gfx.h"
 #include "render/BufferedDraw.h"
 #include "render/Materials.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"

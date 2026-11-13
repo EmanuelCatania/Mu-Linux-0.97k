@@ -19,13 +19,13 @@
 // =============================================================================
 
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "render/Gfx.h"
 #include "app/config/UserSettings.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"
-#include "Item/ContentCatalog.h"
-#include "Item/Item_ServerValue.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/Item_ServerValue.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"

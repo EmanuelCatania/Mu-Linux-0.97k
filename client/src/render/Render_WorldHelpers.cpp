@@ -10,7 +10,7 @@
 
 #include "stdafx.h"
 #include "render/ResourceTables.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "game/entity/EntityName.h"
 #include "render/Gfx.h"
 #include "render/BufferedDraw.h"

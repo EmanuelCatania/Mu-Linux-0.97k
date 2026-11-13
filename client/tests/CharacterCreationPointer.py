@@ -184,17 +184,17 @@ def harness(revision=None):
         records += re.search(rf"struct {name}\s*\{{.*?\}};", types, re.S).group()
     records += "\n#pragma pack(pop)\n"
     records = opaque_cloth_fields(records)
-    constants = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", read_source("src/Item/ItemDefines.h", revision), re.M))
+    constants = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", read_source("src/game/item/ItemDefines.h", revision), re.M))
     header, globals_source = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     definitions = ""
     for name in ("CharactersClient", "DAT_05828d58"):
         definitions += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         definitions += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
-    catalog = re.search(r"struct CatalogMonster\s*\{.*?\};", read_source("src/Item/ContentCatalog.h", revision), re.S).group()
+    catalog = re.search(r"struct CatalogMonster\s*\{.*?\};", read_source("src/assets/data/ContentCatalog.h", revision), re.S).group()
     prefix += SERVICES.replace("RECORDS", records).replace("CONSTANTS", constants).replace("GLOBALS", definitions).replace("CATALOG_RECORD", catalog)
     prefix += function(read_source("src/game/entity/Entity_ActionLegacy.cpp", revision), "SetAction")
     prefix += function(read_source("src/render/SMD_Parser.cpp", revision), "SetCharacterScale")
-    monster = read_source("src/Monster/Monster.cpp", revision)
+    monster = read_source("src/game/monster/Monster.cpp", revision)
     factory = monster[monster.index("// IDA: CreateCharacter (0x0045BFA0)"):]
     call = "return reinterpret_cast<std::uintptr_t>(CreateCharacter(key, type, x, y, rotation));" if "CHARACTER* __cdecl CreateCharacter" in factory else "return CreateCharacter(key, type, x, y, rotation);"
     return prefix + model_view(["Meshs"], revision) + CLOTH_MODEL_MESH + factory + MAIN.replace("CALL_CREATE", call)

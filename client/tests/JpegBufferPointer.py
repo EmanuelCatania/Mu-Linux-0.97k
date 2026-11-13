@@ -70,7 +70,7 @@ def harness(revision=None):
     for name in ['DAT_0055a79c','DAT_0055a7a4','DAT_00561b70','DAT_0055a7c4','_DAT_00552b70']:
         prefix+=re.search(rf'extern [^;\n]*\b{name}(?:\[[^\]]*\])?\s*;',header).group()
         prefix+=re.search(rf'^[^/\n]*\b{name}(?:\[[^\]]*\])?\s*=\s*[^;]+;',definitions,re.M).group()
-    code=function(read_source('src/Terrain/Terrain.cpp',revision),'OpenJpegBuffer')
+    code=function(read_source('src/game/terrain/Terrain.cpp',revision),'OpenJpegBuffer')
     arg='target' if 'float* dst' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(target))'
     return prefix+'\n#define fclose TrackedClose\n'+code+'\n#undef fclose\n'+MAIN.replace('ARG',arg).replace('ASSET',json.dumps(__import__('data_paths').asset(ROOT,'World1/TerrainLight.OZJ').as_posix()))
 

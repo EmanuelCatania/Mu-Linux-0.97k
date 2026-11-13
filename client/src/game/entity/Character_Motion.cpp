@@ -3,10 +3,10 @@
 // caminar y muerte, clase y equipo del héroe, MoveCharacter y MoveCharacterVisual.
 #include <cstdint>
 #include "stdafx.h"
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "ui/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
@@ -19,9 +19,9 @@ void Terrain_BeginBufferedPass();
 #include "platform/ISocket.h"
 #include "platform/ITimer.h"
 #include "platform/IInput.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
-#include "Item/RightClickMove.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
+#include "game/item/RightClickMove.h"
 #include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "structs.h"

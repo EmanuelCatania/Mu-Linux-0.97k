@@ -211,7 +211,7 @@
 #include "render/RenderProfile.h"
 #include "render/BufferedDraw.h"
 #include "platform/ITimer.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "app/config/UserSettings.h"
 #include "render/Camera3D.h"
 #include "ui/HealthBar.h"

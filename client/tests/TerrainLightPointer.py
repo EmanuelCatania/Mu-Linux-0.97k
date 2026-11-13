@@ -62,7 +62,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Terrain/Terrain.cpp',revision)
+    source=read_source('src/game/terrain/Terrain.cpp',revision)
     globals_source=read_source('src/globals.cpp',revision)
     constants='\n'.join(re.search(r'float\s+'+name+r'\s*=\s*[^;]+;',globals_source).group(0) for name in ('_DAT_00552504','_DAT_00552580','_DAT_0055256c'))
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x300000')+SERVICES.replace('CONSTANTS',constants)+function(source,'CreateTerrainLight')+MAIN

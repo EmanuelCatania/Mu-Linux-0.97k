@@ -54,8 +54,8 @@ def harness(revision=None):
   declarations+=re.search(r'^extern int\s*\*'+name+r'\s*;',header,re.M).group().replace('extern ','')
   definition=re.search(r'^int\s*\*'+name+r'\s*=\s*[^;]+;',globals,re.M).group();initializers+=re.sub(r'^int\s*\*','',definition)
  for name in ('DAT_07ea9504','DAT_07ea9328'):declarations+='\n'+re.search(r'^#define '+name+r'\s+[^\n]+',header,re.M).group()+'\n'
- behavior=re.search(r'inline int ItemBehaviorType\([^\n]+',read_source('src/Item/ContentCatalog.h',revision)).group()
- source=read_source('src/Item/Item_LegacyHelpers.cpp',revision)
+ behavior=re.search(r'inline int ItemBehaviorType\([^\n]+',read_source('src/assets/data/ContentCatalog.h',revision)).group()
+ source=read_source('src/game/item/Item_LegacyHelpers.cpp',revision)
  return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x20000')+SERVICES.replace('DECLARATIONS',declarations).replace('BEHAVIOR',behavior).replace('INITIALIZERS',initializers)+function(source,'GetItemCount')+function(source,'GetItemSlot')+MAIN
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

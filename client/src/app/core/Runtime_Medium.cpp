@@ -13,9 +13,9 @@
 
 #include "stdafx.h"
 #include "ui/BuffBar.h"
-#include "Model/SmdImport.h"
+#include "assets/model/SmdImport.h"
 #include "game/physics/ClothTypes.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/entity/ClothPresentation.h"
 #include "platform/ITimer.h"
 #include "platform/IInput.h"

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "game/combat/PlayerAttackSpeed.h"
 #include "net/Protocol/RejectReason.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 #include "ui/BuffBar.h"
 #include "ui/ChatListBox.h"
 #include "net/NetText.h"
@@ -13,8 +13,8 @@
 #include "platform/Text.h"
 #include "platform/ITimer.h"
 #include "game/core/FrameLimiter.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
 #include "net/Reconnect.h"
 #include "game/core/HeroVitals.h"
 #include "ui/EventTimer.h"
@@ -1209,7 +1209,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         case 0x10: {
             // F3/10: server snapshot of full inventory + equipment.
-            // Portado del sub_404830 de la 0.52 en src/Item/Item_Inventory.cpp.
+            // Portado del sub_404830 de la 0.52 en src/game/item/Item_Inventory.cpp.
             NetLog("NET:  → F3/10 Inventory snapshot");
             Recv_Inventory(Msg);
             break;

@@ -9,7 +9,7 @@
 #include "ui/HealthBar.h"
 #include "game/core/HeroVitals.h"
 #include "net/Recv/NetRecv.h"
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "audio/EmoteSound.h"
 
 void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)

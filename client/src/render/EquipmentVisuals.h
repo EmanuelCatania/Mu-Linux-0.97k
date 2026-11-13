@@ -1,5 +1,5 @@
 #pragma once
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 struct CHARACTER;
 
 // Muestra compartida de presentación: equipo y sprites del cuerpo.

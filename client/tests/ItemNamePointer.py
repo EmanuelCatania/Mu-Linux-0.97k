@@ -143,7 +143,7 @@ def harness(revision=None, high_fonts=False):
     prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
     prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()
-    render=function(read_source("src/Item/Item_Display.cpp",revision),"RenderItemName")
+    render=function(read_source("src/ui/inventory/Item_Display.cpp",revision),"RenderItemName")
     arg="object" if "const OBJECT*" in render.split("{",1)[0] else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix+render+MAIN.replace("ARG",arg).replace("HIGH_FONTS","true" if high_fonts else "false")
 

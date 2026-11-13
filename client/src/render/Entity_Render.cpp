@@ -151,8 +151,8 @@
 //   DAT_00552488  → Z oscillation scale factor
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
-#include "Item/ContentCatalog.h"
+#include "assets/model/ModelTypes.h"
+#include "assets/data/ContentCatalog.h"
 #include "render/Entity_Render.h"
 #include <math.h>
 

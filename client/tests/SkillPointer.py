@@ -110,7 +110,7 @@ def harness(revision=None):
     raw = re.search(r"struct _SkillAttrEntry\s*\{.*?\};", header, re.S).group()
     raw += "\n_SkillAttrEntry SkillAttribute{};\n"
     scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
-    data = read_source("src/Item/Skill_Data.cpp", revision)
+    data = read_source("src/assets/data/Skill_Data.cpp", revision)
     warrior = read_source("src/game/combat/Skills_WarriorLegacy.cpp", revision)
     sample = ROOT / "bin/Client/Content/table/skill.bmd"
     if not sample.is_file():

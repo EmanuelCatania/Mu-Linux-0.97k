@@ -6,7 +6,7 @@ import tempfile
 from SceneObjectPointer import build_and_run,function,read_source
 
 def harness(revision=None):
-    header=read_source('src/Item/ItemTypes.h')
+    header=read_source('src/game/item/ItemTypes.h')
     services=r'''
 #include <cstdio>
 #include <cstdlib>
@@ -55,7 +55,7 @@ int main(){
     std::printf("ItemMovePreviewColor: %u secuencias ack/draw/tick sin destello\n",cases);
 }
 '''
-    return header+services+function(read_source('src/net/Recv/Recv_Item.cpp',revision),'ItemMove_ClearPoolPreview')+function(read_source('src/Item/Item_InventoryRender.cpp'),'InventoryColor')+main
+    return header+services+function(read_source('src/net/Recv/Recv_Item.cpp',revision),'ItemMove_ClearPoolPreview')+function(read_source('src/ui/inventory/Item_InventoryRender.cpp'),'InventoryColor')+main
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

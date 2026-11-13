@@ -8,7 +8,7 @@
 #include "app/core/Font.h"
 #include "app/core/Window.h"
 #include "ui/UIState.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 
 CMoveList gMoveList;
 namespace {

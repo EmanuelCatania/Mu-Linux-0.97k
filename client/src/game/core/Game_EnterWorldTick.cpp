@@ -40,7 +40,7 @@
 #include "stdafx.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "platform/Text.h"
 #include "game/core/Game_EnterWorldTick.h"
 #include "net/Net.h"

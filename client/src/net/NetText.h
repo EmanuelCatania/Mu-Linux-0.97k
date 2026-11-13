@@ -1,6 +1,6 @@
 #pragma once
 #include "net/Protocol/ProtocolBase.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include <cstring>
 #include <string>
 

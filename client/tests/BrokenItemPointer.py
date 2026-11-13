@@ -116,7 +116,7 @@ def harness(revision=None):
     attribute='\n'.join(re.search(r'^#define\s+'+name+r'\s+[^\n]+',structs,re.M).group(0) for name in ('MAX_CLASS','MAX_RESISTANCE'))
     attribute+='\n'+re.search(r'struct ITEM_ATTRIBUTE\b.*?\n\};',structs,re.S).group(0)
     attribute+='\nstatic_assert(sizeof(ITEM_ATTRIBUTE)==64 && offsetof(ITEM_ATTRIBUTE,Name)==0);\n'
-    constants='\n'.join(re.findall(r'^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;',read_source('src/Item/ItemDefines.h',revision),re.M))
+    constants='\n'.join(re.findall(r'^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;',read_source('src/game/item/ItemDefines.h',revision),re.M))
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+SERVICES.replace('\nATTRIBUTE\n','\n'+attribute+'\n').replace('CONSTANTS',constants)+function(read_source('src/render/HUD_Pass2.cpp',revision),'RenderBrokenItem_')+MAIN
 
 def main():

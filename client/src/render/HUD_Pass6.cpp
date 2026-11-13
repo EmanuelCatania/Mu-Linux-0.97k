@@ -39,10 +39,10 @@
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
 #include "platform/Text.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "game/core/HeroVitals.h"
-#include "Item/ChaosMixRates.h"
-#include "Local/ClientText.h"
+#include "game/item/ChaosMixRates.h"
+#include "assets/text/ClientText.h"
 #include "ui/BuffBar.h"
 
 // Color de las líneas de buffs del panel C (lo que suman mientras duran).

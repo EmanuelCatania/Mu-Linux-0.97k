@@ -8,7 +8,7 @@
 #include "platform/GuardedOperation.h"
 #include "platform/ITimer.h"
 #include <array>
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 

@@ -123,7 +123,7 @@
 //   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
 
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "net/NetText.h"
 #include "platform/Text.h"
 #include "Party.h"

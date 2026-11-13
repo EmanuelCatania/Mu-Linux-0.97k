@@ -16,7 +16,7 @@ from SceneObjectPointer import build_and_run, read_source
 
 SITES = {
     "src/platform/input/Input_Timing.cpp": [0],
-    "src/Item/Item_Display.cpp": [0],
+    "src/ui/inventory/Item_Display.cpp": [0],
     "src/scenes/Scene_CharSelect.cpp": [0,1,2,3,4],
     "src/scenes/Scene_Intro.cpp": [0],
     "src/scenes/Scene_Login.cpp": [0],

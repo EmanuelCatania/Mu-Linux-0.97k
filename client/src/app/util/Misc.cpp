@@ -11,7 +11,7 @@
 // MoveItems @ 0x00503760 — Entity_UpdateGravity
 
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "net/NetText.h"
 
 

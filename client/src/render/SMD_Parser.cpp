@@ -6,7 +6,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
-#include "Model/SmdImport.h"
+#include "assets/model/SmdImport.h"
 #include "render/JointTypes.h"
 #include "game/entity/EntityName.h"
 #include "render/BMDDevice.h"
@@ -22,8 +22,8 @@
 #include "ui/MoveList.h"
 #include "ui/EventTimer.h"
 #include "ui/GoldenArcher.h"
-#include "Item/ChaosMixRates.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ChaosMixRates.h"
+#include "game/item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "net/Net.h"
@@ -817,7 +817,7 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
     model->Sounds[4] = (short)param_6;
 }
 
-// CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
+// CreateCharacter, CreateMonster viven en src/game/monster/Monster.cpp.
 
 // SetHall (0x00404BB0) vive en src/audio/Sound_DS3D.cpp.  Aca habia una segunda
 // copia bajo el nombre FUN_00404bb0, sin callers: las dos son fieles (en el

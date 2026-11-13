@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "render/Gfx.h"
 #include "render/MaterialVisuals.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 

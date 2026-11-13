@@ -76,8 +76,8 @@
 #include "render/MeshDraw.h"
 #include <cstring>
 #include "render/BMDDevice.h"
-#include "Item/ItemDefines.h"
-#include "Item/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
+#include "assets/data/ContentCatalog.h"
 #include "game/core/MapManager.h"
 #include "../globals.h"
 #include "../functions.h"

@@ -65,13 +65,13 @@ int main(){
 
 
 def harness(revision=None,native=False):
-    code=function(read_source('src/Terrain/Terrain_Light.cpp',revision),'Entity_GetLightScale')
+    code=function(read_source('src/game/terrain/Terrain_Light.cpp',revision),'Entity_GetLightScale')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
     if 'AsObject(' in code:
         from ObjectLayoutContract import object_types,record
         from LegacyModelLayout import VIEW
         prefix+="\nusing WORD=std::uint16_t;using vec3_t=float[3];using vec34_t=float[3][4];\n"+object_types()+"\nOBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\n"
-        prefix+=("\n#pragma pack(push,1)\n"+record(read_source('src/Model/ModelTypes.h'),'BMD')+"\n#pragma pack(pop)\ninline BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}") if native else VIEW
+        prefix+=("\n#pragma pack(push,1)\n"+record(read_source('src/assets/model/ModelTypes.h'),'BMD')+"\n#pragma pack(pop)\ninline BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}") if native else VIEW
 
     header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     for name in sorted(set(re.findall(r'_DAT_[0-9a-f]+',code))):

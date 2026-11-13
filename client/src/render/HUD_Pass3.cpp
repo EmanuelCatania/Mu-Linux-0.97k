@@ -19,7 +19,7 @@
 #include "render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "platform/Text.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "game/core/HeroVitals.h"
 #include "game/entity/EntityView.h"
 #include "globals.h"

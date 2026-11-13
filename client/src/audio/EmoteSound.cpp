@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "audio/EmoteSound.h"
 #include "audio/SoundManager.h"
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "globals.h"
 #include "functions.h"
 #include <cmath>

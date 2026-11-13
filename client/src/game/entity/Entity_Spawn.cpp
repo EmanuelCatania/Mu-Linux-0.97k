@@ -9,7 +9,7 @@
 #include "game/core/RenderSnapshots.h"
 #include "game/entity/EntityTypes.h"
 #include "scenes/ObjectRegistry.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "game/entity/EntityName.h"
 #include "globals.h"
 #include "functions.h"

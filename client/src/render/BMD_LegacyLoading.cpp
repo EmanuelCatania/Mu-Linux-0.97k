@@ -3,8 +3,8 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
-#include "Model/SmdImport.h"
+#include "assets/model/ModelTypes.h"
+#include "assets/model/SmdImport.h"
 #include "render/ResourceTables.h"
 #include "platform/Text.h"
 #include "platform/IWindow.h"
@@ -39,8 +39,8 @@ extern void __cdecl operator_delete(void* ptr);
 #endif
 
 
-// Monster_LoadScriptTable — implemented in src/Monster/Monster_Data.cpp
-// Monster_ParseSetBase2 — implemented in src/Monster/Monster_Data.cpp
+// Monster_LoadScriptTable — implemented in src/assets/data/Monster_Data.cpp
+// Monster_ParseSetBase2 — implemented in src/assets/data/Monster_Data.cpp
 // IDA: SetMaxTextures (0x00505BD0)
 // SetMaxTextures / Model_SetSlotIndex(index): sets active model slot index.
 void __cdecl SetMaxTextures(int param_1) {
@@ -192,7 +192,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
         if (meshCount > 0) return;
     }
 }
-// OpenMonsterModel — implemented in src/Monster/Monster_Data.cpp
+// OpenMonsterModel — implemented in src/assets/data/Monster_Data.cpp
 // FUN_0047A1F0 @ 0x0047A1F0 — TextParser_GetToken: tokenizer for all game data files
 // (Monster.txt / Item.txt / Skill.txt / NPC.txt / Gate.txt / Filter.txt).
 //

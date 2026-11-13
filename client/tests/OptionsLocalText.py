@@ -6,12 +6,12 @@ import tempfile
 from SceneObjectPointer import build_and_run,function,read_source
 
 def harness(revision=None):
-    source=read_source('src/Local/ClientText.cpp',revision)
+    source=read_source('src/assets/text/ClientText.cpp',revision)
     namespace=source[source.index('namespace {'):source.index('const char* CClientText::Get')]
     getter=source[source.index('const char* CClientText::Get'):source.index('bool CClientText::SetServerText')]
     settings=read_source('src/app/config/UserSettings.h')
     enum=settings[settings.index('enum eUserLanguage {'):settings.index('};',settings.index('enum eUserLanguage {'))+2]
-    prefix='#include <cstddef>\n#include <cstdint>\n#include <cstdio>\n#include <cstdlib>\n#include <cstring>\n#include <string>\n'+read_source('src/Local/ClientText.h')+enum+r'''
+    prefix='#include <cstddef>\n#include <cstdint>\n#include <cstdio>\n#include <cstdlib>\n#include <cstring>\n#include <string>\n'+read_source('src/assets/text/ClientText.h')+enum+r'''
 struct Settings { int language=-1;int GetLanguage()const{return language;} }gUserSettings;
 void Require(bool ok){if(!ok){std::fputs("Texto de opciones incorrecto\n",stderr);std::exit(1);}}
 '''

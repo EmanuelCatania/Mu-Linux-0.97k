@@ -4,9 +4,9 @@
 
 #include "stdafx.h"
 #include "platform/Text.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
-#include "Item/ChaosMixRates.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
+#include "game/item/ChaosMixRates.h"
 #include "net/Recv/NetRecv.h"
 
 // ── ShopInsertItem (PORT FIEL de IDA sub_4CC0E0) ──────────────────────────────

@@ -56,7 +56,7 @@ def harness(revision=None):
  tail=MAIN
  for i in range(4):tail=tail.replace('A'+str(i),'v['+str(i)+']' if 'const float* a5' in polygon else 'static_cast<int>(reinterpret_cast<uintptr_t>(v['+str(i)+']))')
  fabs=re.search(r'^long double\s+__cdecl Math_Fabs[^\n]+',read_source('src/render/Render_LegacyTransforms.cpp',revision),re.M).group()
- ray=function(read_source('src/Terrain/Terrain_RayCollision.cpp',revision),'CollisionDetectLineToFace')
+ ray=function(read_source('src/game/terrain/Terrain_RayCollision.cpp',revision),'CollisionDetectLineToFace')
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+fabs+real_double(source,'Math_Fmin')+real_double(source,'Math_Fmax')+polygon+ray+tail
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

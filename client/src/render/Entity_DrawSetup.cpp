@@ -30,10 +30,10 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "render/Gfx.h"
 #include "render/EquipmentVisuals.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "app/config/UserSettings.h"
 
 void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_3,

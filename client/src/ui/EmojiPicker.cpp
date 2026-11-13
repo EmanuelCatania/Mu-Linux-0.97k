@@ -2,7 +2,7 @@
 #include "ui/EmojiPicker.h"
 #include "render/BufferedDraw.h"
 #include "platform/Text.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "app/core/Font.h"
 #include "app/core/Window.h"
 #include <string>

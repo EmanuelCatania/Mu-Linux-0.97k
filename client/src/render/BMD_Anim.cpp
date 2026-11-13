@@ -14,7 +14,7 @@
 //                                stay frozen in their initial frame.
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "globals.h"
 #include "functions.h"
 #include "game/entity/EntityView.h"

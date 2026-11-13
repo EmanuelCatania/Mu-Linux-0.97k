@@ -77,7 +77,7 @@
 
 #include "stdafx.h"
 #include "Trade.h"
-#include "Monster/Monster.h"
+#include "game/monster/Monster.h"
 
 // Forward declarations for functions defined later in this file or in other modules
 int  __cdecl Entity_FindById(int key);

@@ -2,7 +2,7 @@
 #include "render/ResourceTables.h"
 #include "scenes/ObjectRegistry.h"
 #include "platform/GuardedOperation.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "app/config/UserSettings.h"
 #include "render/Terrain_Render.h"
 #include "game/entity/ObjectPose.h"

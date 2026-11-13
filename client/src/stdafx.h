@@ -46,7 +46,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // ── Primitive type aliases (Ghidra pseudo-types) ─────────────────────────────
 #include "types.h"
 #include "game/entity/EntityTypes.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "ui/ChatTypes.h"
 #include "render/JointTypes.h"
 

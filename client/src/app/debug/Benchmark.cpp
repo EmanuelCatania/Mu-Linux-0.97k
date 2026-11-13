@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "game/entity/EntityTypes.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "net/NetText.h"
 #include "net/Recv/NetRecv.h"
 #include "platform/IInput.h"

@@ -38,7 +38,7 @@
 #include "platform/ITimer.h"
 #include "platform/IFileSystem.h"
 #include "platform/ContentLayers.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "resource.h"
 #ifdef _WIN32
 #include "app/debug/MiniDump.h"

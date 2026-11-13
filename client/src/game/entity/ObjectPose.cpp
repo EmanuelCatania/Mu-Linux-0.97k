@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "game/entity/ObjectPose.h"
 #include "game/entity/ObjectBounds.h"
 #include "functions.h"

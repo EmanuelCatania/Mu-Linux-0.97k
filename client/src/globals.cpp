@@ -1656,7 +1656,7 @@ char     lpString_0056186c[32] = {};
 // In the original binary these are 300-byte slots inside a GlobalText[] pool
 // loaded from Data/Local/Text.bmd by sub_479830 (@0x00479830).
 // Los placeholders en español son fallback — OpenTextData() los sobrescribe
-// con GlobalText[381..385,388] al arrancar (ver src/Local/Text_Data.cpp).
+// con GlobalText[381..385,388] al arrancar (ver src/assets/text/Text_Data.cpp).
 // Layout: stride 300 (0x12c).
 //
 // Orden real verificado en UI_StatsPanel.cpp RenderErrorMessage state 0x6e:

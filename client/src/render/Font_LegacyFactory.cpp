@@ -74,4 +74,4 @@ void __cdecl Font_CreateRenderer(intptr_t self, int param_1, int param_2)
     }
 }
 
-// Model data loaders — implemented in src/Model/
+// Model data loaders — implemented in src/assets/model/
