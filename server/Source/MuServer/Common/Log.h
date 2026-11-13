@@ -1,11 +1,6 @@
 #pragma once
 
-enum eLogType
-{
-	LOG_GENERAL = 0,
-	LOG_QUERY,
-	MAX_LOG
-};
+#include "LogTypes.h"
 
 struct LOG_INFO
 {

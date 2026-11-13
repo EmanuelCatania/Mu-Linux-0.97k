@@ -62,13 +62,16 @@
     <ClInclude Include="Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ReadScript.h">
+    <ClInclude Include="..\Common\ReadScript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Log.h">
+    <ClInclude Include="..\Common\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MiniDump.h">
+    <ClInclude Include="LogTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\MiniDump.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CharacterManager.h">
@@ -112,13 +115,13 @@
     <ClCompile Include="DataServerProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ReadScript.cpp">
+    <ClCompile Include="..\Common\ReadScript.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Common\QueryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Queue.cpp">
+    <ClCompile Include="..\Common\Queue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ServerDisplayer.cpp">
@@ -133,10 +136,10 @@
     <ClCompile Include="Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Log.cpp">
+    <ClCompile Include="..\Common\Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MiniDump.cpp">
+    <ClCompile Include="..\Common\MiniDump.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CharacterManager.cpp">

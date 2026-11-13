@@ -14,7 +14,9 @@ mu_link_mysql(JoinServer DataServer)
 # Código idéntico en varios servers (Fase 5, E5). Cada server lo compila con su
 # propio stdafx.h, igual que cuando tenía la copia en su carpeta.
 foreach(service ConnectServer JoinServer DataServer GameServer)
-  target_sources(${service} PRIVATE Common/CriticalSection.cpp)
+  # Log, Queue: lo propio de cada server va en su LogTypes.h y su Queue.h.
+  target_sources(${service} PRIVATE Common/CriticalSection.cpp Common/Log.cpp
+    Common/MiniDump.cpp Common/Queue.cpp Common/ReadScript.cpp)
 endforeach()
 target_sources(JoinServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
 target_sources(DataServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)

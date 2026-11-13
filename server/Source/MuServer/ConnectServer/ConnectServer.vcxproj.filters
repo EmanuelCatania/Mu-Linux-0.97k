@@ -32,13 +32,16 @@
     <ClInclude Include="ConnectServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MiniDump.h">
+    <ClInclude Include="..\Common\MiniDump.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServerDisplayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Log.h">
+    <ClInclude Include="..\Common\Log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SocketManager.h">
@@ -62,7 +65,7 @@
     <ClInclude Include="ClientManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ReadScript.h">
+    <ClInclude Include="..\Common\ReadScript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServerList.h">
@@ -85,19 +88,19 @@
     <ClCompile Include="ConnectServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MiniDump.cpp">
+    <ClCompile Include="..\Common\MiniDump.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ServerDisplayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Log.cpp">
+    <ClCompile Include="..\Common\Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SocketManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Queue.cpp">
+    <ClCompile Include="..\Common\Queue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Common\CriticalSection.cpp">
@@ -115,7 +118,7 @@
     <ClCompile Include="ClientManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ReadScript.cpp">
+    <ClCompile Include="..\Common\ReadScript.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ServerList.cpp">
