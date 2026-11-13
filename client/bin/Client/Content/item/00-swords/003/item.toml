@@ -1,0 +1,7 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Item con el mismo nombre.
+source = "Item"
+section = 0
+index = 3
+name = "Katana"
+model = "Sword04.bmd"

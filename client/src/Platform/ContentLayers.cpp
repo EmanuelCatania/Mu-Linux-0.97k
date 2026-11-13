@@ -111,21 +111,25 @@ std::string ReadSource(const fs::path& toml)
 void ReadEntities(State& state)
 {
     std::error_code error;
-    std::vector<fs::path> types, folders;
-    for (fs::directory_iterator it("Content", error), end; !error && it != end; it.increment(error))
-        if (it->is_directory(error)) types.push_back(it->path());
-    for (const auto& type : types) {
-        const std::string toml = type.filename().string() + ".toml";
-        for (fs::directory_iterator it(type, error), end; !error && it != end; it.increment(error))
-            if (it->is_directory(error) && fs::is_regular_file(it->path() / toml, error)) folders.push_back(it->path());
+    // (carpeta de la entidad, nombre del .toml) a cualquier profundidad dentro
+    // de cada tipo: monster/01-BullFighter/, item/00-swords/000/.
+    std::vector<std::pair<fs::path, std::string>> folders;
+    for (fs::directory_iterator type("Content", error), end; !error && type != end; type.increment(error)) {
+        if (!type->is_directory(error)) continue;
+        const std::string toml = Lower(type->path().filename().string() + ".toml");
+        for (fs::recursive_directory_iterator it(type->path(), fs::directory_options::skip_permission_denied, error), stop;
+             !error && it != stop; it.increment(error))
+            if (it->is_regular_file(error) && Lower(it->path().filename().string()) == toml)
+                folders.emplace_back(it->path().parent_path(), it->path().filename().string());
     }
-    std::sort(folders.begin(), folders.end(),
-        [](const fs::path& a, const fs::path& b) { return Lower(a.generic_string()) < Lower(b.generic_string()); });
-    for (const auto& folder : folders) {
-        const std::string source = ReadSource(folder / (folder.parent_path().filename().string() + ".toml"));
+    std::sort(folders.begin(), folders.end(), [](const auto& a, const auto& b) {
+        return Lower(a.first.generic_string()) < Lower(b.first.generic_string());
+    });
+    for (const auto& [folder, toml] : folders) {
+        const std::string source = ReadSource(folder / toml);
         if (source.empty()) continue;
         // Ruta relativa a Content/, como la usan las capas.
-        const std::string target = folder.parent_path().filename().string() + "/" + folder.filename().string();
+        std::string target = Normalize(folder.lexically_relative("Content").generic_string());
         for (fs::directory_iterator it(folder, error), end; !error && it != end; it.increment(error)) {
             if (!it->is_regular_file(error)) continue;
             const std::string name = it->path().filename().string();

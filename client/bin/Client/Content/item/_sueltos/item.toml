@@ -1,0 +1,5 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Item con el mismo nombre.
+source = "Item"
+# Modelos y texturas de Data/Item que no carga OpenItems (los usan efectos,
+# skills u otras pantallas) o que no usa ningún modelo.

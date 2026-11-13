@@ -1,0 +1,6 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Item/13-helpers/400 con el mismo nombre.
+source = "Item/13-helpers/400"
+section = 13
+index = 400
+# Item custom del server (catálogo).
