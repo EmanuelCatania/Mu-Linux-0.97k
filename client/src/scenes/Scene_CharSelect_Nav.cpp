@@ -19,6 +19,7 @@
 #include "platform/IFileSystem.h"
 #include "assets/data/ContentCatalog.h"
 #include "net/ServerCharacterStats.h"
+#include "net/NetChannel.h"
 #include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -577,7 +578,9 @@ int __fastcall CWsctlc_FDWriteSend(uintptr_t param_1)
 int __fastcall CWsctlc_nRecv(void *context)
 {
     BYTE* param_1 = static_cast<BYTE*>(context);
-    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)(param_1 + 8),
+    // DESVIACION (Fase 5, C4): el recv() pasa por el canal cifrado, que deja en
+    // el buffer texto claro (o los bytes tal cual, con el ConnectServer).
+    int iVar2 = NetChannel::Read(*(SOCKET *)(param_1 + 8),
                      (char *)(*(int *)(param_1 + 0x4010) + 0x2010 + param_1),
                      0x2000 - *(int *)(param_1 + 0x4010), 0);
     if (iVar2 == 0) { DbgLogPublic("NET: Net_Recv recv=0 (peer closed)"); return 1; }
@@ -587,13 +590,6 @@ int __fastcall CWsctlc_nRecv(void *context)
         Platform::TextFormat(dbg, "NET: Net_Recv recv=-1 WSA=%d", err);
         DbgLogPublic(dbg);
         return 1;
-    }
-    // MuEmu: decrypt the fresh chunk in place (no-op for vanilla servers).
-    // Esto tiene que pasar ANTES de que el parser de headers C1/C2/C3/C4 vea nada,
-    // porque cada byte del cable — headers incluidos — viene encriptado.
-    {
-        BYTE *pNew = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
-        MuEmu::DecryptRecv(pNew, iVar2);
     }
     {
         char dbg[256];
@@ -621,7 +617,7 @@ int __fastcall CWsctlc_nRecv(void *context)
         } else if ((hdr == 0xc2) || (hdr == 0xc4)) {
             uLen = (uint)pBase[iOff + 1] * 0x100 + pBase[iOff + 2];
         } else {
-            // Después de MuEmu::DecryptRecv los bytes nuevos ya son texto plano,
+            // Lo que entrega el canal ya es texto plano,
             // así que cualquier cosa que no arranque con C1/C2/C3/C4 es un error real
             // de protocolo — se descarta el buffer y se sale.
             char dbg[96];

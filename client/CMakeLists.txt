@@ -117,6 +117,8 @@ set(MU_SOURCES
     src/game/core/MapManager.cpp
     src/platform/Win32/ClientWndProc.cpp
     src/net/Network.cpp
+    src/net/NetChannel.cpp
+    src/net/SecureChannel.cpp
     src/net/ServerTrust.cpp
     src/net/ServerTrustCore.cpp
     src/net/crypto/monocypher.c
@@ -522,6 +524,9 @@ set(MU_HEADERS
     src/game/core/MapManager.h
     src/game/core/HeroVitals.h
     src/net/Network.h
+    src/net/NetChannel.h
+    src/net/SecureChannel.h
+    src/net/crypto/SecureRandom.h
     src/net/ServerTrust.h
     src/net/crypto/monocypher.h
     src/net/Reconnect.h
@@ -680,7 +685,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/net/ServerTrustCore.cpp src/net/crypto/monocypher.c src/rhi/GL/FragmentPipeline.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp src/rhi/Dispatch.cpp src/render/RenderState.cpp src/render/TerrainDraw.cpp src/rhi/GL/TerrainRenderer.cpp src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp src/stdafx.cpp src/render/Texture/ImageCodec.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c src/platform/GLFunctions.cpp src/rhi/GL/BufferedDraw.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp src/rhi/GL/MeshDraw.cpp src/rhi/GL/Skinning.cpp src/render/ResourceTables.cpp src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp src/platform/ContentLayers.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/net/SecureChannel.cpp src/net/ServerTrustCore.cpp src/net/crypto/monocypher.c src/rhi/GL/FragmentPipeline.cpp src/render/Gfx.cpp src/rhi/GL/GfxDevice.cpp src/rhi/Dispatch.cpp src/render/RenderState.cpp src/render/TerrainDraw.cpp src/rhi/GL/TerrainRenderer.cpp src/render/RenderProfile.cpp src/rhi/GL/ProfileQueries.cpp src/stdafx.cpp src/render/Texture/ImageCodec.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c src/platform/GLFunctions.cpp src/rhi/GL/BufferedDraw.cpp src/render/GlyphAtlas.cpp src/render/BufferedDraw.cpp src/render/Skinning.cpp src/render/MeshTopology.cpp src/rhi/GL/MeshDraw.cpp src/rhi/GL/Skinning.cpp src/render/ResourceTables.cpp src/rhi/GL/ShadowMap.cpp src/render/ShadowLight.cpp src/platform/ContentLayers.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -715,6 +720,7 @@ target_link_libraries(mu97k PRIVATE
     opengl32
     winmm
     ws2_32
+    bcrypt
     version
     dxguid
     dsound
@@ -791,6 +797,15 @@ if(MSVC)
     target_compile_options(mu_server_trust_test PRIVATE /utf-8)
 endif()
 add_test(NAME server_trust COMMAND mu_server_trust_test)
+
+# Fase 5, C4: canal cifrado entre el cliente y el GameServer.
+add_executable(mu_secure_channel_test EXCLUDE_FROM_ALL tests/SecureChannel.cpp src/net/SecureChannel.cpp src/net/crypto/monocypher.c)
+target_include_directories(mu_secure_channel_test PRIVATE src)
+target_compile_features(mu_secure_channel_test PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(mu_secure_channel_test PRIVATE /utf-8)
+endif()
+add_test(NAME secure_channel COMMAND mu_secure_channel_test)
 
 add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c)
 target_include_directories(mu_text_core_test PRIVATE src)

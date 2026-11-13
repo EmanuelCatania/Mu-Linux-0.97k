@@ -124,6 +124,8 @@
     <ClInclude Include="CustomSafeZone.h" />
     <ClInclude Include="ContentCatalog.h" />
     <ClInclude Include="ServerIdentity.h" />
+    <ClInclude Include="SecureLink.h" />
+    <ClInclude Include="..\Common\SecureChannel.h" />
     <ClInclude Include="..\Common\SecureRandom.h" />
     <ClInclude Include="..\Common\monocypher\monocypher.h" />
     <ClInclude Include="CustomPet.h" />
@@ -237,6 +239,10 @@
     <ClCompile Include="CustomSafeZone.cpp" />
     <ClCompile Include="ContentCatalog.cpp" />
     <ClCompile Include="ServerIdentity.cpp" />
+    <ClCompile Include="SecureLink.cpp" />
+    <ClCompile Include="..\Common\SecureChannel.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\Common\monocypher\monocypher.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

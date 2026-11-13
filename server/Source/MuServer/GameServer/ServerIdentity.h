@@ -32,6 +32,9 @@ public:
 
 	const BYTE* PublicKey() const { return this->m_Public; }
 
+	// Clave privada (64 bytes), para firmar el saludo del canal (SecureLink).
+	const BYTE* SecretKey() const { return this->m_Secret; }
+
 	void Sign(BYTE signature[SERVER_IDENTITY_SIGNATURE_SIZE], const BYTE* message, size_t size) const;
 
 	// Rotación: clave anterior y su firma sobre la clave actual.

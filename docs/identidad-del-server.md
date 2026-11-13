@@ -4,6 +4,12 @@ Cada instalación del server tiene una clave de firma propia. Con ella el
 GameServer firma la lista de datos que le manda al cliente (el catálogo), y el
 cliente la usa para saber que sigue hablando con el mismo server de siempre.
 
+La misma clave autentica el **canal cifrado**: al conectarse, el GameServer firma
+con ella su saludo, y a partir de ahí todo lo que viaja entre el cliente y el
+server va cifrado y con verificación de integridad. Un tercero que escuche la red
+no puede leer el tráfico ni cambiarlo sin que la conexión se corte. El
+ConnectServer (la lista de servers) sigue en claro: sólo lleva datos públicos.
+
 ## Dónde está
 
 `Data/Keys/ServerIdentity.key`, dentro del volumen de datos. Se genera sola la
@@ -24,8 +30,9 @@ La clave **pública** sí se comparte. Sale en el log del GameServer al arrancar
 
 - La primera vez que un cliente entra a tu server guarda la clave pública en
   `User/Cache/<server>/server.pub`.
-- En cada login verifica que el catálogo venga firmado con esa clave. Si no,
-  muestra un aviso y se cierra.
+- En cada conexión verifica que el saludo del server venga firmado con esa
+  clave, y en cada login que el catálogo también. Si no, muestra un aviso y se
+  cierra.
 - Si compilás tu propio cliente podés fijarla de antemano en
   `client/src/app/config/ServerConfig.h` (`ServerPublicKey`). Así ni siquiera el
   primer contacto queda sin verificar.

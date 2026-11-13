@@ -175,7 +175,6 @@ int Game_SceneUpdate(void)
             // CRÍTICO: el ConnectServer usa paquetes PLANOS (sin el byte-XOR
             // MuEmu del GameServer). Desactivamos la capa MuEmu mientras hablamos
             // con el CS; Recv_Redirect la reactiva al saltar al GameServer.
-            MuEmu::SetActive(false);
             extern void CreateSocket(const char *server, unsigned int port);
             CreateSocket(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)g_ServerPort);
         }

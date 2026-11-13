@@ -4,6 +4,7 @@
 #include "IpManager.h"
 #include "Log.h"
 #include "PacketManager.h"
+#include "SecureLink.h"
 #include "PacketTrace.h"
 #include "Protocol.h"
 #include "SerialCheck.h"
@@ -482,10 +483,67 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 		return 0;
 	}
 
-#if(ENCRYPT_STATE==1)
-	EncryptData(send, size);
-#endif
+	// El paquete viaja en un registro del canal cifrado (Fase 5, C4).  Antes del
+	// saludo no hay claves: no se manda nada en claro.
+	static BYTE sealed[MAX_MAIN_PACKET_SIZE + SecureChannel::Overhead];
 
+	const int sealedSize = gSecureLink.Seal(index, send, size, sealed);
+
+	if (sealedSize == 0)
+	{
+		this->m_critical.unlock();
+
+		return 0;
+	}
+
+	const bool result = this->SendBytes(index, sealed, sealedSize);
+
+	this->m_critical.unlock();
+
+	return result;
+}
+
+// Bytes tal cual al socket, sin cifrar: sólo para el saludo del canal.
+bool CSocketManager::DataSendRaw(int index, const BYTE* data, int size)
+{
+	this->m_critical.lock();
+
+	if (OBJECT_USER_RANGE(index) == 0 || gObj[index].Socket == INVALID_SOCKET || gObj[index].Connected == OBJECT_OFFLINE)
+	{
+		this->m_critical.unlock();
+
+		return 0;
+	}
+
+	const bool result = this->SendBytes(index, data, size);
+
+	this->m_critical.unlock();
+
+	return result;
+}
+
+// Con m_critical tomado.  La cola de envío recibe hasta MAX_MAIN_PACKET_SIZE
+// por vez; lo que se manda es un flujo de bytes, así que se puede partir.
+bool CSocketManager::SendBytes(int index, const BYTE* data, int size)
+{
+	while (size > MAX_MAIN_PACKET_SIZE)
+	{
+		if (this->SendChunk(index, data, MAX_MAIN_PACKET_SIZE) == 0)
+		{
+			return 0;
+		}
+
+		data += MAX_MAIN_PACKET_SIZE;
+
+		size -= MAX_MAIN_PACKET_SIZE;
+	}
+
+	return this->SendChunk(index, data, size);
+}
+
+// Con m_critical tomado.  size <= MAX_MAIN_PACKET_SIZE.
+bool CSocketManager::SendChunk(int index, const BYTE* data, int size)
+{
 	IO_SEND_CONTEXT* lpIoContext = &gObj[index].PerSocketContext->IoSendContext;
 
 	if (lpIoContext->IoSize > 0)
@@ -494,24 +552,21 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 		{
 			gLog.Output(LOG_CONNECT, "[SocketManager] Max msg size (Type: 2, Index: %d, Size: %d)", index, (lpIoContext->IoSideBuffer.size + size));
 			this->Disconnect(index);
-			this->m_critical.unlock();
 			return 0;
 		}
 
-		memcpy(&lpIoContext->IoSideBuffer.buff[lpIoContext->IoSideBuffer.size], send, size);
+		memcpy(&lpIoContext->IoSideBuffer.buff[lpIoContext->IoSideBuffer.size], data, size);
 		lpIoContext->IoSideBuffer.size += size;
-		this->m_critical.unlock();
 		return 1;
 	}
 
-	memcpy(lpIoContext->IoMainBuffer.buff, send, size);
+	memcpy(lpIoContext->IoMainBuffer.buff, data, size);
 	lpIoContext->IoType = IO_SEND;
 	lpIoContext->IoSize = size;
 	lpIoContext->IoMainBuffer.size = 0;
 
 	FlushSendBuffer(this->m_epollFd, index, &gObj[index], lpIoContext);
 
-	this->m_critical.unlock();
 	return 1;
 }
 
@@ -547,6 +602,8 @@ void CSocketManager::Disconnect(int index)
 	}
 
 	gObj[index].Socket = INVALID_SOCKET;
+	gSecureLink.End(index);
+
 	gObjDel(index);
 
 	this->m_critical.unlock();
@@ -578,17 +635,15 @@ void CSocketManager::OnRecv(int index, DWORD, IO_RECV_CONTEXT* lpIoContext)
 			return;
 		}
 
-		ssize_t received = recv(gObj[index].Socket, &lpIoContext->IoMainBuffer.buff[lpIoContext->IoMainBuffer.size], capacity, 0);
+		// Lo que llega son registros del canal cifrado (Fase 5, C4): se leen
+		// aparte y SecureLink deja el texto claro en el buffer de recepción.
+		static BYTE raw[MAX_MAIN_PACKET_SIZE];
+
+		ssize_t received = recv(gObj[index].Socket, raw, sizeof(raw), 0);
 
 		if (received > 0)
 		{
-#if(ENCRYPT_STATE==1)
-			DecryptData(&lpIoContext->IoMainBuffer.buff[lpIoContext->IoMainBuffer.size], received);
-#endif
-
-			lpIoContext->IoMainBuffer.size += received;
-
-			if (this->DataRecv(index, &lpIoContext->IoMainBuffer) == 0)
+			if (gSecureLink.Receive(index, raw, (int)received, &lpIoContext->IoMainBuffer) == 0)
 			{
 				this->Disconnect(index);
 				this->m_critical.unlock();
@@ -716,7 +771,9 @@ DWORD CSocketManager::ServerAcceptThread(CSocketManager* lpSocketManager)
 		ev.data.u32 = static_cast<uint32_t>(index);
 		epoll_ctl(lpSocketManager->m_epollFd, EPOLL_CTL_ADD, socket, &ev);
 
-		GCConnectClientSend(index, 1);
+		// Saludo del canal cifrado.  El F1:00 lo manda SecureLink cuando llega
+		// el del cliente.
+		gSecureLink.Begin(index);
 
 		lpSocketManager->m_critical.unlock();
 	}

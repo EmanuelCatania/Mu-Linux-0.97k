@@ -853,7 +853,6 @@ void __cdecl Player_ProcessInput(void)
                         for (int i = 3; i < 7; ++i) {
                             pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
                         }
-                        MuEmu::EncryptSend(pkt, 7);
                         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }

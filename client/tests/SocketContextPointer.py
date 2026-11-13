@@ -43,7 +43,7 @@ struct Socket {
  int Startup(std::uint16_t requested,std::uint16_t& actual){Require(requested==0x202);actual=startupVersion;return startupResult;}
  int Cleanup(){++cleanupCalls;return 0;}
  int Close(std::uintptr_t socket){Require(socket==expectedSocket);++closeCalls;return 0;}
- int Receive(std::uintptr_t socket,char* out,int capacity,int flags){
+ int ReceiveThroughChannel(std::uintptr_t socket,char* out,int capacity,int flags){
     Require(socket==expectedSocket && reinterpret_cast<BYTE*>(out)==activeContext+0x2010+priorReceive && capacity==8192-static_cast<int>(priorReceive) && flags==0);++receiveCalls;
     if(incoming.empty())return startupResult;
     Require(incoming.size()<=static_cast<unsigned>(capacity));std::memcpy(out,incoming.data(),incoming.size());return static_cast<int>(incoming.size());
@@ -71,7 +71,8 @@ void CErrorReport_Write(int*,const char*){++errorCalls;}
 void DbgLogPublic(const char*){}
 void CWsctlc__LogPrintOn(){++logOnCalls;}
 void FUN_0043de60(){++flushCalls;}
-namespace MuEmu {void DecryptRecv(BYTE* ptr,int size){Require(ptr==activeContext+0x2010+priorReceive && size==static_cast<int>(incoming.size()));++decryptCalls;}}
+// El canal (net/NetChannel) hace de recv: acá entrega los bytes tal cual.
+namespace NetChannel {int Read(std::uintptr_t socket,char* out,int capacity,int flags){const int got=Platform::GetSocket().ReceiveThroughChannel(socket,out,capacity,flags);if(got>0)++decryptCalls;return got;}}
 void CPacketQueue_PushPacket(std::uintptr_t context,const void* data,int size){
     Require(context==reinterpret_cast<std::uintptr_t>(activeContext) && static_cast<const BYTE*>(data)>=activeContext+0x2010 && static_cast<const BYTE*>(data)+size<=activeContext+0x4010);
     packets.emplace_back(static_cast<const BYTE*>(data),static_cast<const BYTE*>(data)+size);

@@ -4,6 +4,7 @@
 #include "IpManager.h"
 #include "Log.h"
 #include "PacketManager.h"
+#include "SecureLink.h"
 #include "Protocol.h"
 #include "SerialCheck.h"
 #include "User.h"
@@ -541,12 +542,67 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 		return 0;
 	}
 
-#if(ENCRYPT_STATE==1)
+	// El paquete viaja en un registro del canal cifrado (Fase 5, C4).  Antes del
+	// saludo no hay claves: no se manda nada en claro.
+	static BYTE sealed[MAX_MAIN_PACKET_SIZE + SecureChannel::Overhead];
 
-	EncryptData(send, size);
+	const int sealedSize = gSecureLink.Seal(index, send, size, sealed);
 
-#endif
+	if (sealedSize == 0)
+	{
+		this->m_critical.unlock();
 
+		return 0;
+	}
+
+	const bool result = this->SendBytes(index, sealed, sealedSize);
+
+	this->m_critical.unlock();
+
+	return result;
+}
+
+// Bytes tal cual al socket, sin cifrar: sólo para el saludo del canal.
+bool CSocketManager::DataSendRaw(int index, const BYTE* data, int size)
+{
+	this->m_critical.lock();
+
+	if (OBJECT_USER_RANGE(index) == 0 || gObj[index].Socket == INVALID_SOCKET || gObj[index].Connected == OBJECT_OFFLINE)
+	{
+		this->m_critical.unlock();
+
+		return 0;
+	}
+
+	const bool result = this->SendBytes(index, data, size);
+
+	this->m_critical.unlock();
+
+	return result;
+}
+
+// Con m_critical tomado.  La cola de envío recibe hasta MAX_MAIN_PACKET_SIZE
+// por vez; lo que se manda es un flujo de bytes, así que se puede partir.
+bool CSocketManager::SendBytes(int index, const BYTE* data, int size)
+{
+	while (size > MAX_MAIN_PACKET_SIZE)
+	{
+		if (this->SendChunk(index, data, MAX_MAIN_PACKET_SIZE) == 0)
+		{
+			return 0;
+		}
+
+		data += MAX_MAIN_PACKET_SIZE;
+
+		size -= MAX_MAIN_PACKET_SIZE;
+	}
+
+	return this->SendChunk(index, data, size);
+}
+
+// Con m_critical tomado.  size <= MAX_MAIN_PACKET_SIZE.
+bool CSocketManager::SendChunk(int index, const BYTE* data, int size)
+{
 	IO_SEND_CONTEXT* lpIoContext = &gObj[index].PerSocketContext->IoSendContext;
 
 	if (lpIoContext->IoSize > 0)
@@ -557,21 +613,17 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 
 			this->Disconnect(index);
 
-			this->m_critical.unlock();
-
 			return 0;
 		}
 
-		memcpy(&lpIoContext->IoSideBuffer.buff[lpIoContext->IoSideBuffer.size], send, size);
+		memcpy(&lpIoContext->IoSideBuffer.buff[lpIoContext->IoSideBuffer.size], data, size);
 
 		lpIoContext->IoSideBuffer.size += size;
-
-		this->m_critical.unlock();
 
 		return 1;
 	}
 
-	memcpy(lpIoContext->IoMainBuffer.buff, send, size);
+	memcpy(lpIoContext->IoMainBuffer.buff, data, size);
 
 	lpIoContext->wsabuf.buf = (char*)lpIoContext->IoMainBuffer.buff;
 
@@ -593,13 +645,9 @@ bool CSocketManager::DataSend(int index, BYTE* lpMsg, int size)
 
 			this->Disconnect(index);
 
-			this->m_critical.unlock();
-
 			return 0;
 		}
 	}
-
-	this->m_critical.unlock();
 
 	return 1;
 }
@@ -640,6 +688,8 @@ void CSocketManager::Disconnect(int index)
 
 	gObj[index].Socket = INVALID_SOCKET;
 
+	gSecureLink.End(index);
+
 	gObjDel(index);
 
 	this->m_critical.unlock();
@@ -667,15 +717,13 @@ void CSocketManager::OnRecv(int index, DWORD IoSize, IO_RECV_CONTEXT* lpIoContex
 
 	LPOBJ lpObj = &gObj[index];
 
-#if(ENCRYPT_STATE==1)
+	// Lo que llegó son registros del canal cifrado (Fase 5, C4).  Se sacan del
+	// buffer de recepción y SecureLink deja ahí el texto claro.
+	static BYTE raw[MAX_MAIN_PACKET_SIZE];
 
-	DecryptData(&lpIoContext->IoMainBuffer.buff[lpIoContext->IoMainBuffer.size], IoSize);
+	memcpy(raw, &lpIoContext->IoMainBuffer.buff[lpIoContext->IoMainBuffer.size], IoSize);
 
-#endif
-
-	lpIoContext->IoMainBuffer.size += IoSize;
-
-	if (this->DataRecv(index, &lpIoContext->IoMainBuffer) == 0)
+	if (gSecureLink.Receive(index, raw, (int)IoSize, &lpIoContext->IoMainBuffer) == 0)
 	{
 		this->Disconnect(index);
 
@@ -943,7 +991,9 @@ DWORD WINAPI CSocketManager::ServerAcceptThread(CSocketManager* lpSocketManager)
 			}
 		}
 
-		GCConnectClientSend(index, 1);
+		// Saludo del canal cifrado.  El F1:00 lo manda SecureLink cuando llega
+		// el del cliente.
+		gSecureLink.Begin(index);
 
 		lpSocketManager->m_critical.unlock();
 	}

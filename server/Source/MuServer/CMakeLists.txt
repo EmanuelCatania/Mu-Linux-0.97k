@@ -86,7 +86,7 @@ mu_add_text_library(MuTextDLL "DLL")
 target_link_libraries(GameServer PRIVATE MuText)
 
 # Firmas y cifrado (Fase 5, C3/C4): Monocypher, en C y sin el stdafx.h.
-target_sources(GameServer PRIVATE Common/monocypher/monocypher.c)
+target_sources(GameServer PRIVATE Common/monocypher/monocypher.c Common/SecureChannel.cpp)
 if(WIN32)
   target_link_libraries(GameServer PRIVATE bcrypt)
 endif()

@@ -196,11 +196,9 @@ bool DataSendSocket(SOCKET socket, BYTE* lpMsg, DWORD size)
 		return 0;
 	}
 
-#if(ENCRYPT_STATE==1)
-
-	EncryptData(lpMsg, size);
-
-#endif
+	// Va en claro, sin el canal cifrado (Fase 5, C4): sólo se usa para rechazar
+	// una conexión antes de aceptarla (server lleno, límite por IP), cuando todavía
+	// no hay saludo.  El cliente reconoce ese F1:01 suelto y muestra el motivo.
 
 	int count = 0, result = 0;
 
