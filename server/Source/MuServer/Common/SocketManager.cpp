@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "SocketManager.h"
 #include "AllowableIpList.h"
-#include "DataServerProtocol.h"
 #include "ServerManager.h"
 #include "Util.h"
 
@@ -819,7 +818,7 @@ DWORD WINAPI CSocketManager::ServerQueueThread(CSocketManager* lpSocketManager)
 		{
 			if (SERVER_RANGE(QueueInfo.index) != 0 && gServerManager[QueueInfo.index].CheckState() != false)
 			{
-				DataServerProtocolCore(QueueInfo.index, QueueInfo.head, QueueInfo.buff, QueueInfo.size);
+				SocketProtocolCore(QueueInfo.index, QueueInfo.head, QueueInfo.buff, QueueInfo.size);
 			}
 
 			gServerDisplayer.SetWindowName();

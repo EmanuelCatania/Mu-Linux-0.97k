@@ -2,6 +2,7 @@
 
 #include "CriticalSection.h"
 #include "Queue.h"
+#include "SocketManagerServer.h"
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -9,7 +10,6 @@
 #include <vector>
 
 #define MAX_MAIN_PACKET_SIZE 8192
-#define MAX_SIDE_PACKET_SIZE 262144
 #define MAX_SERVER_WORKER_THREAD 8
 #define MAX_IO_OPERATION 2
 #define IO_RECV 0

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "SocketManager.h"
-#include "JoinServerProtocol.h"
 #include "ServerManager.h"
 #include "Util.h"
 
@@ -638,7 +637,7 @@ DWORD CSocketManager::ServerQueueThread(CSocketManager* lpSocketManager)
 		{
 			if (SERVER_RANGE(QueueInfo.index) != 0 && gServerManager[QueueInfo.index].CheckState() != false)
 			{
-				JoinServerProtocolCore(QueueInfo.index, QueueInfo.head, QueueInfo.buff, QueueInfo.size);
+				SocketProtocolCore(QueueInfo.index, QueueInfo.head, QueueInfo.buff, QueueInfo.size);
 			}
 		}
 	}
