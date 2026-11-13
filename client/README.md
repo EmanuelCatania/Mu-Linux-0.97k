@@ -454,9 +454,11 @@ sólo se usa si está en la misma capa que el clásico o en una que gane: así u
 pack puede traer sólo `-hd`, pero el `-hd` de `Data` no pisa lo que reemplazó
 un pack. Las capas se leen al arrancar y quedan en `User/debug.log`.
 
-Los monstruos ya están por entidad: cada uno es una carpeta
-`Content/monster/<NN-Nombre>/` con su modelo, sus texturas y un `monster.toml`
-(`source = "Monster"`, el modelo y los tipos de `Monster.txt` que lo usan).
+Monstruos, NPCs y sets ya están por entidad: cada uno es una carpeta
+(`Content/monster/01-BullFighter/`, `Content/npc/Smith/`, `Content/set/01-Dragon/`)
+con su modelo, sus texturas y un `.toml` del tipo (`monster.toml`, `npc.toml`,
+`set.toml`) que dice qué carpeta de Data reemplaza (`source`). El esqueleto, los
+cuerpos por clase, alas y helpers están en `Content/player/base/`.
 Al arrancar, cada archivo de esas carpetas pasa a responder por
 `Data/<source>/<archivo>`, así que no hace falta escribir alias a mano.
 
