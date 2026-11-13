@@ -32,7 +32,7 @@ void Terrain_BeginBufferedPass();
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/render/HUD_Pass3.cpp.
-// Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
+// Lo usan los llamadores de InventoryGrid_Tick de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BOOL ChaosBoxRequestClose(void);
 extern "C" BYTE Inventory[];
@@ -412,7 +412,7 @@ void __cdecl Inventory_HitTest(void) {
 
     // Hit-test de la ventana de inventario.
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
-    // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
+    // y llama a Equipment_HitTestAll o InventoryGrid_Tick para renderizar la grilla.
     // __ftol() Y-boundary → approximated as (int)DAT_07ea5284 (screen origin Y).
 
     if ((int)DAT_07ea5288 <= (int)DAT_083a427c &&
@@ -506,12 +506,12 @@ void __cdecl Inventory_HitTest(void) {
     DAT_07eaa164 = 0;
     int lVal = (int)((double)(int)DAT_07ea5284 + 200.0);
     if ((int)DAT_083a4278 < lVal) {
-        FUN_004d1fc0();
+        Equipment_HitTestAll();
     } else {
         // inv_base = OffsetInventoryItems: en el binario original DAT_07ea8410 ES la
         // base del pool de inventario; en nuestro build es un DWORD de 4 bytes en
         // globals.cpp y el pool es OffsetInventoryItems.
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07ea5288 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5288 + 0xf),
                      (int)(DAT_07ea5284 + 200),
                      (short*)OffsetInventoryItems, 8, 8, '\0');
     }
@@ -556,10 +556,10 @@ void __cdecl Inventory_HitTest(void) {
         // pools de trade. Tal como 004D23B0: Inventory es la oferta remota
         // de sólo lectura (arriba) y OffsetTradeItems la oferta local
         // editable (abajo).
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
                      (int)(DAT_07ea528c + 0x46),
                      (short*)Inventory, 8, 4, '\0');
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
                      (int)(DAT_07ea528c + 0x10e),
                      (short*)OffsetTradeItems, 8, 4, '\0');
     }
@@ -573,18 +573,18 @@ void __cdecl Inventory_HitTest(void) {
     if (sv6 != '\0') {
         // Pool de TIENDA: ShopItems (en el original, el overlay
         // &Inventory[32].WalkSpeed, offset +24), el mismo que usa el render. Grid 8×15.
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
                      (int)(DAT_07eaa0cc + 0x32),
                      (short*)ShopItems, 8, 0xf, '\x01');
     }
     if (DAT_07eaa119 != '\0') {
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
                      (int)(DAT_07eaa0cc + 0x32),
                      (short*)OffsetWarehouseItems, 8, 0xf, '\0');
     }
     if (DAT_07eaa11a != '\0' && DAT_07eaa140 != 1) {
         // Chaos mix: 8x4 grid en OffsetMixItems.
-        FUN_004d23b0((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
+        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
                      (int)(DAT_07eaa0cc + 0x6e),
                      (short*)OffsetMixItems, 8, 4, '\0');
     }
@@ -920,7 +920,8 @@ void __cdecl Warehouse_HitTest(void) {
 // IDA: FUN_004EB7F0 — entrada de Trade: Zen, confirmación y cancelación.
 //   - Usa TradeInventoryStartX/Y y TradeOpened como guard de la interfaz.
 //   - Los botones envían C3 C1:04:3C:01 y C3 C1:03:3D según corresponda.
-void __cdecl FUN_004eb7f0(void) {
+// IDA: sub_4EB7F0 (0x004EB7F0); Ghidra: FUN_004eb7f0
+void __cdecl Trade_InputTick(void) {
     // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
     char cGuard = DAT_07eaa11b;
@@ -1002,11 +1003,12 @@ void __cdecl FUN_004eb7f0(void) {
     }
 }
 
-// FUN_004ec330 @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
+// Shop_InputTick @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
 //   - Handles shop bottom buttons (Buy, Repair, Repair All) when DAT_07eaa132 != 0
 //   - Updates repair cost per-frame via Item_RecalculateRepairCost()
 //   - Handles inventory close button click
-void __cdecl FUN_004ec330(void) {
+// IDA: sub_4EC330 (0x004EC330); Ghidra: FUN_004ec330
+void __cdecl Shop_InputTick(void) {
     uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = AntiTamper_HashNode();
@@ -1057,7 +1059,7 @@ void __cdecl FUN_004ec330(void) {
                 Item_RecalculateRepairCost();   // sub_4C4080
             }
 
-            // main.exe FUN_004ec330:004eca7c calls FUN_004c4080 per-frame when DAT_07eaa132 != 0
+            // main.exe Shop_InputTick:004eca7c calls FUN_004c4080 per-frame when DAT_07eaa132 != 0
             Item_RecalculateRepairCost();
         }
 

@@ -2141,7 +2141,7 @@ float   _DAT_00590af0  = 0.0f;   // IDA: flt_590AF0, magnitud del viento de la t
 DWORD g_PhysicsManager[4] = { 0, 0, 0, 0 };
 namespace {
 struct PhysicsManagerInit {
-    PhysicsManagerInit() { FUN_00409ad0(g_PhysicsManager); }
+    PhysicsManagerInit() { PhysicsManager_Construct(g_PhysicsManager); }
 } s_PhysicsManagerInit;
 }
 float   DAT_00590af4   = 0.0f;

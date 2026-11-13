@@ -62,7 +62,7 @@ def integrated_harness(revision=None):
     prefix+=function(read_source("src/scenes/Scene_CharSelect_Nav.cpp",revision),"Packet_ParseType2")
     prefix+=dispatch(revision)
     main=INPUT_MAIN.replace("quest[0x1c87f]=static_cast<BYTE>(next()%2)","quest[0x1c87f]=static_cast<BYTE>(next()%4)")
-    invocation="if(proceed) Require(CSQuest_ProceedButton(quest)==1); else FUN_00401af0(quest);"
+    invocation="if(proceed) Require(CSQuest_ProceedButton(quest)==1); else Quest_AnswerHitTest(quest);"
     if main.count(invocation)!=1: raise ValueError("Cambió el fixture de entrada de quest")
     return prefix+main.replace(invocation,"Require(Packet_ParseReceived(quest)==1);")
 

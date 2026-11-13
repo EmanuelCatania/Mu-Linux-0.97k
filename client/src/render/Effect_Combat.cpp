@@ -120,13 +120,14 @@ void __cdecl FUN_0046b980(intptr_t entity)
     ItemDrop_RenderGroundWeapon(entity);
 }
 
-// FUN_0046c5a0 @ 0x0046C5A0 (~117 lines) — skill impact particle burst
+// Effect_SkillImpactBurst @ 0x0046C5A0 (~117 lines) — skill impact particle burst
 // AngleMatrix from direction (param_4), VectorRotate to get offset.
 // Spawn one main particle (0x498) at param_3 position,
 // then 20 trail particles (0x497) at the rotated offset position.
 // param_1 = unused (Ghidra phantom), param_2 = entity base (angles at +0x1C)
 // param_3 = float[3] position, param_4 = float[3] direction angles
-void __cdecl FUN_0046c5a0(int param_1, intptr_t param_2, float* param_3, float* param_4) {
+// IDA: sub_46C5A0 (0x0046C5A0); Ghidra: FUN_0046c5a0
+void __cdecl Effect_SkillImpactBurst(int param_1, intptr_t param_2, float* param_3, float* param_4) {
     (void)param_1;
 
     float light[3] = { 1.0f, 1.0f, 1.0f };

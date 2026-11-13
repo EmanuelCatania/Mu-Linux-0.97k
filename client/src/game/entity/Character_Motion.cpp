@@ -33,7 +33,7 @@ void Terrain_BeginBufferedPass();
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/render/HUD_Pass3.cpp.
-// Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
+// Lo usan los llamadores de InventoryGrid_Tick de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BOOL ChaosBoxRequestClose(void);
 extern "C" BYTE Inventory[];
@@ -792,9 +792,9 @@ int __cdecl CalculateAll(BYTE* characterMachine, int /*p2*/, int /*p3*/) {
 //   FUN_0046fe40   Joint_Find
 //   FUN_004451c0   AngleVectorOffset
 //   Effect_SpawnBombRing   bomb-ring effect
-//   FUN_0046c5a0   skill impact particles
-//   FUN_0046c7f0   directional blood
-//   FUN_0045fae0   lectura hash de 1 byte (lectura de la cola de skills)
+//   Effect_SkillImpactBurst   skill impact particles
+//   WorldObject_EmitFireSmoke   directional blood
+//   HashTable_ReadByte   lectura hash de 1 byte (lectura de la cola de skills)
 //   Alpha   Alpha
 //   PlayBuffer   PlayBuffer
 //   SetPlayerDie / DeleteJoint / CreateBlur — local helpers below
@@ -809,7 +809,7 @@ extern bool __cdecl AttackStage(intptr_t c, intptr_t o);
 extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
 extern void __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey);
-extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
+extern unsigned char __cdecl HashTable_ReadByte(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
 static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, float az, float out[3])
@@ -1512,7 +1512,7 @@ void __cdecl MoveCharacter(intptr_t p1)
         // ─── L1836-2477: targeted vs. self-cast skill effects
         if (AsCharacter(c)->TargetCharacter == -1)
         {
-            // Self-cast (no target). Read action via FUN_0045fae0 (skipped XOR).
+            // Self-cast (no target). Read action via HashTable_ReadByte (skipped XOR).
             v393 = (v328 == 24) ? 1 : 0;
 
             // L1917-2097: Bow/Crossbow arrow shoot (player anims 46..49,54,55)
@@ -1579,7 +1579,7 @@ void __cdecl MoveCharacter(intptr_t p1)
 
             // L2230-2233: Magic anim 0x38..0x3C bonus particles
             if (AsObject(o)->CurrentAction >= 0x38u && AsObject(o)->CurrentAction <= 0x3Cu) {
-                FUN_0046c5a0(0, (intptr_t)v390, (float*)(Owner + 16), (float*)(o + 28));
+                Effect_SkillImpactBurst(0, (intptr_t)v390, (float*)(Owner + 16), (float*)(o + 28));
             }
 
             // L2234-2237: la tercera componente del ángulo se recalcula a partir de las
@@ -1947,7 +1947,7 @@ void __cdecl MoveCharacter(intptr_t p1)
 
     // L2769-2772: pickup-bag splash
     if (AsObject(o)->Type == 236) {
-        FUN_0046c7f0(0, AsObject(o), 0.0f, 0.0f, 0.0f);
+        WorldObject_EmitFireSmoke(0, AsObject(o), 0.0f, 0.0f, 0.0f);
     }
 }
 

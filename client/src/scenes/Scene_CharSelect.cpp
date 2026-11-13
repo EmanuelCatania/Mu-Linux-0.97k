@@ -127,7 +127,7 @@
 //
 // ── SUBSISTEMAS FINALES ───────────────────────────────────────────────────────
 //
-//   FUN_005239a0()  → CharSelect_UpdateInput()
+//   CharScene_RenderFrame()  → CharSelect_UpdateInput()
 //   RenderErrorMessage()  → Chat_Render()
 //   Scene_MapTick()  → UI_Render()
 //   UI_RenderNotices()  → StatusBar_Render()
@@ -169,7 +169,7 @@
 //   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
 //   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
 //   Mouse_UpdateHoverTargets   → CharPreview_Render()
-//   FUN_005239a0   → CharSelect_UpdateInput()
+//   CharScene_RenderFrame   → CharSelect_UpdateInput()
 //   RenderCharacter   → Entity_UpdateRender(entity, entity, is_local)
 //   Vector_InverseRotate   → Matrix_TransformVec(pos, mat, out)
 //   Matrix_BuildFromEuler   → Matrix_FromEuler(angles, out)
@@ -659,7 +659,7 @@ int Scene_CharSelect(void)
         }
 
         // ── Final subsystems ──────────────────────────────────────────────────
-        FUN_005239a0();   // CharSelect_UpdateInput
+        CharScene_RenderFrame();   // CharSelect_UpdateInput
         RenderErrorMessage();   // Chat_Render
         Scene_MapTick();   // UI_Render
         UI_RenderNotices();   // StatusBar_Render

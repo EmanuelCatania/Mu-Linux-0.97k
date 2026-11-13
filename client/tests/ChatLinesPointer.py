@@ -21,7 +21,7 @@ namespace Platform{int TextLength(const char* p){return static_cast<int>(std::st
 namespace TextEngine{std::size_t FitLineBreak(std::string_view text,std::size_t n){Require(n<=text.size());++fits;return profile==0?0:profile==1?n:profile==2?n/2:n/3;}}
 '''
 MAIN=r'''
-int Split(const char* text,char* destination,int width,int count,unsigned indent,int reverse){return FUN_0040c2a0(text,ARG,width,count,128,indent,reverse);}
+int Split(const char* text,char* destination,int width,int count,unsigned indent,int reverse){return ChatText_SplitLines(text,ARG,width,count,128,indent,reverse);}
 std::uint64_t Run(BYTE* input,BYTE* output){
  std::uint64_t hash=14695981039346656037ull;unsigned cases=0;
  for(unsigned length=0;length<=64;++length)for(unsigned w=0;w<4;++w)for(int count=0;count<=4;++count)for(int reverse=0;reverse<=2;++reverse)for(profile=0;profile<4;++profile)for(scale=1;scale<=2;++scale)for(step=1;step<=2;++step){
@@ -50,7 +50,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
  std::printf("Chat lines: 62400 casos, bytes/orden/canarios %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
- code=function(read_source('src/ui/ChatListBox.cpp',revision),'FUN_0040c2a0')
+ code=function(read_source('src/ui/ChatListBox.cpp',revision),'ChatText_SplitLines')
  arg='destination' if 'char* dst' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(destination))'
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+code+MAIN.replace('ARG',arg)
 def main():

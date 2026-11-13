@@ -10,10 +10,10 @@ from ObjectLayoutContract import record
 SOURCES = {
     "src/game/physics/Cloth_Simulation.cpp": "Vec3_Length SpringNode_Delta Cloth_SpringRange Cloth_SpringEqual ClothNode_ApplyForces VerletSystem_Flush SpringNode_ZeroFields SpringNode_SetPos SpringNode_GetPos VerletNode_AddAccel ClothNode_Integrate ClothNode_AddCorrection SpringNode_Ctor VerletNode_SetTarget VerletNode_GetPos VerletNode_ZeroFields VerletNode_CtorBase VerletNode_CtorExt ClothAnchor_Ctor ClothAnchor_SetParams ClothAnchor_Collide Cloth_CollideAnchors Cloth_PinTopRow Cloth_Wind Cloth_Integrate Spring_StoreEdge ClothAnchor_VSlot0 ClothAnchor_VSlot1",
     "src/ui/UI_LegacyWidgetSystem.cpp": "Widget_NodeInit Widget_CtorBase Widget_Release Widget_CheckState GridSpring_Create L_YGXPAXIHP6EX0_Z1_Z Cloth_VSlot0",
-    "src/net/Crypto.cpp": "VerletNode_AddToSystem Cloth_Solve Widget_Ctor SpringMesh_Create FUN_00408ff0 FUN_004090b0 FUN_004091d0",
-    "src/app/core/Runtime_Small.cpp": "FUN_00407970 FUN_00407de0 FUN_00407ec0 FUN_00407ea0",
-    "src/app/core/Runtime_Medium.cpp": "FUN_00408070",
-    "src/ui/UI_LegacyWidgets.cpp": "FUN_00408680 FUN_0045aaa0_impl",
+    "src/net/Crypto.cpp": "VerletNode_AddToSystem Cloth_Solve Widget_Ctor SpringMesh_Create ClothWidget_Render ClothWidget_EmitQuads ClothWidget_EmitVertex",
+    "src/app/core/Runtime_Small.cpp": "ClothNode_SetVTable ClothBody_SetBaseVTable ClothAnchor_Destruct ClothAnchor_ScalarDtor",
+    "src/app/core/Runtime_Medium.cpp": "ClothWidget_Destruct",
+    "src/ui/UI_LegacyWidgets.cpp": "ClothNode_ScalarDtor FUN_0045aaa0_impl",
     "src/game/entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
     "src/game/entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
     "src/render/Render_LegacyBillboards.cpp": "DeleteCloth",
@@ -127,7 +127,7 @@ void OwnerReset(){
 }
 void Draw(ClothWidget* w){
     std::vector<BYTE> before(reinterpret_cast<BYTE*>(w->Nodes),reinterpret_cast<BYTE*>(w->Nodes)+sizeof(ClothNode)*w->NodeCount);
-    FUN_00408ff0(w);Require(std::memcmp(before.data(),w->Nodes,before.size())==0);
+    ClothWidget_Render(w);Require(std::memcmp(before.data(),w->Nodes,before.size())==0);
 }
 int main(){
     unsigned cases=0;

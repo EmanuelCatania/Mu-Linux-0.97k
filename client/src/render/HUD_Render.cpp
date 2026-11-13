@@ -394,7 +394,7 @@
 //     FUN_004f3170();           // RenderSkillSlot_5()
 //     FUN_004f3c50();           // RenderSkillSlot_6()
 //     FUN_004f46a0();           // RenderSkillSlot_7()
-//     FUN_00403f30(DAT_00583d8c); // — (vtable?)
+//     Quest_RenderPanel(DAT_00583d8c); // — (vtable?)
 //     FUN_004f5570();           // RenderSkillSlot_8?
 //   }
 //
@@ -431,7 +431,7 @@
 //     GL_GetModelViewMatrix(&CameraMatrix);   // LoadCameraMatrix(mat_4x4)
 //     GL_EnableDepthTest();                // EnableDepthTest()
 //     GL_EnableDepthWrites();                // EnableDepthWrite()
-//     FUN_00403150(DAT_00583d8c, '\x01', '\0');  // ObjPool_SetFlag(pool, true, false)
+//     Quest_RenderRequiredItems(DAT_00583d8c, '\x01', '\0');  // ObjPool_SetFlag(pool, true, false)
 //
 //     // Según modo de vista (GoldenArcherOpenType):
 //     if (GoldenArcherOpenType == 0 || GoldenArcherOpenType == 3):

@@ -78,7 +78,7 @@ std::uint64_t Run(BYTE* memory,BYTE* storage){
    }
    expected.push_back(9);
   }
-  failAllocation=failed!=0;allocations=deletions=visited=0;events.clear();FUN_00408ff0(object);
+  failAllocation=failed!=0;allocations=deletions=visited=0;events.clear();ClothWidget_Render(object);
   Require(events==expected && allocations==unsigned(valid) && deletions==unsigned(drawing) && visited==(drawing?unsigned(total):0) && std::memcmp(memory,beforeObject.data(),128)==0 && std::memcmp(nodes-16,beforeNodes.data(),4096)==0 && std::memcmp(storage,expectedStorage.data(),1024)==0);
   for(auto value:events)Hash(hash,value);++queries;
  }
@@ -106,7 +106,7 @@ def harness(revision=None):
     if 'ClothPoint(' in getter:
         import ClothFixture
         extra=ClothFixture.prefix();services,main=ClothFixture.vertices(services,main)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+services.replace('GET_POS',getter)+function(source,'FUN_004091d0')+function(source,'FUN_004090b0')+function(source,'FUN_00408ff0')+main
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+services.replace('GET_POS',getter)+function(source,'ClothWidget_EmitVertex')+function(source,'ClothWidget_EmitQuads')+function(source,'ClothWidget_Render')+main
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

@@ -21,7 +21,8 @@
 // UI_InGameMenu, al lado de SaveOptionsToServer97k (sub_50F7A0).
 //
 // Guard propio del port: el original no chequea el fopen y deferencia el NULL.
-void __cdecl FUN_0050f700(const char* map_name)
+// IDA: sub_50F700 (0x0050F700); Ghidra: FUN_0050f700
+void __cdecl SaveMacroText(const char* map_name)
 {
     FILE* fp = Platform::GetFileSystem().Open(map_name, "wt");
     if (!fp) return;

@@ -229,7 +229,7 @@ static const DWORD DrawItemInfoBox_TextColor[7] = {
     0xffff1aff,   // 6  (1.0,0.1,1.0)
 };
 
-// FUN_0040fb70 @ 0x0040FB70 — RenderText del subclass de CUIRenderText, al que
+// Font_RenderLineAligned @ 0x0040FB70 — RenderText del subclass de CUIRenderText, al que
 // llega DrawItemInfoBox vía el dispatcher 0x0040F610.  Portamos la parte que
 // define el layout: el offset de alineación (iSort) y el AVANCE VERTICAL que
 // devuelve, que es lo que hace que cada línea quede donde va.
@@ -243,7 +243,7 @@ static const DWORD DrawItemInfoBox_TextColor[7] = {
 // sobre la x, convertido de píxeles a ortho con Text_GetOrthoScaleX().
 // Todo ancho de TEXTO que pase entre píxeles y layout (la caja y el texto) se
 // convierte con esa misma escala, para que no queden a escalas distintas.
-// OJO: UI_LegacyWidgets.cpp ya define un `FUN_0040fb70` __fastcall que es un
+// OJO: UI_LegacyWidgets.cpp ya define un `Font_RenderLineAligned` __fastcall que es un
 // stub vacio (return 0.0f) y no lo llama nadie.  Para no crear dos simbolos
 // con el mismo nombre y distinta firma, esta copia lleva otro nombre; el
 // canonico va en el comentario.
@@ -285,7 +285,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     // Fondo de la linea (m_dwBackColor).  En el binario este nivel NO lo pinta:
     // CUIRenderText_BakeTextTexture (0x0040FCD0) rasteriza la linea a una
     // textura de ancho iBoxWidth — NO del ancho del texto (`iStack_260 =
-    // param_2; if (param_2 == 0) iStack_260 = sz.cx;`) — y FUN_004105f0 rellena
+    // param_2; if (param_2 == 0) iStack_260 = sz.cx;`) — y Font_BuildColorBitmap rellena
     // con m_dwBackColor todo pixel que no sea glifo.  Por eso la franja del
     // color 5 (clase requerida) va de punta a punta de la caja.
     //

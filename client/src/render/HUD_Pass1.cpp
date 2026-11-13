@@ -478,7 +478,7 @@ void Render_HotbarItems3D_(void)
     // RenderItem3D necesita.  Sin la llamada, la ventana de quest mostraba el
     // nombre del item ("Scroll of Emperor x 1", que lo dibuja la otra llamada
     // con a3 = 1 desde sub_403320) pero nunca su modelo.
-    if (g_csQuest) FUN_00403150((void*)(uintptr_t)g_csQuest, 0, 1, 0);
+    if (g_csQuest) Quest_RenderRequiredItems((void*)(uintptr_t)g_csQuest, 0, 1, 0);
 
     if (!HUD_IsGoldenArcherPanelRuntime()) {
         FUN_004f5ce0(0, 0, 0, 0);

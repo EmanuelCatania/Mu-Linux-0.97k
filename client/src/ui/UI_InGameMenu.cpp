@@ -257,7 +257,7 @@ void __cdecl UI_InGameMenu(void)
                         // arranca el countdown — no envía nada al server.
                         if (SceneFlag == 5) {
                             SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
-                            FUN_0050f700(Platform::UserMacroPath());  // IDA L611
+                            SaveMacroText(Platform::UserMacroPath());  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             gNetwork.Send(pkt, 5);
                         }
@@ -295,7 +295,7 @@ void __cdecl UI_InGameMenu(void)
                             // mundo, cierra el socket y vuelve al login.
                             if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
                                 SaveOptionsToServer97k();
-                                FUN_0050f700(Platform::UserMacroPath());  // IDA L1071
+                                SaveMacroText(Platform::UserMacroPath());  // IDA L1071
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
@@ -332,7 +332,7 @@ void __cdecl UI_InGameMenu(void)
                             //      F3/00 char-list fresca
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
-                            FUN_0050f700(Platform::UserMacroPath());  // IDA L1081
+                            SaveMacroText(Platform::UserMacroPath());  // IDA L1081
                             gReconnect.MarkIntentional();
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             gNetwork.Send(pkt, 5);
@@ -894,7 +894,7 @@ void __cdecl UI_InGameMenu(void)
     // Confirmacion Si/No de ShowCheckBox (usar fruta / renombrar mascota).
     // IDA 0x514310 L1798-1824 (hit-test) + L1862-2135 (accion).
     //
-    // Lo abre `FUN_004d23b0` con ShowCheckBox(1, 376, 153) al hacer click
+    // Lo abre `InventoryGrid_Tick` con ShowCheckBox(1, 376, 153) al hacer click
     // derecho sobre el item 431 (Fruit) con Level >= 10.
     case 0x99:
     {

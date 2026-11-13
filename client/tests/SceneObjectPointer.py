@@ -208,7 +208,7 @@ def harness(revision=None):
     physics = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision),
                        "Effect_PhysicsTick")
     ambient = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision),
-                       "FUN_0046c7f0")
+                       "WorldObject_EmitFireSmoke")
     angles = function(read_source("src/game/math/Math_LegacyTransforms.cpp", revision), "AngleMatrix")
     rotate = function(read_source("src/game/math/Math_3D.cpp", revision), "Vector_Rotate")
     start = scene.index("struct SceneFlamePreset {")

@@ -24,7 +24,7 @@
 #include "platform/ISocket.h"
 #include "net/Ping.h"
 
-void __fastcall FUN_00401af0(void*);
+void __fastcall Quest_AnswerHitTest(void*);
 void  __fastcall SpringNode_Ctor(void *node);
 int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);
 void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);
@@ -549,7 +549,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // IDA: FUN_0053CCA0 (0x0053CCA0)
 // Inversa de CC30 (codificar). Los paquetes server→cliente se decodifican con ésta.
 // 11 bytes de entrada → 8 de salida por bloque. Devuelve el total de bytes decodificados
-// (o sólo el tamaño cuando dst==0). El bloque lo decodifica FUN_0053ce30.
+// (o sólo el tamaño cuando dst==0). El bloque lo decodifica SimpleModulus_DecryptBlock.
 //
 // Context = g_SimpleModulusSC loaded from Data\Dec2.dat.
 // Layout: ctx[1+i]=ModKey, ctx[9+i]=DecKey, ctx[13+i]=XorKey (DWORD indices).
@@ -578,7 +578,7 @@ int __cdecl CSimpleModulus_Decode(BYTE* a1, BYTE* a2, int a3, int a4)
     return outBytes;
 }
 
-// FUN_0053ce30 @ 0x0053CE30 — Decrypt one 11-byte block to 8 bytes.
+// SimpleModulus_DecryptBlock @ 0x0053CE30 — Decrypt one 11-byte block to 8 bytes.
 // ctx : CSimpleModulus context (decode flavor).
 // dst : 8-byte output (caller must guarantee 8 bytes available).
 // src : 11-byte input.
@@ -724,16 +724,18 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
     // por vtable, esto hay que restaurarlo.
 }
 
-// FUN_00403ef0 @ 0x00403EF0 (17 bytes) — quest vtable init
-void __fastcall FUN_00403ef0(void* param_1) {
+// Quest_SetVTable @ 0x00403EF0 (17 bytes) — quest vtable init
+// IDA: sub_403EF0 (0x00403EF0); Ghidra: FUN_00403ef0
+void __fastcall Quest_SetVTable(void* param_1) {
     // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
     *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
     g_csQuest = 0;
 }
 
-// FUN_00403f10 @ 0x00403F10 — Quest ~dtor
-void __fastcall FUN_00403f10(void* ecx, int /*edx*/, BYTE param_1) {
-    FUN_00403ef0(ecx);
+// Quest_ScalarDtor @ 0x00403F10 — Quest ~dtor
+// IDA: sub_403F10 (0x00403F10); Ghidra: FUN_00403f10
+void __fastcall Quest_ScalarDtor(void* ecx, int /*edx*/, BYTE param_1) {
+    Quest_SetVTable(ecx);
     if (param_1 & 1) operator_delete(ecx);
 }
 
@@ -788,7 +790,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
     if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;                       // MouseOnWindow
 
-    FUN_00401af0(param_1);
+    Quest_AnswerHitTest(param_1);
 
     // Botón de aceptar / continuar la quest.
     if (Ui::QuestProceed(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
@@ -834,11 +836,12 @@ closeButton:
 // BATCH 11 — BMD/SMD model loading + mesh rendering + linked list + quest init
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_00408ff0 @ 0x00408FF0 (~43 lines) — BMD mesh render: prepare vertices + draw front/back faces
+// ClothWidget_Render @ 0x00408FF0 (~43 lines) — BMD mesh render: prepare vertices + draw front/back faces
 // __fastcall(ecx=meshObj). Aloca un buffer temporal de vértices (count*0xC), llama a SpringNode_GetPos para transformar
 // cada vértice, setea el modo de alpha según los flags de obj+0x14 (0=deshabilitar, 0x1000=alphaTest),
-// y después llama dos veces a FUN_004090b0, para la cara frontal (textura obj+0xC) y la trasera (textura obj+0x10).
-void __fastcall FUN_00408ff0(void* param_1) {
+// y después llama dos veces a ClothWidget_EmitQuads, para la cara frontal (textura obj+0xC) y la trasera (textura obj+0x10).
+// IDA: sub_408FF0 (0x00408FF0); Ghidra: FUN_00408ff0
+void __fastcall ClothWidget_Render(void* param_1) {
     // Port FIEL de IDA `sub_408FF0` — arma el buffer de vértices transformando
     // cada nodo y dibuja las dos caras.
     int *thiz = (int *)param_1;
@@ -867,17 +870,18 @@ void __fastcall FUN_00408ff0(void* param_1) {
     float texFront, texBack;
     memcpy(&texFront, &ClothSystem(thiz).FrontTexture, 4);   // +0x0C
     memcpy(&texBack,  &ClothSystem(thiz).BackTexture, 4);   // +0x10
-    FUN_004090b0(param_1, 0, 1, texFront, verts);
-    FUN_004090b0(param_1, 0, 0, texBack,  verts);
+    ClothWidget_EmitQuads(param_1, 0, 1, texFront, verts);
+    ClothWidget_EmitQuads(param_1, 0, 0, texBack,  verts);
 
     operator_delete((unsigned char *)verts);
 }
 
-// FUN_004090b0 @ 0x004090B0 (~54 lines) — BMD mesh: emit quads for one face side
+// ClothWidget_EmitQuads @ 0x004090B0 (~54 lines) — BMD mesh: emit quads for one face side
 // __thiscall(this=meshObj, param_1=windingOrder, param_2=textureId, param_3=vertexBuf).
 // Binds texture, glBegin(GL_QUADS=7), nested loop over rows/cols emitting 4 vertices per quad
-// vía FUN_004091d0. El orden de winding se invierte según param_1 (0=atrás, 1=adelante).
-void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, const float* param_3) {
+// vía ClothWidget_EmitVertex. El orden de winding se invierte según param_1 (0=atrás, 1=adelante).
+// IDA: sub_4090B0 (0x004090B0); Ghidra: FUN_004090b0
+void __fastcall ClothWidget_EmitQuads(void* ecx, void* /*edx*/, int param_1, float param_2, const float* param_3) {
     // Port FIEL de IDA `sub_4090B0`. `param_2` es un GLfloat que en realidad
     // lleva el ID de textura en sus BITS (IDA: `BindTexture(SLODWORD(t))`),
     // igual que el `t` de sub_4091D0 lleva el índice de fila.
@@ -893,28 +897,29 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
         // cara delantera: (c,r) (c+1,r) (c+1,r+1) (c,r+1)
         for (int r = 0; r < rows - 1; ++r)
             for (int c = 0; c < cols - 1; ++c) {
-                FUN_004091d0(ecx, 0, param_3, c,     (float)r);
-                FUN_004091d0(ecx, 0, param_3, c + 1, (float)r);
-                FUN_004091d0(ecx, 0, param_3, c + 1, (float)(r + 1));
-                FUN_004091d0(ecx, 0, param_3, c,     (float)(r + 1));
+                ClothWidget_EmitVertex(ecx, 0, param_3, c,     (float)r);
+                ClothWidget_EmitVertex(ecx, 0, param_3, c + 1, (float)r);
+                ClothWidget_EmitVertex(ecx, 0, param_3, c + 1, (float)(r + 1));
+                ClothWidget_EmitVertex(ecx, 0, param_3, c,     (float)(r + 1));
             }
     } else {
         // cara trasera: winding invertido — (c,r) (c,r+1) (c+1,r+1) (c+1,r)
         for (int r = 0; r < rows - 1; ++r)
             for (int c = 0; c < cols - 1; ++c) {
-                FUN_004091d0(ecx, 0, param_3, c,     (float)r);
-                FUN_004091d0(ecx, 0, param_3, c,     (float)(r + 1));
-                FUN_004091d0(ecx, 0, param_3, c + 1, (float)(r + 1));
-                FUN_004091d0(ecx, 0, param_3, c + 1, (float)r);
+                ClothWidget_EmitVertex(ecx, 0, param_3, c,     (float)r);
+                ClothWidget_EmitVertex(ecx, 0, param_3, c,     (float)(r + 1));
+                ClothWidget_EmitVertex(ecx, 0, param_3, c + 1, (float)(r + 1));
+                ClothWidget_EmitVertex(ecx, 0, param_3, c + 1, (float)r);
             }
     }
     BufferedDraw::End();
 }
 
-// FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
+// ClothWidget_EmitVertex @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
 // __thiscall. Calcula la UV desde la posición en la grilla: u = col/(cols-1), v = row/(rows-1), clampeado a 0.99.
 // Emite glTexCoord2f + glVertex3f desde el buffer de vértices en param_1 + (row*cols+col)*0xC.
-void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int param_2, float param_3) {
+// IDA: sub_4091D0 (0x004091D0); Ghidra: FUN_004091d0
+void __fastcall ClothWidget_EmitVertex(void* ecx, void* /*edx*/, const float* param_1, int param_2, float param_3) {
     // Port FIEL de IDA `sub_4091D0`. param_1 = buffer de vértices (stride 12),
     // param_2 = columna, param_3 = fila (llega como float con valor entero).
     int *thiz = (int *)ecx;
@@ -1042,7 +1047,7 @@ void* __fastcall Widget_Ctor(void *param_1)
 // FUN_004093c0 @ 0x004093C0 (11 bytes)
 void __fastcall FUN_004093c0(void *This) {
     ClothSystem(This).VTable = reinterpret_cast<void**>(&PTR_LAB_005524e8);
-    FUN_00408070(This);
+    ClothWidget_Destruct(This);
 }
 
 // SpringMesh_Create @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
@@ -1136,7 +1141,8 @@ void __cdecl SpringMesh_Create(void *widget, OBJECT* entity, int slot, int type,
 // +8 next): This[2] = cabeza, This[3] = cola, cabeza->next = cola,
 // cola->prev = cabeza, This[1] = 0 (cantidad).  La vtable (off_552568) no se
 // instala: nadie despacha por ella.  CWsctlc::LogPrintOn es un nullsub.
-void* __fastcall FUN_00409ad0(void* param_1) {
+// IDA: sub_409AD0 (0x00409AD0); Ghidra: FUN_00409ad0
+void* __fastcall PhysicsManager_Construct(void* param_1) {
     DWORD* This = (DWORD*)param_1;
     DWORD* head = (DWORD*)operator new(0xC);
     head[0] = 0; head[1] = 0; head[2] = 0;
@@ -1157,23 +1163,24 @@ void __fastcall scalar_deleting_destructor_locale(intptr_t ecx, int /*edx*/, BYT
 }
 
 // Locimp_dtor @ 0x00409B80 (~39 lines) — destructor de CPhysicsManager (misma vtable
-// 0x552568 que FUN_00409ad0): vacía la lista y libera los centinelas.
-// __fastcall(ecx=this). Setea la vtable, llama a FUN_00409d20 (limpia todos los nodos),
+// 0x552568 que PhysicsManager_Construct): vacía la lista y libera los centinelas.
+// __fastcall(ecx=this). Setea la vtable, llama a PhysicsManager_Clear (limpia todos los nodos),
 // y después libera la cadena de nodos entre la cabeza y la cola, y los propios centinelas.
 // Sin portar: el cuerpo de abajo está vacío.
 void __fastcall Locimp_dtor(void* param_1) {
     // *param_1 = &PTR_FUN_00552568 (vtable)
-    // FUN_00409d20(param_1) — clear all nodes
+    // PhysicsManager_Clear(param_1) — clear all nodes
     // Recorre la cadena head->next y borra cada nodo
     // Re-link head<->tail, count=0
     // delete tail, delete head
 }
 
-// FUN_00409d20 @ 0x00409D20 (~34 lines) — CPhysicsManager: vacía la lista de nodos
+// PhysicsManager_Clear @ 0x00409D20 (~34 lines) — CPhysicsManager: vacía la lista de nodos
 // __fastcall(ecx=this). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 // Sin portar: el cuerpo de abajo está vacío.
-void __fastcall FUN_00409d20(intptr_t param_1) {
+// IDA: sub_409D20 (0x00409D20); Ghidra: FUN_00409d20
+void __fastcall PhysicsManager_Clear(intptr_t param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
     //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
@@ -1236,42 +1243,45 @@ void __fastcall WidgetB_ZeroFields(void* widget)
     *(int *)(param_1 + 0x1c) = 0;
 }
 
-// FUN_00409f30 @ 0x00409F30 (~64 lines) — BMD: build visible triangle list for mesh part
+// ShadowVolume_BuildTriangles @ 0x00409F30 (~64 lines) — BMD: build visible triangle list for mesh part
 // __thiscall(this=renderCtx, param_1=vertBuf, param_2=meshData, param_3=entityPtr, param_4=skipAlpha).
 // Checks entity visibility distance (param_3+0x168 >= threshold). Skips mesh parts at indices
 // guardados en param_3+0x58/0x64. Cuenta los triángulos visibles por sub-mesh, aloca el buffer de resultado
-// (count * 0x1E), y después llama a FUN_0040a1c0 por cada sub-mesh para poblar los datos de triángulos.
+// (count * 0x1E), y después llama a ShadowVolume_CullAndExtractEdges por cada sub-mesh para poblar los datos de triángulos.
 // Devuelve 1 si lo armó, 0 si la entidad está demasiado lejos o los índices de mesh son inválidos.
-int __fastcall FUN_00409f30(void* ecx, void* /*edx*/, int param_1, int param_2, int param_3, char param_4) {
+// IDA: sub_409F30 (0x00409F30); Ghidra: FUN_00409f30
+int __fastcall ShadowVolume_BuildTriangles(void* ecx, void* /*edx*/, int param_1, int param_2, int param_3, char param_4) {
     (void)ecx; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
     // if (*(float*)(param_3+0x168) < umbral) return 0
     // Saltea las sub-meshes en los índices sVar1, sVar2 (de param_3+0x58, +0x64)
     // Count total triangles across valid sub-meshes
     // this+0x18 = 0; this+0x1C = new byte[totalTris * 0x1E]
-    // Por cada sub-mesh válida: FUN_0040a1c0(this, meshIdx, param_1, triCount, triData)
+    // Por cada sub-mesh válida: ShadowVolume_CullAndExtractEdges(this, meshIdx, param_1, triCount, triData)
     // return 1
     return 0;
 }
 
-// FUN_0040a0a0 @ 0x0040A0A0 — prepara la dirección del volumen de sombra.
-void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
+// ShadowVolume_SetLightDirection @ 0x0040A0A0 — prepara la dirección del volumen de sombra.
+// IDA: sub_40A0A0 (0x0040A0A0); Ghidra: FUN_0040a0a0
+void __fastcall ShadowVolume_SetLightDirection(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
     BYTE* context = static_cast<BYTE*>(This);
     *(DWORD *)(context + 0x10) = 0x3cf5c28f;
     *(DWORD *)(context + 0x14) = 0xbf800000;
     *(float *)(context + 0xc) = -1.0f;
     Vec3_Normalize((float *)(context + 0xc));
-    int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
+    int iVar1 = ShadowVolume_BuildTriangles(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
-        FUN_0040a300(This, NULL, param_1);
+        ShadowVolume_BuildGeometry(This, NULL, param_1);
         operator_delete(*(void **)(context + 0x1c));
     }
 }
 
-// FUN_0040a110 @ 0x0040A110 (~25 lines) — BMD: add triangle edge to shadow volume
+// ShadowVolume_AddEdge @ 0x0040A110 (~25 lines) — BMD: add triangle edge to shadow volume
 // __thiscall(this=shadowCtx). Chequea la adyacencia en param_6 + param_4*0x24 + param_5*2 + 0x1A.
 // Si la arista es de borde (adj == -1 o la cara adyacente mira hacia atrás), appendea un registro de arista (10 bytes)
 // con 3 índices de vértice + 2 índices de vértice de arista al buffer de sombra en this+0x1C.
-void __fastcall FUN_0040a110(void* ecx, void* /*edx*/, short param_1, short param_2, short param_3,
+// IDA: sub_40A110 (0x0040A110); Ghidra: FUN_0040a110
+void __fastcall ShadowVolume_AddEdge(void* ecx, void* /*edx*/, short param_1, short param_2, short param_3,
                              int param_4, int param_5, int param_6) {
     (void)ecx; (void)param_1; (void)param_2; (void)param_3;
     (void)param_4; (void)param_5; (void)param_6;
@@ -1284,12 +1294,13 @@ void __fastcall FUN_0040a110(void* ecx, void* /*edx*/, short param_1, short para
     //   this->shadowCount++
 }
 
-// FUN_0040a1c0 @ 0x0040A1C0 (~70 lines) — BMD: backface cull + edge extraction for shadow volume
+// ShadowVolume_CullAndExtractEdges @ 0x0040A1C0 (~70 lines) — BMD: backface cull + edge extraction for shadow volume
 // __thiscall(this=shadowCtx, param_1=meshPartIdx, param_2=vertBuf, param_3=triCount, param_4=triData).
 // Por cada triángulo: calcula la normal de la cara vía FaceNormalize y el producto punto con la dirección de la luz (this+0xC..0x14).
 // Marca la cara como frontal (0) o trasera (1). Después, por cada triángulo frontal, llama a
-// FUN_0040a110 tres veces (una por arista) para extraer las aristas de silueta del volumen de sombra.
-void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_2, short param_3, int param_4) {
+// ShadowVolume_AddEdge tres veces (una por arista) para extraer las aristas de silueta del volumen de sombra.
+// IDA: sub_40A1C0 (0x0040A1C0); Ghidra: FUN_0040a1c0
+void __fastcall ShadowVolume_CullAndExtractEdges(void* ecx, void* /*edx*/, short param_1, int param_2, short param_3, int param_4) {
     (void)ecx; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
     // Por cada triángulo (param_3 iteraciones):
     //   Carga 3 vértices del vertBuf en (vtxIdx + param_1*15000) * 0xC
@@ -1297,14 +1308,15 @@ void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_
     //   dot = normal . lightDir (this+0xC,+0x10,+0x14)
     //   face_flag[tri] = (dot < threshold) ? 0 : 1
     // Por cada triángulo frontal:
-    //   FUN_0040a110(edge0), FUN_0040a110(edge1), FUN_0040a110(edge2)
+    //   ShadowVolume_AddEdge(edge0), ShadowVolume_AddEdge(edge1), ShadowVolume_AddEdge(edge2)
 }
 
-// FUN_0040a300 @ 0x0040A300 (~110 lines) — BMD: build shadow volume geometry from silhouette edges
+// ShadowVolume_BuildGeometry @ 0x0040A300 (~110 lines) — BMD: build shadow volume geometry from silhouette edges
 // __thiscall(this=shadowCtx, param_1=vertBuf). Allocates output vertex buffer (count * 0x48).
 // Por cada arista de silueta: extruye los vértices de la arista en la dirección -luz (VectorMA),
 // y arma 6 vértices (2 triángulos) por arista = un quad extruido. La altura se clampea a un mínimo.
-void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, intptr_t param_1) {
+// IDA: sub_40A300 (0x0040A300); Ghidra: FUN_0040a300
+void __fastcall ShadowVolume_BuildGeometry(void* ecx, void* /*edx*/, intptr_t param_1) {
     (void)ecx; (void)param_1;
     // this->quadCount = 0
     // this->quadBuf = new byte[this->edgeCount * 0x48]
@@ -1385,11 +1397,12 @@ void __fastcall FUN_0053cbd0(intptr_t ecx, int /*edx*/, BYTE param_1) {
 // FUN_0053cbf0 @ 0x0053CBF0 (7 bytes)
 void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (intptr_t)&PTR_FUN_0055389c; }
 
-// FUN_0053ce30 @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
+// SimpleModulus_DecryptBlock @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
 // 4-round Feistel cipher: extracts 16-bit + 2-bit fields via CSimpleModulus_AddBits,
 // applies reverse XOR chain using context keys (this+0x04..0x3c),
 // y después multiplica-módulo + XOR de salida. Devuelve el byte de checksum o 0xFFFFFFFF si falla.
-unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param_2) {
+// IDA: sub_53CE30 (0x0053CE30); Ghidra: FUN_0053ce30
+unsigned int __cdecl SimpleModulus_DecryptBlock(void *self, unsigned short *param_1, int param_2) {
     (void)self; (void)param_2;
     if (param_1) { param_1[0] = 0; param_1[1] = 0; param_1[2] = 0; param_1[3] = 0; }
     return 0;

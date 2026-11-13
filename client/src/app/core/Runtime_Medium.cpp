@@ -44,8 +44,9 @@ void __cdecl SaveIME_Status(void) {
     Platform::GetInput().ReadImeState();
 }
 
-// FUN_004c3dd0 @ 0x004C3DD0 (56 bytes) — color value from gold amount
-int __cdecl FUN_004c3dd0(int param_1) {
+// GetGoldTextColor @ 0x004C3DD0 (56 bytes) — color value from gold amount
+// IDA: sub_4C3DD0 (0x004C3DD0); Ghidra: FUN_004c3dd0
+int __cdecl GetGoldTextColor(int param_1) {
     if (9999999 < param_1) return (int)0xFF0000FF;
     if (999999 < param_1) return (int)0xFF0096FF;
     return ((param_1 < 100000) - 1 & (int)0xFF81EC01) - (int)0x692301;
@@ -120,8 +121,9 @@ void __fastcall CSQuest__setQuestLists(BYTE* ecx, int /*edx*/, BYTE *byList, int
 }
 
 
-// FUN_005404c0 @ 0x005404C0 (71 bytes) — GameGuard: seed RNG from system time
-int __fastcall FUN_005404c0(int param_1) {
+// GameGuard_SeedRandom @ 0x005404C0 (71 bytes) — GameGuard: seed RNG from system time
+// IDA: sub_5404C0 (0x005404C0); Ghidra: FUN_005404c0
+int __fastcall GameGuard_SeedRandom(int param_1) {
     const auto st = Platform::GetTimer().LocalTime();
     // DAT_083bbb74 = (st.wSecond | ((int)st.wMinute << 16)) * st.wMonth * st.wYear ^ 0xdad53a;
     return param_1;
@@ -181,17 +183,19 @@ void __cdecl CreateClassAttributes(void) {
 
 // DecryptCheckSumKey @ 0x00412D30 (32 bytes) — already implemented above in batch 1
 
-// FUN_00406cd0 @ 0x00406CD0 (79 bytes) — HashWidget deinit (SEH + cleanup)
-void __fastcall FUN_00406cd0(void *param_1_raw) {
+// HashWidget_Deinit @ 0x00406CD0 (79 bytes) — HashWidget deinit (SEH + cleanup)
+// IDA: sub_406CD0 (0x00406CD0); Ghidra: FUN_00406cd0
+void __fastcall HashWidget_Deinit(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     *param_1 = (intptr_t)&PTR_FUN_005524d8; // intermediate vtable
-    FUN_00406d40((intptr_t)param_1);
+    HashWidget_FreeBuckets((intptr_t)param_1);
     param_1[3] = 0; param_1[1] = 0; param_1[2] = 0;
     *param_1 = (intptr_t)&PTR_FUN_005524d8; // final vtable
 }
 
-// FUN_00406d40 @ 0x00406D40 (102 bytes) — free all hash table buckets
-void __cdecl FUN_00406d40(intptr_t param_1) {
+// HashWidget_FreeBuckets @ 0x00406D40 (102 bytes) — free all hash table buckets
+// IDA: sub_406D40 (0x00406D40); Ghidra: FUN_00406d40
+void __cdecl HashWidget_FreeBuckets(intptr_t param_1) {
     unsigned int uVar1 = 0;
     do {
         void *lpMem = *(void **)(*(int *)(param_1 + 4) + uVar1);
@@ -227,8 +231,9 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
 }
 
 
-// FUN_00408070 @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
-void __fastcall FUN_00408070(void *param_1_raw) {
+// ClothWidget_Destruct @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
+// IDA: sub_408070 (0x00408070); Ghidra: FUN_00408070
+void __fastcall ClothWidget_Destruct(void *param_1_raw) {
     ClothPresentation_Forget(param_1_raw);
     ClothWidget& w = ClothSystem(param_1_raw);
     w.VTable = reinterpret_cast<void**>(static_cast<uintptr_t>(0x00552520));
@@ -315,8 +320,9 @@ void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) 
 }
 
 
-// FUN_0040e730 @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
-int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
+// ChatFilter_Matches @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
+// IDA: sub_40E730 (0x0040E730); Ghidra: FUN_0040e730
+int __fastcall ChatFilter_Matches(void *This, int /*edx*/, char *param_1) {
     char *Token = static_cast<char*>(This) + 200;
     if (*Token == '\0') return 1;
     int i = 0;
@@ -549,8 +555,9 @@ void __fastcall FUN_004122c0_impl(intptr_t param_1) {
     }
 }
 
-// FUN_00411300 @ 0x00411300 (95 bytes) — doubly-linked list: insert node after position
-int *__fastcall FUN_00411300(void *This, int /*edx*/, int *param_1, void *param_2, int *param_3) {
+// List_InsertNode @ 0x00411300 (95 bytes) — doubly-linked list: insert node after position
+// IDA: sub_411300 (0x00411300); Ghidra: FUN_00411300
+int *__fastcall List_InsertNode(void *This, int /*edx*/, int *param_1, void *param_2, int *param_3) {
     int *puVar3 = *(int **)((intptr_t)param_2 + 4);
     int *puVar1 = (int *)operator_new(0xc);
     int *puVar2 = (int *)param_2;

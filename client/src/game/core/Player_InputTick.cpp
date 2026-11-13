@@ -1014,7 +1014,7 @@ void __cdecl Player_ProcessInput(void)
         // attack-arm (dispararía ataques al pasar el mouse).
         bool bClickEdge = bMousePush;
         // Solo consumir el push pulse si el click NO está sobre una ventana de UI: el
-        // click handler de ESA ventana (FUN_004d23b0, llamado más tarde desde
+        // click handler de ESA ventana (InventoryGrid_Tick, llamado más tarde desde
         // RenderInventoryWindow / RenderShopInterface / etc.) necesita ver
         // `DAT_083a4124 == 1`. `g_MouseOnWindow` lo setea HUD_HitTest_AllWindows según
         // las flags de panel abierto + bounding box.

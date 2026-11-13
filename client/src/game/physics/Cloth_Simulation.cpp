@@ -495,10 +495,10 @@ intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 // 0x410D80 no están portadas y ningún call site de este build las usa: van
 // como no-ops para que el objeto sea válido.
 void __cdecl ClothAnchor_Collide(void *_this, void *node);
-void __fastcall FUN_00407ea0(void* ecx, int edx, BYTE param_1);
+void __fastcall ClothAnchor_ScalarDtor(void* ecx, int edx, BYTE param_1);
 // Adaptador: el dtor está portado como __fastcall (this en ECX, `edx` dummy) y
 // los call sites de este build invocan la vtable como `__cdecl (this, flags)`.
-static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { FUN_00407ea0(a, 0, (BYTE)flags); }
+static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { ClothAnchor_ScalarDtor(a, 0, (BYTE)flags); }
 static void __cdecl ClothAnchor_VSlot1(void *a) { (void)a; }   // 0x410D80 — sin portar, sin call sites
 void *g_ClothAnchorVTable[3] = {
     (void *)ClothAnchor_VSlot0,
@@ -507,8 +507,8 @@ void *g_ClothAnchorVTable[3] = {
 };
 
 // vtable del NODO de tela (DAT_005524e8 del binario) = { 0x00408680 }.
-void __cdecl FUN_00408680(void *_this, char flags);
-void *g_ClothNodeVTable[1] = { (void *)FUN_00408680 };
+void __cdecl ClothNode_ScalarDtor(void *_this, char flags);
+void *g_ClothNodeVTable[1] = { (void *)ClothNode_ScalarDtor };
 
 // ClothAnchor_Ctor @ 0x00407E50 — ClothAnchor_Ctor: full constructor (base + ext).
 // ClothAnchor_Ctor (IDA-activated)

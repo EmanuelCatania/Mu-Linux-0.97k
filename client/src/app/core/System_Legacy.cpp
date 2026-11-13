@@ -155,12 +155,12 @@ void __stdcall CErrorReport_DumpCallStack(void) {
 }
 
 // IDA: FUN_00406bd0 @ 0x00406BD0 — Packet cipher init (constructor)
-// __fastcall(ecx=cipherObj). Sets vtable, calls FUN_00406d20 (key schedule),
+// __fastcall(ecx=cipherObj). Sets vtable, calls HashWidget_InitFields (key schedule),
 // allocates random-sized obfuscation buffer at obj+6, allocates encode/decode buffers
 // (0x400 entries * 4 bytes each), zeroes them, sets obj+8/+9 as read/write cursors.
 void __fastcall PacketCipher_Initialize(void* param_1) {
     // *(int*)param_1 = &PTR_FUN_005524c8 (vtable)
-    // FUN_00406d20(param_1) — key schedule init
+    // HashWidget_InitFields(param_1) — key schedule init
     // delete old buffer at param_1[6], alloc rand()%0xCC7+0x159 obfuscation bytes
     // param_1[3] = 0x400 (capacity)
     // param_1[1] = new byte[0x1000] (encode buffer)

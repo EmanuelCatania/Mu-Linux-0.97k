@@ -72,10 +72,11 @@ void __cdecl Music_StopTrack(const char* name, int enforce)
     gSound.StopTrack(name, enforce);
 }
 
-// FUN_00412180 @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to
-// FUN_00411a20 (key 7/0xC/0xD/0xE dispatch, scroll adjust, selection tracking).
+// GuildList_HandleInput @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to
+// ListBox_HandleInput (key 7/0xC/0xD/0xE dispatch, scroll adjust, selection tracking).
 // Separate vtable variant for a different list widget class.
-int __fastcall FUN_00412180(int* param_1) {
+// IDA: sub_412180 (0x00412180); Ghidra: FUN_00412180
+int __fastcall GuildList_HandleInput(int* param_1) {
     (void)param_1;
     return 0;
 }
@@ -97,7 +98,7 @@ void __fastcall FUN_004124f0(intptr_t ecx, int /*edx*/, BYTE param_1) {
 }
 
 // FUN_00412510 @ 0x00412510 (~45 lines) — ListBox_Destructor_A: clears item linked list
-// via FUN_00411360 loop, frees list sentinel nodes, resets counts, then delegates to
+// via DList_EraseNode loop, frees list sentinel nodes, resets counts, then delegates to
 // base class destructor (FUN_00410de0 + FUN_00410d90). Sets vtable to PTR_FUN_00552668.
 void __fastcall FUN_00412510(DWORD* param_1) {
     (void)param_1;
@@ -124,7 +125,7 @@ void __fastcall FUN_00412610(DWORD* param_1) {
 //
 // Nuestro build no replica esa tabla, asi que esta funcion queda sin callers y
 // GameGuard nunca arranca, que es lo buscado.
-void FUN_00412700(void) { FUN_0053d430((BYTE *)&g_GameGuardGameName); }
+void FUN_00412700(void) { PreInitNPGameMon((BYTE *)&g_GameGuardGameName); }
 
 // FUN_00412710 @ 0x00412710 (12 bytes)
 void FUN_00412710(void) {}

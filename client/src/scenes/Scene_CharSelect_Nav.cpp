@@ -6,7 +6,7 @@
 //   CSQuest_CheckActCondition (IDA: FUN_00401650)
 //   CSQuest_ShowDialogText (IDA: FUN_004017E0)
 //   CSQuest_clearQuest (slot-list navigation forward)
-//   FUN_00401af0 (slot-list navigation back)
+//   Quest_AnswerHitTest (slot-list navigation back)
 //   ... and related slot scroll/select helpers.
 //
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
@@ -1114,11 +1114,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const
 }
 
 
-// FUN_005130f0 @ 0x005130F0 — AABB_IntersectOBB
+// Collision_ObbAxisOverlap @ 0x005130F0 — AABB_IntersectOBB
 // Separating-axis test between an OBB (param_4..param_15) and an AABB defined
 // by two corner vectors (param_2, param_3) projected onto axis param_1.
 // Devuelve 1 si se superponen, 0 si están separados.
-int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
+// IDA: sub_5130F0 (0x005130F0); Ghidra: FUN_005130f0
+int __cdecl Collision_ObbAxisOverlap(float *param_1, float *param_2, float *param_3,
                           float param_4,  float param_5,  float param_6,
                           float param_7,  float param_8,  float param_9,
                           float param_10, float param_11, float param_12,
@@ -1226,17 +1227,17 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
 
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
 void __fastcall CSQuest_clearQuest(void*);
-void __fastcall FUN_00401af0(void*);
+void __fastcall Quest_AnswerHitTest(void*);
 void __fastcall Cloth_Integrate(int*, float);
 
 // Packet_ParseType2 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
-// Variante más simple: actualiza el flag de hover, llama a FUN_00401af0 para procesar el click en el personaje,
+// Variante más simple: actualiza el flag de hover, llama a Quest_AnswerHitTest para procesar el click en el personaje,
 // y después chequea un hotspot secundario para el envío de keepalive / reintento.
 // El tipo de retorno es undefined4, según la declaración de functions.h.
 unsigned int __cdecl Packet_ParseType2(void *param_1) {
     if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;
-    FUN_00401af0(param_1);
+    Quest_AnswerHitTest(param_1);
     if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
         DAT_083a4124 = '\0';
@@ -1247,7 +1248,7 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
     return 1;
 }
 
-// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo
+// Quest_AnswerHitTest @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo
 // (NO es char-select): hit-test sobre las lineas de respuesta del panel de
 // quest, y despacho por m_iReturnForAnswer del dialogo activo.
 //   1 = aceptar la quest  -> CheckRequestCondition(bLastCheck=1); si falla,
@@ -1279,7 +1280,8 @@ static void Quest_SendState(void *pThis)
     gNetwork.Send(pkt, 5);
 }
 
-void __fastcall FUN_00401af0(void *param_1)
+// IDA: sub_401AF0 (0x00401AF0); Ghidra: FUN_00401af0
+void __fastcall Quest_AnswerHitTest(void *param_1)
 {
     BYTE* quest = static_cast<BYTE*>(param_1);
     // Compute Y-base of char list
@@ -2053,7 +2055,7 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     SetCharacterScale(AsCharacter(c));
 }
 
-// FUN_0046c7f0 @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)
+// WorldObject_EmitFireSmoke @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)
 // Port FIEL de IDA `sub_46C7F0`. Es el spawner de fuego/humo de los objetos
 // del mundo: lo llama `MoveObjects` (0x4FDC00) para los braseros, la forja del
 // herrero, las chimeneas y los faroles.
@@ -2067,7 +2069,8 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
 // (`o+28`) — así el efecto sale del punto correcto del modelo (la boca de la
 // chimenea, la punta del farol). Luego se le suma la posición del objeto
 // (`o+16`) y un jitter de ±8 por eje.
-void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float param_4, float param_5) {
+// IDA: sub_46C7F0 (0x0046C7F0); Ghidra: FUN_0046c7f0
+void __cdecl WorldObject_EmitFireSmoke(int param_1, OBJECT* object, float param_3, float param_4, float param_5) {
     // IDA 0x0046C7F0: a2 es la base del objeto; sus ángulos empiezan en a2+7.
     float *a2 = reinterpret_cast<float*>(object);
     if (!a2) return;
@@ -2514,7 +2517,7 @@ void __cdecl Vec3_Normalize(float *vec) {
 // IDA prueba SEIS ejes y exige que TODOS solapen:
 //     cross(dir, eje0), cross(dir, eje1), cross(dir, eje2), eje0, eje1, eje2
 // con `dir = rayTarget - rayOrigin`.  La proyeccion de cada uno la hace
-// `sub_5130F0` (FUN_005130f0), que ya estaba portada fiel mas arriba.
+// `sub_5130F0` (Collision_ObbAxisOverlap), que ya estaba portada fiel mas arriba.
 bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box)
 {
     if (!rayOrigin || !rayTarget || !box) return false;
@@ -2532,7 +2535,7 @@ bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const fl
                        (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };
 
     for (int i = 0; i < 6; ++i) {
-        if (!FUN_005130f0(axes[i], rayOrigin, rayTarget,
+        if (!Collision_ObbAxisOverlap(axes[i], rayOrigin, rayTarget,
                           box[0], box[1], box[2],
                           box[3], box[4], box[5],
                           box[6], box[7], box[8],

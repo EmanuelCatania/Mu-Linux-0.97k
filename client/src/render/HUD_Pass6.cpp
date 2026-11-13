@@ -388,7 +388,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox();
-    // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
+    // Los casilleros de equipo los procesa sub_4CDC70 (Equipment_SlotHitTest) desde
     // sub_4E6550, en el tick; no aca en el render.
 
     // Input y comandos de la grilla: Inventory_HitTest, dentro de SIM.
@@ -1476,7 +1476,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
-    // El hit-test lo hace FUN_004ec330 (sub_4EC330).
+    // El hit-test lo hace Shop_InputTick (sub_4EC330).
     {
         const BYTE shopMode = ((BYTE*)&DAT_07eaa150)[2];     // BYTE2(dword_7EAA150)
         auto over = [](float bx, float by) {
@@ -1504,7 +1504,7 @@ extern "C" void __cdecl RenderShopInterface(void)
 
             // "Reparar todo": icono 286 tenido de azul, 287 mientras se aprieta.
             // (IDA ademas pone MouseLButtonPush = 0 aca; no se replica porque
-            // el click lo consume FUN_004ec330.)
+            // el click lo consume Shop_InputTick.)
             bx = (float)((double)dword_7EAA0C8 + 115.0);
             BufferedDraw::Color3f(0.5f, 0.69999999f, 1.0f);
             GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);

@@ -29,7 +29,8 @@ static int Whisper_HeroLevel() {
 // (L2079) con lvl 6: con el heroe por debajo de ese nivel solo se le puede
 // escribir a alguien que ya te susurro (quedo anotado por RegistWhisperID); si
 // no, avisa con GlobalText[479] y devuelve 0.
-int __cdecl FUN_0047fed0(int lvl, const char* name) {
+// IDA: sub_47FED0 (0x0047FED0); Ghidra: FUN_0047fed0
+int __cdecl Whisper_CanSendTo(int lvl, const char* name) {
     if (Whisper_HeroLevel() < lvl) {
         for (int row = 0; row < 10; row++) {
             if (!strcmp(name, WhisperRegistID[row]))
@@ -61,7 +62,8 @@ void __cdecl RegistWhisperID(int lvl, const char* text) {
 // Texto largo (>19 caracteres): CutText lo parte en Text[0] y Text[1].
 // Texto corto: va entero a Text[0].
 // param_3==1: system message via vtable call on DAT_055c9ff0.
-void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
+// IDA: sub_481A40 (0x00481A40); Ghidra: FUN_00481a40
+void __cdecl Chat_SetEntryText(CHAT* param_1, char* param_2, int param_3) {
     // param_1: entrada de chat; param_2: texto.
     // param_3: 0 para texto normal, 1 para mensaje mediante vtable.
 
@@ -198,8 +200,8 @@ found_new:
         return;
     }
 
-    // Assign text using FUN_00481a40 logic
-    FUN_00481a40(AsChat(slot), Text, Flag);
+    // Assign text using Chat_SetEntryText logic
+    Chat_SetEntryText(AsChat(slot), Text, Flag);
     return;
 
 found_existing:
@@ -234,7 +236,7 @@ found_existing:
             AsChat(slot)->LifeTime[1] = AsChat(slot)->LifeTime[0];  // disp1 → disp2
         }
         AsChat(slot)->Owner = entity;
-        FUN_00481a40(AsChat(slot), Text, Flag);
+        Chat_SetEntryText(AsChat(slot), Text, Flag);
     } else {
         // Texto vacío (hover de nombre NPC/target): SOLO refrescar el timer.
         AsChat(slot)->IDLifeTime = 10;
