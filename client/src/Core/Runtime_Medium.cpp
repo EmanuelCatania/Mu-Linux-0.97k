@@ -14,7 +14,7 @@
 #include "stdafx.h"
 #include "UI/BuffBar.h"
 #include "Model/SmdImport.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Text/TextCore.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"

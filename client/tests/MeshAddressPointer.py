@@ -55,7 +55,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Physics/Cloth_Simulation.cpp',revision)
+    source=read_source('src/game/physics/Cloth_Simulation.cpp',revision)
     # Normaliza sólo la extracción; el cuerpo compilado conserva char*.
     mesh=function(source.replace('char* MeshPtr','BYTE* MeshPtr'),'MeshPtr').replace('BYTE* MeshPtr','char* MeshPtr')
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x400000')+model_view(['Meshs'],revision)+CLOTH_MODEL_MESH+mesh+MAIN

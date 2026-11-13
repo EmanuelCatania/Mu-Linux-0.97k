@@ -21,7 +21,7 @@
 #include "Render/Skinning.h"
 #include "Render/MeshTopology.h"
 #include "Render/RenderState.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>

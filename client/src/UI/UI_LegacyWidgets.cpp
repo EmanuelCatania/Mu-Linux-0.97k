@@ -2,7 +2,7 @@
 
 #include "stdafx.h"
 #include "UI/ChatListBox.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "globals.h"
 #include "functions.h"
 #include "audio/SoundManager.h"

@@ -399,8 +399,8 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     if (dz > maxD) maxD = (dx <= dy ? dy : dx);
     *(float*)((char*)this_ + 0xb4 + BMD_FIELD_SHIFT) = maxD;
 }
-// BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
-// Triangle_ComputeNormal — implemented in src/Math/Math_3D.cpp
+// BMD_TransformPosition — implemented in src/game/math/Math_3D.cpp (Bone_TransformVertex)
+// Triangle_ComputeNormal — implemented in src/game/math/Math_3D.cpp
 // Particle_Spawn — implemented in src/Render/Particle_Spawn.cpp (Particle_Spawn)
 // CreateSprite — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
 // PressKey — implemented in src/Input/Input.cpp

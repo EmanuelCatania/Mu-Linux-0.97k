@@ -30,10 +30,10 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Physics/Cloth_Simulation.cpp',revision)
+    source=read_source('src/game/physics/Cloth_Simulation.cpp',revision)
     body=function(source,'Cloth_PinTopRow');args='widget,matrix' if 'void* widget' in body else '(int)widget,matrix'
     wrapper='\nvoid Pin(void* widget,float(*matrix)[4]){Cloth_PinTopRow('+args+');}\n'
-    math=read_source('src/Math/Math_3D.cpp',revision)
+    math=read_source('src/game/math/Math_3D.cpp',revision)
     extra='';main=MAIN
     if 'ClothSystem(' in body:
         import ClothFixture

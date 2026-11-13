@@ -140,7 +140,7 @@ set(MU_SOURCES
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
     src/Terrain/Terrain_RenderTerrain.cpp
-    src/Math/Math_3D.cpp
+    src/game/math/Math_3D.cpp
     src/Render/Particle.cpp
     src/Render/Particle_Move.cpp
     src/Render/BMD_Anim.cpp
@@ -234,7 +234,7 @@ set(MU_SOURCES
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
-    src/Math/Math_LegacyTransforms.cpp
+    src/game/math/Math_LegacyTransforms.cpp
     src/Render/Render_LegacyLinker.cpp
     src/Scene/Scene_LegacyCleanup.cpp
     src/Scene/Scene_ObjectLegacy.cpp
@@ -242,10 +242,10 @@ set(MU_SOURCES
     src/UI/UI_LegacyText.cpp
     src/Render/BMD_FilterData.cpp
     src/Item/Quest_UIState.cpp
-    src/Physics/Cloth_Simulation.cpp
+    src/game/physics/Cloth_Simulation.cpp
     src/Render/BMD_LegacyEffects.cpp
     src/Scene/Scene_LegacyHelpers.cpp
-    src/Path/Path_Legacy.cpp
+    src/game/path/Path_Legacy.cpp
     src/Core/Runtime_Externs.cpp
     src/UI/UI_LegacyExterns.cpp
     src/Entity/Entity_ActionLegacy.cpp
@@ -261,7 +261,7 @@ set(MU_SOURCES
     src/UI/UI_LegacyGameHelpers.cpp
     src/Net/Net_LegacyAuth.cpp
     src/Terrain/Terrain_LegacyLoad.cpp
-    src/Path/Path_LegacyReset.cpp
+    src/game/path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
     src/Render/SMD_Parser.cpp
     src/Entity/CharacterEffects.cpp
@@ -277,7 +277,7 @@ set(MU_SOURCES
     src/Combat/Skills_WarriorLegacy.cpp
     src/Render/Render_LegacyDamageNumbers.cpp
     src/Render/GL_LegacyState.cpp
-    src/Math/Math_LegacyAngle.cpp
+    src/game/math/Math_LegacyAngle.cpp
     src/Render/BMD_LegacyLoading.cpp
     src/Input/Cursor_Render.cpp
     src/Input/Input_Timing.cpp
@@ -338,7 +338,7 @@ set(MU_SOURCES
     src/Render/Font_Layout.cpp
     src/Monster/Monster.cpp
     src/Net/SecondPassword.cpp
-    src/Party/Party.cpp
+    src/game/party/Party.cpp
     src/Game/Party_NameMatch.cpp
     src/Render/Ambient_Particles.cpp
     src/Render/Entity_DrawByType.cpp
@@ -374,7 +374,7 @@ set(MU_SOURCES
     src/Scene/Scene_Login_ServerSelect.cpp
     src/audio/Sound.cpp
     src/Terrain/Terrain.cpp
-    src/Trade/Trade.cpp
+    src/game/trade/Trade.cpp
     src/UI/UI_InGameMenu.cpp
     src/UI/UI_PanelInput.cpp
     src/UI/UI_IME.cpp
@@ -449,7 +449,7 @@ set(MU_HEADERS
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
     src/Entity/ClothPresentation.h
-    src/Physics/ClothTypes.h
+    src/game/physics/ClothTypes.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
@@ -540,7 +540,7 @@ set(MU_HEADERS
     src/Net/HWID.h
     src/Net/PacketFrame.h
     src/Net/SecondPassword.h
-    src/Party/Party.h
+    src/game/party/Party.h
     src/Render/Camera.h
     src/Render/Entity_DrawAt.h
     src/Render/Entity_PrepareRender.h
@@ -574,7 +574,7 @@ set(MU_HEADERS
     src/Scene/Scene_Login_ServerSelect.h
     src/audio/Sound.h
     src/Terrain/Terrain.h
-    src/Trade/Trade.h
+    src/game/trade/Trade.h
     src/UI/UI.h
     src/Game/GameEnums.h
     src/Debug/MiniDump.h

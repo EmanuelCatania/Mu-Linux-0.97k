@@ -12,7 +12,7 @@
 //   - Checks if hero entity name matches → writes -3 (matched hero) or -1 (no match)
 
 #include "stdafx.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 
 // IDA: FUN_004afb00

@@ -46,7 +46,7 @@ def harness(revision=None):
  constant=re.search(r'^float\s+Math_DegreesToRadians\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()
  float_type=re.search(r'typedef\s+long double\s+float10\s*;',read_source('src/types.h',revision)).group()
  stdafx=read_source('src/stdafx.h',revision);sine=re.search(r'static inline double\s+fsin\([^\n]+',stdafx).group();cosine=re.search(r'#define fcos [^\n]+',stdafx).group()
- math=read_source('src/Math/Math_3D.cpp',revision)
+ math=read_source('src/game/math/Math_3D.cpp',revision)
  entity=record(read_source('src/Entity/EntityTypes.h',revision),'OBJECT')
  types='#pragma pack(push,1)\n'+entity+'\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)+32<=512);\nOBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}\n'
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+types+float_type+constant+sine+'\n'+cosine+'\n'+function(math,'Matrix_BuildFromEuler')+function(math,'Vector_Rotate')+code+MAIN.replace('ARG',arg)

@@ -2,14 +2,14 @@
 
 #include "stdafx.h"
 #include "Model/ModelTypes.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
 #include "globals.h"
 #include "functions.h"
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
-// BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
+// BMD_TransformPosition — implemented in src/game/math/Math_3D.cpp (Bone_TransformPos)
 float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void  __fastcall VerletNode_AddAccel(void *a, float x, float y, float z);
 void  __fastcall ClothNode_Integrate(void *a, float v);

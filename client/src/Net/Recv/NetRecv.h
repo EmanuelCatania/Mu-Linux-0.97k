@@ -12,7 +12,7 @@
 #include "Net/Net.h"
 #include "Net/HWID.h"
 #include "Net/MuEmu.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 
 // ── Símbolos de otros módulos que usan los handlers ─────────────────────────
 

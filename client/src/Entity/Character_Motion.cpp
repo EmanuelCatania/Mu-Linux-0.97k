@@ -7,7 +7,7 @@
 #include "UI/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
-#include "Party/Party.h"
+#include "game/party/Party.h"
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/TerrainDraw.h"

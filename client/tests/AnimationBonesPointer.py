@@ -80,7 +80,7 @@ constexpr unsigned ModelBytes=sizeof(void*)==4?224:256;
 def harness(revision=None,contracts=False):
  if contracts:return PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'int main(){std::printf("Animation layout: bone=%zu action=%zu keys=%zu ptr=%zu OK\\n",sizeof(ModelAnimationBone),sizeof(ModelAnimationAction),sizeof(ModelAnimationKeys),sizeof(void*));}'
  pose=read_source('src/Entity/ObjectPose.cpp',revision);helper=function(pose,'AnimateWithScratch');public=function(pose,'BMD_Animation')
- render=read_source('src/Render/Render_LegacyTransforms.cpp',revision);math=read_source('src/Math/Math_3D.cpp',revision);scene=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
+ render=read_source('src/Render/Render_LegacyTransforms.cpp',revision);math=read_source('src/game/math/Math_3D.cpp',revision);scene=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
  bodies=function(math,'Matrix_BuildFromEuler')+''.join(function(render,n)for n in ('EulerToQuat','QuatToMatrix','QuatSlerp','R_ConcatTransforms'))+function(scene,'Terrain_QuadEqual')+helper+public
  names=sorted(set(re.findall(r'\b(?:_DAT_[0-9a-f]+|Math_DegreesToRadians)\b',bodies)));globals=read_source('src/globals.cpp',revision);constants=''.join(re.search(r'^float\s+'+n+r'\s*=\s*[^;]+;',globals,re.M).group()for n in names)
  return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+layouts()+constants+bodies+MAIN.replace('DIRECT','bones' if 'float* param_1' in helper else 'static_cast<int>(reinterpret_cast<uintptr_t>(bones))').replace('PUBLIC','bones' if 'float* bones' in public else 'static_cast<int>(reinterpret_cast<uintptr_t>(bones))')

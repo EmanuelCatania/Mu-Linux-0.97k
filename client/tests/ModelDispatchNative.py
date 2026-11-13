@@ -52,7 +52,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 def harness(revision=None):
     headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p))for p in ['src/Render/BufferedDraw.h'])
     source=read_source('src/Render/SMD_Parser.cpp',revision)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/Physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+headers+SERVICES+function(source,'BMD__RenderBody')+function(source,'Model_SetAnimationSlots')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+headers+SERVICES+function(source,'BMD__RenderBody')+function(source,'Model_SetAnimationSlots')+MAIN
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');a=p.parse_args()

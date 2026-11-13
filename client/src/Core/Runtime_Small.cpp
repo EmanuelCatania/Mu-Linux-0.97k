@@ -9,7 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Gfx.h"
 #include "Platform/IAudio.h"

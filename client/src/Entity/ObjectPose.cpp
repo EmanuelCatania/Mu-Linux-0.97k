@@ -7,7 +7,7 @@
 #include "Render/TransformWorkers.h"
 #include "Render/TransformMath.h"
 #include "Render/ResourceTables.h"
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include <array>
 #include <vector>
 #include <unordered_map>

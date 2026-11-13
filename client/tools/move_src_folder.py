@@ -68,6 +68,10 @@ def main():
         if f.name == 'source_paths.py':
             continue
         changed += rewrite(f, lambda t: back.sub('src\\\\' + new.replace('/', '\\\\') + '\\\\', slash.sub(f'src/{new}/', t)))
+    # Los tests arman código C++ con #include "Vieja/..." dentro de strings.
+    embedded = re.compile(r'(#include \\?")' + re.escape(old) + r'/')
+    for f in files(['tests/*.py']):
+        changed += rewrite(f, lambda t: embedded.sub(r'\g<1>' + new + '/', t))
 
     def add_moved(t):
         line = f'    "src/{new}/": "src/{old}/",\n'

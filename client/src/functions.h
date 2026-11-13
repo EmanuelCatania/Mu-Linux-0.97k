@@ -5,7 +5,7 @@
 // dirección del binario termina en puentes muertos.
 #include "Platform/CompilerCompat.h"
 #include <cstdint>
-#include "Physics/ClothTypes.h"
+#include "game/physics/ClothTypes.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct BMD;
 struct OBJECT;

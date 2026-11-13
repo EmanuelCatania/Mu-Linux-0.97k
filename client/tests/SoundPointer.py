@@ -182,7 +182,7 @@ def harness(revision=None):
     source = read_source("src/audio/Sound_DS3D.cpp", revision)
     play = function(source, "PlayBuffer")
     update = function(source, "Sound_Update3DPositions")
-    math_source = read_source("src/Math/Math_3D.cpp", revision)
+    math_source = read_source("src/game/math/Math_3D.cpp", revision)
     math = function(math_source, "Matrix_BuildFromEuler") + function(math_source, "Vector_Rotate")
     arg = "owner" if "const OBJECT* Object" in play else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(owner))"
     return (PREAMBLE.split("BYTE* reservation;")[0] + TYPES.replace("POSITION_FIELD", field)

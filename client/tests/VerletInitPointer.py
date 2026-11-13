@@ -44,7 +44,7 @@ int main() {
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0]+"\n#ifndef _WIN32\n#define __fastcall\n#endif\n"
-    source=read_source("src/Physics/Cloth_Simulation.cpp",revision)
+    source=read_source("src/game/physics/Cloth_Simulation.cpp",revision)
     zero=function(source,"VerletNode_ZeroFields")
     code=zero+function(source,"VerletNode_CtorBase")+function(source,"VerletNode_CtorExt")
     arg="p" if "void*" in zero.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(p))"
