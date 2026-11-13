@@ -12,12 +12,12 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "platform/Text.h"
 #include "platform/ISocket.h"
 #include "platform/IFileSystem.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "net/ServerCharacterStats.h"
 #include "game/core/MapManager.h"
 #include "globals.h"
@@ -828,7 +828,7 @@ void __cdecl SkillAttribute_LoadNames(const char *param_1)
 // Mal nombrada por Ghidra. IDA confirma que es el loader del pool de strings localizados:
 // lee Data\Local\Text.bmd (300000 bytes), lo desencripta con BuxConvert_0 y llena
 // el array GlobalText[] de 1000 × 300 bytes. La implementación real vive en
-// src/Local/Text_Data.cpp como LoadTextData_Bin(); acá ruteamos el nombre FUN_ hacia allá
+// src/assets/text/Text_Data.cpp como LoadTextData_Bin(); acá ruteamos el nombre FUN_ hacia allá
 // para que cualquier cosa enlazada contra el símbolo del decompile funcione.
 void __cdecl LoadGlobalTextBin(const char *param_1)
 {

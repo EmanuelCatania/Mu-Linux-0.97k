@@ -12,7 +12,7 @@
 #include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
-#include "Model/BMDFileTypes.h"
+#include "assets/model/BMDFileTypes.h"
 #include "render/Texture/Texture.h"
 
 extern "C" void DbgLogPublic(const char* msg);

@@ -47,7 +47,7 @@ def harness(revision=None,native=False):
  view=VIEW
  if native:
   from ObjectLayoutContract import record
-  view='using vec3_t=float[3];\n#pragma pack(push,1)\n'+record(read_source('src/Model/ModelTypes.h'),'BMD')+'\n#pragma pack(pop)\nBMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}'
+  view='using vec3_t=float[3];\n#pragma pack(push,1)\n'+record(read_source('src/assets/model/ModelTypes.h'),'BMD')+'\n#pragma pack(pop)\nBMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}'
  main=MAIN.replace('opened=saved=pumped=0;','wantedSlot=reinterpret_cast<BMD*>(model);opened=saved=pumped=0;').replace('for(const char* name:', 'wantedSlot=nullptr;for(const char* name:')
  if 'BMD* param_1' in signature:receiver=receiver.replace('{','{if(wantedSlot)Require(param_1==wantedSlot);',1)
  if native:

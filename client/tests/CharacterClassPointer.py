@@ -148,8 +148,8 @@ def harness(revision=None):
     name = "DAT_07cf1ffc"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group() + re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     prefix += function(read_source("src/render/SMD_Parser.cpp", revision), "SetCharacterScale").replace("SetCharacterScale(", "SetCharacterScaleReal(", 1)
-    prefix += SERVICES + function(read_source("src/Item/ItemDefines.h", revision), "GetItemSection")
-    catalog = read_source("src/Item/ContentCatalog.h", revision)
+    prefix += SERVICES + function(read_source("src/game/item/ItemDefines.h", revision), "GetItemSection")
+    catalog = read_source("src/assets/data/ContentCatalog.h", revision)
     for name in ("ItemModel", "ItemBehaviorType", "ItemEntityModel"):
         prefix += function(catalog, name)
     character = function(read_source("src/game/entity/Character_Motion.cpp", revision), "SetCharacterClass")

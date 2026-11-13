@@ -1,8 +1,8 @@
 // Scene_AssetLoad.cpp
 
 #include "stdafx.h"
-#include "Local/ClientText.h"
-#include "Text/TextCore.h"
+#include "assets/text/ClientText.h"
+#include "render/text/TextCore.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -180,6 +180,6 @@ void __cdecl Scene_LoadGameAssets(void) {
     LoadWaveFile(0x25, "Data\\Sound\\iRepair.wav",       1, '\0');  // 37
     LoadWaveFile(0x26, "Data\\Sound\\iWhisper.wav",      1, '\0');  // 38
 }
-// Monster_LoadStartupData (IDA: Monster_Data_Load) — implemented in src/Monster/Monster_Data.cpp
+// Monster_LoadStartupData (IDA: Monster_Data_Load) — implemented in src/assets/data/Monster_Data.cpp
 // GL_CaptureScreenshot — implemented in src/render/GL_State.cpp
 // GL_GetModelViewMatrix — implemented in src/render/GL_State.cpp

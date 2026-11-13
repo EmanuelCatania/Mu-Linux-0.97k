@@ -114,7 +114,7 @@ def harness(revision=None):
     for name in ("DAT_0055a3f8","DAT_0055a3fc","DAT_07eaa168","DAT_07eaa170","DAT_07eaa174","DAT_07eaa178"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    active=read_source("src/Item/Item_ChaosMix.cpp",revision).split("#endif",1)[1]
+    active=read_source("src/game/item/Item_ChaosMix.cpp",revision).split("#endif",1)[1]
     return prefix+SERVICES_MIX+function(active,"CheckMixRecipe")+MAIN
 
 

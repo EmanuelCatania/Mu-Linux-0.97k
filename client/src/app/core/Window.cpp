@@ -10,7 +10,7 @@
 #include "net/Ping.h"
 #include "app/core/Window.h"
 #include "game/entity/CharacterAttributeView.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 #include "platform/NativeBridge.h"
 #include "platform/IWindow.h"
 #include "platform/IGLContext.h"

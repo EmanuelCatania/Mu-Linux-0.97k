@@ -67,7 +67,7 @@ def harness(revision=None):
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <algorithm>\n#include <initializer_list>\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\nstruct OBJECT {BYTE opaque[444];};\n'
     prefix+=part+character+'BYTE remainder[292];};\nstatic_assert(sizeof(CHARACTER)==916);static_assert(offsetof(CHARACTER,Class)==444);static_assert(offsetof(CHARACTER,BodyPart)==480);\n'
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))
-    prefix+=re.search(r'constexpr int ITEM_MODEL_BASE\s*=\s*[^;]+;',read_source('src/Item/ItemDefines.h',revision)).group()
+    prefix+=re.search(r'constexpr int ITEM_MODEL_BASE\s*=\s*[^;]+;',read_source('src/game/item/ItemDefines.h',revision)).group()
     globals_header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     for name in ['DAT_07cf1ff4','DAT_07cf1ffc']:
         prefix+=re.search(rf'extern [^;\n]*\b{name}\s*;',globals_header).group()

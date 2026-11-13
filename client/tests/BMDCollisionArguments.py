@@ -76,7 +76,7 @@ int main(){auto* model=static_cast<BYTE*>(Reserve(0x26000000));auto* meshes=stat
  std::printf("BMD collision:18144 contratos,%u rayos reales %016llx\n",rays,(unsigned long long)hash);}
 '''
 def harness(revision=None):
- math=extract(read('src/game/math/Math_LegacyTransforms.cpp',revision),'FaceNormalize');point=extract(read('src/scenes/Scene_CharSelect_Nav.cpp',revision),'Collision_PointInPolygon');face=extract(read('src/Terrain/Terrain_RayCollision.cpp',revision),'CollisionDetectLineToFace').replace('CollisionDetectLineToFace(','RealFace(',1)
+ math=extract(read('src/game/math/Math_LegacyTransforms.cpp',revision),'FaceNormalize');point=extract(read('src/scenes/Scene_CharSelect_Nav.cpp',revision),'Collision_PointInPolygon');face=extract(read('src/game/terrain/Terrain_RayCollision.cpp',revision),'CollisionDetectLineToFace').replace('CollisionDetectLineToFace(','RealFace(',1)
  caller=read('src/scenes/Scene_ObjectInteraction.cpp',revision);start=caller.index('BMD__CollisionDetectLineToMesh(');end=caller.index('))',start)+1;expression=caller[start:end]
  expression=re.sub(r'(BMD__CollisionDetectLineToMesh\(\s*)model,',r'\1AsModel(model),',expression)
  wrapper='\n#if INTPTR_MAX == INT32_MAX\nbool PickingCall(void* model){return '+expression+';}\n#endif\n'

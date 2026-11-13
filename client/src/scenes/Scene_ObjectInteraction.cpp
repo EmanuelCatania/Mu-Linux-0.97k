@@ -6,7 +6,7 @@
 #include "render/ResourceTables.h"
 #include "scenes/ObjectRegistry.h"
 #include "platform/GuardedOperation.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 

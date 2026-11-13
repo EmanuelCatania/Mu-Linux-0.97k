@@ -3,7 +3,7 @@
 #include "game/entity/EntityName.h"
 
 #include "game/entity/EntityTypes.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 
 #include <cstddef>
 #include <cstdint>

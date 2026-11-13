@@ -31,7 +31,7 @@ def harness(revision=None):
     body=function(source,'VTable_Release')
     args='obj,vertices' if 'float* vertices' in body else 'obj,(int)vertices'
     wrapper='\nvoid Draw(void* obj,float* vertices){VTable_Release('+args+');}\n'
-    edge=function(read_source('src/Terrain/Terrain.cpp',revision),'FUN_0040a8f0')
+    edge=function(read_source('src/game/terrain/Terrain.cpp',revision),'FUN_0040a8f0')
     return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x400000')+SERVICES+edge+body+wrapper+MAIN
 
 def main():

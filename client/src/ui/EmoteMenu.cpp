@@ -3,7 +3,7 @@
 // sus propios clicks.
 #include "stdafx.h"
 #include "ui/EmoteMenu.h"
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "render/BufferedDraw.h"
 #include "platform/Text.h"
 #include "app/core/Font.h"

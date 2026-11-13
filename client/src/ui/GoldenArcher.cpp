@@ -20,7 +20,7 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "net/NetText.h"
 #include "render/Gfx.h"
 #include "platform/Text.h"

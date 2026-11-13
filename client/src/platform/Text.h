@@ -7,7 +7,7 @@
 #include <cerrno>
 #include <utility>
 #include <string_view>
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #ifdef _WIN32
 #include <mbstring.h>
 #else

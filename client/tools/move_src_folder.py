@@ -3,6 +3,7 @@
 
     python tools/move_src_folder.py Sound audio
     python tools/move_src_folder.py Party game/party
+    python tools/move_src_folder.py Item/Item_Data.cpp assets/data/Item_Data.cpp
 
 Hace `git mv` de la carpeta y actualiza todo lo que la nombra:
   - los #include "Vieja/..." de src/ (sólo líneas de include: no toca rutas
@@ -57,6 +58,35 @@ def fix_disk_case(old, new):
                 d.rmdir()
 
 
+RELATIVE_INCLUDE = re.compile(r'^(\s*#\s*include\s*")((?:\.\./)+[^"]+)(")', re.M)
+
+
+def fix_relative_includes():
+    """Un archivo que cambió de profundidad deja sus `#include "../../lib/..."`
+    apuntando a otra carpeta: sumar o quitar un `../` si así resuelve."""
+    fixed = 0
+    for f in files(['src/**/*.cpp', 'src/**/*.c', 'src/**/*.h']):
+        def fix(m):
+            path = m.group(2)
+            if (f.parent / path).exists():
+                return m.group(0)
+            for other in ('../' + path, path[3:]):
+                if (f.parent / other).exists():
+                    return m.group(1) + other + m.group(3)
+            print(f'sin resolver: {f.relative_to(ROOT)}: {path}')
+            return m.group(0)
+        fixed += rewrite(f, lambda t: RELATIVE_INCLUDE.sub(fix, t))
+    return fixed
+
+
+def check_cmake_relative():
+    """Las fuentes relativas de los CMake de subcarpetas (../../render/...)."""
+    for cmake in files(['src/**/CMakeLists.txt']):
+        for path in re.findall(r'((?:\.\./)+[\w./-]+\.(?:cpp|c|h))', cmake.read_text(encoding='utf-8')):
+            if not (cmake.parent / path).exists():
+                print(f'CMake con ruta rota: {cmake.relative_to(ROOT)}: {path}')
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
@@ -65,44 +95,60 @@ def main():
     # Windows src/Game y src/game son la misma carpeta, así que recorrer el
     # disco mezclaría carpetas distintas para git y "Game" -> "game/core"
     # sería mover una carpeta adentro de sí misma.
-    listed = subprocess.check_output(['git', 'ls-files', '-z', '--', f'src/{old}/'], cwd=ROOT).decode('utf-8')
-    tracked = [p for p in listed.split('\0') if p.startswith(f'src/{old}/')]
+    # Una carpeta entera o un archivo suelto (Item/Item_Data.cpp).
+    is_file = (not (ROOT / 'src' / old).is_dir()) and subprocess.run(
+        ['git', 'ls-files', '--error-unmatch', f'src/{old}'], cwd=ROOT, capture_output=True).returncode == 0
+    if is_file:
+        tracked = [f'src/{old}']
+        sep = ''
+        end = r'(?![\w./\\-])'     # el nombre termina ahí: no matchear Item_Data.cpp.bak
+        bend = end
+    else:
+        listed = subprocess.check_output(['git', 'ls-files', '-z', '--', f'src/{old}/'], cwd=ROOT).decode('utf-8')
+        tracked = [p for p in listed.split('\0') if p.startswith(f'src/{old}/')]
+        sep = '/'
+        end = '/'
+        bend = r'\\'
     if not tracked:
         sys.exit(f'git no tiene archivos en src/{old}/')
     for path in tracked:
-        target = f'src/{new}/' + path[len(f'src/{old}/'):]
+        target = f'src/{new}' + path[len(f'src/{old}'):]
         if subprocess.run(['git', 'ls-files', '--error-unmatch', target], cwd=ROOT,
                           capture_output=True).returncode == 0:
             sys.exit(f'ya existe {target}')
         (ROOT / target).parent.mkdir(parents=True, exist_ok=True)
         subprocess.check_call(['git', 'mv', path, target], cwd=ROOT)
-    fix_disk_case(old, new)
+    if not is_file:
+        fix_disk_case(old, new)
 
-    include = re.compile(r'^(\s*#\s*include\s*["<])' + re.escape(old) + r'/', re.M)
+    include = re.compile(r'^(\s*#\s*include\s*["<])' + re.escape(old) + end, re.M)
     changed = 0
-    slash = re.compile(r'src/' + re.escape(old) + r'/')
+    slash = re.compile(r'src/' + re.escape(old) + end)
     for f in files(['src/**/*.cpp', 'src/**/*.h', 'src/**/*.c', 'src/**/*.hpp', 'src/**/*.rc',
                     'tests/**/*.cpp', 'tests/**/*.h']):
         # includes y las menciones "src/Vieja/..." de los comentarios
-        changed += rewrite(f, lambda t: slash.sub(f'src/{new}/', include.sub(r'\g<1>' + new + '/', t)))
+        changed += rewrite(f, lambda t: slash.sub(f'src/{new}{sep}', include.sub(r'\g<1>' + new + sep, t)))
     quoted = re.compile(r'''(["'])src/''' + re.escape(old) + r'''(["'])''')
-    back = re.compile(r'src\\' + re.escape(old.replace('/', '\\')) + r'\\')
+    back = re.compile(r'src\\' + re.escape(old.replace('/', '\\')) + bend)
+    back_new = 'src\\' + new.replace('/', '\\') + ('\\' if not is_file else '')
     for f in files(['CMakeLists.txt', 'src/platform/SDL3/CMakeLists.txt', 'mu97k.vcxproj', 'mu97k.vcxproj.filters',
                     '.github/scripts/*.py', 'tests/*.py']):
         if f.name == 'source_paths.py':
             continue
-        changed += rewrite(f, lambda t: back.sub('src\\\\' + new.replace('/', '\\\\') + '\\\\', slash.sub(f'src/{new}/', t)))
+        changed += rewrite(f, lambda t: back.sub(lambda m: back_new, slash.sub(f'src/{new}{sep}', t)))
         # La carpeta sola entre comillas: root / "src/Vieja"
         changed += rewrite(f, lambda t: quoted.sub(r'\g<1>src/' + new + r'\g<2>', t))
     # Los tests arman código C++ con #include "Vieja/..." dentro de strings.
-    embedded = re.compile(r'(#include \\?")' + re.escape(old) + r'/')
+    embedded = re.compile(r'(#include \\?")' + re.escape(old) + end)
     for f in files(['tests/*.py']):
-        changed += rewrite(f, lambda t: embedded.sub(r'\g<1>' + new + '/', t))
+        changed += rewrite(f, lambda t: embedded.sub(r'\g<1>' + new + sep, t))
 
     def add_moved(t):
-        line = f'    "src/{new}/": "src/{old}/",\n'
+        line = f'    "src/{new}{sep}": "src/{old}{sep}",\n'
         return t if line in t else t.replace('MOVED = {\n', 'MOVED = {\n' + line, 1)
     rewrite(ROOT / 'tests' / 'source_paths.py', add_moved)
+    changed += fix_relative_includes()
+    check_cmake_relative()
     print(f'src/{old} -> src/{new}: {changed} archivos actualizados')
 
 

@@ -41,8 +41,8 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
  std::printf("Inventory value: 23040 consultas, valor/orden/bytes %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
- source=read_source('src/Item/Item_InventoryGrid.cpp',revision);body=function(source.replace('long long __fastcall CalculateInventoryValue','intptr_t __fastcall CalculateInventoryValue'),'CalculateInventoryValue').replace('intptr_t __fastcall CalculateInventoryValue','long long __fastcall CalculateInventoryValue',1)
- definitions=read_source('src/Item/ItemDefines.h',revision);entries=re.findall(r'^(constexpr (?:int|short) (\w+)\s*=\s*([^;]+);)',definitions,re.M);wanted=set(re.findall(r'\bITEM_JEWEL_\w+\b',body));lookup={name:value for _,name,value in entries}
+ source=read_source('src/game/item/Item_InventoryGrid.cpp',revision);body=function(source.replace('long long __fastcall CalculateInventoryValue','intptr_t __fastcall CalculateInventoryValue'),'CalculateInventoryValue').replace('intptr_t __fastcall CalculateInventoryValue','long long __fastcall CalculateInventoryValue',1)
+ definitions=read_source('src/game/item/ItemDefines.h',revision);entries=re.findall(r'^(constexpr (?:int|short) (\w+)\s*=\s*([^;]+);)',definitions,re.M);wanted=set(re.findall(r'\bITEM_JEWEL_\w+\b',body));lookup={name:value for _,name,value in entries}
  while True:
   expanded=wanted|{dep for name in wanted for dep in re.findall(r'\bITEM_\w+\b',lookup[name])}
   if expanded==wanted:break

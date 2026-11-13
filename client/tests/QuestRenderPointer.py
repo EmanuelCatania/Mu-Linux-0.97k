@@ -236,7 +236,7 @@ def harness(revision=None):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",structs,re.M).group()+"\n"
     prefix+="\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\n"
     prefix+=re.search(r"struct ITEM_ATTRIBUTE\b.*?\n\};",structs,re.S).group()+"\nstatic_assert(sizeof(ITEM_ATTRIBUTE)==64);\n"
-    prefix+="\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;",read_source("src/Item/ItemDefines.h",revision),re.M))
+    prefix+="\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;",read_source("src/game/item/ItemDefines.h",revision),re.M))
     header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
     names=("DAT_00559c78","SetBackgroundTextColor","DAT_083a7c0c","DAT_083a4324","DAT_083a4124","DAT_083a413c","DAT_083a42c4","DAT_083a4278","DAT_083a427c","_DAT_00552464","DAT_055c9e44","DAT_07d78068")
     for name in names:
@@ -249,7 +249,7 @@ def harness(revision=None):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",header+structs,re.M).group()+"\n"
     prefix+="\nchar GlobalText[4000][300];\n"+SERVICES
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()
-    prefix+=function(read_source("src/Item/Item_Display.cpp",revision),"ConvertGold64")
+    prefix+=function(read_source("src/ui/inventory/Item_Display.cpp",revision),"ConvertGold64")
     source=read_source("src/ui/Quest_Legacy.cpp",revision)
     prefix+=function(source,"QuestX")
     answers=function(source,"FUN_00402ff0"); prefix+=answers

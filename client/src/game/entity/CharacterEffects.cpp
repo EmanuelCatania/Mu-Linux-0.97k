@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "game/entity/CharacterEffects.h"
 #include "render/EquipmentVisuals.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 

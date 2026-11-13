@@ -9,8 +9,8 @@
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "game/core/RenderSnapshots.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
 #include "net/Recv/NetRecv.h"
 
 // ---------------------------------------------------------------------------

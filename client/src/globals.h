@@ -1,7 +1,7 @@
 #pragma once
 #include "game/entity/EntityTypes.h"
 #include "render/DamagePointTypes.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "scenes/SceneObjectCell.h"
 #include "render/EffectPools.h"
 struct GATE_ATTRIBUTE;

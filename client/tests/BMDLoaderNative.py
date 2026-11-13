@@ -91,7 +91,7 @@ def harness(revision=None):
  funcs=funcs.replace('void BMD__FindNearTriangle(', 'void Post_FindNearTriangle(').replace('void BMD__Init(','void Post_Init(')
  wrappers='\nvoid BMD__FindNearTriangle(void* p){++adjCalls;Post_FindNearTriangle(p);}\nvoid BMD__Init(void* p,char f){++initCalls;Post_Init(p,f);}\n'
  euler=function(read_source('src/render/Render_LegacyTransforms.cpp'),'EulerToQuat');const=re.search(r'^float\s+_DAT_00552ce0\s*=\s*[^;]+;',read_source('src/globals.cpp'),re.M).group()
- code=prefix()+'\n#include "'+(ROOT/'src/Model/BMDFileTypes.h').as_posix()+'"\n'+POST_SERVICES+SERVICES+const+euler+funcs+wrappers+function(read_source('src/render/SMD_Parser.cpp'),'BMD__Release')+body
+ code=prefix()+'\n#include "'+(ROOT/'src/assets/model/BMDFileTypes.h').as_posix()+'"\n'+POST_SERVICES+SERVICES+const+euler+funcs+wrappers+function(read_source('src/render/SMD_Parser.cpp'),'BMD__Release')+body
  arg='m' if 'BMD* param_1' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(m))'
  return code+MAIN.replace('CALL_OPEN','BMD__Open('+arg+',"../samples/",name.c_str(),0)')
 def main():

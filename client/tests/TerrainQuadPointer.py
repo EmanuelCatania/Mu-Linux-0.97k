@@ -49,7 +49,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* heights=stat
  std::printf("Terrain quad: 32768 casos, indices/vertices/UV/color %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
- code=function(read_source('src/Terrain/Terrain_LegacyRender.cpp',revision),'Terrain_RenderQuad');constant=re.search(r'^float\s+_DAT_005524f0\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()
+ code=function(read_source('src/render/Terrain_LegacyRender.cpp',revision),'Terrain_RenderQuad');constant=re.search(r'^float\s+_DAT_005524f0\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()
  arg='corners' if 'const float (*p5)[3]' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(corners))'
  return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+SERVICES+constant+code+MAIN.replace('ARG',arg)
 def main():

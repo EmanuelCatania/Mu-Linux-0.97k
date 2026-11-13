@@ -76,7 +76,7 @@ def harness(revision=None):
     name = "DAT_07d78068"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    body = function(read_source("src/Item/Item_InventoryGrid.cpp", revision), "FindEmptySlot")
+    body = function(read_source("src/game/item/Item_InventoryGrid.cpp", revision), "FindEmptySlot")
     arg = "pool" if "const BYTE* param_2" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(pool))"
     return prefix + body + MAIN.replace("ARG", arg)
 

@@ -3,7 +3,7 @@
 // y algunos helpers sueltos (CIsin, Screen_ToGLx/y).
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -405,7 +405,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
 // CreateSprite — implemented in src/render/Particle.cpp (Effect_Spawn, returns int)
 // PressKey — implemented in src/platform/input/Input.cpp
 // UIChatLogWindow_AddText — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
-// TestFrustrum2D — implemented in src/Terrain/Terrain_Utils.cpp
+// TestFrustrum2D — implemented in src/game/terrain/Terrain_Utils.cpp
 // OpenJPG — implemented in src/render/Texture/Texture.cpp (Texture_Load)
 // ═════════════════════════════════════════════════════════════════════════════
 

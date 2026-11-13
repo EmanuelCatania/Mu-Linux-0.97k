@@ -1,0 +1,140 @@
+#include "stdafx.h"
+#include "render/text/TextCore.h"
+#include "platform/IWindow.h"
+#include "functions.h"
+#include "globals.h"
+
+// IDA: FUN_0047A5B0
+// Reads a text-format skill data file.
+// Parser uses TextParser_GetToken (record type 0/1/2):
+//   0 = section separator — strcmp with "END"; break inner loop
+//   1 = record: lVar21 = skill_id (×0x28); reads name string into
+//       DAT_07d29d20 + skill_id*0x28, then fields:
+//         [0x20] = type byte
+//         [0x21] = target byte
+//         [0x22..0x23] = short mana
+//         [0x24..0x25] = short dmg
+//         [0x26] = cooldown
+//         [0x27] = range
+//       Inserts/updates entry in hash table at MAIN_HASH_CLASS.
+//       Hash table ops use HashTable_Insert (insert), HashTable_GetIndex,
+//       Skill_HashTable_SerializeEntry (serialize+insert), Skill_HashTable_FreeEntry (free+remove).
+//   2 = EOF — close file, return
+//
+// Hash table context: MAIN_HASH_CLASS (vtable), DAT_055c9bd0 (bucket array),
+//   DAT_055c9bcc (value array), DAT_055c9bd4 (bucket count).
+// Each skill entry is 0x29 bytes; [0x28] = 1 (alive flag).
+void __cdecl Skill_LoadTextData(const char *path)
+{
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!DAT_07d7806c) return;
+
+    // Streaming text parser — logic mirrors Ghidra decompile of FUN_0047a5b0.
+    // The real loop calls TextParser_GetToken to tokenize floats/strings from the
+    // open file handle DAT_07d7806c, using TextParserTokenString as a temp string buf.
+    // Skill records are stored at DAT_07d29d20 + index*0x28 (stride 0x28).
+    // Each record written is also registered in the hash table (MAIN_HASH_CLASS).
+    // Stub: call parser until EOF.
+    while (TextParser_GetToken() != 2) { /* parse handled by TextParser_GetToken side-effects */ }
+    crt_fclose(DAT_07d7806c);
+}
+
+// IDA: FUN_0047A970
+// Writes skill data table to a binary .bmd file.
+// Allocates 0xa00-byte buffer (40 skill entries × 0x28 bytes each).
+// For each entry: copies from DAT_07d29d20, XOR-encrypts via BuxConvert_0,
+// writes to file. After all entries, computes a rolling checksum
+// (seed: DAT_00b43000, constant 0x5a18) and appends 4 bytes.
+// Hash table operations (Skill_HashTable_SerializeEntry / Skill_HashTable_FreeEntry) manage in-memory index.
+void __cdecl Skill_SaveBMD(const char *path)
+{
+    FILE *fp   = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
+    char *buf  = (char *)operator_new(0xa00);
+    const char *src = (const char *)DAT_07d29d20;
+    char *p = buf;
+    for (const char *end = src + 0xa00; src < end; src += 0x28, p += 0x28) {
+        memcpy(p, src, 0x28);
+        BuxConvert_0(p, 0x28);
+    }
+    crt_fwrite(buf, 0xa00, 1, (int *)fp);
+    DWORD cs = DAT_00b43000;
+    for (UINT i = 0; i < 0x9fd; i += 4) {
+        DWORD v  = *(DWORD *)(buf + i);
+        DWORD q  = (i >> 2) & 1;
+        if      (q == 0) cs ^= v;
+        else if (q == 1) cs += v;
+        if ((i & 0xf) == 0)
+            cs ^= (DWORD)(cs + 0x5a18) >> (((BYTE)(i >> 2) & 7) + 1);
+    }
+    crt_fwrite((char *)&cs, 4, 1, (int *)fp);
+    operator_delete(buf);
+    crt_fclose(fp);
+}
+
+// IDA: FUN_0047AC50
+// Reads binary .bmd skill data file (counterpart to FUN_0047a970).
+// Reads 0xa00 bytes + 4-byte checksum, validates, XOR-decrypts each 0x28-byte
+// record, and writes into DAT_07cf1ff8 (skill shadow table, stride 0x28).
+// Hash table entries are rebuilt via Skill_HashTable_SerializeEntry / Skill_HashTable_FreeEntry.
+// [+0x26] field in shadow table is left-shifted by 1 after copy.
+void __cdecl Skill_LoadBMD(const char *path)
+{
+    CHAR msg[256];
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!fp) {
+        crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
+        gWindow.RequestCloseApplication();
+        return;
+    }
+    char *buf0 = (char *)operator_new(0xa00);
+    char *buf  = buf0;
+    crt_fread(buf, 0xa00, 1, (int *)fp);
+    DWORD stored_cs;
+    crt_fread((char *)&stored_cs, 4, 1, (int *)fp);
+    crt_fclose(fp);
+
+    DWORD cs = DAT_00b43000;
+    for (UINT i = 0; i < 0x9fd; i += 4) {
+        DWORD v  = *(DWORD *)(buf + i);
+        DWORD q  = (i >> 2) & 1;
+        if      (q == 0) cs ^= v;
+        else if (q == 1) cs += v;
+        if ((i & 0xf) == 0)
+            cs ^= (DWORD)(cs + 0x5a18) >> (((BYTE)(i >> 2) & 7) + 1);
+    }
+    if (stored_cs != cs) {
+        crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
+        gWindow.RequestCloseApplication();
+        operator_delete(buf0);
+        return;
+    }
+
+    // IDA copia CADA registro descifrado a las DOS tablas (0x47AC50, quitando
+    // el ruido de hash-table):
+    //     qmemcpy(&SkillAttribute[j],  <registro>, 40u);
+    //     qmemcpy(&SkillAttribute2[j], <registro>, 40u);
+    //     SkillAttribute2[j - 2] *= 2;        // el byte +0x26 de la sombra
+    int off = 0;
+    do {
+        BuxConvert_0(buf, 0x28);
+        if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
+            memcpy(SkillAttribute.Raw + off, buf, 0x28);
+        memcpy((char *)DAT_07cf1ff8 + off, buf, 0x28);
+        *((BYTE *)DAT_07cf1ff8 + off + 0x26) <<= 1;
+        off += 0x28;
+        buf += 0x28;
+    } while (off <= 0x9ff);
+    operator_delete(buf0);
+    // DESVIACION (Fase 4, texto Unicode): nombres (32 bytes) a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
+    for (off = 0; off + 0x28 <= 0xa00; off += 0x28) {
+        if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
+            TextEngine::NormalizeTextFileInPlace(SkillAttribute.Raw + off, 32);
+        TextEngine::NormalizeTextFileInPlace((char *)DAT_07cf1ff8 + off, 32);
+    }
+}

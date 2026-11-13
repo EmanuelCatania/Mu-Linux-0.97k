@@ -74,4 +74,4 @@ static_assert(sizeof(ClothModelMesh) == 40, "ClothModelMesh x86");
 
 
 def model_view(names, revision=None):
-    return _packed("BMD", names, 0xBC, revision, "src/Model/ModelTypes.h", "AsModel")
+    return _packed("BMD", names, 0xBC, revision, "src/assets/model/ModelTypes.h", "AsModel")

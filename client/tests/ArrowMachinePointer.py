@@ -118,7 +118,7 @@ def harness(revision=None):
         assert 'reinterpret_cast<const void*>(static_cast<std::uintptr_t>(c)) == DAT_07abf5d8' in source
     globals_source=read_source('src/globals.cpp',revision)
     constants='\n'.join(re.search(r'^float\s+'+name+r'\s*=\s*[^;]+;',globals_source,re.M).group(0) for name in ('_DAT_00552834','_DAT_0055284c','_DAT_00552ab0','_DAT_00552584'))
-    constants+='\n'+re.search(r'^constexpr int ITEM_MODEL_BASE[^;]+;',read_source('src/Item/ItemDefines.h',revision),re.M).group(0)
+    constants+='\n'+re.search(r'^constexpr int ITEM_MODEL_BASE[^;]+;',read_source('src/game/item/ItemDefines.h',revision),re.M).group(0)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('CONSTANTS',constants)+function(source,'CreateArrow')+function(source,'CreateArrows')+MAIN
 
 def main():

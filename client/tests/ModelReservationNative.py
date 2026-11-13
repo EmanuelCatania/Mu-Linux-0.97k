@@ -5,7 +5,7 @@ from pathlib import Path
 from SceneObjectPointer import ROOT,read_source
 
 CONTRACTS=r'''
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include <cstdio>
 static_assert(sizeof(BMD)==(sizeof(void*)==4?188:212));
 static_assert(offsetof(BMD,Bones)==(sizeof(void*)==4?44:48));
@@ -34,7 +34,7 @@ def loader():
     import BMDLoaderNative as test
     from ModelReleaseLifecycle import PREFIX
     original=test.prefix
-    test.prefix=lambda:PREFIX+'\n#include "Model/ModelTypes.h"\n#include "game/physics/ClothTypes.h"\n#include "render/ResourceTables.h"\n'
+    test.prefix=lambda:PREFIX+'\n#include "assets/model/ModelTypes.h"\n#include "game/physics/ClothTypes.h"\n#include "render/ResourceTables.h"\n'
     try:code=test.harness()
     finally:test.prefix=original
     before='static GuardModel storage;'

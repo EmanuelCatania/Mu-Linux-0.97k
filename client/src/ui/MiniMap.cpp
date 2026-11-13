@@ -11,7 +11,7 @@
 #include "app/core/Font.h"
 #include "app/core/Window.h"
 #include "game/core/MapManager.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 #include <math.h>
 
 CMiniMap gMiniMap;

@@ -184,12 +184,12 @@ def harness(revision=None):
         record = record.replace(token, re.search(rf"struct {name}\s*\{{.*?\}};", types, re.S).group())
     prefix = re.sub(r"struct OBJECT\s*\{.*?\};", lambda _: record, prefix, count=1, flags=re.S)
     header, globals_source = (read_source(path, revision) for path in ("src/globals.h", "src/globals.cpp"))
-    declarations = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", read_source("src/Item/ItemDefines.h", revision), re.M))
+    declarations = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", read_source("src/game/item/ItemDefines.h", revision), re.M))
     for name in ("DAT_05828d58", "DAT_055c9e44", "DAT_07d78068"):
         declarations += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         declarations += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     declarations += re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}", header, re.M | re.S).group()
-    terrain = function(read_source("src/Terrain/Terrain_Utils.cpp", revision), "Terrain_GetTileIndex").replace("Terrain_GetTileIndex(", "TileIndexReal(", 1)
+    terrain = function(read_source("src/game/terrain/Terrain_Utils.cpp", revision), "Terrain_GetTileIndex").replace("Terrain_GetTileIndex(", "TileIndexReal(", 1)
     stop = function(read_source("src/game/entity/Character_Motion.cpp", revision), "SetPlayerStop").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* c" in stop else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + declarations + terrain + SERVICES + stop + MAIN.replace("CALL_STOP", f"SetPlayerStop({arg})")

@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "render/MaterialVisuals.h"
 #include "render/LooseWingVisuals.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include <unordered_map>

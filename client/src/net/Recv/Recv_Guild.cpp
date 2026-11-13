@@ -3,7 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "net/NetText.h"
 #include "platform/Text.h"
 #include "net/Protocol/GameServerProtocol.h"

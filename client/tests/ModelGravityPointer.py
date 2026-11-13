@@ -35,7 +35,7 @@ int main(){
 def harness(revision=None):
     code=function(read_source('src/render/Entity_Render.cpp',revision),'Entity_SetGravity')
     arg='model' if 'void* model' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(model))'
-    header='#include "'+(ROOT/'src/Model/ModelTypes.h').as_posix()+'"'+chr(10)
+    header='#include "'+(ROOT/'src/assets/model/ModelTypes.h').as_posix()+'"'+chr(10)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+header+MAIN.replace('FUNCTION',code).replace('ARG',arg)
 
 

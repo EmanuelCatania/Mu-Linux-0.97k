@@ -3,7 +3,7 @@
 #include "game/core/RenderDerivedState.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "scenes/ObjectRegistry.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "game/core/MapManager.h"
 #include <vector>
 #include "game/core/FramePointerSet.h"

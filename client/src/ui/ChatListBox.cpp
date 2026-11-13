@@ -77,7 +77,7 @@
 #include "stdafx.h"
 #include "ui/EmoteMenu.h"
 #include "net/Recv/NetRecv.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "render/Gfx.h"

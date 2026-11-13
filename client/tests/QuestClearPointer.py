@@ -60,7 +60,7 @@ int main() {
 
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
-    body = function(read_source("src/Item/Quest_UIState.cpp", revision), "CSQuest_clearQuest")
+    body = function(read_source("src/ui/Quest_UIState.cpp", revision), "CSQuest_clearQuest")
     arg = "quest" if "void* param_1" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"
     return prefix + SERVICES + body + MAIN.replace("ARG", arg)
 

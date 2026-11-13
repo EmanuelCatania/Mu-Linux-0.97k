@@ -1,5 +1,5 @@
 #include "render/ResourceTables.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "app/core/ResourceLimits.h"
 #include <cstdlib>
 #include <cstdio>

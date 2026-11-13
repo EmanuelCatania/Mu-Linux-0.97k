@@ -8,7 +8,7 @@
 #include "functions.h"
 #include "render/BufferedDraw.h"
 #ifdef MU_SDL_FONTS
-#include "Text/TextAtlas.h"
+#include "render/text/TextAtlas.h"
 #include <string>
 
 // DESVIACION (Fase 4, texto Unicode): en SDL3 la burbuja de chat no se

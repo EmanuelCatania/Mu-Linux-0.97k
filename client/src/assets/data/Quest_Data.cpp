@@ -1,0 +1,61 @@
+#include "stdafx.h"
+#include "render/text/TextCore.h"
+#include "functions.h"
+#include "globals.h"
+
+// ── CSQuest_OpenQuestScript @ 0x00401040 — Quest_LoadBMD(this, path) ────────────────────
+// __thiscall: reads binary .bmd quest data into a quest manager object.
+// Parameters:
+//   this  = pointer to quest manager object
+//   path  = file path (e.g. "Data/Local/Quest.bmd")
+// Returns: 1 on success (high 24 bits from fclose result, low byte = 1),
+//          0 on failure (file not found).
+//
+// Layout:
+//   this+8 onward = 0x7210 DWORDs (zeroed first), then filled with quest data.
+//   File contains 200 records × 0x248 bytes each.
+//   Each record is XOR-decrypted by BuxConvert_1(buf, 0x248) before copy
+//   (IDA: BuxConvert_1).
+//   Copy: 0x92 DWORDs (0x248 bytes) per record into this+8 (sequential).
+// IDA: CSQuest::OpenQuestScript (0x00401040)
+uint __cdecl CSQuest_OpenQuestScript(BYTE* handle, const char *path)
+{
+    CHAR msg[256];
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!fp) {
+        crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
+        // Note: original doesn't show a MessageBox here, just crt_sprintf
+        return 0;
+    }
+    // zero out quest array: this+8, 0x7210 DWORDs
+    DWORD *arr = (DWORD *)(handle + 8);
+    for (int i = 0x7210; i != 0; i--)
+        *arr++ = 0;
+
+    char *buf = (char *)operator_new(0x248);
+    int   cnt = 200;
+    arr = (DWORD *)(handle + 8);
+    do {
+        crt_fread(buf, 0x248, 1, (int *)fp);
+        BuxConvert_1(buf, 0x248);
+        const char *src = buf;
+        DWORD      *dst = arr;
+        for (int j = 0x92; j != 0; j--) {
+            *dst++ = *(DWORD *)src;
+            src += 4;
+        }
+        arr += 0x92;
+        cnt--;
+    } while (cnt != 0);
+    operator_delete(buf);
+    crt_fclose(fp);
+    // DESVIACION (Fase 4, texto Unicode): el nombre de cada quest (+5, 32 bytes;
+    // lo dibuja RenderText(..., questBase + 13)) a UTF-8;
+    // lo que ya es UTF-8 se deja y el resto se
+    // toma como Windows-1252 (NormalizeTextFileInPlace).
+    for (int i = 0; i < 200; ++i)
+        TextEngine::NormalizeTextFileInPlace((char *)(handle + 8 + i * 0x248 + 5), 32);
+    // Ghidra shows: return CONCAT31((int3)((uint)fclose_result >> 8), 1)
+    // i.e. success = low byte 1, upper bytes from fclose. Simplified:
+    return 1;
+}

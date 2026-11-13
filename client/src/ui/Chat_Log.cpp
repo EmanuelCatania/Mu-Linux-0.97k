@@ -2,7 +2,7 @@
 
 #include "stdafx.h"
 #include "ui/ChatListBox.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"

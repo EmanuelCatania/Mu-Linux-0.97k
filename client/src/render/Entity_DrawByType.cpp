@@ -35,7 +35,7 @@
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "render/BMDDevice.h"
 #include "render/BufferedDraw.h"
 #include "game/core/RenderInterpolation.h"

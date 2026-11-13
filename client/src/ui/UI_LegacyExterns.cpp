@@ -2,8 +2,8 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
-#include "Text/TextAtlas.h"
-#include "Text/TextCore.h"
+#include "render/text/TextAtlas.h"
+#include "render/text/TextCore.h"
 #include "render/Gfx.h"
 #include "render/BufferedDraw.h"
 #include "render/Materials.h"

@@ -1,7 +1,7 @@
 // Sin PCH: gestión de páginas Win32/POSIX sin dependencias del renderer.
 #include "render/ResourceTables.h"
 #include "app/core/ResourceLimits.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include <cstring>
 #include <limits>
 #include <new>

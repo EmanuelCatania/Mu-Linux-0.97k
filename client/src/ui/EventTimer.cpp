@@ -9,7 +9,7 @@
 #include "ui/UIState.h"
 #include "app/core/Font.h"
 #include "app/core/Window.h"
-#include "Local/ClientText.h"
+#include "assets/text/ClientText.h"
 
 CEventTimer gEventTimer;
 namespace {

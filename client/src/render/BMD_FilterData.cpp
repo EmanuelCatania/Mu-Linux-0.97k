@@ -201,6 +201,6 @@ void __cdecl OpenNameFilterFile(const char* path)
     if (dst < end) DAT_07d78074 = count;
     operator_delete(Buffer);
 }
-// OpenDialogFile — implemented in src/Item/Dialog_Data.cpp  (Dialog_LoadBMD)
-// CSQuest_OpenQuestScript — implemented in src/Item/Quest_Data.cpp   (Quest_LoadBMD)
-// OpenMonsterScript — implemented in src/Item/NPC_Data.cpp     (NPCName_Load)
+// OpenDialogFile — implemented in src/assets/data/Dialog_Data.cpp  (Dialog_LoadBMD)
+// CSQuest_OpenQuestScript — implemented in src/assets/data/Quest_Data.cpp   (Quest_LoadBMD)
+// OpenMonsterScript — implemented in src/assets/data/NPC_Data.cpp     (NPCName_Load)

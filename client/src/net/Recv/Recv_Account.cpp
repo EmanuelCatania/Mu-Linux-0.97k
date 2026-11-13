@@ -16,7 +16,7 @@
 #include "net/ServerCharacterStats.h"
 #include "app/config/UserSettings.h"
 #include "net/HWID.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "net/Protocol/ProtocolVersion.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,

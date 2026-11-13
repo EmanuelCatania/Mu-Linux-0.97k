@@ -10,7 +10,7 @@
 #include "game/entity/CharacterCloth.h"
 #include "game/entity/CharacterEffects.h"
 #include "game/entity/ObjectPose.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "render/Terrain_Render.h"
 #include "render/Camera.h"
 #include "app/config/UserSettings.h"

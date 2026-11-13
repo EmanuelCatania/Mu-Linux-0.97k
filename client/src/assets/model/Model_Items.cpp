@@ -1,0 +1,395 @@
+// IDA: OpenPlayers @ 0x00506170 — Model_LoadPlayerAndItemMeshes
+// Allocates the model data pool, zeroes it, then loads the player body mesh
+// (model slot 0x186) with all its animations (Korean-locale paths when
+// DAT_0055a7c4 == 0), plus all equipment piece slots (Helm/Armor/Pant/Glove/Boot
+// for every class/tier), item slots, and shadow model.  Ends by calling
+// SetAttackSpeed (Entity_LockAnim) and setting scale tables in the model block.
+#include "stdafx.h"
+#include "render/ResourceTables.h"
+#include "render/Skinning.h"
+#include "game/core/RenderDerivedState.h"
+#include "game/item/ItemDefines.h"
+#include "globals.h"
+#include "functions.h"
+#include "assets/model/Model_CustomAnim.h"
+
+// Model_LoadItems — loads player body + all equipment model slots.
+// Called once from OpenWorld (Map_LoadResources) during startup.
+// IDA: OpenPlayers
+void __cdecl Model_LoadPlayerAndItemMeshes(void)
+{
+    // DESVIACION: base estable y páginas bajo demanda. Conservar la muestra
+    // RNG del offset original para no alterar la secuencia de simulación.
+    (void)rand();
+    // La base ya no cambia: invalidar explícitamente snapshots de la carga anterior.
+    RenderDerivedState_Cancel();Skinning::Invalidate();
+    ResourceTables::ResetModels();
+    DAT_06f42a58=ResourceTables::ModelBase();
+    DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
+
+    // ── Korean-locale SMD animations (skipped in compressed-asset mode) ──────
+    if (DAT_0055a7c4 == '\0') {
+        // Player body (female base mesh, slot 0x186, 0x8d = 141 animation slots)
+        OpenSMDModel((int)0x186, "Data2\\Player\\BodyFemale.smd", 0x8d, '\0');
+
+        // Idle / stand animations
+        OpenSMDAnimation(0x186, "Data2\\Player\\set_01.smd",            1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0); // ³²ÀڸžÛ·Á
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_female_01.smd",    0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_sword_01.smd",     0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBB\xC7\xB0\xED\xB5\xBF\xC0\xDB.smd", 0); // »ÇGoµ¿ÀÛ (shield idle)
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xC1\xA4\xB8\xED\xB5\xBF\xC0\xDB.smd", 0); // Á¤¸éµ¿ÀÛ
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xBD\xC3\xBD\xBA.smd", 0); // ½ºÅÀÀ§½º
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_bow_01.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xC0\xBD\xBA\xC5\xC0\xC7\xAE.smd", 0); // ¿À½ºÅÀÀ®
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_fly_01.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 0); // ¿ÀÀ®ÀÚ»ó
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_stop.smd",      0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_stop_weapon.smd", 0);
+
+        // Run animations
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_male_01.smd",       1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB5\xB5.smd", 1); // ½ºÅÀ·Î (run to stop?)
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_sword_01.smd",      1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC1\xA4\xB8\xED.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB8\xDE\xC0\xCC\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_bow_01.smd",        1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC0\xDA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB5\xAF\xAE\xEC.smd", 1);  // µ¿Àۯ
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_fly_01.smd",        0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_run.smd",       1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_run_weapon.smd", 1);
+
+        // Attack animations
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_fist.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "03.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xC7\xEC" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xB3\xB2" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 6F4=Hwaro
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 7F8=Hwalro
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_bow_fly_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_crossbow_fly_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_sword.smd",   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_twohands.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_spear.smd",   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_sickle.smd",  0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+
+        // (8 padding idle anims follow from Ghidra loop: iVar4=8 times &DAT_0055bd4c)
+        for (int i = 0; i < 8; i++)
+            OpenSMDAnimation(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0);
+
+        // Pegasus / TwoHand Two / Skill animations
+        OpenSMDAnimation(0x186, "Data2\\Player\\Pegasus_fly.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\Pegasus_fly_weapon.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_TwoHandTwo.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\walk_TwoHandTwo.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_TwoHandTwo.smd",           0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_TwoHandTwo.smd",        0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "03.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\Skill_02.smd",                 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\defense_01.smd",               0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\shock_01.smd",                 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\die_01.smd",                   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\die_02.smd",                   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit1.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit2.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit_f_01.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit_f_02.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_pose_01.smd",           0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+
+        // Equipment piece loaders (class 1-4): each loads class_N suffix
+        for (int i = 1; i <= 4; i++) {
+            OpenModels((int)(i + 0x38f), "Data2\\Player\\Helm\\class_",  i);
+            OpenModels((int)(i + 0x396), "Data2\\Player\\Armor\\class_", i);
+            OpenModels((int)(i + 0x39d), "Data2\\Player\\Pant\\class_",  i);
+            OpenModels((int)(i + 0x3a4), "Data2\\Player\\Glove\\class_", i);
+            OpenModels((int)(i + 0x3ab), "Data2\\Player\\Boot\\class_",  i);
+        }
+
+        // Male armour tiers (1-10)
+        for (int i = 1; i <= 10; i++) {
+            OpenModels((int)(i + 0x26f), "Data2\\Player\\Helm\\helm_",        i);
+            OpenModels((int)(i + 0x28f), "Data2\\Player\\Armor\\male_upper_", i);
+            OpenModels((int)(i + 0x2af), "Data2\\Player\\Pant\\male_lower_",  i);
+            OpenModels((int)(i + 0x2cf), "Data2\\Player\\Glove\\male_gloves_",i);
+            OpenModels((int)(i + 0x2ef), "Data2\\Player\\Boot\\male_boots_",  i);
+        }
+
+        // Elf armour tiers (1-5, index offset +1 for Pant/Boot)
+        for (int i = 1; i <= 5; i++) {
+            OpenModels((int)(i + 0x279), "Data2\\Player\\Helm\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0", i);
+            OpenModels((int)(i + 0x299), "Data2\\Player\\Armor\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0", i);
+            OpenModels((int)(i + 0x2b9), "Data2\\Player\\Pant\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0", i+1);
+            OpenModels((int)(i + 0x2d9), "Data2\\Player\\Glove\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0", i);
+            OpenModels((int)(i + 0x2f9), "Data2\\Player\\Boot\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0", i+1);
+        }
+
+        // High-tier (slot 0x29f/0x2bf/0x2df/0x2ff/0x280 etc.) — single-slot SMD loads
+        OpenModel((int)0x29f, "Data2\\Player\\Armor\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2bf, "Data2\\Player\\Pant\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2df, "Data2\\Player\\Glove\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2ff, "Data2\\Player\\Boot\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x280, "Data2\\Player\\Helm\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2a0, "Data2\\Player\\Armor\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2c0, "Data2\\Player\\Pant\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x2e0, "Data2\\Player\\Glove\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)0x300, "Data2\\Player\\Boot\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
+
+        // Shadow model
+        OpenModels((int)0x187, "Data2\\Player\\Shadow\\Shadow", 1);
+    } // end if DAT_0055a7c4 == '\0' (Korean SMD branch)
+
+    // ── Compressed-asset branch (always runs: BMD-based loads) ───────────────
+    AccessModel(0x186, "Data\\Player\\", "Player", -1);
+    DAT_0055a7c4 = '\x01';
+
+    // Check that BMD loaded successfully — DESHABILITADO
+    // 0x47a3*4 = 0x11E8C → dirección absoluta 0x05828d58+0x11E8C = 0x0583ABE4
+    // (otro DAT_ en el binario original). Ghidra malrenderizó como base+index.
+    // if (*(short*)((BYTE*)DAT_05828d58 + 0x47a3*4) > 0) {
+    //     CErrorReport_Write(nullptr, "Player.bmd file error.\r\n");
+    //     MessageBoxA((HWND)(DWORD)DAT_055c9ffc, "Player.bmd file error!!!", nullptr, 0);
+    //     SendMessageA((HWND)(DWORD)DAT_055c9ffc, WM_CLOSE, 0, 0);
+    // }
+
+    // Class armour BMD (class 1-4)
+    for (int i = 1; i <= 4; i++) {
+        AccessModel(i + 0x38f, "Data\\Player\\", "HelmClass",  i);
+        AccessModel(i + 0x396, "Data\\Player\\", "ArmorClass", i);
+        AccessModel(i + 0x39d, "Data\\Player\\", "PantClass",  i);
+        AccessModel(i + 0x3a4, "Data\\Player\\", "GloveClass", i);
+        AccessModel(i + 0x3ab, "Data\\Player\\", "BootClass",  i);
+    }
+
+    // Class2 SMD (only in Korean locale)
+    // IDA 0x00506170 L57: `while (v6 + 3 < 7)` = 3 iteraciones (v6=1,2,3).
+    if (DAT_0055a7c4 == '\0') {
+        for (int i = 1; i+3 < 7; i++) {
+            OpenModels((int)(i + 0x393), "Data2\\Player\\Helm\\class2_",  i);
+            OpenModels((int)(i + 0x39a), "Data2\\Player\\Armor\\class2_", i);
+            OpenModels((int)(i + 0x3a1), "Data2\\Player\\Pant\\class2_",  i);
+            OpenModels((int)(i + 0x3a8), "Data2\\Player\\Glove\\class2_", i);
+            OpenModels((int)(i + 0x3af), "Data2\\Player\\Boot\\class2_",  i);
+        }
+    }
+
+    // Class2 BMD (classes 1-3) — 3 iteraciones, igual que el SMD
+    for (int i = 1; i+3 < 7; i++) {
+        AccessModel(i + 0x393, "Data\\Player\\", "HelmClass2",  i);
+        AccessModel(i + 0x39a, "Data\\Player\\", "ArmorClass2", i);
+        AccessModel(i + 0x3a1, "Data\\Player\\", "PantClass2",  i);
+        AccessModel(i + 0x3a8, "Data\\Player\\", "GloveClass2", i);
+        AccessModel(i + 0x3af, "Data\\Player\\", "BootClass2",  i);
+    }
+
+    DAT_0055a7c4 = '\x01';
+
+    // Male armour BMD tiers (1-10)
+    for (int i = 1; i <= 10; i++) {
+        AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
+        AccessModel(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
+        AccessModel(i + 0x2af, "Data\\Player\\", "PantMale",  i);
+        AccessModel(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
+        AccessModel(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
+    }
+
+    // Elf armour BMD (1-5)
+    for (int i = 1; i <= 5; i++) {
+        AccessModel(i + 0x279, "Data\\Player\\", "HelmElf",  i);
+        AccessModel(i + 0x299, "Data\\Player\\", "ArmorElf", i);
+        AccessModel(i + 0x2b9, "Data\\Player\\", "PantElf",  i);
+        AccessModel(i + 0x2d9, "Data\\Player\\", "GloveElf", i);
+        AccessModel(i + 0x2f9, "Data\\Player\\", "BootElf",  i);
+    }
+
+    // Extra slots (0x10/0x11 index range)
+    AccessModel(0x29f, "Data\\Player\\", "ArmorMale", 0x10);
+    AccessModel(0x2bf, "Data\\Player\\", "PantMale",  0x10);
+    AccessModel(0x2df, "Data\\Player\\", "GloveMale", 0x10);
+    AccessModel(0x2ff, "Data\\Player\\", "BootMale",  0x10);
+    AccessModel(0x280, "Data\\Player\\", "HelmMale",  0x11);
+    AccessModel(0x2a0, "Data\\Player\\", "ArmorMale", 0x11);
+    AccessModel(0x2c0, "Data\\Player\\", "PantMale",  0x11);
+    AccessModel(0x2e0, "Data\\Player\\", "GloveMale", 0x11);
+    AccessModel(0x300, "Data\\Player\\", "BootMale",  0x11);
+
+    // Dark/Soul/Muz/Ma unique armour (Korean SMD only)
+    if (DAT_0055a7c4 == '\0') {
+        OpenModel((int)0x281, "Data2\\Player\\Helm\\",  "DarkP_Head.smd");
+        OpenModel((int)0x2a1, "Data2\\Player\\Armor\\", "DarkP_Armor.smd");
+        OpenModel((int)0x2c1, "Data2\\Player\\Pant\\",  "DarkP_Pant.smd");
+        OpenModel((int)0x2e1, "Data2\\Player\\Glove\\", "DarkP_Glove.smd");
+        OpenModel((int)0x301, "Data2\\Player\\Boot\\",  "DarkP_Boot.smd");
+        OpenModel((int)0x282, "Data2\\Player\\Helm\\",  "Soul_Helm.smd");
+        OpenModel((int)0x2a2, "Data2\\Player\\Armor\\", "Soul_Armor.smd");
+        OpenModel((int)0x2c2, "Data2\\Player\\Pant\\",  "Soul_Pants.smd");
+        OpenModel((int)0x2e2, "Data2\\Player\\Glove\\", "Soul_Gloves.smd");
+        OpenModel((int)0x302, "Data2\\Player\\Boot\\",  "Soul_Boots.smd");
+        OpenModel((int)0x283, "Data2\\Player\\Helm\\",  "Muz_Helm.smd");
+        OpenModel((int)0x2a3, "Data2\\Player\\Armor\\", "Muz_Armor.smd");
+        OpenModel((int)0x2c3, "Data2\\Player\\Pant\\",  "Muz_Pants.smd");
+        OpenModel((int)0x2e3, "Data2\\Player\\Glove\\", "Muz_Gloves.smd");
+        OpenModel((int)0x303, "Data2\\Player\\Boot\\",  "Muz_Boots.smd");
+        OpenModel((int)0x2a4, "Data2\\Player\\Armor\\", "Ma_Armor.smd");
+        OpenModel((int)0x2c4, "Data2\\Player\\Pant\\",  "Ma_Pant.smd");
+        OpenModel((int)0x2e4, "Data2\\Player\\Glove\\", "Ma_Gloves.smd");
+        OpenModel((int)0x304, "Data2\\Player\\Boot\\",  "Ma_Boots.smd");
+    }
+
+    // Final slot range (0x12-0x15 suffix) — includes helm only for first 3
+    // IDA 0x00506170 L104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
+    for (int i = 0x12; i-0x12 < 4; i++) {
+        if (i - 0x12 < 3)
+            AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
+        AccessModel(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
+        AccessModel(i + 0x2af, "Data\\Player\\", "PantMale",  i);
+        AccessModel(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
+        AccessModel(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
+    }
+
+    DAT_0055a7c4 = 1;
+
+    // Shadow BMD
+    AccessModel(0x187, "Data\\Player\\", "Shadow", 1);
+
+    // Velocidades de animación del jugador: IDA OpenPlayers, 0x5073AB..0x507622.
+    // BMD::Open no inicializa PlaySpeed. Los bucles originales incrementan el
+    // offset ANTES de escribir (offset - 12), incluida la última entrada. Se usan
+    // índices de acción para respetar esos límites, sobre todo la pose de apoyo
+    // de la elfa (140).
+    // Modelo del jugador = Models + 188 * 390; Actions en +48, stride 16, speed en +4.
+    {
+        BYTE* playerModelBase = (BYTE*)(uintptr_t)DAT_05828d58;
+        // Aux fields del struct player (no son acciones; offsets internos del modelo)
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x54 + BMD_FIELD_SHIFT) = 20;
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x58 + BMD_FIELD_SHIFT) = 6;
+        *(DWORD*)(playerModelBase + BMD_STRIDE * 390 + 0x5c + BMD_FIELD_SHIFT) = 13;
+
+        BYTE* actions = AsModel(playerModelBase + BMD_STRIDE * 390)->Actions;
+        if (actions) {
+            BYTE* A = actions;
+
+            // action[1..12].speed = 0.28f  (idle/stop / walk variants)
+            for (int action = 1; action <= 12; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3E8F5C29;  // 0.28f
+            }
+            // Spot speeds for stop/walk hands variants
+            *(DWORD*)(A + ModelActionByte(52)) = 0x3E851EB8;  // 0.26f  action[3]
+            *(DWORD*)(A + ModelActionByte(68)) = 0x3E75C28F;  // 0.24f  action[4]
+            *(DWORD*)(A + ModelActionByte(84)) = 0x3E75C28F;  // 0.24f  action[5]
+            *(DWORD*)(A + ModelActionByte(116)) = 0x3E6147AE;  // 0.22f  action[7]
+            *(DWORD*)(A + ModelActionByte(132)) = 0x3E6147AE;  // 0.22f  action[8]
+
+            // action[13..33].speed = 0.30f
+            for (int action = 13; action <= 33; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3E99999A;
+            }
+            *(DWORD*)(A + ModelActionByte(340)) = 0x3EB33333;  // 0.35f action[21]
+            *(DWORD*)(A + ModelActionByte(468)) = 0x3EB33333;  // 0.35f action[29]
+
+            // action[92..130].speed = 0.32f
+            for (int action = 92; action <= 130; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EA3D70A;
+            }
+            // action[68..73]: gestos originales de 5.2 (HUSTLE, PROVOCATION, LOOK_AROUND,
+            // CHEERS, RUSH1 largo, COME_UP) en los huecos de player.bmd. 5.2 les da 0.32f
+            // (rango DEFENSE1..SHOCK de ZzzOpenData.cpp). Sin bandera de no-loop: terminan solos.
+            for (int action = 68; action <= 73; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EA3D70A;  // 0.32f
+            }
+            // action[131..132].speed = 0.45f
+            for (int action = 131; action <= 132; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3EE66666;
+            }
+            // action[133..140].speed = 0.40f, incluidas las dos poses de apoyo.
+            for (int action = 133; action <= 140; ++action) {
+                *(DWORD*)(A + ModelActionByte(16 * action + 4)) = 0x3ECCCCCD;
+            }
+
+            // Per-action overrides
+            *(DWORD*)(A + ModelActionByte(2084)) = 0x3ECCCCCD;  // 0.40f
+            *(DWORD*)(A + ModelActionByte(1780)) = 0x3E8F5C29;  // 0.28f
+            *(DWORD*)(A + ModelActionByte(1796)) = 0x3E8F5C29;  // 0.28f
+            *(DWORD*)(A + ModelActionByte(2196)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(2212)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1028)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1044)) = 0x3E4CCCCD;  // 0.20f
+            *(DWORD*)(A + ModelActionByte(1252)) = 0x3E75C28F;  // 0.24f  PLAYER_STOP_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1268)) = 0x3E99999A;  // 0.30f  PLAYER_WALK_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1284)) = 0x3E99999A;  // 0.30f  PLAYER_RUN_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1300)) = 0x3E75C28F;  // 0.24f  PLAYER_ATTACK_TWO_HAND_SWORD_TWO
+            *(DWORD*)(A + ModelActionByte(1076)) = 0x3EE66666;  // 0.45f
+
+            // Flag de no-loop (action+0): 1 = se detiene en el último frame.
+            *(BYTE*)(A + ModelActionByte(2096)) = 1;
+            *(BYTE*)(A + ModelActionByte(2112)) = 1;
+            *(BYTE*)(A + ModelActionByte(2064)) = 1;
+        }
+    }
+
+    // Acciones propias (Data/Player/CustomAnim.bmd), anexadas al final del jugador.
+    CustomAnim_AppendToPlayer();
+
+    // Lock animation state machine
+    SetAttackSpeed();
+}

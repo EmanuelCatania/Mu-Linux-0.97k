@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "render/Gfx.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #pragma warning(disable: 4554 4244 4700)
 #include "render/Camera.h"
 #include "render/Materials.h"
@@ -227,7 +227,7 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 // CÓDIGO MUERTO: esta función NO se llama. Es una decompilación errónea
 // que asume corners en DAT_07eab1bc..1e8 (que ya están en world coords post
 // Camera_SetupFrustum). La verdadera FUN_004F8EB0 (CreateFrustrum2D) vive en
-// src/Terrain/Terrain_RenderTerrain.cpp — usa 4 corners hardcoded escalados por
+// src/render/Terrain_RenderTerrain.cpp — usa 4 corners hardcoded escalados por
 // GetScreenWidth(), rotados Z=45°, trasladados por cam_pos. Se mantiene por la
 // declaración en Camera.h pero no debe llamarse.
 void __cdecl Camera_SetMatrix(float *cam_pos)

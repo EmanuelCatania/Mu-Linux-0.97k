@@ -123,7 +123,7 @@ def harness(revision=None):
     for name in ("DAT_07cf1ffc","DAT_07eaa0f8"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    return prefix+SERVICES_SCAN+function(read_source("src/Item/Item_Durability.cpp",revision),"Item_RecalculateRepairCost")+MAIN
+    return prefix+SERVICES_SCAN+function(read_source("src/game/item/Item_Durability.cpp",revision),"Item_RecalculateRepairCost")+MAIN
 
 
 def main():

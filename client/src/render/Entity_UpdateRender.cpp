@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "render/Gfx.h"
 #include "platform/ITimer.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "render/EquipmentVisuals.h"

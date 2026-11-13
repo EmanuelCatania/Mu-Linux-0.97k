@@ -3,7 +3,7 @@
 #include "game/entity/CharacterCloth.h"
 #include "game/entity/ObjectPose.h"
 #include "render/EquipmentVisuals.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 
 extern "C" const char* Guild_GetMarkName(int row);
 // El owner se transporta como puntero nativo, sin pasar sus bits por float.

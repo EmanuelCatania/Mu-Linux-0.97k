@@ -1,7 +1,7 @@
 // Combat_Projectiles.cpp
 
 #include "stdafx.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 

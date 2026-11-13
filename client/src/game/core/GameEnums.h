@@ -1,5 +1,5 @@
 #pragma once
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #ifndef GAME_ENUMS_H
 #define GAME_ENUMS_H
 

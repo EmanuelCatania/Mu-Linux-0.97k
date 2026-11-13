@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "net/NetText.h"
-#include "Item/ItemDefines.h"
+#include "game/item/ItemDefines.h"
 #include "net/Recv/NetRecv.h"
 
 void ReceiveTradeExit97k(const BYTE* Msg, int Size)

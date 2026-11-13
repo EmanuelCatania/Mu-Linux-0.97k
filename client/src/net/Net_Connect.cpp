@@ -13,7 +13,7 @@
 #include "net/Network.h"
 #include "net/Reconnect.h"
 #include "net/Net.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 

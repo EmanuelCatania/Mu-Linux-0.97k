@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "ui/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
@@ -18,9 +18,9 @@ void Terrain_BeginBufferedPass();
 #include "platform/ISocket.h"
 #include "platform/ITimer.h"
 #include "platform/IInput.h"
-#include "Item/ContentCatalog.h"
-#include "Item/ItemDefines.h"
-#include "Item/RightClickMove.h"
+#include "assets/data/ContentCatalog.h"
+#include "game/item/ItemDefines.h"
+#include "game/item/RightClickMove.h"
 #include "app/config/UserSettings.h"
 #include "game/core/MapManager.h"
 #include "structs.h"
@@ -1076,7 +1076,7 @@ void __cdecl FUN_004ec330(void) {
     }
 }
 
-// ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp (port
+// ShowCheckBox (0x0051E240) vive en src/ui/inventory/Item_ClickHandler.cpp (port
 // fiel, con GlobalText[166..169] en la rama del mensaje 153); no duplicarla acá.
 
 // IDA: sub_4E3DB0 (0x004E3DB0)

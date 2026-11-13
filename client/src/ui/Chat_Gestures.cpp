@@ -16,7 +16,7 @@
 #include "globals.h"
 #include "functions.h"
 #include <initializer_list>
-#include "Model/Model_CustomAnim.h"
+#include "assets/model/Model_CustomAnim.h"
 #include "audio/EmoteSound.h"
 #include "app/core/Window.h"
 #include <cstdio>

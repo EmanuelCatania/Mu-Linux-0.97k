@@ -33,7 +33,7 @@ def harness(args):
 #include <type_traits>
 using BYTE=std::uint8_t;using WORD=std::uint16_t;using DWORD=std::uint32_t;using UINT=std::uint32_t;
 using vec3_t=float[3];using vec34_t=float[3][4];
-'''+object_types()+read_source('src/Item/ItemTypes.h')+record(read_source('src/structs.h'),'ITEM_t')+r'''
+'''+object_types()+read_source('src/game/item/ItemTypes.h')+record(read_source('src/structs.h'),'ITEM_t')+r'''
 constexpr std::size_t NativeOffset(std::size_t offset){return offset+(sizeof(void*)==8?(offset>=0x1b8?16:offset>=0x188?12:offset>=0x118?8:offset>=0x100?4:0):0);}
 static_assert(sizeof(OBJECT)==(sizeof(void*)==4?0x1bc:0x1d0));
 static_assert(sizeof(CHARACTER)==(sizeof(void*)==4?0x394:0x3d4));

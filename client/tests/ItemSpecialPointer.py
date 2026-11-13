@@ -73,15 +73,15 @@ def harness(revision=None):
     prefix += "\n#ifndef _WIN32\nusing WORD = std::uint16_t;\n#endif\nusing std::uintptr_t;\n"
     structs = read_source("src/structs.h", revision)
     prefix += re.search(r"^#define MAX_SPECIAL_OPTION[^\n]+", structs, re.M).group() + "\n"
-    if '#include "Item/ItemTypes.h"' in structs:
-        prefix += read_source("src/Item/ItemTypes.h", revision)
+    if '#include "game/item/ItemTypes.h"' in structs:
+        prefix += read_source("src/game/item/ItemTypes.h", revision)
     else:
         prefix += re.search(r"struct ITEM\b.*?\n\};", structs, re.S).group()
     prefix += "\nstatic_assert(sizeof(ITEM) == 68 && offsetof(ITEM, Durability) == 26 && offsetof(ITEM, SpecialNum) == 36);\n"
     prefix += "\n".join(re.findall(r"^inline (?:const )?ITEM\* AsItem[^\n]+", structs, re.M))
     plus = function(read_source("src/app/core/Runtime_Small.cpp", revision), "PlusSpecial")
     # El extractor reconoce int; se conserva el unsigned del retorno de producción.
-    defense = "unsigned " + function(read_source("src/Item/Item_SpecialOption.cpp", revision), "Item_GetDefenseWithSpecial")
+    defense = "unsigned " + function(read_source("src/game/item/Item_SpecialOption.cpp", revision), "Item_GetDefenseWithSpecial")
     arg = "item" if "const ITEM* Item" in plus else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(item))"
     return prefix + plus + defense + MAIN.replace("CALL_PLUS", f"PlusSpecial(value, special, {arg})")
 

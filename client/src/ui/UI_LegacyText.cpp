@@ -1,6 +1,6 @@
 // UI_LegacyText.cpp
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include <string_view>
 #include "platform/Text.h"
 #include "globals.h"

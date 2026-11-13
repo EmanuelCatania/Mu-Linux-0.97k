@@ -6,7 +6,7 @@
 #include "ui/EmoteMenu.h"
 #include "platform/IInput.h"
 #include "net/NetText.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "platform/Text.h"
 #include "render/Camera3D.h"
 #include "platform/input/Input.h"

@@ -1,7 +1,7 @@
 // Cloth_Simulation.cpp
 
 #include "stdafx.h"
-#include "Model/ModelTypes.h"
+#include "assets/model/ModelTypes.h"
 #include "game/physics/ClothTypes.h"
 #include "game/core/RenderInterpolation.h"
 #include "game/core/RenderInterpolationMath.h"

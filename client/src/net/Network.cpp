@@ -6,7 +6,7 @@
 #include "platform/Text.h"
 #include "platform/ISocket.h"
 #include "platform/ITimer.h"
-#include "Item/ContentCatalog.h"
+#include "assets/data/ContentCatalog.h"
 #include "net/Protocol/ProtocolVersion.h"
 #include "net/Reconnect.h"
 #include "game/core/HeroVitals.h"
@@ -20,8 +20,8 @@
 #include "ui/MoveList.h"
 #include "ui/EventTimer.h"
 #include "ui/GoldenArcher.h"
-#include "Item/ChaosMixRates.h"
-#include "Item/Item_ServerValue.h"
+#include "game/item/ChaosMixRates.h"
+#include "game/item/Item_ServerValue.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" void CsmWatchdog(const char *tag);

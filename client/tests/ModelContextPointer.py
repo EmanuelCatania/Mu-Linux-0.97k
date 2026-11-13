@@ -9,7 +9,7 @@ from ObjectLayoutContract import object_types, record
 
 
 def harness(contracts_only=False):
-    header=read_source("src/Model/ModelTypes.h")
+    header=read_source("src/assets/model/ModelTypes.h")
     fields=re.findall(r'MU_ASSERT_FIELD\(BMD,\s*(\w+),\s*(0x[\da-fA-F]+)\)',header)
     checks="\n".join(f'static_assert(offsetof(BMD,{name})==M({offset}));' for name,offset in fields)
     prefix=r'''

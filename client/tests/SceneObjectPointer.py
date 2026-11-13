@@ -193,7 +193,7 @@ def harness(revision=None):
     declaration = re.search(r"extern [^;\n]*\bDAT_05828d58\s*;", header).group()
     definition = re.search(r"^[^/\n]*\bDAT_05828d58\s*=\s*[^;]+;", globals_source, re.M).group()
     initializers = []
-    for path in ("src/platform/ClientEntry.cpp", "src/Model/Model_Items.cpp"):
+    for path in ("src/platform/ClientEntry.cpp", "src/assets/model/Model_Items.cpp"):
         initializers.append(re.search(r"^[ \t]*DAT_05828d58\s*=\s*[^;]+;",
                                       read_source(path, revision), re.M).group())
     validate = ('if(DAT_05828d58 != reinterpret_cast<std::uintptr_t>(models)) '

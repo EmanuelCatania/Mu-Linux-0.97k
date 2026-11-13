@@ -205,7 +205,7 @@ def harness(revision=None):
     if legacy_abi:
         types=types.replace("BYTE     _unk180[0x30];","BYTE ClothCount; BYTE pad181[3]; void* Cloth; BYTE pad188[40];")
         types=types.replace("BYTE     _unk14[4];","void* Cloth;")
-    model=record(read_source("src/Model/ModelTypes.h",revision),"BMD")
+    model=record(read_source("src/assets/model/ModelTypes.h",revision),"BMD")
     types+="\n#pragma pack(push,1)\n"+model+"\n#pragma pack(pop)\n"
     types+=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/render/EquipmentVisuals.h",revision),re.S).group()+"\n"
     equipment=read_source("src/render/EquipmentVisuals.cpp",revision)

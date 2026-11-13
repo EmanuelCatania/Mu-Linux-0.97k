@@ -19,7 +19,7 @@
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
 #include "ui/ChatTypes.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "render/Gfx.h"
 #include "platform/Text.h"
 #include "app/config/UserSettings.h"

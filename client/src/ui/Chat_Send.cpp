@@ -1,7 +1,7 @@
 // Chat_Send.cpp
 
 #include "stdafx.h"
-#include "Text/TextCore.h"
+#include "render/text/TextCore.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
 #include "globals.h"
