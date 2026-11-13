@@ -16,8 +16,23 @@ mu_link_mysql(JoinServer DataServer)
 foreach(service ConnectServer JoinServer DataServer GameServer)
   # Log, Queue: lo propio de cada server va en su LogTypes.h y su Queue.h.
   target_sources(${service} PRIVATE Common/CriticalSection.cpp Common/Log.cpp
-    Common/MiniDump.cpp Common/Queue.cpp Common/ReadScript.cpp)
+    Common/MiniDump.cpp Common/Queue.cpp Common/ReadScript.cpp
+    Common/Console.cpp Common/UtilCommon.cpp)
 endforeach()
+
+# Ventana de estado y log de protocolo de los tres servers simples; lo propio
+# de cada uno está en su ServerDisplayerServer.cpp. El GameServer tiene los suyos.
+foreach(service ConnectServer JoinServer DataServer)
+  target_sources(${service} PRIVATE Common/ServerDisplayer.cpp Common/UtilProtocolLog.cpp)
+endforeach()
+
+# Límite de conexiones por IP; el máximo sale del IpManagerServer.h de cada uno.
+target_sources(ConnectServer PRIVATE Common/IpManager.cpp)
+target_sources(GameServer PRIVATE Common/IpManager.cpp)
+
+# Índice de los GameServer conectados (gServerManager).
+target_sources(JoinServer PRIVATE Common/ServerIndex.cpp)
+target_sources(DataServer PRIVATE Common/ServerIndex.cpp)
 target_sources(JoinServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
 target_sources(DataServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
 

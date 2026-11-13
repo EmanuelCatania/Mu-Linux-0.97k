@@ -50,7 +50,10 @@
     <ClInclude Include="Queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ServerDisplayer.h">
+    <ClInclude Include="..\Common\ServerDisplayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\ServerDisplayerHooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServerManager.h">
@@ -63,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\UtilCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\ReadScript.h">
@@ -127,7 +133,10 @@
     <ClCompile Include="..\Common\Queue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ServerDisplayer.cpp">
+    <ClCompile Include="..\Common\ServerDisplayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerDisplayerServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ServerManager.cpp">
@@ -137,6 +146,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\ServerIndex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\UtilProtocolLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\UtilCommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Common\Log.cpp">
@@ -163,7 +181,7 @@
     <ClCompile Include="GoldenArcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console.cpp">
+    <ClCompile Include="..\Common\Console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

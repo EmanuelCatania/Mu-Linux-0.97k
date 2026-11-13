@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ServerDisplayer.h"
+#include "UtilCommon.h"
 #include "User.h"
 
 int SafeGetItem(int index);
@@ -17,10 +18,6 @@ bool CheckSpaceCharacter(char* Text);
 BYTE GetPathPacketDirPos(int px, int py);
 
 void PacketArgumentDecrypt(char* out_buff, char* in_buff, int size);
-
-void ErrorMessageBox(const char* message, ...);
-
-void LogAdd(eLogColor color, const char* text, ...);
 
 void ConsoleProtocolLog(int type, int aIndex, BYTE* lpMsg, int size);
 

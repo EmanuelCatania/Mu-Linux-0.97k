@@ -153,6 +153,9 @@
     <ClInclude Include="Util.h">
       <Filter>Util Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Common\UtilCommon.h">
+      <Filter>Util Files</Filter>
+    </ClInclude>
     <ClInclude Include="DefaultClassInfo.h">
       <Filter>User</Filter>
     </ClInclude>
@@ -207,7 +210,7 @@
     <ClInclude Include="MemoryAllocatorInfo.h">
       <Filter>Management</Filter>
     </ClInclude>
-    <ClInclude Include="ServerDisplayer.h">
+    <ClInclude Include="..\Common\ServerDisplayer.h">
       <Filter>Management</Filter>
     </ClInclude>
     <ClInclude Include="ServerInfo.h">
@@ -318,7 +321,10 @@
     <ClInclude Include="HackPacketCheck.h">
       <Filter>Connection</Filter>
     </ClInclude>
-    <ClInclude Include="IpManager.h">
+    <ClInclude Include="..\Common\IpManager.h">
+      <Filter>Connection</Filter>
+    </ClInclude>
+    <ClInclude Include="IpManagerServer.h">
       <Filter>Connection</Filter>
     </ClInclude>
     <ClInclude Include="PacketManager.h">
@@ -465,6 +471,9 @@
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
+      <Filter>Util Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\UtilCommon.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="DefaultClassInfo.cpp">
@@ -632,7 +641,7 @@
     <ClCompile Include="HackPacketCheck.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
-    <ClCompile Include="IpManager.cpp">
+    <ClCompile Include="..\Common\IpManager.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="PacketManager.cpp">
@@ -665,7 +674,7 @@
     <ClCompile Include="Protocol.cpp">
       <Filter>Connection\Protocols</Filter>
     </ClCompile>
-    <ClCompile Include="Console.cpp">
+    <ClCompile Include="..\Common\Console.cpp">
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="Blacklist.cpp">

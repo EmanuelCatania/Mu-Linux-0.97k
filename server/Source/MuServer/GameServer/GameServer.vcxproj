@@ -148,7 +148,8 @@
     <ClInclude Include="HackCheck.h" />
     <ClInclude Include="HackPacketCheck.h" />
     <ClInclude Include="InvasionManager.h" />
-    <ClInclude Include="IpManager.h" />
+    <ClInclude Include="..\Common\IpManager.h" />
+    <ClInclude Include="IpManagerServer.h" />
     <ClInclude Include="Item.h" />
     <ClInclude Include="ItemBag.h" />
     <ClInclude Include="ItemBagEx.h" />
@@ -197,7 +198,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ScheduleManager.h" />
     <ClInclude Include="SerialCheck.h" />
-    <ClInclude Include="ServerDisplayer.h" />
+    <ClInclude Include="..\Common\ServerDisplayer.h" />
     <ClInclude Include="ServerInfo.h" />
     <ClInclude Include="Shop.h" />
     <ClInclude Include="ShopManager.h" />
@@ -210,6 +211,7 @@
     <ClInclude Include="Trade.h" />
     <ClInclude Include="User.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="..\Common\UtilCommon.h" />
     <ClInclude Include="Viewport.h" />
     <ClInclude Include="Warehouse.h" />
   </ItemGroup>
@@ -224,7 +226,7 @@
     <ClCompile Include="ChaosBox.cpp" />
     <ClCompile Include="CommandManager.cpp" />
     <ClCompile Include="Connection.cpp" />
-    <ClCompile Include="Console.cpp" />
+    <ClCompile Include="..\Common\Console.cpp" />
     <ClCompile Include="..\Common\CriticalSection.cpp" />
     <ClCompile Include="CustomNpcMove.cpp" />
     <ClCompile Include="CustomPkFree.cpp" />
@@ -254,7 +256,7 @@
     <ClCompile Include="HackCheck.cpp" />
     <ClCompile Include="HackPacketCheck.cpp" />
     <ClCompile Include="InvasionManager.cpp" />
-    <ClCompile Include="IpManager.cpp" />
+    <ClCompile Include="..\Common\IpManager.cpp" />
     <ClCompile Include="Item.cpp" />
     <ClCompile Include="ItemBag.cpp" />
     <ClCompile Include="ItemBagEx.cpp" />
@@ -344,6 +346,7 @@
     <ClCompile Include="Trade.cpp" />
     <ClCompile Include="User.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="..\Common\UtilCommon.cpp" />
     <ClCompile Include="Viewport.cpp" />
     <ClCompile Include="Warehouse.cpp" />
   </ItemGroup>

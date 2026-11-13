@@ -203,18 +203,20 @@
     <ClInclude Include="..\Common\QueryManager.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="ServerDisplayer.h" />
+    <ClInclude Include="..\Common\ServerDisplayer.h" />
+    <ClInclude Include="..\Common\ServerDisplayerHooks.h" />
     <ClInclude Include="ServerManager.h" />
     <ClInclude Include="..\Common\SocketManager.h" />
     <ClInclude Include="SocketManagerServer.h" />
     <ClInclude Include="..\Common\SocketManagerUdp.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="..\Common\UtilCommon.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountManager.cpp" />
     <ClCompile Include="..\Common\AllowableIpList.cpp" />
-    <ClCompile Include="Console.cpp" />
+    <ClCompile Include="..\Common\Console.cpp" />
     <ClCompile Include="..\Common\CriticalSection.cpp" />
     <ClCompile Include="JoinServer.cpp" />
     <ClCompile Include="JoinServerProtocol.cpp" />
@@ -227,7 +229,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\Common\Queue.cpp" />
-    <ClCompile Include="ServerDisplayer.cpp" />
+    <ClCompile Include="..\Common\ServerDisplayer.cpp" />
+    <ClCompile Include="ServerDisplayerServer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="..\Common\SocketManager.cpp" />
     <ClCompile Include="SocketManagerUdp.cpp" />
@@ -238,6 +241,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_MySQL|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="..\Common\ServerIndex.cpp" />
+    <ClCompile Include="..\Common\UtilProtocolLog.cpp" />
+    <ClCompile Include="..\Common\UtilCommon.cpp" />
     <ClCompile Include="..\Common\PasswordHash.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
