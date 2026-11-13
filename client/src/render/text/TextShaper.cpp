@@ -1,6 +1,7 @@
 #include "render/text/TextShaper.h"
 #include "render/text/TextCore.h"
 #include "platform/SDL3/SDLFont.h"
+#include "platform/IFileSystem.h"
 #include <hb.h>
 #include <SheenBidi/SheenBidi.h>
 #include <algorithm>
@@ -207,18 +208,18 @@ void FontStack::LoadFallbacks()
         const char* root = std::getenv("MU_ASSET_ROOT");
         base = std::filesystem::path(root && *root ? root : "") / "Data/Font";
     }
-    std::error_code error;
     std::map<std::string, std::map<std::string, std::string>> families; // familia -> estilo -> archivo
-    for (const auto& entry : std::filesystem::directory_iterator(base, error)) {
-        if (!entry.is_regular_file()) continue;
-        const std::string ext = Lower(entry.path().extension().string());
+    // Por las capas: un pack o el server pueden traer o reemplazar respaldos.
+    for (const auto& entry : Platform::GetFileSystem().ListFiles(base.generic_string().c_str())) {
+        const std::filesystem::path name(entry.name);
+        const std::string ext = Lower(name.extension().string());
         if (ext != ".ttf" && ext != ".otf") continue;
-        const std::string stem = entry.path().stem().string();
+        const std::string stem = name.stem().string();
         if (Lower(stem).rfind("liberationsans", 0) == 0) continue;
         const auto dash = stem.find('-');
         const std::string family = dash == std::string::npos ? stem : stem.substr(0, dash);
         const std::string style = dash == std::string::npos ? "regular" : Lower(stem.substr(dash + 1));
-        families[family][style] = entry.path().generic_string();
+        families[family][style] = entry.path;
     }
     for (const auto& [family, styles] : families) {
         auto pick = styles.find(m_Bold ? "bold" : "regular");

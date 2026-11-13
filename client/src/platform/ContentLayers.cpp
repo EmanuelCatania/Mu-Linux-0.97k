@@ -206,6 +206,122 @@ std::vector<Candidate> Candidates(const char* path)
     return out;
 }
 
+namespace {
+std::shared_ptr<const State> Current()
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    return current;
+}
+
+std::string Real(const std::string& path, const Resolver& resolve)
+{
+    return resolve ? resolve(path) : path;
+}
+
+// Último componente de una ruta con '/'.
+std::string Leaf(const std::string& path)
+{
+    const auto slash = path.rfind('/');
+    return slash == std::string::npos ? path : path.substr(slash + 1);
+}
+
+// Si `key` es "<folder>/<archivo>" sin más carpetas, el nombre del archivo.
+bool DirectChild(const std::string& key, const std::string& folder)
+{
+    return key.size() > folder.size() + 1 && key.compare(0, folder.size(), folder) == 0 &&
+        key[folder.size()] == '/' && key.find('/', folder.size() + 1) == std::string::npos;
+}
+} // namespace
+
+std::vector<Entry> List(const char* dir, const Resolver& resolve)
+{
+    std::vector<Entry> out;
+    if (!dir) return out;
+    const auto state = Current();
+    std::unordered_map<std::string, size_t> seen;
+    auto addFile = [&](const std::string& name, const std::string& path, int layer) {
+        if (seen.emplace(Lower(name), out.size()).second) out.push_back({ name, path, layer });
+    };
+    auto addFolder = [&](const std::string& folder, int layer) {
+        const std::string real = Real(folder, resolve);
+        if (real.empty()) return;
+        std::error_code error;
+        for (fs::directory_iterator it(real, error), end; !error && it != end; it.increment(error)) {
+            if (!it->is_regular_file(error)) { error.clear(); continue; }
+            const std::string name = it->path().filename().string();
+            addFile(name, Normalize(real) + "/" + name, layer);
+        }
+    };
+    auto addMoved = [&](const std::string& path, int layer) {
+        const std::string real = Real(path, resolve);
+        std::error_code error;
+        if (!real.empty() && fs::is_regular_file(real, error)) addFile(Leaf(path), real, layer);
+    };
+
+    const std::string normalized = Normalize(dir);
+    const std::string lowerDir = Lower(normalized);
+    const bool layered = (lowerDir == "data" || lowerDir.compare(0, 5, "data/") == 0) &&
+        (!state->server.empty() || !state->packs.empty() || state->content);
+    int layer = 0;
+    if (layered) {
+        const std::string inner = normalized.size() > 5 ? normalized.substr(5) : std::string();
+        const std::string lower = Lower(inner);
+        // Archivos de esta carpeta que viven en otra: registro de entidades y
+        // alias de un archivo solo. Ganan sobre la carpeta, como en Candidates.
+        std::vector<std::string> moved;
+        if (!lower.empty()) {
+            for (const auto& [from, to] : state->files) if (DirectChild(from, lower)) moved.push_back(to);
+            for (const auto& [from, to] : state->aliases) if (DirectChild(from, lower)) moved.push_back(to);
+            std::sort(moved.begin(), moved.end());
+        }
+        std::string aliased;
+        for (const auto& [from, to] : state->aliases) {
+            if (lower.empty() || lower.compare(0, from.size(), from) != 0) continue;
+            if (lower.size() > from.size() && lower[from.size()] != '/') continue;
+            aliased = to + inner.substr(from.size());
+            break;
+        }
+        auto addRoot = [&](const std::string& root) {
+            for (const std::string& path : moved) addMoved(root + "/" + path, layer);
+            if (!aliased.empty()) addFolder(root + "/" + aliased, layer);
+            addFolder(inner.empty() ? root : root + "/" + inner, layer);
+            ++layer;
+        };
+        if (!state->server.empty()) addRoot(state->server);
+        for (const auto& pack : state->packs) addRoot(pack);
+        if (state->content) addRoot("Content");
+    }
+    addFolder(dir, layer);
+    std::sort(out.begin(), out.end(), [](const Entry& a, const Entry& b) {
+        const std::string la = Lower(a.name), lb = Lower(b.name);
+        return la != lb ? la < lb : a.name < b.name;
+    });
+    return out;
+}
+
+void Walk(const char* root, const std::function<bool(const std::string&)>& visit, const Resolver& resolve)
+{
+    if (!root || !visit) return;
+    const auto state = Current();
+    std::vector<std::string> roots;
+    if (Lower(Normalize(root)) == "data") {
+        if (!state->server.empty()) roots.push_back(state->server);
+        roots.insert(roots.end(), state->packs.begin(), state->packs.end());
+        if (state->content) roots.push_back("Content");
+    }
+    roots.push_back(root);
+    for (const std::string& folder : roots) {
+        const std::string real = Real(folder, resolve);
+        if (real.empty()) continue;
+        std::error_code error;
+        fs::recursive_directory_iterator it(real, fs::directory_options::skip_permission_denied, error), end;
+        for (; !error && it != end; it.increment(error)) {
+            if (!it->is_regular_file(error)) { error.clear(); continue; }
+            if (!visit(it->path().string())) return;
+        }
+    }
+}
+
 std::string Describe()
 {
     std::shared_ptr<const State> state;

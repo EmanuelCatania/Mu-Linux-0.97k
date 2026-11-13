@@ -807,6 +807,15 @@ if(MSVC)
 endif()
 add_test(NAME secure_channel COMMAND mu_secure_channel_test)
 
+# Listado de carpetas por las capas de datos (Fase 5, E2).
+add_executable(mu_content_layers_list_test EXCLUDE_FROM_ALL tests/ContentLayersList.cpp src/platform/ContentLayers.cpp)
+target_include_directories(mu_content_layers_list_test PRIVATE src)
+target_compile_features(mu_content_layers_list_test PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(mu_content_layers_list_test PRIVATE /utf-8 /EHsc)
+endif()
+add_test(NAME content_layers_list COMMAND mu_content_layers_list_test)
+
 add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/render/text/TextCore.cpp src/render/text/Utf8Proc.c src/render/text/UniBreak.c)
 target_include_directories(mu_text_core_test PRIVATE src)
 target_compile_features(mu_text_core_test PRIVATE cxx_std_17)

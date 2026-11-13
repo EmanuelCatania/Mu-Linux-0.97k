@@ -36,6 +36,10 @@ public:
                 return candidate.layer;
         return -1;
     }
+    std::vector<ContentLayers::Entry> ListFiles(const char* dir) override { return ContentLayers::List(dir); }
+    void WalkFiles(const char* root, const std::function<bool(const std::string&)>& visit) override {
+        ContentLayers::Walk(root, visit);
+    }
     uint32_t ExecutablePath(char* output, uint32_t capacity) override {
         return GetModuleFileNameA(nullptr, output, capacity);
     }

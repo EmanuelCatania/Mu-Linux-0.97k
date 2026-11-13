@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "platform/Text.h"
+#include "platform/IFileSystem.h"
 #include "game/core/MapManager.h"
 #include "audio/SoundManager.h"
 #include <algorithm>
@@ -168,20 +169,15 @@ void CMapManager::DetectMusicFiles() const
     m_MusicDetected = true;
     namespace fs = std::filesystem;
     std::vector<std::string> files;
-    // Fase 5 (E2): los temas de mapa están en Content/audio/music/map; el
-    // alias "Music" de Content/alias.toml hace que "Data\Music\<nombre>" los
-    // encuentre. Data/Music se sigue mirando para instalaciones viejas.
-    for (const char* dir : { "Content/audio/music/map", "Data/Music" }) {
-        std::error_code error;
-        for (fs::directory_iterator it(dir, error), end; !error && it != end; it.increment(error)) {
-            const fs::path& path = it->path();
-            std::string ext = path.extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
-            if (ext == ".mp3" && it->is_regular_file(error)) files.push_back(path.filename().string());
-        }
+    // Fase 5 (E2): la carpeta se lista a través de las capas, así cuentan los
+    // temas de Content/audio/music/map (alias "Music" de Content/alias.toml),
+    // los de un pack o del server y los de Data/Music de una instalación vieja.
+    for (const auto& entry : Platform::GetFileSystem().ListFiles("Data/Music")) {
+        std::string ext = fs::path(entry.name).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+        if (ext == ".mp3") files.push_back(entry.name);
     }
     std::sort(files.begin(), files.end());
-    files.erase(std::unique(files.begin(), files.end()), files.end());
     const int count = (int)(sizeof(kMusicFileNames) / sizeof(kMusicFileNames[0]));
     for (int map = 0; map < count && map < MaxMaps; ++map) {
         const std::string want = MusicKey(kMusicFileNames[map]);

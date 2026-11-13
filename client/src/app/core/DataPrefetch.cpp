@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "app/core/DataPrefetch.h"
+#include "platform/IFileSystem.h"
 #include <atomic>
 #include <cstdio>
-#include <filesystem>
+#include <string>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
@@ -27,8 +28,9 @@ public:
     void Start(const char* root)
     {
         if (m_Thread.joinable()) return;
-        // Fase 5 (E2): también Content/, adonde se va mudando Data/.
-        m_Thread = std::thread([this, path = std::string(root)] { Run(path); Run("Content"); });
+        // Fase 5 (E2): el recorrido de Data incluye las capas (packs y
+        // Content/, adonde se va mudando Data/).
+        m_Thread = std::thread([this, path = std::string(root)] { Run(path); });
     }
 
 private:
@@ -46,17 +48,15 @@ private:
         syscall(SYS_ioprio_set, kIoprioWhoProcess, 0, kIoprioClassIdle << 13);
         setpriority(PRIO_PROCESS, static_cast<id_t>(tid), 19);
 #endif
-        namespace fs = std::filesystem;
-        std::error_code error;
         static char buffer[64 * 1024];
-        fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied, error), end;
-        for (; !error && it != end && !m_Stop; it.increment(error)) {
-            if (!it->is_regular_file(error)) continue;
-            FILE* file = std::fopen(it->path().string().c_str(), "rb");
-            if (!file) continue;
-            while (!m_Stop && std::fread(buffer, 1, sizeof(buffer), file) == sizeof(buffer)) {}
-            std::fclose(file);
-        }
+        Platform::GetFileSystem().WalkFiles(root.c_str(), [this](const std::string& path) {
+            // La ruta ya es la real: se abre directo, sin volver a pasar por las capas.
+            if (FILE* file = std::fopen(path.c_str(), "rb")) {
+                while (!m_Stop && std::fread(buffer, 1, sizeof(buffer), file) == sizeof(buffer)) {}
+                std::fclose(file);
+            }
+            return !m_Stop;
+        });
 #ifdef _WIN32
         SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
 #endif

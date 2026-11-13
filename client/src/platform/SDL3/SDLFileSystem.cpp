@@ -114,6 +114,8 @@ std::vector<IniLine> ReadIni(const char* path) {
 }
 #endif
 class SDLFileSystem final : public IFileSystem {
+    // Las capas listan con los nombres reales, sin distinguir mayúsculas.
+    static std::string ResolveText(const std::string& path) { return Resolve(path.c_str()).string(); }
 public:
     FILE* Open(const char* path, const char* mode) override {
         const bool write = mode && (std::strchr(mode, 'w') || std::strchr(mode, 'a') || std::strchr(mode, '+'));
@@ -150,6 +152,12 @@ public:
         for (const auto& candidate : candidates)
             if (candidate.layer <= maxLayer && !Resolve(candidate.path.c_str()).empty()) return candidate.layer;
         return -1;
+    }
+    std::vector<ContentLayers::Entry> ListFiles(const char* dir) override {
+        return ContentLayers::List(dir, ResolveText);
+    }
+    void WalkFiles(const char* root, const std::function<bool(const std::string&)>& visit) override {
+        ContentLayers::Walk(root, visit, ResolveText);
     }
     bool SetWorkingDirectory(const char* path) override {
         auto resolved = Resolve(path);
