@@ -109,5 +109,7 @@ Terrain_Render.obj
 doc-port/
 
 
-# Pack opcional de texturas HD (Data/HD): se distribuye aparte, no va en el repo
-bin/Client/Data/HD/
+# Pack opcional HD/UHD (casa-hd.OZJ, casa-uhd.OZT, modelo-hd.bmd al lado de
+# los originales): se distribuye aparte, no va en el repo
+bin/Client/Data/**/*-hd.*
+bin/Client/Data/**/*-uhd.*
