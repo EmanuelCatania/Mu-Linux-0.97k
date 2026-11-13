@@ -101,6 +101,9 @@ int main()
 		}
 		else
 		{
+			// Antes de escuchar: el accept consulta la lista.
+			gAllowableIpList.Load("AllowableIpList.txt");
+
 			if (gSocketManager.Start(JS_TCP_Port) == false)
 			{
 				gQueryManager.Disconnect();
@@ -115,8 +118,6 @@ int main()
 				}
 				else
 				{
-					gAllowableIpList.Load("AllowableIpList.txt");
-
 					PasswordHashSetup(".\\JoinServer.ini");
 
 					SetTimer(hWnd, TIMER_1000, 1000, 0);
