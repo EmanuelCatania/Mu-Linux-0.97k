@@ -256,6 +256,10 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x22:  // 34 Summon Dark Knight
     case 0x23:  // 35 Summon Bali
     case 0x24:  // 36 Summon Soldier
+    case 0x25:  // 37..40: invocaciones del orbe +7..+10 (Mu-Linux)
+    case 0x26:
+    case 0x27:
+    case 0x28:
     {
         // 0042BCA0 first plays 81 unless the channel state is 77, then
         // enters LABEL_98 for the remote caster animation.

@@ -1016,7 +1016,9 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
 
     CheckTarget(AsCharacter(entity));               // IDA L1778 (retorno ignorado)
 
-    if (iType >= 30 && iType <= 36) {
+    // DESVIACION (Mu-Linux): 37..40 son las invocaciones del orbe +7..+10; el
+    // original llega hasta 36.
+    if (iType >= 30 && iType <= 40) {
         // IDA L2617-2680: invocaciones del arbol Elf.
         if ((int)gMapManager.GetCurrentMap() == 10)                        // IDA L2617: World == 10
             return AF_RETURN;
@@ -1025,7 +1027,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
         return AF_RETURN;
     }
 
-    if (iType > 36) {                                         // IDA L2160
+    if (iType > 40) {                                         // IDA L2160 (36 en el original)
         // Solo 52 tiene rama propia; el resto cae en LABEL_240.
         if (iType == 52 && *(WORD *)&AsCharacter(entity)->Object.Type == 390) {     // IDA L2162
             const WORD leftWeapon  = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[0].Type;    // IDA: v83

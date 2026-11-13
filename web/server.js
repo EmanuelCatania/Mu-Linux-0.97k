@@ -22,6 +22,7 @@ const spawns = require('./lib/spawns');
 const mapsLib = require('./lib/maps');
 const dropsLib = require('./lib/drops');
 const gatesLib = require('./lib/gates');
+const summonsLib = require('./lib/summons');
 const zonesLib = require('./lib/zones');
 const mapFoldersLib = require('./lib/map-folders');
 
@@ -1823,6 +1824,48 @@ app.get('/admin/server-editor/commands', requireAdmin, requireAdminPasswordChang
 
 app.get('/admin/server-editor/skills', requireAdmin, requireAdminPasswordChange, (req, res) => {
   res.render('admin_config_editor', { title: 'CFG skills', kind: 'skill', reload: 'skill' });
+});
+
+// Invocaciones de la elfa: monstruo de cada nivel del orbe y escalado
+// (GameServerInfo - Skill.dat, ver lib/summons.js).
+const SUMMON_SKILL_DAT = 'GameServer/Data/GameServerInfo - Skill.dat';
+
+app.get('/admin/server-editor/summons', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_summon_editor');
+});
+
+app.get('/admin/server-editor/api/summons', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const [skill, monsters] = await Promise.all([
+      readEditorFile(SUMMON_SKILL_DAT),
+      readEditorFile('Data/Monster/Monster.txt')
+    ]);
+    return res.json({ ...summonsLib.parse(skill), monsters: summonsLib.parseMonsters(monsters) });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/summons', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  try {
+    const [skill, monsters] = await Promise.all([
+      readEditorFile(SUMMON_SKILL_DAT),
+      readEditorFile('Data/Monster/Monster.txt')
+    ]);
+    const ids = new Set(summonsLib.parseMonsters(monsters).map((m) => m.id));
+    const state = summonsLib.validate(req.body, ids);
+    const data = await editorRequest('POST', '/api/file', { path: SUMMON_SKILL_DAT, content: summonsLib.apply(skill, state) });
+    return res.json({ ok: true, backups: data.backups || [] });
+  } catch (err) {
+    const status = err instanceof summonsLib.SummonError ? 400 : (err.status || 502);
+    return res.status(status).json({ error: err.message });
+  }
 });
 
 app.get('/admin/server-editor/events', requireAdmin, requireAdminPasswordChange, (req, res) => {

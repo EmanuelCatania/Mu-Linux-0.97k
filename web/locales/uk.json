@@ -840,5 +840,18 @@
   "Ver en el mapa": "Показати на мапі",
   "Se guarda en Data/Items/{file}, en la tabla [{index}]. Sirve para items custom y para los originales.": "Зберігається в Data/Items/{file}, у таблиці [{index}]. Підходить для власних та оригінальних предметів.",
   "Se guarda en Data/Items/{file}, en la tabla [{index}.pet]. El cliente dibuja el movimiento y el server ejecuta las habilidades.": "Зберігається в Data/Items/{file}, у таблиці [{index}.pet]. Клієнт малює рух, а сервер виконує здібності.",
-  "y el precio y el apilado de": "а також ціну та складання в"
+  "y el precio y el apilado de": "а також ціну та складання в",
+  "Invocaciones": "Призови",
+  "Monstruo de cada nivel del Orbe de Invocación y cuánto escala con la elfa.": "Монстр для кожного рівня Сфери призову і наскільки він посилюється разом з ельфійкою.",
+  "Abrir invocaciones": "Відкрити призови",
+  "Cada nivel del Orbe de Invocación enseña una invocación. El monstruo sale de Monster.txt y sus stats suben con la energía y el nivel de la elfa.": "Кожен рівень Сфери призову навчає одного призову. Монстр береться з Monster.txt, а його характеристики ростуть з енергією та рівнем ельфійки.",
+  "(sin invocación)": "(без призову)",
+  "nivel": "рівень",
+  "Orbe": "Сфера",
+  "Monstruos": "Монстри",
+  "Monstruo": "Монстр",
+  "Escalado con la elfa": "Посилення разом з ельфійкою",
+  "Porcentaje = A + Energía / B + Nivel / C, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Відсоток = A + Енергія / B + Рівень / C, з обмеженням. Підвищує життя, шкоду, захист і рейтинги атаки та захисту. 0 у B або C вимикає цей член.",
+  "Tope (%)": "Межа (%)",
+  "Ejemplo: energía": "Приклад: енергія"
 }

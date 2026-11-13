@@ -72,6 +72,18 @@ SummonMonster4=20
 SummonMonster5=10
 SummonMonster6=150
 SummonMonster7=151
+; Mu-Linux: orbe de invocacion +7..+10 (Silver Valkyrie, Lizard King, Tantalos, Beam Knight)
+SummonMonster8=52
+SummonMonster9=48
+SummonMonster10=58
+SummonMonster11=61
+
+; Mu-Linux: la invocacion escala con la elfa. Rate (%) = SummonConstA + Energy / SummonConstB + Level / SummonConstC,
+; con tope SummonMaxRate. Sube vida, dano, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese termino.
+SummonConstA=0
+SummonConstB=20
+SummonConstC=2
+SummonMaxRate=300
 
 ;==================================================
 ; Greater Life Skill Settings
