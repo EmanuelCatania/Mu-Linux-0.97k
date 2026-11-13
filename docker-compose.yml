@@ -13,6 +13,9 @@ services:
     volumes:
       - mu_mysql:/var/lib/mysql
       - ./server/MuServer/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
+      # Los procedimientos van aparte, igual que en la imagen de MySQL publicada
+      # (server/docker/mysql/Dockerfile). Sin ellos una base nueva no deja loguear.
+      - ./server/MuServer/MySQL/DB/Procedures.sql:/docker-entrypoint-initdb.d/01-procedures.sql:ro
       - ./server/docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
       - ./server/MuServer/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
     healthcheck:
