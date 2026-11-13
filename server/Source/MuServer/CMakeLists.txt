@@ -44,8 +44,20 @@ if(WIN32)
 else()
   set(mu_socket_manager Common/SocketManagerLinux.cpp)
 endif()
-target_sources(JoinServer PRIVATE ${mu_socket_manager})
-target_sources(DataServer PRIVATE ${mu_socket_manager})
+target_sources(JoinServer PRIVATE ${mu_socket_manager} Common/ServerManager.cpp)
+target_sources(DataServer PRIVATE ${mu_socket_manager} Common/ServerManager.cpp)
+
+# Enlace UDP con el ConnectServer (el ConnectServer recibe; los otros dos envían).
+# A dónde van los errores y quién atiende lo recibido sale del
+# SocketManagerUdpServer.h de cada uno.
+if(WIN32)
+  set(mu_socket_manager_udp Common/SocketManagerUdp.cpp)
+else()
+  set(mu_socket_manager_udp Common/SocketManagerUdpLinux.cpp)
+endif()
+foreach(service ConnectServer JoinServer GameServer)
+  target_sources(${service} PRIVATE ${mu_socket_manager_udp})
+endforeach()
 
 # Texto de las consultas con los valores escapados (Common/SqlFormat).
 target_sources(JoinServer PRIVATE Common/SqlFormat.cpp)

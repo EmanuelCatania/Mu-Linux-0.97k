@@ -2,7 +2,7 @@
 
 #include "SocketManager.h"
 
-#define MAX_SERVER 400
+#include "ServerManagerServer.h"
 
 #define SERVER_RANGE(x) (((x)<0)?0:((x)>=MAX_SERVER)?0:1)
 
@@ -54,6 +54,7 @@ public:
 
 	DWORD m_PacketTime;
 
+	// Usuarios que informa el GameServer (los usa el JoinServer).
 	int m_CurUserCount;
 
 	int m_MaxUserCount;

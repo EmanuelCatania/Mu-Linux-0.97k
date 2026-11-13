@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "ServerManager.h"
-#include "AccountManager.h"
 #include "Util.h"
 
 CServerManager gServerManager[MAX_SERVER];
@@ -129,7 +128,7 @@ void CServerManager::DelServer()
 
 	this->m_MaxUserCount = 0;
 
-	gAccountManager.ClearServerAccountInfo(ServerCode);
+	ServerManagerOnDelServer(ServerCode);
 }
 
 void CServerManager::SetServerInfo(char* name, WORD port, WORD code)

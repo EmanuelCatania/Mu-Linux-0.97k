@@ -207,6 +207,7 @@
     <ClInclude Include="SkillManager.h" />
     <ClInclude Include="SocketManager.h" />
     <ClInclude Include="..\Common\SocketManagerUdp.h" />
+    <ClInclude Include="SocketManagerUdpServer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Trade.h" />
     <ClInclude Include="User.h" />
@@ -310,7 +311,7 @@
     <ClCompile Include="SkillHitBox.cpp" />
     <ClCompile Include="SkillManager.cpp" />
     <ClCompile Include="SocketManager.cpp" />
-    <ClCompile Include="SocketManagerUdp.cpp" />
+    <ClCompile Include="..\Common\SocketManagerUdp.cpp" />
     <ClCompile Include="..\Common\EventInvasions.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
