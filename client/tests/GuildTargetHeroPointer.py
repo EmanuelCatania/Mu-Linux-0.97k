@@ -70,8 +70,8 @@ def condition(source):
     return found[0]
 
 def harness(revision=None):
-    source=read_source('src/game/entity/Character_Motion.cpp',revision);guild=read_source('src/Net/Recv/Recv_Guild.cpp',revision)
-    header=read_source('src/Net/Recv/NetRecv.h',revision);protocol=read_source('src/Net/Protocol/ProtocolBase.h',revision)
+    source=read_source('src/game/entity/Character_Motion.cpp',revision);guild=read_source('src/net/Recv/Recv_Guild.cpp',revision)
+    header=read_source('src/net/Recv/NetRecv.h',revision);protocol=read_source('src/net/Protocol/ProtocolBase.h',revision)
     count=re.search(r'constexpr int kGuildMarkRecordCount\s*=\s*\d+;',header).group(0)
     width=re.search(r'constexpr std::size_t kGuildNameSize\s*=\s*(\d+);',protocol)[1]
     # Sólo la extracción normaliza el tipo del retorno antes de restaurarlo.

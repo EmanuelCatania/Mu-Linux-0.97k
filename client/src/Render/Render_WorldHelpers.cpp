@@ -16,7 +16,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Render/MaterialVisuals.h"
-#include "Platform/IInput.h"
+#include "platform/IInput.h"
 #include "Render/Camera3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "game/entity/ObjectPose.h"
@@ -1164,7 +1164,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // DamageNumbers_Tick (IDA: MovePoints) — implemented in src/Render/Effect_Tick.cpp
 // Effect_TickFlare (IDA: MovePointers) — implemented in src/Render/Effect_Tick.cpp
 // Render_DrawSpritePool — implemented in src/audio/Sound_Queue.cpp (Sound_UpdateQueue)
-// ClearInput — implemented in src/Input/Input.cpp
+// ClearInput — implemented in src/platform/input/Input.cpp
 // UI_RenderInputField — implemented in src/UI/Chat.cpp
 // UI_RenderText — implemented in src/UI/Chat.cpp
 // Chat_TickNoticeTimer — implemented in src/audio/Sound_Queue.cpp
@@ -1173,7 +1173,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
 // Player_InputTick — implemented in src/game/core/Player_InputTick.cpp
-// Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
+// Mouse_UpdateHoverTargets — implemented in src/platform/input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
 
 // DESVIACION: fauna y luces de skills se preparan con pose SIM a 25 Hz.
 void Fauna_TickSprites() {

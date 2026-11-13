@@ -74,7 +74,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'LinkedList_DestroyAll')+MAIN
 
 def main():

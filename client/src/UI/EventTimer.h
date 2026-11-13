@@ -1,5 +1,5 @@
 #pragma once
-#include "Net/Protocol/GameServerProtocol.h"
+#include "net/Protocol/GameServerProtocol.h"
 
 // Horarios de eventos recibidos por F3/E6, sin calendario local.
 // DESVIACION: el 0.97k no tiene este panel; viene del DLL (EventTimer.cpp) y

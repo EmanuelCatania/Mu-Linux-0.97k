@@ -4,10 +4,10 @@
 
 #include "stdafx.h"
 #include "Model/ModelTypes.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include "game/entity/ObjectBounds.h"
 #include "game/entity/ObjectPose.h"
 #include "Render/Skinning.h"
@@ -403,14 +403,14 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
 // Triangle_ComputeNormal — implemented in src/game/math/Math_3D.cpp
 // Particle_Spawn — implemented in src/Render/Particle_Spawn.cpp (Particle_Spawn)
 // CreateSprite — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
-// PressKey — implemented in src/Input/Input.cpp
+// PressKey — implemented in src/platform/input/Input.cpp
 // UIChatLogWindow_AddText — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
 // TestFrustrum2D — implemented in src/Terrain/Terrain_Utils.cpp
 // OpenJPG — implemented in src/Render/Texture/Texture.cpp (Texture_Load)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) vive en
-// src/Net/Crypto.cpp.
+// src/net/Crypto.cpp.
 
 // Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp
 // GL_DrawTexture — implemented in src/Render/GL_2D.cpp

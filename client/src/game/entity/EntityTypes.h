@@ -1,5 +1,5 @@
 #pragma once
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 #include "types.h"
 #include <cstddef>
 

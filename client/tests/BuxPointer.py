@@ -113,7 +113,7 @@ def harness(revision=None):
     scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
     code0 = function(scene, "BuxConvert_0")
     code1 = function(scene, "BuxConvert_1")
-    terrain = function(read_source("src/Net/Net_Bux.cpp", revision), "BuxConvert")
+    terrain = function(read_source("src/net/Net_Bux.cpp", revision), "BuxConvert")
     call0 = "BuxConvert_0(p, n);"
     call_terrain = "BuxConvert(p, n);"
     if "BuxConvert_0(int buf" in code0:

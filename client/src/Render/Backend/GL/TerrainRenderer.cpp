@@ -1,5 +1,5 @@
 // Sin PCH: todo acceso nuevo a GL queda dentro del backend.
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/RenderBackend.h"
 #include "Render/Backend/GL/ProfileUploads.h"
 #undef glTexImage2D
@@ -15,7 +15,7 @@
 #undef glBufferSubData
 #define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
 
-#include "Platform/GLFunctions.h"
+#include "platform/GLFunctions.h"
 #include "Render/Backend/GL/TerrainRenderer.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/BufferedDraw.h"

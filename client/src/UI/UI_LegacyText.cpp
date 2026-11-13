@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "Text/TextCore.h"
 #include <string_view>
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"

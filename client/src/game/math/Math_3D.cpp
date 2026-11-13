@@ -17,7 +17,7 @@
 //   Math_DegreesToRadians — degrees-to-radians constant (π/180)
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 
 
 float* __cdecl Vector_Rotate(float *param_1,float *param_2,float *param_3)

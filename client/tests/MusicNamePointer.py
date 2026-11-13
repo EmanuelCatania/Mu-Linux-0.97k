@@ -127,14 +127,14 @@ int main() {
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0]
-    prefix+=read_source("src/audio/SoundManager.h",revision).replace("#pragma once","").replace('#include "Platform/PlatformHeaders.h"',"")
+    prefix+=read_source("src/audio/SoundManager.h",revision).replace("#pragma once","").replace('#include "platform/PlatformHeaders.h"',"")
     prefix+=SERVICES
     header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
     for name in ("DAT_055ca018",):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     prefix+=re.search(r"^char\s+DAT_005580ac\[\][^;]+;",definitions,re.M).group()
-    text=read_source("src/Platform/Text.h",revision)
+    text=read_source("src/platform/Text.h",revision)
     prefix+="\nnamespace Platform {"+text[text.index("constexpr std::size_t TruncateText"):text.index("inline int TextConcatSecure")]+"}\n"
     prefix+=function(read_source("src/audio/SoundManager.cpp",revision),"CSound::SetMusicStoppedByUser")
     source=read_source("src/audio/Music.cpp",revision)

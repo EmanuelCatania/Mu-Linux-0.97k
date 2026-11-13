@@ -1,8 +1,8 @@
 // System_Legacy.cpp
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
-#include "Platform/Diagnostics.h"
+#include "platform/ITimer.h"
+#include "platform/Diagnostics.h"
 #include "globals.h"
 #include "functions.h"
 

@@ -35,7 +35,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/Net/Net_Connect.cpp',revision),'CNetwork::InitializePacketSerials')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/net/Net_Connect.cpp',revision),'CNetwork::InitializePacketSerials')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

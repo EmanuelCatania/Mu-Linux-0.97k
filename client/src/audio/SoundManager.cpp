@@ -1,9 +1,9 @@
 // SoundManager.cpp — CSound. Ver SoundManager.h.
 
 #include "stdafx.h"
-#include "Platform/Text.h"
-#include "Platform/IAudio.h"
-#include "Platform/IFileSystem.h"
+#include "platform/Text.h"
+#include "platform/IAudio.h"
+#include "platform/IFileSystem.h"
 #include "audio/SoundManager.h"
 
 #ifndef MU_MINIAUDIO_LINKED

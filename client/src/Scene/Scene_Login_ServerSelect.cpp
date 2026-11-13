@@ -117,7 +117,7 @@
 
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Scene.h"
 
 

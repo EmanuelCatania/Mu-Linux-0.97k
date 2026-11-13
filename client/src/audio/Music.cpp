@@ -11,7 +11,7 @@
 // siga siendo el mismo, igual que antes.
 
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "audio/SoundManager.h"
 
 // IDA: StopMp3 (0x004127F0) — corta el tema si `Name` es el que está sonando.

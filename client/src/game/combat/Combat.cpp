@@ -417,11 +417,11 @@
 #include "stdafx.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_Equip.h"
 #include "game/combat/Combat.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include "globals.h"
 #include "functions.h"
 

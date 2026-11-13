@@ -8,11 +8,11 @@
 //   a2 (nuestro `object`)    = ITEM* equipado (CharacterMachine + 536 + 68*mano).
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include "Item_Equip.h"
 
 // IDA L239: v13 = *(std::uint8_t *)(dword_7D7809C + CharacterAttribute + 87).

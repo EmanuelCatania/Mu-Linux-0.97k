@@ -1,6 +1,6 @@
 // Backend GL de GfxDevice: lleva al dispositivo el estado de Gfx que existe en
 // OpenGL 3.3 core (el resto vive en RenderState y lo aplican los shaders).
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/Backend/GL/ProfileUploads.h"
 #include "Render/Backend/GfxDevice.h"
 #include "Render/RenderState.h"

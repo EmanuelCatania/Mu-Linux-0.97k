@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "Item/ChaosMixRates.h"
-#include "Net/Network.h"
+#include "net/Network.h"
 #include "UI/UIState.h"
 
 CChaosMixRates gChaosMixRates;

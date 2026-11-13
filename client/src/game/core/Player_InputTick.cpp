@@ -3,8 +3,8 @@
 #include "UI/EmojiPicker.h"
 #include "UI/EmoteMenu.h"
 #include "game/entity/EntityName.h"
-#include "Platform/ISocket.h"
-#include "Platform/IInput.h"
+#include "platform/ISocket.h"
+#include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Camera3D.h"
 #include "UI/MiniMap.h"
@@ -12,9 +12,9 @@
 #include "UI/MoveList.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
-#include "Net/MuEmu.h"
-#include "Platform/PlatformHeaders.h"
+#include "net/Net.h"
+#include "net/MuEmu.h"
+#include "platform/PlatformHeaders.h"
 #include <string.h>
 
 

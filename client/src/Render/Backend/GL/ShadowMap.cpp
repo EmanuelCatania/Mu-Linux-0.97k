@@ -1,6 +1,6 @@
 // Sin PCH: GL moderno por glad.
-#include "Platform/GL/glad.h"
-#include "Platform/GLFunctions.h"
+#include "platform/GL/glad.h"
+#include "platform/GLFunctions.h"
 #include "Render/Backend/GL/ShadowMap.h"
 #include "Render/Backend/GfxDevice.h"
 #include "Render/BufferedDraw.h"

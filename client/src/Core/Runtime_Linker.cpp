@@ -2,7 +2,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 
 extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);

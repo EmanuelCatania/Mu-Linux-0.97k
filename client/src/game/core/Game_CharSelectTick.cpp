@@ -24,12 +24,12 @@
 #include "stdafx.h"
 #include "UI/EmoteMenu.h"
 #include "UI/ChatListBox.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "Config/UserSettings.h"
 #include "game/core/Game_CharSelectTick.h"
-#include "Net/Net.h"
-#include "Net/MuEmu.h"
+#include "net/Net.h"
+#include "net/MuEmu.h"
 
 extern "C" void Bisect_ChatMode(const char* tag);
 

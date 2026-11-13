@@ -32,13 +32,13 @@
 #include "stdafx.h"
 #include "UI/ChatListBox.h"
 #include "UI/MoveList.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "game/core/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
@@ -51,7 +51,7 @@ static constexpr DWORD kBuffBonusColor = 0xFF64E664u;
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
+#include "net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage);
 

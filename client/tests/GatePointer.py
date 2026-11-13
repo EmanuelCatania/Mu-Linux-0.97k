@@ -110,7 +110,7 @@ def harness(revision=None):
     definition = re.search(r"^[^/\n]*\bGateAttribute\s*=\s*[^;]+;",
                            read_source("src/globals.cpp", revision), re.M).group()
     allocation = re.search(r"^[ \t]*GateAttribute\s*=\s*[^;]+;",
-                           read_source("src/Platform/ClientEntry.cpp", revision), re.M).group()
+                           read_source("src/platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(900)", "AllocateTable(900)")
     initialize = "void InitializeTable() { " + allocation + " }\n"
     gate = read_source("src/Item/Gate_Data.cpp", revision)

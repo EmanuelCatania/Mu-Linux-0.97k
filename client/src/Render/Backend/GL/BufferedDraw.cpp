@@ -1,10 +1,10 @@
 // Sin PCH: las funciones modernas se resuelven con glad, no GL/gl.h.
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/Backend/GL/ProfileUploads.h"
 #undef glBufferData
 #define glBufferData(...) ::ProfileUploadGL::BufferData(glad_glBufferData,__VA_ARGS__)
 
-#include "Platform/GLFunctions.h"
+#include "platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Backend/Api.h"
 #include "Render/Backend/GL/FragmentPipeline.h"

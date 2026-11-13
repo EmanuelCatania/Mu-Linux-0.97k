@@ -5,7 +5,7 @@ static unsigned bindingReads=0;
 void glGetIntegerv(unsigned query,int* value){++bindingReads;*value=query==0x88EF?0:fakeTexture;}
 #include "Render/Backend/GL/ProfileUploads.h"
 #include "Render/Backend/GL/ProfileQueries.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include <cstdio>
 #include <cstdlib>
 #include <string>

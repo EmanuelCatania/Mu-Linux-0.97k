@@ -65,7 +65,7 @@
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 extern "C" void DbgLogPublic(const char*);
 
 namespace {

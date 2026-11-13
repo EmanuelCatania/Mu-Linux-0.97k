@@ -1,5 +1,5 @@
 #define GLAD_GL_IMPLEMENTATION
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/ProfileStats.h"
 #include <array>

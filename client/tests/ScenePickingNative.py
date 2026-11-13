@@ -50,7 +50,7 @@ def harness(revision=None):
     body=function(s,'PickObject_Mouse')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/game/entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
     prefix+=read_source('src/Scene/SceneObjectCell.h').replace('#pragma once','')+read_source('src/Scene/ObjectRegistry.h').replace('#pragma once','')
-    prefix+=read_source('src/Platform/GuardedOperation.h').replace('#pragma once','').replace('#include "Platform/PlatformHeaders.h"','')
+    prefix+=read_source('src/platform/GuardedOperation.h').replace('#pragma once','').replace('#include "platform/PlatformHeaders.h"','')
     prefix+='static_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));static_assert(offsetof(OBJECT,Angle)==28);static_assert(offsetof(OBJECT,OBB)==(sizeof(void*)==4?304:312));\n'
     return prefix+SERVICES+body+MAIN
 def main():

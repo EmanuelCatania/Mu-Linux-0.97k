@@ -22,7 +22,7 @@
 #include "game/entity/EntityName.h"
 #include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"

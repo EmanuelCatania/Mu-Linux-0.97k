@@ -53,7 +53,7 @@ def harness(revision=None):
     prefix += re.search(r"extern [^;\n]*\bg_csQuest\s*;", header).group()
     prefix += re.search(r"^[^/\n]*\bg_csQuest\s*=\s*[^;]+;", definitions, re.M).group()
     prefix += "\n" + re.search(r"^#define DAT_00583d8c[^\n]+", header, re.M).group() + "\n"
-    source = read_source("src/Net/Crypto.cpp", revision)
+    source = read_source("src/net/Crypto.cpp", revision)
     init = function(source, "Quest_FullInit")
     publish = re.search(r"if \(g_csQuest == 0\) g_csQuest = [^;]+;", init).group()
     reset = re.search(r"g_csQuest = 0;", function(source, "FUN_00403ef0")).group()

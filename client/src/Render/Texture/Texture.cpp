@@ -87,9 +87,9 @@
 #include "Render/ResourceTables.h"
 #include "Render/BufferedDraw.h"
 #include "Render/RenderState.h"
-#include "Platform/Text.h"
-#include "Platform/IWindow.h"
-#include "Platform/IFileSystem.h"
+#include "platform/Text.h"
+#include "platform/IWindow.h"
+#include "platform/IFileSystem.h"
 #include "Texture.h"
 
 #include "ImageCodec.h"

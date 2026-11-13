@@ -100,7 +100,7 @@ int main() {
 def harness(revision=None):
     header = read_source("src/globals.h", revision)
     globals_source = read_source("src/globals.cpp", revision)
-    entry = read_source("src/Platform/ClientEntry.cpp", revision)
+    entry = read_source("src/platform/ClientEntry.cpp", revision)
     definitions, allocations = "", ""
     for name in ("DAT_07d29d20", "DAT_07cf1ff8"):
         definitions += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()

@@ -12,7 +12,7 @@
 #include "game/physics/ClothTypes.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Gfx.h"
-#include "Platform/IAudio.h"
+#include "platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "game/core/MapManager.h"
 #include "globals.h"

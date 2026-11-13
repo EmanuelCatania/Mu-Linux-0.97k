@@ -1,5 +1,5 @@
 // Sin PCH: resolver GL moderno mediante glad.
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/Backend/GL/ProfileUploads.h"
 #undef glTexImage2D
 #define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)

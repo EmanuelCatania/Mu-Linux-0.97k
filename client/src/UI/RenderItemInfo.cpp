@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "Platform/GuardedOperation.h"
-#include "Platform/IFileSystem.h"
+#include "platform/GuardedOperation.h"
+#include "platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"

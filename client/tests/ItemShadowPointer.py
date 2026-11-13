@@ -114,7 +114,7 @@ void ValidatePrimary() {
     constants = read_source("src/Item/ItemDefines.h", revision)
     item_max = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", constants, re.M))
     allocation = re.search(r"^[ \t]*DAT_07cf1ff0\s*=\s*[^;]+;",
-                           read_source("src/Platform/ClientEntry.cpp", revision), re.M).group()
+                           read_source("src/platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(0x8000)", "AllocateShadow(0x8000)")
     data = read_source("src/Item/Item_Data.cpp", revision)
     scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)

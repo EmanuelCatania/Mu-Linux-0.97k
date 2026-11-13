@@ -136,7 +136,7 @@ def harness(revision=None):
     prefix += function(read_source("src/Item/Quest_UIState.cpp",revision),"CSQuest_clearQuest")
     for name in ("Quest_SendState","FUN_00401af0"):
         prefix += function(scene,name)
-    prefix += function(read_source("src/Net/Crypto.cpp",revision),"CSQuest_ProceedButton")
+    prefix += function(read_source("src/net/Crypto.cpp",revision),"CSQuest_ProceedButton")
     return prefix+MAIN
 
 

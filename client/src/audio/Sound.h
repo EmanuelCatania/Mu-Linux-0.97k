@@ -1,6 +1,6 @@
 #pragma once
 // Sound.h — DirectSound8 + MMIO: CWaveFile, Sound_LoadAndPlay, Sound_CreateBuffer.
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 
 struct CWaveFile   // 0x2C bytes
 {

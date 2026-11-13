@@ -58,8 +58,8 @@
 #include "stdafx.h"
 #include "Render/Gfx.h"
 #include "Config/UserSettings.h"
-#include "Platform/Text.h"
-#include "Platform/ITimer.h"
+#include "platform/Text.h"
+#include "platform/ITimer.h"
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_Login_ServerSelect.h"
 

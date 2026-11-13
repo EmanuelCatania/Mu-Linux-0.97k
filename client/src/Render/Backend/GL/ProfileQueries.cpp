@@ -1,7 +1,7 @@
 // Sin PCH: glad es el único proveedor de tipos y funciones GL aquí.
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/RenderBackend.h"
-#include "Platform/GLFunctions.h"
+#include "platform/GLFunctions.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include <array>
 #include <cstdio>

@@ -15,7 +15,7 @@ from ItemNamePointer import harness as name_harness
 from SceneObjectPointer import build_and_run, read_source
 
 SITES = {
-    "src/Input/Input_Timing.cpp": [0],
+    "src/platform/input/Input_Timing.cpp": [0],
     "src/Item/Item_Display.cpp": [0],
     "src/Scene/Scene_CharSelect.cpp": [0,1,2,3,4],
     "src/Scene/Scene_Intro.cpp": [0],

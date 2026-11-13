@@ -41,7 +41,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     helper=function(source,'FUN_0053cc00_impl')
     constructor=function(source,'FUN_0053cbb0')
     legacy='(intptr_t)&PTR_FUN_0055389c'

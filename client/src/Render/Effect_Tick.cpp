@@ -15,8 +15,8 @@
 #include "stdafx.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/GuardedOperation.h"
-#include "Platform/Text.h"
+#include "platform/GuardedOperation.h"
+#include "platform/Text.h"
 extern "C" void DbgLogPublic(const char* msg);
 
 

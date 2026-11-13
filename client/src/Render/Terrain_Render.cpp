@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/GuardedOperation.h"
+#include "platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"

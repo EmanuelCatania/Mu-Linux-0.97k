@@ -2,7 +2,7 @@
 #include "Render/TerrainDraw.h"
 #include "Render/Backend/GL/TerrainRenderer.h"
 #include "Render/RenderProfile.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include <cstdio>
 #include <cstdlib>
 #define CHECK(x) do {if(!(x)){std::fprintf(stderr,"Fallo %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)

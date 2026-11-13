@@ -2,7 +2,7 @@
 
 #include "stdafx.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/IAudio.h"
+#include "platform/IAudio.h"
 #include "globals.h"
 #include "functions.h"
 

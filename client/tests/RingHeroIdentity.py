@@ -11,7 +11,7 @@ from SceneObjectPointer import read_source,build_and_run
 def harness(negative=False):
     header=read_source('src/game/entity/EntityTypes.h')
     records='\n'.join(re.search(r'struct '+n+r'\s*\{.*?\n\};',header,re.S).group() for n in ('OBJECT','PART_t','CHARACTER'))
-    source=read_source('src/Net/Recv/Recv_Viewport.cpp')
+    source=read_source('src/net/Recv/Recv_Viewport.cpp')
     start=source.index('            if (hero) {',source.index('if (entityId == g_HeroKey'))
     end=source.index('            NetLog("NET:    0x12 own HeroKey=',start)
     branch=source[start:end]

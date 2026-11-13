@@ -1,7 +1,7 @@
 // GameGuard_Packet.cpp
 
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 

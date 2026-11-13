@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
 

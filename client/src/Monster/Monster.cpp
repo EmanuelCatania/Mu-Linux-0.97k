@@ -482,7 +482,7 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "game/physics/ClothTypes.h"

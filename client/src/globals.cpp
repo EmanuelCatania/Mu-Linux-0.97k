@@ -7,8 +7,8 @@
 
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
-#include "Platform/ISocket.h"
-#include "Platform/ITimer.h"
+#include "platform/ISocket.h"
+#include "platform/ITimer.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
 // int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).

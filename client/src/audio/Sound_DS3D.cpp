@@ -9,8 +9,8 @@
 
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/ITimer.h"
-#include "Platform/IAudio.h"
+#include "platform/ITimer.h"
+#include "platform/IAudio.h"
 
 
 

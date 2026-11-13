@@ -1,8 +1,8 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
-#include "Platform/Text.h"
-#include "Platform/IFileSystem.h"
+#include "platform/Text.h"
+#include "platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -11,7 +11,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];

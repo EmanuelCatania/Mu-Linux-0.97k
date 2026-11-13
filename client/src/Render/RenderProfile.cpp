@@ -3,7 +3,7 @@
 #include "Render/ProfileStats.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include <array>
 #include <cstdio>
 #include <vector>

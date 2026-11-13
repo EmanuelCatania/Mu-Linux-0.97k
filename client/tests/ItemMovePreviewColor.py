@@ -55,7 +55,7 @@ int main(){
     std::printf("ItemMovePreviewColor: %u secuencias ack/draw/tick sin destello\n",cases);
 }
 '''
-    return header+services+function(read_source('src/Net/Recv/Recv_Item.cpp',revision),'ItemMove_ClearPoolPreview')+function(read_source('src/Item/Item_InventoryRender.cpp'),'InventoryColor')+main
+    return header+services+function(read_source('src/net/Recv/Recv_Item.cpp',revision),'ItemMove_ClearPoolPreview')+function(read_source('src/Item/Item_InventoryRender.cpp'),'InventoryColor')+main
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

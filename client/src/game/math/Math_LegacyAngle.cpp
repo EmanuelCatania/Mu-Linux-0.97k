@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern void __cdecl operator_delete(void* ptr);
 

@@ -23,7 +23,7 @@
 #include <vector>
 #include <climits>
 #include "Item/Item_ServerValue.h"
-#include "Net/Protocol/GameServerProtocol.h"
+#include "net/Protocol/GameServerProtocol.h"
 
 int __cdecl ItemStack_GetMaxStack(int index, int level);
 

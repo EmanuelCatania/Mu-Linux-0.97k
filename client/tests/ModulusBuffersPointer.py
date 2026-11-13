@@ -31,7 +31,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     encode=function(source,'CSimpleModulus_Encode');decode=function(source,'CSimpleModulus_Decode')
     encargs='dst,src,size' if 'BYTE* a1' in encode else '(int)dst,src,size'
     decargs='dst,src,size,unused' if 'BYTE* a1' in decode else '(int)dst,(int)src,size,unused'

@@ -27,14 +27,14 @@ if(MU_PLATFORM_ONLY)
         message(FATAL_ERROR "MU_PLATFORM_ONLY requiere SDL3")
     endif()
     include(MuSDLDependencies)
-    add_subdirectory(src/Platform/SDL3)
+    add_subdirectory(src/platform/SDL3)
     return()
 endif()
 include(MuCompilerOptions)
 include(MuWebGPU)
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     include(MuSDLDependencies)
-    add_subdirectory(src/Platform/SDL3)
+    add_subdirectory(src/platform/SDL3)
 else()
     set(MU_MINIAUDIO_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/miniaudio")
 endif()
@@ -46,9 +46,9 @@ endif()
 # (.github/scripts/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
-    src/Platform/ClientEntry.cpp
-    src/Platform/ContentLayers.cpp
-    src/Platform/GLFunctions.cpp
+    src/platform/ClientEntry.cpp
+    src/platform/ContentLayers.cpp
+    src/platform/GLFunctions.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
@@ -89,52 +89,52 @@ set(MU_SOURCES
     src/game/core/HeroVitals.cpp
     src/game/core/Player_InputTick.cpp
     src/Render/Render_Frame.cpp
-    src/Net/Net_Process.cpp
+    src/net/Net_Process.cpp
     src/Config/Config_Load.cpp
     src/UI/UIState.cpp
     src/Local/ClientText.cpp
     src/Core/Window.cpp
-    src/Platform/Win32/Win32NativeBridge.cpp
-    src/Platform/SDL3/SDLWindow.cpp
-    src/Platform/SDL3/SDLInput.cpp
-    src/Platform/SDL3/SDLGLContext.cpp
-    src/Platform/SDL3/SDLTimer.cpp
-    src/Platform/SDL3/SDLFileSystem.cpp
-    src/Platform/SDL3/SDLNativeBridge.cpp
-    src/Platform/SDL3/SDLAudio.cpp
-    src/Platform/SDL3/SDLSocket.cpp
-    src/Platform/SDL3/SDLFont.cpp
+    src/platform/Win32/Win32NativeBridge.cpp
+    src/platform/SDL3/SDLWindow.cpp
+    src/platform/SDL3/SDLInput.cpp
+    src/platform/SDL3/SDLGLContext.cpp
+    src/platform/SDL3/SDLTimer.cpp
+    src/platform/SDL3/SDLFileSystem.cpp
+    src/platform/SDL3/SDLNativeBridge.cpp
+    src/platform/SDL3/SDLAudio.cpp
+    src/platform/SDL3/SDLSocket.cpp
+    src/platform/SDL3/SDLFont.cpp
     src/Text/TextShaper.cpp
-    src/Platform/Win32/Win32Audio.cpp
-    src/Platform/Win32/Win32Timer.cpp
-    src/Platform/Win32/Win32Input.cpp
-    src/Platform/Win32/Win32Window.cpp
-    src/Platform/Win32/Win32FileSystem.cpp
-    src/Platform/Win32/Win32Socket.cpp
-    src/Platform/Win32/Win32GLContext.cpp
-    src/Platform/FontFrontend.cpp
+    src/platform/Win32/Win32Audio.cpp
+    src/platform/Win32/Win32Timer.cpp
+    src/platform/Win32/Win32Input.cpp
+    src/platform/Win32/Win32Window.cpp
+    src/platform/Win32/Win32FileSystem.cpp
+    src/platform/Win32/Win32Socket.cpp
+    src/platform/Win32/Win32GLContext.cpp
+    src/platform/FontFrontend.cpp
     src/audio/SoundManager.cpp
     src/game/core/MapManager.cpp
-    src/Platform/Win32/ClientWndProc.cpp
-    src/Net/Network.cpp
-    src/Net/Reconnect.cpp
-    src/Net/Ping.cpp
-    src/Net/ServerCharacterStats.cpp
+    src/platform/Win32/ClientWndProc.cpp
+    src/net/Network.cpp
+    src/net/Reconnect.cpp
+    src/net/Ping.cpp
+    src/net/ServerCharacterStats.cpp
     src/Item/ChaosMixRates.cpp
     src/UI/HealthBar.cpp
-    src/Net/Recv/Recv_Account.cpp
-    src/Net/Recv/Recv_Character.cpp
-    src/Net/Recv/Recv_Chat.cpp
-    src/Net/Recv/Recv_Combat.cpp
-    src/Net/Recv/Recv_Event.cpp
-    src/Net/Recv/Recv_Guild.cpp
-    src/Net/Recv/Recv_Item.cpp
-    src/Net/Recv/Recv_Party.cpp
-    src/Net/Recv/Recv_Quest.cpp
-    src/Net/Recv/Recv_Trade.cpp
-    src/Net/Recv/Recv_Viewport.cpp
-    src/Net/Recv/Recv_World.cpp
-    src/Input/Input_WndProc.cpp
+    src/net/Recv/Recv_Account.cpp
+    src/net/Recv/Recv_Character.cpp
+    src/net/Recv/Recv_Chat.cpp
+    src/net/Recv/Recv_Combat.cpp
+    src/net/Recv/Recv_Event.cpp
+    src/net/Recv/Recv_Guild.cpp
+    src/net/Recv/Recv_Item.cpp
+    src/net/Recv/Recv_Party.cpp
+    src/net/Recv/Recv_Quest.cpp
+    src/net/Recv/Recv_Trade.cpp
+    src/net/Recv/Recv_Viewport.cpp
+    src/net/Recv/Recv_World.cpp
+    src/platform/input/Input_WndProc.cpp
     src/Config/UserSettings.cpp
     src/audio/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
@@ -162,7 +162,7 @@ set(MU_SOURCES
     src/Render/Camera.cpp
     src/Render/Camera_Movement.cpp
     src/Render/Entity_Render.cpp
-    src/Net/Crypto.cpp
+    src/net/Crypto.cpp
     src/game/core/Timer.cpp
     src/game/core/FrameLimiter.cpp
     src/audio/Music.cpp
@@ -174,12 +174,12 @@ set(MU_SOURCES
     src/Terrain/Terrain_RenderFace.cpp
     src/Terrain/Terrain_RenderBlocks.cpp
     src/audio/Sound_DS3D.cpp
-    src/Net/Net_Connect.cpp
-    src/Net/Net_PacketSession.cpp
-    src/Net/MuEmu.cpp
-    src/Net/PacketFrame.cpp
-    src/Net/Net_Events.cpp
-    src/Net/HWID.cpp
+    src/net/Net_Connect.cpp
+    src/net/Net_PacketSession.cpp
+    src/net/MuEmu.cpp
+    src/net/PacketFrame.cpp
+    src/net/Net_Events.cpp
+    src/net/HWID.cpp
     src/game/entity/Entity_Init.cpp
     src/game/entity/Entity_MoveClient.cpp
     src/game/entity/Character_Motion.cpp
@@ -204,7 +204,7 @@ set(MU_SOURCES
     src/Core/Legacy_Runtime.cpp
     src/game/entity/EntityName.cpp
     src/game/entity/Entity_Lookup.cpp
-    src/Net/Net_Disconnect.cpp
+    src/net/Net_Disconnect.cpp
     src/Render/Render_MatrixStack.cpp
     src/Scene/Scene_ObjectTick.cpp
     src/Render/Particle_Legacy.cpp
@@ -213,7 +213,7 @@ set(MU_SOURCES
     src/UI/EmojiPicker.cpp
     src/UI/EmoteMenu.cpp
     src/Terrain/Terrain_RayCollision.cpp
-    src/Platform/Win32/MiniDump.cpp
+    src/platform/Win32/MiniDump.cpp
     src/game/combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
@@ -222,7 +222,7 @@ set(MU_SOURCES
     src/GameGuard/GameGuard_Packet.cpp
     src/Render/SMD_Legacy.cpp
     src/UI/UI_LegacyWidgets.cpp
-    src/Net/Net_LegacyRuntime.cpp
+    src/net/Net_LegacyRuntime.cpp
     src/Scene/Scene_CharSelect_Nav.cpp
     src/Item/Item_LegacyHelpers.cpp
     src/UI/UI_DialogInterface.cpp
@@ -259,7 +259,7 @@ set(MU_SOURCES
     src/UI/UI_LegacyWidgetSystem.cpp
     src/Render/Render_LegacyTrails.cpp
     src/UI/UI_LegacyGameHelpers.cpp
-    src/Net/Net_LegacyAuth.cpp
+    src/net/Net_LegacyAuth.cpp
     src/Terrain/Terrain_LegacyLoad.cpp
     src/game/path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
@@ -279,15 +279,15 @@ set(MU_SOURCES
     src/Render/GL_LegacyState.cpp
     src/game/math/Math_LegacyAngle.cpp
     src/Render/BMD_LegacyLoading.cpp
-    src/Input/Cursor_Render.cpp
-    src/Input/Input_Timing.cpp
+    src/platform/input/Cursor_Render.cpp
+    src/platform/input/Input_Timing.cpp
     src/Util/Process_Exit.cpp
-    src/Net/Net_Bux.cpp
+    src/net/Net_Bux.cpp
     src/Scene/Scene_EntityLifecycle.cpp
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Protocol/Protocol_Check.cpp
+    src/net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
     src/Render/Render_WorldHelpers.cpp
     src/Render/BMD_Load.cpp
@@ -311,8 +311,8 @@ set(MU_SOURCES
     src/game/core/Game_SceneUpdate.cpp
     src/game/core/Movement.cpp
     src/game/core/CheckGate.cpp
-    src/Input/Input.cpp
-    src/Input/Mouse_Hover.cpp
+    src/platform/input/Input.cpp
+    src/platform/input/Mouse_Hover.cpp
     src/Item/Item_Equip.cpp
     src/Item/Item_EquipSlots.cpp
     src/Item/Item_Move.cpp
@@ -337,7 +337,7 @@ set(MU_SOURCES
     src/Item/NPC_ModelLoad.cpp
     src/Render/Font_Layout.cpp
     src/Monster/Monster.cpp
-    src/Net/SecondPassword.cpp
+    src/net/SecondPassword.cpp
     src/game/party/Party.cpp
     src/game/core/Party_NameMatch.cpp
     src/Render/Ambient_Particles.cpp
@@ -404,24 +404,24 @@ set(MU_SOURCES
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
 set(MU_HEADERS
-    src/Platform/IClientSettings.h
-    src/Platform/ClientSettings.h
-    src/Platform/IDiagnostics.h
-    src/Platform/Diagnostics.h
-    src/Platform/Win32/Win32Diagnostics.h
-    src/Platform/Posix/PosixDiagnostics.h
-    src/Platform/IIdentity.h
-    src/Platform/Identity.h
-    src/Platform/Win32/Win32Identity.h
-    src/Platform/Posix/PosixIdentity.h
-    src/Platform/LocalTime.h
-    src/Platform/Text.h
-    src/Platform/GuardedOperation.h
+    src/platform/IClientSettings.h
+    src/platform/ClientSettings.h
+    src/platform/IDiagnostics.h
+    src/platform/Diagnostics.h
+    src/platform/Win32/Win32Diagnostics.h
+    src/platform/Posix/PosixDiagnostics.h
+    src/platform/IIdentity.h
+    src/platform/Identity.h
+    src/platform/Win32/Win32Identity.h
+    src/platform/Posix/PosixIdentity.h
+    src/platform/LocalTime.h
+    src/platform/Text.h
+    src/platform/GuardedOperation.h
     src/Scene/ObjectRegistry.h
     src/Scene/SceneObjectCell.h
-    src/Platform/PlatformHeaders.h
-    src/Platform/DebugHeaders.h
-    src/Platform/Posix/WinTypes.h
+    src/platform/PlatformHeaders.h
+    src/platform/DebugHeaders.h
+    src/platform/Posix/WinTypes.h
     src/stdafx.h
     src/functions.h
     src/globals.h
@@ -466,19 +466,19 @@ set(MU_HEADERS
     src/Item/Item_ServerValue.h
     src/UI/GoldenArcher.h
     src/Core/Window.h
-    src/Platform/CompilerCompat.h
-    src/Platform/NativeBridge.h
-    src/Platform/SDL3/SDLPlatform.h
-    src/Platform/IAudio.h
-    src/Platform/ITimer.h
-    src/Platform/IInput.h
-    src/Platform/IWindow.h
-    src/Platform/Win32/Win32Window.h
-    src/Platform/IFileSystem.h
-    src/Platform/ContentLayers.h
-    src/Platform/UserPath.h
-    src/Platform/ISocket.h
-    src/Platform/SDL3/SDLFont.h
+    src/platform/CompilerCompat.h
+    src/platform/NativeBridge.h
+    src/platform/SDL3/SDLPlatform.h
+    src/platform/IAudio.h
+    src/platform/ITimer.h
+    src/platform/IInput.h
+    src/platform/IWindow.h
+    src/platform/Win32/Win32Window.h
+    src/platform/IFileSystem.h
+    src/platform/ContentLayers.h
+    src/platform/UserPath.h
+    src/platform/ISocket.h
+    src/platform/SDL3/SDLFont.h
     src/Render/GlyphAtlas.h
     src/Render/Gfx.h
     src/Render/ResourceTables.h
@@ -501,10 +501,10 @@ set(MU_HEADERS
     src/Render/BufferedDraw.h
     src/Render/TransformMath.h
     src/Render/TransformWorkers.h
-    src/Platform/IGLContext.h
-    src/Platform/GLFunctions.h
-    src/Platform/GL/glad.h
-    src/Platform/Win32/Win32GLContext.h
+    src/platform/IGLContext.h
+    src/platform/GLFunctions.h
+    src/platform/GL/glad.h
+    src/platform/Win32/Win32GLContext.h
     src/Core/Font.h
     src/UI/PanelAnchor.h
     src/UI/EventTimer.h
@@ -518,13 +518,13 @@ set(MU_HEADERS
     src/audio/SoundManager.h
     src/game/core/MapManager.h
     src/game/core/HeroVitals.h
-    src/Net/Network.h
-    src/Net/Reconnect.h
-    src/Net/Ping.h
-    src/Net/ServerCharacterStats.h
+    src/net/Network.h
+    src/net/Reconnect.h
+    src/net/Ping.h
+    src/net/ServerCharacterStats.h
     src/Item/ChaosMixRates.h
     src/UI/HealthBar.h
-    src/Net/Recv/NetRecv.h
+    src/net/Recv/NetRecv.h
     src/game/combat/Combat.h
     src/game/combat/Skills.h
     src/game/core/Game_CharSelectTick.h
@@ -533,13 +533,13 @@ set(MU_HEADERS
     src/game/core/FrameLimiter.h
     src/game/core/Game_SceneUpdate.h
     src/game/core/Movement.h
-    src/Input/Input.h
+    src/platform/input/Input.h
     src/Item/Item_Equip.h
     src/Monster/Monster.h
-    src/Net/Net.h
-    src/Net/HWID.h
-    src/Net/PacketFrame.h
-    src/Net/SecondPassword.h
+    src/net/Net.h
+    src/net/HWID.h
+    src/net/PacketFrame.h
+    src/net/SecondPassword.h
     src/game/party/Party.h
     src/Render/Camera.h
     src/Render/Entity_DrawAt.h
@@ -561,7 +561,7 @@ set(MU_HEADERS
     src/Render/Terrain_Render.h
     src/Render/Texture/ImageCodec.h
     src/Text/TextCore.h
-    src/Net/NetText.h
+    src/net/NetText.h
     src/Text/TextShaper.h
     src/Text/TextAtlas.h
     src/Render/Texture/Texture.h
@@ -580,9 +580,9 @@ set(MU_HEADERS
     src/Debug/MiniDump.h
     src/Debug/Benchmark.h
     src/resource.h
-    src/Net/Protocol/ProtocolBase.h
-    src/Net/Protocol/GameServerProtocol.h
-    src/Net/Protocol/ConnectServerProtocol.h
+    src/net/Protocol/ProtocolBase.h
+    src/net/Protocol/GameServerProtocol.h
+    src/net/Protocol/ConnectServerProtocol.h
 )
 
 set(MU_RESOURCES
@@ -600,14 +600,14 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESO
 endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
-list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+list(FILTER MU_SOURCES EXCLUDE REGEX "src/platform/SDL3/")
 # El shaping (HarfBuzz/SheenBidi) vive en la biblioteca de plataforma SDL3.
 list(REMOVE_ITEM MU_SOURCES src/Text/TextShaper.cpp)
 if(NOT WIN32)
-    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/platform/Win32/")
 endif()
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
-    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
 endif()
 if(WIN32)
     add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
@@ -675,7 +675,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp src/Platform/ContentLayers.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp src/platform/ContentLayers.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -820,7 +820,7 @@ add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     add_executable(mu_bmd_device_test EXCLUDE_FROM_ALL
         tests/BMDDevice.cpp
-        src/Platform/GLFunctions.cpp src/Render/ResourceTables.cpp
+        src/platform/GLFunctions.cpp src/Render/ResourceTables.cpp
         src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
         src/Render/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp
         src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp

@@ -29,17 +29,17 @@
 
 #include "stdafx.h"
 #include <algorithm>
-#include "Platform/ITimer.h"
-#include "Net/Reconnect.h"
-#include "Net/PacketFrame.h"
+#include "platform/ITimer.h"
+#include "net/Reconnect.h"
+#include "net/PacketFrame.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" { void DbgLogPublic(const char*); }
 #pragma warning(disable: 4554 4244 4018 4146)
 #include "game/core/Game_SceneUpdate.h"
-#include "Net/Net.h"
-#include "Net/MuEmu.h"
-#include "Net/Network.h"
+#include "net/Net.h"
+#include "net/MuEmu.h"
+#include "net/Network.h"
 
 
 static void LoginScene_ApplySafeObjectAnim()

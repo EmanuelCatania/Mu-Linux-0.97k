@@ -1,11 +1,11 @@
 // UserSettings.cpp — preferencias del jugador desde Config.ini. Ver UserSettings.h.
 
 #include "stdafx.h"
-#include "Platform/Text.h"
-#include "Platform/IFileSystem.h"
+#include "platform/Text.h"
+#include "platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include "game/core/FrameLimiter.h"
-#include "Platform/IGLContext.h"
+#include "platform/IGLContext.h"
 #include "Render/Gfx.h"
 #include <cerrno>
 #include <climits>

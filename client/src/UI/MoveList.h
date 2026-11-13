@@ -1,5 +1,5 @@
 #pragma once
-#include "Net/Protocol/GameServerProtocol.h"
+#include "net/Protocol/GameServerProtocol.h"
 
 // Menú M del DLL (MoveList.cpp). La lista y los requisitos llegan en el
 // catálogo (sección F3:F5).

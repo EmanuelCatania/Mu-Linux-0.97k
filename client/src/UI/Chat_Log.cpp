@@ -3,11 +3,11 @@
 #include "stdafx.h"
 #include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/MuEmu.h"
-#include "Net/Net.h"
+#include "net/MuEmu.h"
+#include "net/Net.h"
 #include "Render/Camera.h"
 
 // UIChatLogWindow_AddText @ 0x00480620  — full 1:1 port of IDA sub_480620.

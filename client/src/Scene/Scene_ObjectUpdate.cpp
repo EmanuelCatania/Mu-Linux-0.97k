@@ -5,8 +5,8 @@
 
 #include "stdafx.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/GuardedOperation.h"
-#include "Platform/ITimer.h"
+#include "platform/GuardedOperation.h"
+#include "platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"

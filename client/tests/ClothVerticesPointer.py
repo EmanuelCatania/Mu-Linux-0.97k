@@ -100,7 +100,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     getter=function(read_source('src/game/physics/Cloth_Simulation.cpp',revision),'SpringNode_GetPos').replace('SpringNode_GetPos','ActualGetPos')
     extra='';services,main=SERVICES,MAIN
     if 'ClothPoint(' in getter:

@@ -43,7 +43,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 #include <math.h>
 #include <unordered_map>
 #include <vector>

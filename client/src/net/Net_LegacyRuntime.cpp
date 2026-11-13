@@ -1,0 +1,324 @@
+#include <cstdint>
+// Net_LegacyRuntime.cpp
+//
+// Funciones de red/sesión (InitGame, ReceiveChat, SendCheck, ...). Cada una
+// conserva su símbolo/dirección de IDA en el comentario que la precede.
+
+#include "stdafx.h"
+#include "net/NetText.h"
+#include "globals.h"
+#include "functions.h"
+
+extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
+extern void __cdecl Effect_PhysicsTick(std::uintptr_t Object);
+extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
+
+// En el binario original `OffsetInventoryItems` y `DAT_07ea8410` son el mismo
+// símbolo (idem para Mix/Warehouse). En nuestra build son globals separados,
+// así que comparaciones tipo `DAT_07ea9800 == &DAT_07ea8410` tienen que usar
+// las direcciones reales del pool.
+// Forward-decls a nivel TU para usar las direcciones reales del pool.
+extern "C" BYTE OffsetInventoryItems[];   // HUD_Pass3.cpp — main inv (8x8 + 12 wear)
+extern "C" BYTE OffsetTradeItems[];       // HUD_Pass3.cpp
+extern "C" BYTE OffsetMixItems[];         // HUD_Pass3.cpp
+extern "C" BYTE OffsetWarehouseItems[];   // HUD_Pass3.cpp
+extern "C" const char* Guild_GetMarkName(int row);
+extern "C" BYTE Inventory[];              // HUD_Pass3.cpp
+extern "C" int dword_7EAA0C8;             // HUD_Pass3.cpp
+extern "C" int dword_7EAA0CC;             // HUD_Pass3.cpp
+
+// IDA Hex-Rays intrinsic shims.
+#ifndef LODWORD
+#define LODWORD(x)           (*((DWORD*)&(x)))
+#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
+#define SLOBYTE(x)           (*((char*)&(x)))
+#define SHIBYTE(x)           (*(((char*)&(x))+1))
+#define SLOWORD(x)           (*((short*)&(x)))
+#define SLODWORD(x)          (*((int*)&(x)))
+#endif
+#ifndef LOBYTE
+#define LOBYTE(x)            (*((unsigned char*)&(x)))
+#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
+#define LOWORD(x)            (*((unsigned short*)&(x)))
+#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
+#endif
+#ifndef COERCE_FLOAT
+#define COERCE_FLOAT(x)      (*(float*)&(x))
+#endif
+#ifndef __PAIR64__
+#define __PAIR64__(hi,lo)    (((std::uint64_t)(DWORD)(hi)<<32)|(DWORD)(lo))
+#endif
+#ifndef qmemcpy
+#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
+#endif
+#ifndef delete__
+#define delete__(p) operator_delete((unsigned char*)(p))
+#endif
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BATCH 16 — Inventory, equipment, item management, gold formatting
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InitGame @ 0x00424490 (829 bytes, ~227 lines)
+// Resets all game state globals on entering a new game session.
+// Clears: inventory, quest, attack state, NPC selection, repair mode, notices.
+// Hash table operations: looks up CharacterMachine key, clones+XOR-encrypts
+// the CHARACTER_ATTRIBUTE block (0x584 bytes), then re-inserts.
+// Second hash pass decrements ref-count and frees if zero.
+// Finally clears event chip, Muto numbers, whisper, match info, party list.
+// ─────────────────────────────────────────────────────────────────────────────
+void __stdcall InitGame(void)
+{
+    // --- Phase 1: Reset game state globals ---
+    EnableUse = 0;
+    DAT_07e11998 = -1;    // SendGetItem
+    // IDA InitGame L31 es `SummonLife = 0`, y SummonLife vive en 0x05826D24
+    // (lo escriben InitGame, ReceiveRevival x3 y ProtocolCore, y lo lee
+    // RenderEquipedHelperLife).  No confundir con DAT_07E11D28, que es
+    // MouseUpdateTime -- el contador del debounce de movimiento de Player_InputTick.
+    DAT_05826d24 = 0;     // SummonLife
+    DAT_05826c08 = 0;     // SoccerTime    (IDA InitGame @0x4244B4)
+    DAT_05826d33 = 0;     // SoccerObserver (IDA InitGame @0x4244BA)
+    // IDA InitGame L36-39 resetea los globals NOMBRADOS
+    //   SelectedNpc / SelectedOperate / SelectedCharacter / SelectedItem,
+    // que viven en 0x00559C4C / 54 / 50 / 48.  El port escribia DAT_07E11988..94,
+    // que es memoria distinta: el mismo error de alias que esta funcion ya tenia
+    // en SummonLife, Attacking, CheckInventory y World.
+    //
+    // Efecto visible: al volver del mundo al select-server, SelectedCharacter
+    // quedaba con el slot hovereado in-game y Entity_RenderAll_3D le dibujaba el
+    // contorno de seleccion al personaje del barco que cayera en ese indice
+    // (reportado 2026-10-03: el DK aparecia con el borde de seleccionado).
+    SelectedNpc       = -1;
+    SelectedOperate   = -1;
+    SelectedCharacter = -1;
+    SelectedItem      = -1;
+    Attacking = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
+                          // Antes escribia DAT_07e11984, que es el debounce de
+                          // la flecha arriba del chat.
+    m_bAutoAttack = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
+    // IDA InitGame L40 es `CheckInventory = 0`, y CheckInventory vive en
+    // 0x07EAA160 -- es el puntero al ITEM bajo el mouse que Scene_MapTick le
+    // pasa a RenderItemInfo para dibujar el tooltip.  No confundir con
+    // DAT_07E11D24 (el tipo de item de la ventana F1, el que indexa sub_4C2E20).
+    // Si no se limpia, el tooltip queda dibujado encima del char-select y del
+    // select-server.
+    DAT_07eaa160 = 0;     // CheckInventory
+
+    // IDA InitGame tiene ADEMAS esta linea, sobre otro global (ojo: D20, no
+    // D24).  Es el modo de la ventana de ayuda F1.
+    DAT_07e11d20 = 0;
+    // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World), no
+    // DAT_005615c4 (el puntero al mp3 de la taberna).
+    gMapManager.SetCurrentMap(-1);   // World
+    // CSQuest__ClearQuest(g_csQuest);
+    // IDA InitGame L43 es `LockInputStatus = 0`, y LockInputStatus vive en
+    // 0x07E11D6F (xrefs: WndProc x4, InitGame, ReceiveJoinMapServer,
+    // RenderIME_Status).  No confundir con DAT_07E11D1C, que es **LoadingWorld**
+    // -- el contador que gatea el frame de render (`if (LoadingWorld > 30) return`).
+    DAT_07e11d6f = 0;     // LockInputStatus
+    DAT_07eaa134 = 0;     // RepairEnable_0 (IDA InitGame 0x4244FC)
+    DAT_07eaa138 = 0;     // RepairEnable   (IDA InitGame 0x424502)
+    DAT_00559c6d = 0xff;
+    DAT_0055a3e4 = 0xffffffff;
+    ClearNotice();        // IDA: ClearNotice (0x0047FAC0).  Antes llamaba a FUN_0051d740,
+                          // que no es una funcion (cuerpo vacio): los notices del juego
+                          // seguian en pantalla al volver al login o al char-select.
+
+    // --- Phase 2: Hash table lookup for CharacterMachine ---
+    // Looks up CharacterMachine key in MAIN_HASH_CLASS (anti-tamper obfuscation).
+    // If found, clones the 0x584-byte block, XOR-encrypts it with key table
+    // at DAT_00559050 (reverse iterate, XOR ^ subtract 0x23, add 0xB9),
+    // then copies back. Reference count incremented.
+    // This is anti-tamper hash table manipulation — not game logic.
+
+    // --- Phase 3: Reset CharacterAttribute ---
+    // CharacterAttribute->AbilityTime[0] = 0;
+    // CharacterAttribute->AbilityTime[1] = 0;
+    // CharacterAttribute->AddPoint = 0;
+
+    // --- Phase 4: Second hash pass (decrement ref-count, free if zero) ---
+    // Same hash table pattern as Phase 2, but decrements refcount.
+    // If refcount hits 0, calls Packet_EncryptBuffer to free the entry.
+
+    // --- Phase 5: Final cleanup ---
+    DAT_07e11e1c = 0;     // _g_shEventChipCount
+    DAT_07e11e20 = -1;    // g_shMutoNumber[0]
+    DAT_07e11e22 = -1;    // g_shMutoNumber[1]
+    DAT_07e11e24 = -1;    // g_shMutoNumber[2]
+    m_bWhisperSound = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
+    ClearWhisperID();     // IDA: ClearWhisperID (0x004804D0).  Antes llamaba a
+                          // FUN_00482350, que no es una funcion (cae dentro de sub_4824C0).
+    clearMatchInfo();       // clearMatchInfo (0x0047EB80; antes se llamaba a
+                          // FUN_004827a0, un stub vacio con la direccion mal)
+    FUN_00433830();       // InitPartyList
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ReceiveChat @ 0x00427630 (692 bytes, ~156 lines)
+// Packet handler for opcode 0x00 (chat message from server).
+// Packet layout: [C1][len][00][sender:40][prefijo:1][msg...] (0.97.40)
+//
+// Si SceneFlag == 2 (escena de login):
+//   Sends a 4-byte ACK packet {0xC1, 0x04, 0x0E, ...} back to server
+//   (keep-alive/chat ACK). Handles WSAEWOULDBLOCK by queuing to send buffer.
+//
+// En el resto de las escenas:
+//   Extracts sender name (40 bytes @ offset 3) y rutea por el byte de prefijo
+//   en +43 (el mensaje empieza en +44):
+//     '~' (0x7E) → AddText(sender, msg, 4)        — party
+//     '@' (0x40) → AddText(sender, msg, 5)        — guild
+//     '#' (0x23) → AssignChat(sender, msg, 1)     — sólo burbuja
+//     default    → AssignChat(sender, msg, 0) + AddText(sender, msg, 3) — chat
+//                  normal (el mensaje se toma desde +43)
+// ─────────────────────────────────────────────────────────────────────────────
+void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
+{
+    // SceneFlag 2 = escena de login en este cliente (no in-game).
+    if (SceneFlag == 2) {  // SceneFlag == 2 (Login scene)
+        // Send 4-byte ACK: C1 04 0E xx
+        char ackPkt[4];
+        ackPkt[0] = (char)0xC1;
+        ackPkt[1] = 4;
+        ackPkt[2] = 0x0E;
+        ackPkt[3] = 0;
+        gNetwork.SendRaw(ackPkt, 4);
+        return;
+    }
+
+    // --- Chat message processing (escenas que no son el login) ---
+    // 0.97.40: name[40]@+3 y message[200]@+43 (PMSG_CHAT_SEND), en UTF-8.
+    const int MSG = 3 + (int)NetText::CharacterNameSize;
+    char sender[NetText::CharacterNameSize + 1];
+    char msg[NetText::ChatMessageSize + 1];
+    memset(sender, 0, sizeof(sender));
+    memset(msg, 0, sizeof(msg));
+
+    NetText::FromServer(sender, sizeof(sender), ReceiveBuffer + 3, NetText::CharacterNameSize);
+
+    // IDA ReceiveChat (0x427630) usa UIChatLogWindow_AddText(strID, strText, <canal>)
+    // con el canal correcto por prefijo.
+    extern void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode);
+
+    BYTE chatType = ReceiveBuffer[MSG];
+
+    if (chatType == '~') {
+        // Party (canal 4)
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
+        UIChatLogWindow_AddText(sender, msg, 4);
+    }
+    else if (chatType == '@') {
+        // Guild (canal 5)
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
+        UIChatLogWindow_AddText(sender, msg, 5);
+    }
+    else if (chatType == '#') {
+        // Solo burbuja sobre el personaje (sin entrada en el log)
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
+        AssignChat(sender, msg, 1);
+    }
+    else {
+        // Chat normal: burbuja + log en canal 3 (color casi-blanco 0xFFEFDCCD;
+        // renderLine lo saltea si byte_559BF1==0, que es el toggle de F2).
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG, NetText::ChatMessageSize);
+        AssignChat(sender, msg, 0);
+        UIChatLogWindow_AddText(sender, msg, 3);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FUN_00422c50 @ 0x00422C50 (395 bytes, ~99 lines)
+// __fastcall(ecx=contextObj). Binary tree node cleanup for a connection/session
+// object. Frees 4 heap allocations at offsets +0x3FC, +0x408, +0x40C, +0x410.
+// Resets +0x400 to 1950000000 (likely a timeout sentinel), +0x404 to -1.
+// Then rebuilds the BST rooted at +0x41C:
+//   - Sets vtable at +0x414 to PTR_LAB_00552840
+//   - Recursively inserts left/right children via CBTree_RemoveFrom
+//   - Removes root node via FUN_004236c0 or CBTree_RemoveNode
+//   - Handles the "find rightmost in left subtree" replacement for BST delete
+// Finally zeroes +0x41C (root) and +0x418 (count).
+// ─────────────────────────────────────────────────────────────────────────────
+void __fastcall FUN_00422c50(intptr_t param_1)
+{
+    // Free heap allocations
+    if (*(void **)(param_1 + 0x3FC) != NULL) {
+        operator_delete(*(void **)(param_1 + 0x3FC));
+        *(DWORD *)(param_1 + 0x3FC) = 0;
+    }
+    if (*(void **)(param_1 + 0x408) != NULL) {
+        operator_delete(*(void **)(param_1 + 0x408));
+        *(DWORD *)(param_1 + 0x408) = 0;
+    }
+    if (*(void **)(param_1 + 0x40C) != NULL) {
+        operator_delete(*(void **)(param_1 + 0x40C));
+        *(DWORD *)(param_1 + 0x40C) = 0;
+    }
+    if (*(void **)(param_1 + 0x410) != NULL) {
+        operator_delete(*(void **)(param_1 + 0x410));
+        *(DWORD *)(param_1 + 0x410) = 0;
+    }
+    *(int *)(param_1 + 0x400) = 1950000000;  // timeout sentinel
+    *(int *)(param_1 + 0x404) = -1;
+
+    // BST rebuild at +0x414 / +0x41C
+    // Walks tree, re-inserts children via CBTree_RemoveFrom, then removes root.
+    // Handles standard BST node deletion with in-order predecessor swap.
+    // Details: see Ghidra decompile @ 0x00422C50.
+
+    *(DWORD *)(param_1 + 0x41C) = 0;  // root = NULL
+    *(DWORD *)(param_1 + 0x418) = 0;  // count = 0
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AppearMonster @ 0x0042A0C0 (234 bytes, ~44 lines)
+// Sets initial animation + sound when a monster entity first appears on screen.
+// Dispatched by MonsterIndex (entity type):
+//   0x15 (21)       → action 1, sound 0x13  (bull fighter)
+//   0x2C (44)       → action 1, sound 0x126 (agon)
+//   0x35-0x36 (53-54) → action 1, Appear=60 frames (fade-in over ~2.4s)
+//   0x55,0x5B,0x61,0x72,0x78,0x7E → sound 0x14B (boss monsters)
+//   Object.Type==0x186 → action 0x81, alpha 1.0 (special NPC)
+//   default         → alpha 0.0 (invisible, fade-in handled elsewhere)
+// ─────────────────────────────────────────────────────────────────────────────
+void __cdecl AppearMonster(intptr_t c)
+{
+    BYTE monIdx = *(BYTE *)(c + 0x02);  // MonsterIndex
+    switch (monIdx) {
+    case 0x15:
+        *(int *)(c + EntityOffset(0x105)) = 1;   // SetAction(obj, 1)
+        *(int *)(c + EntityOffset(0x106)) = 1;   // PriorAction = 1
+        *(float *)(c + 0x04) = 1.0f; // Alpha = 1.0
+        PlayBuffer(0x13, 0, 0);
+        return;
+    case 0x2C:
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
+        *(float *)(c + 0x04) = 1.0f;
+        PlayBuffer(0x126, 0, 0);
+        return;
+    case 0x35:
+    case 0x36:
+        *(int *)(c + EntityOffset(0x100)) = 60;  // Appear = 60 frames
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
+        *(float *)(c + 0x04) = 1.0f;
+        return;
+    case 0x55: case 0x5B: case 0x61:
+    case 0x72: case 0x78: case 0x7E:
+        PlayBuffer(0x14B, 0, 0);   // boss spawn sound
+        return;
+    }
+    if (*(int *)(c + 0x00) == 0x186) {  // Object.Type == special NPC
+        *(int *)(c + EntityOffset(0x105)) = 0x81;
+        *(int *)(c + EntityOffset(0x106)) = 0x81;
+        *(float *)(c + 0x04) = 1.0f;
+        return;
+    }
+    *(float *)(c + 0x04) = 0.0f;  // default: invisible
+}
+
+// ─────────────────────────────────────────────────────────────────────────────

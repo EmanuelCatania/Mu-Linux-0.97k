@@ -8,16 +8,16 @@ extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "Render/TerrainDraw.h"
 void Terrain_BeginBufferedPass();
 #include "Render/BufferedDraw.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "game/entity/ObjectBounds.h"
-#include "Platform/Text.h"
-#include "Platform/ISocket.h"
-#include "Platform/ITimer.h"
-#include "Platform/IInput.h"
+#include "platform/Text.h"
+#include "platform/ISocket.h"
+#include "platform/ITimer.h"
+#include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
@@ -26,7 +26,7 @@ void Terrain_BeginBufferedPass();
 #include "structs.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 // El rango de guild pide C1 plano (Encrypt=0).
 extern "C" void GuildCreator_CloseFromResult(void);

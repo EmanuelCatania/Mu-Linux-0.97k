@@ -2,10 +2,10 @@
 #include "stdafx.h"
 #include <cstring>
 #include "game/core/RenderSnapshots.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern void __cdecl operator_delete(void* ptr);
 

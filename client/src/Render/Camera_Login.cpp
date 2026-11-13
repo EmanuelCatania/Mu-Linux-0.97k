@@ -4,8 +4,8 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/MuEmu.h"
-#include "Net/Net.h"
+#include "net/MuEmu.h"
+#include "net/Net.h"
 #include "Render/Camera.h"
 
 // FUN_004F8EB0 @ 0x004F8EB0 — Login_CameraUpdate; wrapper signature differs.

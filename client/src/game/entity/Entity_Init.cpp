@@ -9,7 +9,7 @@
 // Max slots: 0x59740 / 0x394 = 640
 
 #include "stdafx.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IFileSystem.h"
 
 
 // CreateHero — CreateHero (Ghidra-confirmed signature)

@@ -9,7 +9,7 @@
 // Se usan con gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG),
 // gFont.GetTextDC() y gFont.GetTextBits().
 
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 #include <string>
 #include <vector>
 

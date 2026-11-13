@@ -5,10 +5,10 @@
 #include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "UI/ChatTypes.h"
 #include <string>
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 

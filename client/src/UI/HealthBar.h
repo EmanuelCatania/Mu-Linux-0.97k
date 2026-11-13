@@ -1,5 +1,5 @@
 #pragma once
-#include "Net/Protocol/GameServerProtocol.h"
+#include "net/Protocol/GameServerProtocol.h"
 
 class CHealthBar
 {

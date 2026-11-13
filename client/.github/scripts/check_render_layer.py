@@ -1,6 +1,6 @@
 """Verifica que el código del juego no use OpenGL directamente.
 
-Sólo src/Render/Backend/** y src/Platform/** pueden llamar a gl*/wgl*/glu*,
+Sólo src/Render/Backend/** y src/platform/** pueden llamar a gl*/wgl*/glu*,
 usar constantes GL_* o tipos GL*. El resto pasa por Render/Gfx.h y
 Render/BufferedDraw.h. Se ignoran comentarios y literales de texto.
 
@@ -12,7 +12,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-ALLOWED = ('src/Render/Backend/', 'src/Platform/')
+ALLOWED = ('src/Render/Backend/', 'src/platform/')
 ALLOWED_FILES = set()
 
 PATTERN = re.compile(
@@ -64,7 +64,7 @@ def main():
         if path.suffix not in ('.cpp', '.h', '.hpp', '.inl'):
             continue
         rel = path.relative_to(ROOT).as_posix()
-        if rel == 'src/Platform/GL/glad.h':
+        if rel == 'src/platform/GL/glad.h':
             continue
         allowed = rel.startswith(ALLOWED) or rel in ALLOWED_FILES
         text = strip_comments_and_strings(path.read_text(encoding='utf-8', errors='replace'))

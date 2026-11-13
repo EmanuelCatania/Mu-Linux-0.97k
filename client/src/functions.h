@@ -3,7 +3,7 @@
 // No agregar declaraciones FUN_ sin definición para direcciones que ya tienen su
 // función declarada con el nombre de IDA: un segundo símbolo C++ para la misma
 // dirección del binario termina en puentes muertos.
-#include "Platform/CompilerCompat.h"
+#include "platform/CompilerCompat.h"
 #include <cstdint>
 #include "game/physics/ClothTypes.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)

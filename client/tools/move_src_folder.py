@@ -8,7 +8,7 @@ Hace `git mv` de la carpeta y actualiza todo lo que la nombra:
   - los #include "Vieja/..." de src/ (sólo líneas de include: no toca rutas
     de datos como "Data/Sound/...") y las menciones src/Vieja/ de los comentarios;
   - las rutas src/Vieja/ y src\\Vieja\\ de CMakeLists.txt, mu97k.vcxproj,
-    src/Platform/SDL3/CMakeLists.txt, .github/scripts/ y tests/;
+    src/platform/SDL3/CMakeLists.txt, .github/scripts/ y tests/;
   - tests/source_paths.py, para que los tests que leen revisiones viejas
     encuentren el archivo en su ruta anterior.
 """
@@ -64,7 +64,7 @@ def main():
         # includes y las menciones "src/Vieja/..." de los comentarios
         changed += rewrite(f, lambda t: slash.sub(f'src/{new}/', include.sub(r'\g<1>' + new + '/', t)))
     back = re.compile(r'src\\' + re.escape(old.replace('/', '\\')) + r'\\')
-    for f in files(['CMakeLists.txt', 'src/Platform/SDL3/CMakeLists.txt', 'mu97k.vcxproj', 'mu97k.vcxproj.filters',
+    for f in files(['CMakeLists.txt', 'src/platform/SDL3/CMakeLists.txt', 'mu97k.vcxproj', 'mu97k.vcxproj.filters',
                     '.github/scripts/*.py', 'tests/*.py']):
         if f.name == 'source_paths.py':
             continue

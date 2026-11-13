@@ -6,10 +6,10 @@
 #include "Render/Gfx.h"
 #include "Render/Materials.h"
 #include "Render/Texture/ImageCodec.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern void __cdecl operator_delete(void* ptr);
 
