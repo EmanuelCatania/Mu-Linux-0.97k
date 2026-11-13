@@ -47,6 +47,7 @@ endif()
 set(MU_SOURCES
     src/stdafx.cpp
     src/Platform/ClientEntry.cpp
+    src/Platform/ContentLayers.cpp
     src/Platform/GLFunctions.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
@@ -474,6 +475,7 @@ set(MU_HEADERS
     src/Platform/IWindow.h
     src/Platform/Win32/Win32Window.h
     src/Platform/IFileSystem.h
+    src/Platform/ContentLayers.h
     src/Platform/UserPath.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
@@ -673,7 +675,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/Gfx.cpp src/Render/Backend/GL/GfxDevice.cpp src/Render/Backend/Dispatch.cpp src/Render/RenderState.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/BufferedDraw.cpp src/Render/Skinning.cpp src/Render/MeshTopology.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp src/Render/Backend/GL/ShadowMap.cpp src/Render/ShadowLight.cpp src/Platform/ContentLayers.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.

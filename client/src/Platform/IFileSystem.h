@@ -14,6 +14,9 @@ public:
     // Crea un directorio de salida; acepta un directorio ya existente.
     virtual bool EnsureDirectory(const char* path) = 0;
     virtual bool Exists(const char* path) = 0;
+    // Capa donde está `path` (Platform/ContentLayers.h: 0 = la que más gana),
+    // mirando sólo hasta `maxLayer`; -1 si no está. Sin capas, Data es la 0.
+    virtual int FindLayer(const char* path, int maxLayer) = 0;
     virtual uint32_t ExecutablePath(char* output, uint32_t capacity) = 0;
     virtual uint32_t ReadIniString(const char* section, const char* key,
         const char* fallback, char* output, uint32_t capacity, const char* path) = 0;

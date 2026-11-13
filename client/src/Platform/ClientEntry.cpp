@@ -37,6 +37,7 @@
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Platform/IFileSystem.h"
+#include "Platform/ContentLayers.h"
 #include "Item/ItemDefines.h"
 #include "resource.h"
 #ifdef _WIN32
@@ -471,6 +472,9 @@ int main(int, char**)
         Platform::GetWindow().ShowError("No se pudo inicializar el diagnóstico de crashes", "Mu Online", false, true);
         return 1;
     }
+    // Fase 5 (E2): capas de datos (Packs/, Content/) con el directorio ya fijado.
+    Platform::ContentLayers::Init();
+    DbgLogPublic(Platform::ContentLayers::Describe().c_str());
 #if defined(_DEBUG) && defined(_WIN32)
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
     // siguiente alloc/free que toque el bloque dañado — rápido sin O(n^2) de

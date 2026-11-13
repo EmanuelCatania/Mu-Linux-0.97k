@@ -437,6 +437,23 @@ misma carpeta y con el mismo formato, con el sufijo `-hd` antes de la extensión
 Se activan con `HDTextures = 1`; con `0` no se busca ningún archivo extra.
 Es sólo visual: el server no se entera.
 
+### Capas de datos
+
+Además de `Data/`, el cliente busca cada archivo de datos en otras carpetas al
+lado de `main.exe`, en este orden (la primera que lo tenga gana):
+
+1. `Servers/<ip>_<puerto>/`: contenido del server al que estás conectado.
+2. `Packs/<nombre>/`: packs opcionales del jugador, en orden alfabético.
+3. `Content/`: contenido del juego en el orden nuevo (en migración).
+4. `Data/`: el orden de siempre.
+
+Las tres primeras reflejan el interior de `Data`: `Packs/MiPack/Object8/casa.OZJ`
+reemplaza a `Data/Object8/casa.OZJ`. `Content/alias.toml` traduce carpetas
+viejas a las nuevas (`"Object8" = "map/atlans/objects"`). Una versión `-hd`
+sólo se usa si está en la misma capa que el clásico o en una que gane: así un
+pack puede traer sólo `-hd`, pero el `-hd` de `Data` no pisa lo que reemplazó
+un pack. Las capas se leen al arrancar y quedan en `User/debug.log`.
+
 ---
 
 ## Textos, idiomas y Unicode

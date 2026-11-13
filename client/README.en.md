@@ -433,6 +433,23 @@ and the same format, with a `-hd` suffix before the extension:
 
 They are used with `HDTextures = 1`; with `0` no extra file is looked up. It is visual only: the server is not involved.
 
+### Data layers
+
+Besides `Data/`, the client looks for each data file in other folders next to
+`main.exe`, in this order (the first one that has it wins):
+
+1. `Servers/<ip>_<port>/`: content of the server you are connected to.
+2. `Packs/<name>/`: the player's optional packs, in alphabetical order.
+3. `Content/`: game content in the new layout (being migrated).
+4. `Data/`: the usual layout.
+
+The first three mirror the inside of `Data`: `Packs/MyPack/Object8/house.OZJ`
+replaces `Data/Object8/house.OZJ`. `Content/alias.toml` maps old folders to the
+new ones (`"Object8" = "map/atlans/objects"`). A `-hd` version is only used if
+it is in the same layer as the classic file or in one that wins: a pack can
+ship only `-hd` files, but the `-hd` in `Data` does not override what a pack
+replaced. Layers are read at startup and logged in `User/debug.log`.
+
 ---
 
 ## Text, languages and Unicode

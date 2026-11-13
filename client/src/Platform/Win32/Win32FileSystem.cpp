@@ -1,11 +1,20 @@
 #include "stdafx.h"
 #include "Platform/IFileSystem.h"
+#include "Platform/ContentLayers.h"
+#include <cstring>
 
 namespace Platform {
 namespace {
 class Win32FileSystem final : public IFileSystem {
 public:
-    FILE* Open(const char* path, const char* mode) override { return fopen(path, mode); }
+    FILE* Open(const char* path, const char* mode) override {
+        const bool write = mode && (std::strchr(mode, 'w') || std::strchr(mode, 'a') || std::strchr(mode, '+'));
+        // Lecturas de Data/: la primera capa que tenga el archivo (ContentLayers).
+        if (!write)
+            for (const auto& candidate : ContentLayers::Candidates(path))
+                if (FILE* file = fopen(candidate.path.c_str(), mode)) return file;
+        return fopen(path, mode);
+    }
     bool SetWorkingDirectory(const char* path) override { return SetCurrentDirectoryA(path) != FALSE; }
     uint32_t WorkingDirectory(uint32_t capacity, char* output) override {
         return GetCurrentDirectoryA(capacity, output);
@@ -14,7 +23,18 @@ public:
         return CreateDirectoryA(path, nullptr) != 0 || GetLastError() == ERROR_ALREADY_EXISTS;
     }
     bool Exists(const char* path) override {
+        for (const auto& candidate : ContentLayers::Candidates(path))
+            if (GetFileAttributesA(candidate.path.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
         return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+    }
+    int FindLayer(const char* path, int maxLayer) override {
+        const auto candidates = ContentLayers::Candidates(path);
+        if (candidates.empty())
+            return maxLayer >= 0 && GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES ? 0 : -1;
+        for (const auto& candidate : candidates)
+            if (candidate.layer <= maxLayer && GetFileAttributesA(candidate.path.c_str()) != INVALID_FILE_ATTRIBUTES)
+                return candidate.layer;
+        return -1;
     }
     uint32_t ExecutablePath(char* output, uint32_t capacity) override {
         return GetModuleFileNameA(nullptr, output, capacity);
