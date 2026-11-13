@@ -205,7 +205,8 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ServerDisplayer.h" />
     <ClInclude Include="ServerManager.h" />
-    <ClInclude Include="SocketManager.h" />
+    <ClInclude Include="..\Common\SocketManager.h" />
+    <ClInclude Include="SocketManagerServer.h" />
     <ClInclude Include="..\Common\SocketManagerUdp.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Util.h" />
@@ -228,7 +229,7 @@
     <ClCompile Include="..\Common\Queue.cpp" />
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />
-    <ClCompile Include="SocketManager.cpp" />
+    <ClCompile Include="..\Common\SocketManager.cpp" />
     <ClCompile Include="SocketManagerUdp.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

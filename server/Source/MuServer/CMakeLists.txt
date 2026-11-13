@@ -21,6 +21,17 @@ endforeach()
 target_sources(JoinServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
 target_sources(DataServer PRIVATE Common/QueryManager.cpp Common/AllowableIpList.cpp)
 
+# SocketManager de los dos servers que atienden a los GameServer. Lo propio de
+# cada uno (tope del buffer y quién atiende los paquetes) va en su
+# SocketManagerServer.h. ConnectServer y GameServer tienen el suyo en su carpeta.
+if(WIN32)
+  set(mu_socket_manager Common/SocketManager.cpp)
+else()
+  set(mu_socket_manager Common/SocketManagerLinux.cpp)
+endif()
+target_sources(JoinServer PRIVATE ${mu_socket_manager})
+target_sources(DataServer PRIVATE ${mu_socket_manager})
+
 # Texto de las consultas con los valores escapados (Common/SqlFormat).
 target_sources(JoinServer PRIVATE Common/SqlFormat.cpp)
 target_sources(DataServer PRIVATE Common/SqlFormat.cpp)

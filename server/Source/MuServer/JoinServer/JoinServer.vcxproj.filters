@@ -59,7 +59,10 @@
     <ClInclude Include="ServerManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SocketManager.h">
+    <ClInclude Include="..\Common\SocketManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketManagerServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\SocketManagerUdp.h">
@@ -124,7 +127,7 @@
     <ClCompile Include="ServerManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SocketManager.cpp">
+    <ClCompile Include="..\Common\SocketManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SocketManagerUdp.cpp">
