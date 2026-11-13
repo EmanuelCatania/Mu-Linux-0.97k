@@ -27,7 +27,8 @@ public:
     void Start(const char* root)
     {
         if (m_Thread.joinable()) return;
-        m_Thread = std::thread([this, path = std::string(root)] { Run(path); });
+        // Fase 5 (E2): también Content/, adonde se va mudando Data/.
+        m_Thread = std::thread([this, path = std::string(root)] { Run(path); Run("Content"); });
     }
 
 private:
