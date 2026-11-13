@@ -23,7 +23,7 @@ CheckAutoPotionHackTolerance=50
 ; Validacion del camino que manda el cliente: el inicio tiene que estar cerca
 ; de la posicion que calcula el server y ningun paso puede pisar una pared.
 ; 0 = apagada, 1 = observar (solo registra en el log de hack), 2 = aplicar
-MoveCheck=1
+MoveCheck=2
 ; Tiles que el inicio del camino puede alejarse de la posicion del server
 MoveCheckTolerance=4
 ; Distancia que el personaje puede recorrer, en milisegundos. Se recarga con
