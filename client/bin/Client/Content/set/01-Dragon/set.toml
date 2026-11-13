@@ -1,0 +1,5 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Player con el mismo nombre.
+source = "Player"
+index = 1   # índice del item en las secciones 7..11
+name = "Dragon"

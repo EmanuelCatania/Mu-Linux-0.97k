@@ -449,9 +449,11 @@ se estiver na mesma camada do clássico ou em uma que ganhe: um pacote pode
 trazer só `-hd`, mas o `-hd` de `Data` não substitui o que um pacote trocou. As
 camadas são lidas ao iniciar e ficam no `User/debug.log`.
 
-Os monstros já estão por entidade: cada um é uma pasta
-`Content/monster/<NN-Nome>/` com o modelo, as texturas e um `monster.toml`
-(`source = "Monster"`, o modelo e os tipos do `Monster.txt` que o usam). Ao
+Monstros, NPCs e sets já estão por entidade: cada um é uma pasta
+(`Content/monster/01-BullFighter/`, `Content/npc/Smith/`, `Content/set/01-Dragon/`)
+com o modelo, as texturas e um `.toml` do tipo (`monster.toml`, `npc.toml`,
+`set.toml`) que diz qual pasta de Data substitui (`source`). O esqueleto, os
+corpos por classe, asas e helpers ficam em `Content/player/base/`. Ao
 iniciar, cada arquivo dessas pastas passa a responder por
 `Data/<source>/<arquivo>`, então não é preciso escrever alias à mão.
 

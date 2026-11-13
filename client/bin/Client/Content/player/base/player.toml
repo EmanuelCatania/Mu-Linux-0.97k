@@ -1,0 +1,4 @@
+# Registro de la Fase 5: los archivos de esta carpeta responden por los de
+# Data/Player con el mismo nombre.
+source = "Player"
+# Esqueleto, cuerpos por clase, animaciones propias, sombra, alas y helpers.
