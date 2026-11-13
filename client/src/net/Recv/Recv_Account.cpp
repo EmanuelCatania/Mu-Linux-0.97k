@@ -320,7 +320,6 @@ void Recv_Redirect(const BYTE* Msg)
     // que responderá con JoinServer (F1/00) y arranca el login normal.
     // Reactivamos la capa MuEmu (byte-XOR) que el GameServer sí usa.
     gNetwork.EndConnectServerSession();
-    MuEmu::SetActive(true);
     CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));   // Net_Disconnect
     CreateSocket(IpAddr, port);                   // Net_Connect
     g_bGameServerConnected = 1;                              // g_bGameServerConnected

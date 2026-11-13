@@ -91,6 +91,9 @@ public:
 
 	bool DataSend(int index, BYTE* lpMsg, int size);
 
+	// Bytes sin cifrar, sólo para el saludo del canal (SecureLink).
+	bool DataSendRaw(int index, const BYTE* data, int size);
+
 	void Disconnect(int index);
 
 	void OnRecv(int index, DWORD IoSize, IO_RECV_CONTEXT* lpIoContext);
@@ -108,6 +111,10 @@ public:
 	DWORD GetQueueSize();
 
 private:
+
+	bool SendBytes(int index, const BYTE* data, int size);
+
+	bool SendChunk(int index, const BYTE* data, int size);
 
 	SOCKET m_listen;
 

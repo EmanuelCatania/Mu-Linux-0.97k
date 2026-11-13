@@ -24,4 +24,6 @@
 // 9: horarios de eventos e invasiones en el C2:91; se quitan F3:E6 y F3:F2.
 // 10: detalle de los buffs propios en el 0x07 expandido; se quita F3:F1.
 // 11: firma del manifiesto del catálogo (F3:FC antes del F3:F6).
-#define MU_PROTOCOL_VERSION 11
+// 12: canal cifrado (Common/SecureChannel): saludo al conectar y todo el tráfico
+//     en registros XChaCha20-Poly1305; se quita el XOR de byte de HackCheck.
+#define MU_PROTOCOL_VERSION 12

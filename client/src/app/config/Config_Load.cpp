@@ -277,7 +277,6 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
             Version[i] = (BYTE)(v5[i] + i + 1);
     }
 
-    MuEmu::InitKeys(ServerConfig::CustomerName, ServerConfig::ServerSerial);
 
     char line[256];
     Platform::TextFormat(line, "ServerConfig: %s=%s:%u GameServer=%s:%u version='%s'",

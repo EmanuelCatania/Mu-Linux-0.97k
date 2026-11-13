@@ -12,6 +12,7 @@
 #include "game/core/HeroVitals.h"
 #include "net/Ping.h"
 #include "net/Network.h"
+#include "net/NetChannel.h"
 #include "net/Net.h"
 #include "net/MuEmu.h"
 #include "net/PacketFrame.h"
@@ -79,6 +80,9 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
     extern void Net_ProcessPacket(void);
     if (evt & 0x01) { // FD_READ
         CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
+        // Fase 5, C4: si el canal descifró más de lo que entraba en el buffer de
+        // recepción, lo que sobró se entrega sin esperar otro FD_READ.
+        while (NetChannel::PendingPlain() > 0 && CWsctlc_nRecv((void*)(uintptr_t)SocketClient) == 0) {}
         CsmWatchdog("after-Recv");        // catches any future trample regression
         // Durante OpenWorld el pump de AccessModel reentra aca.
         // Se drena el socket (arriba) para que el server no cierre por
@@ -137,7 +141,6 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             if (m_HasConnectServer) {
                 m_ConnectServerMode = true;
                 m_ServerListRequested = false;
-                MuEmu::SetActive(false);
             }
         }
     }
@@ -253,38 +256,11 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
         // al pedir una lista o elegir canal; no mantener conexiones de fondo.
         if (SceneFlag != 2 || !m_HasConnectServer || !m_ConnectServerMode) return;
         BeginConnectServerSession();
-        MuEmu::SetActive(false);
         extern bool CreateSocketNoExit(const char*, unsigned int);
         if (!CreateSocketNoExit(PTR_s_connect_muonline_co_kr_005615b8, (unsigned int)g_ServerPort)) return;
     }
-    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
-        if (len <= 0x2000 - SocketClientSendBufferLength) {
-            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
-            SocketClientSendBufferLength += len;
-        } else Net_Disconnect(SocketClient);
-        return;
-    }
-    unsigned int remain = (unsigned int)len;
-    int off = 0;
-    while ((int)remain > 0) {
-        int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
-        if (r == -1) {
-            if (Platform::GetSocket().LastError() == Platform::SocketWouldBlock) {
-                if (SocketClientSendBufferLength + (int)remain < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
-                    SocketClientSendBufferLength += (int)remain;
-                } else {
-                    Net_Disconnect(SocketClient);
-                }
-            } else {
-                Net_Disconnect(SocketClient);
-            }
-            return;
-        }
-        if (r == 0) return;
-        remain -= (unsigned int)r;
-        off += r;
-    }
+    // Con el ConnectServer el canal va en claro; la cola es la misma.
+    NetChannel::Send((const char*)data, len);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -301,50 +277,9 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
 int CNetwork::SendRaw(const char* buf, int len)
 {
     if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return 0;
-
-    // Copy to a mutable scratch buffer so we can encrypt in place without
-    // clobbering caller state (some callers reuse `buf` across retries).
-    static BYTE s_scratch[0x2000];
-    if (len <= 0 || (int)sizeof(s_scratch) < len) return -1;
-    memcpy(s_scratch, buf, len);
-    MuEmu::EncryptSend(s_scratch, len);
-
-    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
-        if (len > 0x2000 - SocketClientSendBufferLength) {
-            Net_Disconnect(SocketClient);
-            return -1;
-        }
-        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, s_scratch, len);
-        SocketClientSendBufferLength += len;
-        return 0;
-    }
-    int sent = 0;
-    int rem  = len;
-    do {
-        int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
-        if (n == -1) {
-            int err = Platform::GetSocket().LastError();
-            if (err == Platform::SocketWouldBlock) {
-                if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
-                    // Queue the still-unsent ENCRYPTED tail — never re-queue
-                    // plaintext or the prefix we already transmitted.
-                    memcpy(SocketClientSendBuffer + SocketClientSendBufferLength,
-                           s_scratch + sent, (len - sent));
-                    SocketClientSendBufferLength += (len - sent);
-                } else {
-                    Net_Disconnect(SocketClient);
-                }
-            } else {
-                Net_Disconnect(SocketClient);
-            }
-            return -1;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        sent += n;
-        rem  -= n;
-    } while (rem > 0);
-    return 0;
+    if (len <= 0 || len > 0x2000) return -1;
+    // El canal cifra, manda y encola lo que el socket no tome (Fase 5, C4).
+    return NetChannel::Send(buf, len) == len ? 0 : -1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

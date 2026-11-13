@@ -11,6 +11,7 @@
 #include "platform/Text.h"
 #include "platform/ISocket.h"
 #include "net/Network.h"
+#include "net/NetChannel.h"
 #include "net/Reconnect.h"
 #include "net/Net.h"
 #include "assets/data/ContentCatalog.h"
@@ -46,6 +47,9 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     CWsctlc_Startup(reinterpret_cast<uintptr_t>(SocketClient));
   }
   CWsctlc_Create(&SocketClient,(int)(uintptr_t)gWindow.GetHwnd());
+  // DESVIACION (Fase 5, C4): cada conexión arranca su canal.  Con el GameServer
+  // va cifrado; con el ConnectServer, en claro.
+  NetChannel::OnNewConnection(!gNetwork.IsConnectServerMode());
   iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
   {
     char dbg[64];

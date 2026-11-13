@@ -58,11 +58,9 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "globals.h"
 #include "functions.h"
 
-// ── MuEmu auto-encrypt send() hook ──────────────────────────────────────────
-// Redirect every send() call to our MuEmu_send_hook which auto-applies
-// MuEmu::EncryptSend if the buffer starts with a plain MuEmu header byte.
-// This is a SAFETY NET — explicit MuEmu::EncryptSend calls in send paths
-// must still happen.  See src/net/MuEmu.cpp for the wrapper body.
+// ── Enganche de send() ──────────────────────────────────────────────────────
+// Todo send() del cliente pasa por MuEmu_send_hook, y de ahí al canal cifrado
+// (net/NetChannel.h): el envío tiene un solo camino.  Ver src/net/MuEmu.cpp.
 #include "net/MuEmu.h"
 #define send(s, buf, len, flags)  MuEmu_send_hook((s), (buf), (len), (flags))
 
