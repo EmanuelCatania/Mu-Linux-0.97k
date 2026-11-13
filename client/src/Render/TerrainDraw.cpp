@@ -2,7 +2,7 @@
 #include "Render/TerrainDraw.h"
 #include "Render/Backend/GL/TerrainRenderer.h"
 #include "Render/RenderProfile.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include <cstdio>
 extern "C" void DbgLogPublic(const char*);
 namespace TerrainDraw {

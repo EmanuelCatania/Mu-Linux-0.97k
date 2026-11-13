@@ -2,7 +2,7 @@
 #include "Text/TextAtlas.h"
 #ifdef MU_SDL_FONTS
 #include "Text/TextShaper.h"
-#include "Platform/SDL3/SDLFont.h"
+#include "platform/SDL3/SDLFont.h"
 #include "Render/BufferedDraw.h"
 #include "Config/UserSettings.h"
 #include <unordered_map>

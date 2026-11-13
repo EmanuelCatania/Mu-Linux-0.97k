@@ -81,7 +81,7 @@ def harness(revision=None):
         declarations += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     # Extraer también el alias de producción: no crear almacenamiento paralelo.
     alias = re.search(r"^#define DAT_07abf5d0[^\n]+", read_source("src/structs.h", revision), re.M).group()
-    entry = read_source("src/Platform/ClientEntry.cpp", revision)
+    entry = read_source("src/platform/ClientEntry.cpp", revision)
     start = re.search(r"^[ \t]*DAT_055c9e48\s*=", entry, re.M).start()
     end = entry.index(";", entry.index("memset(", start)) + 1
     initialize = entry[start:end].replace("malloc(0x764d4)", "AllocatePool(0x764d4)")

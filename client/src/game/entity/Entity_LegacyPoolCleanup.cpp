@@ -4,7 +4,7 @@
 #include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include "game/party/Party.h"
 
 extern void __cdecl operator_delete(void* ptr);

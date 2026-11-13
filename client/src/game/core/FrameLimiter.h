@@ -1,5 +1,5 @@
 #pragma once
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 class CFrameLimiter {
 public:
     using StartTime = Platform::TimerStart;

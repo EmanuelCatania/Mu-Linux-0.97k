@@ -9,7 +9,7 @@
 #include "Render/BMDDevice.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"

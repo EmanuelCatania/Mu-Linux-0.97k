@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "Render/BufferedDraw.h"

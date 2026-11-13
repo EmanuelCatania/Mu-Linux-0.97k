@@ -29,15 +29,15 @@
 #include "Text/TextCore.h"
 #include "game/party/Party.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
-#include "Platform/Text.h"
-#include "Platform/IInput.h"
+#include "net/NetText.h"
+#include "platform/Text.h"
+#include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "UI/EventTimer.h"
 #pragma warning(disable: 4102)
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 
 // Inventory grid base — used by section 11 (Q/W/E quick-use sound feedback).

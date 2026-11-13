@@ -26,7 +26,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     setter=function(source,'WidgetB_SetVtable').replace('WidgetB_SetVtable','ActualSetVtable')
     destructor=function(source,'FUN_00409ef0')
     args='widget,unused,flags' if 'void* widget' in destructor else '(int)widget,unused,flags'

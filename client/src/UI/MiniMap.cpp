@@ -2,7 +2,7 @@
 #include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"

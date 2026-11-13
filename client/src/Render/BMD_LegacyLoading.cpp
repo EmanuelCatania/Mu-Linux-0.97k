@@ -6,11 +6,11 @@
 #include "Model/ModelTypes.h"
 #include "Model/SmdImport.h"
 #include "Render/ResourceTables.h"
-#include "Platform/Text.h"
-#include "Platform/IWindow.h"
+#include "platform/Text.h"
+#include "platform/IWindow.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern void __cdecl operator_delete(void* ptr);
 

@@ -13,7 +13,7 @@
 #include "game/entity/EntityName.h"
 #include "globals.h"
 #include "functions.h"
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 
 // IDA: CreateCharacterPointer (0x0045ADC0)
 void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,

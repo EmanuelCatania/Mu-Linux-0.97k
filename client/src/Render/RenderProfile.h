@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 
 // DESVIACION: diagnóstico R1, independiente de la simulación. Sin reloj,
 // queries ni asignaciones por frame cuando está apagado (sólo el guard).

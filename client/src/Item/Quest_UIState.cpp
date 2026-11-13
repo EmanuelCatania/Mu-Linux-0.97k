@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 
 // CSQuest::clearQuest @ 0x00401960 — cierra la ventana de quest.

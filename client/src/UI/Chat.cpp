@@ -17,11 +17,11 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "UI/ChatTypes.h"
 #include "Text/TextCore.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Config/UserSettings.h"
 
 // ─────────────────────────────────────────────────────────────────────────────

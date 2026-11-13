@@ -17,7 +17,7 @@
 //   _DAT_00552890 — delta-time scale (1/1000)
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */

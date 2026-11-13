@@ -24,8 +24,8 @@
 extern "C" const char* Guild_GetMarkName(int row);
 int GuildMark_FindRecordByName(const char* name);
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
-#include "Platform/GuardedOperation.h"
+#include "platform/Text.h"
+#include "platform/GuardedOperation.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"

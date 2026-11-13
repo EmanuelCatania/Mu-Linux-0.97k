@@ -38,11 +38,11 @@
 //   DAT_083a4328          — updated with selected port
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
-#include "Platform/PlatformHeaders.h"
+#include "net/Net.h"
+#include "platform/PlatformHeaders.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 

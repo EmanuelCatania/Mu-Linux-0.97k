@@ -12,7 +12,7 @@
 
 #include "stdafx.h"
 #include "Text/TextCore.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 
 
 // Packet_IsValidSockType — Packet_IsValidSockType

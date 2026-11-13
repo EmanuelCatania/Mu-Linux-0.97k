@@ -1,0 +1,226 @@
+#include <cstdint>
+#pragma once
+#include "platform/IDiagnostics.h"
+#include "platform/IWindow.h"
+#include "Debug/MiniDump.h"
+#include <windows.h>
+
+// SEH: cada paso del filtro de crash va protegido para que un fallo al
+// loguear no tape el volcado. GCC (MinGW) no tiene __try/__except: ahí los
+// pasos corren sin protección, igual que en Linux.
+#if defined(_MSC_VER)
+#define MU_SEH_TRY __try
+#define MU_SEH_EXCEPT __except (EXCEPTION_EXECUTE_HANDLER)
+#else
+#define MU_SEH_TRY if (true)
+#define MU_SEH_EXCEPT else
+#endif
+#include <cstdio>
+#include <intrin.h>
+#include "platform/ITimer.h"
+namespace Platform {
+namespace Win32DiagnosticsDetail {
+inline DiagnosticLog logger = nullptr;
+inline void CrashLog(const char* text) { if (logger) logger(text); }
+inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
+{
+    // Anti-recursion guard: Si DbgLog crashea (e.g., WriteFile AV),
+    // el filter se reentra → recursion infinita → otra AV en KernelBase.
+    static __declspec(thread) int s_handlerDepth = 0;
+    if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
+    s_handlerDepth++;
+
+    // El .dmp se escribe PRIMERO, antes de loguear nada.  Todo lo que sigue
+    // (recorrido de frames, escaneo de stack) puede fallar por su cuenta si la
+    // memoria quedo hecha un desastre, y en ese caso igual queremos el volcado.
+    // Ver Debug/MiniDump.h: no esta en el binario original, se agrega con el
+    // enfoque del MuServer.
+    char dumpPath[MAX_PATH] = {};
+    bool dumpOk = false;
+    MU_SEH_TRY {
+        dumpOk = CMiniDump::Write(ep, dumpPath, sizeof(dumpPath));
+    } MU_SEH_EXCEPT { dumpOk = false; }
+
+    char line1[256], line2[256], full[600];
+    MU_SEH_TRY {
+        _snprintf_s(line1, sizeof(line1), _TRUNCATE,
+            "CRASH: code=0x%08X  addr=0x%p",
+            ep->ExceptionRecord->ExceptionCode,
+            ep->ExceptionRecord->ExceptionAddress);
+    } MU_SEH_EXCEPT {
+        line1[0] = 0;
+    }
+    line2[0] = 0;
+    MU_SEH_TRY {
+        if (ep && ep->ExceptionRecord && ep->ExceptionRecord->NumberParameters >= 2) {
+            _snprintf_s(line2, sizeof(line2), _TRUNCATE,
+                "param0=%u  param1=0x%p",
+                (unsigned)ep->ExceptionRecord->ExceptionInformation[0],
+                (void*)ep->ExceptionRecord->ExceptionInformation[1]);
+        }
+    } MU_SEH_EXCEPT { line2[0] = 0; }
+    MU_SEH_TRY { CrashLog(line1); } MU_SEH_EXCEPT {}
+    if (line2[0]) MU_SEH_TRY { CrashLog(line2); } MU_SEH_EXCEPT {}
+    // ── Stack trace desde el contexto del crash ──────────────────────────────
+    MU_SEH_TRY {
+#if defined(_M_X64)
+        if (ep && ep->ContextRecord) {
+            char trace[128];
+            _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_PC: rva=0x%llX (rsp=0x%p rbp=0x%p)",
+                (unsigned long long)(ep->ContextRecord->Rip - (DWORD64)GetModuleHandleA(nullptr)), (void*)ep->ContextRecord->Rsp, (void*)ep->ContextRecord->Rbp);
+            CrashLog(trace);
+            char scan[900];
+            int used = _snprintf_s(scan, sizeof(scan), _TRUNCATE, "STACK_SCAN:");
+            const DWORD64 image = (DWORD64)GetModuleHandleA(nullptr);
+            const DWORD64* stack = (const DWORD64*)ep->ContextRecord->Rsp;
+            for (int i = 0, found = 0; i < 400 && found < 24; ++i) {
+                MU_SEH_TRY {
+                    const DWORD64 value = stack[i];
+                    if (value > image + 0x1000 && value < image + 0x2000000) {
+                        used += _snprintf_s(scan + used, sizeof(scan) - used, _TRUNCATE, " %llX", value - image);
+                        ++found;
+                    }
+                } MU_SEH_EXCEPT { break; }
+            }
+            CrashLog(scan);
+        }
+#else
+        if (ep && ep->ContextRecord) {
+            CONTEXT* ctx = ep->ContextRecord;
+            char trace[800];
+            int n = 0;
+            n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
+                "STACK_PC: 0x%p (esp=0x%p ebp=0x%p)",
+                (void*)ctx->Eip, (void*)ctx->Esp, (void*)ctx->Ebp);
+            CrashLog(trace);
+
+            // Volcado de registros — los valores de los argumentos suelen ir en eax/ecx/edx
+            _snprintf_s(trace, sizeof(trace), _TRUNCATE,
+                "REGS: eax=%08X ecx=%08X edx=%08X ebx=%08X esi=%08X edi=%08X",
+                (unsigned)ctx->Eax, (unsigned)ctx->Ecx, (unsigned)ctx->Edx,
+                (unsigned)ctx->Ebx, (unsigned)ctx->Esi, (unsigned)ctx->Edi);
+            CrashLog(trace);
+
+            // ── Recorrido de frames por EBP (direcciones de retorno reales) ─────
+            // Por cada frame: prev_ebp = *ebp, return_addr = *(ebp+4),
+            // then ebp = prev_ebp.
+            n = _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_FRAMES:");
+            DWORD ebp = ctx->Ebp;
+            DWORD prev_ebp_value = 0;
+            for (int frame = 0; frame < 12 && n < (int)sizeof(trace) - 16; ++frame) {
+                MU_SEH_TRY {
+                    if (ebp < 0x10000 || ebp > 0x7FFFFFFF) break;
+                    if (ebp & 3) break; // misaligned
+                    DWORD ret = *(DWORD*)(ebp + 4);
+                    DWORD next = *(DWORD*)(ebp);
+                    if (next != 0 && next <= ebp) break; // sanity: ebp must grow upward
+                    n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
+                        " 0x%X", ret);
+                    prev_ebp_value = ebp;
+                    ebp = next;
+                    if (ebp == prev_ebp_value) break;
+                } MU_SEH_EXCEPT { break; }
+            }
+            CrashLog(trace);
+
+            // ── Escaneo crudo del stack (250 dwords desde esp): atrapa frames FPO/sin-EBP ──
+            // El loop emite hasta ~25 direcciones candidatas (filtradas al código del juego).
+            int dumped = 0;
+            n = _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_SCAN:");
+            DWORD esp = ctx->Esp;
+            for (int i = 0; i < 250 && n < (int)sizeof(trace) - 16 && dumped < 25; ++i) {
+                MU_SEH_TRY {
+                    DWORD val = *(DWORD*)(esp + i * 4);
+                    if (val >= 0x401000 && val < 0x600000) {
+                        n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
+                            " %X:%X", esp + i*4, val);
+                        dumped++;
+                    }
+                } MU_SEH_EXCEPT { break; }
+            }
+            CrashLog(trace);
+        }
+#endif
+    } MU_SEH_EXCEPT {}
+
+    MU_SEH_TRY {
+        if (dumpOk) {
+            char b[MAX_PATH + 32];
+            _snprintf_s(b, sizeof(b), _TRUNCATE, "MINIDUMP: %s", dumpPath);
+            CrashLog(b);
+        } else {
+            CrashLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
+        }
+    } MU_SEH_EXCEPT {}
+
+    // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
+    // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
+    // peor, queda asi despues de que el proceso muere.
+    MU_SEH_TRY { Platform::GetWindow().RestoreDisplay(); } MU_SEH_EXCEPT {}
+
+    MU_SEH_TRY {
+        if (dumpOk) {
+            _snprintf_s(full, sizeof(full), _TRUNCATE,
+                        "%s\n%s\n\nVolcado guardado en:\n%s", line1, line2, dumpPath);
+        } else {
+            _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
+        }
+        Platform::GetWindow().ShowError(full, "Crash", false, true);
+    } MU_SEH_EXCEPT {}
+
+    s_handlerDepth--;
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+}
+class Win32Diagnostics final : public IDiagnostics {
+public:
+    std::int64_t MeasureClockRate(std::uint32_t param_1) override {
+    // CPUID(1) — check TSC support (EDX bit 4)
+    int regs[4] = {0,0,0,0};
+    __cpuid(regs, 1);
+    if ((regs[3] & 0x10) == 0) return 0;  // no TSC
+
+    LARGE_INTEGER freq;
+    if (!QueryPerformanceFrequency(&freq)) return 0;
+
+    HANDLE hProc = GetCurrentProcess();
+    HANDLE hThread = GetCurrentThread();
+    DWORD priClass = GetPriorityClass(hProc);
+    int   threadPri = GetThreadPriority(hThread);
+    DWORD_PTR procAff = 0, sysAff = 0;
+    GetProcessAffinityMask(hProc, &procAff, &sysAff);
+
+    SetPriorityClass(hProc, REALTIME_PRIORITY_CLASS);
+    SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL);
+    SetProcessAffinityMask(hProc, 1);
+
+    // cpuid as serializing barrier before RDTSC
+    __cpuid(regs, 0);
+    LARGE_INTEGER qpcStart, qpcEnd;
+    QueryPerformanceCounter(&qpcStart);
+    std::uint64_t tscStart = __rdtsc();
+    Platform::GetTimer().SleepMilliseconds(param_1);
+    QueryPerformanceCounter(&qpcEnd);
+    std::uint64_t tscEnd = __rdtsc();
+
+    SetProcessAffinityMask(hProc, procAff);
+    SetThreadPriority(hThread, threadPri);
+    SetPriorityClass(hProc, priClass);
+
+    double tscDelta = (double)(std::int64_t)(tscEnd - tscStart);
+    double qpcDelta = (double)(qpcEnd.QuadPart - qpcStart.QuadPart);
+    double seconds  = qpcDelta / (double)freq.QuadPart;
+    if (seconds <= 0.0) return 0;
+    return (long long)(tscDelta / seconds);
+    }
+
+    bool Install(DiagnosticLog log) override {
+        Win32DiagnosticsDetail::logger = log;
+        SetErrorMode(SEM_FAILCRITICALERRORS);
+        SetUnhandledExceptionFilter(Win32DiagnosticsDetail::DbgUnhandledException);
+        CMiniDump::Preload();
+        return true;
+    }
+};
+}

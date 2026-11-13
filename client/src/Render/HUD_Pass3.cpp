@@ -18,7 +18,7 @@
 #include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
 void HUD_BeginGridPass(int pass);
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "game/core/HeroVitals.h"
 #include "game/entity/EntityView.h"

@@ -20,12 +20,12 @@
 //   DAT_00559050  — 16-byte XOR key for keepalive re-randomization
 
 #include "stdafx.h"
-#include "Platform/ISocket.h"
+#include "platform/ISocket.h"
 #include "Scene/Scene_Dispatch.h"
 #include "Scene/Scene_Intro.h"
 #include "Scene/Scene_Loading.h"
 #include "game/core/Game_MainLoop.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include <stdlib.h>   // for rand()
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)
 // OpenGL_Release: declared static in WinMain.cpp; forward-declare here

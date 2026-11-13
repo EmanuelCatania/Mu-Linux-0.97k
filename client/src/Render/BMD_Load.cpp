@@ -9,7 +9,7 @@
 //   BMD__Save (BMD_SaveToFile)
 
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "Model/BMDFileTypes.h"

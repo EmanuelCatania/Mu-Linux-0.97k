@@ -153,12 +153,12 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    close=function(read_source('src/Net/Crypto.cpp',revision),'CWsctlc_Close')
-    getter=function(read_source('src/Net/Crypto.cpp',revision),'CWsctlc_GetSocket')
+    close=function(read_source('src/net/Crypto.cpp',revision),'CWsctlc_Close')
+    getter=function(read_source('src/net/Crypto.cpp',revision),'CWsctlc_GetSocket')
     startup=function(read_source('src/Render/SMD_Parser.cpp',revision),'CWsctlc_Startup')
     scene=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
     send=function(scene,'CWsctlc_FDWriteSend');recv=function(scene,'CWsctlc_nRecv')
-    disconnect=function(read_source('src/Net/Net_Disconnect.cpp',revision),'Net_Disconnect')
+    disconnect=function(read_source('src/net/Net_Disconnect.cpp',revision),'Net_Disconnect')
     arg='reinterpret_cast<uintptr_t>(context)' if 'uintptr_t ctx' in close else 'static_cast<int>(reinterpret_cast<uintptr_t>(context))'
     disconnect_arg='context' if 'void* ctx' in disconnect else 'static_cast<int>(reinterpret_cast<uintptr_t>(context))'
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+getter+close+startup+send+recv+disconnect+MAIN.replace('DISCONNECT_ARG',disconnect_arg).replace('ARG',arg)

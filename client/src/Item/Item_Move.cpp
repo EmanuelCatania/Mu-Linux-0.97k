@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 // SendRequestEquipmentItem @ 0x0043C250 — Equipment move / item drag
 //

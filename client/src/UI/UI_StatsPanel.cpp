@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "UI/OptionsMenu.h"
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */

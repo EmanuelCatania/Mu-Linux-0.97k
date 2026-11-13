@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "UI/HealthBar.h"
 #include "Config/UserSettings.h"
 #include "game/entity/EntityView.h"

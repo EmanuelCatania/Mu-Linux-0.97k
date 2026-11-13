@@ -136,7 +136,7 @@ def harness(revision=None):
     medium = read_source("src/Core/Runtime_Medium.cpp", revision)
     prefix += function(medium, "CSQuest__ShowQuestNpcWindow") + function(medium, "CSQuest__setQuestLists")
     prefix += function(read_source("src/Core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
-    recv = read_source("src/Net/Recv/Recv_Quest.cpp", revision)
+    recv = read_source("src/net/Recv/Recv_Quest.cpp", revision)
     for name in ("NetRecv_A0", "NetRecv_A1", "NetRecv_A2"):
         prefix += function(recv, name)
     return prefix + MAIN

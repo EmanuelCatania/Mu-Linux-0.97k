@@ -210,7 +210,7 @@
 #include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Render/Camera3D.h"

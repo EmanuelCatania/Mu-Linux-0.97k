@@ -17,7 +17,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     reset=function(source,'WidgetB_ZeroFields')
     args='widget' if 'void* widget' in reset else '(int)widget'
     wrapper='\nvoid* Call(unsigned route,void* widget){if(route==0){WidgetB_ZeroFields('+args+');return widget;}return route==1?WidgetB_Ctor(widget):WidgetB_CtorFull(widget);}\n'

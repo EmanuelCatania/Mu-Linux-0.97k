@@ -1,6 +1,6 @@
 #include "Text/TextShaper.h"
 #include "Text/TextCore.h"
-#include "Platform/SDL3/SDLFont.h"
+#include "platform/SDL3/SDLFont.h"
 #include <hb.h>
 #include <SheenBidi/SheenBidi.h>
 #include <algorithm>

@@ -5,20 +5,20 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
-#include "Platform/UserPath.h"
+#include "platform/UserPath.h"
 #include "UI/ChatListBox.h"
-#include "Net/Recv/NetRecv.h"
+#include "net/Recv/NetRecv.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
-#include "Platform/Text.h"
-#include "Platform/ISocket.h"
-#include "Net/Reconnect.h"
+#include "net/NetText.h"
+#include "platform/Text.h"
+#include "platform/ISocket.h"
+#include "net/Reconnect.h"
 #include "UI/OptionsMenu.h"
 #include "globals.h"
 #include "functions.h"
 
-#include "Net/MuEmu.h"
-#include "Net/Net.h"  // gNetwork.Send (proper C3 wrap with serial)
+#include "net/MuEmu.h"
+#include "net/Net.h"  // gNetwork.Send (proper C3 wrap with serial)
 
 // byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
 // dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.

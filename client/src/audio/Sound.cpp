@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Platform/IAudio.h"
+#include "platform/IAudio.h"
 #include "audio/SoundManager.h"
 
 // IDA: InitDirectSound (0x004044A0)

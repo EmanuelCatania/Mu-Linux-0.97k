@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "UI/EmojiPicker.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Text/TextCore.h"
 #include "Core/Font.h"
 #include "Core/Window.h"

@@ -8,9 +8,9 @@
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Render/GlyphAtlas.h"
-#include "Platform/Text.h"
-#include "Platform/GuardedOperation.h"
-#include "Platform/ITimer.h"
+#include "platform/Text.h"
+#include "platform/GuardedOperation.h"
+#include "platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -22,7 +22,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);

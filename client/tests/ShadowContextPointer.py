@@ -28,7 +28,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     actual=function(read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision),'Vec3_Normalize').replace('Vec3_Normalize','ActualNormalize')+function(source,'FUN_00409f30').replace('FUN_00409f30','ActualFind')+function(source,'FUN_0040a300').replace('FUN_0040a300','ActualBuild')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ACTUAL',actual)+function(source,'FUN_0040a0a0')+MAIN
 

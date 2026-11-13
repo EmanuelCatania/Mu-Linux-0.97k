@@ -38,13 +38,13 @@
 //   DAT_055ca038   — "select" button confirm flag
 
 #include "stdafx.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "Text/TextCore.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "game/core/Game_EnterWorldTick.h"
-#include "Net/Net.h"
-#include "Net/MuEmu.h"
+#include "net/Net.h"
+#include "net/MuEmu.h"
 
 extern "C" void DbgLogPublic(const char*);
 

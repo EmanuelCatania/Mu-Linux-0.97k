@@ -1,8 +1,8 @@
 // UI_IME.cpp
 
 #include "stdafx.h"
-#include "Platform/Text.h"
-#include "Platform/IInput.h"
+#include "platform/Text.h"
+#include "platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
 

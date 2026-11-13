@@ -39,7 +39,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     wrappers=[]
-    for path,var in [('src/Scene/Scene_Intro.cpp','pvVar5'),('src/Net/Net_Connect.cpp','pvVar4')]:
+    for path,var in [('src/Scene/Scene_Intro.cpp','pvVar5'),('src/net/Net_Connect.cpp','pvVar4')]:
         source=read_source(path,revision)
         pattern=rf'{var}\s*=\s*AntiTamper_HashNode\(\);\s*[^\n]+\n\s*HashTable_Insert\([^\n]+;'
         blocks=re.findall(pattern,source)

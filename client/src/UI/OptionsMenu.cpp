@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include <climits>
 #include "UI/OptionsMenu.h"
 #include "Config/UserSettings.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
 #include "Local/ClientText.h"
-#include "Net/HWID.h"
+#include "net/HWID.h"
 #include "audio/SoundManager.h"
 
 COptionsMenu gOptionsMenu;

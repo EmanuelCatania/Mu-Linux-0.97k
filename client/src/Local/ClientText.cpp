@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "Platform/Text.h"
-#include "Platform/IFileSystem.h"
+#include "platform/Text.h"
+#include "platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Config/UserSettings.h"
 #include "Text/TextCore.h"

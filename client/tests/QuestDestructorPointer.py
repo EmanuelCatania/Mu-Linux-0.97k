@@ -66,7 +66,7 @@ int main() {
 def harness(revision=None):
     prefix = init_harness(revision).split("std::uint64_t RunInit(", 1)[0]
     prefix = prefix.replace(function(prefix, "operator_delete"), "void operator_delete(void*);")
-    source = read_source("src/Net/Crypto.cpp", revision)
+    source = read_source("src/net/Crypto.cpp", revision)
     reset, destructor = function(source, "FUN_00403ef0"), function(source, "FUN_00403f10")
     arg = "quest" if "void* ecx" in destructor else "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"
     resetarg = "quest" if "void* param_1" in reset else "static_cast<int*>(quest)"

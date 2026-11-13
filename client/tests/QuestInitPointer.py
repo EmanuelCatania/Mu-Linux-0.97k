@@ -59,7 +59,7 @@ def harness(revision=None):
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     prefix += re.search(r"extern [^;\n]*\bg_csQuest\s*;", header).group()
     prefix += re.search(r"^[^/\n]*\bg_csQuest\s*=\s*[^;]+;", definitions, re.M).group()
-    return prefix + function(read_source("src/Net/Crypto.cpp", revision), "Quest_FullInit") + MAIN
+    return prefix + function(read_source("src/net/Crypto.cpp", revision), "Quest_FullInit") + MAIN
 
 
 def main():

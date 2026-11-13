@@ -30,7 +30,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision).replace('__stdcall','__cdecl')
+    source=read_source('src/net/Crypto.cpp',revision).replace('__stdcall','__cdecl')
     add=function(source,'CSimpleModulus_AddBits').replace('__cdecl','__stdcall')
     args='dst,to,src,from,count' if 'void* a1' in add else '(int)dst,to,(int)src,from,count'
     wrapper='\nint Call(BYTE* dst,unsigned to,const BYTE* src,unsigned from,int count){return CSimpleModulus_AddBits('+args+');}\n'

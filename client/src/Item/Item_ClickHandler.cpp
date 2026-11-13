@@ -47,8 +47,8 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
-#include "Platform/ITimer.h"
-#include "Platform/IInput.h"
+#include "platform/ITimer.h"
+#include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
@@ -57,8 +57,8 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
-#include "Net/Net.h"
-#include "Platform/PlatformHeaders.h"
+#include "net/Net.h"
+#include "platform/PlatformHeaders.h"
 
 
 // ── Globals referenced (declared elsewhere) ──────────────────────────────────
@@ -880,7 +880,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // EventType 1 = Devil Square, 2 = Blood Castle; el server hace
                 // `ItemLevel - 1` para indexar el nivel del evento.
                 // La respuesta (mismo opcode 0x91) la atiende
-                // `Recv_EventZoneOpenTime` en src/Net/Net_Events.cpp.
+                // `Recv_EventZoneOpenTime` en src/net/Net_Events.cpp.
                 //
                 // En el decompile de `sub_4D23B0` (raw L1032-1053) `v275 = 73` (0x49) es el
                 // byte 12 de la CLAVE XOR, no un opcode; el opcode real es `v301[4] = -111` =

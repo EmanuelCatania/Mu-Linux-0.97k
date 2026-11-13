@@ -2,12 +2,12 @@
 
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];

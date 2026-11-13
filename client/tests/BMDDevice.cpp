@@ -1,10 +1,10 @@
 // Verificación del backend BMD real en un contexto oculto, sin assets ni red.
 #define NOMINMAX
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 // Cargar GL antes de los aliases ABI Win32 de la prueba POSIX.
-#include "Platform/PlatformHeaders.h"
-#include "Platform/GLFunctions.h"
-#include "Platform/ITimer.h"
+#include "platform/PlatformHeaders.h"
+#include "platform/GLFunctions.h"
+#include "platform/ITimer.h"
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Gfx.h"

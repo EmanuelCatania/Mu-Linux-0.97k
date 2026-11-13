@@ -121,7 +121,7 @@ def harness(revision=None):
     lists = function(read_source("src/Core/Runtime_Medium.cpp", revision), "CSQuest__setQuestLists")
     entry = function(read_source("src/Core/Runtime_Small.cpp", revision), "CSQuest__setQuestList")
     prefix += lists + entry
-    source = read_source("src/Net/Recv/Recv_Quest.cpp", revision)
+    source = read_source("src/net/Recv/Recv_Quest.cpp", revision)
     for name in ("NetRecv_A0", "NetRecv_A1", "NetRecv_A2"):
         prefix += function(source, name)
     legacy = "static_cast<int>(reinterpret_cast<std::uintptr_t>(quest))"

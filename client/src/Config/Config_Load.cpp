@@ -43,12 +43,12 @@
 //     SetByte(0x0041EFB5, 0xEB);  // Crack gg init
 
 #include "stdafx.h"
-#include "Platform/UserPath.h"
-#include "Platform/ClientSettings.h"
-#include "Platform/Text.h"
-#include "Platform/IFileSystem.h"
+#include "platform/UserPath.h"
+#include "platform/ClientSettings.h"
+#include "platform/Text.h"
+#include "platform/IFileSystem.h"
 #include "Config/Config.h"
-#include "Net/MuEmu.h"
+#include "net/MuEmu.h"
 #include "Config/ServerConfig.h"
 #include "Config/UserSettings.h"
 #include "audio/SoundManager.h"

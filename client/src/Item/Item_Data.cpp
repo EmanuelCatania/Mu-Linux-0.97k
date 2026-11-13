@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Text/TextCore.h"
-#include "Platform/IWindow.h"
+#include "platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
 

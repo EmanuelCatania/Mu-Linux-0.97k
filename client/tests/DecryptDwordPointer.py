@@ -62,7 +62,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/Net/Crypto.cpp',revision),'Packet_DecryptDword')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(read_source('src/net/Crypto.cpp',revision),'Packet_DecryptDword')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

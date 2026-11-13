@@ -29,7 +29,7 @@ int main(){bankLow=static_cast<BYTE*>(Reserve(0x26000000u));Require(bankLow);if(
 '''
 
 def harness(revision=None):
-    source=read_source('src/Net/Crypto.cpp',revision)
+    source=read_source('src/net/Crypto.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(source,'Packet_EncryptDword')+function(source,'Packet_EncryptBuffer')+MAIN
 
 def main():

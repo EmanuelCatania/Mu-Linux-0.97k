@@ -4,8 +4,8 @@
 #include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/MuEmu.h"
-#include "Net/Net.h"
+#include "net/MuEmu.h"
+#include "net/Net.h"
 #include "Render/Camera.h"
 
 // ── GL_PopMatrixAll ───────────────────────────────────────────────────────────

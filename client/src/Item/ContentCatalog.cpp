@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "Platform/UserPath.h"
-#include "Platform/ContentLayers.h"
+#include "platform/UserPath.h"
+#include "platform/ContentLayers.h"
 #include "Model/ModelTypes.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
 #include <algorithm>
-#include "Platform/Text.h"
-#include "Platform/ITimer.h"
+#include "platform/Text.h"
+#include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
 #include "UI/MoveList.h"
@@ -16,12 +16,12 @@
 #include <array>
 #include "Util/Sha256.h"
 #include "Item/ItemDefines.h"
-#include "Net/Protocol/GameServerProtocol.h"
+#include "net/Protocol/GameServerProtocol.h"
 #include <map>
 #include <string>
 #include <vector>
-#include "Net/Network.h"
-#include "Platform/IFileSystem.h"
+#include "net/Network.h"
+#include "platform/IFileSystem.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 

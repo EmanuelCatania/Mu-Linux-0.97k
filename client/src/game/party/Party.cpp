@@ -124,10 +124,10 @@
 
 #include "stdafx.h"
 #include "Text/TextCore.h"
-#include "Net/NetText.h"
-#include "Platform/Text.h"
+#include "net/NetText.h"
+#include "platform/Text.h"
 #include "Party.h"
-#include "Net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
+#include "net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
 
 // World está declarado en globals.h.
 extern BYTE* g_PartyHPTable;           // DAT_07e11e98  stride 0x24
@@ -305,7 +305,7 @@ void Party_Keepalive(void)
 // enganchadas a los opcodes 0x90-0x99. Ese rango NO es guild: IDA y MuEmu
 // coinciden en que son eventos (Devil Square, Blood Castle, Golden Archer).
 // La tabla opcode -> función real está en la cabecera de
-// `src/Net/Net_Events.cpp`, que es quien los atiende.
+// `src/net/Net_Events.cpp`, que es quien los atiende.
 //
 // El guild de verdad usa 0x50-0x56 y lo atiende Net_Process.cpp
 // (`ReceiveGuildResult`, `ReceiveGuildList`, `ReceiveCreateGuildResult`, ...).

@@ -84,8 +84,8 @@ def main():
             (source("mu_freetype") / "docs/GPLv2.TXT", "FreeType-GPLv2.txt"),
             (repo / "lib/stb/stb_image.h", "stb_image.h"),
             (repo / "lib/stb/stb_image_write.h", "stb_image_write.h"),
-            (repo / "src/Platform/GL/LICENSE.glad", "glad.txt"),
-            (repo / "src/Platform/GL/glad.h", "glad.h"),
+            (repo / "src/platform/GL/LICENSE.glad", "glad.txt"),
+            (repo / "src/platform/GL/glad.h", "glad.h"),
         ]:
             shutil.copy2(origin, licenses / destination)
         # Dawn (WebGPU) entra por vcpkg sólo en x64.

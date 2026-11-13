@@ -5,7 +5,7 @@
 #include "UI/EmoteMenu.h"
 #include "Model/Model_CustomAnim.h"
 #include "Render/BufferedDraw.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
 #include <string>

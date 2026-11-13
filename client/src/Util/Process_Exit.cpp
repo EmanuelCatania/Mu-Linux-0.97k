@@ -1,7 +1,7 @@
 // Process_Exit.cpp
 
 #include "stdafx.h"
-#include "Platform/IWindow.h"
+#include "platform/IWindow.h"
 #include "globals.h"
 #include "functions.h"
 

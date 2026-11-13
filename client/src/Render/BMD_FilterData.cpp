@@ -2,8 +2,8 @@
 // Carga y guardado de los filtros de texto (filtro de chat y de nombres).
 
 #include "stdafx.h"
-#include "Platform/IWindow.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IWindow.h"
+#include "platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
 

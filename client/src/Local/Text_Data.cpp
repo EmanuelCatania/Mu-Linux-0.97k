@@ -14,9 +14,9 @@
 // an empty pool (UI strings just render blank rather than killing the client).
 
 #include "stdafx.h"
-#include "Platform/UserPath.h"
-#include "Platform/Text.h"
-#include "Platform/IFileSystem.h"
+#include "platform/UserPath.h"
+#include "platform/Text.h"
+#include "platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Text/TextCore.h"
 #include "globals.h"

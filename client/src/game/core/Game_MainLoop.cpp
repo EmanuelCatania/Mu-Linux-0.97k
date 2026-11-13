@@ -34,7 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
-#include "Platform/UserPath.h"
+#include "platform/UserPath.h"
 #include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
@@ -47,17 +47,17 @@ void Sprite_CaptureStep();
 void Chat_TickPresentation();
 void HUD_TickGridPresentation();
 void ItemNames_TickInput();
-#include "Platform/IFileSystem.h"
-#include "Platform/ISocket.h"
-#include "Platform/Text.h"
-#include "Platform/ITimer.h"
-#include "Platform/IInput.h"
-#include "Net/Reconnect.h"
+#include "platform/IFileSystem.h"
+#include "platform/ISocket.h"
+#include "platform/Text.h"
+#include "platform/ITimer.h"
+#include "platform/IInput.h"
+#include "net/Reconnect.h"
 #include "game/entity/CharacterAttributeView.h"
-#include "Net/ServerCharacterStats.h"
+#include "net/ServerCharacterStats.h"
 #include "game/core/FrameLimiter.h"
-#include "Input/Input.h"
-#include "Net/Ping.h"
+#include "platform/input/Input.h"
+#include "net/Ping.h"
 #include "audio/EmoteSound.h"
 #include "game/core/MapManager.h"
 #include "Debug/Benchmark.h"
@@ -70,8 +70,8 @@ void ItemNames_TickInput();
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_CharSelect.h"
 #include "Render/Render.h"
-#include "Net/Net.h"
-#include "Net/MuEmu.h"
+#include "net/Net.h"
+#include "net/MuEmu.h"
 #include <stdlib.h>
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)
 

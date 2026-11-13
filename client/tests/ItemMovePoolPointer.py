@@ -153,7 +153,7 @@ def harness(revision=None):
     setter=re.search(r"\bdword_7EA9800\s*=\s*[^;]*\binv_base[^;]*;",click).group()
     getter=re.search(r"BYTE\* srcPool\s*=\s*[^;]+;",function(click,"RestorePickedItemToSource")).group()
     prefix+="\nvoid SetContext(BYTE* inv_base) {"+setter+"}\nBYTE* ReadContext() {"+getter+" return srcPool; }\n"
-    recv=read_source("src/Net/Recv/Recv_Item.cpp",revision)
+    recv=read_source("src/net/Recv/Recv_Item.cpp",revision)
     clear=function(recv,"ItemMove_ClearPickedState")
     assignments=[re.search(rf"\b{name}\s*=\s*0\s*;",clear).group() for name in ("DAT_07ea9800","g_ItemMoveSourcePool","g_ItemMoveTargetPool")]
     prefix+="\nvoid ItemMove_ClearPickedState() { Add(3,{});"+"".join(assignments)+"}\n"

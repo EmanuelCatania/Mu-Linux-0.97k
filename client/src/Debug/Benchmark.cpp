@@ -12,9 +12,9 @@
 
 #include "game/entity/EntityTypes.h"
 #include "Model/ModelTypes.h"
-#include "Net/NetText.h"
-#include "Net/Recv/NetRecv.h"
-#include "Platform/IInput.h"
+#include "net/NetText.h"
+#include "net/Recv/NetRecv.h"
+#include "platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
 #include "game/core/MapManager.h"

@@ -392,8 +392,8 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Texture/ImageCodec.h"
-#include "Platform/IWindow.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IWindow.h"
+#include "platform/IFileSystem.h"
 #include "Terrain/Terrain.h"
 
 // InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.

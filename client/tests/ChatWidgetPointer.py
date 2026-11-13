@@ -101,7 +101,7 @@ def harness(revision=None, legacy_function=None):
     for name in ("DAT_055c9ff0","DAT_055c9ff4","g_bUseChatListBox"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    source=read_source("src/Platform/ClientEntry.cpp",revision)
+    source=read_source("src/platform/ClientEntry.cpp",revision)
     assignments=[re.search(rf"\b{name}\s*=\s*[^;]*\b{ctor}\([^;]*;",source).group() for name,ctor in (("DAT_055c9ff0","ChatListBox_Construct"),("DAT_055c9ff4","ChatListBox_ConstructWhisper"))]
     prefix+="\nvoid Publish() {"+"".join(assignments)+"}\n"
     def body(path,name):

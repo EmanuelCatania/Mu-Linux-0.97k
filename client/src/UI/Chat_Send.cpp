@@ -3,10 +3,10 @@
 #include "stdafx.h"
 #include "Text/TextCore.h"
 #include "game/entity/EntityName.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 // SendChat @ 0x004C1B90
 // Sends a chat message packet to server.

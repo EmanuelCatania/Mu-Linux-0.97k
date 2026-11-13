@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdarg>
 
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 
 // OpenGL no se incluye acá: sólo el backend, con Platform/GL/glad.h (3.3 core).
 
@@ -11,7 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "Platform/DebugHeaders.h"
+#include "platform/DebugHeaders.h"
 
 // Ghidra intrinsic stubs (not available in MSVC)
 #define _rand() rand()
@@ -39,7 +39,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // Fuentes y DC de memoria del texto: CFont (Core/Font.h), a través de gFont.
 // El DC de OpenGL NO es el DC de memoria del texto (gFont.GetTextDC()).
 #include "Core/Window.h"
-#include "Net/Network.h"
+#include "net/Network.h"
 #include "Core/Font.h"
 #include "game/core/MapManager.h"
 
@@ -62,8 +62,8 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // Redirect every send() call to our MuEmu_send_hook which auto-applies
 // MuEmu::EncryptSend if the buffer starts with a plain MuEmu header byte.
 // This is a SAFETY NET — explicit MuEmu::EncryptSend calls in send paths
-// must still happen.  See src/Net/MuEmu.cpp for the wrapper body.
-#include "Net/MuEmu.h"
+// must still happen.  See src/net/MuEmu.cpp for the wrapper body.
+#include "net/MuEmu.h"
 #define send(s, buf, len, flags)  MuEmu_send_hook((s), (buf), (len), (flags))
 
 #include "Render/Gfx.h"

@@ -708,5 +708,5 @@
 //   GL_SetBlendSrcOver   → SetBlendMode(mode)
 
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "Render/HUD_Render.h"

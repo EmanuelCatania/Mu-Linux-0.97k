@@ -4,11 +4,11 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Platform/Text.h"
-#include "Platform/ITimer.h"
+#include "platform/Text.h"
+#include "platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BYTE Inventory[];

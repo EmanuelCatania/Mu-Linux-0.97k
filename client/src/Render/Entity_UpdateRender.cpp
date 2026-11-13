@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Render/Gfx.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "game/core/MapManager.h"

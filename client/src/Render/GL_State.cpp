@@ -35,7 +35,7 @@
 #include "Render/Gfx.h"
 #include "Render/Materials.h"
 #include "Render/ResourceTables.h"
-#include "Platform/ITimer.h"
+#include "platform/ITimer.h"
 
 void GL_SetBlendAdditive(void)
 

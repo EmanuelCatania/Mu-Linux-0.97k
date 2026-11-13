@@ -13,7 +13,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);

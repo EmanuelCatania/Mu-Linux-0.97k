@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
-#include "Platform/GuardedOperation.h"
+#include "platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"

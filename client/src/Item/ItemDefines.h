@@ -9,7 +9,7 @@
 //   bits 9-12 del índice; los bytes 4 y 6 quedan reservados.  Para un vanilla
 //   los bytes 0-3 son los del formato de 4.
 
-#include "Platform/PlatformHeaders.h"
+#include "platform/PlatformHeaders.h"
 #include <string.h>
 
 constexpr int ITEM_MAX_SECTION = 16;

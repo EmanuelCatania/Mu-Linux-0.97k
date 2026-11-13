@@ -1,7 +1,7 @@
 #include <cstdint>
 // Particle.cpp
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 extern "C" { void DbgLogPublic(const char* msg); }
 // IDA: Alpha (0x0043E5C0)
 // Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate

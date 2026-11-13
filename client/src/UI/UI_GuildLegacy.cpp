@@ -1,10 +1,10 @@
 // UI_GuildLegacy.cpp
 
 #include "stdafx.h"
-#include "Net/NetText.h"
+#include "net/NetText.h"
 #include "game/entity/EntityName.h"
 #include "Render/Gfx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -16,7 +16,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-#include "Net/Net.h"
+#include "net/Net.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);

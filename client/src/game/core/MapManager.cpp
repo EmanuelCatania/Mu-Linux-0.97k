@@ -1,7 +1,7 @@
 // MapManager.cpp — CMapManager. Ver MapManager.h.
 
 #include "stdafx.h"
-#include "Platform/Text.h"
+#include "platform/Text.h"
 #include "game/core/MapManager.h"
 #include "audio/SoundManager.h"
 #include <algorithm>

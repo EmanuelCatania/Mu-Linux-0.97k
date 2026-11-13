@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Platform/IWindow.h"
+#include "platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
 

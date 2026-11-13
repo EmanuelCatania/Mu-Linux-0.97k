@@ -12,11 +12,11 @@
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
 #include "Render/ResourceTables.h"
-#include "Platform/IWindow.h"
-#include "Platform/Text.h"
-#include "Platform/ISocket.h"
-#include "Platform/IInput.h"
-#include "Platform/IFileSystem.h"
+#include "platform/IWindow.h"
+#include "platform/Text.h"
+#include "platform/ISocket.h"
+#include "platform/IInput.h"
+#include "platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "UI/MoveList.h"
@@ -26,7 +26,7 @@
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
-#include "Net/Net.h"
+#include "net/Net.h"
 #include "game/party/Party.h"
 
 extern void __cdecl operator_delete(void* ptr);
@@ -874,7 +874,7 @@ unsigned int __cdecl CheckAttack(void) {
     return targetPkLevel;
 }
 // GetScreenWidth @ 0x004CB520 vive en src/Render/HUD_Pass2.cpp.
-// SecondPassword_Handler vive en src/Net/SecondPassword.cpp y los hit-tests de
+// SecondPassword_Handler vive en src/net/SecondPassword.cpp y los hit-tests de
 // los paneles (004e4760-004ec330) en src/UI/UI_PanelInput.cpp.
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.

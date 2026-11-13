@@ -1,6 +1,6 @@
 """Dónde está hoy un archivo de datos que el código pide como Data/<ruta> (Fase 5).
 
-Misma resolución que Platform/ContentLayers del cliente, sin packs ni server:
+Misma resolución que platform/ContentLayers del cliente, sin packs ni server:
 primero el registro de entidades (Content/<tipo>/.../<tipo>.toml con
 `source`), después los alias de Content/alias.toml, la ruta tal cual dentro de
 Content/ y al final Data/.  Así un test que pide "Player/Angel.bmd" sigue

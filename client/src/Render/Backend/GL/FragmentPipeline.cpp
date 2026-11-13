@@ -1,5 +1,5 @@
 // Sin PCH: GL y traducción del estado permanecen en el backend.
-#include "Platform/GL/glad.h"
+#include "platform/GL/glad.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderState.h"
 #include <string>
