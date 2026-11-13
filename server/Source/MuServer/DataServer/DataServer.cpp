@@ -84,14 +84,15 @@ int main()
 		}
 		else
 		{
+			// Antes de escuchar: el accept consulta la lista.
+			gAllowableIpList.Load("AllowableIpList.txt");
+
 			if (gSocketManager.Start(DS_TCP_Port) == false)
 			{
 				gQueryManager.Disconnect();
 			}
 			else
 			{
-				gAllowableIpList.Load("AllowableIpList.txt");
-
 				gBadSyntax.Load("BadSyntax.txt");
 
 				SetTimer(hWnd, TIMER_1000, 1000, 0);

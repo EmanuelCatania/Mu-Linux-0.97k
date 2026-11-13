@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SocketManager.h"
+#include "AllowableIpList.h"
 #include "ServerManager.h"
 #include "Util.h"
 
@@ -535,20 +536,28 @@ DWORD CSocketManager::ServerAcceptThread(CSocketManager* lpSocketManager)
 			continue;
 		}
 
+		char IPAddress[INET_ADDRSTRLEN];
+		if (inet_ntop(AF_INET, &SocketAddr.sin_addr, IPAddress, INET_ADDRSTRLEN) == NULL)
+		{
+			LogAdd(LOG_RED, "[SocketManager] inet_ntop() failed with error: %d", WSAGetLastError());
+			closesocket(socket);
+			continue;
+		}
+
+		// Sólo los GameServer de AllowableIpList.txt, igual que en Windows
+		// (ServerAcceptCondition). Va antes de ocupar un índice.
+		if (gAllowableIpList.CheckAllowableIp(IPAddress) == false)
+		{
+			LogAdd(LOG_RED, "[SocketManager] Connection rejected: %s is not in AllowableIpList.txt", IPAddress);
+			closesocket(socket);
+			continue;
+		}
+
 		lpSocketManager->m_critical.lock();
 
 		int index = GetFreeServerIndex();
 		if (index == -1)
 		{
-			lpSocketManager->m_critical.unlock();
-			closesocket(socket);
-			continue;
-		}
-
-		char IPAddress[INET_ADDRSTRLEN];
-		if (inet_ntop(AF_INET, &SocketAddr.sin_addr, IPAddress, INET_ADDRSTRLEN) == NULL)
-		{
-			LogAdd(LOG_RED, "[SocketManager] inet_ntop() failed with error: %d", WSAGetLastError());
 			lpSocketManager->m_critical.unlock();
 			closesocket(socket);
 			continue;
