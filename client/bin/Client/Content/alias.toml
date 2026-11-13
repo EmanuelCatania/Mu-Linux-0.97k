@@ -48,3 +48,27 @@
 
 # Sprites de efectos (los modelos de Data/Skill van por entidad en effect/model).
 "Effect" = "effect/sprite"
+
+# Data/Local repartido: textos por idioma, tablas del juego y pantallas de carga.
+# Font/, Enc1.dat/Dec2.dat y Macro.txt quedan en Data (lo mínimo para arrancar).
+"Local/Text.bmd" = "text/Text.bmd"
+"Local/Text_Eng.bmd" = "text/Text_Eng.bmd"
+"Local/Text_Por.bmd" = "text/Text_Por.bmd"
+"Local/Text_Spn.bmd" = "text/Text_Spn.bmd"
+"Local/Dialog.bmd" = "text/Dialog.bmd"
+"Local/Dialog_Eng.bmd" = "text/Dialog_Eng.bmd"
+"Local/Dialog_Por.bmd" = "text/Dialog_Por.bmd"
+"Local/Dialog_Spn.bmd" = "text/Dialog_Spn.bmd"
+"Local/NPCName.txt" = "text/NPCName.txt"
+"Local/NPCName(kor).txt" = "text/NPCName(kor).txt"
+"Local/item.bmd" = "table/item.bmd"
+"Local/skill.bmd" = "table/skill.bmd"
+"Local/quest.bmd" = "table/quest.bmd"
+"Local/Filter.bmd" = "table/Filter.bmd"
+"Local/FilterName.bmd" = "table/FilterName.bmd"
+"Local/Loading01.ozj" = "ui/loading/Loading01.ozj"
+"Local/Loading02.ozj" = "ui/loading/Loading02.ozj"
+"Local/Loading03.ozj" = "ui/loading/Loading03.ozj"
+"Local/Webzenlogo.ozj" = "ui/loading/Webzenlogo.ozj"
+"Local/Everyone.OZJ" = "ui/loading/Everyone.OZJ"
+"Gate.bmd" = "table/Gate.bmd"

@@ -115,7 +115,7 @@ def harness(revision=None):
     initialize = "void InitializeTable() { " + allocation + " }\n"
     gate = read_source("src/Item/Gate_Data.cpp", revision)
     cipher = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "BuxConvert_0")
-    sample = ROOT / "bin/Client/Data/Gate.bmd"
+    sample = ROOT / "bin/Client/Content/table/Gate.bmd"
     if not sample.is_file():
         raise FileNotFoundError(sample)
     return (PREAMBLE + record + asserts + declaration + definition + initialize + cipher

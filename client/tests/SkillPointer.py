@@ -112,7 +112,7 @@ def harness(revision=None):
     scene = read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision)
     data = read_source("src/Item/Skill_Data.cpp", revision)
     warrior = read_source("src/Combat/Skills_WarriorLegacy.cpp", revision)
-    sample = ROOT / "bin/Client/Data/Local/skill.bmd"
+    sample = ROOT / "bin/Client/Content/table/skill.bmd"
     if not sample.is_file():
         raise FileNotFoundError(sample)
     return (IO_PREAMBLE.split("BYTE* reservation;")[0] + EXTRA + definitions + raw + TEXT
