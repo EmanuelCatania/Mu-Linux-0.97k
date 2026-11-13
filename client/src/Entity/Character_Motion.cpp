@@ -1448,6 +1448,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             break;
         }
         case 30: case 31: case 32: case 33: case 34: case 35: case 36:  // Buff / Debuff
+        case 37: case 38: case 39: case 40:  // invocaciones del orbe +7..+10 (Mu-Linux)
             CreateEffect(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
                          (float*)(uintptr_t)-1, nullptr, 0);
             break;
@@ -1748,6 +1749,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             switch (queuedSkill) {
             case 16: case 26: case 27: case 28:
             case 30: case 31: case 32: case 33: case 34: case 35: case 36:
+            case 37: case 38: case 39: case 40:   // invocaciones nuevas (Mu-Linux)
             case 43: case 47: case 48:
                 break;
             default:

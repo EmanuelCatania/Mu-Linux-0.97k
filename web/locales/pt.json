@@ -834,5 +834,19 @@
   "Ver en el mapa": "Ver no mapa",
   "Se guarda en Data/Items/{file}, en la tabla [{index}]. Sirve para items custom y para los originales.": "Salvo em Data/Items/{file}, na tabela [{index}]. Serve para itens custom e originais.",
   "Se guarda en Data/Items/{file}, en la tabla [{index}.pet]. El cliente dibuja el movimiento y el server ejecuta las habilidades.": "Salvo em Data/Items/{file}, na tabela [{index}.pet]. O cliente desenha o movimento e o server executa as habilidades.",
-  "y el precio y el apilado de": "e o preço e o empilhamento de"
+  "y el precio y el apilado de": "e o preço e o empilhamento de",
+  "Invocaciones": "Invocações",
+  "Monstruo de cada nivel del Orbe de Invocación y cuánto escala con la elfa.": "Monstro de cada nível do Orbe de Invocação e quanto escala com a elfa.",
+  "Abrir invocaciones": "Abrir invocações",
+  "Cada nivel del Orbe de Invocación enseña una invocación. El monstruo sale de Monster.txt y sus stats suben con la energía y el nivel de la elfa.": "Cada nível do Orbe de Invocação ensina uma invocação. O monstro vem do Monster.txt e seus atributos sobem com a energia e o nível da elfa.",
+  "(sin invocación)": "(sem invocação)",
+  "nivel": "nível",
+  "Orbe": "Orbe",
+  "Monstruos": "Monstros",
+  "Monstruo": "Monstro",
+  "Escalado con la elfa": "Escala com a elfa",
+  "Tope (%)": "Teto (%)",
+  "Ejemplo: energía": "Exemplo: energia",
+  "Porcentaje = A + Energía / B + Nivel / C + Resets × R, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Porcentagem = A + Energia / B + Nível / C + Resets × R, com teto. Sobe vida, dano, defesas e taxas de ataque e defesa. 0 em B ou C desativa esse termo.",
+  "R (% por reset)": "R (% por reset)"
 }
