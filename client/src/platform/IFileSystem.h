@@ -1,6 +1,10 @@
 #pragma once
 #include <cstdio>
 #include <cstdint>
+#include <functional>
+#include <string>
+#include <vector>
+#include "platform/ContentLayers.h"
 
 namespace Platform {
 // Aperturas CRT: el llamador conserva fread/fseek/fclose y sus modos originales.
@@ -17,6 +21,12 @@ public:
     // Capa donde está `path` (Platform/ContentLayers.h: 0 = la que más gana),
     // mirando sólo hasta `maxLayer`; -1 si no está. Sin capas, Data es la 0.
     virtual int FindLayer(const char* path, int maxLayer) = 0;
+    // Archivos de una carpeta (sin subcarpetas), por nombre. "Data/<carpeta>"
+    // se ve a través de las capas, igual que Open (ContentLayers::List).
+    virtual std::vector<ContentLayers::Entry> ListFiles(const char* dir) = 0;
+    // Todos los archivos bajo `root`, con subcarpetas; `visit` devuelve false
+    // para cortar. "Data" incluye las capas (ContentLayers::Walk).
+    virtual void WalkFiles(const char* root, const std::function<bool(const std::string&)>& visit) = 0;
     virtual uint32_t ExecutablePath(char* output, uint32_t capacity) = 0;
     virtual uint32_t ReadIniString(const char* section, const char* key,
         const char* fallback, char* output, uint32_t capacity, const char* path) = 0;
