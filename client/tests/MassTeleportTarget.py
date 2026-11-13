@@ -119,7 +119,7 @@ int main(){
 
 def harness(root=ROOT,revision=None):
     path='src/Combat/Combat.cpp'
-    source=subprocess.check_output(['git','show',revision+':'+path],cwd=root).decode('utf-8') if revision else lower((root/path).read_text(encoding='utf-8'))
+    source=__import__('source_paths').show(root, revision, path) if revision else lower((root/path).read_text(encoding='utf-8'))
     seed=function(source,'Combat_SeedRuntimeState97k').replace('Combat_SeedRuntimeState97k','ActualSeed')
     send=function(source,'Combat_SendPartyRecall97k').replace('Combat_SendPartyRecall97k','ActualSend')
     return SERVICES.replace('SEED',seed).replace('SEND',send).replace('ATTACK',function(source,'Attack_Label1585_97k'))+MAIN

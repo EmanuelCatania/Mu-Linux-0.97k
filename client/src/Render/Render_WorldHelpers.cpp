@@ -1163,13 +1163,13 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // RenderParticles — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)
 // DamageNumbers_Tick (IDA: MovePoints) — implemented in src/Render/Effect_Tick.cpp
 // Effect_TickFlare (IDA: MovePointers) — implemented in src/Render/Effect_Tick.cpp
-// Render_DrawSpritePool — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
+// Render_DrawSpritePool — implemented in src/audio/Sound_Queue.cpp (Sound_UpdateQueue)
 // ClearInput — implemented in src/Input/Input.cpp
 // UI_RenderInputField — implemented in src/UI/Chat.cpp
 // UI_RenderText — implemented in src/UI/Chat.cpp
-// Chat_TickNoticeTimer — implemented in src/Sound/Sound_Queue.cpp
+// Chat_TickNoticeTimer — implemented in src/audio/Sound_Queue.cpp
 // UI_RenderNotices — implemented in src/UI/Chat.cpp
-// Chat_TickMessageTimer — implemented in src/Sound/Sound_Queue.cpp
+// Chat_TickMessageTimer — implemented in src/audio/Sound_Queue.cpp
 // UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
 // Player_InputTick — implemented in src/Game/Player_InputTick.cpp

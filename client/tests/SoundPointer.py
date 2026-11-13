@@ -179,7 +179,7 @@ def harness(revision=None):
     for name in ("_DAT_005524bc", "Math_DegreesToRadians"):
         declarations += re.search(rf"^float\s+{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     field = re.search(r"vec3_t\s+Position\s*;", read_source("src/Entity/EntityTypes.h", revision)).group()
-    source = read_source("src/Sound/Sound_DS3D.cpp", revision)
+    source = read_source("src/audio/Sound_DS3D.cpp", revision)
     play = function(source, "PlayBuffer")
     update = function(source, "Sound_Update3DPositions")
     math_source = read_source("src/Math/Math_3D.cpp", revision)

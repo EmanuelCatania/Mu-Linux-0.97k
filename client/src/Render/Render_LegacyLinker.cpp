@@ -115,7 +115,7 @@ void __cdecl OpenTexture(int id, void* path, int flags, bool param) {
     OpenTexture(id, (const char*)path, flags, (char)param);
 }
 
-// LoadWaveFile @ 0x00404A10 — real implementation in src/Sound/Sound.cpp.
+// LoadWaveFile @ 0x00404A10 — real implementation in src/audio/Sound.cpp.
 
 void __cdecl OpenModel(int id, char* path, ...) {
     // 0x00505E90 — Load model with variable texture/normal args

@@ -10,7 +10,7 @@
 #include "Game/HeroVitals.h"
 #include "Net/Recv/NetRecv.h"
 #include "Model/Model_CustomAnim.h"
-#include "Sound/EmoteSound.h"
+#include "audio/EmoteSound.h"
 
 void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
 {

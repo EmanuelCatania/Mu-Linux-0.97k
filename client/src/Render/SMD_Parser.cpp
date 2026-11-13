@@ -819,7 +819,7 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
 
-// SetHall (0x00404BB0) vive en src/Sound/Sound_DS3D.cpp.  Aca habia una segunda
+// SetHall (0x00404BB0) vive en src/audio/Sound_DS3D.cpp.  Aca habia una segunda
 // copia bajo el nombre FUN_00404bb0, sin callers: las dos son fieles (en el
 // binario la funcion es un stub que devuelve 1), asi que solo sobraba el nombre.
 

@@ -133,7 +133,7 @@ def harness(revision=None):
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     for name in ("DAT_083a7cc0","DAT_083a7cc4"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",header,re.M).group()+"\n"
-    source=read_source("src/Sound/Sound_Queue.cpp",revision)
+    source=read_source("src/audio/Sound_Queue.cpp",revision)
     draw=function(source,"Render_DrawSprite"); prefix+=draw+function(source,"Render_DrawSpritePool")
     prefix+=function(read_source("src/Render/Particle_Legacy.cpp",revision),"Character_UpdateAll")
     arg="reinterpret_cast<const OBJECT*>(object)" if "const OBJECT*" in draw.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"

@@ -1087,7 +1087,7 @@ void  __fastcall FUN_00403320(void* param_1);                        // quest NP
 UINT  __fastcall FUN_00403700(void* ecx, void* edx, UINT param_1);  // quest list by state
 void  __fastcall FUN_00403a40(void* param_1);                        // quest UI main panel
 UINT  __fastcall HashTable_GetIndex(void* ecx, void* edx, DWORD param_1); // IDA: FUN_004041e0
-HRESULT __cdecl InitDirectSound(HWND hDlg);                          // 0x004044A0 — DirectSound8 init (src/Sound/Sound.cpp)
+HRESULT __cdecl InitDirectSound(HWND hDlg);                          // 0x004044A0 — DirectSound8 init (src/audio/Sound.cpp)
 HRESULT __cdecl CreateStaticBuffer(int Buffer, const char* strFileName, int MaxChannel, bool Enable); // 0x00404650
 void  __stdcall FUN_00405340(void);                                  // CErrorReport: rotate log
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
@@ -1279,7 +1279,7 @@ void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); //
 
 // Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, LookAtTarget
 void  __cdecl OpenTexture(int id, void *path, int flags, bool param);   // 0x00505C80
-// LoadWaveFile declared above with real signature — real impl in src/Sound/Sound.cpp.
+// LoadWaveFile declared above with real signature — real impl in src/audio/Sound.cpp.
 void  __cdecl OpenModel(int id, char *path, ...);                       // 0x00505E90 (varargs: texName, normName, etc.)
 void  __cdecl RenderItem3D(float sx, float sy, float w, float h, int Type, int Level, int Option1, int ExtOption, bool PickUp); // IDA: RenderItem3D (0x004E1BE0)
 // InventoryColor = InventoryColor

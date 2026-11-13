@@ -49,7 +49,7 @@
 #endif
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 #include "Config/UserSettings.h"
 #if defined(_DEBUG) && defined(_WIN32)
 #  define _CRTDBG_MAP_ALLOC

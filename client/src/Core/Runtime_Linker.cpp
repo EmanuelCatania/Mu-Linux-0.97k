@@ -70,7 +70,7 @@ void __cdecl FUN_00543c98(void *ptr) {
 
 // StopBuffer @ 0x00404C60 — implementado en Render/Render_WorldHelpers.cpp (delega a Sound_StopBuffer).
 
-// StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/Sound/Music.cpp).
+// StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/audio/Music.cpp).
 // No reimplementarlo acá: es el mismo símbolo del binario.
 void __cdecl StopMp3(char *cmd, int param) {
     Music_StopTrack(cmd, param);
