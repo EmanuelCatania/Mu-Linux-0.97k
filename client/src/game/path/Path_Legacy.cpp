@@ -1,7 +1,7 @@
 // Path_Legacy.cpp
 
 #include "stdafx.h"
-#include "Game/PathContext.h"
+#include "game/core/PathContext.h"
 #include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -304,7 +304,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
     PathContext* pfCtx = DAT_05826df4;
 
-    // El contexto lo construye PathContext_Create() (src/Game/PathFinder.cpp,
+    // El contexto lo construye PathContext_Create() (src/game/core/PathFinder.cpp,
     // llamada desde WinMain), que replica el ctor del binario: 0x0043F280..0x0043F2C7,
     // reserva de 0x424 bytes y vtable de la cola de prioridad en +0x414.  InitPath
     // (PathFinder_ResetContext, en Path/Path_LegacyReset.cpp) la llama OpenFont

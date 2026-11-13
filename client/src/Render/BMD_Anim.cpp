@@ -17,8 +17,8 @@
 #include "Model/ModelTypes.h"
 #include "globals.h"
 #include "functions.h"
-#include "Entity/EntityView.h"
-#include "Combat/PlayerAttackSpeed.h"
+#include "game/entity/EntityView.h"
+#include "game/combat/PlayerAttackSpeed.h"
 
 // BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (__thiscall, 7 args in original)
 // Advances animation frame counter (*AnimationFrame) by Speed each call. If the frame

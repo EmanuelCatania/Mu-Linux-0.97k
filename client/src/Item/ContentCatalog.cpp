@@ -11,7 +11,7 @@
 #include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
 #include "UI/MoveList.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "Local/ClientText.h"
 #include <array>
 #include "Util/Sha256.h"

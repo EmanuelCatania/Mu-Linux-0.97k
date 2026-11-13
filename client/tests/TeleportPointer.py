@@ -133,7 +133,7 @@ int main() {
 
 def harness(revision=None):
     prefix = action_harness(revision).split("void* Call(OBJECT* object, int action)", 1)[0]
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     record = OBJECT_RECORD
     for token, name, kind in (("TYPE_FIELD", "Type", "short"),
                               ("POSITION_FIELD", "Position", "vec3_t"),
@@ -148,7 +148,7 @@ def harness(revision=None):
         record = re.sub(rf"\b{token}\b", re.search(rf"\b{kind}\s+{name}\s*;", types).group(), record)
     prefix = re.sub(r"struct OBJECT\s*\{.*?\};", lambda _: record, prefix, count=1, flags=re.S)
     prefix = prefix.replace("void* __cdecl SetAction(OBJECT* entity_ptr", "void* __cdecl SetActionReal(OBJECT* entity_ptr")
-    source = read_source("src/Entity/Entity_LegacyTeleport.cpp", revision)
+    source = read_source("src/game/entity/Entity_LegacyTeleport.cpp", revision)
     begin, end = (function(source, name) for name in ("CreateTeleportBegin", "CreateTeleportEnd"))
     main = MAIN
     for token, name, body in (("CALL_BEGIN", "CreateTeleportBegin", begin), ("CALL_END", "CreateTeleportEnd", end)):

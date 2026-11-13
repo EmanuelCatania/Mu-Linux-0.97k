@@ -79,7 +79,7 @@ def harness(revision=None, legacy=False):
     if legacy:
         prefix+='constexpr unsigned ModelBytes=224,LightOffset=72;\n'
     else:
-        prefix+=layouts()+'using vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/Entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
+        prefix+=layouts()+'using vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/game/entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
         prefix+='OBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\nconstexpr unsigned LightOffset=offsetof(BMD,BodyLight);\nstatic_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));\nstatic_assert(LightOffset==(sizeof(void*)==4?72:96));\n'
     services=SERVICES.replace('activeModel+72','activeModel+LightOffset')
     main=MAIN.replace('ARG',arg).replace('224','ModelBytes').replace('activeModel+72','activeModel+LightOffset')

@@ -1,6 +1,6 @@
 #pragma once
 #include "types.h"
-#include "Entity/EntityTypes.h"
+#include "game/entity/EntityTypes.h"
 #include <cstddef>
 
 // IDA: JOINT, 0x9D8 bytes; pool de 500 en 0x07B27150 (DAT_07b27150).

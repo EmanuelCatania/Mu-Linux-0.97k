@@ -14,7 +14,7 @@
 #include "Render/Gfx.h"
 #include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 

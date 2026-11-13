@@ -27,7 +27,7 @@
 //   Direction[0..1] punto adelantado (posición + paso × 3).
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #include "Render/ResourceTables.h"
 
 namespace {

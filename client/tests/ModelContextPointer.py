@@ -37,7 +37,7 @@ static_assert(alignof(BMD)==1&&std::is_standard_layout_v<BMD>&&std::is_trivially
     equipment=read_source("src/Render/EquipmentVisuals.cpp")
     ctor=re.search(r'EquipmentModelContext::EquipmentModelContext\(.*?\n\}',equipment,re.S).group()
     dtor=re.search(r'EquipmentModelContext::~EquipmentModelContext\(\)[^\n]*',equipment).group()
-    pose=read_source("src/Entity/ObjectPose.cpp")
+    pose=read_source("src/game/entity/ObjectPose.cpp")
     prepare=function(pose,"PrepareContext")
     simulation=function(pose,"ObjectPose_PrepareSimulation")
     math=read_source("src/game/math/Math_3D.cpp")

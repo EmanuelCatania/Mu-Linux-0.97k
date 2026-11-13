@@ -13,13 +13,13 @@
 
 #include "stdafx.h"
 #include "Model/ModelTypes.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Net/ServerCharacterStats.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 

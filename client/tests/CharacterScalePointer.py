@@ -91,7 +91,7 @@ int main() {
 
 
 def harness(revision=None):
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     support = SUPPORT.replace("PART_RECORD", opaque_cloth_fields(re.search(r"struct PART_t\s*\{.*?\};", types, re.S).group()))
     for token, name, kind in (("SCALE_FIELD", "Scale", "float"),
                               ("CLASS_FIELD", "Class", "BYTE"),

@@ -28,7 +28,7 @@
 #include "UI/ChatHistory.h"
 #include "Text/TextCore.h"
 #include "game/party/Party.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/IInput.h"
@@ -489,7 +489,7 @@ void __cdecl Chat_InputTick(void)
             // 379..403 x 452..476) y L2078 (inventario, 410..434 x 452..476).
             //
             // El cuerpo fiel vive en `HUD_BottomBarButtons_HitTest`
-            // (src/Game/Player_InputTick.cpp), que ya trae los cuatro botones
+            // (src/game/core/Player_InputTick.cpp), que ya trae los cuatro botones
             // con sus sonidos, paquetes y efectos sobre los otros flags.
             HUD_BottomBarButtons_HitTest();
 
@@ -912,7 +912,7 @@ void __cdecl Chat_InputTick(void)
     }
 
     // ── 12-15. C/V/I/G/P: NO se manejan acá ─────────────────────────────────
-    // Los maneja `HUD_HotkeyTick` (src/Game/Player_InputTick.cpp) con el helper
+    // Los maneja `HUD_HotkeyTick` (src/game/core/Player_InputTick.cpp) con el helper
     // por flanco PressKey, incluidos los paquetes 0x52/0x42 de guild/party.
     // No duplicarlos aquí: dos handlers en el mismo frame invierten el panel dos
     // veces y queda cerrado.

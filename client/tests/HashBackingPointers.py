@@ -27,7 +27,7 @@ std::uint64_t Run(uintptr_t base){std::uint64_t hash=14695981039346656037ull;uns
 int main(){auto expected=Run(0x26000000u);if(sizeof(void*)>4){Require(Run(uintptr_t(0x126000000ull))==expected);Require(Run(0x8a000000u)==expected);}std::printf("Hash backing:262144 reemplazos/ruta %016llx\n",(unsigned long long)expected);}
 '''
 def harness(revision=None):
- source=read_source('src/Game/Game_MainLoop.cpp',revision);start=source.index('if (DAT_055c9be0 != NULL)');end=source.index('unsigned rnd1',start);prefix=source[start:end];tail='operator_delete(old_be8);\n            operator_delete(old_bec);';assert tail in source
+ source=read_source('src/game/core/Game_MainLoop.cpp',revision);start=source.index('if (DAT_055c9be0 != NULL)');end=source.index('unsigned rnd1',start);prefix=source[start:end];tail='operator_delete(old_be8);\n            operator_delete(old_bec);';assert tail in source
  declarations=[];getters=[];setters=[]
  for name,suffix,arg in [('DAT_055c9be0','0','a'),('DAT_055c9be8','8','b'),('DAT_055c9bec','C','c')]:
   match=re.search(r'(DWORD|BYTE\*)\s+'+name+r'\s*=\s*(?:0|nullptr);',read_source('src/globals.cpp',revision));assert match;declarations.append(match.group());kind=match[1]

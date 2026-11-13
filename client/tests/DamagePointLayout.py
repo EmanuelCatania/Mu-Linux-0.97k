@@ -37,11 +37,11 @@ int main(){BYTE* pool=reinterpret_cast<BYTE*>(DAT_07c80110);Require(sizeof(DAT_0
 '''
 def harness(revision=None):
  header='' if revision else read_source('src/Render/DamagePointTypes.h');globals_source=read_source('src/globals.cpp',revision);declaration=re.search(r'(?:char|DamagePoint)\s+DAT_07c80110\[[^\n]+;',globals_source);assert declaration
- poses=read_source('src/Game/RenderSnapshots.h',revision);samples=read_source('src/Game/RenderSnapshots.cpp',revision);structs=''.join(block(poses,'struct '+name+' {') for name in ['RenderPose','RenderPosePair'])+block(samples,'struct Sample {')
+ poses=read_source('src/game/core/RenderSnapshots.h',revision);samples=read_source('src/game/core/RenderSnapshots.cpp',revision);structs=''.join(block(poses,'struct '+name+' {') for name in ['RenderPose','RenderPosePair'])+block(samples,'struct Sample {')
  constants='';g=read_source('src/globals.cpp',revision)
  for name in ['_DAT_00552958','_DAT_005528b8','_DAT_00552580','_DAT_00552660','_DAT_00552834']:
   match=re.search(r'float\s+'+name+r'\s*=\s*[^;]+;',g);assert match;constants+=match.group()+'\n'
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <algorithm>\nusing undefined1=unsigned char;\n'+header+structs+declaration.group()+constants+SERVICES+function(read_source('src/Combat/Skills_WarriorLegacy.cpp',revision),'Entity_TeleportAnim')+function(read_source('src/Entity/Entity_LegacyTeleport.cpp',revision),'CreatePoint')+function(read_source('src/Render/Effect_Tick.cpp',revision),'DamageNumbers_Tick')+block(samples,'Sample PointSample(')+function(read_source('src/Render/Render_LegacyDamageNumbers.cpp',revision),'RenderPoints')+MAIN
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <algorithm>\nusing undefined1=unsigned char;\n'+header+structs+declaration.group()+constants+SERVICES+function(read_source('src/game/combat/Skills_WarriorLegacy.cpp',revision),'Entity_TeleportAnim')+function(read_source('src/game/entity/Entity_LegacyTeleport.cpp',revision),'CreatePoint')+function(read_source('src/Render/Effect_Tick.cpp',revision),'DamageNumbers_Tick')+block(samples,'Sample PointSample(')+function(read_source('src/Render/Render_LegacyDamageNumbers.cpp',revision),'RenderPoints')+MAIN
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

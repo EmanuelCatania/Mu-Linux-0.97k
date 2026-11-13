@@ -16,7 +16,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Net/NetText.h"
 #include "UI/ChatTypes.h"
 #include "Text/TextCore.h"

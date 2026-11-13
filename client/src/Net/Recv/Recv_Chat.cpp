@@ -6,7 +6,7 @@
 #include "Platform/Text.h"
 #include "Net/Recv/NetRecv.h"
 #include "Net/NetText.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 
 // ── CHAT ─────────────────────────────────────────────────────────
 // Layout del server MuEmu (Protocol.h). IDA ReceiveChat (0x427630) lee el

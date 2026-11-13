@@ -49,7 +49,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Combat/Combat_AttackEffect.cpp',revision)
+    source=read_source('src/game/combat/Combat_AttackEffect.cpp',revision)
     shim=re.search(r'namespace CErrorReport\s*\{\s*(inline void Write\((DWORD|void\*)\s*,\s*const char\*\)\s*\{[^{}]*\})\s*\}',source)
     if not shim:raise ValueError('Shim local inesperado')
     calls=re.findall(r'CErrorReport::Write\([^;]*\);',source)

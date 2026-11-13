@@ -15,7 +15,7 @@ _POINTER_SIZES = {"BYTE": 1, "char": 1, "short": 2, "WORD": 2, "int": 4, "DWORD"
                   "std::uint32_t": 4, "std::int32_t": 4, "vec3_t": 12}
 
 
-def _fields(struct, revision=None, header="src/Entity/EntityTypes.h"):
+def _fields(struct, revision=None, header="src/game/entity/EntityTypes.h"):
     source = read_source(header, revision)
     body = re.search(r"struct " + struct + r"\s*\{(.*?)\n\};", source, re.S).group(1)
     fields = {}
@@ -28,7 +28,7 @@ def _fields(struct, revision=None, header="src/Entity/EntityTypes.h"):
     return fields
 
 
-def view(struct, names, size, revision=None, header="src/Entity/EntityTypes.h"):
+def view(struct, names, size, revision=None, header="src/game/entity/EntityTypes.h"):
     """struct con los campos `names` en su offset x86 y tamaño total `size`."""
     fields = _fields(struct, revision, header)
     out, cursor, pad = [f"struct {struct} {{"], 0, 0
@@ -55,7 +55,7 @@ def _packed(struct, names, size, revision, header, accessor):
 
 
 def object_view(names, revision=None):
-    return _packed("OBJECT", names, 0x1BC, revision, "src/Entity/EntityTypes.h", "AsObject")
+    return _packed("OBJECT", names, 0x1BC, revision, "src/game/entity/EntityTypes.h", "AsObject")
 
 
 CLOTH_MODEL_MESH = """

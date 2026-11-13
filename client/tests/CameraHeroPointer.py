@@ -38,10 +38,10 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    header=read_source('src/Entity/EntityTypes.h',revision)
+    header=read_source('src/game/entity/EntityTypes.h',revision)
     accessors='\n'.join(re.findall(r'^inline (?:const )?OBJECT\* AsObject\([^\n]+',header,re.M))
     if len(accessors.splitlines())!=3:raise ValueError('Se esperaban tres overloads AsObject')
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ACCESSORS',accessors)+function(read_source('src/Game/SimulationPreparation.cpp',revision),'PrepareCamera')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ACCESSORS',accessors)+function(read_source('src/game/core/SimulationPreparation.cpp',revision),'PrepareCamera')+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

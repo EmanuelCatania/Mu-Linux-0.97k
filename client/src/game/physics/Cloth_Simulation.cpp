@@ -3,8 +3,8 @@
 #include "stdafx.h"
 #include "Model/ModelTypes.h"
 #include "game/physics/ClothTypes.h"
-#include "Game/RenderInterpolation.h"
-#include "Game/RenderInterpolationMath.h"
+#include "game/core/RenderInterpolation.h"
+#include "game/core/RenderInterpolationMath.h"
 #include "globals.h"
 #include "functions.h"
 

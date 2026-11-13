@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity/EntityTypes.h"
+#include "game/entity/EntityTypes.h"
 
 // IDA: ala 790 de RenderPartObjectEffect (0x00504B50).
 void LooseWingVisuals_BeginStep();

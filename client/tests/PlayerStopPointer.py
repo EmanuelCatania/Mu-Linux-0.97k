@@ -173,7 +173,7 @@ int main() {
 
 def harness(revision=None):
     prefix = sound_harness(revision).split("HRESULT CallPlay(", 1)[0].replace("0x10000", "0x100000")
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     record = OBJECT_RECORD
     for token, name, kind in (("TYPE_FIELD", "Type", "short"), ("SUBTYPE_FIELD", "SubType", "int"),
                               ("POSITION_FIELD", "Position", "vec3_t"), ("CURRENT_FIELD", "CurrentAction", "BYTE"),
@@ -190,7 +190,7 @@ def harness(revision=None):
         declarations += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     declarations += re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}", header, re.M | re.S).group()
     terrain = function(read_source("src/Terrain/Terrain_Utils.cpp", revision), "Terrain_GetTileIndex").replace("Terrain_GetTileIndex(", "TileIndexReal(", 1)
-    stop = function(read_source("src/Entity/Character_Motion.cpp", revision), "SetPlayerStop").replace("rand()", "NextRandom()")
+    stop = function(read_source("src/game/entity/Character_Motion.cpp", revision), "SetPlayerStop").replace("rand()", "NextRandom()")
     arg = "character" if "CHARACTER* c" in stop else "static_cast<int>(reinterpret_cast<std::uintptr_t>(character))"
     return prefix + declarations + terrain + SERVICES + stop + MAIN.replace("CALL_STOP", f"SetPlayerStop({arg})")
 

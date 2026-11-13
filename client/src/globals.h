@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity/EntityTypes.h"
+#include "game/entity/EntityTypes.h"
 #include "Render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
 #include "Scene/SceneObjectCell.h"

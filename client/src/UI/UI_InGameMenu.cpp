@@ -8,7 +8,7 @@
 #include "Platform/UserPath.h"
 #include "UI/ChatListBox.h"
 #include "Net/Recv/NetRecv.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"

@@ -70,7 +70,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Entity/Character_Motion.cpp',revision)
+    source=read_source('src/game/entity/Character_Motion.cpp',revision)
     source=source[source.index('void __cdecl MoveCharacter('):]
     start=source.index('    if (',source.index('// ─── IDA L437-477:'))
     end=source.index('    // ─── IDA L478-498:',start)
@@ -78,7 +78,7 @@ def harness(revision=None):
     kill=re.search(r'^\s*if \(.*Hero.*\) \*\(BYTE\*\)o = 0;',source,re.M).group()
     target=re.search(r'if \(([^\n]+Hero[^\n]+SelectedCharacter[^\n]+)\) \{',source).group(1)
     green=re.search(r'^\s*Light\[1\] = [^\n]+Hero[^\n]+;',source,re.M).group()
-    header=read_source('src/Entity/EntityTypes.h',revision)
+    header=read_source('src/game/entity/EntityTypes.h',revision)
     accessors='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter\([^\n]+',header,re.M))
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ACCESSORS',accessors).replace('BUFF',buff).replace('KILL',kill).replace('TARGET',target).replace('GREEN',green)+MAIN
 def main():

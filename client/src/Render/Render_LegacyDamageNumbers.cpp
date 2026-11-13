@@ -2,9 +2,9 @@
 // Números de daño flotantes: RenderNumber (0x005120C0) y RenderPoints (0x00479330).
 
 #include "stdafx.h"
-#include "Game/RenderInterpolation.h"
-#include "Game/RenderSnapshots.h"
-#include "Game/FrameLimiter.h"
+#include "game/core/RenderInterpolation.h"
+#include "game/core/RenderSnapshots.h"
+#include "game/core/FrameLimiter.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"

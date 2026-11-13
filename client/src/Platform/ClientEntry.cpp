@@ -45,7 +45,7 @@
 #else
 #include "Platform/SDL3/SDLPlatform.h"
 #include "Net/Ping.h"
-#include "Game/FrameLimiter.h"
+#include "game/core/FrameLimiter.h"
 #endif
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
@@ -669,7 +669,7 @@ int main(int, char**)
     // InitPath (0x0043F2D0, PathFinder_ResetContext en Path/Path_LegacyReset.cpp) NO
     // se llama aca: la llama OpenFont (World_Init) desde Scene_Intro, igual que en
     // el binario. Este ctor corre antes, que es el orden correcto.
-    extern void __cdecl PathContext_Create(void);   // src/Game/PathFinder.cpp
+    extern void __cdecl PathContext_Create(void);   // src/game/core/PathFinder.cpp
     PathContext_Create();
 
     // 22: vtable object construction (font/UI system objects)

@@ -2,7 +2,7 @@
 
 #include "stdafx.h"
 #include "Text/TextCore.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"

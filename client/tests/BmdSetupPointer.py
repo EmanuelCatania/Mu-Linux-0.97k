@@ -99,7 +99,7 @@ int main() {
 def harness(revision=None):
     source=read_source('src/Render/BMD_SetupRender.cpp',revision)
     code=function(source,'BMD_SetupRenderByType')
-    types=layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/Entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\nOBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\nconstexpr unsigned ModelBytes=sizeof(BMD)+36,EntityBytes=sizeof(OBJECT)+36;\n'
+    types=layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/game/entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\nOBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\nconstexpr unsigned ModelBytes=sizeof(BMD)+36,EntityBytes=sizeof(OBJECT)+36;\n'
     types=types.replace('constexpr unsigned ModelBytes=sizeof(void*)==4?224:256;','')
     services=SERVICES.replace('Hash(activeModel+72,12)','Hash(activeModel+offsetof(BMD,BodyLight),12)')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+types+services

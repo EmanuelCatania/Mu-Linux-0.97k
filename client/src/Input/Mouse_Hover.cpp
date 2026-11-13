@@ -37,7 +37,7 @@
 
 #include "stdafx.h"
 #include "game/party/Party.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -571,7 +571,7 @@ int __cdecl SpecialObject_HoverTest(void)
     }
     return -1;
 }
-// FUN_004afb00 — implemented in src/Game/Party_NameMatch.cpp (Party_MatchEntityNames)
+// FUN_004afb00 — implemented in src/game/core/Party_NameMatch.cpp (Party_MatchEntityNames)
 // Party_HPBar_HoverCheck @ 0x004E5980 — Party_HPBar_HoverCheck(void)
 // Iterates the party HP bar array (DAT_07e11e9c, stride 0x24 = 9 uints) and checks
 // if the mouse cursor (DAT_083a427c, DAT_083a4278) is within any party member's

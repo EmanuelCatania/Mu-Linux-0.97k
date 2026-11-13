@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/EquipmentVisuals.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include <array>
 #include <memory>
 #include <vector>

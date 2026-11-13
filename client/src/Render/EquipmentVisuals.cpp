@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "Render/MaterialVisuals.h"
-#include "Game/RenderInterpolation.h"
-#include "Game/RenderInterpolationMath.h"
-#include "Game/RenderSnapshots.h"
+#include "game/core/RenderInterpolation.h"
+#include "game/core/RenderInterpolationMath.h"
+#include "game/core/RenderSnapshots.h"
 #include "Render/EquipmentVisuals.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include <vector>
 
 namespace {

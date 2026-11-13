@@ -9,7 +9,7 @@
 #include "Item/ContentCatalog.h"
 #include "Net/Protocol/ProtocolVersion.h"
 #include "Net/Reconnect.h"
-#include "Game/HeroVitals.h"
+#include "game/core/HeroVitals.h"
 #include "Net/Ping.h"
 #include "Net/Network.h"
 #include "Net/Net.h"

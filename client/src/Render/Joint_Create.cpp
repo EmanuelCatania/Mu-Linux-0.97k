@@ -4,7 +4,7 @@
 // CreateJoint - creates a lightning/beam visual joint by type.
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
+#include "game/core/RenderFxSnapshots.h"
 
 // x64: los locales del hash anti-tamper estan a 4 bytes en __fr y sus punteros se
 // pisan entre si; con capacidad 0 ninguna busqueda se ejecuta.

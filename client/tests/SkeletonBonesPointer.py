@@ -72,7 +72,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* p=static_cas
 '''
 def harness(revision=None):
  source=read_source('src/Render/Entity_AnimationLegacy.cpp',revision);body=function(source,'Skeleton_Transform');math=read_source('src/game/math/Math_3D.cpp',revision)
- bodies=''.join(function(math,n)for n in ('Matrix_BuildFromEuler','Vector_Transform','Vector_Rotate','Vector_InverseRotate'))+function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')+body
+ bodies=''.join(function(math,n)for n in ('Matrix_BuildFromEuler','Vector_Transform','Vector_Rotate','Vector_InverseRotate'))+function(read_source('src/game/entity/ObjectBounds.h',revision),'ObjectBounds_Build')+body
  names=sorted(set(re.findall(r'\b(?:_DAT_[0-9a-f]+|Math_DegreesToRadians)\b',bodies)));globals=read_source('src/globals.cpp',revision);constants=''.join(re.search(r'^float\s+'+n+r'\s*=\s*[^;]+;',globals,re.M).group()for n in names)
  skin=re.search(r'struct Source\s*\{[\s\S]*?\};',read_source('src/Render/Skinning.h',revision)).group()
  service=SERVICES.replace('TRANSFORM_HEADER','#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"').replace('SOURCE',skin)

@@ -58,7 +58,7 @@ def condition(source,offset):
     return matches[0]
 
 def harness(revision=None):
-    source=read_source('src/Game/Player_InputTick.cpp',revision)
+    source=read_source('src/game/core/Player_InputTick.cpp',revision)
     guards='\n'.join(f'bool {name}(){{return ({condition(source,offset)});}}' for name,offset in [('DeadGuard','0x2fd'),('HoverGuard','0x34e')])
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+guards+MAIN
 

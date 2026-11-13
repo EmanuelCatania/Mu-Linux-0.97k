@@ -129,7 +129,7 @@ def harness(revision=None):
         prefix+=re.search(rf"struct {name}\s*\{{.*?\n\}};",source,re.S).group()
     for pattern in (r"^std::unordered_map<const void \*, Frame> frames, previousFrames;",r"^Frame \*recording[^;]+;",r"^int scene[^;]+;"):
         prefix+=re.search(pattern,source,re.M).group()
-    prefix+=SERVICES+function(read_source("src/Game/RenderInterpolationMath.cpp",revision),"RenderBlend")
+    prefix+=SERVICES+function(read_source("src/game/core/RenderInterpolationMath.cpp",revision),"RenderBlend")
     for name in ("WorldEffects_BeginStep","WorldEffects_AddSprite","WorldEffects_Draw"):
         prefix+=function(source,name)
     arg="object" if "const OBJECT* entity" in function(source,"WorldEffects_Draw") else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"

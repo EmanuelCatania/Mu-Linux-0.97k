@@ -29,7 +29,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     body=function(read_source('src/UI/UI_LegacyWidgetSystem.cpp',revision),'Widget_NodeInit')
-    presentation=read_source('src/Entity/ClothPresentation.cpp',revision)
+    presentation=read_source('src/game/entity/ClothPresentation.cpp',revision)
     types='\n'.join(re.search(r'struct '+name+r'\s*\{.*?\};',presentation,re.S).group(0) for name in ('Point','Sample'))
     forget=function(presentation,'ClothPresentation_Forget').replace('ClothPresentation_Forget','ForgetActual')
     args='widget' if 'void* widget' in body else '(int)widget'

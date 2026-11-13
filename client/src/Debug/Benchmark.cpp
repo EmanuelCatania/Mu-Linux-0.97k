@@ -10,14 +10,14 @@
 #include <cstdio>
 #include <vector>
 
-#include "Entity/EntityTypes.h"
+#include "game/entity/EntityTypes.h"
 #include "Model/ModelTypes.h"
 #include "Net/NetText.h"
 #include "Net/Recv/NetRecv.h"
 #include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 
 namespace Benchmark {
 namespace {

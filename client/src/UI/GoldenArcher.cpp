@@ -19,7 +19,7 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
-#include "Entity/EntityName.h"
+#include "game/entity/EntityName.h"
 #include "Text/TextCore.h"
 #include "Net/NetText.h"
 #include "Render/Gfx.h"

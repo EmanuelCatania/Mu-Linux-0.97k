@@ -9,7 +9,7 @@ from pathlib import Path
 from SceneObjectPointer import read_source,build_and_run
 
 def harness(negative=False):
-    header=read_source('src/Entity/EntityTypes.h')
+    header=read_source('src/game/entity/EntityTypes.h')
     records='\n'.join(re.search(r'struct '+n+r'\s*\{.*?\n\};',header,re.S).group() for n in ('OBJECT','PART_t','CHARACTER'))
     source=read_source('src/Net/Recv/Recv_Viewport.cpp')
     start=source.index('            if (hero) {',source.index('if (entityId == g_HeroKey'))
@@ -18,8 +18,8 @@ def harness(negative=False):
     if negative:
         assert branch.count('EntityName::Set(hero, name);')==1
         branch=branch.replace('EntityName::Set(hero, name);','')
-    names=read_source('src/Entity/EntityName.cpp');names=names[names.index('namespace EntityName {'):]
-    assert 'EntityName::Clear(param_1);' in read_source('src/Entity/Entity_Spawn.cpp')
+    names=read_source('src/game/entity/EntityName.cpp');names=names[names.index('namespace EntityName {'):]
+    assert 'EntityName::Clear(param_1);' in read_source('src/game/entity/Entity_Spawn.cpp')
     prefix=r'''
 #include <cstdint>
 #include <cstddef>

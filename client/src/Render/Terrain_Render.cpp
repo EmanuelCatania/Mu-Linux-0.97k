@@ -5,9 +5,9 @@
 #include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
-#include "Entity/ObjectPose.h"
+#include "game/entity/ObjectPose.h"
 #include "Render/WorldEffects.h"
-#include "Game/RenderDerivedState.h"
+#include "game/core/RenderDerivedState.h"
 #include "Render/DrawDistance.h"
 
 // External helpers

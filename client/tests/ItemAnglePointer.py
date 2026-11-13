@@ -54,10 +54,10 @@ int main() {
 
 def harness(revision=None):
     prefix = position_harness(revision).split("void CallPosition(CHARACTER* character)", 1)[0]
-    scale = re.search(r"float\s+Scale\s*;", read_source("src/Entity/EntityTypes.h", revision)).group()
+    scale = re.search(r"float\s+Scale\s*;", read_source("src/game/entity/EntityTypes.h", revision)).group()
     prefix = prefix.replace("BYTE beforePosition[8];", "BYTE beforeScale[4]; " + scale, 1)
     prefix += "\nstatic_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Scale) == 12 && offsetof(OBJECT, Angle) == 28));\n"
-    item = function(read_source("src/Entity/Entity_LegacyEffects.cpp", revision), "ItemAngle")
+    item = function(read_source("src/game/entity/Entity_LegacyEffects.cpp", revision), "ItemAngle")
     arg = "object" if "OBJECT* object" in item else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix + item + MAIN.replace("CALL_ITEM", f"ItemAngle({arg})")
 

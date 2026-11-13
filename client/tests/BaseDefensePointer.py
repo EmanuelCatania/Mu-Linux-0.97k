@@ -77,7 +77,7 @@ int main() {
 def harness(revision=None):
     prefix = rate_harness(revision).split("int CallRate(BYTE* machine)", 1)[0]
     prefix = prefix.replace("std::memcpy(activeMachine + 78, &serverRate, 2);", "std::memcpy(activeMachine + 76, &serverRate, 2);")
-    types = read_source("src/Entity/EntityTypes.h", revision)
+    types = read_source("src/game/entity/EntityTypes.h", revision)
     prefix += "\nusing vec3_t = float[3];\nstruct OBJECT { BYTE data[444]; };\n"
     for name in ("PART_t", "CHARACTER"):
         prefix += re.search(rf"struct {name}\s*\{{.*?\}};", types, re.S).group()

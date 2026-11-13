@@ -60,7 +60,7 @@ int main(){
 
 def harness(revision=None):
     source=read_source('src/Render/Render_PlayerEquipment.cpp',revision)
-    header=read_source('src/Entity/EntityTypes.h',revision)
+    header=read_source('src/game/entity/EntityTypes.h',revision)
     part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();part=opaque_cloth_fields(part)
     # Sólo prefijo sin punteros; OBJECT es una reserva opaca de los bytes x86.
     character=header[header.index('struct CHARACTER {'):header.index('    PART_t   Weapon[2];')]

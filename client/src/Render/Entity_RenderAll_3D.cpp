@@ -79,7 +79,7 @@
 
 #include "stdafx.h"
 #include "Render/Entity_RenderAll_3D.h"
-#include "Entity/ObjectPose.h"
+#include "game/entity/ObjectPose.h"
 
 
 // IDA: Entity_RenderAll_3D (0x0045AB00)

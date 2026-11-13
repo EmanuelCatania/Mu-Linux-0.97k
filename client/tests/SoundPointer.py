@@ -178,7 +178,7 @@ def harness(revision=None):
         declarations += re.search(rf"^[^/\n]*\b{name}\b\s*(?:\[[^;\n]*\])?\s*=\s*[^;]+;", globals_source, re.M).group()
     for name in ("_DAT_005524bc", "Math_DegreesToRadians"):
         declarations += re.search(rf"^float\s+{name}\s*=\s*[^;]+;", globals_source, re.M).group()
-    field = re.search(r"vec3_t\s+Position\s*;", read_source("src/Entity/EntityTypes.h", revision)).group()
+    field = re.search(r"vec3_t\s+Position\s*;", read_source("src/game/entity/EntityTypes.h", revision)).group()
     source = read_source("src/audio/Sound_DS3D.cpp", revision)
     play = function(source, "PlayBuffer")
     update = function(source, "Sound_Update3DPositions")

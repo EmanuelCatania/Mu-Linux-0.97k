@@ -4,8 +4,8 @@
 // CreateEffect -- spawns a visual effect by type ID.
 
 #include "stdafx.h"
-#include "Game/RenderFxSnapshots.h"
-#include "Game/RenderDerivedState.h"
+#include "game/core/RenderFxSnapshots.h"
+#include "game/core/RenderDerivedState.h"
 #include "Render/Particle_Render.h"
 
 

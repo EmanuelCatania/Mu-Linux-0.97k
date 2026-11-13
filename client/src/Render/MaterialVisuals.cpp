@@ -4,7 +4,7 @@
 #include "Render/LooseWingVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
-#include "Game/MapManager.h"
+#include "game/core/MapManager.h"
 #include <unordered_map>
 #include <vector>
 
