@@ -1,0 +1,6 @@
+# Monstruo (registro de la Fase 5): los archivos de esta carpeta responden por
+# los de Data/Monster con el mismo nombre.
+source = "Monster"
+model = "Monster14.bmd"
+types = [20]   # índices de Monster.txt
+name = "Elite Yeti"

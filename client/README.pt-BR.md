@@ -449,6 +449,12 @@ se estiver na mesma camada do clássico ou em uma que ganhe: um pacote pode
 trazer só `-hd`, mas o `-hd` de `Data` não substitui o que um pacote trocou. As
 camadas são lidas ao iniciar e ficam no `User/debug.log`.
 
+Os monstros já estão por entidade: cada um é uma pasta
+`Content/monster/<NN-Nome>/` com o modelo, as texturas e um `monster.toml`
+(`source = "Monster"`, o modelo e os tipos do `Monster.txt` que o usam). Ao
+iniciar, cada arquivo dessas pastas passa a responder por
+`Data/<source>/<arquivo>`, então não é preciso escrever alias à mão.
+
 ---
 
 ## Textos, idiomas e Unicode

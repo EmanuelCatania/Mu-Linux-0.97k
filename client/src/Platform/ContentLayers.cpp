@@ -4,6 +4,7 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 namespace Platform::ContentLayers {
 namespace {
@@ -15,6 +16,10 @@ struct State {
     bool content = false;                  // existe Content/
     // Alias en minúsculas y con '/', ordenados del prefijo más largo al más corto.
     std::vector<std::pair<std::string, std::string>> aliases;
+    // Alias de archivo generados por el registro (ver ReadEntities):
+    // "monster/monster01.bmd" -> "monster/01-BullFighter/Monster01.bmd".
+    std::unordered_map<std::string, std::string> files;
+    int entities = 0;
 };
 
 std::mutex mutex;
@@ -81,6 +86,55 @@ bool IsDirectory(const fs::path& path)
     std::error_code error;
     return fs::is_directory(path, error);
 }
+
+// `source = "..."` antes de la primera sección de un .toml de entidad.
+std::string ReadSource(const fs::path& toml)
+{
+    std::ifstream file(toml);
+    std::string line;
+    while (std::getline(file, line)) {
+        line = Trim(line);
+        if (line.empty() || line.front() == '#') continue;
+        if (line.front() == '[') break;
+        const auto equal = line.find('=');
+        if (equal != std::string::npos && Lower(Trim(line.substr(0, equal))) == "source")
+            return Normalize(Unquote(line.substr(equal + 1)));
+    }
+    return {};
+}
+
+// Registro (Fase 5): cada entidad es una carpeta Content/<tipo>/<nombre>/ con
+// un <tipo>.toml que dice qué carpeta de Data reemplaza (`source = "Monster"`).
+// Cada archivo de la carpeta pasa a responder por "<source>/<archivo>", así el
+// código sigue pidiendo "Data\Monster\Monster01.bmd". Si dos entidades traen
+// el mismo archivo gana la primera en orden alfabético.
+void ReadEntities(State& state)
+{
+    std::error_code error;
+    std::vector<fs::path> types, folders;
+    for (fs::directory_iterator it("Content", error), end; !error && it != end; it.increment(error))
+        if (it->is_directory(error)) types.push_back(it->path());
+    for (const auto& type : types) {
+        const std::string toml = type.filename().string() + ".toml";
+        for (fs::directory_iterator it(type, error), end; !error && it != end; it.increment(error))
+            if (it->is_directory(error) && fs::is_regular_file(it->path() / toml, error)) folders.push_back(it->path());
+    }
+    std::sort(folders.begin(), folders.end(),
+        [](const fs::path& a, const fs::path& b) { return Lower(a.generic_string()) < Lower(b.generic_string()); });
+    for (const auto& folder : folders) {
+        const std::string source = ReadSource(folder / (folder.parent_path().filename().string() + ".toml"));
+        if (source.empty()) continue;
+        // Ruta relativa a Content/, como la usan las capas.
+        const std::string target = folder.parent_path().filename().string() + "/" + folder.filename().string();
+        for (fs::directory_iterator it(folder, error), end; !error && it != end; it.increment(error)) {
+            if (!it->is_regular_file(error)) continue;
+            const std::string name = it->path().filename().string();
+            if (Lower(it->path().extension().string()) == ".toml") continue;
+            state.files.emplace(Lower(source + "/" + name), target + "/" + name);
+        }
+        ++state.entities;
+    }
+}
 } // namespace
 
 void Init()
@@ -94,7 +148,7 @@ void Init()
             [](const std::string& a, const std::string& b) { return Lower(a) < Lower(b); });
     }
     state->content = IsDirectory("Content");
-    if (state->content) ReadAliases(*state);
+    if (state->content) { ReadAliases(*state); ReadEntities(*state); }
     std::lock_guard<std::mutex> lock(mutex);
     state->server = current->server;
     current = state;
@@ -126,7 +180,8 @@ std::vector<Candidate> Candidates(const char* path)
     const std::string lower = Lower(inner);
 
     std::string aliased;
-    for (const auto& [from, to] : state->aliases) {
+    if (const auto file = state->files.find(lower); file != state->files.end()) aliased = file->second;
+    if (aliased.empty()) for (const auto& [from, to] : state->aliases) {
         if (lower.compare(0, from.size(), from) != 0) continue;
         if (lower.size() > from.size() && lower[from.size()] != '/') continue;
         aliased = to + inner.substr(from.size());
@@ -157,7 +212,9 @@ std::string Describe()
     std::string text = "Capas:";
     if (!state->server.empty()) text += " " + state->server;
     for (const auto& pack : state->packs) text += " " + pack;
-    if (state->content) text += " Content(" + std::to_string(state->aliases.size()) + " alias)";
+    if (state->content)
+        text += " Content(" + std::to_string(state->aliases.size()) + " alias, " +
+            std::to_string(state->entities) + " entidades, " + std::to_string(state->files.size()) + " archivos)";
     text += " Data";
     return text;
 }
