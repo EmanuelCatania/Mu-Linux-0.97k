@@ -14,6 +14,8 @@
 // BufferName[][], SoundLoadCount.
 
 #include "stdafx.h"
+#include "Platform/ContentLayers.h"
+#include <string>
 #include "Sound/SoundManager.h"
 #pragma warning(disable: 4996)
 #include "Sound/Sound.h"
@@ -66,7 +68,15 @@ int CWaveFile_Open(CWaveFile* self, LPSTR filename)
     if (self->is_streaming != 0) return 0;
 
     MMCKINFO ckRiff, ckChunk;
-    self->hmmio = mmioOpenA(filename, NULL, MMIO_ALLOCBUF);
+    // Fase 5 (E2): mmio abre el archivo por su cuenta; la ruta se resuelve
+    // antes por las capas de datos (Platform/ContentLayers.h).
+    std::string layered;
+    for (const auto& candidate : Platform::ContentLayers::Candidates(filename)) {
+        if (GetFileAttributesA(candidate.path.c_str()) == INVALID_FILE_ATTRIBUTES) continue;
+        layered = candidate.path;
+        break;
+    }
+    self->hmmio = mmioOpenA(layered.empty() ? filename : &layered[0], NULL, MMIO_ALLOCBUF);
     if (!self->hmmio) return 0;
 
     if (mmioDescend(self->hmmio, &ckRiff, NULL, 0) != 0) goto fail;
