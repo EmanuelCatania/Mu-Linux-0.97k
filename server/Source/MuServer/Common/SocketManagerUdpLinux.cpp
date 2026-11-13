@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "SocketManagerUdp.h"
-#include "Log.h"
+#include "SocketManagerUdpServer.h"
 
 #ifndef _WIN32
 
@@ -26,7 +26,7 @@ bool CSocketManagerUdp::Start(WORD port)
 	this->m_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (this->m_socket == INVALID_SOCKET)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] socket() failed with error: %d", WSAGetLastError());
+		UdpLog("[SocketManagerUdp] socket() failed with error: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -37,7 +37,7 @@ bool CSocketManagerUdp::Start(WORD port)
 
 	if (bind(this->m_socket, (sockaddr*)&SocketAddr, sizeof(SocketAddr)) == SOCKET_ERROR)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] bind() failed with error: %d", WSAGetLastError());
+		UdpLog("[SocketManagerUdp] bind() failed with error: %d", WSAGetLastError());
 		closesocket(this->m_socket);
 		this->m_socket = INVALID_SOCKET;
 		return false;
@@ -54,7 +54,7 @@ bool CSocketManagerUdp::Connect(char* IpAddress, WORD port)
 	this->m_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (this->m_socket == INVALID_SOCKET)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] socket() failed with error: %d", WSAGetLastError());
+		UdpLog("[SocketManagerUdp] socket() failed with error: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -69,7 +69,7 @@ bool CSocketManagerUdp::Connect(char* IpAddress, WORD port)
 	int err = getaddrinfo(IpAddress, port_str, &hints, &addrs);
 	if (err != 0 || addrs == nullptr)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] getaddrinfo() failed with error: %d", err);
+		UdpLog("[SocketManagerUdp] getaddrinfo() failed with error: %d", err);
 		return false;
 	}
 
@@ -122,7 +122,7 @@ bool CSocketManagerUdp::DataRecv()
 		}
 		else
 		{
-			gLog.Output(LOG_CONNECT, "[SocketManagerUdp] Protocol header error (Header: %x)", lpMsg[count]);
+			UdpLog("[SocketManagerUdp] Protocol header error (Header: %x)", lpMsg[count]);
 			memset(this->m_RecvBuff, 0, sizeof(this->m_RecvBuff));
 			this->m_RecvSize = 0;
 			return false;
@@ -130,7 +130,7 @@ bool CSocketManagerUdp::DataRecv()
 
 		if (size < 3 || size > MAX_UDP_PACKET_SIZE)
 		{
-			gLog.Output(LOG_CONNECT, "[SocketManagerUdp] Protocol size error (Header: %x, Size: %d, Head: %x)", header, size, head);
+			UdpLog("[SocketManagerUdp] Protocol size error (Header: %x, Size: %d, Head: %x)", header, size, head);
 			memset(this->m_RecvBuff, 0, sizeof(this->m_RecvBuff));
 			this->m_RecvSize = 0;
 			return false;
@@ -138,6 +138,8 @@ bool CSocketManagerUdp::DataRecv()
 
 		if (size <= this->m_RecvSize)
 		{
+			UdpProtocolCore(head, &lpMsg[count], size);
+
 			count += size;
 			this->m_RecvSize -= size;
 
@@ -169,7 +171,7 @@ bool CSocketManagerUdp::DataSend(BYTE* lpMsg, int size)
 
 	if (size > MAX_UDP_PACKET_SIZE)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] Max msg size (Size: %d)", size);
+		UdpLog("[SocketManagerUdp] Max msg size (Size: %d)", size);
 		return false;
 	}
 
@@ -179,7 +181,7 @@ bool CSocketManagerUdp::DataSend(BYTE* lpMsg, int size)
 	int sent = sendto(this->m_socket, (char*)this->m_SendBuff, this->m_SendSize, 0, (sockaddr*)&this->m_SocketAddr, sizeof(this->m_SocketAddr));
 	if (sent == SOCKET_ERROR)
 	{
-		gLog.Output(LOG_CONNECT, "[SocketManagerUdp] sendto() failed with error: %d", WSAGetLastError());
+		UdpLog("[SocketManagerUdp] sendto() failed with error: %d", WSAGetLastError());
 		return false;
 	}
 
@@ -205,7 +207,7 @@ DWORD CSocketManagerUdp::ServerRecvThread(CSocketManagerUdp* lpSocketManagerUdp)
 				continue;
 			}
 
-			gLog.Output(LOG_CONNECT, "[SocketManagerUdp] recvfrom() failed with error: %d", GetLastError());
+			UdpLog("[SocketManagerUdp] recvfrom() failed with error: %d", GetLastError());
 			memset(lpSocketManagerUdp->m_RecvBuff, 0, sizeof(lpSocketManagerUdp->m_RecvBuff));
 			lpSocketManagerUdp->m_RecvSize = 0;
 			continue;

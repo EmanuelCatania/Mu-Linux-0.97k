@@ -348,6 +348,9 @@
     <ClInclude Include="..\Common\SocketManagerUdp.h">
       <Filter>Connection</Filter>
     </ClInclude>
+    <ClInclude Include="SocketManagerUdpServer.h">
+      <Filter>Connection</Filter>
+    </ClInclude>
     <ClInclude Include="DSProtocol.h">
       <Filter>Connection\Protocols</Filter>
     </ClInclude>
@@ -662,7 +665,7 @@
     <ClCompile Include="SocketManager.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
-    <ClCompile Include="SocketManagerUdp.cpp">
+    <ClCompile Include="..\Common\SocketManagerUdp.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="DSProtocol.cpp">

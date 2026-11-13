@@ -203,7 +203,8 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="..\Common\ServerDisplayer.h" />
     <ClInclude Include="..\Common\ServerDisplayerHooks.h" />
-    <ClInclude Include="ServerManager.h" />
+    <ClInclude Include="..\Common\ServerManager.h" />
+    <ClInclude Include="ServerManagerServer.h" />
     <ClInclude Include="..\Common\SocketManager.h" />
     <ClInclude Include="SocketManagerServer.h" />
     <ClInclude Include="stdafx.h" />
@@ -233,7 +234,8 @@
     <ClCompile Include="..\Common\Queue.cpp" />
     <ClCompile Include="..\Common\ServerDisplayer.cpp" />
     <ClCompile Include="ServerDisplayerServer.cpp" />
-    <ClCompile Include="ServerManager.cpp" />
+    <ClCompile Include="..\Common\ServerManager.cpp" />
+    <ClCompile Include="ServerManagerServer.cpp" />
     <ClCompile Include="..\Common\SocketManager.cpp" />
     <ClCompile Include="..\Common\TextName.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
