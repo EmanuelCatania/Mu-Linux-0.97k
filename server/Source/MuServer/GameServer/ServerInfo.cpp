@@ -1904,7 +1904,7 @@ void CServerInfo::ReadHackInfo(const char* section, const char* path)
 
 	this->m_MoveCheckTileTime = GetPrivateProfileInt(section, "MoveCheckTileTime", 250, path);
 
-	this->m_SkillLineCheck = GetPrivateProfileInt(section, "SkillLineCheck", 1, path);
+	this->m_SkillLineCheck = GetPrivateProfileInt(section, "SkillLineCheck", 0, path);
 
 	this->m_AttackCheck = GetPrivateProfileInt(section, "AttackCheck", 1, path);
 

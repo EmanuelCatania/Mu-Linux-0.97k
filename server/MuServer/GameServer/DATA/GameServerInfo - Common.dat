@@ -39,8 +39,10 @@ MoveCheckBudget=2000
 MoveCheckTileTime=250
 
 ; Linea de vision entre el atacante y cada blanco de un skill de area (0x1D):
-; 0 = apagada, 1 = observar, 2 = descartar el blanco tapado por una pared
-SkillLineCheck=1
+; 0 = apagada, 1 = observar, 2 = descartar el blanco tapado por una pared.
+; Apagada: el cliente original no mira paredes al armar la lista de un skill
+; de area, y visualmente el skill atraviesa la pared y alcanza al blanco.
+SkillLineCheck=0
 
 ; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
 AttackCheck=2
