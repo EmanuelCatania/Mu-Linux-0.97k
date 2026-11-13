@@ -2001,6 +2001,8 @@ void CServerInfo::ReadSkillInfo(const char* section, const char* path)
 
 	this->m_SummonMaxRate = GetPrivateProfileInt(section, "SummonMaxRate", 300, path);
 
+	this->m_SummonResetRate = GetPrivateProfileInt(section, "SummonResetRate", 0, path);
+
 	this->m_GreaterLifeConstA = GetPrivateProfileInt(section, "GreaterLifeConstA", 0, path);
 
 	this->m_GreaterLifeConstB = GetPrivateProfileInt(section, "GreaterLifeConstB", 0, path);

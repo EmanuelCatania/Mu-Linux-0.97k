@@ -1443,8 +1443,9 @@ bool CSkillManager::SkillSummon(int aIndex, int bIndex, CSkill* lpSkill)
 
 	// Mu-Linux: la invocación escala con la elfa.  En el original quedaba con
 	// los stats planos de Monster.txt y a nivel alto no servía.
-	// Rate = SummonConstA + Energy / SummonConstB + Level / SummonConstC (%),
-	// con tope SummonMaxRate.  Sube vida, daño, defensas y tasas de ataque y
+	// Rate = SummonConstA + Energy / SummonConstB + Level / SummonConstC
+	//      + Reset * SummonResetRate (%), con tope SummonMaxRate.  El término de
+	// resets compensa que el nivel vuelve a 1 al resetear.  Sube vida, daño, defensas y tasas de ataque y
 	// defensa en ese porcentaje.
 	int rate = gServerInfo.m_SummonConstA;
 
@@ -1456,6 +1457,11 @@ bool CSkillManager::SkillSummon(int aIndex, int bIndex, CSkill* lpSkill)
 	if (gServerInfo.m_SummonConstC > 0)
 	{
 		rate += lpObj->Level / gServerInfo.m_SummonConstC;
+	}
+
+	if (gServerInfo.m_SummonResetRate > 0 && lpObj->Reset > 0)
+	{
+		rate += lpObj->Reset * gServerInfo.m_SummonResetRate;
 	}
 
 	rate = ((rate > gServerInfo.m_SummonMaxRate) ? gServerInfo.m_SummonMaxRate : rate);

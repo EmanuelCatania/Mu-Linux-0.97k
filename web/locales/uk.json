@@ -851,7 +851,8 @@
   "Monstruos": "Монстри",
   "Monstruo": "Монстр",
   "Escalado con la elfa": "Посилення разом з ельфійкою",
-  "Porcentaje = A + Energía / B + Nivel / C, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Відсоток = A + Енергія / B + Рівень / C, з обмеженням. Підвищує життя, шкоду, захист і рейтинги атаки та захисту. 0 у B або C вимикає цей член.",
   "Tope (%)": "Межа (%)",
-  "Ejemplo: energía": "Приклад: енергія"
+  "Ejemplo: energía": "Приклад: енергія",
+  "Porcentaje = A + Energía / B + Nivel / C + Resets × R, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Відсоток = A + Енергія / B + Рівень / C + Ресети × R, з обмеженням. Підвищує життя, шкоду, захист і рейтинги атаки та захисту. 0 у B або C вимикає цей член.",
+  "R (% por reset)": "R (% за ресет)"
 }

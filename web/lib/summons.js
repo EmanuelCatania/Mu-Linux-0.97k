@@ -3,6 +3,7 @@
 //
 //   SummonMonster1..11   monstruo (índice de Monster.txt) de cada nivel del orbe
 //   SummonConstA/B/C     escalado: % = A + Energía / B + Nivel / C
+//   SummonResetRate      % por cada reset (el nivel vuelve a 1 al resetear)
 //   SummonMaxRate        tope del porcentaje
 //
 // El panel lee y escribe sólo esas claves: el resto del archivo (comentarios,
@@ -11,8 +12,8 @@
 
 const SLOT_COUNT = 11;
 const SLOT_DEFAULTS = [26, 32, 21, 20, 10, 150, 151, 52, 48, 58, 61];
-const CONST_KEYS = ['SummonConstA', 'SummonConstB', 'SummonConstC', 'SummonMaxRate'];
-const CONST_DEFAULTS = { SummonConstA: 0, SummonConstB: 20, SummonConstC: 2, SummonMaxRate: 300 };
+const CONST_KEYS = ['SummonConstA', 'SummonConstB', 'SummonConstC', 'SummonResetRate', 'SummonMaxRate'];
+const CONST_DEFAULTS = { SummonConstA: 0, SummonConstB: 20, SummonConstC: 2, SummonResetRate: 0, SummonMaxRate: 300 };
 
 class SummonError extends Error {}
 
@@ -65,6 +66,7 @@ function validate(input, monsterIds) {
   out.constants.SummonConstA = checkInt(input?.constants?.SummonConstA, 'SummonConstA', 0, 1000);
   out.constants.SummonConstB = checkInt(input?.constants?.SummonConstB, 'SummonConstB', 0, 100000);
   out.constants.SummonConstC = checkInt(input?.constants?.SummonConstC, 'SummonConstC', 0, 100000);
+  out.constants.SummonResetRate = checkInt(input?.constants?.SummonResetRate, 'SummonResetRate', 0, 10000);
   out.constants.SummonMaxRate = checkInt(input?.constants?.SummonMaxRate, 'SummonMaxRate', 0, 10000);
   return out;
 }
@@ -99,10 +101,11 @@ function apply(content, state) {
 }
 
 // Porcentaje que gana una invocación (igual que CSkillManager::SkillSummon).
-function rate(constants, energy, level) {
+function rate(constants, energy, level, resets = 0) {
   let value = Number(constants.SummonConstA) || 0;
   if (constants.SummonConstB > 0) value += Math.floor(energy / constants.SummonConstB);
   if (constants.SummonConstC > 0) value += Math.floor(level / constants.SummonConstC);
+  if (constants.SummonResetRate > 0 && resets > 0) value += resets * constants.SummonResetRate;
   return Math.min(value, Number(constants.SummonMaxRate) || 0);
 }
 

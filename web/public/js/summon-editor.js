@@ -14,11 +14,12 @@
   }
 
   // Misma cuenta que CSkillManager::SkillSummon en el GameServer.
-  function rate(energy, level) {
+  function rate(energy, level, resets) {
     const c = state.constants;
     let value = Number(c.SummonConstA) || 0;
     if (c.SummonConstB > 0) value += Math.floor(energy / c.SummonConstB);
     if (c.SummonConstC > 0) value += Math.floor(level / c.SummonConstC);
+    if (c.SummonResetRate > 0 && resets > 0) value += resets * c.SummonResetRate;
     return Math.min(value, Number(c.SummonMaxRate) || 0);
   }
 
@@ -47,14 +48,15 @@
         <tbody>${rows}</tbody>
       </table>
       <h3>Escalado con la elfa</h3>
-      <p class="muted">Porcentaje = A + Energía / B + Nivel / C, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.</p>
+      <p class="muted">Porcentaje = A + Energía / B + Nivel / C + Resets × R, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.</p>
       <div class="form-grid">
         <label class="field">A <input type="number" min="0" data-const="SummonConstA" value="${c.SummonConstA}"></label>
         <label class="field">B <input type="number" min="0" data-const="SummonConstB" value="${c.SummonConstB}"></label>
         <label class="field">C <input type="number" min="0" data-const="SummonConstC" value="${c.SummonConstC}"></label>
+        <label class="field">R (% por reset) <input type="number" min="0" data-const="SummonResetRate" value="${c.SummonResetRate}"></label>
         <label class="field">Tope (%) <input type="number" min="0" data-const="SummonMaxRate" value="${c.SummonMaxRate}"></label>
       </div>
-      <p class="muted">Ejemplo: energía <input type="number" min="0" id="sample-energy" value="1000" style="width:6em"> nivel <input type="number" min="1" id="sample-level" value="200" style="width:5em"> → <strong id="sample-rate"></strong></p>
+      <p class="muted">Ejemplo: energía <input type="number" min="0" id="sample-energy" value="1000" style="width:6em"> nivel <input type="number" min="1" id="sample-level" value="200" style="width:5em"> resets <input type="number" min="0" id="sample-resets" value="0" style="width:5em"> → <strong id="sample-rate"></strong></p>
       <div class="editor-actions">
         <button type="button" id="save-summons">Guardar</button>
       </div>`;
@@ -64,8 +66,9 @@
   function updateSample() {
     const energy = Number(root.querySelector('#sample-energy')?.value) || 0;
     const level = Number(root.querySelector('#sample-level')?.value) || 0;
+    const resets = Number(root.querySelector('#sample-resets')?.value) || 0;
     const out = root.querySelector('#sample-rate');
-    if (out) out.textContent = `+${rate(energy, level)}%`;
+    if (out) out.textContent = `+${rate(energy, level, resets)}%`;
   }
 
   root.addEventListener('change', (ev) => {

@@ -395,6 +395,7 @@ public:
 	int m_SummonConstB;
 	int m_SummonConstC;
 	int m_SummonMaxRate;
+	int m_SummonResetRate;
 	int m_GreaterLifeConstA;
 	int m_GreaterLifeConstB;
 	int m_GreaterLifeConstC;

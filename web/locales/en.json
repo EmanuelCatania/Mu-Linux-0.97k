@@ -845,7 +845,8 @@
   "Monstruos": "Monsters",
   "Monstruo": "Monster",
   "Escalado con la elfa": "Scaling with the elf",
-  "Porcentaje = A + Energía / B + Nivel / C, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Percent = A + Energy / B + Level / C, capped. Raises life, damage, defenses and attack and defense rates. 0 in B or C disables that term.",
   "Tope (%)": "Cap (%)",
-  "Ejemplo: energía": "Example: energy"
+  "Ejemplo: energía": "Example: energy",
+  "Porcentaje = A + Energía / B + Nivel / C + Resets × R, con tope. Sube vida, daño, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese término.": "Percent = A + Energy / B + Level / C + Resets × R, capped. Raises life, damage, defenses and attack and defense rates. 0 in B or C disables that term.",
+  "R (% por reset)": "R (% per reset)"
 }

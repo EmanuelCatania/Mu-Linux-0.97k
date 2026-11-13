@@ -78,12 +78,14 @@ SummonMonster9=48
 SummonMonster10=58
 SummonMonster11=61
 
-; Mu-Linux: la invocacion escala con la elfa. Rate (%) = SummonConstA + Energy / SummonConstB + Level / SummonConstC,
-; con tope SummonMaxRate. Sube vida, dano, defensas y tasas de ataque y defensa. 0 en B o C desactiva ese termino.
+; Mu-Linux: la invocacion escala con la elfa. Rate (%) = SummonConstA + Energy / SummonConstB + Level / SummonConstC
+; + Reset * SummonResetRate, con tope SummonMaxRate. Sube vida, dano, defensas y tasas de ataque y defensa.
+; 0 en B o C desactiva ese termino. SummonResetRate (% por reset) compensa que el nivel vuelve a 1 al resetear.
 SummonConstA=0
 SummonConstB=20
 SummonConstC=2
 SummonMaxRate=300
+SummonResetRate=0
 
 ;==================================================
 ; Greater Life Skill Settings

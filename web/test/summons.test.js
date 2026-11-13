@@ -41,4 +41,5 @@ test('summons: rate sigue la fórmula del GameServer', () => {
   assert.equal(summons.rate(c, 1000, 200), 150);   // 1000/20 + 200/2
   assert.equal(summons.rate(c, 5000, 400), 300);   // tope
   assert.equal(summons.rate({ ...c, SummonConstB: 0 }, 1000, 200), 100);
+  assert.equal(summons.rate({ ...c, SummonResetRate: 10 }, 1000, 1, 5), 100);   // 50 + 0 + 5 resets * 10
 });
