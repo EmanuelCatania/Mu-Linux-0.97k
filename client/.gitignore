@@ -117,3 +117,6 @@ bin/Client/Content/**/*-hd.*
 # Capas de datos del jugador y de cada server (Platform/ContentLayers.h)
 bin/Client/Packs/
 bin/Client/Servers/
+
+# Caché de Python (tests y scripts)
+__pycache__/

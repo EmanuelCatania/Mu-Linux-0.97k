@@ -10,7 +10,8 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def read_source(path, revision):
     if revision:
-        return subprocess.check_output(['git','show',f'{revision}:{path}'],cwd=ROOT,text=True,encoding='utf-8')
+        from source_paths import show   # E3: prueba la ruta vieja si se movió
+        return show(ROOT, revision, path)
     return (ROOT/path).read_text(encoding='utf-8')
 
 def build_and_run(directory, source, args):

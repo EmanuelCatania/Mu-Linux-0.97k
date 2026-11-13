@@ -12,7 +12,7 @@
 
 #include "stdafx.h"
 #include "Platform/Text.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 // IDA: StopMp3 (0x004127F0) — corta el tema si `Name` es el que está sonando.
 void CSound::StopTrack(const char* Name, int bEnforce)

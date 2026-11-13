@@ -51,7 +51,7 @@
 #include "Net/MuEmu.h"
 #include "Config/ServerConfig.h"
 #include "Config/UserSettings.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 

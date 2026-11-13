@@ -8,7 +8,7 @@
 #include "Core/Window.h"
 #include "Local/ClientText.h"
 #include "Net/HWID.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 COptionsMenu gOptionsMenu;
 

@@ -4,7 +4,7 @@
 #include "Platform/Text.h"
 #include "Platform/IAudio.h"
 #include "Platform/IFileSystem.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 #ifndef MU_MINIAUDIO_LINKED
 #define MINIAUDIO_IMPLEMENTATION

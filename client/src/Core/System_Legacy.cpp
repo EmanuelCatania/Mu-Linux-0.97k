@@ -52,7 +52,7 @@ void* AntiTamper_HashNode(void)
     return s_node;
 }
 
-// InitDirectSound @ 0x004044A0 — real implementation in src/Sound/Sound.cpp.
+// InitDirectSound @ 0x004044A0 — real implementation in src/audio/Sound.cpp.
 
 // IDA: FUN_00405420 @ 0x00405420 — CErrorReport_FindLogMarker (143 bytes IDA, port FIEL).
 // Scans buffer for "###Log Begin###" markers, returns pointer to 4th-from-last marker

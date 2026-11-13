@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def read_source(path, revision=None):
     if revision:
-        return subprocess.check_output(
-            ["git", "show", f"{revision}:{path}"], cwd=ROOT).decode("utf-8")
+        from source_paths import show   # E3: prueba la ruta vieja si se movió
+        return show(ROOT, revision, path)
     return lower((ROOT / path).read_text(encoding="utf-8"))
 
 

@@ -5,7 +5,7 @@
 // Sound_UpdatePos   @ 0x00404CD0 — per-frame 3D listener-relative SetPosition
 // SetHall           @ 0x00404BB0 — stub in original (returns 1)
 //
-// State lives in globals.cpp. See src/Sound/Sound.cpp for the loader side.
+// State lives in globals.cpp. See src/audio/Sound.cpp for the loader side.
 
 #include "stdafx.h"
 #include "Render/Gfx.h"

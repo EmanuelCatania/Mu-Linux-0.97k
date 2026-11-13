@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Platform/IAudio.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 // IDA: InitDirectSound (0x004044A0)
 HRESULT __cdecl InitDirectSound(HWND window) {

@@ -1,7 +1,7 @@
 // EmoteSound.cpp — sonido de los emotes propios. Ver EmoteSound.h.
 #include "stdafx.h"
-#include "Sound/EmoteSound.h"
-#include "Sound/SoundManager.h"
+#include "audio/EmoteSound.h"
+#include "audio/SoundManager.h"
 #include "Model/Model_CustomAnim.h"
 #include "globals.h"
 #include "functions.h"

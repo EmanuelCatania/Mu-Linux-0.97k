@@ -5,7 +5,7 @@ from pathlib import Path
 from MassTeleportTarget import build_and_run
 ROOT=Path(__file__).resolve().parents[1]
 def read(path,revision=None):
- return subprocess.check_output(['git','show',revision+':'+path],cwd=ROOT).decode('utf-8') if revision else (ROOT/path).read_text(encoding='utf-8')
+ return __import__('source_paths').show(ROOT, revision, path) if revision else (ROOT/path).read_text(encoding='utf-8')
 def extract(source,name):
  source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S);m=re.search(r'(?:unsigned int|bool|int|void)\s+(?:__cdecl\s+)?'+name+r'\([^;{]*\)\s*\{',source);assert m,name;end=m.end();depth=1
  while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1

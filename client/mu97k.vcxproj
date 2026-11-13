@@ -178,6 +178,8 @@
     <ClInclude Include="src\Platform\IWindow.h" />
     <ClInclude Include="src\Platform\Win32\Win32Window.h" />
     <ClInclude Include="src\Platform\IFileSystem.h" />
+    <ClInclude Include="src\Platform\ContentLayers.h" />
+    <ClInclude Include="src\Platform\UserPath.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
@@ -216,7 +218,7 @@
     <ClInclude Include="src\Render\Camera3D.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
     <ClInclude Include="src\UI\MoveList.h" />
-    <ClInclude Include="src\Sound\SoundManager.h" />
+    <ClInclude Include="src\audio\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Game\HeroVitals.h" />
     <ClInclude Include="src\Net\Network.h" />
@@ -273,7 +275,7 @@
     <ClInclude Include="src\Scene\Scene_Loading.h" />
     <ClInclude Include="src\Scene\Scene_Login.h" />
     <ClInclude Include="src\Scene\Scene_Login_ServerSelect.h" />
-    <ClInclude Include="src\Sound\Sound.h" />
+    <ClInclude Include="src\audio\Sound.h" />
     <ClInclude Include="src\Terrain\Terrain.h" />
     <ClInclude Include="src\Trade\Trade.h" />
     <ClInclude Include="src\UI\UI.h" />
@@ -373,7 +375,7 @@
     <ClCompile Include="src\Platform\Win32\Win32Socket.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
     <ClCompile Include="src\Platform\FontFrontend.cpp" />
-    <ClCompile Include="src\Sound\SoundManager.cpp" />
+    <ClCompile Include="src\audio\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Platform\Win32\ClientWndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
@@ -396,7 +398,7 @@
     <ClCompile Include="src\Net\Recv\Recv_World.cpp" />
     <ClCompile Include="src\Input\Input_WndProc.cpp" />
     <ClCompile Include="src\Config\UserSettings.cpp" />
-    <ClCompile Include="src\Sound\Sound_Queue.cpp" />
+    <ClCompile Include="src\audio\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RenderTerrain.cpp" />
@@ -425,15 +427,15 @@
     <ClCompile Include="src\Net\Crypto.cpp" />
     <ClCompile Include="src\Game\Timer.cpp" />
     <ClCompile Include="src\Game\FrameLimiter.cpp" />
-    <ClCompile Include="src\Sound\Music.cpp" />
-    <ClCompile Include="src\Sound\EmoteSound.cpp" />
+    <ClCompile Include="src\audio\Music.cpp" />
+    <ClCompile Include="src\audio\EmoteSound.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
     <ClCompile Include="src\Render\GL_2D.cpp" />
     <ClCompile Include="src\Render\Effect_Tick.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Light.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RenderFace.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RenderBlocks.cpp" />
-    <ClCompile Include="src\Sound\Sound_DS3D.cpp" />
+    <ClCompile Include="src\audio\Sound_DS3D.cpp" />
     <ClCompile Include="src\Net\Net_Connect.cpp" />
     <ClCompile Include="src\Net\Net_PacketSession.cpp" />
     <ClCompile Include="src\Net\MuEmu.cpp" />
@@ -640,7 +642,7 @@
     <ClCompile Include="src\Render\Weather.cpp" />
     <ClCompile Include="src\Render\Weather_Particles.cpp" />
     <ClCompile Include="src\Scene\Scene_Login_ServerSelect.cpp" />
-    <ClCompile Include="src\Sound\Sound.cpp" />
+    <ClCompile Include="src\audio\Sound.cpp" />
     <ClCompile Include="src\Terrain\Terrain.cpp" />
     <ClCompile Include="src\Trade\Trade.cpp" />
     <ClCompile Include="src\UI\UI_InGameMenu.cpp" />

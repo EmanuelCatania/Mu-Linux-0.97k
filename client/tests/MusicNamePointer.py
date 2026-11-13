@@ -127,7 +127,7 @@ int main() {
 
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0]
-    prefix+=read_source("src/Sound/SoundManager.h",revision).replace("#pragma once","").replace('#include "Platform/PlatformHeaders.h"',"")
+    prefix+=read_source("src/audio/SoundManager.h",revision).replace("#pragma once","").replace('#include "Platform/PlatformHeaders.h"',"")
     prefix+=SERVICES
     header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
     for name in ("DAT_055ca018",):
@@ -136,8 +136,8 @@ def harness(revision=None):
     prefix+=re.search(r"^char\s+DAT_005580ac\[\][^;]+;",definitions,re.M).group()
     text=read_source("src/Platform/Text.h",revision)
     prefix+="\nnamespace Platform {"+text[text.index("constexpr std::size_t TruncateText"):text.index("inline int TextConcatSecure")]+"}\n"
-    prefix+=function(read_source("src/Sound/SoundManager.cpp",revision),"CSound::SetMusicStoppedByUser")
-    source=read_source("src/Sound/Music.cpp",revision)
+    prefix+=function(read_source("src/audio/SoundManager.cpp",revision),"CSound::SetMusicStoppedByUser")
+    source=read_source("src/audio/Music.cpp",revision)
     for name in ("CSound::StopTrack","CSound::PlayTrack","Music_PlayTrack","Music_StopTrack"):
         prefix+=function(source,name)
     prefix+=function(read_source("src/Core/Runtime_Linker.cpp",revision),"StopMp3")

@@ -58,7 +58,7 @@ void ItemNames_TickInput();
 #include "Game/FrameLimiter.h"
 #include "Input/Input.h"
 #include "Net/Ping.h"
-#include "Sound/EmoteSound.h"
+#include "audio/EmoteSound.h"
 #include "Game/MapManager.h"
 #include "Debug/Benchmark.h"
 #include "Game/Game_MainLoop.h"

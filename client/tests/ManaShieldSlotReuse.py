@@ -66,7 +66,7 @@ int main(){
 '''
 parser=argparse.ArgumentParser();parser.add_argument('--architecture',choices=['Win32','x64'],default='Win32');parser.add_argument('--revision');args=parser.parse_args()
 def read(path):
-    return subprocess.check_output(['git','show',args.revision+':'+path],cwd=ROOT).decode('utf-8') if args.revision else (ROOT/path).read_text(encoding='utf-8')
+    return __import__('source_paths').show(ROOT, args.revision, path) if args.revision else (ROOT/path).read_text(encoding='utf-8')
 code=code.replace('DELETE',function(read('src/Entity/Entity_LegacyTeleport.cpp'),'DeleteJoint')).replace('CLEAR',function(read('src/Render/SMD_Parser.cpp'),'ClearCharacters'))
 with tempfile.TemporaryDirectory(prefix='mu-shield-slot-') as temp:
     path=Path(temp);(path/'main.cpp').write_text(code,encoding='utf-8')

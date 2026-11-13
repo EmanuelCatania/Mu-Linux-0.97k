@@ -113,7 +113,7 @@ set(MU_SOURCES
     src/Platform/Win32/Win32Socket.cpp
     src/Platform/Win32/Win32GLContext.cpp
     src/Platform/FontFrontend.cpp
-    src/Sound/SoundManager.cpp
+    src/audio/SoundManager.cpp
     src/Game/MapManager.cpp
     src/Platform/Win32/ClientWndProc.cpp
     src/Net/Network.cpp
@@ -136,7 +136,7 @@ set(MU_SOURCES
     src/Net/Recv/Recv_World.cpp
     src/Input/Input_WndProc.cpp
     src/Config/UserSettings.cpp
-    src/Sound/Sound_Queue.cpp
+    src/audio/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
     src/Terrain/Terrain_RenderTerrain.cpp
@@ -165,15 +165,15 @@ set(MU_SOURCES
     src/Net/Crypto.cpp
     src/Game/Timer.cpp
     src/Game/FrameLimiter.cpp
-    src/Sound/Music.cpp
-    src/Sound/EmoteSound.cpp
+    src/audio/Music.cpp
+    src/audio/EmoteSound.cpp
     src/Terrain/Terrain_Tile.cpp
     src/Render/GL_2D.cpp
     src/Render/Effect_Tick.cpp
     src/Terrain/Terrain_Light.cpp
     src/Terrain/Terrain_RenderFace.cpp
     src/Terrain/Terrain_RenderBlocks.cpp
-    src/Sound/Sound_DS3D.cpp
+    src/audio/Sound_DS3D.cpp
     src/Net/Net_Connect.cpp
     src/Net/Net_PacketSession.cpp
     src/Net/MuEmu.cpp
@@ -372,7 +372,7 @@ set(MU_SOURCES
     src/Render/Weather.cpp
     src/Render/Weather_Particles.cpp
     src/Scene/Scene_Login_ServerSelect.cpp
-    src/Sound/Sound.cpp
+    src/audio/Sound.cpp
     src/Terrain/Terrain.cpp
     src/Trade/Trade.cpp
     src/UI/UI_InGameMenu.cpp
@@ -515,7 +515,7 @@ set(MU_HEADERS
     src/Render/Camera3D.h
     src/UI/OptionsMenu.h
     src/UI/MoveList.h
-    src/Sound/SoundManager.h
+    src/audio/SoundManager.h
     src/Game/MapManager.h
     src/Game/HeroVitals.h
     src/Net/Network.h
@@ -572,7 +572,7 @@ set(MU_HEADERS
     src/Scene/Scene_Loading.h
     src/Scene/Scene_Login.h
     src/Scene/Scene_Login_ServerSelect.h
-    src/Sound/Sound.h
+    src/audio/Sound.h
     src/Terrain/Terrain.h
     src/Trade/Trade.h
     src/UI/UI.h

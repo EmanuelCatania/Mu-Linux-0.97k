@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "Platform/Text.h"
 #include "Game/MapManager.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 #include <algorithm>
 #include <cctype>
 #include <filesystem>

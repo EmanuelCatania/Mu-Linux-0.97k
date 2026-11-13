@@ -5,7 +5,7 @@
 #include "Physics/ClothTypes.h"
 #include "globals.h"
 #include "functions.h"
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 
 // SMD2BMDModel @ 0x0040BBA0 (~226 lines) — Convert parsed SMD data into BMD model structure
 void __cdecl SMD2BMDModel_stub(int ID, int Actions) {

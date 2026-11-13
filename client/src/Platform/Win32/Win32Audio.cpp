@@ -16,9 +16,9 @@
 #include "stdafx.h"
 #include "Platform/ContentLayers.h"
 #include <string>
-#include "Sound/SoundManager.h"
+#include "audio/SoundManager.h"
 #pragma warning(disable: 4996)
-#include "Sound/Sound.h"
+#include "audio/Sound.h"
 #include "Platform/IAudio.h"
 #include <dsound.h>
 #include <mmsystem.h>
