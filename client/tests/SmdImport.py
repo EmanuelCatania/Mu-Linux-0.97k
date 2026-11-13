@@ -83,8 +83,8 @@ def harness(writer=False):
     bmd=re.search(r'struct BMD\s*\{.*?\n\};',header,re.S).group()
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <cmath>\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+bmd+'\n#pragma pack(pop)\nBMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}\n'
     source=read_source('src/render/SMD_Legacy.cpp')
-    for h in ('stdafx.h','globals.h','functions.h','Render/ResourceTables.h'):source=source.replace('#include "'+h+'"','')
-    source=source.replace('"Model/SmdImport.h"',json.dumps((ROOT/'src/assets/model/SmdImport.h').as_posix()))
+    for h in ('stdafx.h','globals.h','functions.h','render/ResourceTables.h'):source=source.replace('#include "'+h+'"','')
+    source=source.replace('"assets/model/SmdImport.h"',json.dumps((ROOT/'src/assets/model/SmdImport.h').as_posix()))
     runtime=function(read_source('src/app/core/Runtime_Medium.cpp'),'OpenSMDFile')
     wrapper='extern "C" bool __cdecl OpenSMDFile(const char* p,int t,char f){return OpenSMDFile(const_cast<char*>(p),t,f!=0);}\n'
     entry=read_source('src/render/BMD_LegacyLoading.cpp')

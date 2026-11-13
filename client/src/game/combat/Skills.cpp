@@ -51,7 +51,7 @@
 //   entity_caster[+0x2F5] = 1   // mark skill as active/landed
 
 #include "stdafx.h"
-#include "../Combat/Skills.h"
+#include "Skills.h"
 
 
 // Forward declarations for functions identified in decompilation
