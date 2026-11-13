@@ -46,8 +46,8 @@ void __cdecl BMD__Open(BMD* param_1, const char* param_2, const char* param_3, i
         }
     }
 
-    // DESVIACION (pack HD): con texturas HD, un modelo de Data\HD\<ruta> con el
-    // mismo nombre reemplaza al original. Ver Texture_HDAssetPath.
+    // DESVIACION: con el nivel HD/UHD, "modelo-hd.bmd" / "modelo-uhd.bmd" al
+    // lado del original lo reemplaza. Ver Texture_HDAssetPath.
     char hdPath[300];
     FILE *fp = crt_fopen(Texture_HDAssetPath(local_4c, hdPath, sizeof(hdPath)), DAT_005580ac);
     if (!fp) {

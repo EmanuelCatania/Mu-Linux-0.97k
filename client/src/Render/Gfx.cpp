@@ -208,9 +208,9 @@ void EndShadowScene() {
     shadowScene = false;
     GfxDevice::ShadowScene(false, nullptr, 0.0f);
 }
-namespace { bool hdTextures = false; }
-void SetHDTextures(bool enabled) { hdTextures = enabled; }
-bool HDTextures() { return hdTextures; }
+namespace { int hdTextures = 0; }
+void SetHDTextures(int level) { hdTextures = level; }
+int HDTextures() { return hdTextures; }
 // Valores numéricos de OpenGL que trae el binario (p. ej. OpenJPG(..., 0x2601, 0x2901)).
 TexValue TexValueFromLegacy(int value) {
     switch (value) {

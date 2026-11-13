@@ -130,9 +130,10 @@ public:
     bool GetAntialiasing() const { return m_Antialiasing == 1 || m_Antialiasing == 3; }   // FXAA
     int Multisample() const { return m_StartupAntialiasing >= 2 ? 4 : 0; }
     void SetAntialiasingLevel(int level);
-    // DESVIACION: pack de texturas HD ([Window] HDTextures); se aplica al reiniciar.
-    bool GetHDTextures() const { return m_HDTextures; }
-    void SetHDTextures(bool enabled);
+    // DESVIACION: versiones -hd / -uhd ([Window] HDTextures: 0 clásicas,
+    // 1 HD, 2 UHD); se aplica al reiniciar.
+    int GetHDTextures() const { return m_HDTextures; }
+    void SetHDTextures(int level);
     // DESVIACION: sombras proyectadas ([Window] Shadows): 0 apagadas (sombra
     // plana del original), 1 suaves, 2 fuertes. Se aplica en caliente.
     int GetShadows() const { return m_Shadows; }
@@ -211,7 +212,7 @@ private:
     int m_TextureQuality = 0, m_StartupTextureQuality = 0;
     int m_Sharpness = 0;
     int m_Antialiasing = 0, m_StartupAntialiasing = 0;
-    bool m_HDTextures = false, m_StartupHDTextures = false;
+    int m_HDTextures = 0, m_StartupHDTextures = 0;
     int m_Shadows = 0;
     bool m_DepthFog = false;
     int m_DrawDistance = 0;

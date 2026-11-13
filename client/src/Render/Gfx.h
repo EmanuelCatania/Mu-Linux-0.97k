@@ -102,9 +102,10 @@ bool TextureMipmaps();
 bool TextureBicubic();
 // DESVIACION: muestras de MSAA del framebuffer (0 sin MSAA); se fija al crear la ventana.
 void SetMultisample(int samples);
-// DESVIACION: texturas del pack HD (Data/HD); se fija al arrancar.
-void SetHDTextures(bool enabled);
-bool HDTextures();
+// DESVIACION: versiones -hd / -uhd de texturas y modelos (0 = clásicas,
+// 1 = HD, 2 = UHD); se fija al arrancar.
+void SetHDTextures(int level);
+int HDTextures();
 int Multisample();
 // DESVIACION: sombras proyectadas con mapa de sombras (opción del jugador). El
 // mundo 3D del cuadro va entre BeginShadowScene y EndShadowScene: lo que se

@@ -106,7 +106,7 @@ void CUserSettings::Load(const char* iniPath)
     m_TextureQuality = m_StartupTextureQuality = ReadRange("Window", "TextureQuality", iniPath, 0, 2, 0);
     m_Sharpness = ReadRange("Window", "Sharpness", iniPath, 0, 3, 0);
     m_Antialiasing = m_StartupAntialiasing = ReadRange("Window", "Antialiasing", iniPath, 0, 3, 0);
-    m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 1, 0) != 0;
+    m_HDTextures = m_StartupHDTextures = ReadRange("Window", "HDTextures", iniPath, 0, 2, 0);
     m_Shadows = ReadRange("Window", "Shadows", iniPath, 0, 2, 0);
     m_DepthFog = ReadRange("Window", "DepthFog", iniPath, 0, 1, 0) != 0;
     m_DrawDistance = ReadRange("Window", "DrawDistance", iniPath, 0, 3, 0);
@@ -267,10 +267,11 @@ void CUserSettings::SetSharpness(int level)
     SaveInt("Window", "Sharpness", level);
 }
 
-void CUserSettings::SetHDTextures(bool enabled)
+void CUserSettings::SetHDTextures(int level)
 {
-    m_HDTextures = enabled;
-    SaveInt("Window", "HDTextures", enabled ? 1 : 0);
+    if (level < 0 || level > 2) return;
+    m_HDTextures = level;
+    SaveInt("Window", "HDTextures", level);
 }
 
 void CUserSettings::SetShadows(int level)

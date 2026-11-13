@@ -244,8 +244,7 @@ static int tex_max_size(void)
 // Internal: decode OZJ (JPEG with 24-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 {
-    char hdPath[300];
-    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(fullPath, hdPath, sizeof(hdPath)), "rb");
+    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
     ImageCodec::Image image;
@@ -288,8 +287,7 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 // Internal: decode OZT (TGA 32-bit with 4-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
 {
-    char hdPath[300];
-    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(fullPath, hdPath, sizeof(hdPath)), "rb");
+    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
     ImageCodec::Image image;
@@ -461,51 +459,59 @@ void Texture_Draw2D(int id,
 // ============================================================
 // (Implementation not reproduced — same pipeline as Texture_Load above)
 
-// ── Pack HD ──────────────────────────────────────────────────────────────
-// DESVIACION: con la opción de texturas HD, "Data\X\nombre.OZJ" se reemplaza en
-// la GPU por "Data\HD\X\nombre.ozj.png" si existe. El PNG es la misma imagen (en
-// el orden de filas que deja el decodificador) ampliada un factor entero k; se
-// sube sobre un lienzo k veces el de potencia de 2 del original, así los UV no
-// cambian. Medidas del slot y copia en CPU (Buffer) quedan las originales.
+// ── Versiones HD y UHD ───────────────────────────────────────────────────
+// DESVIACION: la versión de alta definición de un archivo va al lado del
+// clásico, con el mismo formato y el sufijo -hd o -uhd antes de la extensión:
+// "Data\Object1\casa.OZJ" -> "casa-hd.OZJ" / "casa-uhd.OZJ". La opción de
+// texturas elige el nivel (0 = clásicas, 1 = HD, 2 = UHD); con UHD, lo que no
+// tenga -uhd usa su -hd. Una textura HD es la misma imagen ampliada un factor
+// entero k; se sube sobre un lienzo k veces el de potencia de 2 del original,
+// así los UV no cambian y las medidas del slot y la copia en CPU (Buffer)
+// quedan las originales.
 namespace {
-bool HDPath(const char* fullPath, const char* format, char* out, size_t size)
+// "Data\X\casa.OZJ" + "-hd" -> "Data\X\casa-hd.OZJ". false sin extensión.
+bool VariantPath(const char* path, const char* suffix, char* out, size_t size)
 {
-    if (!fullPath || tolower((unsigned char)fullPath[0]) != 'd' || tolower((unsigned char)fullPath[1]) != 'a' ||
-        tolower((unsigned char)fullPath[2]) != 't' || tolower((unsigned char)fullPath[3]) != 'a' ||
-        (fullPath[4] != '\\' && fullPath[4] != '/')) return false;
-    const char* dot = strrchr(fullPath, '.');
-    if (!dot || size_t(dot - fullPath) + 16 > size) return false;
-    // Conserva la extensión original (casa.ozj.png / casa.ozt.png): hay
-    // texturas con el mismo nombre en los dos formatos.
-    char ext[8]{};
-    for (int i = 0; i < 7 && dot[1 + i]; ++i) ext[i] = char(tolower((unsigned char)dot[1 + i]));
-    std::snprintf(out, size, "Data\\HD\\%.*s.%s.%s", int(dot - (fullPath + 5)), fullPath + 5, ext, format);
-    return true;
+    if (!path) return false;
+    const char* dot = strrchr(path, '.');
+    const char* slash = strrchr(path, '\\');
+    const char* slash2 = strrchr(path, '/');
+    if (slash2 > slash) slash = slash2;
+    if (!dot || (slash && dot < slash)) return false;
+    const int written = std::snprintf(out, size, "%.*s%s%s", int(dot - path), path, suffix, dot);
+    return written > 0 && size_t(written) < size;
+}
+
+// true si el nombre ya es una versión (casa-hd.OZJ): no se busca casa-hd-hd.
+bool IsVariant(const char* path)
+{
+    const char* dot = path ? strrchr(path, '.') : nullptr;
+    if (!dot) return false;
+    for (const char* suffix : { "-hd", "-uhd" }) {
+        const size_t n = strlen(suffix);
+        if (size_t(dot - path) >= n && !Platform::TextCompareIgnoreCaseN(dot - n, suffix, n)) return true;
+    }
+    return false;
 }
 } // namespace
 
-// Reemplazo de archivos enteros por el pack HD: además de las texturas
-// ampliadas (casa.ozj.jpg, arriba), Data\HD puede traer un archivo con el mismo
-// nombre que el original, por ejemplo un modelo rehecho (Player\ArmorMale04.bmd)
-// con texturas propias (Player\KMUA2_tex_mg004.OZJ). Como las texturas que pide
-// un modelo se resuelven con la misma regla, las del pack se encuentran aunque
-// el juego original no las tenga. Con la opción apagada no se mira Data\HD.
+// Archivos enteros (modelos .bmd, CustomAnim.txt): con el nivel elegido, si
+// existe la versión -uhd / -hd se abre esa en lugar del clásico. Un modelo
+// rehecho puede pedir texturas propias, que van con nombre normal al lado y a
+// su vez pueden tener su -hd. Las texturas no pasan por acá: se cargan
+// clásicas y la versión HD las reemplaza en la GPU (UploadHD).
 const char* Texture_HDAssetPath(const char* path, char* out, std::size_t size)
 {
-    if (!Gfx::HDTextures() || !path || !out || size == 0) return path;
-    if (tolower((unsigned char)path[0]) != 'd' || tolower((unsigned char)path[1]) != 'a' ||
-        tolower((unsigned char)path[2]) != 't' || tolower((unsigned char)path[3]) != 'a' ||
-        (path[4] != '\\' && path[4] != '/')) return path;
-    // Ya es una ruta del pack (Data\HD\...): no se anida.
-    if (tolower((unsigned char)path[5]) == 'h' && tolower((unsigned char)path[6]) == 'd' &&
-        (path[7] == '\\' || path[7] == '/')) return path;
-    const int written = std::snprintf(out, size, "Data\\HD\\%s", path + 5);
-    if (written <= 0 || size_t(written) >= size) return path;
-    if (!Platform::GetFileSystem().Exists(out)) return path;
+    const int level = Gfx::HDTextures();
+    if (level <= 0 || !path || !out || size == 0 || IsVariant(path)) return path;
+    bool found = false;
+    if (level >= 2 && VariantPath(path, "-uhd", out, size)) found = Platform::GetFileSystem().Exists(out);
+    if (!found && VariantPath(path, "-hd", out, size)) found = Platform::GetFileSystem().Exists(out);
+    if (!found) return path;
     static unsigned s_used = 0;
     if (++s_used <= 20 || s_used % 100 == 0) {
         char line[340];
-        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Pack HD: %s (%u archivos)", out, s_used);
+        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText, "Version HD: %s (%u archivos)", out, s_used);
         DbgLogPublic(line);
     }
     return out;
@@ -513,29 +519,27 @@ const char* Texture_HDAssetPath(const char* path, char* out, std::size_t size)
 
 namespace {
 // Decodifica la imagen HD y arma el lienzo; corre en un hilo aparte.
-// Sin transparencia se acepta JPEG (casa.ozj.jpg), que ocupa varias veces
-// menos que PNG; si no hay JPEG se busca el PNG.
 struct HDJob {
     int id = 0; unsigned handle = 0; unsigned generation = 0;
-    std::vector<unsigned char> bytes; bool jpeg = false;
+    std::vector<unsigned char> bytes;
     int width = 0, height = 0, paddedWidth = 0, paddedHeight = 0, channels = 0, maxSize = 0;
     int k = 0, canvasWidth = 0, canvasHeight = 0;
     std::vector<unsigned char> canvas;
-    char path[300]{};
-    char pngPath[300]{};
+    char path[300]{};      // la versión que se leyó (para el log)
+    char uhdPath[300]{};   // casa-uhd.OZJ, sólo con el nivel UHD
+    char hdPath[300]{};    // casa-hd.OZJ
 };
-// Lee el archivo HD (JPEG si hay, si no PNG). Corre en el hilo de carga: en
-// disco mecánico una lectura en frío tarda 10-50 ms y frenaba el juego.
+// Lee la versión -uhd si se pidió y existe, si no la -hd. Corre en el hilo de
+// carga: en disco mecánico una lectura en frío tarda 10-50 ms y frenaba el juego.
 bool ReadHD(HDJob& job)
 {
     FILE* file = nullptr;
-    if (job.path[0] && (file = Platform::GetFileSystem().Open(job.path, "rb"))) {
-        job.jpeg = true;
-    } else {
-        file = Platform::GetFileSystem().Open(job.pngPath, "rb");
-        if (!file) return false;
-        memcpy(job.path, job.pngPath, sizeof(job.path));
+    for (const char* candidate : { job.uhdPath, job.hdPath }) {
+        if (!candidate[0] || !(file = Platform::GetFileSystem().Open(candidate, "rb"))) continue;
+        memcpy(job.path, candidate, sizeof(job.path));
+        break;
     }
+    if (!file) return false;
     long size = -1;
     if (fseek(file, 0, SEEK_END) == 0) size = ftell(file);
     if (size > 0 && fseek(file, 0, SEEK_SET) == 0) {
@@ -548,12 +552,23 @@ bool ReadHD(HDJob& job)
 bool BuildHD(HDJob& job)
 {
     if (!ReadHD(job)) return false;
+    // Mismo formato que el clásico: OZJ = JPEG con 24 bytes de cabecera,
+    // OZT = TGA de 32 bits con 4 bytes; .jpg/.tga sin cabecera.
+    const char* dot = strrchr(job.path, '.');
+    if (!dot) return false;
+    ImageCodec::Format format;
+    size_t prefix;
+    if (!Platform::TextCompareIgnoreCase(dot, ".ozj")) { format = ImageCodec::Format::Jpeg; prefix = 24; }
+    else if (!Platform::TextCompareIgnoreCase(dot, ".ozt")) { format = ImageCodec::Format::Tga32; prefix = 4; }
+    else if (!Platform::TextCompareIgnoreCase(dot, ".jpg")) { format = ImageCodec::Format::Jpeg; prefix = 0; }
+    else if (!Platform::TextCompareIgnoreCase(dot, ".tga")) { format = ImageCodec::Format::Tga32; prefix = 0; }
+    else return false;
     ImageCodec::Image hd;
     const size_t length = job.bytes.size();
+    if (length <= prefix) return false;
     job.bytes.resize(length + 2);   // espacio para el marcador final del JPEG
-    const bool decoded = job.jpeg
-        ? ImageCodec::DecodeBuffer(job.bytes.data(), length, ImageCodec::Format::Jpeg, job.maxSize, hd) && hd.channels == 3
-        : ImageCodec::DecodePngBuffer(job.bytes.data(), length, job.channels, job.maxSize, hd);
+    const bool decoded = ImageCodec::DecodeBuffer(job.bytes.data() + prefix, length - prefix, format, job.maxSize, hd) &&
+        hd.channels == job.channels;
     std::vector<unsigned char>().swap(job.bytes);
     if (!decoded || hd.width % job.width || hd.height % job.height) return false;
     const int k = hd.width / job.width;
@@ -653,8 +668,8 @@ void UploadHD(int id, unsigned handle, const char* fullPath, int width, int heig
     // El archivo lo abre y lo lee el hilo de carga (ReadHD), que lo cierra
     // enseguida: los trabajos en cola no tienen archivos abiertos (el CRT tiene
     // un tope de ~512 y al agotarse fallaba la apertura de Item.bmd).
-    if (!HDPath(fullPath, "png", job.pngPath, sizeof(job.pngPath))) return;
-    if (channels == 3) HDPath(fullPath, "jpg", job.path, sizeof(job.path));
+    if (IsVariant(fullPath) || !VariantPath(fullPath, "-hd", job.hdPath, sizeof(job.hdPath))) return;
+    if (Gfx::HDTextures() >= 2) VariantPath(fullPath, "-uhd", job.uhdPath, sizeof(job.uhdPath));
     job.id = id; job.handle = handle; job.generation = s_hdGeneration[size_t(id)];
     job.width = width; job.height = height; job.paddedWidth = paddedWidth; job.paddedHeight = paddedHeight;
     job.channels = channels; job.maxSize = tex_max_size();
@@ -727,10 +742,8 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     }
 
     // --- Open file ---
-    // full_path queda con la ruta original: de ahí sale también la textura
-    // ampliada del pack HD (UploadHD).
-    char hdPath[300];
-    FILE* f = Platform::GetFileSystem().Open(Texture_HDAssetPath(full_path, hdPath, sizeof(hdPath)), "rb");
+    // De full_path sale también la versión -hd / -uhd (UploadHD).
+    FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
     // DIAG: registrar cada intento. Cap general 60 + cap adicional para Logo/Ship
     // (los archivos que nos interesan para diagnosticar el login scene caen
     // después del cap y antes los perdíamos).
@@ -869,8 +882,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     }
 
     // ── Open file ─────────────────────────────────────────────────────────────
-    char hdPath[300];
-    FILE* Stream = (FILE*)Platform::GetFileSystem().Open(Texture_HDAssetPath(local_200, hdPath, sizeof(hdPath)), DAT_005580ac);
+    FILE* Stream = (FILE*)Platform::GetFileSystem().Open(local_200, DAT_005580ac);
     // DIAG: log TGA loads + specifically log slots 0xc/0x10/0x11 (Account textures)
     {
         static int s_tga = 0;
