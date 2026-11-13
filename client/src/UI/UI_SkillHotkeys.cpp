@@ -2,7 +2,7 @@
 // UI_SkillHotkeys.cpp
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 

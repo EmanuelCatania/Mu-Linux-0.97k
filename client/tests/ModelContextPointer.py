@@ -33,8 +33,8 @@ static_assert(alignof(BMD)==1&&std::is_standard_layout_v<BMD>&&std::is_trivially
 ''' + checks
     if contracts_only:
         return prefix+'\nint main(){std::printf("BMD contratos ptr=%zu size=%zu Scale=%zu Origin=%zu Action=%zu OK\\n",sizeof(void*),sizeof(BMD),offsetof(BMD,BodyScale),offsetof(BMD,BodyOrigin),offsetof(BMD,CurrentAction));}\n'
-    context=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/Render/EquipmentVisuals.h"),re.S).group()
-    equipment=read_source("src/Render/EquipmentVisuals.cpp")
+    context=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/render/EquipmentVisuals.h"),re.S).group()
+    equipment=read_source("src/render/EquipmentVisuals.cpp")
     ctor=re.search(r'EquipmentModelContext::EquipmentModelContext\(.*?\n\}',equipment,re.S).group()
     dtor=re.search(r'EquipmentModelContext::~EquipmentModelContext\(\)[^\n]*',equipment).group()
     pose=read_source("src/game/entity/ObjectPose.cpp")
@@ -59,7 +59,7 @@ void ObjectPose_PrepareBones(OBJECT* o,void* m,float* b,char t){Require(o==wante
 void ObjectPose_PrepareBounds(OBJECT* o,char t){Require(o==wantedOwner&&t==wantedTranslate);++boundsCalls;}
 void Calc_RenderObject(OBJECT* o,char t,int flag){Require(o==wantedOwner&&t==wantedTranslate&&flag==0);++editorCalls;}
 '''
-    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Rotate")+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/game/math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+function(read_source("src/Render/BMD_SetupRender.cpp"),"BMD__RotationPosition")+simulation+"\n#undef DAT_06989c9c\n#define DAT_06989c9c referenceParent[0]\nnamespace Legacy {\nfloat referenceParent[12];\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
+    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Rotate")+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/game/math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+function(read_source("src/render/BMD_SetupRender.cpp"),"BMD__RotationPosition")+simulation+"\n#undef DAT_06989c9c\n#define DAT_06989c9c referenceParent[0]\nnamespace Legacy {\nfloat referenceParent[12];\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
 
 
 MAIN=r'''

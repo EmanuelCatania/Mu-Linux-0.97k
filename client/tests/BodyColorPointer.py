@@ -71,7 +71,7 @@ int main() {
 
 
 def harness(revision=None, legacy=False):
-    source=read_source('src/Render/Render_LegacyBillboards.cpp',revision)
+    source=read_source('src/render/Render_LegacyBillboards.cpp',revision)
     if legacy:source=read_source('tests/fixtures/BodyColor-e3731d7c.cpp')
     body=function(source,'RenderPartObjectBodyColor');alt=function(source,'Entity_SetModelColorAlt')
     arg='reinterpret_cast<uintptr_t>(entity)' if 'uintptr_t entity' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(entity))'

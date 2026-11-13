@@ -82,12 +82,12 @@ def harness(writer=False):
     header=read_source('src/Model/ModelTypes.h')
     bmd=re.search(r'struct BMD\s*\{.*?\n\};',header,re.S).group()
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <cmath>\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+bmd+'\n#pragma pack(pop)\nBMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}\n'
-    source=read_source('src/Render/SMD_Legacy.cpp')
+    source=read_source('src/render/SMD_Legacy.cpp')
     for h in ('stdafx.h','globals.h','functions.h','Render/ResourceTables.h'):source=source.replace('#include "'+h+'"','')
     source=source.replace('"Model/SmdImport.h"',json.dumps((ROOT/'src/Model/SmdImport.h').as_posix()))
     runtime=function(read_source('src/Core/Runtime_Medium.cpp'),'OpenSMDFile')
     wrapper='extern "C" bool __cdecl OpenSMDFile(const char* p,int t,char f){return OpenSMDFile(const_cast<char*>(p),t,f!=0);}\n'
-    entry=read_source('src/Render/BMD_LegacyLoading.cpp')
+    entry=read_source('src/render/BMD_LegacyLoading.cpp')
     main=MAIN.replace('MODEL_PATH',json.dumps((ROOT/'tests/fixtures/smd/reference.smd').as_posix())).replace('ANIM_PATH',json.dumps((ROOT/'tests/fixtures/smd/walk.smd').as_posix()))
     writer_code=''
     if writer:
@@ -98,7 +98,7 @@ FILE* crt_fopen(const char* path,const void* mode){return std::fopen(path,static
 unsigned crt_fwrite(char* data,unsigned size,unsigned count,int* file){return static_cast<unsigned>(std::fwrite(data,size,count,reinterpret_cast<FILE*>(file)));}
 void putc(int c,int* file){std::fputc(c,reinterpret_cast<FILE*>(file));}
 void crt_fclose(FILE* file){std::fclose(file);}
-'''+function(read_source('src/Render/BMD_Load.cpp'),'BMD__Save')
+'''+function(read_source('src/render/BMD_Load.cpp'),'BMD__Save')
         main=main.replace('Require(m.NumActions==2);\n  Require(SMDFile', 'Require(m.NumActions==2);\n  char output[32];std::sprintf(output,"roundtrip-%u.bmd",flip);char directory[]="";Require(BMD__Save(static_cast<int>(reinterpret_cast<uintptr_t>(&m)),directory,output)==1);\n  Require(SMDFile')
     return prefix+SERVICES+source+runtime+wrapper+function(entry,'OpenSMDModel')+function(entry,'OpenSMDAnimation')+writer_code+main
 

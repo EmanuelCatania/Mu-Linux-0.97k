@@ -29,7 +29,7 @@
 #include "stdafx.h"
 #include "platform/UserPath.h"
 #include "Core/DataPrefetch.h"
-#include "Render/ResourceTables.h"
+#include "render/ResourceTables.h"
 #include "platform/Diagnostics.h"
 #include "platform/Text.h"
 #include "platform/NativeBridge.h"
@@ -381,7 +381,7 @@ extern int Config_Load(void);
 extern int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort);
 extern "C" void* ChatListBox_Construct(void);         // src/UI/ChatListBox.cpp
 extern "C" void* ChatListBox_ConstructWhisper(void);  // src/UI/ChatListBox.cpp
-extern "C" void  HUD_InitInventoryPools(void);        // src/Render/HUD_Pass3.cpp
+extern "C" void  HUD_InitInventoryPools(void);        // src/render/HUD_Pass3.cpp
 
 // Silent CRT invalid_parameter handler — sin esto, snprintf con format
 // inválido (NULL fmt, etc.) recursa infinitamente vía ucrtbased y crashea.

@@ -72,7 +72,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* second=stati
 
 
 def harness(revision=None):
-    source=read_source('src/Render/Render_PlayerEquipment.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
+    source=read_source('src/render/Render_PlayerEquipment.cpp',revision);header=read_source('src/game/entity/EntityTypes.h',revision)
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))
     monitor=function(source,'HeroEquipWatchdog');wipe=function(source,'EquipWipe_Tick')

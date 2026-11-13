@@ -50,8 +50,8 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 
 def harness(revision=None):
-    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p))for p in ['src/Render/BufferedDraw.h'])
-    source=read_source('src/Render/SMD_Parser.cpp',revision)
+    headers='\n'.join(re.sub(r'#include "[^\"]+"|#pragma once','',read_source(p))for p in ['src/render/BufferedDraw.h'])
+    source=read_source('src/render/SMD_Parser.cpp',revision)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+layouts()+'\n#pragma pack(push,1)\n'+record(read_source('src/game/physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+headers+SERVICES+function(source,'BMD__RenderBody')+function(source,'Model_SetAnimationSlots')+MAIN
 
 def main():

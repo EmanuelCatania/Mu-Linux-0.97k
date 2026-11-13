@@ -99,8 +99,8 @@ def harness(revision=None):
     if fake not in prefix:
         raise ValueError("No se encontró el getter controlado del fixture")
     prefix=prefix.replace(fake,"")+"\n#include <unordered_map>\n"
-    header=read_source("src/Render/MaterialVisuals.h",revision)
-    source=read_source("src/Render/MaterialVisuals.cpp",revision)
+    header=read_source("src/render/MaterialVisuals.h",revision)
+    source=read_source("src/render/MaterialVisuals.cpp",revision)
     prefix+=re.search(r"class MaterialVisualScope\s*\{.*?\n\};",header,re.S).group()
     prefix+=re.search(r"struct ObjectSample\s*\{.*?\};",source,re.S).group()
     prefix+=re.search(r"^const MaterialVisualSample \*current[^;]+;",source,re.M).group()

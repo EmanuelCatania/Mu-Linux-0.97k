@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
-files = sorted((root / "src/Render").glob("BMD*.cpp"))
-files += [root / "src/Render" / name for name in
+files = sorted((root / "src/render").glob("BMD*.cpp"))
+files += [root / "src/render" / name for name in
           ("BMDDevice.h", "BufferedDraw.h", "MeshDraw.h", "Skinning.h",
            "Entity_DrawByType.cpp", "SMD_Parser.cpp")]
 # Quitar comentarios y literales antes de buscar símbolos: las referencias

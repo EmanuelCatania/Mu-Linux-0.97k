@@ -1,0 +1,525 @@
+// HUD_Pass1.cpp — primera tanda de funciones de render del HUD in-world, portadas 1:1
+// del mu.exe original (sub_4BCA20, sub_4BD090, sub_4BD2B0, sub_4BFDE0).
+//
+// Contenido:
+//   * RenderPartyHP        — las barritas de HP sobre los miembros del party en el mundo
+//   * RenderBooleans       — floating-numbers iterator (damage/heal popups); cada
+//                            entrada la dibuja RenderBoolean (0x480E00, HUD_Pass3.cpp).
+//   * RenderMainFrameWindow — el marco inferior del HUD (5 llamadas a RenderBitmap + el
+//                            anti-tamper CharacterMachine encrypt/decrypt
+//                            block).  Anti-tamper is preserved structurally
+//                            por fidelidad, pero usa la hash-table existente
+//                            helpers (sub_4041E0/sub_403F80/sub_404400).
+//   * Render_HotbarItems3D — sub_4BFDE0, the 3D-projected inventory hotbar
+//                            items abajo y al centro de la pantalla.
+//
+// El helper sub_480C60 (FloatingLabel_MeasureText) también está portado acá — calcula las dimensiones
+// del texto de las etiquetas de números flotantes.
+//
+// =============================================================================
+
+#include "stdafx.h"
+#include "game/entity/EntityName.h"
+#include "UI/ChatTypes.h"
+#include "render/Gfx.h"
+#include "platform/Text.h"
+#include "UI/MiniMap.h"
+#include "globals.h"
+#include "structs.h"
+#include "functions.h"
+
+extern "C" BYTE OffsetInventoryItems[];     // src/render/HUD_Pass3.cpp
+extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
+extern "C" int __cdecl sub_482E40(int a1);
+extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
+
+static bool HUD_IsGoldenArcherPanelRuntime(void)
+{
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
+}
+
+// Referencias externas a helpers que ya existen en nuestro build.
+// (Camera_ProjectWorldToScreen = Projection, GL_DrawTexture = RenderBitmap, GL_DrawRect = RenderColor,
+//  UI_DrawText = RenderText_1, Camera_BuildMouseRay = CreateScreenVector,
+//  RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
+//  GL_ResetState = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
+//
+// Helpers de hash-table — ya declarados en functions.h con linkage C++; acá no
+// los redeclaramos. RenderMainFrameWindow sólo los llama desde el bloque
+// gateado `if (CharacterMachine && dword_55C9BD4)`, que en nuestro build se saltea,
+// así que no necesitamos sus referencias al enlazar.
+
+// sub_403150: NO es un "desencriptado de g_csQuest" como decia la nota vieja.
+// Es el render de la lista de items que pide la quest (UI/Quest_Legacy.cpp):
+// con a3 = 1 los dibuja como texto y con a3 = 0 como modelos 3D.  La llamada
+// con a3 = 0 vive en este pase; ver el comentario en el cuerpo.
+
+// ── Globals que el original referencia por nombre simbólico ─────────────────
+// Definimos #defines para que los nombres estilo IDA coincidan con el storage que
+// ya tenemos, y el código portado quede visualmente cerca del decompile.
+// Direcciones reales según `ida_xrefs_to`, las cuatro escritas por
+// `gluPerspective2` (0x511220), que es lo que escribe nuestro GL_SetPerspective:
+//     ScreenCenterX 0x083A429C · ScreenCenterY 0x083A42A0
+//     PerspectiveX  0x083A42A4 · PerspectiveY  0x083A42A8
+// OJO: 0x00561558..0x00561564 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
+#define ScreenCenterX        ViewportCenterX
+#define ScreenCenterY        ViewportCenterY
+#define PerspectiveX         _DAT_083a42a4
+#define PerspectiveY         _DAT_083a42a8
+
+#define byte_7E11D6E         DAT_07e11d6e
+#define dword_55C9BC8        MAIN_HASH_CLASS
+#define dword_55C9BCC        DAT_055c9bcc
+#define dword_55C9BD0        DAT_055c9bd0
+#define dword_55C9BD4        DAT_055c9bd4
+
+// =============================================================================
+// FloatingLabel_MeasureText — port de sub_480C60. Mide la burbuja de chat (CHAT)
+// y guarda el tamaño en Width/Height, con una, dos o tres líneas según cuántos
+// textos estén vivos (LifeTime).
+// IDA devuelve int, pero el único llamador (RenderBooleans) descarta el valor.
+void __cdecl FloatingLabel_MeasureText(CHAT* c, int p2, int p3)
+{
+    (void)p2; (void)p3;
+
+    SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
+
+    int n;
+    n = Platform::TextLength(ChatDisplayName(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayName(c), n, &psizl);
+    n = Platform::TextLength(c->Text[0]);
+    gFont.MeasureText32(gFont.GetTextDC(), c->Text[0], n, &v12);
+    n = Platform::TextLength(c->Text[1]);
+    gFont.MeasureText32(gFont.GetTextDC(), c->Text[1], n, &v13);
+    n = Platform::TextLength(ChatDisplayGuild(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayGuild(c), n, &v14);
+
+    int result = psizl.cx + 3;
+    if (c->LifeTime[1] <= 0) {
+        if (c->LifeTime[0] <= 0) {
+            c->Width  = result + v14.cx;
+            c->Height = gFont.GetHeight();
+        } else {
+            LONG cx = v14.cx + result;
+            if (cx <= v12.cx) cx = v12.cx;
+            c->Width = cx;
+            result = 2 * gFont.GetHeight();
+            c->Height = result;
+        }
+    } else {
+        LONG v6 = v12.cx;
+        if (v12.cx <= v13.cx) v6 = v13.cx;
+        LONG v7 = v14.cx + result;
+        if (v7 <= v6) {
+            v7 = v12.cx;
+            if (v12.cx <= v13.cx) v7 = v13.cx;
+        }
+        c->Width = v7;
+        result = gFont.GetHeight();
+        c->Height = 3 * gFont.GetHeight();
+    }
+    (void)result;
+}
+
+// FUN_00480e00 — RenderBoolean — ahora portada en src/render/HUD_Pass3.cpp.
+
+// =============================================================================
+// RenderPartyHP — sub_4BCA20. Itera el array Party, proyecta la posición de mundo de cada
+// miembro al espacio de pantalla y dibuja una barrita horizontal de
+// HP (42×5 px) sobre su cabeza. Cuando el cursor pasa sobre la barra se
+// dibuja un tooltip "HP : NN%" justo arriba. El byte de HP está en Party[i].field+0
+// (0..0x0A — ya viene preescalado a "decenas de porciento").
+//
+// Deps:
+//   PartyNumber        — count of valid slots
+//   Party              — base address (struct stride 36, header 24 bytes)
+//   CharactersClient   — entity array base (stride 0x394)
+//   Projection()       — World→Screen helper
+//   MouseX, MouseY
+//   m_hFontDC, g_fScreenRate_x, g_fScreenRate_y, TextSize
+//   RenderText_1, RenderColor (FillRect alias), EnableAlphaTest,
+//   EnableAlphaBlend, DisableAlphaBlend, glColor3f / glColor4f
+//
+// 1:1 port preserves the layered draw: shadow quad + dark frame + dark mid
+// fila + (HP * 4) píxeles rojos — con tope de 10 segmentos — usando glColor y
+// FillRect (RenderColor / GL_DrawRect).
+// =============================================================================
+// Projection (sub_5113F0 en IDA) está implementada en nuestro build como
+// Camera_ProjectWorldToScreen en src/render/Camera.cpp — la envolvemos bajo el nombre de IDA para
+// que el cuerpo de abajo quede cerca del decompile.
+static inline void Projection(float* Position, int* sx, int* sy) {
+    Camera_ProjectWorldToScreen(Position, sx, sy);
+}
+
+extern "C" void __cdecl RenderPartyHP_(void);
+void RenderPartyHP_(void)
+{
+    if (PartyNumber <= 0) return;
+
+    DWORD* v1 = (DWORD*)(Party + 24);  // &Party[0].field+24 = offset of slot 0 base
+    int v19 = 0;
+
+    do {
+        // DESVIACION: IDA sólo descarta -1, pero el héroe sin resolver queda en
+        // -3 (y -2 entre la pasada del hover y la del picker). En x86 eso leía
+        // basura antes del pool; en x64 el índice sin signo sale del espacio.
+        const int v2 = (int)v1[1];                 // índice del personaje
+        if (v2 >= 0 && v2 < 400) {
+            const BYTE* character = (const BYTE*)CharactersClient + (size_t)v2 * CHARACTER_STRIDE;
+            float Position[3];
+            Position[0] = *(const float*)(character + 16);
+            Position[1] = *(const float*)(character + 20);
+            Position[2] = *(const float*)(character + EntityOffset(300))  // [75]
+                        + *(const float*)(character + 24)   // [6]
+                        + 100.0f;
+
+            int sx, sy;
+            Projection(Position, &sx, &sy);
+            sx -= 19;
+
+            if ((int)MouseX >= sx
+                && (double)sx + 38.0 > (double)MouseX
+                && (int)MouseY >= sy - 2
+                && (int)MouseY < sy + 6)
+            {
+                CHAR String[100];
+                Platform::TextFormat(String, "HP : %d0%%", *(unsigned char*)v1);
+                m_dwTextColor = 0xFFFFFFFFu;
+                m_dwBackColor = 0xFF000000u;
+                RenderTipText(sx, sy - 15, String);
+            }
+
+            EnableAlphaTest(true);
+            Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.5f);
+            GL_DrawRect((float)(sx + 1), (float)(sy + 1), 42.0f, 5.0f);  // shadow
+
+            EnableAlphaBlend();
+            Gfx::Color3f(0.2f, 0.0f, 0.0f);
+            GL_DrawRect((float)sx, (float)sy, 42.0f, 5.0f);              // dark frame
+
+            Gfx::Color3f(0.19607843f, 0.039215688f, 0.0f);
+            GL_DrawRect((float)(sx + 2), (float)(sy + 2), 38.0f, 1.0f);  // mid row
+
+            int v7 = (int)*(unsigned char*)v1;
+            if (v7 > 10) v7 = 10;
+
+            Gfx::Color3f(0.98039216f, 0.039215688f, 0.0f);
+            for (int i = 0; i < v7; ++i) {
+                GL_DrawRect((float)(sx + 4 * i + 2), (float)(sy + 2), 3.0f, 2.0f);
+            }
+            GL_ResetState();   // DisableAlphaBlend
+        }
+        v1 += 9;     // stride 36 bytes
+        ++v19;
+    } while (v19 < PartyNumber);
+
+    GL_ResetState();
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+}
+
+// Entrada pública (la llama Render_Frame.cpp).
+void Render_HPBars(void) { RenderPartyHP_(); }
+
+
+// =============================================================================
+// RenderBooleans — sub_4BD090.  Dibuja las burbujas de chat (CHAT, pool de
+// 100 en DAT_07e016f8) sobre los personajes, en tres pasadas:
+//   1. Proyecta la posición de mundo del dueño → pantalla, la guarda en x/y, y después
+//      compute label dimensions (sub_480C60).
+//   2. De-overlap pass: for every pair of active entries, shift one out of
+//      la otra si sus rectángulos de bbox se superponen.
+//   3. Pasada de render: llama a RenderBoolean por entrada (HUD_Pass3.cpp).
+//
+// =============================================================================
+extern "C" void __cdecl RenderBooleans_(void);
+void RenderBooleans_(void)
+{
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+
+    // IDA recorre el pool con punteros anclados en Owner (pasada 1) y en
+    // LifeTime[0] (pasadas 2 y 3); acá se usan los campos de CHAT.
+    CHAT* chats = AsChat(DAT_07e016f8);
+    const int kChats = (int)(sizeof(DAT_07e016f8) / sizeof(CHAT));   // 100
+
+    // Pasada 1: proyecta el dueño (o Position si no hay dueño) y ubica la caja.
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* c = &chats[i];
+        if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
+            int sx = 0, sy = 0;
+            if (c->Owner) {
+                const OBJECT* o = &c->Owner->Object;
+                float Position[3];
+                Position[0] = o->Position[0];
+                Position[1] = o->Position[1];
+                Position[2] = o->BoundingBoxMax[2] + o->Position[2] + _DAT_0055290c;
+                Projection(Position, &sx, &sy);
+            } else {
+                Projection(c->Position, &sx, &sy);
+            }
+            FloatingLabel_MeasureText(c, 0, 0);
+            c->x = sx - 640 * c->Width / (int)gWindow.GetWidth() / 2;
+            c->y = sy - 36;
+        }
+    }
+
+    // Pasada 2: si dos cajas activas se superponen, corre la Y de la primera
+    // fuera del rango vertical de la otra.
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* a = &chats[i];
+        if (!(a->IDLifeTime > 0 || a->LifeTime[0] > 0)) continue;
+
+        for (int j = 0; j < kChats; ++j) {
+            if (i == j) continue;
+            const CHAT* b = &chats[j];
+            if (!(b->IDLifeTime > 0 || b->LifeTime[0] > 0)) continue;
+
+            int v5 = a->x;
+            int v6 = b->x;
+            if (v5 + 640 * a->Width / (int)gWindow.GetWidth() <= v6) continue;
+            if (v5 >= v6 + 640 * b->Width / (int)gWindow.GetWidth()) continue;
+
+            int v7 = a->y;
+            int v8 = b->y;
+            int v13 = 480 * a->Height / (int)gWindow.GetHeight();
+            if (v7 + v13 <= v8) continue;
+
+            int v9 = 480 * b->Height / (int)gWindow.GetHeight();
+            if (v7 >= v9 + v8) continue;
+
+            if (v7 >= v8 + v9 / 2) a->y = v9 + v8;
+            else                    a->y = v8 - v13;
+        }
+    }
+
+    // Pasada 3: renderiza cada entrada activa vía RenderBoolean.
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* c = &chats[i];
+        if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
+            // Desviación del binario: sub_47F4C0 ajusta cada renglón por separado al
+            // borde y una burbuja saliente quedaba pegada, con renglones encimados.
+            // Ajustarla entera no alcanza: varias colapsarían en la misma fila, así
+            // que se oculta apenas deja de entrar en pantalla.
+            if (c->Owner && !c->Owner->Object.Visible) continue;
+            const int boxW = 640 * c->Width / (int)gWindow.GetWidth();
+            const int boxH = 480 * c->Height / (int)gWindow.GetHeight();
+            const int marginX = 640 * gWindow.GetUiOffsetX() / (int)gWindow.GetWidth();
+            const int maxY = 480 - 47 * 480 / 640;
+            if (c->y < 0 || c->y + boxH > maxY) continue;
+            if (c->x < -marginX || c->x + boxW > 640 + marginX) continue;
+            RenderBoolean(c->x, c->y, (intptr_t)c);
+        }
+    }
+}
+
+void Render_FloatingText(void) { RenderBooleans_(); }
+
+
+// =============================================================================
+// RenderMainFrameWindow — sub_4BD2B0.  Renders the bottom HUD frame:
+//   * Dos decoraciones de esquina (bitmap 0xE9, 108×45) en x=0 y x=532, y=387
+//   * Tres filas de tiles en y=432 que cubren la barra (bitmaps 0xE6, 231, 232)
+// Intercalado entre los dibujos va el bloque interno anti-tamper de CharacterMachine:
+//   busca CharacterMachine en la hash table dword_55C9BC8, incrementa el
+//   ref-count [+1412] y, en el primer acceso, desencripta el buffer de 0x584 bytes
+//   a una alocación nueva, lo copia de vuelta y más tarde decrementa.
+//
+// We preserve the anti-tamper structure but it's a no-op when the table is
+// vacía (dword_55C9BD4 == 0) — que es nuestro estado por defecto. Cuando el motor
+// pueble la tabla más adelante, el camino se va a ejecutar correctamente.
+// =============================================================================
+extern "C" void __cdecl RenderMainFrameWindow_(void);
+void RenderMainFrameWindow_(void)
+{
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    EnableAlphaTest(true);
+    DAT_07e11d6e = 0;
+    m_dwTextColor = 0xFFFFFFFF;
+    m_dwBackColor = 0xFF000000;
+
+    // Two corner decorations (bitmap 0xE9 mirrored at x=532).
+    // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
+    // abierto, los botones de zoom y transparencia ocupan ese lugar.
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen): sin los dragones de
+    // Menu04; abajo, al final, se dibujan las cabezas de WDecorOld en las esquinas.
+    const bool wide = gWindow.IsWide();
+    if (!wide && !gMiniMap.HidesLeftDragon())
+        GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
+    if (!wide && !gMiniMap.HidesRightDragon())
+        GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
+    GL_ResetState();   // DisableAlphaBlend
+
+    // Bottom tile #1 (left half).
+    GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+
+    // ── Anti-tamper #1: andamiaje de la hash-table intercalado de IDA ──
+    // La sobrecarga de dos argumentos de HashTable_GetIndex (functions.h) devuelve
+    // siempre -1 en este build: sólo corre la rama "no encontrado".
+    if (CharacterMachine) {
+        void* v0 = CharacterMachine;
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, v0);
+        if (!(v6 != 0xFFFFFFFFu && DAT_055c9bd4)) {
+            // No encontrado / tabla vacía — inserta una entrada nueva marcada con
+            // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR
+            // round-trip elsewhere).
+            BYTE* fresh = (BYTE*)AntiTamper_HashNode();
+            fresh[1412] = 1;
+            HashTable_Insert(&MAIN_HASH_CLASS, fresh, v0);
+        }
+    }
+
+    // sprintf("%d/%d", curHP, maxHP) en Buffer — el original calcula el
+    // string pero NO lo renderiza dentro de esta función. El buffer es un
+    // efecto secundario que leen otros caminos de UI. Nuestro build no expone el
+    // buffer por separado, así que el efecto es inobservable; lo salteamos.
+    if (CharacterAttribute) {
+        CHAR Buffer[100];
+        Platform::TextFormat(Buffer, "%d/%d",
+                  *(int*)((BYTE*)CharacterAttribute + 16),
+                  *(int*)((BYTE*)CharacterAttribute + 52));
+        (void)Buffer;
+    }
+
+    // Bottom tile #2 (mid) and #3 (right half).
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    GL_DrawTexture(231, 256.0f, 432.0f, 128.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+    GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+    GL_ResetState();
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    if (wide) {
+        // DLL CWideScreen: WDecorOld, izquierda -61 y derecha 556 espejada.
+        // El DLL las ubica respecto de la barra central, no de la ventana.
+        const float barX = (float)gWindow.PanelOrigin({Ui::Anchor::Centro, 640});
+        EnableAlphaTest(true);
+        GL_DrawTexture(0x5F0, barX - 61.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, barX + 556.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_ResetState();
+    }
+}
+
+void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
+
+
+// =============================================================================
+// Render_HotbarItems3D — sub_4BFDE0. Renderiza los items de la barra de accesos rápidos del inventario como
+// mallas 3D vía RenderItem3D, desplazados a lo largo de x=208..301 en pasos de 31 px.
+// Guarda el estado ortográfico 2D actual, arma un frustum en perspectiva nuevo
+// (FOV=1.0 rad) usando la CameraMatrix guardada, dibuja los items y después
+// restores 2D state.
+//
+// La rama `g_bEventChipDialogEnable in {0, 3}` elige la barra normal
+// path; other values delegate to sub_4F54B0 (event-chip dialog renderer)
+// que no tenemos portado. El valor por defecto de 0 toma el camino normal.
+//
+// Deps:
+//   EndBitmap / BeginBitmap (GL_End2D / GL_Begin2D)
+//   sub_482BE0(slot)        — devuelve el índice de OffsetInventoryItems del slot de la barra
+//   OffsetInventoryItems    — array of {Type, Level, ...}
+//   RenderItem3D            — RenderItem3D
+//   CreateScreenVector      — Camera_BuildMouseRay
+//   CameraPosition[]        — float[3] world-space camera
+//   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
+// =============================================================================
+// Item_FindQuickSlotByCategory, RenderItem3D y Camera_BuildMouseRay ya están declaradas en
+// functions.h (que entra vía stdafx.h).
+extern "C" DWORD DAT_07e91388;
+extern "C" DWORD DAT_07eaa13c;
+
+// FUN_004f5ce0 (sub_4F5CE0) está portada en HUD_Pass6.cpp como sub_4F5CE0_().
+// FUN_004f6420 (sub_4F6420) está portada en HUD_Pass6.cpp.
+// Las dos tienen declaración en functions.h como `void(int,int,int,int)` — las envolvemos.
+extern "C" char __cdecl sub_4F5CE0_(void);
+extern "C" void __cdecl sub_4F6420(int, int, int, int);
+void __cdecl FUN_004f5ce0(int, int, int, int) { sub_4F5CE0_(); }
+void __cdecl FUN_004f6420(int a, int b, int c, int d) { sub_4F6420(a, b, c, d); }
+
+// alineación del struct OffsetInventoryItems. En IDA el acceso es:
+//   *(&OffsetInventoryItems.Type  + 34*v2)   → 4-byte slot, stride 136 bytes  ←Type
+//   *(&OffsetInventoryItems.Level + 17*v2)   → 4-byte slot, stride 68  bytes  ←Level
+// (el segundo acceso usa índices de 4 bytes, así que hay 17*4 = 68 de stride entre Levels).
+// Es un array plano de int, no un struct empaquetado — portarlo como arrays de int crudos
+// declarados en otro lado si están disponibles. Dejamos un fallback débil para que la llamada
+// compile igual cuando el array no está.
+//
+// NO tenemos OffsetInventoryItems expuesto; gateamos el loop interno con un
+// runtime guard so an absent symbol degrades to "no items drawn" rather
+// than a link error.
+
+extern "C" void __cdecl Render_HotbarItems3D_(void);
+void Render_HotbarItems3D_(void)
+{
+
+    GL_End2D();   // EndBitmap
+
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
+    // El pase de ítems también cubre los márgenes: el viewport central
+    // recortaba los modelos de paneles anclados fuera del 4:3.
+    GL_SetViewport(0, 0, (int)gWindow.GetRealWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetRealWidth() / (double)(int)gWindow.GetHeight());
+    float fov1 = 1.0f;
+    int   fovBits  = *(int*)&fov1;
+    int   nearBits = *(int*)&CameraViewNear;
+    GL_SetPerspective(fovBits, aspectF, nearBits, CameraViewFar);
+
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
+    GL_EnableDepthTest();
+    GL_EnableDepthWrites();
+    // IDA sub_4BFDE0 L31: `sub_403150(g_csQuest, 1, 0)`.
+    //
+    // Aca habia un comentario que daba a sub_403150 por "refresco del estado
+    // encriptado de quests" y la saltaba por "no afecta la hotbar visual".  Es
+    // una misidentificacion: con a3 = 0 esa funcion dibuja los MODELOS 3D de
+    // los items que pide la quest, y tiene que correr aca porque este pase es
+    // el que deja montado el FOV de 1 grado y la CameraMatrix identidad que
+    // RenderItem3D necesita.  Sin la llamada, la ventana de quest mostraba el
+    // nombre del item ("Scroll of Emperor x 1", que lo dibuja la otra llamada
+    // con a3 = 1 desde sub_403320) pero nunca su modelo.
+    if (g_csQuest) FUN_00403150((void*)(uintptr_t)g_csQuest, 0, 1, 0);
+
+    if (!HUD_IsGoldenArcherPanelRuntime()) {
+        FUN_004f5ce0(0, 0, 0, 0);
+        if (DAT_07e91388 > 0 && !DAT_07eaa13c) {
+            FUN_004f6420(0, 0, 0, 0);
+        }
+
+        int slot_x = 208;
+        for (int slot_idx = 0; slot_x < 301; ++slot_idx) {
+            int v2 = Item_FindQuickSlotByCategory(slot_idx);
+            if (v2 != -1) {
+                // IDA passes the raw hotbar slot fields:
+                //   Type  = *(short*)(base + slot*0x44 + 0)
+                //   Level = *(int*  )(base + slot*0x44 + 4)
+                // no la vista expandida de ITEM.
+                BYTE* slotBase = OffsetInventoryItems + v2 * 0x44;
+                short itemType = *(short*)(slotBase + 0);
+                int   itemLvl  = *(int*)(slotBase + 4);
+                RenderItem3D((float)slot_x, 454.0f, 20.0f, 20.0f,
+                             (int)itemType, itemLvl,
+                             0, 0, 0);
+            }
+            slot_x += 31;
+        }
+    } else {
+        // sub_4F54B0 — event-chip dialog renderer.  Not yet ported.
+    }
+
+    Gfx::LoadIdentity();
+    Gfx::Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
+
+    float Target[3] = {0, 0, 0};
+    Camera_BuildMouseRay(100, 100, Target);
+
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
+
+    GL_Begin2D();   // BeginBitmap
+}
+
+void Render_HotbarItems3D(void) { Render_HotbarItems3D_(); }

@@ -1,7 +1,7 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"

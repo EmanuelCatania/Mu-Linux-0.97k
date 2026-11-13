@@ -12,7 +12,7 @@ def production():
     prefix = source.split("// common initialisation", 1)[0] + "return puVar3; }\n"
     create = function(prefix, "CreateObject")
     unlink = function(read_source("src/Scene/Scene_LegacyHelpers.cpp"), "Entity_GridUnlink")
-    unload = function(read_source("src/Render/SMD_Parser.cpp"), "DeleteObjects")
+    unload = function(read_source("src/render/SMD_Parser.cpp"), "DeleteObjects")
     return create + unlink + unload
 
 

@@ -71,7 +71,7 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
 
 // FUN_00482850 @ 0x00482850 - sub_482850: cuenta la municion del inventario
 // IDA: FUN_00482850
-// La copia VIVA de sub_482850 es `FUN_00482850_` (src/Render/HUD_Pass3.cpp),
+// La copia VIVA de sub_482850 es `FUN_00482850_` (src/render/HUD_Pass3.cpp),
 // que es la que llama RenderNumArrow -- el unico caller que tiene la funcion en
 // el binario (dos veces, 0x4BF77D y 0x4BF821).  Esta entrada existia como una
 // segunda implementacion del mismo simbolo y estaba mal en tres accesos

@@ -99,7 +99,7 @@ def harness(revision=None):
     obj = re.sub(r"OBJECT\*\s+(ScenePrevious|SceneNext)\b", r"std::uint32_t \1", obj)
     obj = opaque_cloth_fields(obj)
     prefix += "\nusing vec3_t=float[3];\n#pragma pack(push,1)\n" + obj + "\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)==444);\n"
-    prefix += re.search(r"struct MaterialVisualSample\s*\{.*?\n\};", read_source("src/Render/MaterialVisuals.h", revision), re.S).group()
+    prefix += re.search(r"struct MaterialVisualSample\s*\{.*?\n\};", read_source("src/render/MaterialVisuals.h", revision), re.S).group()
     prefix += SERVICES
     source = read_source("src/game/entity/Entity_Reset.cpp", revision)
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)

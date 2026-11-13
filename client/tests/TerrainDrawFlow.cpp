@@ -1,7 +1,7 @@
 // La captura no debe duplicar la pasada ni alterar los atributos finales.
-#include "Render/TerrainDraw.h"
-#include "Render/Backend/GL/TerrainRenderer.h"
-#include "Render/RenderProfile.h"
+#include "render/TerrainDraw.h"
+#include "rhi/GL/TerrainRenderer.h"
+#include "render/RenderProfile.h"
 #include "platform/ITimer.h"
 #include <cstdio>
 #include <cstdlib>

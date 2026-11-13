@@ -116,7 +116,7 @@
 //   CErrorReport_Write  → Log(hashtable, msg)
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "Scene/Scene_Intro.h"
 
 // Debug trace (defined in WinMain.cpp)

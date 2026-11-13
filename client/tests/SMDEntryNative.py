@@ -47,7 +47,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* names=static
  std::printf("SMD entry:4096 casos, memoria/orden %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
-    source=read_source('src/Render/BMD_LegacyLoading.cpp',revision)
+    source=read_source('src/render/BMD_LegacyLoading.cpp',revision)
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include "'+(ROOT/'src/Model/ModelTypes.h').as_posix()+'"\n'
     return prefix+"namespace Smd { inline bool SelectModel(const void*) { return true; } }\n"+SERVICES+function(source,'OpenSMDModel')+function(source,'OpenSMDAnimation')+MAIN
 

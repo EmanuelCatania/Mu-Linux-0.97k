@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Render/ResourceTables.h"
+#include "render/ResourceTables.h"
 #include "game/core/RenderDerivedState.h"
 #include "game/core/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"

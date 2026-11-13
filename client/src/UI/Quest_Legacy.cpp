@@ -1,8 +1,8 @@
 // Quest_Legacy.cpp
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
-#include "Render/MaterialVisuals.h"
+#include "render/Gfx.h"
+#include "render/MaterialVisuals.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"

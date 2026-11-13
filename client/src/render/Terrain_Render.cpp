@@ -1,0 +1,141 @@
+#include "stdafx.h"
+#include "render/ResourceTables.h"
+#include "Scene/ObjectRegistry.h"
+#include "platform/GuardedOperation.h"
+#include "Item/ItemDefines.h"
+#include "Config/UserSettings.h"
+#include "render/Terrain_Render.h"
+#include "game/entity/ObjectPose.h"
+#include "render/WorldEffects.h"
+#include "game/core/RenderDerivedState.h"
+#include "render/DrawDistance.h"
+
+// External helpers
+extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
+// Entity_PrepareRender se declara en functions.h (que este archivo ya incluye);
+// la declaracion local de aca tenia otra firma y creaba una sobrecarga.
+extern void __cdecl CErrorReport_Write(void *buf, const char *msg);
+extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
+
+
+// ── Mejora INTENCIONAL del cliente final (cámara mejorada del DLL) — NO es 1:1 ─
+// El 0.97k culea objetos del mundo con CollisionRange (obj[+0xD0] ≈ -30 cross-
+// units), margen pensado para la cámara estrecha original.  La cámara final del
+// proyecto (DLL) muestra más área, lo que expone "popping" de estructuras
+// grandes (paredes, pilares, puente de Lorencia): su anchor sale del trapezoide
+// 2D mientras la parte alta del modelo sigue visible → el objeto entero
+// desaparece.  Ampliamos el margen de cull (Range más negativo = más lenient)
+// a un Range efectivo ≈ -300, mismo criterio que Mu 5.2 usa para objetos grandes
+// (ZzzObject.cpp: CollisionRange -300 para estructuras).  Verificado contra IDA:
+// el cull -30 es 1:1 con el 0.97k; esto es una desviación deliberada alineada a
+// la cámara final, NO un fix de bug del port.
+static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈ -300
+
+static void Terrain_ProcessObjects(bool simulation)
+{
+    // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
+    if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
+    float z_offset = 0.0f;
+    if (gMapManager.GetCurrentMap() == 10) {
+        z_offset = -10.0f;
+    }
+
+    SceneObjectCell* chunk_ptr = g_ObjectBucketGrid;
+
+    int chunk_y = 8;
+    do
+    {
+        float chunk_yf = (float)chunk_y;
+        int chunk_x = 8;
+        do
+        {
+            unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
+            if (simulation) chunk_ptr->Visible = static_cast<std::uint8_t>(vis);
+
+            if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
+            {
+                char *entity = static_cast<char*>(chunk_ptr->Head);
+                Platform::RunValidatedOperation([&]() {
+                    int chunkIter = 0;
+                    while (entity != nullptr &&
+                           chunkIter++ < 4096 &&
+                           SceneObjects::Contains(entity))
+                    {
+                        if (*entity == '\0' || !DAT_05828d58 ||
+                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= ResourceTables::ModelCount())
+                        {
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
+                            continue;
+                        }
+
+                        if (SceneFlag != 5 && *(short*)(entity + 2) == 0)
+                        {
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
+                            continue;
+                        }
+
+                        float ex = *(float*)(entity + 0x10) * _DAT_005524f8;
+                        float ey = *(float*)(entity + 0x14) * _DAT_005524f8;
+                        // Range = z_offset + CollisionRange(obj[+0xD0]) - margen ampliado
+                        // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
+                        float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
+                        vis = TestFrustrum2D(ex, ey, ez);
+                        // DESVIACION: distancia de dibujado; lejos, sólo el terreno.
+                        if (vis && !DrawDistance::Detailed(*(float*)(entity + 0x10), *(float*)(entity + 0x14))) vis = 0;
+                        if (simulation) entity[EntityOffset(0x160)] = (char)vis;
+
+                        if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
+                        {
+                            if (simulation) {
+                                if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
+                                {
+                                    void *pvSlot = AntiTamper_HashNode();
+                                    *(unsigned char*)((char*)pvSlot + 0x584) = 1;
+                                    HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
+                                }
+
+                                WorldEffects_Tick((intptr_t)entity);
+                            } else {
+                                RenderDerivedState_SaveObject(entity);
+                                Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
+                                WorldEffects_Draw(AsObject(entity));
+                            }
+                        }
+
+                        entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
+                    }
+                }); // SEH adicional en Windows; nodos y tipos validados en ambos sistemas.
+            }
+
+            ++chunk_ptr;
+            chunk_x += 0x10;
+        }
+        while (chunk_x < 0x108);
+
+        chunk_y += 0x10;
+    }
+    while (chunk_y < 0x108);
+
+    // Login/char-select fallback: only seed the frustum-visible flag and let
+    // Entity_RenderAll_3D drive the actual draw path.
+    if (SceneFlag != 5)
+    {
+        int iVar = 0;
+        do {
+            char *entity = (char*)(DAT_07abf5d0 + iVar);
+            if (*entity != '\0') {
+                float ex = *(float*)(entity + 0x10) * _DAT_005524f8;
+                float ey = *(float*)(entity + 0x14) * _DAT_005524f8;
+                float ez = z_offset + *(float*)(entity + 0xd0);
+                unsigned short vis = TestFrustrum2D(ex, ey, ez);
+                entity[EntityOffset(0x160)] = (char)vis;
+            }
+            iVar += CHARACTER_STRIDE;
+        } while (iVar < 400 * CHARACTER_STRIDE);
+    }
+}
+
+// DESVIACION: culling, pose, estado y emisores avanzan por paso SIM.
+// El draw vuelve a probar el frustum sin publicar flags del mundo ni emitir.
+void Terrain_PrepareSimulation() { Terrain_ProcessObjects(true); }
+void Terrain_Render() { Terrain_ProcessObjects(false); }

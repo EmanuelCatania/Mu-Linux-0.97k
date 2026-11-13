@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "net/NetText.h"
 #include "game/entity/EntityName.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);

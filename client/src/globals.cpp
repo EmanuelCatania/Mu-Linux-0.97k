@@ -6,7 +6,7 @@
 // replaced by pointer aliases to the original binary's addresses.
 
 #include "stdafx.h"
-#include "Render/ResourceTables.h"
+#include "render/ResourceTables.h"
 #include "platform/ISocket.h"
 #include "platform/ITimer.h"
 

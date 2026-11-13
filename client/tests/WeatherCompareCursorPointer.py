@@ -61,7 +61,7 @@ int main(){
 '''
 
 def harness(revision=None):
-    source=read_source('src/Render/Weather.cpp',revision);comparisons=[]
+    source=read_source('src/render/Weather.cpp',revision);comparisons=[]
     for index,name in enumerate(('ppuVar15','ppuVar15b')):
         line=re.search(r'^[^\n]*\b'+name+r'\s*=[^\n]*$',source,re.M)
         if not line:raise ValueError('Cursor inesperado')

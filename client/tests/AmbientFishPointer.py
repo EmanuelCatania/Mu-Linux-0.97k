@@ -120,7 +120,7 @@ int main(){
 
 
 def harness(revision=None):
-    source = read_source('src/Render/Ambient_Particles.cpp', revision)
+    source = read_source('src/render/Ambient_Particles.cpp', revision)
     source = re.sub(r'^\s*#include[^\n]*\n', '', source, flags=re.M)
     source = re.sub(r'^extern "C"[^\n]*\n', '', source, flags=re.M)
     assert 'void __cdecl AmbientParticles_Update(void)' in source

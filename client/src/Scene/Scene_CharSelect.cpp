@@ -179,7 +179,7 @@
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "platform/Text.h"
 #include "platform/ITimer.h"

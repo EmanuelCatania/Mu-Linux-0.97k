@@ -8,7 +8,7 @@
 #include "functions.h"
 #include "net/MuEmu.h"
 #include "net/Net.h"
-#include "Render/Camera.h"
+#include "render/Camera.h"
 
 // UIChatLogWindow_AddText @ 0x00480620  — full 1:1 port of IDA sub_480620.
 // Two distinct sinks:

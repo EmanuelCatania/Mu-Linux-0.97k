@@ -8,7 +8,7 @@
 // State lives in globals.cpp. See src/audio/Sound.cpp for the loader side.
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/ITimer.h"
 #include "platform/IAudio.h"
 

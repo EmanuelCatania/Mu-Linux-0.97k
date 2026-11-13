@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "platform/Text.h"
 #include <climits>
 #include "UI/OptionsMenu.h"

@@ -6,7 +6,7 @@
 #include "platform/ISocket.h"
 #include "platform/IInput.h"
 #include "Item/ContentCatalog.h"
-#include "Render/Camera3D.h"
+#include "render/Camera3D.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"

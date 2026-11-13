@@ -62,7 +62,7 @@ int main(){const auto files=MakeFiles();auto* low=static_cast<BYTE*>(Reserve(0x2
 
 
 def harness(revision=None):
-    codec='src/Render/Texture/ImageCodec.cpp'
+    codec='src/render/Texture/ImageCodec.cpp'
     if revision and read_source(codec,revision)!=read_source(codec):raise ValueError('El codec difiere de la referencia')
     prefix='#define NOMINMAX\n'+PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')
     prefix+='\n#include '+json.dumps((ROOT/codec).as_posix())+'\n'+SERVICES

@@ -1,9 +1,9 @@
 #pragma once
 #include "game/entity/EntityTypes.h"
-#include "Render/DamagePointTypes.h"
+#include "render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
 #include "Scene/SceneObjectCell.h"
-#include "Render/EffectPools.h"
+#include "render/EffectPools.h"
 struct GATE_ATTRIBUTE;
 struct OBJECT;
 // globals.h — extern declarations for all Ghidra DAT_ globals.

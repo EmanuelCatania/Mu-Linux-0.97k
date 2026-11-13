@@ -442,7 +442,7 @@ static void Combat_SendDuration1E_97k(char* entity, int skillType,
 static void Combat_SendPlainPacket97k(BYTE* pkt, int len);
 
 // Base de la grilla de inventario — la usa el feedback sonoro del mana-scroll de Attack.
-// Defined in src/Render/HUD_Pass3.cpp.
+// Defined in src/render/HUD_Pass3.cpp.
 extern "C" BYTE OffsetInventoryItems[];
 
 // IDA: SendMove @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)

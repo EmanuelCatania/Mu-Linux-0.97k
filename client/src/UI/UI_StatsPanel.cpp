@@ -3,7 +3,7 @@
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "UI/OptionsMenu.h"
 

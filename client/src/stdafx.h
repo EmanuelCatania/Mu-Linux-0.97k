@@ -48,7 +48,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "game/entity/EntityTypes.h"
 #include "Model/ModelTypes.h"
 #include "UI/ChatTypes.h"
-#include "Render/JointTypes.h"
+#include "render/JointTypes.h"
 
 // ── Game type definitions (structs, enums, constants) ────────────────────────
 #include "structs.h"
@@ -66,5 +66,5 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "net/MuEmu.h"
 #define send(s, buf, len, flags)  MuEmu_send_hook((s), (buf), (len), (flags))
 
-#include "Render/Gfx.h"
-#include "Render/RenderProfile.h"
+#include "render/Gfx.h"
+#include "render/RenderProfile.h"

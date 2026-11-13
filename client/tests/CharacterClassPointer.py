@@ -147,7 +147,7 @@ def harness(revision=None):
     header, globals_source = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     name = "DAT_07cf1ffc"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group() + re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
-    prefix += function(read_source("src/Render/SMD_Parser.cpp", revision), "SetCharacterScale").replace("SetCharacterScale(", "SetCharacterScaleReal(", 1)
+    prefix += function(read_source("src/render/SMD_Parser.cpp", revision), "SetCharacterScale").replace("SetCharacterScale(", "SetCharacterScaleReal(", 1)
     prefix += SERVICES + function(read_source("src/Item/ItemDefines.h", revision), "GetItemSection")
     catalog = read_source("src/Item/ContentCatalog.h", revision)
     for name in ("ItemModel", "ItemBehaviorType", "ItemEntityModel"):

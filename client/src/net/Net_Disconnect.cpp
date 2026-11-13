@@ -6,7 +6,7 @@
 #include "functions.h"
 #include "net/MuEmu.h"
 #include "net/Net.h"
-#include "Render/Camera.h"
+#include "render/Camera.h"
 
 // ── Net_Disconnect @ 0x0043dc90 ──────────────────────────────────────────────
 // Closes the game socket and resets connection state.

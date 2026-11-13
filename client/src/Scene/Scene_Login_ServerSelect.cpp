@@ -116,7 +116,7 @@
 //  Packet_IsValidSockType(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "Scene.h"
 

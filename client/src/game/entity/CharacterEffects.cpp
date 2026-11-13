@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "game/entity/CharacterEffects.h"
-#include "Render/EquipmentVisuals.h"
+#include "render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "game/core/MapManager.h"

@@ -164,7 +164,7 @@ void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
 }
 
 
-// Terrain_Water — MOVED TO src/Render/Terrain_Water.cpp (canonical location)
+// Terrain_Water — MOVED TO src/render/Terrain_Water.cpp (canonical location)
 // This duplicate definition is disabled to avoid LNK2005.
 #if 0
 int FUN_004f95e0_DISABLED(void)

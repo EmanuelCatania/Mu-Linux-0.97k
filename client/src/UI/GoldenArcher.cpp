@@ -22,7 +22,7 @@
 #include "game/entity/EntityName.h"
 #include "Text/TextCore.h"
 #include "net/NetText.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "UI/GoldenArcher.h"
 #include "UI/UIState.h"

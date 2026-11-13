@@ -33,7 +33,7 @@
 //   +0x168 float alpha
 
 #include "stdafx.h"
-#include "Render/MaterialVisuals.h"
+#include "render/MaterialVisuals.h"
 
 
 // IDA: ItemObjectAttribute (0x00502BA0)

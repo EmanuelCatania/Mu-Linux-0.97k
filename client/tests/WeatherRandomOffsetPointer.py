@@ -66,7 +66,7 @@ int main(){
 }
 '''
 def harness(revision=None):
-    source=read_source('src/Render/Weather.cpp',revision)
+    source=read_source('src/render/Weather.cpp',revision)
     begin=source.index('\n',source.index('// ── Weather-mode:'))+1
     end=source.index('    // Get terrain tile',begin)
     frame=re.search(r'    float\s+__fr\[12\][\s\S]*?&fStack_c\s*= __fr\[11\];',source).group()

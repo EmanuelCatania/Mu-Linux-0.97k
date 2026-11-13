@@ -45,7 +45,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);BMD__
 '''
 
 def harness(revision=None):
-    body=function(read_source('src/Render/BMD_LegacyDraw.cpp',revision),'BMD__RenderMeshTranslate')
+    body=function(read_source('src/render/BMD_LegacyDraw.cpp',revision),'BMD__RenderMeshTranslate')
     # Mismos datos y oráculo; sólo la representación de tablas pasa a tipos nativos.
     main=MAIN.replace('188','sizeof(BMD)')
     start=main.index('BYTE* entry=tables+mesh*40;')

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"

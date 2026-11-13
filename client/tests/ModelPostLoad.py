@@ -79,7 +79,7 @@ int main(){
 }
 '''
 def harness(revision=None):
- source=read_source('src/Render/BMD_Load.cpp',revision);names=('BMD__FindTriangleForEdge','BMD__FindNearTriangle','BMD_CreateBoundingBox','BMD__Init');bodies='\n'.join(function(source,n)for n in names)
+ source=read_source('src/render/BMD_Load.cpp',revision);names=('BMD__FindTriangleForEdge','BMD__FindNearTriangle','BMD_CreateBoundingBox','BMD__Init');bodies='\n'.join(function(source,n)for n in names)
  arg='model' if 'BMD* model' in function(source,'BMD_CreateBoundingBox') else 'static_cast<int>(reinterpret_cast<uintptr_t>(model))'
  return prefix()+SERVICES+bodies+MAIN.replace('BOUND_MODEL',arg)
 def main():

@@ -58,7 +58,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 
 def harness(revision=None):
-    code=function(read_source('src/Render/Particle.cpp',revision),'Particle_PathUpdate')
+    code=function(read_source('src/render/Particle.cpp',revision),'Particle_PathUpdate')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
     gh,gd=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     for name in sorted(set(re.findall(r'_DAT_[0-9a-f]+',code))):

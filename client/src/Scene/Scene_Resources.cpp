@@ -7,7 +7,7 @@
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 
 #include "stdafx.h"
-#include "Render/MeshDraw.h"
+#include "render/MeshDraw.h"
 #include <vector>
 #include <algorithm>
 

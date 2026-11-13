@@ -15,7 +15,7 @@
 #include "Model/ModelTypes.h"
 #include "Model/BMDFileTypes.h"
 #include "Model/Model_CustomAnim.h"
-#include "Render/Texture/Texture.h"
+#include "render/Texture/Texture.h"
 #include "globals.h"
 #include "functions.h"
 #include <vector>

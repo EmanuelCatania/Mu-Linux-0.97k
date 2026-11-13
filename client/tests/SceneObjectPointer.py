@@ -204,7 +204,7 @@ def harness(revision=None):
     preamble = PREAMBLE.replace("DWORD DAT_05828d58;", declaration + definition)
     scene = read_source("src/Scene/Scene_ObjectUpdate.cpp", revision)
     tick = function(scene, "FUN_004fdc00")
-    alpha = function(read_source("src/Render/Particle.cpp", revision), "Alpha")
+    alpha = function(read_source("src/render/Particle.cpp", revision), "Alpha")
     physics = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),
                        "Effect_PhysicsTick")
     ambient = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),

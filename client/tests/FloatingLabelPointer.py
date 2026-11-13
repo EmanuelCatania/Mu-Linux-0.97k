@@ -62,7 +62,7 @@ def harness(revision=None):
     record=re.sub(r'CHARACTER\*\s+Owner;', 'BYTE opaqueOwner[4];',record)
     prefix='#define NOMINMAX\n'+PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <algorithm>\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+record+'\n#pragma pack(pop)\nstatic_assert(sizeof(CHAT)==596);static_assert(offsetof(CHAT,Width)==576);static_assert(offsetof(CHAT,Height)==580);\n'
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHAT\* AsChat[^\n]+',header,re.M))+SERVICES
-    code=function(read_source('src/Render/HUD_Pass1.cpp',revision),'FloatingLabel_MeasureText')
+    code=function(read_source('src/render/HUD_Pass1.cpp',revision),'FloatingLabel_MeasureText')
     arg='chat' if 'CHAT* c' in code.split('{',1)[0] else 'static_cast<int>(reinterpret_cast<uintptr_t>(chat))'
     return prefix+code+MAIN.replace('ARG',arg)
 

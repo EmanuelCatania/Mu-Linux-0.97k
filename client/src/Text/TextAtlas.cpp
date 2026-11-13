@@ -3,7 +3,7 @@
 #ifdef MU_SDL_FONTS
 #include "Text/TextShaper.h"
 #include "platform/SDL3/SDLFont.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "Config/UserSettings.h"
 #include <unordered_map>
 #include <vector>

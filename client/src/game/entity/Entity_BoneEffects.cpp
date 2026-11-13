@@ -2,7 +2,7 @@
 // Entity_SpawnBoneRangeEffect).
 
 #include "stdafx.h"
-#include "Render/EquipmentVisuals.h"
+#include "render/EquipmentVisuals.h"
 #include "globals.h"
 #include "functions.h"
 

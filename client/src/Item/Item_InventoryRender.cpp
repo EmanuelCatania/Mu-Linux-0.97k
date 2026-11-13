@@ -4,8 +4,8 @@
 // Pases de render del inventario y del equipo.
 
 #include "stdafx.h"
-#include "Render/Gfx.h"
-#include "Render/MaterialVisuals.h"
+#include "render/Gfx.h"
+#include "render/MaterialVisuals.h"
 #include "globals.h"
 #include "functions.h"
 // InventoryColor @ 0x004E2420 (~38 lines) — sets GL color by item Color field

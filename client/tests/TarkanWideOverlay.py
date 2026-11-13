@@ -30,7 +30,7 @@ int main(){unsigned cases=0;const int sizes[][4]={{640,480,640,0},{800,600,800,0
 }
 '''
 def harness():
-    source=read_source('src/Render/Render_Frame.cpp');start=source.index('    if (gMapManager.GetCurrentMap() == 8)');end=source.index('    Render_CharInfoPanel();',start)
+    source=read_source('src/render/Render_Frame.cpp');start=source.index('    if (gMapManager.GetCurrentMap() == 8)');end=source.index('    Render_CharInfoPanel();',start)
     return PRE+''.join(function(source,n)for n in ['ConvertX_RF','ConvertY_RF','RenderBitmapUV'])+'void Draw(){'+source[start:end]+'}'+MAIN
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');a=p.parse_args()

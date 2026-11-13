@@ -1,11 +1,11 @@
 // Input_Timing.cpp
 
 #include "stdafx.h"
-#include "Render/RenderProfile.h"
-#include "Render/TerrainDraw.h"
-#include "Render/Materials.h"
-#include "Render/BMDDevice.h"
-#include "Render/MeshDraw.h"
+#include "render/RenderProfile.h"
+#include "render/TerrainDraw.h"
+#include "render/Materials.h"
+#include "render/BMDDevice.h"
+#include "render/MeshDraw.h"
 #include "platform/IInput.h"
 #include "platform/ITimer.h"
 #include "platform/Text.h"

@@ -41,7 +41,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
  std::printf("Joint offset: 32768 casos, posicion/readonly %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
- code=function(read_source('src/Render/SMD_Parser.cpp',revision),'Joint_BoneOffsetApply')
+ code=function(read_source('src/render/SMD_Parser.cpp',revision),'Joint_BoneOffsetApply')
  arg='object' if 'BYTE* param_1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(object))'
  constant=re.search(r'^float\s+Math_DegreesToRadians\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()
  float_type=re.search(r'typedef\s+long double\s+float10\s*;',read_source('src/types.h',revision)).group()

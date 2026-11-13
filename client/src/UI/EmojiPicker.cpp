@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "UI/EmojiPicker.h"
-#include "Render/BufferedDraw.h"
+#include "render/BufferedDraw.h"
 #include "platform/Text.h"
 #include "Text/TextCore.h"
 #include "Core/Font.h"

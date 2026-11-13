@@ -2,7 +2,7 @@
 #include "Text/TextCore.h"
 #include "game/entity/EntityName.h"
 #include "net/NetText.h"
-#include "Render/Gfx.h"
+#include "render/Gfx.h"
 #include "platform/Text.h"
 #include "platform/ISocket.h"
 #include "platform/ITimer.h"
