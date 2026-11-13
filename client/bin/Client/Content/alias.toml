@@ -1,0 +1,15 @@
+# Alias de rutas (Platform/ContentLayers.h): el cliente sigue pidiendo las
+# rutas de Data y esta tabla dice dónde quedaron en el orden nuevo. Las claves
+# son relativas al interior de Data; los valores, al de Content (y de cada pack
+# o carpeta de server). Si dos claves coinciden gana la más larga.
+
+[alias]
+# Música separada por uso: temas de mapa, cortinas de eventos y pantallas.
+"Music" = "audio/music/map"
+"Music/devil_square_intro.mp3" = "audio/music/event/devil_square_intro.mp3"
+"Music/devil_square_outro.mp3" = "audio/music/event/devil_square_outro.mp3"
+"Music/DuelArena.mp3" = "audio/music/event/DuelArena.mp3"
+"Music/PK_Field.mp3" = "audio/music/event/PK_Field.mp3"
+"Music/login_theme.mp3" = "audio/music/screen/login_theme.mp3"
+"Music/main_theme.mp3" = "audio/music/screen/main_theme.mp3"
+"Music/MuTheme.mp3" = "audio/music/screen/MuTheme.mp3"

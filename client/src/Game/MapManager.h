@@ -19,7 +19,7 @@
 // DESVIACION (Fase 5): el tema de cada mapa sale, en este orden, de
 //   1. el server (`music` en su Map.toml, sección F3:F7 del catálogo);
 //   2. la tabla del binario (Lorencia, Devias, Noria y Dungeon);
-//   3. un mp3 de Data/Music con el nombre del mapa (Atlans.mp3, tarkan.mp3,
+//   3. un mp3 de Content/audio/music/map (o Data/Music) con el nombre del mapa (Atlans.mp3, tarkan.mp3,
 //      lost_tower_a.mp3...), que en el 0.97k no sonaba en ningún mapa.
 // Así un tema propio se agrega dejando el archivo, y el server lo puede
 // reemplazar por cualquier otro.  Los temas por zona (taberna, catedral y la
@@ -64,7 +64,7 @@ public:
     // Corta la música del mapa que esté sonando (IDA StopMusic 0x00513420).
     void StopMusic() const;
 
-    // Tema que fija el server para un mapa: nombre de Data/Music sin extensión
+    // Tema que fija el server para un mapa: nombre del mp3 sin extensión (Data/Music, ver Content/alias.toml)
     // (letras, números, '_' y '-').  false si el nombre no es válido.
     bool SetServerMusic(int map, const char* name);
     // Al desconectar: vuelven los temas del cliente.
