@@ -72,7 +72,7 @@ def harness(revision=None):
         prefix+=re.search(rf'^[^/\n]*\b{name}(?:\[[^\]]*\])?\s*=\s*[^;]+;',definitions,re.M).group()
     code=function(read_source('src/Terrain/Terrain.cpp',revision),'OpenJpegBuffer')
     arg='target' if 'float* dst' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(target))'
-    return prefix+'\n#define fclose TrackedClose\n'+code+'\n#undef fclose\n'+MAIN.replace('ARG',arg).replace('ASSET',json.dumps((ROOT/'bin/Client/Data/World1/TerrainLight.OZJ').as_posix()))
+    return prefix+'\n#define fclose TrackedClose\n'+code+'\n#undef fclose\n'+MAIN.replace('ARG',arg).replace('ASSET',json.dumps(__import__('data_paths').asset(ROOT,'World1/TerrainLight.OZJ').as_posix()))
 
 
 def main():
