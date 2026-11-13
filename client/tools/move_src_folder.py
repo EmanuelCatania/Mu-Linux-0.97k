@@ -64,14 +64,24 @@ RELATIVE_INCLUDE = re.compile(r'^(\s*#\s*include\s*")((?:\.\./)+[^"]+)(")', re.M
 def fix_relative_includes():
     """Un archivo que cambió de profundidad deja sus `#include "../../lib/..."`
     apuntando a otra carpeta: sumar o quitar un `../` si así resuelve."""
+    # Contra la lista de git y no contra el disco: en Windows "../Combat/x.h"
+    # existe aunque la carpeta sea "combat", y en Linux no compila.
+    import posixpath
+    tracked = set(subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode('utf-8').split('\0'))
+
+    def exists(f, path):
+        rel = f.relative_to(ROOT).as_posix()
+        full = posixpath.normpath(posixpath.join(posixpath.dirname(rel), path))
+        return full in tracked or (full.startswith('..') and (f.parent / path).exists())
+
     fixed = 0
     for f in files(['src/**/*.cpp', 'src/**/*.c', 'src/**/*.h']):
         def fix(m):
             path = m.group(2)
-            if (f.parent / path).exists():
+            if exists(f, path):
                 return m.group(0)
             for other in ('../' + path, path[3:]):
-                if (f.parent / other).exists():
+                if exists(f, other):
                     return m.group(1) + other + m.group(3)
             print(f'sin resolver: {f.relative_to(ROOT)}: {path}')
             return m.group(0)

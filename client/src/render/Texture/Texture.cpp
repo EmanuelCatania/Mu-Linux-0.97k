@@ -83,6 +83,7 @@
 #include <thread>
 #include <condition_variable>
 #include <chrono>
+#include <climits>
 #include "render/Gfx.h"
 #include "render/ResourceTables.h"
 #include "render/BufferedDraw.h"
