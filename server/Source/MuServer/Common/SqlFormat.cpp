@@ -34,6 +34,15 @@ bool SqlFormat(std::string& out, const char* format, va_list args, const SqlEsca
 
 			case 's':
 			{
+				// El escape sólo protege dentro de un literal: un %s sin
+				// comillas dejaría que el valor agregue SQL propio aunque
+				// esté escapado.  Se exige '%s' en el formato.
+				if (p - format < 2 || p[-2] != '\'' || p[1] != '\'')
+				{
+					error = "%s fuera de comillas simples (tiene que ser '%s')";
+					return false;
+				}
+
 				const char* value = va_arg(args, const char*);
 
 				if (value == nullptr)
