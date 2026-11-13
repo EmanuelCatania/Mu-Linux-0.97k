@@ -178,6 +178,8 @@
     <ClInclude Include="src\Platform\IWindow.h" />
     <ClInclude Include="src\Platform\Win32\Win32Window.h" />
     <ClInclude Include="src\Platform\IFileSystem.h" />
+    <ClInclude Include="src\Platform\ContentLayers.h" />
+    <ClInclude Include="src\Platform\UserPath.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
