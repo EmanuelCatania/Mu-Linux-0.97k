@@ -22,6 +22,12 @@ elif [ "$(readlink -f "$MU_CLIENT_ROOT/Data")" != "$asset_root/Data" ]; then
     echo "MU_CLIENT_ROOT/Data ya existe y no corresponde a MU_ASSET_ROOT; elegí otro MU_CLIENT_ROOT." >&2
     exit 1
 fi
+# Fase 5 (E2): el contenido en el orden nuevo va al lado de Data.
+if [ -d "$asset_root/Content" ]; then
+    if [ -L "$MU_CLIENT_ROOT/Content" ] || [ ! -e "$MU_CLIENT_ROOT/Content" ]; then
+        ln -sfn "$asset_root/Content" "$MU_CLIENT_ROOT/Content"
+    fi
+fi
 # Crear preferencias sólo en el primer arranque; nunca copiar las del build.
 if [ ! -e "$MU_CLIENT_ROOT/Config.ini" ] && [ ! -e "$MU_CLIENT_ROOT/config.ini" ]; then
     printf '[Window]\nWindowMode=1\nBorderless=0\nResolution=2\n' > "$MU_CLIENT_ROOT/Config.ini"
