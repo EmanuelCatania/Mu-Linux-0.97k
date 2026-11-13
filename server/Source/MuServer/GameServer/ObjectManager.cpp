@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ObjectManager.h"
+#include "PacketTrace.h"
 #include "Attack.h"
 #include "BattleSoccerManager.h"
 #include "BloodCastle.h"
@@ -557,12 +558,13 @@ void CObjectManager::ObjectMoveProc()
 
 				lpObj->PathTime = GetTickCount();
 
-				// El paso ya respeta MoveTime, así que nunca deja el saldo en
-				// negativo; sólo lo gasta para que los saltos del cliente se
-				// sumen a lo que el server ya caminó (ver gObjMoveBudgetCharge).
+				// El paso ya respeta MoveTime (más lento que MoveCheckTileTime), así
+				// que nunca deja el saldo en negativo; sólo lo gasta para que los
+				// saltos del cliente se sumen a lo que el server ya caminó (ver
+				// gObjMoveBudgetCharge).
 				if (lpObj->Type == OBJECT_USER)
 				{
-					gObjMoveBudgetCharge(lpObj, (int)MoveTime);
+					gObjMoveBudgetCharge(lpObj, gServerInfo.m_MoveCheckTileTime);
 				}
 
 				if ((++lpObj->PathCur) >= lpObj->PathCount)
@@ -1317,6 +1319,9 @@ bool CObjectManager::CharacterUseScroll(LPOBJ lpObj, CItem* lpItem)
 
 bool CObjectManager::CharacterUsePotion(LPOBJ lpObj, CItem* lpItem)
 {
+	// Medición para CheckAutoPotionHack (Fase 5, A4): intervalo entre pociones.
+	TRACE_NOTE(lpObj->Index, 0x26, -1, "pocion: %u ms desde la anterior (item %d)", (unsigned)(GetTickCount() - lpObj->PotionTime), lpItem->m_Index);
+
 	if (gServerInfo.m_CheckAutoPotionHack != 0 && (GetTickCount() - lpObj->PotionTime) < ((DWORD)gServerInfo.m_CheckAutoPotionHackTolerance))
 	{
 		return 0;

@@ -3,9 +3,11 @@
 ; Hack Settings
 ;==================================================
 ; Check Physic and Magic Speed (0 = No / 1 = Yes)
-CheckSpeedHack=0
+CheckSpeedHack=1
 ; The tolerance for the SpeedHack when CheckSpeedHack=1
-CheckSpeedHackTolerance=0
+; Medido 2026-11-12: en el juego cliente y server coinciden siempre; sólo difieren
+; mientras el server todavía no calculó al personaje (valor 0), que se saltea.
+CheckSpeedHackTolerance=20
 
 ; Check Latency (0 = No / 1 = Yes)
 CheckLatencyHack=0
@@ -13,29 +15,37 @@ CheckLatencyHack=0
 CheckLatencyHackTolerance=0
 
 ; Check Potions consumption (0 = No / 1 = Yes)
-CheckAutoPotionHack=0
+CheckAutoPotionHack=1
 ; The tolerance for consuming potions when CheckAutoPotionHack=1
-CheckAutoPotionHackTolerance=0
+; Medido 2026-11-12: el intervalo humano más corto (tecla sostenida) es 75 ms.
+CheckAutoPotionHackTolerance=50
 
 ; Validacion del camino que manda el cliente: el inicio tiene que estar cerca
 ; de la posicion que calcula el server y ningun paso puede pisar una pared.
 ; 0 = apagada, 1 = observar (solo registra en el log de hack), 2 = aplicar
-MoveCheck=1
+MoveCheck=2
 ; Tiles que el inicio del camino puede alejarse de la posicion del server
 MoveCheckTolerance=4
-; Distancia que el personaje puede recorrer, medida en milisegundos de
-; caminata del server (MoveSpeed por tile). Se recarga con el tiempo hasta
-; este tope y la gastan los pasos del server y los saltos al inicio del camino
-; que manda el cliente. Sin esto, mandar caminos que arrancan 4 tiles adelante
-; cada 100 ms movia al personaje 40 tiles por segundo. Usa el mismo MoveCheck.
+; Distancia que el personaje puede recorrer, en milisegundos. Se recarga con
+; el tiempo hasta este tope y cada tile recorrido cuesta MoveCheckTileTime
+; (los pasos del server y los saltos al inicio del camino que manda el
+; cliente). Sin esto, mandar caminos que arrancan 4 tiles adelante cada
+; 100 ms movia al personaje 40 tiles por segundo. Usa el mismo MoveCheck.
 MoveCheckBudget=2000
+; Costo de un tile: el tiempo del cliente mas rapido. El cliente avanza por
+; pasos de 40 ms: 12 unidades caminando (333 ms por tile), 15 corriendo o
+; con alas/montura (267 ms) y 16 con las alas 789 (250 ms). El server camina
+; a 400 ms, asi que con ese costo el saldo se vaciaba en linea recta.
+MoveCheckTileTime=250
 
 ; Linea de vision entre el atacante y cada blanco de un skill de area (0x1D):
-; 0 = apagada, 1 = observar, 2 = descartar el blanco tapado por una pared
-SkillLineCheck=1
+; 0 = apagada, 1 = observar, 2 = descartar el blanco tapado por una pared.
+; Apagada: el cliente original no mira paredes al armar la lista de un skill
+; de area, y visualmente el skill atraviesa la pared y alcanza al blanco.
+SkillLineCheck=0
 
 ; Cadencia del ataque normal (0 = apagada, 1 = observar, 2 = aplicar)
-AttackCheck=1
+AttackCheck=2
 ; El intervalo minimo entre dos ataques depende de la velocidad, como la
 ; animacion del cliente (PlaySpeed = 0.6 + PhysiSpeed * 0.004 en la mas rapida):
 ;   minimo (ms) = AttackCheckScale / (0.6 + PhysiSpeed * 0.004)

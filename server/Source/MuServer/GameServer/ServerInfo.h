@@ -111,6 +111,7 @@ public:
 	int m_MoveCheck;
 	int m_MoveCheckTolerance;
 	int m_MoveCheckBudget;
+	int m_MoveCheckTileTime;
 	int m_SkillLineCheck;
 	int m_AttackCheck;
 	int m_AttackCheckScale;

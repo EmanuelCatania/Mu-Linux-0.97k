@@ -75,11 +75,13 @@ DWORD gLevelExperience[MAX_CHARACTER_LEVEL + 1];
 // OBJECT MAIN FUNCTIONS ***************************************************//
 //**************************************************************************//
 
-// Fase 5: presupuesto de movimiento, en milisegundos de caminata del server.
-// Se recarga con el tiempo transcurrido hasta MoveCheckBudget y lo gastan los
-// pasos que avanza el server (ObjectMoveProc) y los saltos al inicio del camino
-// o a la posición que manda el cliente. Caminando a la velocidad del server el
-// saldo no baja; sólo baja si el personaje se desplaza más rápido que eso.
+// Fase 5: presupuesto de movimiento, en milisegundos.  Se recarga con el
+// tiempo transcurrido hasta MoveCheckBudget y cada tile que avanza el
+// personaje cuesta MoveCheckTileTime: los pasos del server (ObjectMoveProc)
+// y los saltos al inicio del camino o a la posición que manda el cliente.
+// El costo es el del cliente más rápido (250 ms por tile, ver ServerInfo),
+// no el MoveSpeed del server (400): el cliente camina más rápido que el
+// server y con 400 el saldo se vaciaba caminando en línea recta.
 // Devuelve false si el gasto deja el saldo en negativo (el saldo queda en 0).
 bool gObjMoveBudgetCharge(LPOBJ lpObj, int cost)
 {

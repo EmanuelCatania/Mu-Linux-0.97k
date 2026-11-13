@@ -1837,6 +1837,22 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 		return;
 	}
 
+	// Estos skills resuelven sus blancos dentro del 0x1E (SkillTripleShot con
+	// el cono del ángulo, SkillTwistingSlash / SkillRagefulBlow /
+	// SkillDeathStab con el radio) y no pasan por MultiSkillAttack, así que
+	// nunca anotan MultiSkillIndex: el 0x1D que manda el cliente para ellos
+	// sobra y siempre se descartó.  Llega por el impacto del efecto: en Triple
+	// Shot, CreateArrows (0x474BD0) crea las flechas con Skill = 1,
+	// CreateEffect (0x460DC0 L313) lo copia a `o->Kind`, y con Kind != 0 el
+	// chequeo de colisión (sub_466440) reporta el blanco con un 0x1D.  Puede
+	// llegar incluso antes que el 0x1E (medido con Twisting Slash).  Se ignora
+	// sin avisarle al cliente, que si no muestra un rechazo por cada impacto.
+	if (lpObj->Type == OBJECT_USER && (lpSkill->m_skill == SKILL_TRIPLE_SHOT || lpSkill->m_skill == SKILL_TWISTING_SLASH || lpSkill->m_skill == SKILL_RAGEFUL_BLOW || lpSkill->m_skill == SKILL_DEATH_STAB))
+	{
+		TRACE_NOTE(aIndex, 0x1D, -1, "skill %d: 0x1D del impacto, los blancos se resuelven en el 0x1E", lpSkill->m_skill);
+		return;
+	}
+
 	if (lpObj->Type == OBJECT_USER && (lpObj->MultiSkillIndex == 0 || lpObj->MultiSkillIndex != lpSkill->m_index || (lpObj->MultiSkillCount++) >= 5))
 	{
 		TRACE_REJECT(aIndex, 0x1D, -1, "skill %d: sin 0x1E previo o fuera de cuenta (MultiSkillIndex=%d esperado=%d MultiSkillCount=%d)", lpSkill->m_skill, lpObj->MultiSkillIndex, lpSkill->m_index, lpObj->MultiSkillCount);

@@ -755,6 +755,11 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 
 	GCLiveClientSend(aIndex, lpMsg->TickCount);
 
+	// Medición para CheckSpeedHack / CheckLatencyHack (Fase 5, A4): sólo con la
+	// traza activa.  Velocidades que reporta el cliente contra las del server y
+	// la deriva del reloj del cliente.
+	TRACE_NOTE(aIndex, 0x0E, -1, "vivo: PhysiSpeed cliente=%d server=%d MagicSpeed cliente=%d server=%d deriva=%d ms", (int)lpMsg->PhysiSpeed, lpObj->PhysiSpeed, (int)lpMsg->MagicSpeed, lpObj->MagicSpeed, (int)((GetTickCount() - lpObj->ServerTickCount) - (lpMsg->TickCount - lpObj->ClientTickCount)));
+
 	if (gServerInfo.m_CheckLatencyHack != 0 && abs((int)((GetTickCount() - lpObj->ServerTickCount) - (lpMsg->TickCount - lpObj->ClientTickCount))) > gServerInfo.m_CheckLatencyHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Latency Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, (GetTickCount() - lpObj->ServerTickCount), (lpMsg->TickCount - lpObj->ClientTickCount));
@@ -764,7 +769,7 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpMsg->PhysiSpeed > lpObj->PhysiSpeed && abs((int)(lpObj->PhysiSpeed - lpMsg->PhysiSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
+	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpObj->PhysiSpeed > 0 && lpMsg->PhysiSpeed > lpObj->PhysiSpeed && abs((int)(lpObj->PhysiSpeed - lpMsg->PhysiSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Speed Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, lpObj->PhysiSpeed, lpMsg->PhysiSpeed);
 
@@ -773,7 +778,7 @@ void CGLiveClientRecv(PMSG_LIVE_CLIENT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpMsg->MagicSpeed > lpObj->MagicSpeed && abs((int)(lpObj->MagicSpeed - lpMsg->MagicSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
+	if (lpObj->Connected == OBJECT_ONLINE && gServerInfo.m_CheckSpeedHack != 0 && lpObj->MagicSpeed > 0 && lpMsg->MagicSpeed > lpObj->MagicSpeed && abs((int)(lpObj->MagicSpeed - lpMsg->MagicSpeed)) > gServerInfo.m_CheckSpeedHackTolerance)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Client Speed Hack Detected [%d][%d]", lpObj->Account, lpObj->Name, lpObj->MagicSpeed, lpMsg->MagicSpeed);
 
@@ -845,7 +850,7 @@ static bool MoveCheckPath(LPOBJ lpObj, PMSG_MOVE_RECV* lpMsg)
 	// El server adopta el inicio que manda el cliente: ese salto gasta
 	// presupuesto. Sin esto, caminos que arrancan 4 tiles adelante cada 100 ms
 	// (el mínimo entre dos 0x10) movían al personaje 40 tiles por segundo.
-	if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+	if (d > 0 && gObjMoveBudgetCharge(lpObj, d * gServerInfo.m_MoveCheckTileTime) == false)
 	{
 		gLog.Output(LOG_HACK, "[%s][%s] Movimiento: salto de %d tiles al inicio (%d,%d) sin presupuesto%s", lpObj->Account, lpObj->Name, d, lpMsg->x, lpMsg->y, mode);
 
@@ -925,7 +930,7 @@ void CGPositionRecv(PMSG_POSITION_RECV* lpMsg, int aIndex)
 	{
 		int d = MoveCheckDistance(lpObj, lpMsg->x, lpMsg->y);
 
-		if (d > 0 && gObjMoveBudgetCharge(lpObj, d * lpObj->MoveSpeed) == false)
+		if (d > 0 && gObjMoveBudgetCharge(lpObj, d * gServerInfo.m_MoveCheckTileTime) == false)
 		{
 			const char* mode = (gServerInfo.m_MoveCheck == 2) ? "" : " [observado]";
 
