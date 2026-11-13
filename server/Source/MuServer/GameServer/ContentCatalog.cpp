@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ContentCatalog.h"
+#include "ServerIdentity.h"
 #include "Gate.h"
 #include "MapManager.h"
 #include "Move.h"
@@ -1122,6 +1123,48 @@ void CContentCatalog::Send(int aIndex)
 	const BYTE syncSize = (BYTE)(8 + sync.count * sizeof(CATALOG_CACHE_ENTRY));
 
 	sync.header.set(0xF3, 0xF6, syncSize);
+
+	// Firma del manifiesto (C3), antes del F3:F6 que el cliente verifica con ella.
+	if (gServerIdentity.IsLoaded())
+	{
+		BYTE message[sizeof(CATALOG_SIGNATURE_CONTEXT) - 1 + 1 + CATALOG_CACHE_MAX * 9];
+
+		size_t length = sizeof(CATALOG_SIGNATURE_CONTEXT) - 1;
+
+		memcpy(message, CATALOG_SIGNATURE_CONTEXT, length);
+
+		message[length++] = sync.count;
+
+		for (int n = 0; n < sync.count; n++)
+		{
+			message[length++] = sync.entry[n].subh;
+
+			memcpy(&message[length], sync.entry[n].hash, sizeof(sync.entry[n].hash));
+
+			length += sizeof(sync.entry[n].hash);
+		}
+
+		PMSG_CATALOG_SIGNATURE_SEND signature;
+
+		memset(&signature, 0, sizeof(signature));
+
+		signature.header.set(0xF3, 0xFC, sizeof(signature));
+
+		memcpy(signature.publicKey, gServerIdentity.PublicKey(), sizeof(signature.publicKey));
+
+		gServerIdentity.Sign(signature.signature, message, length);
+
+		if (gServerIdentity.HasRotation())
+		{
+			signature.flags |= CATALOG_SIGNATURE_HAS_ROTATION;
+
+			memcpy(signature.previousKey, gServerIdentity.PreviousPublicKey(), sizeof(signature.previousKey));
+
+			memcpy(signature.rotationSignature, gServerIdentity.RotationSignature(), sizeof(signature.rotationSignature));
+		}
+
+		DataSend(aIndex, (BYTE*)&signature, sizeof(signature));
+	}
 
 	DataSend(aIndex, (BYTE*)&sync, syncSize);
 

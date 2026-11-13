@@ -84,6 +84,12 @@ endfunction()
 mu_add_text_library(MuText "")
 mu_add_text_library(MuTextDLL "DLL")
 target_link_libraries(GameServer PRIVATE MuText)
+
+# Firmas y cifrado (Fase 5, C3/C4): Monocypher, en C y sin el stdafx.h.
+target_sources(GameServer PRIVATE Common/monocypher/monocypher.c)
+if(WIN32)
+  target_link_libraries(GameServer PRIVATE bcrypt)
+endif()
 target_link_libraries(DataServer PRIVATE MuTextDLL)
 
 # Datos por carpeta de mapa y por evento (Fase 5): spawns e invasiones en TOML.

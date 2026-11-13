@@ -43,6 +43,8 @@ enum class ClientTextId {
     RejectNpcNoRepair,
     RejectTradeRange,
     RejectRepairNoShop,
+    // La clave de identidad del server no es la que el cliente tenía fijada.
+    ServerKeyMismatch,
     Count
 };
 // Los textos salen del server (F3/F0, tabla 4, Data/Text/<idioma>/Client.txt).

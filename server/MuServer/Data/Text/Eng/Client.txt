@@ -160,4 +160,6 @@
 78	"Trade canceled: too far apart"
 //RejectRepairNoShop
 79	"Open the shop to repair"
+//ServerKeyMismatch
+80	"This server could not prove its identity. The connection was closed."
 end

@@ -21,6 +21,9 @@
 #include <string>
 #include <vector>
 #include "net/Network.h"
+#include "net/ServerTrust.h"
+#include "app/core/Window.h"
+#include "platform/IWindow.h"
 #include "platform/IFileSystem.h"
 
 extern "C" void DbgLogPublic(const char* msg);
@@ -577,6 +580,7 @@ void CContentCatalog::SetServer(const char* ip, unsigned int port)
 {
     s_CacheDir.clear();
     Platform::ContentLayers::SetServer("");
+    ServerTrust::SetServer("");
     if (!ip || !*ip) return;
     std::string id;
     for (const char* p = ip; *p; ++p)
@@ -585,6 +589,7 @@ void CContentCatalog::SetServer(const char* ip, unsigned int port)
     Platform::TextFormat(suffix, "_%u", port);
     id += suffix;
     s_CacheDir = std::string(Platform::UserDir()) + "Cache/" + id;   // Fase 5 (E1): User/
+    ServerTrust::SetServer(s_CacheDir);   // Fase 5 (C3): ahí va también la clave fijada
     // Fase 5 (E2): el contenido propio del server va en Servers/<mismo id>.
     Platform::ContentLayers::SetServer(id);
 }
@@ -613,12 +618,73 @@ void CContentCatalog::SendCacheList()
     Log("ContentCatalog: F1/06 con %d secciones en caché (%s)", count, s_CacheDir.c_str());
 }
 
+namespace {
+
+// Firma del manifiesto (F3:FC) pendiente de usar en el F3:F6 que le sigue.
+bool s_HasSignature = false;
+Proto::PMSG_CATALOG_SIGNATURE_SEND s_Signature;
+
+// true si el F3:F6 viene firmado por el server en el que este cliente confía
+// (Fase 5, C3).  Sin esto no se usa la caché ni se sigue con el login.
+bool ManifestIsTrusted(const BYTE* msg, int count)
+{
+    if (!s_HasSignature) {
+        Log("ContentCatalog: el F3/F6 llegó sin firma (F3/FC)");
+        return false;
+    }
+    const bool rotation = (s_Signature.flags & Proto::CATALOG_SIGNATURE_HAS_ROTATION) != 0;
+    const ServerTrust::Result trust = ServerTrust::Check(
+        s_Signature.publicKey,
+        rotation ? s_Signature.previousKey : nullptr,
+        rotation ? s_Signature.rotationSignature : nullptr);
+    if (trust == ServerTrust::Result::Mismatch) {
+        Log("ContentCatalog: la clave del server no es la fijada y no trae una rotación válida");
+        return false;
+    }
+    // Mismo mensaje que arma el server: contexto + count + (subh + hash) por sección.
+    std::vector<std::uint8_t> message(Proto::CATALOG_SIGNATURE_CONTEXT,
+                                      Proto::CATALOG_SIGNATURE_CONTEXT + sizeof(Proto::CATALOG_SIGNATURE_CONTEXT) - 1);
+    message.push_back((std::uint8_t)count);
+    for (int i = 0; i < count; ++i) {
+        Proto::CATALOG_CACHE_ENTRY entry;
+        memcpy(&entry, msg + 8 + i * sizeof(entry), sizeof(entry));
+        message.push_back(entry.subh);
+        message.insert(message.end(), entry.hash, entry.hash + sizeof(entry.hash));
+    }
+    if (!ServerTrust::Verify(s_Signature.signature, s_Signature.publicKey, message.data(), message.size())) {
+        Log("ContentCatalog: la firma del manifiesto no es válida");
+        return false;
+    }
+    if (trust == ServerTrust::Result::FirstUse) Log("ContentCatalog: primer contacto, se fija la clave del server");
+    if (trust == ServerTrust::Result::Rotated) Log("ContentCatalog: el server rotó su clave, se fija la nueva");
+    return true;
+}
+
+} // namespace
+
+void CContentCatalog::ReceiveSignature(const BYTE* msg, int size)
+{
+    s_HasSignature = false;
+    if (size < (int)sizeof(s_Signature)) return;
+    memcpy(&s_Signature, msg, sizeof(s_Signature));
+    s_HasSignature = true;
+}
+
 void CContentCatalog::ReceiveSync(const BYTE* msg, int size)
 {
     s_SyncHash.clear();
     if (size < 8) return;
     int count = msg[4];
     if (count > Proto::CATALOG_CACHE_MAX || 8 + count * (int)sizeof(Proto::CATALOG_CACHE_ENTRY) > size) return;
+    const bool trusted = ManifestIsTrusted(msg, count);
+    s_HasSignature = false;
+    if (!trusted) {
+        // No es el server que este cliente conoce (o no lo demostró): no se usa
+        // nada de lo que mande y se cierra.
+        Platform::GetWindow().ShowError(gClientText.Get(ClientTextId::ServerKeyMismatch), "Mu Online", true, true);
+        gWindow.RequestCloseApplication();
+        return;
+    }
     int loaded = 0;
     bool broken = false;
     for (int i = 0; i < count; ++i) {

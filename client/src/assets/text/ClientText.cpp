@@ -81,7 +81,8 @@ const char* const English[] = {
     "The NPC is too far away",
     "That NPC does not repair",
     "Trade canceled: too far apart",
-    "Open the shop to repair"
+    "Open the shop to repair",
+    "This server could not prove its identity. The connection was closed."
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
@@ -136,6 +137,7 @@ const char* MenuFallback(ClientTextId id, int language)
         { ClientTextId::RejectNpcNoRepair, "Ese NPC no repara", "Esse NPC n\xC3\xA3o conserta" },
         { ClientTextId::RejectTradeRange, "Trade cancelado: est\xC3\xA1n demasiado lejos", "Troca cancelada: longe demais" },
         { ClientTextId::RejectRepairNoShop, "Abr\xC3\xAD la tienda para reparar", "Abra a loja para consertar" },
+        { ClientTextId::ServerKeyMismatch, "Este server no pudo demostrar su identidad. Se cerr\xC3\xB3 la conexi\xC3\xB3n.", "Este servidor n\xC3\xA3o conseguiu provar sua identidade. A conex\xC3\xA3o foi fechada." },
         { ClientTextId::RenderVSyncUnavailable, "VSync no disponible", "VSync indispon\xC3\xAD" "vel" },
     };
     for (const Entry& entry : entries) {

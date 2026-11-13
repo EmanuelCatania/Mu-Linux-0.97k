@@ -160,4 +160,6 @@
 78	"Troca cancelada: longe demais"
 //RejectRepairNoShop
 79	"Abra a loja para consertar"
+//ServerKeyMismatch
+80	"Este servidor não conseguiu provar sua identidade. A conexão foi fechada."
 end

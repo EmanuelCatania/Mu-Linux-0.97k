@@ -829,6 +829,25 @@ struct CATALOG_CACHE_ENTRY
 static_assert(sizeof(CATALOG_CACHE_ENTRY) == 12, "F1:06 / F3:F6 entrada");
 static_assert(8 + CATALOG_CACHE_MAX * sizeof(CATALOG_CACHE_ENTRY) <= 255, "F1:06 / F3:F6 entran en un C1");
 
+// F3:FC — firma del manifiesto (Fase 5, C3), justo antes del F3:F6.  El server
+// firma con su clave de identidad CATALOG_SIGNATURE_CONTEXT + count + por cada
+// sección del F3:F6, en orden, subh (1 byte) + hash (8 bytes).
+const char CATALOG_SIGNATURE_CONTEXT[] = "MuCatalog1";
+const std::uint8_t CATALOG_SIGNATURE_HAS_ROTATION = 0x01;
+
+struct PMSG_CATALOG_SIGNATURE_SEND
+{
+    PSBMSG_HEAD header;     // C1:F3:FC
+    std::uint8_t flags;     // CATALOG_SIGNATURE_*
+    std::uint8_t Reserved[3];
+    std::uint8_t publicKey[32];
+    std::uint8_t signature[64];
+    // Con HAS_ROTATION: la clave anterior del server y su firma sobre la actual.
+    std::uint8_t previousKey[32];
+    std::uint8_t rotationSignature[64];
+};
+static_assert(sizeof(PMSG_CATALOG_SIGNATURE_SEND) == 200, "F3:FC");
+
 // F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
 // llegan los del idioma que el cliente pidió con el F1:04.
 const std::uint8_t CATALOG_TEXT_ITEM = 1;

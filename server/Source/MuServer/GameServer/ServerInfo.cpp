@@ -45,6 +45,7 @@
 #include "Move.h"
 #include "Notice.h"
 #include "PacketManager.h"
+#include "ServerIdentity.h"
 #include "Path.h"
 #include "Quest.h"
 #include "QuestObjective.h"
@@ -291,6 +292,9 @@ void CServerInfo::ReadHackInfo()
 	gPacketManager.LoadEncryptionKey(gPath.GetFullPath("Hack\\Enc2.dat"));
 
 	gPacketManager.LoadDecryptionKey(gPath.GetFullPath("Hack\\Dec1.dat"));
+
+	// Clave de identidad (Fase 5, C3): se genera en el primer arranque.
+	gServerIdentity.Load(gPath.GetFullPath("Keys"));
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Hack loaded successfully");
 }
