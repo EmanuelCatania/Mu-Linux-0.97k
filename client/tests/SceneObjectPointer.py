@@ -68,7 +68,13 @@ using undefined4 = std::uint32_t;
 struct OBJECT;
 OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
 OBJECT* AsObject(std::uintptr_t p) { return reinterpret_cast<OBJECT*>(p); }
-struct Map { int world; int GetCurrentMap() const { return world; } } gMapManager;
+MAP_INFO_STUB
+struct Map {
+    int world;
+    int GetCurrentMap() const { return world; }
+    MapInfoStub Current() const { return MapInfoFor(world); }
+    MapInfoStub Info(int map) const { return MapInfoFor(map); }
+} gMapManager;
 float WorldTime;
 int HeroTile, SceneFlag, CameraWalkCut, CurrentCameraCount, DAT_07e11d30;
 DWORD DAT_05828d58;
@@ -116,6 +122,22 @@ void* Reserve(std::uintptr_t address, std::size_t size) {
 #define EditFlag DAT_07e11d30
 #define LODWORD(x) (*reinterpret_cast<std::uint32_t*>(&(x)))
 '''
+
+# Propiedades de mapa que el cliente lee de Content/map/maps.toml
+# (gMapManager.Current()). Los stubs de gMapManager las arman con las reglas
+# vanilla, las mismas que verifica MapInfoPointer.
+MAP_INFO_STUB = r'''
+struct MapInfoStub {
+    int world;
+    bool mountFlies, autoAttack, weather, swimmable;
+    bool IsIndoor(int t) const { return (world == 0 && t == 4) || (world == 2 && (t == 3 || t >= 10)); }
+};
+inline MapInfoStub MapInfoFor(int w)
+{
+    return { w, w == 8 || w == 10, w != 6, w == 0 || w == 2 || w == 3 || w == 7 || w == 9 || w == 10, w == 7 };
+}
+'''
+PREAMBLE = PREAMBLE.replace("MAP_INFO_STUB", MAP_INFO_STUB)
 
 MAIN = r'''
 template<class T> void Put(char* p, int offset, T value) {

@@ -417,7 +417,7 @@ void __cdecl SetPlayerWalk(CHARACTER* param_1) {
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
-    if (gMapManager.GetCurrentMap() != MAP_TARKAN && gMapManager.GetCurrentMap() != MAP_ICARUS) {
+    if (!gMapManager.Current().mountFlies) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
             SetAction(AsObject(param_1), 32);
             goto label_119;
@@ -480,7 +480,7 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
     if (*(short*)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type == 0x333) {
-        if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS)
+        if (gMapManager.Current().mountFlies)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;

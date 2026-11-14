@@ -344,6 +344,7 @@ set(MU_SOURCES
     src/game/monster/MonsterSpawnTable.cpp
     src/assets/model/NpcModelTable.cpp
     src/render/InventoryPoseTable.cpp
+    src/game/core/MapInfoTable.cpp
     src/net/SecondPassword.cpp
     src/game/party/Party.cpp
     src/game/core/Party_NameMatch.cpp
@@ -530,6 +531,7 @@ set(MU_HEADERS
     src/assets/data/TomlLines.h
     src/assets/model/NpcModelTable.h
     src/render/InventoryPoseTable.h
+    src/game/core/MapInfoTable.h
     src/game/core/HeroVitals.h
     src/net/Network.h
     src/net/NetChannel.h

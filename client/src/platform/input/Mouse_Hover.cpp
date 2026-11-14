@@ -61,7 +61,7 @@ void Mouse_UpdateHoverTargets(void)
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 
     // `SelectedCharacter >= 0` evita leer entity[+0x2fd] con indice -1 (estado inicial).
-    if (m_bAutoAttack == '\0' || gMapManager.GetCurrentMap() == MAP_ARENA) {
+    if (m_bAutoAttack == '\0' || !gMapManager.Current().autoAttack) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
         Attacking = -1;

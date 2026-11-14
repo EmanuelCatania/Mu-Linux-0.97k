@@ -19,20 +19,11 @@ namespace {
 //   [3] Devias          [4] Noria                [5] Dungeon
 // La catedral es el Church.mp3 del cliente japonés 0.98.
 const char kMusicPub[]       = "Data\\Music\\Pub.mp3";
-const char kMusicLorencia[]  = "Data\\Music\\Lorencia.mp3";
 const char kMusicCathedral[] = "Data\\Music\\Cathedral.mp3";
-const char kMusicDevias[]    = "Data\\Music\\Devias.mp3";
-const char kMusicNoria[]     = "Data\\Music\\Noria.mp3";
-const char kMusicDungeon[]   = "Data\\Music\\Dungeon.mp3";
 
 constexpr int kLorencia = 0;
-constexpr int kDungeon  = 1;
 constexpr int kDevias   = 2;
-constexpr int kNoria    = 3;
 constexpr int kLostTower = 4;
-constexpr int kDungeon2 = 5;   // el binario le pone la música del Dungeon
-constexpr int kAtlans   = 7;
-constexpr int kMapCount = 17;  // mapas del 0.97k: 0..16 (Blood Castle 1..6 = 11..16)
 
 // HeroTile 4 = el piso de la taberna de Lorencia.
 constexpr int kPubTile = 4;
@@ -94,41 +85,19 @@ bool InLostTowerUpperFloors()
 }
 }
 
-CMapManager::CMapManager()
-{
-    MapInfo& lorencia = m_Maps[kLorencia];
-    lorencia.music = kMusicLorencia;
-    lorencia.musicSafeZoneOnly = true;
-
-    MapInfo& devias = m_Maps[kDevias];
-    devias.music = kMusicDevias;
-    devias.musicSafeZoneOnly = true;
-
-    MapInfo& noria = m_Maps[kNoria];
-    noria.music = kMusicNoria;
-    noria.musicSafeZoneOnly = true;
-
-    m_Maps[kDungeon].music  = kMusicDungeon;
-    m_Maps[kDungeon2].music = kMusicDungeon;
-
-    m_Maps[kAtlans].swimmable = true;
-
-    // Como el MapManager.txt del DLL: minimapa completo en todos los mapas.
-    for (int map = 0; map < kMapCount; ++map)
-        m_Maps[map].miniMap = MiniMapMode::FullMap;
-}
+CMapManager::CMapManager() = default;
 
 const CMapManager::MapInfo* CMapManager::Get(int map) const
 {
     if (map < 0 || map >= MaxMaps) return nullptr;
-    return &m_Maps[map];
+    return &MapInfo_Get(map);
 }
 
 // IDA: GetMapName (0x004EF120), con el nombre propio de la tabla adelante.
 const char* CMapManager::GetName(int map) const
 {
     const MapInfo* info = Get(map);
-    if (info && info->name) return info->name;
+    if (info && !info->name.empty()) return info->name.c_str();
 
     if (map >= 11 && map <= 16) return GlobalText[56];   // Blood Castle
     if (map == 10)              return GlobalText[55];   // Icarus
@@ -152,7 +121,12 @@ const char* CMapManager::ResolveMusic(int map) const
 {
     if (map < 0 || map >= MaxMaps) return nullptr;
     if (!m_ServerMusic[map].empty()) return m_ServerMusic[map].c_str();
-    if (m_Maps[map].music) return m_Maps[map].music;
+    const std::string& configured = MapInfo_Get(map).music;
+    if (!configured.empty()) {
+        // Se arma una sola vez: el puntero tiene que seguir siendo el mismo.
+        if (m_ConfiguredMusic[map].empty()) m_ConfiguredMusic[map] = std::string(kMusicDir) + configured;
+        return m_ConfiguredMusic[map].c_str();
+    }
     DetectMusicFiles();
     return m_DetectedMusic[map].empty() ? nullptr : m_DetectedMusic[map].c_str();
 }

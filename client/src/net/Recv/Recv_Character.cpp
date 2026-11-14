@@ -765,7 +765,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
         *(const WORD*)(heroPtr + EntityOffset(696)) != 819 ||        // sin Dinorant
         AsCharacter(heroPtr)->SafeZone != 0) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]);
-    } else if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
+    } else if (gMapManager.Current().mountFlies) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 90.0f;
     } else {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 30.0f;
@@ -1523,7 +1523,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // teleport animation.
     float worldZ = RequestTerrainHeight(worldX, worldY);
     if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
-        worldZ += (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 90.0f : 30.0f;
+        worldZ += (gMapManager.Current().mountFlies) ? 90.0f : 30.0f;
     AsCharacter(hero)->Object.Position[2] = worldZ;
     // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
     // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
@@ -1560,7 +1560,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // la altura de aterrizaje una segunda vez contra el mapa nuevo.
             worldZ = RequestTerrainHeight(worldX, worldY);
             if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
-                worldZ += (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 90.0f : 30.0f;
+                worldZ += (gMapManager.Current().mountFlies) ? 90.0f : 30.0f;
             AsCharacter(hero)->Object.Position[2] = worldZ;
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.

@@ -116,7 +116,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     {
         // Normal spawn
     }
-    else if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
+    else if (gMapManager.Current().mountFlies) {
         terrainH += (float)_DAT_00552848;
     }
     else {

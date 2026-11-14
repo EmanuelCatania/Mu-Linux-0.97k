@@ -476,7 +476,7 @@ char Sound_PlayFootstep()
   {
     if ( gMapManager.GetCurrentMap() == MAP_DEVIAS )
     {
-      if ( HeroTile != 3 && HeroTile < 10 )
+      if ( !gMapManager.Current().IsIndoor(HeroTile) )
       {
         return PlayBuffer(10, 0, 0);
       }

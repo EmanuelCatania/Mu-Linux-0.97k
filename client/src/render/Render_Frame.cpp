@@ -623,7 +623,7 @@ void Render_Scene3D(void)
     Gfx::EndShadowScene();                       // los sprites no usan la vista de la cámara
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
-    if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {
+    if (worldId == MAP_DEVIAS && !gMapManager.Info(worldId).IsIndoor(HeroTile)) {
         SkillEffects_RenderAll();
     }
     Render_DrawSpritePool();                              // RenderSprites

@@ -28,6 +28,7 @@
 
 #include <string>
 #include "game/core/MapNumber.h"
+#include "game/core/MapInfoTable.h"
 
 class CMapManager {
 public:
@@ -36,20 +37,19 @@ public:
     // Modo del minimapa (DLL MapManager.txt, columna MiniMap). La imagen no es
     // un asset por mapa: CMiniMap la arma al cargar el mapa a partir de
     // TerrainWall (.att), así que todo mapa integrado la tiene.
-    enum class MiniMapMode : unsigned char { None = 0, MiniMap = 1, FullMap = 2 };
+    using MiniMapMode = MapMiniMap;
 
-    struct MapInfo {
-        bool swimmable = false;          // se nada en vez de caminar (Atlans)
-        bool musicSafeZoneOnly = false;  // la música arranca sólo en zona segura
-        const char* name = nullptr;      // nullptr = GlobalText, como GetMapName
-        const char* music = nullptr;     // nullptr = sin música
-        MiniMapMode miniMap = MiniMapMode::None;
-    };
+    // Propiedades de cada mapa: Content/map/maps.toml (game/core/MapInfoTable.h).
+    using MapInfo = ::MapInfo;
 
     CMapManager();
 
     int GetCurrentMap() const { return m_CurrentMap; }
     void SetCurrentMap(int map) { m_CurrentMap = map; }
+
+    // Propiedades de un mapa, o del mapa actual.
+    const MapInfo& Info(int map) const { return MapInfo_Get(map); }
+    const MapInfo& Current() const { return MapInfo_Get(m_CurrentMap); }
 
     // Nombre del mapa para el chat y el panel de party.
     const char* GetName(int map) const;
@@ -81,7 +81,7 @@ private:
     bool IsAnyMapTrack(const char* track) const;
 
     int m_CurrentMap = 0; // IDA: World (0x0055A7AC)
-    MapInfo m_Maps[MaxMaps];
+    mutable std::string m_ConfiguredMusic[MaxMaps]; // ruta completa del `music` de maps.toml
     std::string m_ServerMusic[MaxMaps];            // ruta completa, "" = la del cliente
     mutable std::string m_DetectedMusic[MaxMaps];  // ruta completa, "" = no hay archivo
     mutable std::string m_DetectedSecond[MaxMaps]; // segunda variante (lost_tower_b)

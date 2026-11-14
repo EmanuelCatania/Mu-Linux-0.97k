@@ -358,7 +358,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x31:  // 49 Fire Breath
     {
         SetAction(AsObject(caster),
-                     (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 65 : 64);
+                     (gMapManager.Current().mountFlies) ? 65 : 64);
         goto common_tail;
     }
 
