@@ -18,3 +18,17 @@ docker-compose.override.yml
 # El README.md de la carpeta si se versiona; explica como agregarlos.
 client/bin/Client/Data/Sound/Dances/*
 !client/bin/Client/Data/Sound/Dances/README.md
+
+# Binarios compilados y logs de runtime de los servers / cliente desplegados.
+*.exe
+*.pdb
+*.ilk
+**/LOG/
+**/LOG_QUERY/
+**/LOG_ACCOUNT/
+**/CHAOS_MIX_LOG/
+**/CHAT_LOG/
+**/COMMAND_LOG/
+**/CONNECT_LOG/
+**/HACK_LOG/
+**/TRADE_LOG/
