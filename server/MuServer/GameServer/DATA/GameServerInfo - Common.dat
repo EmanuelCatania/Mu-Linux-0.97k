@@ -113,13 +113,13 @@ GuildWarWinPointsGain_Normal=1
 ;==================================================
 ; Experience Settings
 ;==================================================
-; Experience rate gained in the server when killing monsters ; default: 100
+; Experience rate gained in the server when killing monsters ; default = 100
 AddExperienceRate_AL0=1000
 AddExperienceRate_AL1=1000
 AddExperienceRate_AL2=1000
 AddExperienceRate_AL3=1000
 
-; Experience rate gained in events reward (Devil Square, Blood Castle) ; default: 100
+; Experience rate gained in events reward (Devil Square, Blood Castle) ; default = 100
 AddEventExperienceRate_AL0=1000
 AddEventExperienceRate_AL1=1000
 AddEventExperienceRate_AL2=1000
@@ -131,7 +131,7 @@ AddEventExperienceRate_AL3=1000
 ; Time of the item on the ground (In Seconds)
 ItemDropTime=30
 
-; Rate of the drop of the items ; default: 100
+; Rate of the drop of the items ; default = 100
 ItemDropRate_AL0=100
 ItemDropRate_AL1=100
 ItemDropRate_AL2=100
@@ -143,7 +143,7 @@ ItemDropRate_AL3=100
 ; Time of the money on the ground (In Seconds)
 MoneyDropTime=30
 
-; Rate of the amount of droped zen ; default: 50
+; Rate of the amount of droped zen ; default = 50
 MoneyAmountDropRate_AL0=50
 MoneyAmountDropRate_AL1=50
 MoneyAmountDropRate_AL2=50
@@ -198,15 +198,15 @@ ShopItemBlockExc=0
 MaxCharacterLevel=400
 
 ; Experience table curve exponent (range: 1.0 - 3.0, decimals allowed)
-;   exp(level) = (DWORD_MAX * 0.95 / MaxCharacterLevel^N) * level^N
+;   exp(level) = (((DWORD_MAX * 0.95) / ExpModifier) / MaxCharacterLevel^N) * level^N
 ; N=3 is the original curve. Lower values flatten the curve.
 ExperienceExponent=1.5
 
 ; Maximum simultaneous levels increase per experience gained
-MaxLevelUp=1
+MaxLevelUp=100
 
 ; Maximum simultaneous levels increase per experience gained in events reward (Devil Square, Blood Castle)
-MaxLevelUpEvent=1
+MaxLevelUpEvent=100
 
 ; Maximum Character Stats
 MaxStatPoint_AL0=32767

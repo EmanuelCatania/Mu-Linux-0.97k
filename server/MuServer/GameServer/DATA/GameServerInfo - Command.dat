@@ -43,10 +43,10 @@ CommandResetMoney_AL2=0
 CommandResetMoney_AL3=0
 
 ; Amount of points gain after utilizing "/reset"
-CommandResetPoint_AL0=0
-CommandResetPoint_AL1=0
-CommandResetPoint_AL2=0
-CommandResetPoint_AL3=0
+CommandResetPoint_AL0=1000
+CommandResetPoint_AL1=1000
+CommandResetPoint_AL2=1000
+CommandResetPoint_AL3=1000
 
 ; Percentage of points gain after utilizing "/reset"
 CommandResetPointRateDW=100
@@ -148,10 +148,10 @@ CommandGrandResetMoney_AL2=0
 CommandGrandResetMoney_AL3=0
 
 ; Amount of points gain after utilizing "/grandreset"
-CommandGrandResetPoint_AL0=0
-CommandGrandResetPoint_AL1=0
-CommandGrandResetPoint_AL2=0
-CommandGrandResetPoint_AL3=0
+CommandGrandResetPoint_AL0=5000
+CommandGrandResetPoint_AL1=5000
+CommandGrandResetPoint_AL2=5000
+CommandGrandResetPoint_AL3=5000
 
 ; Percentage of points gain after utilizing "/grandreset"
 CommandGrandResetPointRateDW=100
