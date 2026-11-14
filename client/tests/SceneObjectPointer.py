@@ -16,6 +16,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from legacy_fields import lower
+from legacy_fields import lower_names
 import re
 import subprocess
 import tempfile
@@ -241,7 +242,10 @@ def harness(revision=None):
         call = ("float bits; const auto address = static_cast<DWORD>("
                 "reinterpret_cast<std::uintptr_t>(object)); "
                 "std::memcpy(&bits, &address, 4); FUN_004fdc00(bits);")
-    return preamble + initialize + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
+    # El harness usa memoria en layout x86 y OBJECT sin definir: los accesos por
+    # nombre pasan a offset crudo.
+    code = lower_names(alpha + physics + angles + rotate + ambient + flames + tick)
+    return preamble + initialize + code + MAIN.replace("CALL_TICK", call)
 
 
 # Layout x86 con el que trabajan los harnesses (memoria cruda con offsets de

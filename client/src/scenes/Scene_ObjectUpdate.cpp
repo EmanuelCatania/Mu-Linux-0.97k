@@ -407,7 +407,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Angle[0] = *(DWORD*)(v8 + 28);   // angleX
                 *(DWORD *)&AsObject(e)->Angle[1] = *(DWORD*)(v8 + 32);   // angleY
                 *(DWORD *)&AsObject(e)->Angle[2] = *(DWORD*)(v8 + 36);   // angleZ
-                BYTE v14 = *(BYTE*)(v8 + EntityOffset(261));              // owner CurrentAction
+                BYTE v14 = AsObject(v8)->CurrentAction;              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 3);
                     else                                       SetAction(AsObject(e), 2);
@@ -461,8 +461,8 @@ void __stdcall MoveBugs(void) {
         {
         float* v28 = (float*)(e + 0x10);
         *(BYTE*)(v40 + 160 + BMD_FIELD_SHIFT) = AsObject(e)->CurrentAction;          // model.CurrentAction
-        BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + EntityOffset(0x10C)),
-                     (void*)(e + EntityOffset(0x106)), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
+        BMD__PlayAnimation((void*)v40, (float*)&AsObject(e)->AnimationFrame, (float*)&AsObject(e)->PriorAnimationFrame,
+                     (void*)&AsObject(e)->PriorAction, AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
         short v29 = AsObject(e)->Type;
         // 0.97.20: pet custom (Data/Custom/Pets del server).
@@ -667,8 +667,8 @@ LABEL_22:
   // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
   // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
-  BMD__PlayAnimation((void*)v5, (float*)(o + EntityOffset(264)), (float*)(o + EntityOffset(268)),
-               (void*)(o + EntityOffset(262)), oa);
+  BMD__PlayAnimation((void*)v5, (float*)&AsObject(o)->AnimationFrame, (float*)&AsObject(o)->PriorAnimationFrame,
+               (void*)&AsObject(o)->PriorAction, oa);
   if ( SceneFlag == 2 || SceneFlag == 4 )
   {
     if ( *(WORD *)(o + 2) == 160 )

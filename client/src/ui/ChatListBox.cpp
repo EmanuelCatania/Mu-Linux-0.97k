@@ -1540,7 +1540,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
             }
         }
     }
-    if (Hero && *(BYTE*)(Hero + EntityOffset(846)) && InputEnable) {
+    if (Hero && AsCharacter(Hero)->SafeZone && InputEnable) {
         const char* sender = (const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor);
         SIZE sz = {0,0};
         int len = Platform::TextLength(sender);

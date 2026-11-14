@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from legacy_fields import lower_names
 
 SERVICES=r'''
 #include <cmath>
@@ -105,7 +106,7 @@ int main(){
 def harness(revision=None):
     source=read_source('src/render/SMD_Parser.cpp',revision)
     preamble=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x80000')
-    return preamble+SERVICES+'\n#define rand ControlledRand\n'+function(source,'Effect_CollisionCheck')+'\n#undef rand\n'+MAIN
+    return preamble+SERVICES+'\n#define rand ControlledRand\n'+lower_names(function(source,'Effect_CollisionCheck'))+'\n#undef rand\n'+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

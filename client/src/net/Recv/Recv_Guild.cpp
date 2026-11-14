@@ -102,7 +102,7 @@ void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, in
     if (!entity || !AsCharacter(entity)->Object.Live || !hero) return;
 
     AsCharacter(entity)->GuildTeam = 0;
-    const short heroGuild = *(short*)(hero + EntityOffset(474));
+    const short heroGuild = AsCharacter(hero)->GuildMarkIndex;
     if (heroGuild != -1 && AsCharacter(entity)->GuildMarkIndex == heroGuild)
         AsCharacter(entity)->GuildTeam = 1;
 
@@ -425,7 +425,7 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400) {
         BYTE* entity = base + entitySlot * CHARACTER_STRIDE;
-        *(short*)(entity + EntityOffset(474)) = (short)row;
+        AsCharacter(entity)->GuildMarkIndex = (short)row;
         // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
         GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
         GuildWar_RefreshEntityRelations();

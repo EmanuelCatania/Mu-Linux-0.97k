@@ -12,6 +12,7 @@ import tempfile
 
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from legacy_fields import lower_names
 
 SERVICES = r'''
 #include <algorithm>
@@ -134,8 +135,9 @@ def harness(revision=None):
     for name in ("DAT_083a7cc0","DAT_083a7cc4"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",header,re.M).group()+"\n"
     source=read_source("src/audio/Sound_Queue.cpp",revision)
-    draw=function(source,"Render_DrawSprite"); prefix+=draw+function(source,"Render_DrawSpritePool")
-    prefix+=function(read_source("src/render/Particle_Legacy.cpp",revision),"Character_UpdateAll")
+    # Memoria en layout x86 y OBJECT sin definir: los accesos por nombre pasan a offset crudo.
+    draw=function(source,"Render_DrawSprite"); prefix+=lower_names(draw+function(source,"Render_DrawSpritePool"))
+    prefix+=lower_names(function(read_source("src/render/Particle_Legacy.cpp",revision),"Character_UpdateAll"))
     arg="reinterpret_cast<const OBJECT*>(object)" if "const OBJECT*" in draw.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return prefix+MAIN.replace("ARG",arg)
 

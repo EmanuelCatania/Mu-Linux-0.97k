@@ -231,7 +231,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     *(float*)(object + 0x18) = position[2];
     *(BYTE*)(object + 0x3D) = ExtOption;
     *(int*)(object + 0xDC) = 0;
-    *(BYTE*)(object + EntityOffset(0x1BC)) = 2;
+    AsCharacter(object)->Class = 2;
 
     if (drawType==790) LooseWingVisuals_SubmitPreview(*(OBJECT *)object,renderAngle,headAngle,
         inventoryPose.BodyHeight,ItemLevel,Select==1);

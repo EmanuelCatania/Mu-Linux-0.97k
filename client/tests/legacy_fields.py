@@ -60,3 +60,56 @@ def lower(source):
         if key not in reverse or ty not in SCALARS: return m.group(0)
         return '(*(%s*)(%s + %d))'%(ty,m[2],reverse[key])
     return direct.sub(d,source)
+
+
+# AsObject(x)->Campo / AsCharacter(x)->Campo -> offset x86 crudo, para los harnesses
+# que trabajan con memoria en el layout x86 y OBJECT/CHARACTER sin definir. No se
+# aplica en read_source: los tests que compilan los structs reales no lo necesitan.
+_named = re.compile(r'(&?)\b(AsObject|AsCharacter)\((\w+)\)->(\w+(?:\[\d+\])?(?:\.\w+(?:\[\d+\])?)?)(?![\w.\[])')
+_size = {'BYTE': 1, 'char': 1, 'short': 2, 'WORD': 2, 'int': 4, 'float': 4, 'DWORD': 4}
+
+
+def _full(fields):
+    """offset/tipo de cada campo de un struct, incluidos los vec3_t y arreglos."""
+    out = {}
+    for o, t, p, n, a in fields:
+        if n.startswith('_unk') or p:
+            continue
+        if t == 'vec3_t' and not a:
+            for i in range(3):
+                out[f'{n}[{i}]'] = (o + 4 * i, 'float')
+        elif a and a[1:-1].isdigit() and t in _size:
+            for i in range(int(a[1:-1])):
+                out[f'{n}[{i}]'] = (o + _size[t] * i, t)
+        elif not a:
+            out[n] = (o, t)
+    return out
+
+
+_objects = _full(ob)
+_characters = _full(ch)
+_parts = _full(parse(h[h.index('struct PART_t'):h.index('struct CHARACTER {')]))
+for o, t, p, n, a in ch:
+    if t == 'PART_t':
+        count = int(a[1:-1]) if a else 1
+        for i in range(count):
+            for f, (rel, ty) in _parts.items():
+                _characters[(f'{n}[{i}].{f}' if a else f'{n}.{f}')] = (o + 0x18 * i + rel, ty)
+
+
+def lower_names(source):
+    def r(m):
+        amp, fn, base, field = m.groups()
+        table = _objects if fn == 'AsObject' else _characters
+        hit = table.get(field)
+        if hit is None and fn == 'AsCharacter' and field.startswith('Object.'):
+            hit = _objects.get(field[len('Object.'):])
+        if hit is None:
+            return m.group(0)
+        off, ty = hit
+        if amp:
+            return '((char*)(%s) + %d)' % (base, off)
+        if ty not in SCALARS:
+            return m.group(0)
+        return '(*(%s*)((char*)(%s) + %d))' % (ty, base, off)
+    return _named.sub(r, source)

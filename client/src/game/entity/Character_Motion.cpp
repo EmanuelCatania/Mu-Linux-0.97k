@@ -1156,7 +1156,7 @@ void __cdecl MoveCharacter(intptr_t p1)
         if (IsBloodCastleMap(gMapManager.GetCurrentMap()) && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = AsObject(o)->Direction[1]; in1[2] = 0.0f;
-            AngleMatrix((float*)(o + EntityOffset(408)), in2);
+            AngleMatrix((float*)&AsObject(o)->DownAngle[0], in2);
             VectorRotate(in1, (float*)in2, out_);
             AsObject(o)->Direction[1] += AsObject(o)->Direction[0];
             AsObject(o)->Gravity += AsObject(o)->Velocity;
@@ -1796,19 +1796,19 @@ void __cdecl MoveCharacter(intptr_t p1)
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] - 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
         BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] + 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)&AsCharacter(c)->TargetPosition[0], v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
     }
 
@@ -1831,7 +1831,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             v379[0] = AsObject(o)->Angle[0];
             v379[1] = AsObject(o)->Angle[1];
             v379[2] = AsObject(o)->Angle[2];
-            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + EntityOffset(788)), v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)&AsCharacter(c)->TargetPosition[0], v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
             AsCharacter(c)->LongRangeAttack = -1;
         }
     }
@@ -2578,7 +2578,7 @@ void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
     unsigned int found = Path_FindRoute(cachedX, (float)cachedY,
                                       (unsigned int)AsCharacter(entity)->TargetX,
                                       (unsigned int)AsCharacter(entity)->TargetY,
-                                      (unsigned char*)(entity + EntityOffset(0x354)), 0.0f);
+                                      (unsigned char*)&AsCharacter(entity)->PathCurrent, 0.0f);
     if ((char)found != '\0') {
         AsCharacter(entity)->Movement = 1;
     }

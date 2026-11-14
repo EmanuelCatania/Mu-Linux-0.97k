@@ -2126,6 +2126,7 @@ LAB_0046eb8a:
 LAB_0046eb9c:
   puVar13 = (undefined4 *)0x0;
 LAB_0046eb9e:
+  // puVar13 es undefined4*: la suma avanza de a 4 bytes, no es el campo AlphaEnable.
   cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
   *(byte *)(puVar13 + EntityOffset(0x161)) = cVar4 + 1U;
   if ((byte)(cVar4 + 1U) < 2) {
@@ -2272,6 +2273,7 @@ LAB_0046edb0:
 LAB_0046edc2:
   puVar13 = (undefined4 *)0x0;
 LAB_0046edc4:
+  // puVar13 es undefined4*: la suma avanza de a 4 bytes, no es el campo AlphaEnable.
   cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
   *(char *)(puVar13 + EntityOffset(0x161)) = cVar4 + -1;
   if ((char)(cVar4 + -1) == '\0') {
@@ -2381,6 +2383,7 @@ LAB_0046e687:
 LAB_0046e699:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e69b:
+  // puVar13 es undefined4*: la suma avanza de a 4 bytes, no es el campo AlphaEnable.
   cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
   *(byte *)(puVar13 + EntityOffset(0x161)) = cVar4 + 1U;
   if ((byte)(cVar4 + 1U) < 2) {
@@ -2537,6 +2540,7 @@ LAB_0046e8ad:
 LAB_0046e8bf:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e8c1:
+  // puVar13 es undefined4*: la suma avanza de a 4 bytes, no es el campo AlphaEnable.
   cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
   *(char *)(puVar13 + EntityOffset(0x161)) = cVar4 + -1;
   if ((char)(cVar4 + -1) == '\0') {

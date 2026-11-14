@@ -72,7 +72,7 @@ void ApplyCustomEquipment(BYTE* c, const BYTE* items)
     // CustomPet: el CharSet lo trajo como "sin helper"; acá se crea su bug.
     const WORD helper = *(const WORD*)(items + 8 * 2);
     if (helper != 0xFFFF && helper >= ITEM_MAX_VANILLA && gContentCatalog.GetPet(helper)) {
-        *(WORD*)(c + EntityOffset(696)) = (WORD)ItemModel(helper);
+        *(WORD*)&AsCharacter(c)->Helper.Type = (WORD)ItemModel(helper);
         DeleteBug((intptr_t)c);
         CreateBug(ItemModel(helper), (void*)(c + 16), (void*)c, 0);
     }
@@ -192,7 +192,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
             BYTE* slot = basePtr + s * CHARACTER_STRIDE;
-            if (slot[0] && *(WORD*)(slot + EntityOffset(0x1dc)) == entityId) {
+            if (slot[0] && AsCharacter(slot)->Key == entityId) {
                 h = slot; break;
             }
         }
@@ -253,7 +253,7 @@ void NetRecv_11(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
             BYTE* slot = basePtr + s * CHARACTER_STRIDE;
-            if (slot[0] && *(WORD*)(slot + EntityOffset(0x1dc)) == entityId) {
+            if (slot[0] && AsCharacter(slot)->Key == entityId) {
                 h = slot; break;
             }
         }
@@ -356,7 +356,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // heroe por Key y lo re-inicializaria SIN pasar por la restauracion de abajo
         // (se perderia, entre otras cosas, el byte de clase +0x1BC).
         BYTE* heroEnt = (BYTE*)(uintptr_t)DAT_07abf5d8;
-        const WORD heroKeyReal = heroEnt ? *(WORD*)(heroEnt + EntityOffset(0x1DC)) : g_HeroKey;
+        const WORD heroKeyReal = heroEnt ? AsCharacter(heroEnt)->Key : g_HeroKey;
         if (entityId == g_HeroKey || entityId == heroKeyReal) {
             BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
             if (hero) {
@@ -548,8 +548,8 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         entity[EntityOffset(0x306)] = e[8 + NAME];
         entity[EntityOffset(0x307)] = e[9 + NAME];
         *(float*)(entity + 36) = ((float)(e[10 + NAME] >> 4) - 1.0f) * 45.0f;
-        *(int*)(entity + EntityOffset(0x388)) = e[2];
-        *(int*)(entity + EntityOffset(0x38c)) = e[3];
+        AsCharacter(entity)->PositionX = e[2];
+        AsCharacter(entity)->PositionY = e[3];
         {
             char name[NetText::CharacterNameSize + 1];
             NetText::FromServer(name, sizeof(name), e + 8, NAME);
@@ -566,7 +566,7 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             CreateSprite(BITMAP_LIGHTNING + 1, (float*)(entity + 16), 1.0f,
                          (float*)(entity + 232), (intptr_t)entity,
                          0.0f, 0);
-            *(DWORD*)(entity + EntityOffset(360)) = 0;
+            *(DWORD*)&AsObject(entity)->Alpha = 0;
         }
         ++transformed;
     }

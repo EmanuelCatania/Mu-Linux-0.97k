@@ -474,7 +474,7 @@ int Scene_CharSelect(void)
             iVar4 = 5;
             pcVar5 = (char*)DAT_07abf5d0;
             do {
-                if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + EntityOffset(0x1be))))
+                if ((*pcVar5 != '\0') && (0xdb < *(ushort*)&AsCharacter(pcVar5)->Level))
                     uVar8 = 3;
                 pcVar5 += CHARACTER_STRIDE;
             } while (--iVar4 != 0);

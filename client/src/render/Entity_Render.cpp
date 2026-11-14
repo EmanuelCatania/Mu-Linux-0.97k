@@ -313,8 +313,8 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + EntityOffset(0x118)),(float *)(param_2 + EntityOffset(0x124)),
-               (float *)(param_2 + EntityOffset(0x130)),param_4);
+  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float*)&AsObject(param_2)->BoundingBoxMin[0],(float*)&AsObject(param_2)->BoundingBoxMax[0],
+               (float*)&AsObject(param_2)->OBB[0],param_4);
   BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
                AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
                AsObject(param_2)->HiddenMesh,0xffffffff);
@@ -391,8 +391,8 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + EntityOffset(0x118)),(float *)(param_1 + EntityOffset(0x124)),
-                 (float *)(param_1 + EntityOffset(0x130)),param_10);
+    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float*)&AsObject(param_1)->BoundingBoxMin[0],(float*)&AsObject(param_1)->BoundingBoxMax[0],
+                 (float*)&AsObject(param_1)->OBB[0],param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
     DivineSkirt_Apply(AsObject(static_cast<intptr_t>(param_1)), param_2, param_3, this_);

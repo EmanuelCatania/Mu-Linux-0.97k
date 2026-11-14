@@ -955,7 +955,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
             *((BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter + 132) == 1) {
             if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                (int)TargetX, (int)TargetY,
-                               (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
+                               (unsigned char*)&AsCharacter(entity)->PathCurrent, (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L1827
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L1828
                 // DESVIACION (Fase 5): avisarle al server del camino. El original
@@ -1220,7 +1220,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
             if (SelectedCharacter != -1) {
                 if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                    (int)TargetX, (int)TargetY,
-                                   (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
+                                   (unsigned char*)&AsCharacter(entity)->PathCurrent, (float)range)) {
                     *(char *)&AsCharacter(entity)->Movement = 1;                          // IDA L7205
                     *(char *)&AsCharacter(entity)->MovementType = 5;                          // IDA L7206
                     // DESVIACION (Fase 5): avisarle al server del camino. El original
@@ -1253,7 +1253,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
         if (SelectedCharacter != -1 && CheckAttack()) {      // IDA L7821: CheckAttack()
             if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                (int)TargetX, (int)TargetY,
-                               (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
+                               (unsigned char*)&AsCharacter(entity)->PathCurrent, (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L7864
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L7865
                 // DESVIACION (Fase 5): avisarle al server del camino. El original
@@ -2257,7 +2257,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 int heroGX = AsCharacter(c)->PositionX;
                 int heroGY = AsCharacter(c)->PositionY;
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + EntityOffset(852)), Range)) {
+                                 (unsigned char*)&AsCharacter(c)->PathCurrent, Range)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2498,7 +2498,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 }
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
+                                 (unsigned char*)&AsCharacter(c)->PathCurrent, (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2514,7 +2514,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
             }
             if ((float)skillRange * 1.2f * 100.0f < (float)sqrt((double)dist) || forceWalk) {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + EntityOffset(852)),
+                                 (unsigned char*)&AsCharacter(c)->PathCurrent,
                                  (float)skillRange * 1.2f)) {
                     AsCharacter(c)->Movement = 1;
                 }
@@ -2535,7 +2535,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
+                                 (unsigned char*)&AsCharacter(c)->PathCurrent, (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2552,7 +2552,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
+                                 (unsigned char*)&AsCharacter(c)->PathCurrent, (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
