@@ -166,10 +166,7 @@ tests/ErrorReportResetPointer.py --generator Ninja
 tests/TwelveWordResetPointer.py --generator Ninja
 tests/SpecialObjectPointer.py --generator Ninja
 tests/AmbientHeroPointer.py --generator Ninja
-tests/AmbientPoolInitPointer.py --generator Ninja
-tests/AmbientPoolAnimationPointer.py --generator Ninja
-tests/AmbientTerrainPointer.py --generator Ninja
-tests/AmbientSpawnHeroPointer.py --generator Ninja
+tests/AmbientFishPointer.py --generator Ninja
 tests/EquipmentOwnerPointer.py --generator Ninja
 tests/SceneAnimationGuardPointer.py --generator Ninja
 tests/SceneTypeSelectors.py --generator Ninja

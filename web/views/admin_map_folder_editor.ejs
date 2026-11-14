@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2><%= t("Editor por mapa") %></h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/server-editor"><%= t("Editor servidor") %></a>
+      <a class="button-link" href="/admin/accounts"><%= t("Cuentas") %></a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/news"><%= t("Noticias") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
+    </div>
+  </div>
+
+  <% if (!editorEnabled) { %>
+    <div class="alert">
+      <%= t("El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con") %>
+      <code>EDITOR_ENABLED=1</code> <%= t("y el compose del editor.") %>
+    </div>
+  <% } else { %>
+    <p class="muted"><%= t("Cada mapa tiene su carpeta en") %> <code>Data/Maps</code>. <%= t("Al guardar se valida contra los archivos del mismo tipo de los otros mapas, se escribe sólo el de este mapa y se le pide al GameServer que lo recargue.") %> <%= t("Los spawns se editan sobre el mapa o como texto: los dos modos escriben el mismo Spawns.toml.") %></p>
+    <div id="map-folder-editor"></div>
+  <% } %>
+</section>
+
+<% if (editorEnabled) { %>
+<script src="/js/spawn-visual.js"></script>
+<script src="/js/map-folder-editor.js"></script>
+<% } %>
+
+<%- include('partials/footer') %>

@@ -1,6 +1,7 @@
 // Input.cpp
 // Sistema de input del cliente — análisis completo
 #include "stdafx.h"
+#include "UI/PanelAnchor.h"
 #include "UI/ChatListBox.h"
 #include "Platform/IInput.h"
 #include "Input/Input.h"
@@ -318,6 +319,27 @@ void __cdecl ClearInput(int param_1)
 
 
 // Input_ProcessFunctionKeys @ 0x004c04a0 — Input_ProcessFunctionKeys
+// Cicla el tamano del chat y lo reubica: lo que hace la tecla F4 y, desde 0.97.43, el
+// segundo boton del popup del chat (antes ese boton solo cambiaba las filas y el
+// recuadro quedaba mal puesto).
+// IDA: CheckFunctionButtons (cola de la rama F4)
+void Input_CycleChatSize(void)
+{
+  ChatListBox_ScrollByN(DAT_055c9ff0);
+  int x, y;
+  if (g_bUseChatListBox != 1) {
+    x = -10; y = Ui::ClassicChatY;           // modo clasico (debajo de los avisos del sistema)
+  } else if (DAT_07eaa117 == 0 ||
+             (DAT_07eaa116 == 0 && DAT_07eaa11b == 0 && DAT_07eaa119 == 0 &&
+              DAT_07eaa11a == 0 && DAT_07eaa11c == 0 && DAT_07eaa118 == 0)) {
+    x = 0xba; y = 0x1a4;                     // recuadro, sin paneles al costado
+  } else {
+    x = 0; y = 0x1a4;                        // recuadro con un panel abierto
+  }
+  Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0, x, y);
+  PlayBuffer(0x19,0,0);
+}
+
 // Handles F1(0x70)-F4(0x73) toggle keys each frame.
 // IDA: CheckFunctionButtons
 void Input_ProcessFunctionKeys(void)
@@ -381,31 +403,5 @@ void Input_ProcessFunctionKeys(void)
     return;
   }
   DAT_07e11ab8 = 1;
-  ChatListBox_ScrollByN(DAT_055c9ff0);
-  if (g_bUseChatListBox != 1) {
-    uVar7 = 0x51;
-    uVar6 = 0xfffffff6;
-    goto LAB_004c06e6;
-  }
-  if (DAT_07eaa117 == '\0') {
-LAB_004c06d6:
-    uVar7 = 0x1a4;
-    uVar6 = 0xba;
-  }
-  else {
-    if (DAT_07eaa116 == '\0') {
-      cVar2 = DAT_07eaa11b;
-      if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
-         (DAT_07eaa11c == '\0')) {
-        cVar2 = DAT_07eaa118;
-        if (cVar2 == '\0') goto LAB_004c06d6;
-      }
-    }
-    uVar7 = 0x1a4;
-    uVar6 = 0;
-  }
-LAB_004c06e6:
-  Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
-  PlayBuffer(0x19,0,0);
-  return;
+  Input_CycleChatSize();
 }

@@ -444,6 +444,7 @@ char  __cdecl SelectSkillByHotkey(int number);                              // S
 void  __cdecl Chat_InputTick(void);
 void  __cdecl Cursor_Render(void);                                               // IDA: RenderCursor
 void  __cdecl Input_ProcessFunctionKeys(void);      // IDA: CheckFunctionButtons
+void  Input_CycleChatSize(void);                    // F4 y boton 2 del popup del chat
 void  __cdecl UI_UpdateFpsCounter(void);                                         // IDA: RenderDebugWindow
 void  __cdecl RenderHelpWindow(void);
 unsigned int __cdecl Item_CalculateMaxDurability(void* item, ITEM_ATTRIBUTE* attr, int level); // IDA: 0x004C45C0

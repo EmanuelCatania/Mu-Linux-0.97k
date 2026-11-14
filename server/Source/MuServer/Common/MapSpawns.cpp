@@ -91,6 +91,11 @@ static int FolderMapNumber(const std::string& folder)
 	return std::atoi(folder.substr(0, dash).c_str());
 }
 
+int MapSpawns_FolderMap(const std::string& folder)
+{
+	return FolderMapNumber(folder);
+}
+
 // Carpetas de mapa con Spawns.toml, ordenadas por número. Falla si dos carpetas
 // dicen ser el mismo mapa.
 static bool ListMapFolders(const std::string& mapsDir, std::map<int, fs::path>& out, std::string& error)
@@ -717,8 +722,8 @@ bool MapSpawns_WriteInvasions(const std::string& path, const std::vector<MapSpaw
 		<< "#\n"
 		<< "# Cruzan mapas, así que no están en ninguna carpeta de Maps: cada entrada\n"
 		<< "# dice en qué `map` aparece. Las invasiones en sí (horarios, jefes,\n"
-		<< "# mensajes) siguen en Event/InvasionManager.dat; ahí, la tabla 2 elige por\n"
-		<< "# mapa y por `value` qué puntos de esta lista usa cada una.\n"
+		<< "# mensajes) están en Invasions.toml, en esta misma carpeta; ahí, cada\n"
+		<< "# grupo elige por mapa y por `value` qué puntos de esta lista usa.\n"
 		<< "#\n"
 		<< "# `count` monstruos repartidos en `box` = [x, y, tx, ty]. dir: 0 a 7, o -1\n"
 		<< "# (o sin dir) para una al azar. dis: distancia que se mueve el monstruo.\n"

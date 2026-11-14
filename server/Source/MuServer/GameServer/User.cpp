@@ -619,6 +619,10 @@ void gObjClearPlayerOption(LPOBJ lpObj)
 	{
 		memset(&lpObj->HackPacketCount[n], 0, sizeof(lpObj->HackPacketCount[n]));
 	}
+
+	lpObj->PacketRateTime = 0;
+
+	lpObj->PacketRateCount = 0;
 }
 
 void gObjClearSpecialOption(LPOBJ lpObj)
@@ -902,6 +906,8 @@ short gObjAdd(SOCKET socket, char* IpAddress, int aIndex)
 	memset(lpObj->Account, 0, sizeof(lpObj->Account));
 
 	memset(lpObj->HardwareID, 0, sizeof(lpObj->HardwareID));
+
+	lpObj->CatalogCacheCount = 0;
 
 	gSerialCheck[aIndex].Init();
 

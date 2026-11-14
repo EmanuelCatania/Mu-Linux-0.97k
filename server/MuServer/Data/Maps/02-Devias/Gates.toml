@@ -1,0 +1,23 @@
+# Devias (mapa 2): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 19, type = "exit", area = [242, 34, 243, 37], dir = 7, level = [15, 400] },
+  { index = 20, type = "entrance", area = [244, 34, 245, 37], target = 21, level = [0, 400] },
+  { index = 22, type = "destination", area = [197, 35, 218, 50], level = [15, 400] },
+  { index = 28, type = "entrance", area = [2, 248, 3, 249], target = 29, level = [40, 400] },
+  { index = 44, type = "exit", area = [2, 246, 3, 247], dir = 2, level = [15, 400] },
+  { index = 72, type = "destination", area = [23, 27, 27, 24], level = [15, 400] },
+  { index = 73, type = "destination", area = [224, 231, 227, 227], level = [15, 400] },
+  { index = 74, type = "destination", area = [69, 181, 72, 178], level = [15, 400] },
+]

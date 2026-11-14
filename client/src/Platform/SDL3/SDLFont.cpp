@@ -179,7 +179,7 @@ struct SDLFont::Impl {
 SDLFont::SDLFont() : impl(new Impl) {}
 SDLFont::~SDLFont() = default;
 
-bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
+bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error, long faceIndex)
 {
     error.clear();
     if (height <= 0 || height > 4096 || bytes.empty() || bytes.size() > size_t(std::numeric_limits<FT_Long>::max())) {
@@ -188,20 +188,20 @@ bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
     }
     std::unique_ptr<Impl> next(new Impl);
     next->bytes = std::move(bytes);
-    return Open(std::move(next), nullptr, height, error);
+    return Open(std::move(next), nullptr, height, error, faceIndex);
 }
 
-bool SDLFont::LoadFile(const std::string& path, int height, std::string& error)
+bool SDLFont::LoadFile(const std::string& path, int height, std::string& error, long faceIndex)
 {
     error.clear();
     if (height <= 0 || height > 4096 || path.empty()) {
         error = "Tamaño o archivo de fuente inválido";
         return false;
     }
-    return Open(std::unique_ptr<Impl>(new Impl), path.c_str(), height, error);
+    return Open(std::unique_ptr<Impl>(new Impl), path.c_str(), height, error, faceIndex);
 }
 
-bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error)
+bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error, long faceIndex)
 {
     if (FT_Init_FreeType(&next->library)) { error = "No se pudo iniciar FreeType"; return false; }
     unsigned interpreter = 35;
@@ -209,8 +209,8 @@ bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std
         error = "No se pudo seleccionar el intérprete TrueType"; return false;
     }
     const FT_Error opened = path
-        ? FT_New_Face(next->library, path, 0, &next->face)
-        : FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face);
+        ? FT_New_Face(next->library, path, FT_Long(faceIndex), &next->face)
+        : FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), FT_Long(faceIndex), &next->face);
     const bool bitmapColor = !opened && !FT_IS_SCALABLE(next->face) && FT_HAS_FIXED_SIZES(next->face) &&
                              LoadSfnt(next->face, TTAG_CBLC, next->cblc) && LoadSfnt(next->face, TTAG_CBDT, next->cbdt);
     if (opened || (!FT_IS_SCALABLE(next->face) && !bitmapColor) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
@@ -483,8 +483,13 @@ bool CoversGameText(FT_Face face)
         if (!FT_Get_Char_Index(face, codepoint)) return false;
     return true;
 }
+struct InstalledFace {
+    std::string path;
+    long index = 0;         // cara dentro de la colección; 0 en un .ttf/.otf
+    bool collection = false;
+};
 struct InstalledFontTable {
-    std::unordered_map<std::string, std::string> paths;     // "familia/bn" -> archivo
+    std::unordered_map<std::string, InstalledFace> paths;   // "familia/bn" -> archivo y cara
     std::unordered_map<std::string, std::string> families;  // "familia" -> nombre visible
 };
 const InstalledFontTable& InstalledFonts()
@@ -512,20 +517,35 @@ const InstalledFontTable& InstalledFonts()
             std::filesystem::recursive_directory_iterator entry(root, std::filesystem::directory_options::skip_permission_denied, error), end;
             for (; !error && entry != end; entry.increment(error)) {
                 const auto extension = LowerFamily(entry->path().extension().string());
-                if (extension == ".ttf" || extension == ".otf") paths.push_back(entry->path().string());
+                // .ttc/.otc: colecciones con varias caras. En Windows las fuentes
+                // CJK vienen así (SimSun, Microsoft YaHei, MS Gothic, ...).
+                if (extension == ".ttf" || extension == ".otf" || extension == ".ttc" || extension == ".otc")
+                    paths.push_back(entry->path().string());
             }
         }
         std::sort(paths.begin(), paths.end());
         for (const auto& path : paths) {
-            auto bytes = ReadFont(path);
-            FT_Face face = nullptr;
-            if (!bytes.empty() && !FT_New_Memory_Face(library, bytes.data(), FT_Long(bytes.size()), 0, &face)) {
+            // Las colecciones pesan 15-20 MB: se abren por archivo y FreeType lee
+            // sólo lo que necesita para ver el nombre de cada cara. Un .ttf/.otf
+            // se sigue leyendo como antes.
+            const auto extension = LowerFamily(std::filesystem::path(path).extension().string());
+            const bool isCollection = extension == ".ttc" || extension == ".otc";
+            std::vector<uint8_t> bytes;
+            if (!isCollection && (bytes = ReadFont(path)).empty()) continue;
+            long faces = 1;
+            for (long index = 0; index < faces; ++index) {
+                FT_Face face = nullptr;
+                const FT_Error opened = isCollection
+                    ? FT_New_Face(library, path.c_str(), FT_Long(index), &face)
+                    : FT_New_Memory_Face(library, bytes.data(), FT_Long(bytes.size()), FT_Long(index), &face);
+                if (opened) break;
+                faces = face->num_faces > 0 ? face->num_faces : 1;
                 if (FT_IS_SCALABLE(face) && face->family_name && CoversGameText(face)) {
                     const std::string family = LowerFamily(face->family_name);
                     std::string key = family;
                     key += (face->style_flags & FT_STYLE_FLAG_BOLD) ? "/b" : "/r";
                     key += (face->style_flags & FT_STYLE_FLAG_ITALIC) ? "i" : "n";
-                    result.paths.emplace(key, path);
+                    result.paths.emplace(key, InstalledFace{ path, index, isCollection });
                     result.families.emplace(family, face->family_name);
                 }
                 FT_Done_Face(face);
@@ -567,15 +587,22 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     // System es bitmap en GDI: el default portable es Arial o su respaldo.
     const std::string name = LowerFamily(requested) == "system" ? "arial" : LowerFamily(requested);
     std::string path;
+    InstalledFace installedFace;
     if (name != "liberation sans") {
         const auto& installed = InstalledFonts().paths;
         const auto found = installed.find(name + (bold ? "/b" : "/r") + (italic ? "i" : "n"));
-        if (found != installed.end()) path = found->second;
+        if (found != installed.end()) { installedFace = found->second; path = installedFace.path; }
     }
-    auto bytes = path.empty() ? std::vector<uint8_t>{} : ReadFont(path);
     // Una familia instalada puede ser de símbolos (Webdings/Wingdings) o
     // resultar incompatible. El respaldo depende de cargarla, no sólo de leerla.
-    bool loaded = !bytes.empty() && Load(std::move(bytes), height, error);
+    // Las colecciones se abren por archivo: FreeType lee bajo demanda y no hay
+    // que tener 15-20 MB en memoria por cada tamaño de fuente.
+    bool loaded = false;
+    if (!path.empty() && installedFace.collection) loaded = LoadFile(path, height, error, installedFace.index);
+    else {
+        auto bytes = path.empty() ? std::vector<uint8_t>{} : ReadFont(path);
+        loaded = !bytes.empty() && Load(std::move(bytes), height, error);
+    }
     const bool fallback = !loaded;
     if (fallback) {
         const char* root = assetRoot && *assetRoot ? assetRoot : std::getenv("MU_ASSET_ROOT");
@@ -583,8 +610,7 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
         std::filesystem::path base = root && *root ? std::filesystem::path(root) : std::filesystem::path();
         const char* style = bold ? (italic ? "BoldItalic" : "Bold") : (italic ? "Italic" : "Regular");
         path = (base / "Data/Font" / (std::string("LiberationSans-") + style + ".ttf")).generic_string();
-        bytes = ReadFont(path);
-        loaded = Load(std::move(bytes), height, error);
+        loaded = Load(ReadFont(path), height, error);
     }
     if (!loaded) {
         error += ": " + path;

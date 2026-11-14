@@ -1,0 +1,23 @@
+# Arena (mapa 6): zonas.
+#
+# safe      [x, y, tx, ty] donde nadie recibe daño
+# pk_free   [x, y, tx, ty] donde matar no te vuelve PK
+# npc_move  hablar con el NPC `npc` parado en `at` = [x, y] lleva a
+#           `to` = [mapa, x, y]. Opcionales: level y reset = [mínimo,
+#           máximo] (-1 = sin límite), account (nivel de cuenta mínimo)
+#           y pk_move (si pueden usarlo los PK; sin la clave, no)
+
+safe = [
+  [42, 68, 53, 98], # Jaula Arena
+  [61, 61, 72, 88], # Jaula Arena
+  [42, 51, 53, 62], # Jaula Arena
+  [42, 33, 53, 44], # Jaula Arena
+  [24, 33, 35, 44], # Jaula Arena
+  [24, 51, 35, 62], # Jaula Arena
+  [24, 69, 35, 80], # Jaula Arena
+  [24, 86, 35, 98], # Jaula Arena
+  [6, 33, 16, 44], # Jaula Arena
+  [6, 51, 16, 62], # Jaula Arena
+  [6, 69, 16, 80], # Jaula Arena
+  [6, 86, 16, 98], # Jaula Arena
+]

@@ -75,6 +75,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/EmoteMenu.h"
 #include "Net/Recv/NetRecv.h"
 #include "Text/TextCore.h"
 #include "Net/NetText.h"
@@ -116,6 +117,18 @@ static int Chat_BBoxHit(int x, int y, int w, int h, int mode)
     return 0;
 }
 #define FUN_0040c490(x,y,w,h,m) Chat_BBoxHit((int)(x),(int)(y),(int)(w),(int)(h),(int)(m))
+
+// DESVIACION: mientras se escribe, el campo de texto ocupa la franja de los botones
+// del popup (415..444) y el original los ocultaba. Ahora suben 20 px, quedan siempre
+// visibles y siguen respondiendo.
+static bool ChatTyping() { return DAT_00559c84 != 0 || DAT_07e11d71 != 0; }
+// Los 5 botones del popup (gestos, ver chat, tamano, transparencia, emotes) quedan centrados
+// en la pantalla de 640: el cluster original era de 3 y arrancaba en 295.
+static float ChatButtonsX() { return 320.0f - (4.0f * ChatListBox_TabButtonSpacing + 16.0f) * 0.5f; }
+static float ChatButtonsY()
+{
+    return ChatTyping() ? ChatListBox_TabButtonsY - 20.0f : ChatListBox_TabButtonsY;
+}
 
 // Globals que sólo se usan acá — declarados localmente para no ensanchar globals.h
 // for one-off chat-widget statics.
@@ -1064,7 +1077,7 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
     ptrs.selected = ptrs.list2;
 
     // Toggle "input dialog active" flag based on mouse Y band.
-    if (FUN_0040c490(160, 436, 320, 50, 1)) {
+    if (ChatTyping() || EmoteMenu::AnyOpen() || FUN_0040c490(160, 436, 320, 50, 1)) {
         self[48] = 1;
     } else if ((int)MouseY < 416) {
         self[48] = 0;
@@ -1080,8 +1093,8 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
     //   this[48] == 1 && sub_40C490((std::int64_t)flt_5590B0, (std::int64_t)flt_5590B4,
     //                               (std::int64_t)(flt_5590B8 * 3.0), 16, 1)
     // = la franja COMPLETA de los 3 botones: x∈[295, 349), y∈[417, 433).
-    if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
-                                      (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {
+    if (self[48] == 1 && FUN_0040c490((int)ChatButtonsX(), (int)ChatButtonsY(),
+                                      (int)(ChatListBox_TabButtonSpacing * 5.0f), 16, 1)) {
         return 1;
     }
     return 0;
@@ -1449,7 +1462,9 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
 {
     float* pAlpha = (float*)&self[49];             // *(float*)(this + 196)
 
-    if (!(*pAlpha > 0.0f) || DAT_00559c84 /*InputEnable*/) return;
+    if (ChatTyping() || EmoteMenu::AnyOpen()) *pAlpha = 1.0f;   // escribiendo o con el menu abierto: siempre visibles
+    EmoteMenu::Render((int)ChatButtonsY());
+    if (!(*pAlpha > 0.0f)) return;
 
     // ── 2) Setup + hover ────────────────────────────────────────────────────
     EnableAlphaTest(true);
@@ -1457,34 +1472,42 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
     m_dwTextColor = 0xFFFFFFFFu;
     m_dwBackColor = 0xFF000000u;                   // -16777216
 
-    const float bx  = ChatListBox_TabButtonsX;
-    const float by  = ChatListBox_TabButtonsY;
+    const float bx  = ChatButtonsX();
+    const float by  = ChatButtonsY();
     const float gap = ChatListBox_TabButtonSpacing;
+    // Posiciones en la franja: 0 gestos, 1 ver chat, 2 tamano, 3 transparencia, 4 emotes.
+    const float chatX = bx + gap, sizeX = bx + 2 * gap, alphaX = bx + 3 * gap, emoteX = bx + 4 * gap;
 
-    int hovered = 0;
-    if      (FUN_0040c490(bx,           by, 16, 16, 1)) hovered = 1;
-    else if (FUN_0040c490(bx + gap,     by, 16, 16, 1)) hovered = 2;
-    else if (FUN_0040c490(bx + 2 * gap, by, 16, 16, 1)) hovered = 3;
+    int hovered = 0;          // 1 ver chat, 2 tamano, 3 transparencia, 4 emotes, 5 gestos
+    if      (FUN_0040c490(chatX,  by, 16, 16, 1)) hovered = 1;
+    else if (FUN_0040c490(sizeX,  by, 16, 16, 1)) hovered = 2;
+    else if (FUN_0040c490(alphaX, by, 16, 16, 1)) hovered = 3;
+    else if (FUN_0040c490(emoteX, by, 16, 16, 1)) hovered = 4;
+    else if (FUN_0040c490(bx,     by, 16, 16, 1)) hovered = 5;
 
     // Botón 1 — ver chat on/off (textura 1285 = Interface/nis_btnchat).
     if (DAT_00559bf1) {
-        ChatLB_DrawButton(1285, hovered == 1, bx, by, 16.0f, 16.0f, *pAlpha, 0);
+        ChatLB_DrawButton(1285, hovered == 1, chatX, by, 16.0f, 16.0f, *pAlpha, 0);
     } else {
         Gfx::Color4f(0.7f, 0.7f, 0.7f, *pAlpha);
-        RenderBitmap(1285, bx + 1.0f, by + 1.0f, 16.0f, 16.0f,
+        RenderBitmap(1285, chatX + 1.0f, by + 1.0f, 16.0f, 16.0f,
                      0.0f, 0.0f, 0.9375f, 0.9375f, 1, 1);
         Gfx::Color4f(1.0f, 1.0f, 1.0f, *pAlpha);
     }
 
     // Botón 2 — tamaño del historial (1286 = nis_btnsize).
-    ChatLB_DrawButton(1286, hovered == 2, bx + gap, by, 16.0f, 16.0f, *pAlpha, 0);
+    ChatLB_DrawButton(1286, hovered == 2, sizeX, by, 16.0f, 16.0f, *pAlpha, 0);
     // Botón 3 — transparencia (1287 = nis_btnalpha).
-    ChatLB_DrawButton(1287, hovered == 3, bx + 2 * gap, by, 16.0f, 16.0f, *pAlpha, 0);
+    ChatLB_DrawButton(1287, hovered == 3, alphaX, by, 16.0f, 16.0f, *pAlpha, 0);
+    // Boton 4: menu de emotes (1288 = Interface/nis_btndance, propio de este cliente).
+    ChatLB_DrawButton(1288, hovered == 4 || EmoteMenu::IsOpen(EmoteMenu::Fortnite), emoteX, by, 16.0f, 16.0f, *pAlpha, 0);
+    // Boton 5 (a la izquierda): gestos clasicos (1289 = Interface/nis_btngesture, propio).
+    ChatLB_DrawButton(1289, hovered == 5 || EmoteMenu::IsOpen(EmoteMenu::Classic), bx, by, 16.0f, 16.0f, *pAlpha, 0);
 
     // ── 3) Tooltip del botón bajo el cursor ─────────────────────────────────
-    if (hovered >= 1 && hovered <= 3) {
-        char* tip = GlobalText[750 + (hovered - 1)];
-        float tipX = bx + (float)(hovered - 1) * gap;
+    if (hovered >= 1 && hovered <= 5) {
+        char* tip = hovered == 4 ? const_cast<char*>("Emotes") : hovered == 5 ? const_cast<char*>("Gestos") : GlobalText[750 + (hovered - 1)];
+        const float tipX = hovered == 5 ? bx : hovered == 4 ? emoteX : bx + (float)hovered * gap;
         int   tipY = (int)(by - 10.0f);
         RenderTipText((int)(tipX - 16.0f), tipY, tip);
     }
@@ -1563,13 +1586,13 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
     //   self[48] (+192) NO es un puntero a método: es el flag "mouse cerca de
     //   la barra de chat" que escribe el slot 21 (ChatLB_hitTestInput) y que
     //   maneja el fade de los botones en sub_40DEF0.
-    if (self[48] != 0 && DAT_00559c84 == 0) {
-        const int bx  = (int)ChatListBox_TabButtonsX, by = (int)ChatListBox_TabButtonsY;
+    if (self[48] != 0) {
+        const int bx  = (int)ChatButtonsX(), by = (int)ChatButtonsY();
         const int bw  = 16, bh = 16;
         const int gap = (int)ChatListBox_TabButtonSpacing;
 
         // Botón 1 — "ver chat on/off" (mismo flag que la tecla F2).
-        if (FUN_0040c490(bx, by, bw, bh, 1)) {
+        if (FUN_0040c490(bx + gap, by, bw, bh, 1)) {
             DAT_00559bf1 = (DAT_00559bf1 == 0);
             PlayBuffer(25, 0, 0);
             // IDA: `(*(...)(*(_DWORD *)this + 48))(this, 0)` → *this = vptr,
@@ -1582,8 +1605,21 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
         }
 
         // Botón 2 — cicla el tamaño del historial (mismo que la tecla F4).
-        if (FUN_0040c490(bx + gap, by, bw, bh, 1)) {
-            ChatListBox_ScrollByN(self);
+        if (FUN_0040c490(bx + 2 * gap, by, bw, bh, 1)) {
+            Input_CycleChatSize();            // lo mismo que F4 (incluye reubicar el recuadro)
+            DAT_083a4124 = 0;
+        }
+
+        // Boton 4: abre o cierra el menu de emotes.
+        if (FUN_0040c490(bx + 4 * gap, by, bw, bh, 1)) {
+            EmoteMenu::Toggle(EmoteMenu::Fortnite);
+            PlayBuffer(25, 0, 0);
+            DAT_083a4124 = 0;
+        }
+
+        // Boton de la izquierda: abre o cierra la lista de gestos clasicos.
+        if (FUN_0040c490(bx, by, bw, bh, 1)) {
+            EmoteMenu::Toggle(EmoteMenu::Classic);
             PlayBuffer(25, 0, 0);
             DAT_083a4124 = 0;
         }
@@ -1591,7 +1627,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
         // Botón 3 — transparencia: self[47] += 0.2, y al pasar 0.9 vuelve a 0.2.
         // self[47] es el float de alpha del recuadro (+188), el mismo campo que
         // escribe F3/30 ReceiveOption como `transparencia * 0.1`.
-        if (FUN_0040c490(bx + 2 * gap, by, bw, bh, 1)) {
+        if (FUN_0040c490(bx + 3 * gap, by, bw, bh, 1)) {
             float* alpha = (float*)&self[47];
             *alpha += 0.2f;
             if (*alpha > 0.89999998f) *alpha = 0.2f;

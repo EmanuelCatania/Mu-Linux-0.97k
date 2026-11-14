@@ -5,7 +5,8 @@
   const state = {
     maps: [],
     selected: null,
-    filter: ''
+    filter: '',
+    format: 'txt'
   };
 
   function setMessage(text, type) {
@@ -97,6 +98,10 @@
           <button type="button" id="add-map">Agregar mapa</button>
           <button type="button" id="save-map">Guardar</button>
         </div>
+      </div>
+      <div class="spawn-format">
+        <span id="map-format-label"></span>
+        <button type="button" id="convert-maps" class="hidden">Pasar a archivos por mapa</button>
       </div>
       <div class="spawn-editor">
         <div class="spawn-list">
@@ -230,6 +235,27 @@
       setMessage(window.MuText.t('Mapa eliminado.'), 'success');
     });
 
+    root.querySelector('#convert-maps').addEventListener('click', async () => {
+      if (!window.confirm(window.MuText.t('Las reglas de los mapas pasan a un archivo por mapa (Data/Maps/NN-Nombre/Map.toml). MapManager.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?'))) {
+        return;
+      }
+      try {
+        const res = await fetch('/admin/server-editor/api/mapmanager/convert', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo convertir'));
+        state.format = 'toml';
+        renderFormat();
+        const reload = await fetch('/admin/server-editor/api/reload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target: 'mapmanager' })
+        });
+        setMessage(window.MuText.t(reload.ok ? 'Convertido y recargado en el servidor.' : 'Convertido, pero no se pudo recargar en el server.'), reload.ok ? 'success' : 'error');
+      } catch (err) {
+        setMessage(err.message, 'error');
+      }
+    });
+
     root.querySelector('#save-map').addEventListener('click', async () => {
       try {
         const content = buildMapManager();
@@ -243,7 +269,7 @@
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ target: 'map' })
+          body: JSON.stringify({ target: 'mapmanager' })
         });
         if (!reload.ok) {
           setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
@@ -261,6 +287,16 @@
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.maps = parseMapManager(data.content || '');
+    state.format = data.format === 'toml' ? 'toml' : 'txt';
+  }
+
+  // De dónde lee el servidor las reglas de los mapas. Con los archivos por
+  // mapa, el panel los convierte a la lista para editarlos y de vuelta al guardar.
+  function renderFormat() {
+    root.querySelector('#map-format-label').textContent = state.format === 'toml'
+      ? window.MuText.t('Formato: un archivo por mapa (Data/Maps/NN-Nombre/Map.toml).')
+      : window.MuText.t('Formato: MapManager.txt.');
+    root.querySelector('#convert-maps').classList.toggle('hidden', state.format === 'toml');
   }
 
   async function init() {
@@ -268,6 +304,7 @@
     bindEvents();
     try {
       await loadInitialData();
+      renderFormat();
       renderList();
       if (state.maps[0]) selectMap(state.maps[0]);
     } catch (err) {

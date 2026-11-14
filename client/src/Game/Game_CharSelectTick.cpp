@@ -22,6 +22,7 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "UI/EmoteMenu.h"
 #include "UI/ChatListBox.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
@@ -35,6 +36,7 @@ extern "C" void Bisect_ChatMode(const char* tag);
 
 void Game_CharSelectTick(void)
 {
+    EmoteMenu::ApplyPending();   // emote elegido en la lista del chat
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
     if (DAT_083a7c4c == '\0') {
         CErrorReport_Write(&DAT_055c9bf0, "> Character selected <%d> %s");

@@ -13,6 +13,7 @@ void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
+#include "UI/ChatListBox.h"
 
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
@@ -55,14 +56,17 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 static void ChatLB_ScrollBy0(int* self)
 {
     // vtable+48 = entrada 12 = scrollByN(this, n).  __fastcall en nuestro build.
+    // En x64 el puntero a la vtable vive en una cabecera ANTES del objeto, no en su
+    // primer DWORD: se pide con ChatWidget_GetVTable.
     typedef int (__fastcall *FnScrollByN)(int* /*ecx=this*/, int /*edx*/, int /*n*/);
-    void** vt = *(void***)self;
+    void** vt = ChatWidget_GetVTable(self);
+    if (!vt) return;
     ((FnScrollByN)vt[12])(self, 0, 0);
 }
 
 void __cdecl ChatListBox_ScrollByN(void* val) {
     int *param_1 = static_cast<int*>(val);
-    if (!param_1 || !*(int*)param_1) return;   // objeto sin construir / vtable nula
+    if (!param_1 || !ChatWidget_GetVTable(param_1)) return;   // objeto sin construir / vtable nula
     switch (param_1[0x23]) {
     case 3:
         param_1[0x23] = 6;

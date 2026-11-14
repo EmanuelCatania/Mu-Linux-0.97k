@@ -1,6 +1,7 @@
 #include <cstdint>
 #include "stdafx.h"
 #include "UI/EmojiPicker.h"
+#include "UI/EmoteMenu.h"
 #include "Entity/EntityName.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
@@ -101,6 +102,7 @@ static void MouseOnWindow_Update(void)
 
     // Selector de emojis del chat (su grilla se abre sobre el mundo).
     if (EmojiPicker::Contains(mx, my)) { g_MouseOnWindow = 1; return; }
+    if (EmoteMenu::Contains(mx, my)) { g_MouseOnWindow = 1; return; }
 
     // Bottom HUD (y >= 432) — per IDA Game_CharSelectTick:298.
     if (my >= 432) { g_MouseOnWindow = 1; return; }

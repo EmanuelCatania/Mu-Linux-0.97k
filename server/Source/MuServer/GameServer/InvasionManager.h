@@ -76,7 +76,11 @@ public:
 
 	void Init();
 
+	void Reset();
+
 	void Load(const char* path);
+
+	void LoadToml(const char* path);
 
 	void MainProc();
 

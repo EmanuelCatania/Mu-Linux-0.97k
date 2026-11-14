@@ -3,6 +3,7 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "UI/EmoteMenu.h"
 #include "Platform/IInput.h"
 #include "Net/NetText.h"
 #include "Text/TextCore.h"
@@ -130,7 +131,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
     case Platform::InputEventType::Wheel:    // 0x20A
         // DESVIACION: el original la descartaba; ver ChatListBox_AddWheel.
         // Con la cámara 3D activa la rueda es su zoom (DLL Controller.cpp).
-        if (!gCamera3D.Wheel(event.wheel))
+        if (!EmoteMenu::Wheel(event.wheel / 120) && !gCamera3D.Wheel(event.wheel))
             ChatListBox_AddWheel(event.wheel / 120);
         break;
 

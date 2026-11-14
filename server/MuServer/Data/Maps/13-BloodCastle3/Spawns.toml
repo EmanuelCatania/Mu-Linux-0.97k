@@ -1,0 +1,114 @@
+# Blood Castle 3 (mapa 13): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 232, at = [10, 9], dir = 1 }, # Archangel
+]
+
+event = [
+  { monster = 96, at = [14, 34], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 38], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [13, 35], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [13, 28], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 35], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 33], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 41], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 42], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 25], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 23], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [13, 26], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [13, 37], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 40], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [13, 39], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 27], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 24], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [14, 32], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 45], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 96, at = [15, 31], dir = 7, dis = 30 }, # Chief Skeleton Warrior
+  { monster = 97, at = [15, 26], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 45], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 23], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 43], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 39], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 37], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 29], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 28], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 25], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 21], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [14, 22], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 21], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 31], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 30], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [15, 33], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [14, 21], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 97, at = [13, 43], dir = 7, dis = 30 }, # Chief Skeleton Archer
+  { monster = 98, at = [15, 46], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 63], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 53], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 65], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 67], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 59], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 59], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 55], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 62], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 41], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 69], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 50], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 48], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 46], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [14, 44], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 51], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [14, 49], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 57], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [14, 64], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [14, 67], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 53], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 65], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [15, 60], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 98, at = [13, 57], dir = 7, dis = 30 }, # Dark Skull Soldier
+  { monster = 99, at = [13, 69], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [14, 61], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [13, 55], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [14, 58], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [14, 52], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [15, 50], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [15, 66], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [14, 56], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [14, 70], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [13, 63], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 99, at = [13, 48], dir = 7, dis = 30 }, # Giant Ogre
+  { monster = 111, at = [13, 78], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 83], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 78], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [15, 78], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [16, 80], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [15, 62], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [52, 83], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 90], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [11, 83], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [15, 94], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [20, 82], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [20, 88], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 54], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 36], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [15, 68], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 111, at = [14, 47], dir = 7, dis = 30 }, # Red Skeleton Knight
+  { monster = 112, at = [16, 87], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [12, 81], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [13, 88], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [13, 85], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [19, 85], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [13, 93], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [14, 80], dir = 7, dis = 30 }, # Magic Skeleton
+  { monster = 112, at = [18, 81], dir = 7, dis = 30 }, # Magic Skeleton
+]

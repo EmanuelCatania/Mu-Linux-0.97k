@@ -15,6 +15,28 @@ CSafeZone::~CSafeZone()
 
 }
 
+void CSafeZone::SetRects(const std::vector<ZoneRect>& rects)
+{
+	this->m_SafeZoneInfo.clear();
+
+	for (const ZoneRect& r : rects)
+	{
+		SAFE_ZONE_INFO info;
+
+		info.Map = r.Map;
+
+		info.X = r.X;
+
+		info.Y = r.Y;
+
+		info.TX = r.TX;
+
+		info.TY = r.TY;
+
+		this->m_SafeZoneInfo.push_back(info);
+	}
+}
+
 void CSafeZone::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;

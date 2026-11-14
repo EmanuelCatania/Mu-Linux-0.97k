@@ -74,3 +74,6 @@ bool MapSpawns_WriteInvasions(const std::string& path, const std::vector<MapSpaw
 
 // Nombre de carpeta para un mapa: "00-Lorencia", "04-LostTower".
 std::string MapSpawns_FolderName(int map, const std::string& mapName);
+
+// Número de mapa del prefijo "NN-" de una carpeta; -1 si no tiene.
+int MapSpawns_FolderMap(const std::string& folder);
