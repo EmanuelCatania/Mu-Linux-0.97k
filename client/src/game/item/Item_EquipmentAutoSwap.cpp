@@ -40,6 +40,17 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     if ((characterAttribute[11] & 7) != 2 || DAT_07e91388 != 0)
         return;
 
+    // DESVIACION: con un movimiento de item sin respuesta (EquipmentItem) no
+    // se hace nada.  CheckArrow corre en cada intento de ataque y la elfa
+    // ataca varias veces antes de que vuelva el 0x24: el segundo llamado ya
+    // no encontraba el pack recién movido y tomaba el siguiente.  En IDA el
+    // envío de ese segundo pack no sale (SendRequestEquipmentItem 0x43C250
+    // arranca con `if (!EquipmentItem)`), pero UI_Main ya lo sacó de la
+    // grilla, así que el pack queda invisible en el cliente y ocupado en el
+    // server hasta reentrar.  Visto en las pruebas de 0.97.50.
+    if (DAT_07eaa165 != 0)   // IDA: EquipmentItem (0x07EAA165)
+        return;
+
     // IDA sub_48B680 L120-146.  Los slots estaban invertidos:
     //
     //   if ( (v18 >= 128 && v18 < 135 || v18 == 145) && *v25 == -1 )
@@ -78,8 +89,14 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     memcpy(DAT_07e91350, source, sizeof(ITEM));
 
     const int encodedSourceSlot = inventorySlot + 12;
+    // IDA: `*(_DWORD *)&Inventory[32].Type = v26 + 12;` — el slot de origen,
+    // que NetRecv_24 usa para devolver el pack si el server lo rechaza.
+    DAT_07ea5b18 = (DWORD)encodedSourceSlot;
     UI_Main(encodedSourceSlot, (short*)OffsetInventoryItems, 8);
     DAT_07e11e78 = (DWORD)targetEquipmentSlot;
+    // IDA SendRequestEquipmentItem (0x43C250): `EquipmentItem = 1` antes de
+    // enviar.  El port lo pone en cada call site.
+    DAT_07eaa165 = 1;
     SendRequestEquipmentItem(0, encodedSourceSlot, (ITEM*)DAT_07e91350,
                                   0, targetEquipmentSlot);
     UIChatLogWindow_AddText(chatId, GlobalText[250], 1);
