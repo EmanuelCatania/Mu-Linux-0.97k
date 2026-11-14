@@ -120,6 +120,10 @@ int main(){
 def harness(root=ROOT,revision=None):
     path='src/game/combat/Combat.cpp'
     source=__import__('source_paths').show(root, revision, path) if revision else lower((root/path).read_text(encoding='utf-8'))
+    # Desde T8b la key del objetivo es un campo con nombre sobre una base compuesta; el
+    # harness sólo modela al héroe en AsCharacter, así que ésta se baja a su offset x86.
+    key='AsCharacter(CharactersClient + selOff)->Key'
+    if key in source:source=source.replace(key,'(*(unsigned short*)((char*)(CharactersClient + selOff) + 476))')
     seed=function(source,'Combat_SeedRuntimeState97k').replace('Combat_SeedRuntimeState97k','ActualSeed')
     send=function(source,'Combat_SendPartyRecall97k').replace('Combat_SendPartyRecall97k','ActualSend')
     return SERVICES.replace('SEED',seed).replace('SEND',send).replace('ATTACK',function(source,'Attack_Label1585_97k'))+MAIN
