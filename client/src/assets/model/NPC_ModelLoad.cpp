@@ -5,10 +5,11 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
-// OpenNpc @ 0x005091D0 (~153 lines) — loads NPC model + textures
-// Switch on Type: 0x14f=Female, 0x150=Male, 0x151=Girl, 0x152=Smith (+sound),
-// 0x153=Wizard, 0x154..0x15d various merchants/masters,
-// 0x176+=special NPCs (Sevina, BloodCastle) via OpenModel.
+#include "assets/model/NpcModelTable.h"
+#include "audio/SoundTable.h"
+// OpenNpc @ 0x005091D0 — carga el modelo y las texturas de un NPC.
+// Cada modelo (335 Female, 338 Smith, 374 Sevina, ...) tiene su sección en
+// Content/npc/models.toml.
 void __cdecl OpenNpc(int Type) {
     // 0x005091D0 — Load NPC model + textures by Type
     // Models = DAT_05828d58, each entry is a BMD struct.
@@ -27,103 +28,22 @@ void __cdecl OpenNpc(int Type) {
     if (DAT_0055a7c4 != 0 && *(short*)(model + 0x26) > 0)
         return;
 
-    switch (Type) {
-    case 0x14f:
-        AccessModelWithTextures(0x14f, "Data\\Npc\\", "Female", 1);
-        for (int i = 1; i <= 3; i++) {
-            AccessModelWithTextures(i + 0x15d, "Data\\Npc\\", "FemaleHead", i);
-            AccessModelWithTextures(i + 0x15f, "Data\\Npc\\", "FemaleUpper", i);
-            AccessModelWithTextures(i + 0x161, "Data\\Npc\\", "FemaleLower", i);
-            AccessModelWithTextures(i + 0x165, "Data\\Npc\\", "FemaleBoots", i);
-            OpenTexture(i + 0x15d, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x15f, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x161, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x165, (void*)"Data\\Npc\\", 0x2600, true);
+    // Qué cargar para cada modelo sale de Content/npc/models.toml (y los
+    // sonidos, de [npc.N] en audio/sound/sounds.toml). El orden es el del
+    // binario: para cada variante i, primero los modelos de todas las partes y
+    // después sus texturas; algunos slots se pisan entre variantes.
+    if (const NpcModel* npc = NpcModel_Get(Type)) {
+        char* const folder = const_cast<char*>("Data\\Npc\\");
+        AccessModelWithTextures(Type, folder, const_cast<char*>(npc->Model.c_str()), npc->Index);
+        for (int i = 1; i <= npc->PartCount; i++) {
+            for (const auto& part : npc->Parts)
+                AccessModelWithTextures(part.second + i, folder, const_cast<char*>(part.first.c_str()), i);
+            for (const auto& part : npc->Parts)
+                OpenTexture(part.second + i, (void*)folder, 0x2600, true);
         }
-        break;
-    case 0x150:
-        AccessModelWithTextures(0x150, "Data\\Npc\\", "Man", 1);
-        for (int i = 1; i <= 3; i++) {
-            AccessModelWithTextures(i + 0x167, "Data\\Npc\\", "ManHead", i);
-            AccessModelWithTextures(i + 0x169, "Data\\Npc\\", "ManUpper", i);
-            AccessModelWithTextures(i + 0x16b, "Data\\Npc\\", "ManGloves", i);
-            AccessModelWithTextures(i + 0x16d, "Data\\Npc\\", "ManBoots", i);
-            OpenTexture(i + 0x167, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x169, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x16b, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x16d, (void*)"Data\\Npc\\", 0x2600, true);
-        }
-        break;
-    case 0x151:
-        AccessModelWithTextures(0x151, "Data\\Npc\\", "Girl", 1);
-        for (int i = 1; i <= 3; i++) {
-            AccessModelWithTextures(i + 0x16f, "Data\\Npc\\", "GirlHead", i);
-            AccessModelWithTextures(i + 0x171, "Data\\Npc\\", "GirlUpper", i);
-            AccessModelWithTextures(i + 0x173, "Data\\Npc\\", "GirlLower", i);
-            OpenTexture(i + 0x16f, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x171, (void*)"Data\\Npc\\", 0x2600, true);
-            OpenTexture(i + 0x173, (void*)"Data\\Npc\\", 0x2600, true);
-        }
-        break;
-    case 0x152:
-        AccessModelWithTextures(0x152, "Data\\Npc\\", "Smith", 1);
-        LoadWaveFile(0x78, "Data\\Sound\\nBlackSmith.wav", 1, false);   // IDA: n<herrero>.wav
-        break;
-    case 0x153:
-        AccessModelWithTextures(0x153, "Data\\Npc\\", "Wizard", 1);
-        break;
-    case 0x154:
-        AccessModelWithTextures(0x154, "Data\\Npc\\", "SnowMerchant", 1);
-        break;
-    case 0x155:
-        AccessModelWithTextures(0x155, "Data\\Npc\\", "SnowSmith", 1);
-        break;
-    case 0x156:
-        AccessModelWithTextures(0x156, "Data\\Npc\\", "SnowWizard", 1);
-        break;
-    case 0x157:
-        AccessModelWithTextures(0x157, "Data\\Npc\\", "ElfWizard", 1);
-        LoadWaveFile(0x78, "Data\\Sound\\nHarp.wav", 1, false);   // IDA: n<arpa>.wav
-        break;
-    case 0x158:
-        AccessModelWithTextures(0x158, "Data\\Npc\\", "ElfMerchant", 1);
-        break;
-    case 0x159:
-        AccessModelWithTextures(0x159, "Data\\Npc\\", "Master", 1);
-        break;
-    case 0x15a:
-        AccessModelWithTextures(0x15a, "Data\\Npc\\", "Storage", 1);
-        break;
-    case 0x15b:
-        AccessModelWithTextures(0x15b, "Data\\Npc\\", "Tournament", 1);
-        break;
-    case 0x15c:
-        AccessModelWithTextures(0x15c, "Data\\Npc\\", "MixNpc", 1);
-        LoadWaveFile(0x79, "Data\\Sound\\nMix.wav", 1, false);   // IDA: n<mix>.wav
-        break;
-    case 0x15d:
-        AccessModelWithTextures(0x15d, "Data\\Npc\\", "DevilNpc", 1);
-        break;
-    case 0x176:
-        AccessModelWithTextures(0x176, "Data\\Npc\\", "Sevina", 1);
-        OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
-        DAT_0055a7c4 = '\x01';
-        break;
-    case 0x177:
-        AccessModelWithTextures(0x177, "Data\\Npc\\", "BloodCastle", 1);
-        OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
-        DAT_0055a7c4 = '\x01';
-        break;
-    case 0x178:
-        AccessModelWithTextures(0x178, "Data\\Npc\\", "BloodCastle", 2);
-        OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
-        DAT_0055a7c4 = '\x01';
-        break;
-    case 0x179:
-        AccessModelWithTextures(0x179, "Data\\Npc\\", "DeviasTrader", 1);
-        OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
-        DAT_0055a7c4 = '\x01';
-        break;
+        SoundTable_LoadNpc(Type);
+        if (npc->Texture) OpenTexture(Type, (void*)folder, 0x2600, true);
+        if (npc->MarksLoaded) DAT_0055a7c4 = '\x01';
     }
 
     // ── Post-switch: carga de la textura base del NPC (bloque común del original) ──

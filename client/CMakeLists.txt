@@ -341,6 +341,8 @@ set(MU_SOURCES
     src/assets/model/NPC_ModelLoad.cpp
     src/render/Font_Layout.cpp
     src/game/monster/Monster.cpp
+    src/game/monster/MonsterSpawnTable.cpp
+    src/assets/model/NpcModelTable.cpp
     src/net/SecondPassword.cpp
     src/game/party/Party.cpp
     src/game/core/Party_NameMatch.cpp
@@ -523,6 +525,9 @@ set(MU_HEADERS
     src/game/core/MapNumber.h
     src/render/EffectIds.h
     src/audio/SoundTable.h
+    src/game/monster/MonsterSpawnTable.h
+    src/assets/data/TomlLines.h
+    src/assets/model/NpcModelTable.h
     src/game/core/HeroVitals.h
     src/net/Network.h
     src/net/NetChannel.h

@@ -5,6 +5,7 @@
 #
 # [sound] se carga al arrancar. [monster.N] se carga la primera vez que se abre
 # el modelo del monstruo de tipo N; dos tipos pueden repetir la misma lista.
+# [npc.N] se carga con el modelo de NPC N (npc/models.toml).
 
 [sound]
 0 = ["aWind.wav", 1]   # a바람.wav
@@ -429,3 +430,12 @@
 [monster.62]
 356 = ["mMagicSkull.wav", 2, true]
 357 = ["mMagicSkull.wav", 2, true]
+
+[npc.338]   # Smith
+120 = ["nBlackSmith.wav", 1]
+
+[npc.343]   # ElfWizard
+120 = ["nHarp.wav", 1]
+
+[npc.348]   # MixNpc
+121 = ["nMix.wav", 1]

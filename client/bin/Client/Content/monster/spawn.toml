@@ -1,0 +1,1137 @@
+# Cómo se crea cada tipo de monstruo o NPC (los índices de Monster.txt).
+#
+#   model        modelo con el que se dibuja
+#   load         qué cargar antes: "monster" (OpenMonsterModel), "npc" (OpenNpc) o "none"
+#   resource     el número que recibe ese loader
+#   extra        otro OpenMonsterModel que hace falta además
+#   scale        escala del objeto
+#   right, left  arma de cada mano como [sección, índice] del item
+#   right_level, left_level, right_excellent
+#   blend_mesh, blend_light, subtype, hidden_mesh   campos del objeto
+#   level        CHARACTER::Level (el binario lo usa como estado de animación)
+#   blood        CHARACTER::Blood
+#   init         ajuste que no entra en estos campos: una función de Monster.cpp
+#
+# Un tipo sin sección usa el modelo 270 con OpenMonsterModel(0).
+
+[spawn.0]   # Bull Fighter
+model = 270
+load = "monster"
+resource = 0
+scale = 0.8
+right = [1, 6]
+hidden_mesh = 0
+
+[spawn.1]   # Hound
+model = 271
+load = "monster"
+resource = 1
+scale = 0.85
+right = [0, 4]
+hidden_mesh = 0
+
+[spawn.2]   # Budge Dragon
+model = 272
+load = "monster"
+resource = 2
+scale = 0.5
+
+[spawn.3]   # Spider
+model = 279
+load = "monster"
+resource = 9
+scale = 0.4
+
+[spawn.4]   # Elite Bull Fighter
+model = 270
+load = "monster"
+resource = 0
+scale = 1.15
+right = [3, 7]
+level = 1
+
+[spawn.5]   # Hell Hound
+model = 271
+load = "monster"
+resource = 1
+scale = 1.1
+right = [0, 7]
+left = [6, 9]
+hidden_mesh = 1
+level = 1
+
+[spawn.6]   # Lich
+model = 274
+load = "monster"
+resource = 4
+scale = 0.85
+right = [5, 2]
+
+[spawn.7]   # Giant
+model = 275
+load = "monster"
+resource = 5
+scale = 1.6
+right = [1, 2]
+left = [1, 2]
+
+[spawn.8]   # Poison Bull Fighter
+model = 270
+load = "monster"
+resource = 0
+scale = 1.0
+right = [3, 8]
+level = 2
+init = "Monster8"
+
+[spawn.9]   # Thunder Lich
+model = 274
+load = "monster"
+resource = 4
+scale = 1.1
+right = [5, 3]
+level = 1
+
+[spawn.10]   # Dark Knight
+model = 273
+load = "monster"
+resource = 3
+scale = 0.8
+right = [0, 13]
+level = 1
+
+[spawn.11]   # Ghost
+model = 277
+load = "monster"
+resource = 7
+blood = 1
+init = "Monster11"
+
+[spawn.12]   # Larva
+model = 276
+load = "monster"
+resource = 6
+scale = 0.6
+
+[spawn.13]   # Hell Spider
+model = 278
+load = "monster"
+resource = 8
+scale = 1.1
+right = [5, 2]
+
+[spawn.14]   # Skeleton
+model = 390
+load = "none"
+scale = 0.95
+right = [0, 6]
+left = [6, 4]
+subtype = 206
+blood = 1
+
+[spawn.15]   # Skeleton Archer
+model = 390
+load = "none"
+scale = 1.1
+left = [4, 2]
+subtype = 207
+level = 1
+blood = 1
+
+[spawn.16]   # Chief Skeleton Warrior
+model = 390
+load = "none"
+scale = 1.2
+right = [1, 3]
+left = [6, 6]
+subtype = 208
+level = 1
+blood = 1
+
+[spawn.17]   # Cyclops
+model = 280
+load = "monster"
+resource = 10
+right = [1, 8]
+
+[spawn.18]   # Gorgon
+model = 281
+load = "monster"
+resource = 11
+scale = 1.5
+right = [5, 4]
+blend_mesh = 1
+blend_light = 1.0
+
+[spawn.19]   # Yeti
+model = 282
+load = "monster"
+resource = 12
+scale = 1.1
+
+[spawn.20]   # Elite Yeti
+model = 283
+load = "monster"
+resource = 13
+scale = 1.4
+
+[spawn.21]   # Assassin
+model = 284
+load = "monster"
+resource = 14
+scale = 0.95
+
+[spawn.22]   # Ice Monster
+model = 285
+load = "monster"
+resource = 15
+blend_mesh = 0
+blend_light = 1.0
+
+[spawn.23]   # Hommerd
+model = 286
+load = "monster"
+resource = 16
+scale = 1.15
+right = [1, 7]
+left = [6, 10]
+
+[spawn.24]   # Worm
+model = 287
+load = "monster"
+resource = 17
+
+[spawn.25]   # Ice Queen
+model = 288
+load = "monster"
+resource = 18
+scale = 1.1
+right = [5, 1]
+blend_mesh = 2
+blend_light = 1.0
+level = 3
+init = "Monster25"
+
+[spawn.26]   # Goblin
+model = 289
+load = "monster"
+resource = 19
+scale = 0.8
+right = [1, 0]
+
+[spawn.27]   # Chain Scorpion
+model = 290
+load = "monster"
+resource = 20
+scale = 1.1
+
+[spawn.28]   # Beetle Monster
+model = 291
+load = "monster"
+resource = 21
+scale = 0.8
+right = [3, 1]
+blend_mesh = 1
+
+[spawn.29]   # Hunter
+model = 292
+load = "monster"
+resource = 22
+scale = 0.95
+right = [4, 10]
+
+[spawn.30]   # Forest Monster
+model = 293
+load = "monster"
+resource = 23
+scale = 0.75
+
+[spawn.31]   # Agon
+model = 294
+load = "monster"
+resource = 24
+scale = 1.3
+right = [0, 8]
+left = [0, 8]
+
+[spawn.32]   # Stone Golem
+model = 295
+load = "monster"
+resource = 25
+
+[spawn.33]   # Elite Goblin
+model = 289
+load = "monster"
+resource = 19
+scale = 1.2
+right = [2, 1]
+left = [6, 1]
+level = 1
+
+[spawn.34]   # Cursed Wizard
+model = 390
+load = "none"
+right = [5, 5]
+left = [6, 14]
+init = "Monster34"
+
+[spawn.35]   # Death Gorgon
+model = 281
+load = "monster"
+resource = 11
+scale = 1.3
+right = [1, 8]
+left = [1, 8]
+blend_mesh = 1
+blend_light = 1.0
+level = 2
+
+[spawn.36]   # Shadow
+model = 298
+load = "monster"
+resource = 28
+scale = 1.2
+
+[spawn.37]   # Devil
+model = 296
+load = "monster"
+resource = 26
+scale = 1.1
+
+[spawn.38]   # Balrog
+model = 297
+load = "monster"
+resource = 27
+scale = 1.6
+right = [3, 9]
+right_level = 9
+
+[spawn.39]   # Poison Shadow
+model = 298
+load = "monster"
+resource = 28
+scale = 1.2
+level = 1
+
+[spawn.40]   # Death Knight
+model = 299
+load = "monster"
+resource = 29
+scale = 1.3
+right = [0, 14]
+
+[spawn.41]   # Death Cow
+model = 300
+load = "monster"
+resource = 30
+scale = 1.1
+right = [2, 3]
+
+[spawn.42]   # Red Dragon
+model = 301
+load = "monster"
+resource = 31
+scale = 1.3
+init = "Monster42"
+
+[spawn.43]   # Golden Budge Dragon
+model = 272
+load = "monster"
+resource = 2
+scale = 0.7
+
+[spawn.44]   # Dragon
+model = 301
+load = "monster"
+resource = 31
+scale = 0.9
+
+[spawn.45]   # Bahamut
+model = 303
+load = "monster"
+resource = 33
+scale = 0.6
+
+[spawn.46]   # Vepar
+model = 304
+load = "monster"
+resource = 34
+scale = 1.0
+
+[spawn.47]   # Valkyrie
+model = 305
+load = "monster"
+resource = 35
+scale = 1.1
+right = [4, 13]
+blend_mesh = 0
+blend_light = 1.0
+
+[spawn.48]   # Lizard King
+model = 306
+load = "monster"
+resource = 36
+scale = 1.4
+right = [5, 6]
+
+[spawn.49]   # Hydra
+model = 307
+load = "monster"
+resource = 37
+scale = 1.0
+blend_mesh = 5
+blend_light = 0.0
+
+[spawn.50]   # Sea Worm
+model = 308
+load = "monster"
+resource = 38
+scale = 1.8
+
+[spawn.51]   # Great Bahamut
+model = 303
+load = "monster"
+resource = 33
+scale = 1.0
+level = 1
+
+[spawn.52]   # Silver Valkyrie
+model = 305
+load = "monster"
+resource = 35
+scale = 1.4
+right = [4, 13]
+
+[spawn.53]   # Golden Titan
+model = 309
+load = "monster"
+resource = 39
+scale = 1.8
+blend_mesh = 2
+blend_light = 1.0
+init = "MonsterJoints"
+
+[spawn.54]   # Golden Soldier
+model = 310
+load = "monster"
+resource = 40
+scale = 1.1
+left = [4, 14]
+
+[spawn.55]   # Death King
+model = 390
+load = "none"
+scale = 1.4
+right = [3, 9]
+subtype = 206
+level = 1
+blood = 1
+
+[spawn.56]   # Death Bone
+model = 390
+load = "none"
+scale = 0.8
+right = [3, 8]
+subtype = 206
+blood = 1
+
+[spawn.57]   # Iron Wheel
+model = 311
+load = "monster"
+resource = 41
+scale = 1.4
+right = [4, 14]
+init = "MonsterJoints"
+
+[spawn.58]   # Tantalos
+model = 312
+load = "monster"
+resource = 42
+scale = 1.8
+right = [0, 16]
+blend_mesh = 2
+blend_light = 1.0
+init = "MonsterJoints"
+
+[spawn.59]   # Zaikan
+model = 312
+load = "monster"
+resource = 42
+scale = 2.1
+right = [5, 8]
+blend_mesh = 2
+blend_light = 1.0
+subtype = 1
+init = "MonsterJoints"
+
+[spawn.60]   # Bloody wolf
+model = 313
+load = "monster"
+resource = 43
+scale = 2.2
+init = "MonsterJoints"
+
+[spawn.61]   # Beam Knight
+model = 314
+load = "monster"
+resource = 44
+scale = 1.5
+init = "MonsterJoints"
+
+[spawn.62]   # Mutant
+model = 315
+load = "monster"
+resource = 45
+scale = 1.5
+init = "MonsterJoints"
+
+[spawn.63]   # Death Beam Knight
+model = 314
+load = "monster"
+resource = 44
+scale = 1.9
+blend_mesh = -2
+blend_light = 1.0
+init = "MonsterJoints"
+
+[spawn.64]   # Ogre archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.2
+left = [4, 3]
+left_level = 3
+
+[spawn.65]   # Elite Ogre
+model = 317
+load = "monster"
+resource = 47
+scale = 1.3
+
+[spawn.66]   # Cursed king
+model = 318
+load = "monster"
+resource = 48
+scale = 1.7
+
+[spawn.67]   # Metal Balrog
+model = 297
+load = "monster"
+resource = 27
+scale = 1.6
+right = [3, 9]
+right_level = 9
+
+[spawn.68]
+model = 319
+load = "monster"
+resource = 49
+scale = 1.4
+
+[spawn.69]   # Alquamos
+model = 320
+load = "monster"
+resource = 50
+scale = 1.0
+blend_mesh = 0
+
+[spawn.70]   # Queen Rainier
+model = 321
+load = "monster"
+resource = 51
+scale = 1.3
+blend_mesh = -2
+blend_light = 1.0
+
+[spawn.71]   # Mega Crust
+model = 322
+load = "monster"
+resource = 52
+scale = 1.1
+right = [0, 18]
+right_level = 5
+left = [6, 14]
+left_level = 0
+blend_mesh = 1
+blend_light = 1.0
+
+[spawn.72]   # Phantom Knight
+model = 323
+load = "monster"
+resource = 53
+scale = 1.45
+right = [0, 17]
+right_level = 5
+
+[spawn.73]   # Drakan
+model = 324
+load = "monster"
+resource = 54
+scale = 0.8
+init = "Monster73"
+
+[spawn.74]   # Alpha Crust
+model = 322
+load = "monster"
+resource = 52
+scale = 1.3
+right = [0, 18]
+right_level = 9
+left = [6, 14]
+left_level = 9
+blend_mesh = 1
+blend_light = 1.0
+
+[spawn.75]   # Great Drakan
+model = 324
+load = "monster"
+resource = 54
+scale = 1.0
+init = "Monster73"
+
+[spawn.77]   # Phoenix of Darkness
+model = 325
+load = "monster"
+resource = 55
+extra = 56
+scale = 1.0
+init = "Monster77"
+
+[spawn.78]   # Golden Goblin
+model = 289
+load = "monster"
+resource = 19
+scale = 0.8
+right = [1, 0]
+right_level = 9
+
+[spawn.79]   # Golden Derkon
+model = 301
+load = "monster"
+resource = 31
+scale = 0.9
+
+[spawn.80]   # Golden Lizard King
+model = 306
+load = "monster"
+resource = 36
+scale = 1.4
+right = [5, 7]
+right_excellent = 63
+
+[spawn.81]   # Golden Vepar
+model = 304
+load = "monster"
+resource = 34
+scale = 1.0
+
+[spawn.82]   # Golden Tantalos
+model = 312
+load = "monster"
+resource = 42
+scale = 1.8
+right = [0, 16]
+right_excellent = 63
+blend_mesh = 2
+blend_light = 1.0
+init = "MonsterJoints"
+
+[spawn.83]   # Golden Wheel
+model = 311
+load = "monster"
+resource = 41
+scale = 1.4
+right = [4, 14]
+right_excellent = 63
+init = "MonsterJoints"
+
+[spawn.84]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.85]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.86]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.87]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.88]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.89]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.90]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.91]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.92]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.93]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.94]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.95]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.96]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.97]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.98]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.99]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.100]   # Lance
+model = 39
+load = "none"
+
+[spawn.101]   # Iron Stick
+model = 40
+load = "none"
+
+[spawn.102]   # Fire
+model = 51
+load = "none"
+
+[spawn.103]   # Meteorite
+model = 25
+load = "none"
+
+[spawn.111]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.112]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.113]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.114]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.115]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.116]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.117]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.118]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.119]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.120]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.121]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.122]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.123]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.124]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.125]   # Chief Skeleton Warrior
+model = 317
+load = "monster"
+resource = 47
+scale = 1.1
+
+[spawn.126]   # Chief Skeleton Archer
+model = 316
+load = "monster"
+resource = 46
+scale = 1.1
+left = [4, 3]
+left_level = 1
+
+[spawn.127]   # Dark Skull Soldier
+model = 329
+load = "monster"
+resource = 59
+scale = 1.0
+right = [1, 8]
+right_level = 0
+left = [1, 8]
+left_level = 0
+
+[spawn.128]   # Giant Ogre
+model = 328
+load = "monster"
+resource = 58
+scale = 0.8
+
+[spawn.129]   # Red Skeleton Knight
+model = 327
+load = "monster"
+resource = 57
+scale = 1.19
+right = [2, 6]
+init = "Monster88"
+
+[spawn.130]   # Magic Skeleton
+model = 332
+load = "monster"
+resource = 62
+scale = 1.2
+right = [5, 0]
+right_level = 11
+
+[spawn.131]   # Castle Gate
+model = 331
+load = "monster"
+resource = 61
+scale = 0.8
+init = "Monster131"
+
+[spawn.132]   # Statue of Saint
+model = 330
+load = "monster"
+resource = 60
+scale = 0.8
+init = "Monster131"
+
+[spawn.133]   # Statue of Saint
+model = 330
+load = "monster"
+resource = 60
+scale = 0.8
+init = "Monster131"
+
+[spawn.134]   # Statue of Saint
+model = 330
+load = "monster"
+resource = 60
+scale = 0.8
+init = "Monster131"
+
+[spawn.150]   # Bali
+model = 302
+load = "monster"
+resource = 32
+scale = 0.12
+
+[spawn.151]   # Soldier
+model = 310
+load = "monster"
+resource = 40
+scale = 1.3
+left = [4, 14]
+
+[spawn.200]   # Soccer Ball
+model = 236
+load = "none"
+scale = 1.8
+blend_mesh = 2
+level = 1
+
+[spawn.230]   # Wandering Merchant Alex
+model = 336
+load = "npc"
+resource = 336
+init = "Monster230"
+
+[spawn.231]   # Thompson Kenel
+model = 377
+load = "npc"
+resource = 377
+
+[spawn.232]   # Archangel
+model = 375
+load = "npc"
+resource = 375
+scale = 1.0
+init = "Monster232"
+
+[spawn.233]   # Messenger of Archangel
+model = 376
+load = "npc"
+resource = 376
+scale = 1.0
+init = "Monster232"
+
+[spawn.234]   # Npc Transfer
+model = 289
+load = "monster"
+resource = 19
+scale = 1.5
+right = [5, 0]
+right_level = 4
+init = "Monster234"
+
+[spawn.235]   # Sebina the Priest
+model = 374
+load = "npc"
+resource = 374
+scale = 1.0
+init = "Monster232"
+
+[spawn.236]   # Golden Archer
+model = 390
+load = "npc"
+resource = 390
+scale = 1.0
+subtype = 207
+level = 8
+init = "Monster232"
+
+[spawn.237]   # Charon
+model = 349
+load = "npc"
+resource = 349
+
+[spawn.238]   # Chaos Goblin
+model = 348
+load = "npc"
+resource = 348
+blend_mesh = 1
+
+[spawn.239]   # Arena Guard
+model = 347
+load = "npc"
+resource = 347
+
+[spawn.240]   # Safety Guardian
+model = 346
+load = "npc"
+resource = 346
+
+[spawn.241]   # Captain Lorence
+model = 345
+load = "npc"
+resource = 345
+
+[spawn.242]   # Elf Lala
+model = 343
+load = "npc"
+resource = 343
+blend_mesh = 1
+init = "Monster242"
+
+[spawn.243]   # Eo the Craftsman
+model = 344
+load = "npc"
+resource = 344
+
+[spawn.244]   # Caren the Barmaid
+model = 340
+load = "npc"
+resource = 340
+
+[spawn.245]   # Wizard Izabel
+model = 342
+load = "npc"
+resource = 342
+
+[spawn.246]   # Weapons Merchant Zienna
+model = 341
+load = "npc"
+resource = 341
+
+[spawn.247]   # Archer Guard
+model = 390
+load = "none"
+right = [4, 11]
+left = [4, 7]
+init = "Monster247"
+
+[spawn.248]   # Merchant Martin
+model = 336
+load = "npc"
+resource = 336
+init = "Monster248"
+
+[spawn.249]   # Berdysh Guard
+model = 390
+load = "none"
+right = [3, 7]
+init = "Monster247"
+
+[spawn.250]   # Merchant Peddler
+model = 336
+load = "npc"
+resource = 336
+init = "Monster250"
+
+[spawn.251]   # Hanzo the Blacksmith
+model = 338
+load = "npc"
+resource = 338
+scale = 0.95
+
+[spawn.253]   # Potion Girl Amy
+model = 337
+load = "npc"
+resource = 337
+init = "Monster253"
+
+[spawn.254]   # Pasi the Mage
+model = 339
+load = "npc"
+resource = 339
+
+[spawn.255]   # Lumen the Barmaid
+model = 335
+load = "npc"
+resource = 335
+init = "Monster255"

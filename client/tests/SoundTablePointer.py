@@ -2,7 +2,7 @@
 """Tabla de sonidos (Content/audio/sound/sounds.toml) leída por el SoundTable real.
 
 Compila src/audio/SoundTable.cpp con un LoadWaveFile que registra cada llamada,
-carga [sound] y [monster.0..255] desde el sounds.toml del repo y comprueba:
+carga [sound], [monster.0..255] y [npc.0..1023] desde el sounds.toml del repo y comprueba:
 
   * que no haya líneas que el lector rechace;
   * que ningún id se repita dentro de una sección;
@@ -51,7 +51,8 @@ def build(directory, source, args, cwd=None):
 
 RECORDER = r'''
 #include <cstdio>
-static int g_section = -1;   // -1 = [sound]; N = monstruo N
+constexpr int NPC_BASE = 10000;
+static int g_section = -1;   // -1 = [sound]; N = monstruo N; NPC_BASE + N = NPC N
 void LoadWaveFile(int id, const char* path, int channels, char spatial)
 {
     std::printf("%d|%d|%s|%d|%d\n", g_section, id, path, channels, spatial ? 1 : 0);
@@ -63,6 +64,8 @@ def current_harness():
     source = (ROOT / "src/audio/SoundTable.cpp").read_text(encoding="utf-8")
     for include in ('#include "stdafx.h"', '#include "audio/SoundTable.h"', '#include "functions.h"'):
         source = source.replace(include, "")
+    toml = (ROOT / "src/assets/data/TomlLines.h").read_text(encoding="utf-8").replace("#pragma once", "")
+    source = source.replace('#include "assets/data/TomlLines.h"', toml)
     source = source.replace('extern "C" void DbgLogPublic(const char* msg);',
                             'void DbgLogPublic(const char* msg) { std::printf("WARN|%s\\n", msg); }')
     return RECORDER + source + r'''
@@ -70,6 +73,7 @@ int main()
 {
     SoundTable_LoadStartup();
     for (g_section = 0; g_section < 256; ++g_section) SoundTable_LoadMonster(g_section);
+    for (int model = 0; model < 1024; ++model) { g_section = NPC_BASE + model; SoundTable_LoadNpc(model); }
 }
 '''
 
@@ -148,12 +152,14 @@ def main():
         missing = sorted({c[2] for c in calls if c[2].lower() not in names})
         if missing:
             raise RuntimeError(f"archivos que no están: {missing}")
-        monsters = len({c[0] for c in calls if c[0] >= 0})
-        print(f"SoundTable: {len(startup)} globales, {monsters} tipos de monstruo, "
-              f"{len(calls) - len(startup)} sonidos de monstruo; archivos presentes")
+        monsters = len({c[0] for c in calls if 0 <= c[0] < 10000})
+        npcs = len({c[0] for c in calls if c[0] >= 10000})
+        print(f"SoundTable: {len(startup)} globales, {monsters} tipos de monstruo, {npcs} NPC; archivos presentes")
 
         if args.reference_ref:
             reference = normalize(build(Path(temp) / "reference", reference_harness(args.reference_ref), args))
+            # La referencia sólo tiene globales y monstruos; los NPC los compara NpcModelPointer.
+            calls = [c for c in calls if c[0] < 10000]
             if reference != calls:
                 for index, (a, b) in enumerate(zip(reference, calls)):
                     if a != b:

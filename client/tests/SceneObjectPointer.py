@@ -252,8 +252,12 @@ def shared_names(source):
     return text
 
 
-def build_and_run(directory, source, args):
+def build_and_run(directory, source, args, files=None):
     directory.mkdir()
+    # Archivos que el binario lee relativos a su directorio de trabajo (p. ej. Content/...).
+    for name, data in (files or {}).items():
+        (directory / name).parent.mkdir(parents=True, exist_ok=True)
+        (directory / name).write_bytes(data)
     layout = HARNESS_LAYOUT + shared_names(source)
     if "ModelTypes.h" in source:   # el header real ya define BMD_STRIDE/BMD_FIELD_SHIFT
         layout = layout.replace(",BMD_STRIDE=188,BMD_FIELD_SHIFT=0", "")
