@@ -225,6 +225,9 @@
     <ClCompile Include="MiniDump.cpp" />
     <ClCompile Include="GoldenArcher.cpp" />
     <ClCompile Include="QueryManager.cpp" />
+    <ClCompile Include="..\Common\SqlFormat.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="ServerDisplayer.cpp" />
     <ClCompile Include="ServerManager.cpp" />

@@ -1,0 +1,70 @@
+# Invasiones: cuándo salen, cuánto duran y qué monstruos traen.
+#
+# index      número de la invasión (el de /invasionstart)
+# schedule   horarios "HH:MM:SS" (con * para cualquiera), o
+#            { time = "HH:MM:SS", dow, day, month, year } para fijar el día;
+#            dow: 1 = domingo ... 7 = sábado
+# duration   minutos que dura; warning: minutos de aviso antes de empezar
+# effect     1 = dragones rojos volando, 3 = dragones dorados
+# boss       monstruo jefe (su muerte manda el mensaje `boss`)
+# messages   números de mensaje de Message_*.txt (sin uno, no se avisa)
+# groups     al empezar, de cada grupo se elige un mapa al azar y salen ahí
+#            todos sus monstruos. Un mapa es un número o { map, value }:
+#            `value` elige qué puntos de Spawns.toml usa en ese mapa. Un
+#            monstruo es un número o { monster, regen_type, regen_time }:
+#            con regen_type 0 no reaparece hasta el final; si no, reaparece
+#            regen_time segundos después de morir.
+#
+# Dónde aparece cada monstruo está en Spawns.toml, en esta misma carpeta.
+
+[[invasion]]
+index = 0
+name = "Death King"
+schedule = ["14:50:00"]
+duration = 10
+warning = 5
+boss = 55
+messages = { respawn = 19, despawn = 21, boss = 20, warning = 18 }
+groups = [
+  { maps = [0, 3], monsters = [55, 56] },
+]
+
+[[invasion]]
+index = 1
+name = "Red Dragon"
+schedule = ["19:35:00"]
+duration = 10
+warning = 5
+effect = 1
+boss = 42
+messages = { respawn = 19, despawn = 21, boss = 20, warning = 18 }
+groups = [
+  { maps = [0, 2], monsters = [42] },
+]
+
+[[invasion]]
+index = 2
+name = "Golden"
+schedule = ["14:58:00"]
+duration = 10
+warning = 5
+effect = 3
+messages = { respawn = 19, despawn = 21, boss = 20, warning = 18 }
+groups = [
+  { maps = [0, 2, 3], monsters = [43] },
+  { maps = [2], monsters = [53] },
+  { maps = [2], monsters = [54] },
+  { maps = [3], monsters = [78] },
+  { maps = [0, 2, 3, 4], monsters = [79] },
+  { maps = [7], monsters = [80] },
+  { maps = [7], monsters = [81] },
+  { maps = [8], monsters = [82] },
+  { maps = [8], monsters = [83] },
+]
+
+[[invasion]]
+index = 3
+name = "Tamachan"
+schedule = ["00:00:00", "02:00:00", "04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00", "16:00:00", "18:00:00", "20:00:00", "22:00:00"]
+duration = 5
+messages = { despawn = 21 }

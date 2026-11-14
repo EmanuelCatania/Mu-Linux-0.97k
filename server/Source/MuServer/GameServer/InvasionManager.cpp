@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "InvasionManager.h"
+#include "EventInvasions.h"
 #include "FlyingDragons.h"
 #include "ReadScript.h"
 #include "Monster.h"
@@ -93,6 +94,110 @@ void CInvasionManager::Init()
 	gFlyingDragons.Init();
 }
 
+// Deja las 30 invasiones como sin definir (lo que vale para un índice que el
+// archivo no menciona).
+void CInvasionManager::Reset()
+{
+	for (int n = 0; n < MAX_INVASION; n++)
+	{
+		INVASION_INFO* lpInfo = &this->m_InvasionInfo[n];
+
+		lpInfo->RespawnMessage = -1;
+
+		lpInfo->DespawnMessage = -1;
+
+		lpInfo->BossIndex = -1;
+
+		lpInfo->BossMessage = -1;
+
+		lpInfo->InvasionTime = 0;
+
+		lpInfo->WarningTime = 0;
+
+		lpInfo->WarningMsg = -1;
+
+		lpInfo->TamachanRainWave = -1;
+
+		lpInfo->TamachanRainDropCount = 0;
+
+		lpInfo->StartTime.clear();
+
+		for (int g = 0; g < MAX_INVASION_RESPAWN_GROUP; g++)
+		{
+			lpInfo->RespawnInfo[g].clear();
+		}
+
+		lpInfo->MonsterInfo.clear();
+	}
+}
+
+// Fase 5: Data/Events/Invasions/Invasions.toml. Arma las mismas tablas que
+// Load() con el .dat: el horario, la definición, y por grupo sus mapas y sus
+// monstruos (en ese orden, que es el que usa SetState_START).
+void CInvasionManager::LoadToml(const char* path)
+{
+	std::vector<InvasionDef> defs;
+
+	std::string error;
+
+	if (!EventInvasions_Load(path, defs, error))
+	{
+		ErrorMessageBox("%s", error.c_str());
+
+		return;
+	}
+
+	this->Reset();
+
+	for (const InvasionDef& def : defs)
+	{
+		INVASION_INFO* lpInfo = &this->m_InvasionInfo[def.Index];
+
+		for (const InvasionSchedule& s : def.Schedule)
+		{
+			lpInfo->StartTime.push_back({ s.Year, s.Month, s.Day, s.DayOfWeek, s.Hour, s.Minute, s.Second });
+		}
+
+		if (def.Defined)
+		{
+			lpInfo->RespawnMessage = def.RespawnMessage;
+
+			lpInfo->DespawnMessage = def.DespawnMessage;
+
+			lpInfo->BossIndex = def.BossIndex;
+
+			lpInfo->BossMessage = def.BossMessage;
+
+			lpInfo->InvasionTime = def.InvasionTime;
+
+			lpInfo->WarningTime = def.WarningTime;
+
+			lpInfo->WarningMsg = def.WarningMessage;
+
+			lpInfo->InvasionEffect = def.InvasionEffect;
+
+			strcpy_s(lpInfo->InvasionName, def.Name.c_str());
+
+#ifdef _WIN32
+			CreateSubMenuItem(ID_STARTINVASION, def.Index, lpInfo->InvasionName);
+#endif
+		}
+
+		for (size_t g = 0; g < def.Groups.size(); g++)
+		{
+			for (const InvasionMap& m : def.Groups[g].Maps)
+			{
+				lpInfo->RespawnInfo[g].push_back({ (int)g, m.Map, m.Value });
+			}
+
+			for (const InvasionMonster& m : def.Groups[g].Monsters)
+			{
+				lpInfo->MonsterInfo.push_back({ (int)g, m.Monster, m.RegenType, m.RegenTime });
+			}
+		}
+	}
+}
+
 void CInvasionManager::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -113,69 +218,7 @@ void CInvasionManager::Load(const char* path)
 		return;
 	}
 
-	for (int n = 0; n < MAX_INVASION; n++)
-	{
-		this->m_InvasionInfo[n].RespawnMessage = -1;
-
-		this->m_InvasionInfo[n].DespawnMessage = -1;
-
-		this->m_InvasionInfo[n].BossIndex = -1;
-
-		this->m_InvasionInfo[n].BossMessage = -1;
-
-		this->m_InvasionInfo[n].InvasionTime = 0;
-
-		this->m_InvasionInfo[n].WarningTime = 0;
-
-		this->m_InvasionInfo[n].WarningMsg = -1;
-
-		this->m_InvasionInfo[n].TamachanRainWave = -1;
-		this->m_InvasionInfo[n].TamachanRainDropCount = 0;
-
-		this->m_InvasionInfo[n].StartTime.clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[0].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[1].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[2].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[3].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[4].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[5].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[6].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[7].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[8].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[9].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[10].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[11].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[12].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[13].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[14].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[15].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[16].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[17].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[18].clear();
-
-		this->m_InvasionInfo[n].RespawnInfo[19].clear();
-
-		this->m_InvasionInfo[n].MonsterInfo.clear();
-	}
+	this->Reset();
 
 	try
 	{

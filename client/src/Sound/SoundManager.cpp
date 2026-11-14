@@ -127,6 +127,14 @@ void CSound::StopEmoteSound(int voice)
     ReleaseVoice(g_emoteVoices[voice]);
 }
 
+float CSound::EmoteSoundLength(int voice)
+{
+    if (voice < 0 || voice >= kEmoteVoices || !g_emoteVoices[voice].sound) return 0.0f;
+    float length = 0.0f;
+    if (ma_sound_get_length_in_seconds(g_emoteVoices[voice].sound, &length) != MA_SUCCESS) return 0.0f;
+    return length;
+}
+
 bool CSound::IsEmoteSoundPlaying(int voice)
 {
     return voice >= 0 && voice < kEmoteVoices && g_emoteVoices[voice].sound &&

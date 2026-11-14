@@ -95,6 +95,18 @@ const std::vector<std::string>& SystemFallbackFonts()
 
 void SetFallbackFontDirectory(const std::string& directory) { fallbackDirectory = directory; }
 
+namespace {
+// Escrituras de Asia oriental: ideogramas, kana, hangul y los signos y formas
+// de ancho completo que las acompañan.
+bool IsCjk(char32_t c)
+{
+    return (c >= 0x1100 && c <= 0x11FF) || (c >= 0x2E80 && c <= 0x9FFF) ||
+           (c >= 0xA960 && c <= 0xA97F) || (c >= 0xAC00 && c <= 0xD7FF) ||
+           (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFE30 && c <= 0xFE4F) ||
+           (c >= 0xFF00 && c <= 0xFFEF) || (c >= 0x20000 && c <= 0x3FFFF);
+}
+}
+
 namespace { bool colorEmojiEnabled = false; }
 void SetColorEmoji(bool enabled) { colorEmojiEnabled = enabled; }
 
@@ -153,6 +165,7 @@ FontStack::~FontStack()
 {
     delete m_ColorEmoji;
     for (auto* font : m_Fallbacks) delete font;
+    for (auto* font : m_SystemFonts) delete font;
     delete m_Cache;
 }
 
@@ -160,6 +173,8 @@ void FontStack::Reset(Platform::SDLFont* primary, int height, bool bold)
 {
     for (auto* font : m_Fallbacks) delete font;
     m_Fallbacks.clear();
+    for (auto* font : m_SystemFonts) delete font;
+    m_SystemFonts.clear();
     delete m_ColorEmoji;
     m_ColorEmoji = nullptr;
     m_ColorEmojiTried = false;
@@ -223,19 +238,36 @@ Platform::SDLFont* FontStack::FontFor(char32_t codepoint)
     if (colorEmojiEnabled && fallbackDirectory.empty() && IsEmoji(codepoint))
         if (auto* font = ColorEmojiFont(); font && font->HasCodepoint(codepoint)) return font;
     if (m_Primary->HasCodepoint(codepoint)) return m_Primary;
+    // CJK: las fuentes del sistema van antes que Data/Font. El respaldo de ahí
+    // (DroidSansFallback) cubre todo pero no trae hinting para tamaños chicos y
+    // a 12-16 px se ve borroso; las del sistema (Microsoft YaHei, SimSun, Malgun
+    // Gothic, Noto CJK...) están hechas para esos tamaños. Data/Font queda para
+    // cuando el sistema no tiene ninguna.
+    if (IsCjk(codepoint) && fallbackDirectory.empty())
+        if (auto* font = SystemFontFor(codepoint)) return font;
     LoadFallbacks();
     for (auto* font : m_Fallbacks)
         if (font->HasCodepoint(codepoint)) return font;
     if (!fallbackDirectory.empty()) return m_Primary;
+    if (auto* font = SystemFontFor(codepoint)) return font;
+    return m_Primary;
+}
+
+// Primera fuente del sistema con el carácter. Las ya abiertas se prueban
+// primero; después se siguen abriendo las de la lista en su orden.
+Platform::SDLFont* FontStack::SystemFontFor(char32_t codepoint)
+{
+    for (auto* font : m_SystemFonts)
+        if (font->HasCodepoint(codepoint)) return font;
     const auto& system = SystemFallbackFonts();
     while (m_SystemTried < system.size()) {
         auto* font = new Platform::SDLFont;
         std::string message;
         if (!font->LoadFile(system[m_SystemTried++], m_Height, message)) { delete font; continue; }
-        m_Fallbacks.push_back(font);
+        m_SystemFonts.push_back(font);
         if (font->HasCodepoint(codepoint)) return font;
     }
-    return m_Primary;
+    return nullptr;
 }
 
 const ShapedText& FontStack::Shape(std::string_view input)

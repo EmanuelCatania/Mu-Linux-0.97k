@@ -29,10 +29,11 @@ public:
     SDLFont(const SDLFont&) = delete;
     SDLFont& operator=(const SDLFont&) = delete;
     // Altura positiva de celda, como CreateFont; los bytes pertenecen al objeto.
-    bool Load(std::vector<uint8_t> bytes, int height, std::string& error);
+    // `faceIndex`: cara dentro de una colección (.ttc/.otc); 0 en un .ttf/.otf.
+    bool Load(std::vector<uint8_t> bytes, int height, std::string& error, long faceIndex = 0);
     // Igual que Load, pero FreeType lee el archivo bajo demanda en vez de
     // cargarlo entero (fuentes del sistema de 10-20 MB usadas como respaldo).
-    bool LoadFile(const std::string& path, int height, std::string& error);
+    bool LoadFile(const std::string& path, int height, std::string& error, long faceIndex = 0);
     // Respaldo en Data/Font, relativo a la carpeta del cliente o a MU_ASSET_ROOT.
     bool LoadFamily(const char* family, bool bold, bool italic, int height,
                     int width, bool underline, bool strikeOut, std::string& error,
@@ -52,7 +53,7 @@ public:
     int Measure(const uint32_t* text, size_t count);
 private:
     struct Impl;
-    bool Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error);
+    bool Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error, long faceIndex);
     bool OpenBitmapColor(std::unique_ptr<Impl> next, int height, std::string& error);
     FontGlyph RasterizeBitmapColor(uint32_t glyph) const;
     std::unique_ptr<Impl> impl;

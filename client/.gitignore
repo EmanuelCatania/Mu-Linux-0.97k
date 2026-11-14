@@ -30,6 +30,9 @@ bin/Client/opengl32.dll.apitrace
 # cliente; nosotros las mandamos a esta carpeta (desviacion documentada en
 # Game_MainLoop, SCREENSHOT_DIR_DEVIATION).
 bin/Client/Screenshots/
+
+# Caché del catálogo de cada server (Item/ContentCatalog.cpp).
+bin/Client/Cache/
 bin/Client/Screen(*.jpg
 
 *.pch

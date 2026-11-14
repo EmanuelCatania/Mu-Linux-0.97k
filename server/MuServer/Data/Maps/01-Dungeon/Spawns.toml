@@ -1,0 +1,412 @@
+# Dungeon (mapa 1): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 100, at = [117, 99], dir = 1 }, # Lance
+  { monster = 100, at = [120, 99], dir = 1 }, # Lance
+  { monster = 100, at = [123, 99], dir = 1 }, # Lance
+  { monster = 100, at = [126, 99], dir = 1 }, # Lance
+  { monster = 100, at = [136, 95], dir = 1 }, # Lance
+  { monster = 100, at = [139, 95], dir = 1 }, # Lance
+  { monster = 100, at = [166, 12], dir = 1 }, # Lance
+  { monster = 100, at = [172, 12], dir = 1 }, # Lance
+  { monster = 100, at = [177, 103], dir = 1 }, # Lance
+  { monster = 100, at = [178, 12], dir = 1 }, # Lance
+  { monster = 100, at = [180, 103], dir = 1 }, # Lance
+  { monster = 100, at = [183, 103], dir = 1 }, # Lance
+  { monster = 100, at = [186, 103], dir = 1 }, # Lance
+  { monster = 100, at = [186, 151], dir = 3 }, # Lance
+  { monster = 100, at = [189, 103], dir = 1 }, # Lance
+  { monster = 100, at = [193, 33], dir = 1 }, # Lance
+  { monster = 100, at = [196, 33], dir = 1 }, # Lance
+  { monster = 100, at = [198, 130], dir = 1 }, # Lance
+  { monster = 100, at = [202, 150], dir = 1 }, # Lance
+  { monster = 100, at = [202, 93], dir = 1 }, # Lance
+  { monster = 100, at = [205, 93], dir = 1 }, # Lance
+  { monster = 100, at = [227, 61], dir = 1 }, # Lance
+  { monster = 100, at = [229, 93], dir = 1 }, # Lance
+  { monster = 100, at = [232, 37], dir = 3 }, # Lance
+  { monster = 100, at = [232, 40], dir = 3 }, # Lance
+  { monster = 100, at = [232, 46], dir = 3 }, # Lance
+  { monster = 100, at = [232, 93], dir = 1 }, # Lance
+  { monster = 101, at = [10, 26], dir = 1 }, # Iron Stick
+  { monster = 101, at = [11, 26], dir = 1 }, # Iron Stick
+  { monster = 101, at = [128, 212], dir = 1 }, # Iron Stick
+  { monster = 101, at = [130, 213], dir = 1 }, # Iron Stick
+  { monster = 101, at = [143, 214], dir = 1 }, # Iron Stick
+  { monster = 101, at = [155, 230], dir = 5 }, # Iron Stick
+  { monster = 101, at = [19, 19], dir = 1 }, # Iron Stick
+  { monster = 101, at = [22, 24], dir = 1 }, # Iron Stick
+  { monster = 101, at = [23, 24], dir = 1 }, # Iron Stick
+  { monster = 101, at = [23, 28], dir = 1 }, # Iron Stick
+  { monster = 101, at = [23, 29], dir = 1 }, # Iron Stick
+  { monster = 101, at = [24, 4], dir = 1 }, # Iron Stick
+  { monster = 101, at = [24, 5], dir = 1 }, # Iron Stick
+  { monster = 101, at = [27, 11], dir = 1 }, # Iron Stick
+  { monster = 101, at = [27, 12], dir = 1 }, # Iron Stick
+  { monster = 101, at = [27, 21], dir = 1 }, # Iron Stick
+  { monster = 101, at = [33, 9], dir = 1 }, # Iron Stick
+  { monster = 101, at = [35, 9], dir = 1 }, # Iron Stick
+  { monster = 101, at = [39, 16], dir = 1 }, # Iron Stick
+  { monster = 101, at = [39, 17], dir = 1 }, # Iron Stick
+  { monster = 101, at = [39, 18], dir = 1 }, # Iron Stick
+  { monster = 101, at = [48, 193], dir = 1 }, # Iron Stick
+  { monster = 101, at = [49, 193], dir = 1 }, # Iron Stick
+  { monster = 101, at = [90, 164], dir = 1 }, # Iron Stick
+  { monster = 101, at = [91, 164], dir = 1 }, # Iron Stick
+  { monster = 101, at = [92, 164], dir = 1 }, # Iron Stick
+  { monster = 102, at = [169, 12], dir = 1 }, # Fire
+  { monster = 102, at = [175, 12], dir = 1 }, # Fire
+  { monster = 102, at = [45, 224], dir = 3 }, # Fire
+  { monster = 102, at = [66, 71], dir = 3 }, # Fire
+  { monster = 102, at = [80, 61], dir = 1 }, # Fire
+]
+
+area = [
+  { monster = 5, box = [112, 230, 121, 233], count = 5, dis = 10 }, # Hell Hound
+  { monster = 8, box = [88, 235, 94, 244], count = 5, dis = 10 }, # Poison Bull Fighter
+  { monster = 9, box = [83, 205, 86, 223], count = 5, dis = 10 }, # Thunder Lich
+  { monster = 10, box = [94, 185, 104, 195], count = 5, dis = 10 }, # Dark Knight
+  { monster = 10, box = [70, 177, 80, 187], count = 5, dis = 10 }, # Dark Knight
+  { monster = 10, box = [63, 216, 78, 231], count = 5, dis = 10 }, # Dark Knight
+  { monster = 11, box = [26, 241, 48, 247], count = 5, dis = 10 }, # Ghost
+  { monster = 12, box = [6, 242, 19, 247], count = 5, dis = 10 }, # Larva
+  { monster = 13, box = [11, 218, 28, 226], count = 5, dis = 10 }, # Hell Spider
+  { monster = 14, box = [47, 228, 57, 238], count = 5, dis = 10 }, # Skeleton
+  { monster = 14, box = [42, 195, 54, 212], count = 5, dis = 10 }, # Skeleton
+  { monster = 15, box = [38, 156, 54, 169], count = 5, dis = 10 }, # Skeleton Archer
+  { monster = 10, box = [78, 146, 88, 156], count = 5, dis = 10 }, # Dark Knight
+  { monster = 10, box = [117, 148, 128, 158], count = 5, dis = 10 }, # Dark Knight
+  { monster = 16, box = [61, 163, 75, 177], count = 5, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [107, 175, 122, 190], count = 5, dis = 10 }, # Cyclops
+  { monster = 15, box = [125, 141, 131, 157], count = 5, dis = 10 }, # Skeleton Archer
+  { monster = 14, box = [112, 210, 122, 224], count = 5, dis = 10 }, # Skeleton
+  { monster = 13, box = [115, 237, 145, 249], count = 7, dis = 10 }, # Hell Spider
+  { monster = 11, box = [149, 238, 162, 249], count = 7, dis = 10 }, # Ghost
+  { monster = 13, box = [187, 217, 196, 242], count = 7, dis = 10 }, # Hell Spider
+  { monster = 15, box = [199, 221, 212, 233], count = 5, dis = 10 }, # Skeleton Archer
+  { monster = 12, box = [235, 235, 245, 245], count = 5, dis = 10 }, # Larva
+  { monster = 10, box = [240, 193, 250, 203], count = 5, dis = 10 }, # Dark Knight
+  { monster = 10, box = [207, 173, 217, 183], count = 5, dis = 10 }, # Dark Knight
+  { monster = 13, box = [171, 195, 179, 202], count = 7, dis = 10 }, # Hell Spider
+  { monster = 13, box = [153, 146, 168, 183], count = 7, dis = 10 }, # Hell Spider
+  { monster = 17, box = [206, 150, 212, 163], count = 5, dis = 10 }, # Cyclops
+  { monster = 16, box = [224, 168, 238, 175], count = 5, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [228, 111, 231, 121], count = 6, dis = 10 }, # Cyclops
+  { monster = 16, box = [198, 116, 201, 123], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 15, box = [161, 124, 171, 129], count = 6, dis = 10 }, # Skeleton Archer
+  { monster = 14, box = [121, 116, 126, 125], count = 6, dis = 10 }, # Skeleton
+  { monster = 13, box = [93, 109, 96, 117], count = 6, dis = 10 }, # Hell Spider
+  { monster = 13, box = [83, 111, 106, 119], count = 6, dis = 10 }, # Hell Spider
+  { monster = 17, box = [62, 105, 71, 113], count = 6, dis = 10 }, # Cyclops
+  { monster = 16, box = [93, 99, 97, 106], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 15, box = [67, 47, 77, 53], count = 6, dis = 10 }, # Skeleton Archer
+  { monster = 14, box = [96, 46, 102, 54], count = 6, dis = 10 }, # Skeleton
+  { monster = 17, box = [117, 70, 122, 78], count = 6, dis = 10 }, # Cyclops
+  { monster = 16, box = [135, 84, 142, 89], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [162, 92, 175, 102], count = 6, dis = 10 }, # Cyclops
+  { monster = 16, box = [209, 82, 222, 92], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 14, box = [241, 68, 249, 80], count = 6, dis = 10 }, # Skeleton
+  { monster = 15, box = [233, 36, 239, 50], count = 6, dis = 10 }, # Skeleton Archer
+  { monster = 15, box = [240, 11, 245, 23], count = 6, dis = 10 }, # Skeleton Archer
+  { monster = 15, box = [217, 11, 223, 15], count = 6, dis = 10 }, # Skeleton Archer
+  { monster = 17, box = [194, 8, 199, 21], count = 6, dis = 10 }, # Cyclops
+  { monster = 16, box = [155, 40, 162, 45], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 16, box = [118, 42, 125, 48], count = 6, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 10, box = [112, 5, 122, 15], count = 6, dis = 10 }, # Dark Knight
+  { monster = 10, box = [75, 3, 85, 13], count = 6, dis = 10 }, # Dark Knight
+  { monster = 10, box = [45, 7, 55, 17], count = 6, dis = 10 }, # Dark Knight
+  { monster = 17, box = [34, 22, 44, 32], count = 6, dis = 10 }, # Cyclops
+  { monster = 15, box = [20, 89, 30, 99], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [20, 89, 30, 99], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [20, 89, 30, 99], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [13, 69, 25, 81], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [13, 69, 25, 81], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [13, 69, 25, 81], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [1, 50, 13, 62], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [1, 50, 13, 62], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [1, 50, 13, 62], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [20, 50, 32, 62], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [20, 50, 32, 62], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [20, 50, 32, 62], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [40, 50, 46, 62], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [40, 50, 46, 62], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [40, 50, 46, 62], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [40, 80, 46, 92], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [40, 80, 46, 92], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [40, 80, 46, 92], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [40, 115, 46, 128], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [40, 115, 46, 128], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [40, 115, 46, 128], count = 4, dis = 10 }, # Cyclops
+  { monster = 15, box = [1, 118, 10, 128], count = 4, dis = 10 }, # Skeleton Archer
+  { monster = 16, box = [1, 118, 10, 128], count = 4, dis = 10 }, # Chief Skeleton Warrior
+  { monster = 17, box = [1, 118, 10, 128], count = 4, dis = 10 }, # Cyclops
+]
+
+spot = [
+  { monster = 8, at = [50, 123], dis = 30 },
+  { monster = 8, at = [42, 122], dis = 30 },
+  { monster = 8, at = [4, 73], dis = 30 },
+  { monster = 8, at = [12, 56], dis = 30 },
+  { monster = 8, at = [2, 78], dis = 30 },
+  { monster = 16, at = [108, 9], dis = 30 },
+  { monster = 14, at = [120, 232], dis = 30 },
+  { monster = 14, at = [107, 230], dis = 30 },
+  { monster = 12, at = [65, 205], dis = 30 },
+  { monster = 14, at = [84, 244], dis = 30 },
+  { monster = 15, at = [61, 169], dis = 30 },
+  { monster = 14, at = [94, 242], dis = 30 },
+  { monster = 14, at = [108, 195], dis = 30 },
+  { monster = 14, at = [94, 208], dis = 30 },
+  { monster = 11, at = [69, 167], dis = 30 },
+  { monster = 12, at = [87, 177], dis = 30 },
+  { monster = 11, at = [136, 149], dis = 30 },
+  { monster = 12, at = [70, 195], dis = 30 },
+  { monster = 14, at = [62, 181], dis = 30 },
+  { monster = 12, at = [61, 213], dis = 30 },
+  { monster = 11, at = [133, 212], dis = 30 },
+  { monster = 12, at = [69, 222], dis = 30 },
+  { monster = 12, at = [57, 247], dis = 30 },
+  { monster = 12, at = [49, 246], dis = 30 },
+  { monster = 14, at = [31, 247], dis = 30 },
+  { monster = 14, at = [3, 246], dis = 30 },
+  { monster = 14, at = [29, 246], dis = 30 },
+  { monster = 14, at = [83, 198], dis = 30 },
+  { monster = 17, at = [18, 220], dis = 30 },
+  { monster = 14, at = [33, 209], dis = 30 },
+  { monster = 11, at = [135, 212], dis = 30 },
+  { monster = 12, at = [86, 196], dis = 30 },
+  { monster = 11, at = [151, 212], dis = 30 },
+  { monster = 11, at = [168, 220], dis = 30 },
+  { monster = 12, at = [46, 210], dis = 30 },
+  { monster = 14, at = [45, 201], dis = 30 },
+  { monster = 12, at = [46, 205], dis = 30 },
+  { monster = 11, at = [46, 146], dis = 30 },
+  { monster = 11, at = [49, 182], dis = 30 },
+  { monster = 11, at = [44, 162], dis = 30 },
+  { monster = 11, at = [45, 180], dis = 30 },
+  { monster = 11, at = [45, 183], dis = 30 },
+  { monster = 11, at = [164, 232], dis = 30 },
+  { monster = 12, at = [137, 241], dis = 30 },
+  { monster = 12, at = [130, 244], dis = 30 },
+  { monster = 11, at = [92, 157], dis = 30 },
+  { monster = 11, at = [102, 174], dis = 30 },
+  { monster = 11, at = [113, 166], dis = 30 },
+  { monster = 15, at = [217, 229], dis = 30 },
+  { monster = 11, at = [222, 223], dis = 30 },
+  { monster = 11, at = [163, 184], dis = 30 },
+  { monster = 11, at = [164, 186], dis = 30 },
+  { monster = 17, at = [230, 173], dis = 30 },
+  { monster = 17, at = [236, 167], dis = 30 },
+  { monster = 11, at = [150, 193], dis = 30 },
+  { monster = 11, at = [142, 218], dis = 30 },
+  { monster = 12, at = [134, 240], dis = 30 },
+  { monster = 17, at = [241, 173], dis = 30 },
+  { monster = 11, at = [199, 116], dis = 30 },
+  { monster = 5, at = [170, 126], dis = 30 },
+  { monster = 14, at = [120, 243], dis = 30 },
+  { monster = 11, at = [240, 247], dis = 30 },
+  { monster = 11, at = [242, 247], dis = 30 },
+  { monster = 11, at = [241, 226], dis = 30 },
+  { monster = 11, at = [246, 220], dis = 30 },
+  { monster = 11, at = [243, 201], dis = 30 },
+  { monster = 5, at = [163, 114], dis = 30 },
+  { monster = 11, at = [244, 192], dis = 30 },
+  { monster = 11, at = [213, 248], dis = 30 },
+  { monster = 17, at = [173, 200], dis = 30 },
+  { monster = 11, at = [148, 149], dis = 30 },
+  { monster = 5, at = [163, 125], dis = 30 },
+  { monster = 15, at = [141, 110], dis = 30 },
+  { monster = 5, at = [145, 118], dis = 30 },
+  { monster = 13, at = [112, 93], dis = 30 },
+  { monster = 15, at = [98, 54], dis = 30 },
+  { monster = 14, at = [99, 49], dis = 30 },
+  { monster = 13, at = [104, 65], dis = 30 },
+  { monster = 13, at = [183, 27], dis = 30 },
+  { monster = 8, at = [187, 15], dis = 30 },
+  { monster = 8, at = [158, 17], dis = 30 },
+  { monster = 16, at = [159, 41], dis = 30 },
+  { monster = 16, at = [115, 8], dis = 30 },
+  { monster = 5, at = [123, 120], dis = 30 },
+  { monster = 15, at = [114, 110], dis = 30 },
+  { monster = 15, at = [68, 110], dis = 30 },
+  { monster = 15, at = [76, 111], dis = 30 },
+  { monster = 16, at = [124, 20], dis = 30 },
+  { monster = 16, at = [90, 6], dis = 30 },
+  { monster = 13, at = [114, 20], dis = 30 },
+  { monster = 5, at = [138, 86], dis = 30 },
+  { monster = 16, at = [212, 83], dis = 30 },
+  { monster = 16, at = [211, 90], dis = 30 },
+  { monster = 16, at = [226, 58], dis = 30 },
+  { monster = 16, at = [239, 56], dis = 30 },
+  { monster = 16, at = [235, 23], dis = 30 },
+  { monster = 13, at = [247, 87], dis = 30 },
+  { monster = 11, at = [247, 7], dis = 30 },
+  { monster = 11, at = [240, 7], dis = 30 },
+  { monster = 11, at = [241, 9], dis = 30 },
+  { monster = 9, at = [28, 18], dis = 30 },
+  { monster = 9, at = [22, 4], dis = 30 },
+  { monster = 9, at = [18, 29], dis = 30 },
+  { monster = 9, at = [18, 23], dis = 30 },
+  { monster = 9, at = [34, 4], dis = 30 },
+  { monster = 8, at = [119, 47], dis = 30 },
+  { monster = 9, at = [22, 90], dis = 30 },
+  { monster = 9, at = [33, 78], dis = 30 },
+  { monster = 8, at = [25, 100], dis = 30 },
+  { monster = 16, at = [29, 80], dis = 30 },
+  { monster = 9, at = [42, 117], dis = 30 },
+  { monster = 10, at = [14, 107], dis = 30 },
+  { monster = 8, at = [21, 82], dis = 30 },
+  { monster = 10, at = [22, 65], dis = 30 },
+  { monster = 10, at = [39, 77], dis = 30 },
+  { monster = 10, at = [29, 66], dis = 30 },
+  { monster = 8, at = [16, 55], dis = 30 },
+  { monster = 8, at = [35, 55], dis = 30 },
+  { monster = 8, at = [116, 47], dis = 30 },
+  { monster = 8, at = [122, 46], dis = 30 },
+  { monster = 8, at = [193, 30], dis = 30 },
+  { monster = 5, at = [120, 75], dis = 30 },
+  { monster = 13, at = [149, 94], dis = 30 },
+  { monster = 5, at = [81, 58], dis = 30 },
+  { monster = 13, at = [126, 94], dis = 30 },
+  { monster = 5, at = [71, 53], dis = 30 },
+  { monster = 5, at = [69, 88], dis = 30 },
+  { monster = 16, at = [86, 105], dis = 30 },
+  { monster = 16, at = [88, 104], dis = 30 },
+  { monster = 5, at = [98, 111], dis = 30 },
+  { monster = 15, at = [156, 125], dis = 30 },
+  { monster = 17, at = [165, 171], dis = 30 },
+  { monster = 17, at = [208, 162], dis = 30 },
+  { monster = 17, at = [220, 161], dis = 30 },
+  { monster = 17, at = [176, 188], dis = 30 },
+  { monster = 17, at = [168, 150], dis = 30 },
+  { monster = 17, at = [156, 171], dis = 30 },
+  { monster = 17, at = [176, 161], dis = 30 },
+  { monster = 17, at = [185, 161], dis = 30 },
+  { monster = 17, at = [181, 171], dis = 30 },
+  { monster = 17, at = [198, 168], dis = 30 },
+  { monster = 17, at = [190, 172], dis = 30 },
+  { monster = 11, at = [227, 248], dis = 30 },
+  { monster = 11, at = [181, 246], dis = 30 },
+  { monster = 14, at = [152, 247], dis = 30 },
+  { monster = 17, at = [128, 232], dis = 30 },
+  { monster = 14, at = [156, 247], dis = 30 },
+  { monster = 12, at = [193, 224], dis = 30 },
+  { monster = 12, at = [194, 222], dis = 30 },
+  { monster = 12, at = [194, 221], dis = 30 },
+  { monster = 11, at = [86, 150], dis = 30 },
+  { monster = 11, at = [98, 145], dis = 30 },
+  { monster = 12, at = [79, 154], dis = 30 },
+  { monster = 12, at = [78, 189], dis = 30 },
+  { monster = 14, at = [97, 187], dis = 30 },
+  { monster = 14, at = [105, 208], dis = 30 },
+  { monster = 14, at = [85, 208], dis = 30 },
+  { monster = 14, at = [84, 220], dis = 30 },
+  { monster = 14, at = [85, 229], dis = 30 },
+  { monster = 12, at = [100, 198], dis = 30 },
+  { monster = 12, at = [95, 192], dis = 30 },
+  { monster = 12, at = [90, 187], dis = 30 },
+  { monster = 14, at = [68, 227], dis = 30 },
+  { monster = 14, at = [61, 238], dis = 30 },
+  { monster = 14, at = [73, 245], dis = 30 },
+  { monster = 12, at = [73, 241], dis = 30 },
+  { monster = 14, at = [3, 232], dis = 30 },
+  { monster = 14, at = [3, 219], dis = 30 },
+  { monster = 14, at = [7, 219], dis = 30 },
+  { monster = 14, at = [17, 211], dis = 30 },
+  { monster = 17, at = [13, 235], dis = 30 },
+  { monster = 17, at = [27, 236], dis = 30 },
+  { monster = 11, at = [45, 188], dis = 30 },
+  { monster = 11, at = [53, 188], dis = 30 },
+  { monster = 11, at = [52, 166], dis = 30 },
+  { monster = 11, at = [62, 154], dis = 30 },
+  { monster = 11, at = [70, 154], dis = 30 },
+  { monster = 11, at = [77, 152], dis = 30 },
+  { monster = 11, at = [110, 145], dis = 30 },
+  { monster = 11, at = [119, 146], dis = 30 },
+  { monster = 11, at = [120, 159], dis = 30 },
+  { monster = 11, at = [111, 188], dis = 30 },
+  { monster = 11, at = [125, 195], dis = 30 },
+  { monster = 11, at = [135, 196], dis = 30 },
+  { monster = 11, at = [144, 187], dis = 30 },
+  { monster = 11, at = [125, 218], dis = 30 },
+  { monster = 17, at = [143, 232], dis = 30 },
+  { monster = 17, at = [50, 211], dis = 30 },
+  { monster = 11, at = [197, 245], dis = 30 },
+  { monster = 11, at = [247, 211], dis = 30 },
+  { monster = 11, at = [231, 186], dis = 30 },
+  { monster = 11, at = [223, 187], dis = 30 },
+  { monster = 11, at = [213, 186], dis = 30 },
+  { monster = 11, at = [209, 175], dis = 30 },
+  { monster = 15, at = [193, 148], dis = 30 },
+  { monster = 15, at = [188, 145], dis = 30 },
+  { monster = 15, at = [206, 152], dis = 30 },
+  { monster = 15, at = [212, 151], dis = 30 },
+  { monster = 17, at = [220, 172], dis = 30 },
+  { monster = 17, at = [247, 168], dis = 30 },
+  { monster = 15, at = [247, 176], dis = 30 },
+  { monster = 17, at = [52, 222], dis = 30 },
+  { monster = 17, at = [50, 235], dis = 30 },
+  { monster = 17, at = [38, 234], dis = 30 },
+  { monster = 17, at = [16, 227], dis = 30 },
+  { monster = 17, at = [25, 220], dis = 30 },
+  { monster = 17, at = [235, 108], dis = 30 },
+  { monster = 17, at = [228, 105], dis = 30 },
+  { monster = 17, at = [214, 116], dis = 30 },
+  { monster = 11, at = [183, 128], dis = 30 },
+  { monster = 15, at = [175, 127], dis = 30 },
+  { monster = 15, at = [175, 118], dis = 30 },
+  { monster = 15, at = [183, 123], dis = 30 },
+  { monster = 5, at = [87, 114], dis = 30 },
+  { monster = 5, at = [65, 127], dis = 30 },
+  { monster = 15, at = [68, 125], dis = 30 },
+  { monster = 15, at = [80, 97], dis = 30 },
+  { monster = 5, at = [70, 76], dis = 30 },
+  { monster = 13, at = [168, 96], dis = 30 },
+  { monster = 13, at = [196, 100], dis = 30 },
+  { monster = 16, at = [240, 77], dis = 30 },
+  { monster = 16, at = [247, 77], dis = 30 },
+  { monster = 16, at = [248, 20], dis = 30 },
+  { monster = 16, at = [244, 9], dis = 30 },
+  { monster = 16, at = [229, 11], dis = 30 },
+  { monster = 8, at = [205, 24], dis = 30 },
+  { monster = 16, at = [155, 32], dis = 30 },
+  { monster = 16, at = [137, 33], dis = 30 },
+  { monster = 16, at = [122, 29], dis = 30 },
+  { monster = 9, at = [118, 11], dis = 30 },
+  { monster = 16, at = [48, 11], dis = 30 },
+  { monster = 9, at = [38, 23], dis = 30 },
+  { monster = 9, at = [160, 10], dis = 30 },
+  { monster = 9, at = [194, 18], dis = 30 },
+  { monster = 9, at = [213, 12], dis = 30 },
+  { monster = 9, at = [221, 14], dis = 30 },
+  { monster = 9, at = [243, 16], dis = 30 },
+  { monster = 9, at = [233, 66], dis = 30 },
+  { monster = 8, at = [39, 112], dis = 30 },
+  { monster = 8, at = [26, 111], dis = 30 },
+  { monster = 8, at = [15, 113], dis = 30 },
+  { monster = 8, at = [12, 97], dis = 30 },
+  { monster = 8, at = [44, 56], dis = 30 },
+  { monster = 10, at = [41, 88], dis = 30 },
+  { monster = 10, at = [19, 120], dis = 30 },
+  { monster = 10, at = [37, 98], dis = 30 },
+  { monster = 9, at = [30, 105], dis = 30 },
+  { monster = 9, at = [27, 53], dis = 30 },
+  { monster = 9, at = [10, 68], dis = 30 },
+  { monster = 9, at = [33, 90], dis = 30 },
+  { monster = 9, at = [12, 121], dis = 30 },
+  { monster = 18, at = [43, 111], dis = 30 },
+  { monster = 18, at = [8, 123], dis = 30 },
+  { monster = 18, at = [7, 56], dis = 30 },
+  { monster = 18, at = [26, 67], dis = 30 },
+]

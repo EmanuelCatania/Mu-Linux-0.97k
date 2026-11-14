@@ -1,0 +1,19 @@
+# Devil Square 1 (mapa 9): gates.
+#
+# index    número de la gate. No se cambia: lo usan el cliente (Gate.bmd),
+#          Move.txt y el dead_gate de los Map.toml
+# type     "entrance" (pisarla lleva a `target`), "exit" (donde aparece
+#          quien llega) o "destination" (sólo destino: /move, revivir)
+# area     [x, y, tx, ty]
+# target   gate a la que lleva una entrada
+# dir      hacia dónde mira el personaje al llegar (0 a 7)
+# level    [mínimo, máximo] de nivel para usarla; -1 = sin límite
+# reset    [mínimo, máximo] de resets; sin la clave, sin límite
+# account  nivel de cuenta mínimo; sin la clave, 0
+
+gate = [
+  { index = 58, type = "destination", area = [133, 91, 141, 99], level = [10, 400] },
+  { index = 59, type = "destination", area = [135, 162, 142, 170], level = [10, 400] },
+  { index = 60, type = "destination", area = [62, 150, 70, 158], level = [10, 400] },
+  { index = 61, type = "destination", area = [66, 84, 74, 92], level = [10, 400] },
+]

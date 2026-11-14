@@ -15,6 +15,28 @@ CPKFree::~CPKFree()
 
 }
 
+void CPKFree::SetRects(const std::vector<ZoneRect>& rects)
+{
+	this->m_PKFreeInfo.clear();
+
+	for (const ZoneRect& r : rects)
+	{
+		MOVE_PKFREE_INFO info;
+
+		info.Map = r.Map;
+
+		info.X = r.X;
+
+		info.Y = r.Y;
+
+		info.TX = r.TX;
+
+		info.TY = r.TY;
+
+		this->m_PKFreeInfo.push_back(info);
+	}
+}
+
 void CPKFree::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;

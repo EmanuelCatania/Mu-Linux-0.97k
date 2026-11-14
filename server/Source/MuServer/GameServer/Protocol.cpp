@@ -30,6 +30,7 @@
 #include "ServerInfo.h"
 #include "SkillManager.h"
 #include "Trade.h"
+#include "ContentCatalog.h"
 #include "Util.h"
 #include "Viewport.h"
 #include "Warehouse.h"
@@ -490,6 +491,16 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 				case 0x05:
 				{
 					CGSetHwidRecv((PMSG_SET_HWID_RECV*)lpMsg, aIndex);
+
+					break;
+				}
+
+				case 0x06:
+				{
+					if (gObj[aIndex].Connected >= OBJECT_CONNECTED)
+					{
+						gContentCatalog.SetClientCache(aIndex, (PMSG_CATALOG_CACHE_RECV*)lpMsg);
+					}
 
 					break;
 				}

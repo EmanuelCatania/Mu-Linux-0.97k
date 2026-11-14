@@ -11,6 +11,7 @@
   const state = {
     maps: [],
     gates: [],
+    format: 'txt',
     selectedMap: 0,
     selectedGate: null,
     terrainCache: new Map(),
@@ -299,6 +300,10 @@
           <button type="button" id="save-gates">Guardar</button>
         </div>
       </div>
+      <div class="spawn-format">
+        <span id="gate-format-label"></span>
+        <button type="button" id="convert-gates" class="hidden">Pasar a archivos por mapa</button>
+      </div>
       <div class="spawn-editor">
         <div class="spawn-map">
           <canvas id="map-canvas"></canvas>
@@ -546,6 +551,8 @@
       setMessage(window.MuText.t('Arrastra en el mapa para ajustar el area.'), 'success');
     });
 
+    root.querySelector('#convert-gates').addEventListener('click', convertGates);
+
     root.querySelector('#save-gates').addEventListener('click', async () => {
       try {
         const invalidGate = state.gates.find((gate) => !isGateValid(gate));
@@ -751,7 +758,38 @@
     if (!gatesRes.ok) throw new Error(gatesData.error || window.MuText.t('No se pudo cargar gates'));
     state.maps = Array.isArray(mapsData.maps) ? mapsData.maps : [];
     state.gates = parseGateTxt(gatesData.content || '');
+    state.format = gatesData.format === 'toml' ? 'toml' : 'txt';
     state.selectedMap = state.maps[0]?.id ?? 0;
+  }
+
+  // De dónde lee el servidor las gates. Con los archivos por mapa, el panel las
+  // convierte a la lista para editarlas y de vuelta al guardar.
+  function renderFormat() {
+    root.querySelector('#gate-format-label').textContent = state.format === 'toml'
+      ? window.MuText.t('Formato: un Gates.toml por mapa (Data/Maps).')
+      : window.MuText.t('Formato: Gate.txt.');
+    root.querySelector('#convert-gates').classList.toggle('hidden', state.format === 'toml');
+  }
+
+  async function convertGates() {
+    if (!window.confirm(window.MuText.t('Las gates pasan a un Gates.toml por mapa (Data/Maps). Gate.txt queda como respaldo y el servidor deja de leerlo. ¿Seguir?'))) {
+      return;
+    }
+    try {
+      const res = await fetch('/admin/server-editor/api/gates/convert', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo convertir'));
+      state.format = 'toml';
+      renderFormat();
+      const reload = await fetch('/admin/server-editor/api/reload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'move' })
+      });
+      setMessage(window.MuText.t(reload.ok ? 'Convertido y recargado en el servidor.' : 'Convertido, pero no se pudo recargar en el server.'), reload.ok ? 'success' : 'error');
+    } catch (err) {
+      setMessage(err.message, 'error');
+    }
   }
 
   async function init() {
@@ -759,6 +797,7 @@
     bindEvents();
     try {
       await loadInitialData();
+      renderFormat();
       populateSelectors();
       renderGateList();
       await loadTerrain(state.selectedMap);

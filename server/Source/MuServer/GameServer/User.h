@@ -341,6 +341,9 @@ struct OBJECTSTRUCT
 	SOCKET Socket;
 	char IpAddr[16];
 	char HardwareID[36];
+	BYTE CatalogCacheCount; // secciones del catálogo que el cliente tiene en caché (F1:06)
+	BYTE CatalogCacheSub[16];
+	BYTE CatalogCacheHash[16][8];
 	BYTE ClassCode;
 	BYTE ClassFlag;
 	DWORD AutoSaveTime;
@@ -539,6 +542,8 @@ struct OBJECTSTRUCT
 	DWORD* SkillDelay;
 	DWORD* HackPacketDelay;
 	DWORD* HackPacketCount;
+	DWORD PacketRateTime; // inicio de la ventana de un segundo (CheckPacketRate)
+	DWORD PacketRateCount; // paquetes recibidos en esa ventana
 	int WarehouseNumber;
 	int AccountLevel;
 	char AccountExpireDate[20];

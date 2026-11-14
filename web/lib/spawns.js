@@ -161,8 +161,8 @@ function invasionsFileText(entries, mapName) {
     '#',
     '# Cruzan mapas, así que no están en ninguna carpeta de Maps: cada entrada',
     '# dice en qué `map` aparece. Las invasiones en sí (horarios, jefes,',
-    '# mensajes) siguen en Event/InvasionManager.dat; ahí, la tabla 2 elige por',
-    '# mapa y por `value` qué puntos de esta lista usa cada una.',
+    '# mensajes) están en Invasions.toml, en esta misma carpeta; ahí, cada',
+    '# grupo elige por mapa y por `value` qué puntos de esta lista usa.',
     '#',
     '# `count` monstruos repartidos en `box` = [x, y, tx, ty]. dir: 0 a 7, o -1',
     '# (o sin dir) para una al azar. dis: distancia que se mueve el monstruo.',
@@ -289,5 +289,6 @@ module.exports = {
   parseLegacy,
   buildLegacy,
   buildToml,
+  mapFileText,
   parseToml
 };

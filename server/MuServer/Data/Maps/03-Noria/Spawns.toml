@@ -1,0 +1,32 @@
+# Noria (mapa 3): monstruos y NPCs.
+#
+# npc    fijo en `at` = [x, y]
+# area   `count` monstruos repartidos en `box` = [x, y, tx, ty]
+# spot   uno, a 3 tiles o menos de `at`
+# event  como npc, para los eventos del mapa (Blood Castle, Devil Square)
+#
+# Los puntos de las invasiones no van acá: cruzan mapas y viven en
+# Events/Invasions/Spawns.toml.
+#
+# dir: 0 a 7, o -1 (o sin dir) para una al azar. dis: distancia que se
+# mueve el monstruo desde su lugar (0 si no se mueve).
+
+npc = [
+  { monster = 237, at = [171, 105], dir = 3 }, # Charon
+  { monster = 242, at = [173, 125], dir = 1 }, # Elf Lala
+  { monster = 243, at = [195, 124], dir = 2 }, # Eo the Craftsman
+  { monster = 240, at = [172, 96], dir = 3 }, # Safety Guardian
+  { monster = 238, at = [180, 103], dir = 1 }, # Chaos Goblin
+  { monster = 236, at = [169, 109], dir = 3 }, # Golden Archer
+]
+
+area = [
+  { monster = 26, box = [152, 115, 152, 115], count = 25, dis = 1 }, # Goblin
+  { monster = 27, box = [152, 115, 152, 115], count = 25, dis = 1 }, # Chain Scorpion
+  { monster = 28, box = [8, 6, 128, 128], count = 25, dis = 1 }, # Beetle Monster
+  { monster = 29, box = [8, 6, 128, 128], count = 25, dis = 1 }, # Hunter
+  { monster = 30, box = [162, 80, 162, 80], count = 25, dis = 1 }, # Forest Monster
+  { monster = 31, box = [162, 80, 162, 80], count = 25, dis = 1 }, # Agon
+  { monster = 32, box = [208, 134, 208, 134], count = 25, dis = 1 }, # Stone Golem
+  { monster = 33, box = [208, 134, 208, 134], count = 25, dis = 1 }, # Elite Goblin
+]

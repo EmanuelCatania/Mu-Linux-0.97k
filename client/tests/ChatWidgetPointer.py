@@ -24,6 +24,9 @@ template<class T> std::uintptr_t Address(T value) {
     else return static_cast<std::uintptr_t>(value);
 }
 static void ChatLB_ScrollBy0(int* ptr) { Require(reinterpret_cast<BYTE*>(ptr)==activeWidget); ++scrollCalls; }
+// En x64 la vtable vive en una cabecera delante del objeto; el arnes la simula con el primer
+// DWORD del widget (marcador distinto de cero = objeto construido).
+void** ChatWidget_GetVTable(void* widget) { return *static_cast<int*>(widget)?reinterpret_cast<void**>(1):nullptr; }
 '''
 
 MAIN = r'''

@@ -197,7 +197,7 @@ Somente GM de nível 1 ou superior, pelo chat do jogo:
 | `/bcstart` | Blood Castle, todos os níveis |
 | `/dsstart` | Devil Square, todos os níveis |
 | `/bingostart` | Golden Archer Bingo |
-| `/invasionstart <indice>` | Índice em `server/MuServer/Data/Event/InvasionManager.dat` |
+| `/invasionstart <indice>` | `index` da invasão em `server/MuServer/Data/Events/Invasions/Invasions.toml` (ou, num servidor sem esse arquivo, o índice de `Event/InvasionManager.dat`) |
 
 Agendam uma única execução aproximadamente dois minutos depois, sem alterar os horários do arquivo nem reiniciar eventos ativos. BC/DS também rejeitam o pedido quando a entrada já está aberta. Iniciar uma invasão não reinicia as outras. O evento deve estar habilitado. Os novos comandos registram o pedido e o resultado em `COMMAND_LOG`.
 
@@ -319,7 +319,7 @@ O cliente baseado em injeção de DLL está totalmente descontinuado e foi remov
    docker compose up -d --build
    ```
 
-3. Abra `44405/tcp` e `55901/tcp`.
+3. Abra `44405/tcp` e `55901/tcp`. Para limitar conexões por IP no firewall do host, veja [docs/firewall.md](docs/firewall.md) (em espanhol).
 
 Para imagens publicadas sem build:
 

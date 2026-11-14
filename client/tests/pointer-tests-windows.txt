@@ -185,10 +185,7 @@ tests/ErrorReportResetPointer.py --architecture x64
 tests/TwelveWordResetPointer.py --architecture x64
 tests/SpecialObjectPointer.py --architecture x64
 tests/AmbientHeroPointer.py --architecture x64
-tests/AmbientPoolInitPointer.py --architecture x64
-tests/AmbientPoolAnimationPointer.py --architecture x64
-tests/AmbientTerrainPointer.py --architecture x64
-tests/AmbientSpawnHeroPointer.py --architecture x64
+tests/AmbientFishPointer.py --architecture x64
 tests/EquipmentOwnerPointer.py --architecture x64
 tests/SceneAnimationGuardPointer.py --architecture x64
 tests/SceneTypeSelectors.py --architecture x64

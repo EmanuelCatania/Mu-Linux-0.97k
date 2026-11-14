@@ -1,0 +1,47 @@
+# Drops especiales que caen en cualquier mapa. Los de un solo mapa van en
+# Maps/NN-Nombre/Drops.toml.
+#
+# item           [sección, índice] del item (Item.txt)
+# level          nivel del item (+N); sin la clave, 0
+# grade          opciones excelentes fijas, si `exc` no da ninguna
+# options        índices de ItemOptionRate.txt para level, skill, luck,
+#                add y exc; sin la clave, esa opción no sale
+# monster        sólo ese monstruo (Monster.txt); sin la clave, cualquiera
+# monster_level  [mínimo, máximo] del nivel del monstruo; -1 = sin límite
+# rate           chance de 1.000.000 por monstruo muerto; -1 = siempre
+#
+# Se prueban antes que el drop normal del monstruo (un item al azar de
+# nivel cercano al suyo): si cae uno de estos, el monstruo no tira nada más.
+
+drop = [
+  { item = [12, 15], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 400], rate = 100 }, # Jewel of Chaos
+  { item = [13, 16], level = 1, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 32], rate = 1000 }, # Scroll of Archangel 1
+  { item = [13, 16], level = 2, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [33, 45], rate = 1000 }, # Scroll of Archangel 2
+  { item = [13, 16], level = 3, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [46, 57], rate = 1000 }, # Scroll of Archangel 3
+  { item = [13, 16], level = 4, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [58, 68], rate = 1000 }, # Scroll of Archangel 4
+  { item = [13, 16], level = 5, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [69, 76], rate = 1000 }, # Scroll of Archangel 5
+  { item = [13, 16], level = 6, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [77, 84], rate = 1000 }, # Scroll of Archangel 6
+  { item = [13, 17], level = 1, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 32], rate = 1000 }, # Blood Bone 1
+  { item = [13, 17], level = 2, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [33, 45], rate = 1000 }, # Blood Bone 2
+  { item = [13, 17], level = 3, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [46, 57], rate = 1000 }, # Blood Bone 3
+  { item = [13, 17], level = 4, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [58, 68], rate = 1000 }, # Blood Bone 4
+  { item = [13, 17], level = 5, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [69, 76], rate = 1000 }, # Blood Bone 5
+  { item = [13, 17], level = 6, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [77, 84], rate = 1000 }, # Blood Bone 6
+  { item = [14, 11], level = 1, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [12, 69], rate = 1000 }, # Star of Christmas
+  { item = [14, 11], level = 3, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [12, 69], rate = 1000 }, # Heart of Love
+  { item = [14, 11], level = 5, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [12, 49], rate = 1000 }, # Silver Medal
+  { item = [14, 11], level = 6, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [50, 69], rate = 1000 }, # Gold Medal
+  { item = [14, 11], level = 7, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [50, 69], rate = 1000 }, # Box of Heaven
+  { item = [14, 13], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 400], rate = 100 }, # Jewel of Bless
+  { item = [14, 14], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 400], rate = 100 }, # Jewel of Soul
+  { item = [14, 16], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 400], rate = 50 }, # Jewel of Life
+  { item = [14, 17], level = 1, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 32], rate = 1000 }, # Devil's Eye 1
+  { item = [14, 17], level = 2, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [33, 45], rate = 1000 }, # Devil's Eye 2
+  { item = [14, 17], level = 3, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [46, 57], rate = 1000 }, # Devil's Eye 3
+  { item = [14, 17], level = 4, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [58, 68], rate = 1000 }, # Devil's Eye 4
+  { item = [14, 18], level = 1, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [1, 32], rate = 1000 }, # Devil's Key 1
+  { item = [14, 18], level = 2, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [33, 45], rate = 1000 }, # Devil's Key 2
+  { item = [14, 18], level = 3, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [46, 57], rate = 1000 }, # Devil's Key 3
+  { item = [14, 18], level = 4, options = { skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [58, 68], rate = 1000 }, # Devil's Key 4
+  { item = [14, 22], options = { level = 1, skill = 3, luck = 5, add = 1, exc = 0 }, monster_level = [46, 150], rate = 20 }, # Jewel of Creation
+]
