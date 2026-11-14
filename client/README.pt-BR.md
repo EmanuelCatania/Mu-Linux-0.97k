@@ -434,15 +434,18 @@ São usadas com `HDTextures = 1`; com `0` nenhum arquivo extra é procurado.
 
 ### Camadas de dados
 
-Além de `Data/`, o cliente procura cada arquivo de dados em outras pastas ao
-lado do `main.exe`, nesta ordem (a primeira que tiver ganha):
+O código pede os arquivos com caminhos `Data/...` (a organização original do
+0.97k). `Data` já não é uma pasta: o cliente procura cada arquivo nestas pastas
+ao lado do `main.exe`, nesta ordem (a primeira que tiver ganha):
 
 1. `Servers/<ip>_<porta>/`: conteúdo do servidor em que você está conectado.
 2. `Packs/<nome>/`: pacotes opcionais do jogador, em ordem alfabética.
-3. `Content/`: conteúdo do jogo na organização nova (em migração).
-4. `Data/`: a organização de sempre.
+3. `Content/`: conteúdo do jogo na organização nova.
+4. `System/`: o mínimo para iniciar (fontes, chaves de rede, modelo de
+   macros). Uma instalação antiga com `Data/` ainda é lida como esta camada;
+   `tools/migrar_data.py` a passa para a organização nova.
 
-As três primeiras espelham o interior de `Data`: `Packs/MeuPack/Object8/casa.OZJ`
+As quatro espelham o interior de `Data`: `Packs/MeuPack/Object8/casa.OZJ`
 substitui `Data/Object8/casa.OZJ`. `Content/alias.toml` traduz pastas antigas
 para as novas (`"Object8" = "map/atlans/objects"`). Uma versão `-hd` só é usada
 se estiver na mesma camada do clássico ou em uma que ganhe: um pacote pode
@@ -499,10 +502,10 @@ O texto passa pelo HarfBuzz (forma dos caracteres, ligaduras), pelo SheenBidi
 (escritas da direita para a esquerda, como árabe e hebraico) e pelo libunibreak
 (onde uma linha pode ser quebrada no chat, nos balões e nos diálogos). O que a
 fonte escolhida não tem é procurado, caractere por caractere, nas fontes de
-reserva de `bin/Client/Data/Font/` (chinês, japonês, coreano, árabe, hebraico,
+reserva de `bin/Client/System/Font/` (chinês, japonês, coreano, árabe, hebraico,
 tailandês, devanágari e emoji) e depois nas do sistema. Dá para adicionar mais
 `.ttf` ou `.otf` a essa pasta; os detalhes estão em
-[`Respaldo-README.md`](bin/Client/Data/Font/Respaldo-README.md).
+[`Respaldo-README.md`](bin/Client/System/Font/Respaldo-README.md).
 
 `[Font]` no `Config.ini` escolhe a fonte principal, o tamanho, a suavização
 (`FontQuality`), uma sombra (`TextShadow=1`) e um contorno (`TextOutline=1`);
@@ -872,7 +875,7 @@ A licença cobre **o código**: tudo o que está sob `src/`.
 As bibliotecas de terceiros mantêm suas próprias licenças: stb e miniaudio
 (domínio público / MIT-0), utf8proc (MIT), libunibreak (zlib), SDL3 (zlib),
 FreeType (FreeType License), HarfBuzz (MIT), SheenBidi (Apache 2.0) e Dawn
-(BSD 3-Clause). As fontes de `bin/Client/Data/Font/` trazem a sua ao lado
+(BSD 3-Clause). As fontes de `bin/Client/System/Font/` trazem a sua ao lado
 (SIL OFL 1.1 ou Apache 2.0). O pacote Linux inclui as licenças em `licenses/`.
 
 ---

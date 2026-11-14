@@ -3,7 +3,7 @@
 Misma resolución que platform/ContentLayers del cliente, sin packs ni server:
 primero el registro de entidades (Content/<tipo>/.../<tipo>.toml con
 `source`), después los alias de Content/alias.toml, la ruta tal cual dentro de
-Content/ y al final Data/.  Así un test que pide "Player/Angel.bmd" sigue
+Content/ y al final System/ (o el Data/ de una instalación vieja).  Así un test que pide "Player/Angel.bmd" sigue
 encontrando el archivo aunque se haya movido.
 """
 import re
@@ -70,7 +70,7 @@ def asset(root, path):
         if lower == old or lower.startswith(old + "/"):
             candidates.append(client / "Content" / (new + inner[len(old):]))
             break
-    candidates += [client / "Content" / inner, client / "Data" / inner]
+    candidates += [client / "Content" / inner, client / "System" / inner, client / "Data" / inner]
     for c in candidates:
         if c.is_file():
             return c

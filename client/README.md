@@ -439,15 +439,18 @@ Es sólo visual: el server no se entera.
 
 ### Capas de datos
 
-Además de `Data/`, el cliente busca cada archivo de datos en otras carpetas al
+El código pide los archivos con rutas `Data/...` (el orden original del 0.97k).
+`Data` ya no es una carpeta: el cliente busca cada archivo en estas carpetas al
 lado de `main.exe`, en este orden (la primera que lo tenga gana):
 
 1. `Servers/<ip>_<puerto>/`: contenido del server al que estás conectado.
 2. `Packs/<nombre>/`: packs opcionales del jugador, en orden alfabético.
-3. `Content/`: contenido del juego en el orden nuevo (en migración).
-4. `Data/`: el orden de siempre.
+3. `Content/`: contenido del juego en el orden nuevo.
+4. `System/`: lo mínimo para arrancar (fuentes, claves de red, plantilla de
+   macros). Una instalación vieja con `Data/` todavía se lee como esta capa;
+   `tools/migrar_data.py` la pasa al orden nuevo.
 
-Las tres primeras reflejan el interior de `Data`: `Packs/MiPack/Object8/casa.OZJ`
+Las cuatro reflejan el interior de `Data`: `Packs/MiPack/Object8/casa.OZJ`
 reemplaza a `Data/Object8/casa.OZJ`. `Content/alias.toml` traduce carpetas
 viejas a las nuevas (`"Object8" = "map/atlans/objects"`). Una versión `-hd`
 sólo se usa si está en la misma capa que el clásico o en una que gane: así un
@@ -505,10 +508,10 @@ El texto pasa por HarfBuzz (forma de los caracteres, ligaduras), SheenBidi
 (escrituras de derecha a izquierda, como árabe y hebreo) y libunibreak (dónde se
 puede cortar una línea en chat, burbujas y diálogos). Lo que la fuente elegida
 no tiene se busca, carácter por carácter, en las fuentes de respaldo de
-`bin/Client/Data/Font/` (chino, japonés, coreano, árabe, hebreo, tailandés,
+`bin/Client/System/Font/` (chino, japonés, coreano, árabe, hebreo, tailandés,
 devanagari y emoji) y después en las del sistema. Se pueden agregar más `.ttf` u
 `.otf` a esa carpeta; el detalle está en
-[`Respaldo-README.md`](bin/Client/Data/Font/Respaldo-README.md).
+[`Respaldo-README.md`](bin/Client/System/Font/Respaldo-README.md).
 
 `[Font]` en `Config.ini` elige la fuente principal, el tamaño, el suavizado
 (`FontQuality`), una sombra (`TextShadow=1`) y un contorno (`TextOutline=1`);
@@ -878,7 +881,7 @@ La licencia cubre **el código**: todo lo que está bajo `src/`.
 Las bibliotecas de terceros mantienen sus propias licencias: stb y miniaudio
 (dominio público / MIT-0), utf8proc (MIT), libunibreak (zlib), SDL3 (zlib),
 FreeType (FreeType License), HarfBuzz (MIT), SheenBidi (Apache 2.0) y Dawn
-(BSD 3-Clause). Las fuentes de `bin/Client/Data/Font/` tienen la suya al lado
+(BSD 3-Clause). Las fuentes de `bin/Client/System/Font/` tienen la suya al lado
 (SIL OFL 1.1 o Apache 2.0). El paquete Linux incluye las licencias en
 `licenses/`.
 

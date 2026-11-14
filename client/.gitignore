@@ -52,7 +52,7 @@ lib/libjpeg/Release/
 lib/libjpeg/obj/
 
 # ─────────────────────────────────────────────────────────────
-#  Assets del juego (bin/Client/Data/)
+#  Assets del juego (bin/Client/System/ y bin/Client/Content/)
 #
 #  SE VERSIONAN. El repo es privado y sólo se comparte con
 #  colaboradores, así que los assets van adentro para que quien
@@ -111,7 +111,7 @@ doc-port/
 
 # Pack opcional HD (casa-hd.OZJ, modelo-hd.bmd al lado de los originales):
 # se distribuye aparte, no va en el repo
-bin/Client/Data/**/*-hd.*
+bin/Client/System/**/*-hd.*
 bin/Client/Content/**/*-hd.*
 
 # Capas de datos del jugador y de cada server (Platform/ContentLayers.h)

@@ -206,7 +206,8 @@ void FontStack::LoadFallbacks()
     if (!fallbackDirectory.empty()) base = fallbackDirectory;
     else {
         const char* root = std::getenv("MU_ASSET_ROOT");
-        base = std::filesystem::path(root && *root ? root : "") / "Data/Font";
+        // Sin raíz de assets es la ruta lógica (pasa por las capas: System/Font).
+        base = root && *root ? std::filesystem::path(root) / "System/Font" : std::filesystem::path("Data/Font");
     }
     std::map<std::string, std::map<std::string, std::string>> families; // familia -> estilo -> archivo
     // Por las capas: un pack o el server pueden traer o reemplazar respaldos.
