@@ -222,6 +222,7 @@
     <ClInclude Include="src\game\core\MapManager.h" />
     <ClInclude Include="src\game\core\MapNumber.h" />
     <ClInclude Include="src\render\EffectIds.h" />
+    <ClInclude Include="src\audio\SoundTable.h" />
     <ClInclude Include="src\game\core\HeroVitals.h" />
     <ClInclude Include="src\net\Network.h" />
     <ClInclude Include="src\net\NetChannel.h" />
@@ -578,6 +579,7 @@
     <ClCompile Include="src\assets\model\SkillModels.cpp" />
     <ClCompile Include="src\assets\model\InterfaceTextures.cpp" />
     <ClCompile Include="src\audio\GameSounds.cpp" />
+    <ClCompile Include="src\audio\SoundTable.cpp" />
     <ClCompile Include="src\game\combat\Combat.cpp" />
     <ClCompile Include="src\game\combat\Combat_AttackStage.cpp" />
     <ClCompile Include="src\game\combat\Combat_Projectiles.cpp" />

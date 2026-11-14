@@ -238,3 +238,4 @@ tests/WeatherCompareCursorPointer.py --architecture x64
 tests/WeatherSentinelCursorPointer.py --architecture x64
 tests/WeatherRandomOffsetPointer.py --architecture x64
 tests/ParticleOwnerPointer.py --architecture x64
+tests/SoundTablePointer.py --architecture x64

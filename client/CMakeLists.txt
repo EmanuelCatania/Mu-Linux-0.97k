@@ -303,6 +303,7 @@ set(MU_SOURCES
     src/assets/model/SkillModels.cpp
     src/assets/model/InterfaceTextures.cpp
     src/audio/GameSounds.cpp
+    src/audio/SoundTable.cpp
     src/game/combat/Combat.cpp
     src/game/combat/Combat_AttackStage.cpp
     src/game/combat/Combat_Projectiles.cpp
@@ -521,6 +522,7 @@ set(MU_HEADERS
     src/game/core/MapManager.h
     src/game/core/MapNumber.h
     src/render/EffectIds.h
+    src/audio/SoundTable.h
     src/game/core/HeroVitals.h
     src/net/Network.h
     src/net/NetChannel.h
