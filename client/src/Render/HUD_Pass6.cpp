@@ -1146,7 +1146,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
-            RenderTipText((int)closeX, (int)closeY - 13, GlobalText[221]);
+            // GlobalText[221] es "Cerrar Party (P)"; el del panel de personaje
+            // es GlobalText[222] = "Cerrar Info de Personaje (C)".
+            RenderTipText((int)closeX, (int)closeY - 13, GlobalText[222]);
         }
     }
 }
