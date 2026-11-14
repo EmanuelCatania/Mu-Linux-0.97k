@@ -134,7 +134,7 @@ void __cdecl Effect_SkillImpactBurst(int param_1, intptr_t param_2, float* param
     float angle[3] = { 1.0f, 0.0f, 0.0f };  // scale=1.0 in angle[0]
 
     // Spawn main impact particle (type 0x498) at param_3 position
-    Particle_Spawn(0x498, param_3, angle, light, 0, 0.0f, 0);
+    Particle_Spawn(BITMAP_SPARK + 1, param_3, angle, light, 0, 0.0f, 0);
 
     // Build rotation matrix from direction angles
     float dirAngles[3] = { param_4[0], param_4[1], param_4[2] };
@@ -157,7 +157,7 @@ void __cdecl Effect_SkillImpactBurst(int param_1, intptr_t param_2, float* param
     for (int i = 0; i < 20; i++) {
         rand();  // random variation X
         rand();  // random variation Y
-        Particle_Spawn(0x497, param_3, angle, light, 0, 0.0f, 0);
+        Particle_Spawn(BITMAP_SPARK, param_3, angle, light, 0, 0.0f, 0);
     }
 }
 
@@ -183,7 +183,7 @@ void __cdecl CreateBlood(intptr_t o) {
             float pos[3] = { *(float*)(o + 0x10), *(float*)(o + 0x14), *(float*)(o + 0x18) };
             float ang[3] = { *(float*)(o + 0x1C), *(float*)(o + 0x20), *(float*)(o + 0x24) };
             float lit[3] = { *(float*)(o + 0xE8), *(float*)(o + 0xEC), *(float*)(o + 0xF0) };
-            CreateEffect(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
+            CreateEffect(MODEL_ICE_SMALL, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
             count = count - 1;
         } while (count != 0);
         return;

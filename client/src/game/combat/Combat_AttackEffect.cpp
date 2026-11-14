@@ -506,7 +506,7 @@ LABEL_269:
           v246[2] = (double)Owneru * 20.0;
           v246[0] = 0.0;
           v246[1] = 0.0;
-          CreateEffect(191, (float *)(Owner + 16), v246, (float *)(Owner + 232), 1, Owner, -1, 0, 0);
+          CreateEffect(MODEL_FIRE, (float *)(Owner + 16), v246, (float *)(Owner + 232), 1, Owner, -1, 0, 0);
           Owneru = ++v186;
         }
         while ( v186 < 18 );
@@ -579,15 +579,15 @@ LABEL_293:
       {
         if ( AsCharacter(Owner)->SkillStage == 1 )
         {
-          CreateEffect(200, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
-          CreateEffect(201, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+          CreateEffect(MODEL_CIRCLE, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+          CreateEffect(MODEL_CIRCLE_LIGHT, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           PlayBuffer(89, 0, 0);
         }
         TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
         v191 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
         TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
         TargetPosition[1] = v191 - 512.0;
-        CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+        CreateEffect(MODEL_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         goto LABEL_75;
       }
       break;
@@ -708,18 +708,18 @@ LABEL_242:
           v246[0] = AsCharacter(Owner)->Object.Angle[0] - 20.0;
           v246[2] = AsCharacter(Owner)->Object.Angle[2] - 30.0;
           v246[1] = v167;
-          CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
+          CreateEffect(MODEL_FIRE, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
           v168 = AsCharacter(Owner)->Object.Angle[2];
           v169 = AsCharacter(Owner)->Object.Angle[0] - 30.0;
           v246[1] = AsCharacter(Owner)->Object.Angle[1];
           v246[0] = v169;
           v246[2] = v168;
-          CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
+          CreateEffect(MODEL_FIRE, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
           v170 = AsCharacter(Owner)->Object.Angle[1];
           v246[0] = AsCharacter(Owner)->Object.Angle[0] - 20.0;
           v246[2] = AsCharacter(Owner)->Object.Angle[2] + 30.0;
           v246[1] = v170;
-          CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
+          CreateEffect(MODEL_FIRE, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
           PlayBuffer(46, 0, 0);
         }
         goto LABEL_31;
@@ -735,8 +735,8 @@ LABEL_242:
         v201 = (intptr_t)AsCharacter(Owner)->Object.BoneMatrices;
         v248[2] = (float)(v200 - 16);
         TransformPosition(v2, (float (*)[4])(v201 + 96), v248, TargetPosition, 1);
-        Particle_Spawn(1241, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
-        Particle_Spawn(1206, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
+        Particle_Spawn(BITMAP_BUBBLE, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
+        Particle_Spawn(BITMAP_BLOOD + 1, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
         --v199;
       }
       while ( v199 );
@@ -1010,7 +1010,7 @@ LABEL_185:
         v248[1] = -110.0;
         v248[2] = 0.0;
         TransformPosition(v2, (float (*)[4])(v113 + 48 * v114), v248, TargetPosition, 1);
-        CreateEffect(223, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, Owner, -1, 0, 0);
+        CreateEffect(MODEL_ARROW_BOMB, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, Owner, -1, 0, 0);
         if ( AsCharacter(Owner)->MonsterIndex == 57 )
         {
           v115 = AsCharacter(Owner)->Object.Angle[0];
@@ -1018,9 +1018,9 @@ LABEL_185:
           Angle[2] = AsCharacter(Owner)->Object.Angle[2] + 20.0;
           Angle[0] = v115;
           Angle[1] = v116;
-          CreateEffect(223, (float *)(Owner + 16), Angle, (float *)(Owner + 232), 0, Owner, -1, 0, 0);
+          CreateEffect(MODEL_ARROW_BOMB, (float *)(Owner + 16), Angle, (float *)(Owner + 232), 0, Owner, -1, 0, 0);
           Angle[2] = Angle[2] - 40.0;
-          CreateEffect(223, (float *)(Owner + 16), Angle, (float *)(Owner + 232), 0, Owner, -1, 0, 0);
+          CreateEffect(MODEL_ARROW_BOMB, (float *)(Owner + 16), Angle, (float *)(Owner + 232), 0, Owner, -1, 0, 0);
         }
       }
       break;
@@ -1033,7 +1033,7 @@ LABEL_185:
         if ( v79 == 1 )
         {
           FUN_00466300(Owner + 16);
-          CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+          CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         }
         v80 = (char *)(Owner + EntityOffset(770));
         v243 = Owner + EntityOffset(770);
@@ -1148,7 +1148,7 @@ LABEL_120:
             Ownery = rand() % 800;
             TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
             TargetPosition[1] = (double)Ownery + AsCharacter(Owner)->Object.Position[1] - 400.0;
-            CreateEffect(240, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+            CreateEffect(MODEL_SKILL_BLAST, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           }
           if ( AsCharacter(Owner)->SkillStage == 14 )
           {
@@ -1170,7 +1170,7 @@ LABEL_120:
       }
       else if ( v79 == 1 )
       {
-        CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+        CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
       break;
     case 66:
@@ -1305,7 +1305,7 @@ LABEL_152:
       if ( (v26 == 3 || v26 == 4) && AsCharacter(Owner)->SkillStage == 5 )
       {
         FUN_00466300(Owner + 16);
-        CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+        CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
       break;
     case 72:
@@ -1427,7 +1427,7 @@ LABEL_50:
           Position[0] = AsCharacter(Owner)->Object.Position[0];
           Angle[2] = (float)(v43 % 360);
           Position[2] = AsCharacter(Owner)->Object.Position[2] + 100.0;
-          CreateJoint(1253, Position, Position, Angle, 1, 0, 60.0, 0, 0);
+          CreateJoint(BITMAP_JOINT_SPIRIT, Position, Position, Angle, 1, 0, 60.0, 0, 0);
           --v42;
         }
         while ( v42 );
@@ -1441,7 +1441,7 @@ LABEL_50:
         if ( v44 == 11 )
         {
           FUN_00466300(Owner + 16);
-          CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+          CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           v45 = 5;
           do
           {
@@ -1636,7 +1636,7 @@ LABEL_88:
             Position[0] = AsCharacter(Owner)->Object.Position[0];
             Angle[2] = (float)(v78 % 360);
             Position[2] = AsCharacter(Owner)->Object.Position[2] + 100.0;
-            CreateJoint(1253, Position, Position, Angle, 3, 0, 50.0, 0, 0);
+            CreateJoint(BITMAP_JOINT_SPIRIT, Position, Position, Angle, 3, 0, 50.0, 0, 0);
             --v77;
           }
           while ( v77 );
@@ -1765,13 +1765,13 @@ LABEL_31:
           v21 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
           TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
           TargetPosition[1] = v21 - 512.0;
-          CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+          CreateEffect(MODEL_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           goto LABEL_75;
         }
         if ( AsCharacter(Owner)->SkillStage == 1 )
         {
 LABEL_30:
-          CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 1, 0, -1, 0, 0);
+          CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 1, 0, -1, 0, 0);
         }
       }
       break;
@@ -1782,7 +1782,7 @@ LABEL_30:
         v198 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
         TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
         TargetPosition[1] = v198 - 512.0;
-        CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
+        CreateEffect(MODEL_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
 LABEL_75:
         PlayBuffer(46, 0, 0);
       }
@@ -1817,8 +1817,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1261, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-            Particle_Spawn(1195, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_LASER + 1, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+            Particle_Spawn(BITMAP_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
           }
           break;
         case 0x2E:
@@ -1835,8 +1835,8 @@ LABEL_75:
               v248,
               TargetPosition,
               1);
-            CreateJoint(1166, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
-            CreateJoint(1166, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 10.0, -1, 0);
+            CreateJoint(BITMAP_MOTION_BLUR, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_MOTION_BLUR, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 10.0, -1, 0);
           }
           break;
         case 0x3D:
@@ -1851,8 +1851,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 10.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 10.0, -1, 0);
           }
           if ( AsCharacter(Owner)->SkillStage == 1 )
           {
@@ -1869,8 +1869,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1261, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-            Particle_Spawn(1195, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_LASER + 1, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+            Particle_Spawn(BITMAP_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
           }
           break;
         case 0x42:
@@ -1891,8 +1891,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = Ownerw;
-            CreateJoint(1261, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
-            Particle_Spawn(1195, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_LASER + 1, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
+            Particle_Spawn(BITMAP_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
             ++v219;
             Ownerw = Ownerw + 270.0;
           }
@@ -1922,8 +1922,8 @@ LABEL_75:
             v214 = 4;
             do
             {
-              CreateJoint(1249, v213, v213, v246, 7, v203, 50.0, -1, 0);
-              CreateJoint(1249, TargetPosition, TargetPosition, v246, 7, v203, 50.0, -1, 0);
+              CreateJoint(BITMAP_FLARE, v213, v213, v246, 7, v203, 50.0, -1, 0);
+              CreateJoint(BITMAP_FLARE, TargetPosition, TargetPosition, v246, 7, v203, 50.0, -1, 0);
               --v214;
             }
             while ( v214 );
@@ -1947,7 +1947,7 @@ LABEL_75:
             v248[2] = 0.0;
             TransformPosition(This, (float (*)[4])(v212 + 528), v248, TargetPosition, 1);
             CreateEffect(256, TargetPosition, v246, Light, 1, 0, -1, 0, 0);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
           }
           break;
         case 0x4D:
@@ -1961,7 +1961,7 @@ LABEL_75:
             v246[1] = v208;
             v246[2] = v209;
             CreateEffect(256, TargetPosition, v246, Light, 1, 0, -1, 0, 0);
-            CreateJoint(1254, TargetPosition, TargetPosition, v246, 2, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, TargetPosition, v246, 2, v203, 50.0, -1, 0);
           }
           break;
         case 0x57:
@@ -1986,7 +1986,7 @@ LABEL_75:
             v246[0] = AsCharacter(Owner)->Object.Angle[0];
             v246[1] = v206;
             v246[2] = v207;
-            CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 5, 0, -1, 0, 0);
+            CreateEffect(MODEL_FIRE, TargetPosition, v246, (float *)(Owner + 232), 5, 0, -1, 0, 0);
           }
           break;
         case 0x59:
@@ -2007,7 +2007,7 @@ LABEL_75:
             v246[1] = v204;
             v246[2] = v205;
             CreateEffect(256, TargetPosition, v246, Light, 1, 0, -1, 0, 0);
-            CreateJoint(1254, TargetPosition, TargetPosition, v246, 2, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, TargetPosition, v246, 2, v203, 50.0, -1, 0);
           }
           break;
         default:
@@ -2030,9 +2030,9 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
-            Particle_Spawn(1180, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
+            Particle_Spawn(BITMAP_ENERGY, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
           }
           break;
         case 0x25:
@@ -2051,8 +2051,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1261, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-            Particle_Spawn(1195, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_LASER + 1, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+            Particle_Spawn(BITMAP_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
           }
           break;
         case 0x27:
@@ -2071,9 +2071,9 @@ LABEL_75:
           v246[0] = -60.0;
           v246[1] = 0.0;
           v246[2] = v227;
-          CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-          CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
-          Particle_Spawn(1180, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
+          CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+          CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
+          Particle_Spawn(BITMAP_ENERGY, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
           break;
         case 0x30:
           for ( jj = 0; jj < 6; ++jj )
@@ -2087,8 +2087,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = (float)(rand() % 360);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
-            CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 10.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
+            CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 10.0, -1, 0);
           }
           break;
         case 0x4D:
@@ -2102,7 +2102,7 @@ LABEL_75:
               v246[0] = 0.0;
               v246[1] = 0.0;
               v246[2] = (float)(rand() % 360);
-              CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 80.0, -1, 0);
+              CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 80.0, -1, 0);
               --v221;
             }
             while ( v221 );
@@ -2132,8 +2132,8 @@ LABEL_75:
             v246[0] = 0.0;
             v246[1] = 0.0;
             v246[2] = Ownerx;
-            CreateJoint(1261, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
-            Particle_Spawn(1195, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
+            CreateJoint(BITMAP_JOINT_LASER + 1, TargetPosition, (float *)(v203 + 16), v246, 1, v203, 50.0, -1, 0);
+            Particle_Spawn(BITMAP_FIRE, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 1.0, 0);
             ++v220;
             Ownerx = Ownerx + 270.0;
           }
@@ -2154,9 +2154,9 @@ LABEL_75:
           v246[0] = -60.0;
           v246[1] = 0.0;
           v246[2] = v229;
-          CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
-          CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
-          Particle_Spawn(1180, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
+          CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
+          CreateJoint(BITMAP_JOINT_THUNDER, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
+          Particle_Spawn(BITMAP_ENERGY, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
           break;
       }
     }

@@ -57,7 +57,7 @@ extern "C" void __cdecl CreateTeleportBegin(OBJECT* o)
     (void)SetAction(o, 87);
     o->AlphaTarget = 0.0f;
     o->Teleport = 1;
-    (void)CreateEffect(1176, o->Position, o->Angle,
+    (void)CreateEffect(BITMAP_SPARK + 1, o->Position, o->Angle,
                        o->Light, nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     PlayBuffer(88, 0, 0);                          // PlayBuffer(88) whoosh
@@ -75,7 +75,7 @@ extern "C" void __cdecl CreateTeleportEnd(OBJECT* o)
     o->AnimationFrame = 5.0f;
     o->Teleport = 3;
     o->AlphaTarget = 1.0f;
-    (void)CreateEffect(1176, o->Position, o->Angle,
+    (void)CreateEffect(BITMAP_SPARK + 1, o->Position, o->Angle,
                        o->Light, nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     PlayBuffer(88, 0, 0);

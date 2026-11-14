@@ -176,7 +176,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
                     pos[2] += (float)(rand() % 60 - 30);
                 }
 
-                CreateEffect(0x10A, pos, (float*)(o + 0x1C), light,
+                CreateEffect(MODEL_SPEARSKILL, pos, (float*)(o + 0x1C), light,
                              (float*)(intptr_t)weapType, (float*)o, NULL, NULL, 0);
             }
             return true;
@@ -289,19 +289,19 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
             float* oLight = (float*)(o + 0xE8);
 
             // 5x CreateEffect(0xCB) at different angle offsets
-            CreateEffect(0xCB, oPos, angleDir, oLight,
+            CreateEffect(MODEL_MAGIC2, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            CreateEffect(0xCB, oPos, angleDir, oLight,
+            CreateEffect(MODEL_MAGIC2, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            CreateEffect(0xCB, oPos, angleDir, oLight,
+            CreateEffect(MODEL_MAGIC2, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            CreateEffect(0xCB, oPos, angleDir, oLight,
+            CreateEffect(MODEL_MAGIC2, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            CreateEffect(0xCB, oPos, angleDir, oLight,
+            CreateEffect(MODEL_MAGIC2, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
 
             PlayBuffer(0x54, 0, 0);
@@ -355,12 +355,12 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
         if(stage==10) PlayBuffer(95,0,0);
         else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)),z,p,1); CreateEffect(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
         else if(stage==8) { const float r=AsObject(o)->Angle[2]*0.017453292f; float p[3]={AsObject(o)->Position[0]+sinf(r)*50.0f,AsObject(o)->Position[1]-cosf(r)*50.0f,AsObject(o)->Position[2]+110.0f},l[3]={1,1,1}; CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
-        if(stage>=13 && stage<=14) { const float r=AsObject(o)->Angle[2]*0.017453292f; for(int i=0;i<3;++i) { float p[3]={AsObject(o)->Position[0]+sinf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[1]-cosf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[2]+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
+        if(stage>=13 && stage<=14) { const float r=AsObject(o)->Angle[2]*0.017453292f; for(int i=0;i<3;++i) { float p[3]={AsObject(o)->Position[0]+sinf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[1]-cosf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[2]+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(MODEL_SPEARSKILL,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && AsObject(o)->CurrentAction==63) AsCharacter(c)->SkillStage=15; }
     else if(skill==49) { if(AsObject(o)->AnimationFrame>=5.0f && type==390 && (AsObject(o)->CurrentAction==64 || AsObject(o)->CurrentAction==65)) AsCharacter(c)->SkillStage=15; }
     else if(skill==52) { if(type==390 && AsObject(o)->CurrentAction>=34 && AsObject(o)->CurrentAction<=91 && AsObject(o)->AnimationFrame>=5.0f){AsObject(o)->PriorAnimationFrame=4.0f;AsObject(o)->AnimationFrame=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100, AsObject(o),0);} g_iLimitAttackTime=5; }
     else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const intptr_t modelState=DAT_05828d58?(intptr_t)AsModel(DAT_05828d58+390*BMD_STRIDE)->Actions:0; if(modelState && CharacterAttribute) *(float*)(modelState+ModelActionByte(980))=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
-    else if(skill==56) { if(type==390 && AsObject(o)->CurrentAction==81){float a[3]={AsObject(o)->Angle[0],AsObject(o)->Angle[1],AsObject(o)->Angle[2]-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
+    else if(skill==56) { if(type==390 && AsObject(o)->CurrentAction==81){float a[3]={AsObject(o)->Angle[0],AsObject(o)->Angle[1],AsObject(o)->Angle[2]-40.0f};for(int i=0;i<5;++i){CreateEffect(MODEL_MAGIC2,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
     // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).
     else if (EntityView((const void*)(uintptr_t)c).Kind() == EntityView::PlayerKind && type == 390 &&
@@ -382,13 +382,13 @@ void __cdecl Combat_SpawnDeathDustParticles(OBJECT* object)
     v1 = 20;
     do
     {
-      *(DWORD *)&AsObject(a1)->Light[0] = 1065353216;
-      *(DWORD *)&AsObject(a1)->Light[1] = 1065353216;
-      *(DWORD *)&AsObject(a1)->Light[2] = 1065353216;
+      AsObject(a1)->Light[0] = 1.0f;
+      AsObject(a1)->Light[1] = 1.0f;
+      AsObject(a1)->Light[2] = 1.0f;
       Position[0] = (double)(rand() % 64 - 32) + AsObject(a1)->Position[0];
       Position[1] = (double)(rand() % 64 - 32) + AsObject(a1)->Position[1];
       Position[2] = (double)(rand() % 32 - 16) + AsObject(a1)->Position[2];
-      Particle_Spawn(1221, Position, (float *)(a1 + 28), (float *)(a1 + 232), 1, 1.0, 0);
+      Particle_Spawn(BITMAP_SMOKE + 1, Position, (float *)(a1 + 28), (float *)(a1 + 232), 1, 1.0, 0);
       --v1;
     }
     while ( v1 );
@@ -412,6 +412,6 @@ void __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* object) {
     float pos[3] = { fX, *(float*)(param_1 + 0x14), *(float*)(param_1 + 0x18) };
     float scale[3] = { 1.0f, 1.0f, 0.0f };
     float light[3] = { fX, fZ, 0.0f };
-    Particle_Spawn(0x4c5, (float*)pos, (float*)scale, (float*)light,
+    Particle_Spawn(BITMAP_SMOKE + 1, (float*)pos, (float*)scale, (float*)light,
                  *(int*)(param_1 + 0x18), 0.0f, r2 % 200);
 }

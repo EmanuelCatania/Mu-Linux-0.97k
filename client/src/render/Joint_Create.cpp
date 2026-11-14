@@ -1247,7 +1247,7 @@ LAB_0046e37e:
     goto switchD_0046dee7_default;
   }
   switch(param_1) {
-  case 0x4e9:
+  case BITMAP_JOINT_SPARK:
     iVar6 = AsJoint(pcVar14)->SubType;
     if (iVar6 == 0) {
       pcVar14[0xc] = '\0';
@@ -1322,7 +1322,7 @@ LAB_0046f415:
       *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 4;
     }
     break;
-  case 0x4ea:
+  case BITMAP_JOINT_ENERGY:
     iVar6 = AsJoint(pcVar14)->SubType;
     AsJoint(pcVar14)->Scale = param_7;
     switch(iVar6) {
@@ -1446,7 +1446,7 @@ LAB_0046f415:
       pcVar14[0x3f] = '?';
     }
     goto switchD_0046dee7_default;
-  case 0x4eb:
+  case BITMAP_JOINT_HEALING:
     pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\f';
     pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
@@ -1547,7 +1547,7 @@ LAB_0046f415:
     pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     goto switchD_0046dee7_default;
-  case 0x4ed:
+  case BITMAP_JOINT_LASER + 1:
 switchD_0046f0e4_caseD_4ed:
     pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
@@ -1567,7 +1567,7 @@ switchD_0046f0e4_caseD_4ed:
     pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     if (AsJoint(pcVar14)->SubType != 0) {
-      if (AsJoint(pcVar14)->Type == 0x4ed) {
+      if (AsJoint(pcVar14)->Type == BITMAP_JOINT_LASER + 1) {
         *pfVar3 = 0.35;
         pcVar14[0x38] = -0x33;
         pcVar14[0x39] = -0x34;
@@ -1592,7 +1592,7 @@ switchD_0046f0e4_caseD_4ed:
       goto switchD_0046dee7_default;
     }
     break;
-  case 0x4ee:
+  case BITMAP_MOTION_BLUR_R2:
     pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\0';
@@ -1629,7 +1629,7 @@ switchD_0046f0e4_caseD_4ed:
     break;
   default:
     goto switchD_0046dee7_default;
-  case 0x4fd:
+  case BITMAP_FLARE_BLUE:
 switchD_0046f0e4_caseD_4fd:
     iVar6 = AsJoint(pcVar14)->SubType;
     pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'd';
@@ -1751,7 +1751,7 @@ LAB_0046f55a:
           uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
         }
         local_98 = (byte *)(uVar9 + 8);
-        CreateSprite(0x4cf,pfVar1,(float)(intptr_t)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
+        CreateSprite(BITMAP_SHINY + 1,pfVar1,(float)(intptr_t)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
         ;
         fVar24 = *pfVar2 * _DAT_005526d8;
         *pfVar3 = 1.0;

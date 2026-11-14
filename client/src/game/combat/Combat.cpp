@@ -1020,7 +1020,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
     // original llega hasta 36.
     if (iType >= 30 && iType <= 40) {
         // IDA L2617-2680: invocaciones del arbol Elf.
-        if ((int)gMapManager.GetCurrentMap() == 10)                        // IDA L2617: World == 10
+        if ((int)gMapManager.GetCurrentMap() == MAP_ICARUS)                        // IDA L2617: World == 10
             return AF_RETURN;
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
         SetPlayerMagic(AsCharacter(entity));                 // IDA LABEL_1430
@@ -1563,7 +1563,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // Player_InputTick L942 (=1) y este Attack (=2/-1), y lo leen el gate de
     // auto-ataque de arriba y Player_InputTick L599.  En nuestro arbol esa
     // direccion es `Attacking`, que Mouse_Hover ya usa con esa semantica.
-    if (DAT_07e11e18 != 0 && (int)gMapManager.GetCurrentMap() != 6) {  // IDA: m_bAutoAttack, World
+    if (DAT_07e11e18 != 0 && (int)gMapManager.GetCurrentMap() != MAP_ARENA) {  // IDA: m_bAutoAttack, World
         const BYTE movementState = *(char *)&AsCharacter(entity)->Class & 7;       // IDA: v16 = c[EntityOffset(444)] & 7 (clase)
         if ((movementState != 2 || iType == 24 || iType == 25 || iType == 52)
             && (movementState != 1 || iType != 48)) {

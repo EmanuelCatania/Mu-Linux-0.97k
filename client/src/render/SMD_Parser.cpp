@@ -122,17 +122,17 @@ void __cdecl SetCharacterScale(CHARACTER* param_1) {
         }
         if (*(char *)&AsCharacter(param_1)->Skin != '\0') {
             switch (AsCharacter(param_1)->Class & 7) {
-            case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6e147b; return; // 0.93f
-            case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f5c28f6; return; // 0.86f
+            case 0: case 1: AsCharacter(param_1)->Object.Scale = 0.93f; return; // 0.93f
+            case 2:         AsCharacter(param_1)->Object.Scale = 0.86f; return; // 0.86f
             case 3:         goto case3;
             default:        return;
             }
         }
         switch (AsCharacter(param_1)->Class & 7) {
-        case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f666666; return; // 0.9f
-        case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6147ae; return; // 0.88f
+        case 0: case 1: AsCharacter(param_1)->Object.Scale = 0.9f; return; // 0.9f
+        case 2:         AsCharacter(param_1)->Object.Scale = 0.88f; return; // 0.88f
         case 3:
-        case3:          *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f733333; return; // 0.95f
+        case3:          AsCharacter(param_1)->Object.Scale = 0.95f; return; // 0.95f
         }
     }
 }

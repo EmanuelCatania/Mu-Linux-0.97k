@@ -354,7 +354,7 @@ LAB_004649e0:
         goto switchD_00465549_caseD_4ba;
       default:
         return (float *)0x0;
-      case 0x4df:
+      case BITMAP_FIRECRACKER:
         AsObject(pfVar17)->Light[0] = 1.0;
         AsObject(pfVar17)->Light[1] = 1.0;
         AsObject(pfVar17)->Light[2] = 1.0;
@@ -375,8 +375,8 @@ LAB_004649e0:
         AsObject(pfVar17)->Position[2] = 100.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 75;
         return pfVar8;
-      case 0x4f0:
-      case 0x4f1:
+      case BITMAP_MAGIC + 1:
+      case BITMAP_MAGIC + 2:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         // IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un DWORD. Leerlo como float
         // y convertir (`(int)*(float *)&AsObject(pfVar17)->SubType`) daría 0 para cualquier SubType chico.
@@ -436,7 +436,7 @@ LAB_004649e0:
         AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
         pfVar12 = (float *)PlayBuffer(0x2e,0,0);
         return pfVar12;
-      case 0x4fa:
+      case BITMAP_SKULL:
         *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
         pfVar12 = (float*)(uintptr_t)AsObject(pfVar17)->SubType;   // SubType (DWORD)
         if (pfVar12 == (float *)0x1) {
@@ -449,7 +449,7 @@ LAB_004649e0:
         *(int*)&pfVar17[EffectLifetimeIndex] = 8;
         AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_0055297c;
         return pfVar12;
-      case 0x566:
+      case BITMAP_ADV_SMOKE + 1:
         *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         AsObject(pfVar17)->Velocity = 1.0;
         pfVar12 = pfVar17 + 7;
@@ -526,7 +526,7 @@ LAB_004658be:
     }
     if (0x498 < param_1) {
       switch(param_1) {
-      case 0x49c:
+      case BITMAP_ENERGY:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         AsObject(pfVar17)->Direction[0] = 0.0;
         AsObject(pfVar17)->Direction[1] = -60.0;
@@ -540,12 +540,12 @@ LAB_004658be:
         return pfVar8;
       default:
         return (float *)0x0;
-      case 0x4a7:        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+      case BITMAP_LIGHTNING + 1:        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         AsObject(pfVar17)->Scale = 1.5;
         return pfVar8;
-      case 0x4ab:
+      case BITMAP_FIRE:
         goto switchD_00464efe_caseD_4ab;
-      case 0x4ac:
+      case BITMAP_FIRE + 1:
         *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
         local_6c = 0.0;
@@ -684,7 +684,7 @@ switchD_00464efe_caseD_4ab:
       uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 + 0x20);
       local_40 = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[2];
-      Particle_Spawn(0x4c4,&local_48,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,0,1.0,0);
+      Particle_Spawn(BITMAP_SMOKE,&local_48,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,0,1.0,0);
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     fVar27 = AsObject(pfVar17)->Position[0];
@@ -1035,7 +1035,7 @@ switchD_00461001_caseD_c7:
     // archivo (`AsObject(pfVar17)->SubType != 4`).
     if (AsObject(pfVar17)->SubType == 2) {
       if (param_1 != 0xdf) {
-        CreateEffect(0xff,AsObject(pfVar17)->Position,pfVar12,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,
+        CreateEffect(MODEL_PIERCING,AsObject(pfVar17)->Position,pfVar12,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,
                      (float *)0xffffffff,(float *)0x0,0);
       }
       *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
@@ -1235,7 +1235,7 @@ switchD_00461001_caseD_c7:
     pfVar17[0x12] = AsObject(pfVar17)->Position[2];
     Joint_Create(0x4ea,pfVar12,pfVar12,AsObject(pfVar17)->Angle,5,(intptr_t)pfVar17,100.0,-1,0);
     if (*(float *)&AsObject(pfVar17)->SubType != 0.0) {
-      CreateEffect(0xff,pfVar12,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,(float *)0xffffffff,
+      CreateEffect(MODEL_PIERCING,pfVar12,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,(float *)0xffffffff,
                    (float *)0x0,0);
       *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
       AsObject(pfVar17)->Kind = 1;
@@ -4179,7 +4179,7 @@ void __cdecl Tamachan_Spawn(void)
     angle[2] = CreateAngle(16284.0f, 12031.0f,
                             *(float *)((char *)DAT_07abf5d8 + 16),
                             *(float *)((char *)DAT_07abf5d8 + 20));
-  CreateEffect(0xc1, pos, angle, angle, (float *)0, (float *)0, (float *)-1,
+  CreateEffect(MODEL_TAMA, pos, angle, angle, (float *)0, (float *)0, (float *)-1,
                 (float *)0, 0);
 }
 

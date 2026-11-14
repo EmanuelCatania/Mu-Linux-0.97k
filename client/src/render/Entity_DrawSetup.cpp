@@ -263,12 +263,12 @@ void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(BITMAP_SPARK + 1, targetPos, scale, fxLight, param_1, 0.0f, 0);
         BMD__TransformPosition(this_, (float (*)[4])&DAT_06970afc, zeroPos, targetPos, false);
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(BITMAP_SPARK + 1, targetPos, scale, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 867) {
         float zeroPos[3] = { 0.0f, 0.0f, 0.0f };
@@ -285,12 +285,12 @@ void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(BITMAP_SPARK + 1, targetPos, scale, fxLight, param_1, 0.0f, 0);
         BMD__TransformPosition(this_, (float (*)[4])&DAT_06970c7c, zeroPos, targetPos, false);
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(BITMAP_SPARK + 1, targetPos, scale, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 869) {
         float fxLight[3];
@@ -299,7 +299,7 @@ void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_
         fxLight[0] = lum;
         fxLight[1] = lum * 0.5f;
         fxLight[2] = 0.0f;
-        CreateSprite(1176, (float *)(param_1 + 0x10), 2.5f, fxLight, param_1, 0.0f, 0);
+        CreateSprite(BITMAP_SPARK + 1, (float *)(param_1 + 0x10), 2.5f, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 789) {
         *(float *)(param_1 + 104) = (sinf((float)WorldTime * 0.001f) + 1.0f) * 0.25f;
@@ -311,14 +311,14 @@ void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_
     // o+140 chooses a projected shadow, not another opaque body pass.
     // RenderCharacter already drew the body through Entity_PrepareRender.
     if (*(BYTE *)(param_1 + 140) != 0) {
-        if (gMapManager.GetCurrentMap() == 7) {
+        if (gMapManager.GetCurrentMap() == MAP_ATLANS) {
             EnableAlphaTest(true);
             Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.2f);
         } else {
             GL_ResetState();
             Gfx::Color3f(0.0f, 0.0f, 0.0f);
         }
-        if (gMapManager.GetCurrentMap() != 10)
+        if (gMapManager.GetCurrentMap() != MAP_ICARUS)
             BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));
         return;
     }

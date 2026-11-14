@@ -598,7 +598,7 @@ void InitializeMonster8(CHARACTER* character)
 void InitializeMonster11(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    *(unsigned int *)&AsCharacter(c)->Object.AlphaTarget = 1053609165;
+    AsCharacter(c)->Object.AlphaTarget = 0.4f;
     AsCharacter(c)->MoveSpeed = 15;
 }
 
@@ -625,8 +625,8 @@ void InitializeMonster34(CHARACTER* character)
     AsCharacter(c)->BodyPart[5].Level = 9;
     AsCharacter(c)->PK = 6;
     SetCharacterScale(AsCharacter(c));
-    if (gMapManager.GetCurrentMap() == 9) {
-        *(unsigned int *)&AsCharacter(c)->Object.Scale = 1067869798;
+    if (gMapManager.GetCurrentMap() == MAP_DEVIL_SQUARE1) {
+        AsCharacter(c)->Object.Scale = 1.3f;
     }
 }
 
@@ -634,9 +634,9 @@ void InitializeMonster34(CHARACTER* character)
 void InitializeMonster42(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[0] = 1128792064;
-    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[1] = 1125515264;
-    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[2] = 1133248512;
+    AsCharacter(c)->Object.BoundingBoxMax[0] = 200.0f;
+    AsCharacter(c)->Object.BoundingBoxMax[1] = 150.0f;
+    AsCharacter(c)->Object.BoundingBoxMax[2] = 280.0f;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 73.

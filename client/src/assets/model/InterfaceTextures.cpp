@@ -1,8 +1,6 @@
 // IDA: OpenImages @ 0x0050eb80 — UI_LoadInterfaceTextures
 // Loads UI interface textures (inventory slots, buttons, skill icons, money
 // icons, trading UI, guild badge, etc.) into texture slots 0x22 and 0x104-0x12a.
-// Despite the name, this loads inventory/UI interface textures, not skill
-// particle effects (those are in Model_Misc.cpp).
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"

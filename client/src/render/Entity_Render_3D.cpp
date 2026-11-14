@@ -176,8 +176,8 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
     pfVar3 = (float *)gMapManager.GetCurrentMap();
 
     switch (gMapManager.GetCurrentMap()) {
-    // ── case 0: login / connecting ────────────────────────────────────────────
-    case 0:
+    // ── case MAP_LORENCIA: login / connecting ────────────────────────────────────────────
+    case MAP_LORENCIA:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
         if (pfVar3 == (float *)0x38) {
             // Type 56 — portal gate: two fire jets from bone data
@@ -212,7 +212,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
                 local_c[2] = (float)(int)(uVar4 - 0x10);
                 BMD_TransformPosition(pModel, (float *)&DAT_06970acc, local_c, &local_18, '\0');
-                Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_SMOKE, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
                 // High puff: y=-80
                 uVar4 = _rand() & 0x8000001f;
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
@@ -222,14 +222,14 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
                 local_c[2] = (float)(int)(uVar4 - 0x10);
                 BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
-                pfVar3 = (float *)Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+                pfVar3 = (float *)Particle_Spawn(BITMAP_SMOKE, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
                 return pfVar3;
             }
         }
         break;
 
-    // ── case 2: in-world ──────────────────────────────────────────────────────
-    case 2:
+    // ── case MAP_DEVIAS: in-world ──────────────────────────────────────────────────────
+    case MAP_DEVIAS:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
         if (pfVar3 == (float *)0x64) {
             // Type 100 — player: rotating spark pair at z=150
@@ -258,8 +258,8 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
         }
         break;
 
-    // ── case 3: char-select scene ─────────────────────────────────────────────
-    case 3:
+    // ── case MAP_NORIA: char-select scene ─────────────────────────────────────────────
+    case MAP_NORIA:
         pfVar3 = (float *)(*(short *)(param_1 + 2) + -1);
         switch (*(short *)(param_1 + 2)) {
         case 1:
@@ -324,8 +324,8 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
                 bVar8 = (uVar4 == 0);
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xffffffe0) == 0xffffffff);
                 if (bVar8) {
-                    Particle_Spawn(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
-                    Particle_Spawn(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SHINY, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SHINY, &local_18, (float *)(param_1 + 0x1c), &local_24, 1, 1.0f, 0);
                 }
             }
             BMD_TransformPosition(pModel, (float *)&DAT_0697157c, local_c, &local_18, '\0');
@@ -352,8 +352,8 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
         pfVar3 = &local_18;
         goto LAB_004fc55a;
 
-    // ── case 4: in-world variant ──────────────────────────────────────────────
-    case 4:
+    // ── case MAP_LOST_TOWER: in-world variant ──────────────────────────────────────────────
+    case MAP_LOST_TOWER:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         if (entityType > 0x12 && entityType < 0x15) {
@@ -392,7 +392,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
             pfVar3 = (float *)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
         }
         // fallthrough to case 6
-    case 6:
+    case MAP_ARENA:
         if (*(short *)(param_1 + 2) == 9) {
             local_24 = fVar14 * _DAT_00552534;
             local_20 = fVar14 * _DAT_005528b8;
@@ -411,8 +411,8 @@ LAB_004fc55a:
         }
         break;
 
-    // ── case 8: various special types ─────────────────────────────────────────
-    case 8:
+    // ── case MAP_TARKAN: various special types ─────────────────────────────────────────
+    case MAP_TARKAN:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         switch (entityType) {
@@ -428,7 +428,7 @@ LAB_004fc55a:
             if (*(int *)(param_1 + 0x58) != -2) {
                 iVar2 = 0x14;
                 do {
-                    pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
+                    pfVar3 = (float *)Particle_Spawn(BITMAP_SMOKE, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
                 } while (--iVar2 != 0);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
@@ -455,7 +455,7 @@ LAB_004fc55a:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             iVar2 = _rand();
             if (iVar2 % 5 == 0) {
-                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)Particle_Spawn(BITMAP_SMOKE, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -464,7 +464,7 @@ LAB_004fc55a:
             uVar11 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime % 5000 > 4500
             uVar11 = (ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20 | uVar11 & 0xffffffff;
             if (0x1194 < (int)((longlong)uVar11 % 5000)) {
-                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)Particle_Spawn(BITMAP_SMOKE, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -479,7 +479,7 @@ LAB_004fc55a:
                 pfVar6  = (float *)(param_1 + 0x1c);
                 pfVar12 = (float *)(param_1 + 0x10);
                 local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-                Particle_Spawn(0x4c4, pfVar12, pfVar6, pfVar13, 8, *(float *)(param_1 + 0xc), 0);
+                Particle_Spawn(BITMAP_SMOKE, pfVar12, pfVar6, pfVar13, 8, *(float *)(param_1 + 0xc), 0);
                 iVar2 = _rand();
                 if (iVar2 % 3 == 0) {
                     uVar4 = _rand() & 0x8000007f;
@@ -489,7 +489,7 @@ LAB_004fc55a:
                     if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffff80) + 1;
                     local_10 = *(float *)(param_1 + 0x18);
                     local_14 = (float)(int)(uVar4 - 0x40) + *(float *)(param_1 + 0x14);
-                    Particle_Spawn(0x4c4, &local_18, pfVar6, pfVar13, 4, *(float *)(param_1 + 0xc) * _DAT_00552504, 0);
+                    Particle_Spawn(BITMAP_SMOKE, &local_18, pfVar6, pfVar13, 4, *(float *)(param_1 + 0xc) * _DAT_00552504, 0);
                     bVar18 = 0;
                     pfVar17 = (float *)0x0; pfVar16 = (float *)0xffffffff;
                     pfVar15 = (float *)0x0; pfVar3  = (float *)0x0;
@@ -503,8 +503,8 @@ LAB_004fc55a:
         }
         break;
 
-    // ── case 9: sub-type 2 (entity type 2) — slash trails ────────────────────
-    case 9:
+    // ── case MAP_DEVIL_SQUARE1: sub-type 2 (entity type 2) — slash trails ────────────────────
+    case MAP_DEVIL_SQUARE1:
         pfVar3 = (float *)(*(short *)(param_1 + 2) + -2);
         if (pfVar3 == (float *)0x0) {
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
@@ -530,8 +530,8 @@ LAB_004fc55a:
         }
         break;
 
-    // ── case 0xa: skill particle emitters (types 0–5, 0xa) ───────────────────
-    case 0xa:
+    // ── case MAP_ICARUS: skill particle emitters (types 0–5, 0xa) ───────────────────
+    case MAP_ICARUS:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
         entityType = *(short *)(param_1 + 2);
         switch (entityType) {
@@ -543,7 +543,7 @@ LAB_004fc55a:
                 // salian de basura — las nubes de Icarus se veian verdes y magenta.
                 float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 0x14;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(BITMAP_CLOUD, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
@@ -556,7 +556,7 @@ LAB_004fc55a:
                 // salian de basura — las nubes de Icarus se veian verdes y magenta.
                 float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 10;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(BITMAP_CLOUD, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
@@ -565,13 +565,13 @@ LAB_004fc55a:
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-            pfVar3 = (float *)Particle_Spawn(0x47e, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+            pfVar3 = (float *)Particle_Spawn(BITMAP_LIGHT, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             return pfVar3;
         }
         break;
 
     // ── cases 0xb–0x10: misc particle types ──────────────────────────────────
-    case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
+    case MAP_BLOOD_CASTLE1: case MAP_BLOOD_CASTLE2: case MAP_BLOOD_CASTLE3: case MAP_BLOOD_CASTLE4: case MAP_BLOOD_CASTLE5: case MAP_BLOOD_CASTLE6:
         iVar2 = (int)*(short *)(param_1 + 2);
         if (iVar2 == 0xb) {
             // IDA 0x004FC070: Angle[0] contiene bytes {1,2,4,6}; los tres
@@ -614,8 +614,8 @@ LAB_004fc55a:
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffc) == 0xffffffff);
                 *(float *)(param_1 + 0x80) = *(float *)(param_1 + 0x80) + _DAT_0055256c;
                 if (bVar8) {
-                    Particle_Spawn(0x566, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
-                    Particle_Spawn(0x565, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_ADV_SMOKE + 1, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_ADV_SMOKE, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
                 }
             }
             uVar4 = _rand() & 0x80000001;
@@ -635,10 +635,10 @@ LAB_004fc55a:
                 if (bVar8) {
                     pfVar3 = (float *)(param_1 + 0x1c);
                     pfVar6 = (float *)(param_1 + 0x10);
-                    Particle_Spawn(0x4f4, pfVar6, pfVar3, &local_24, 6, 1.0f, 0);
-                    Particle_Spawn(0x565, pfVar6, pfVar3, &local_24, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_CLOUD, pfVar6, pfVar3, &local_24, 6, 1.0f, 0);
+                    Particle_Spawn(BITMAP_ADV_SMOKE, pfVar6, pfVar3, &local_24, 1, 1.0f, 0);
                     local_24 = 1.0f; local_20 = 0.8f; local_1c = 0.8f;
-                    pfVar3 = (float *)Particle_Spawn(0x4e1, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
+                    pfVar3 = (float *)Particle_Spawn(BITMAP_FLARE, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
                     return pfVar3;
                 }
             }

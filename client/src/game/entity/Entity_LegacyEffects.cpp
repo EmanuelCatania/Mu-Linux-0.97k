@@ -116,8 +116,8 @@ void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
         outPos[2] += *(float *)(param_1 + 0x18);
 
         float size[4] = { 1.0f, 1.0f, 1.0f, angX };
-        Particle_Spawn(0x4ce, outPos, pfVar1, size, 0, 1.0f, 0);
-        Particle_Spawn(0x4ce, outPos, pfVar1, size, 1, 1.0f, 0);
+        Particle_Spawn(BITMAP_SHINY, outPos, pfVar1, size, 0, 1.0f, 0);
+        Particle_Spawn(BITMAP_SHINY, outPos, pfVar1, size, 1, 1.0f, 0);
     }
 }
 

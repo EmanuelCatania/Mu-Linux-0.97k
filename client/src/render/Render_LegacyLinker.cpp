@@ -429,7 +429,7 @@ LABEL_9:
           {
             Position[0] = (double)(rand() % 300) - 150.0 + *(float *)(a1 + 16);
             Position[1] = *(float *)(a1 + 20) - ((double)(rand() % 20) + 600.0);
-            Particle_Spawn(1221, Position, (float *)(a1 + 28), (float *)(a1 + 232), 0, 1.0, 0);
+            Particle_Spawn(BITMAP_SMOKE + 1, Position, (float *)(a1 + 28), (float *)(a1 + 232), 0, 1.0, 0);
             --v7;
           }
           while ( v7 );

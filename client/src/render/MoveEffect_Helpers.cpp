@@ -30,13 +30,13 @@ void __cdecl Effect_SpawnSmokeBurst(float *param_1, char param_2)
     angle[0] = (float)(_rand() % 60 + 150);
     angle[1] = 0.0f;
     angle[2] = (float)(_rand() % 30);
-    Particle_Spawn(1175, position, angle, light, 2, 1.0f, 0);
+    Particle_Spawn(BITMAP_SPARK, position, angle, light, 2, 1.0f, 0);
   }
   light[0] = 0.7f;
   light[1] = 0.7f;
   light[2] = 0.7f;
   if (param_2 != 0)
-    Particle_Spawn(1215, position, angle, light, 0, 1.0f, 0);
+    Particle_Spawn(BITMAP_EXPLOTION, position, angle, light, 0, 1.0f, 0);
   return;
 
 }
@@ -60,11 +60,11 @@ void __cdecl Effect_SpawnSmokeExplosion(undefined4 *param_1, char param_2)
     angle[0] = (float)(_rand() % 60 + 150);
     angle[1] = 0.0f;
     angle[2] = (float)(_rand() % 30);
-    Particle_Spawn(1175, position, angle, light, 2, 1.0f, 0);
+    Particle_Spawn(BITMAP_SPARK, position, angle, light, 2, 1.0f, 0);
   }
   if (param_2 != 0) {
     angle[0] = angle[1] = angle[2] = 0.0f;
-    (void)Particle_Spawn(1216, position, angle, light, 0, 4.0f, 0);
+    (void)Particle_Spawn(BITMAP_EXPLOTION + 1, position, angle, light, 0, 4.0f, 0);
   }
   return;
 
@@ -193,14 +193,14 @@ void __cdecl Effect_SpawnProximityHit(intptr_t param_1)
           }
           // Random magic hit effect: type 0xD5 or 0xD6
           CreateEffect(uVar6 + 0xd5, pfVar8, pfVar9, pfVar10, pfVar11, pfVar12, pfVar13, pfVar14, bVar15);
-          Particle_Spawn(0x4c4, pfVar1, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+          Particle_Spawn(BITMAP_SMOKE, pfVar1, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
           iVar7 = iVar7 + -1;
         } while (iVar7 != 0);
         PlayBuffer(0x30, 0, 0);  // play sound 0x30 (magic hit sfx)
         return;
       }
       if (sVar2 == 0x49c) {  // entity type: area-of-effect skill
-        Particle_Spawn(0x498, pfVar1, (float *)(param_1 + 0x1c), local_c, 1, 6.0f, 0);
+        Particle_Spawn(BITMAP_SPARK + 1, pfVar1, (float *)(param_1 + 0x1c), local_c, 1, 6.0f, 0);
         return;
       }
     }

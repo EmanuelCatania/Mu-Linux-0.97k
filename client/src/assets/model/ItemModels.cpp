@@ -3,7 +3,6 @@
 // into slots 0x190-0x3bd.  Uses OpenModels (numbered prefix loader) and
 // OpenModel (named SMD loader) for Korean-locale files, then
 // AccessModel (BMD index loader) for compressed-asset paths.
-// Note: "Players" here is a misnomer — this function loads item/weapon geometry.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"

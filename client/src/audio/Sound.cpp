@@ -58,7 +58,7 @@ void __cdecl LoadWaveFile(int Buffer, const char* strFileName,
 
 // ============================================================================
 // LoadWaveFile @ 0x00404A10 (IDA: FUN_00404A10; name from 5.2).
-// (Monster_Data, Model_Gates, stubs) which pass the 4th arg as char.
+// (Monster_Data, GameSounds, stubs) which pass the 4th arg as char.
 // Forwards to LoadWaveFile with bool cast.
 // ============================================================================
 void __cdecl LoadWaveFile(int Buffer, const char* strFileName,

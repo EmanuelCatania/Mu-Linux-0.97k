@@ -474,14 +474,14 @@ char Sound_PlayFootstep()
   result = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
   if ( result != 30 && result != 31 )
   {
-    if ( gMapManager.GetCurrentMap() == 2 )
+    if ( gMapManager.GetCurrentMap() == MAP_DEVIAS )
     {
       if ( HeroTile != 3 && HeroTile < 10 )
       {
         return PlayBuffer(10, 0, 0);
       }
     }
-    else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
+    else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != MAP_NORIA )
     {
       if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)&((CHARACTER*)(uintptr_t)(Hero))->SafeZone )   // IDA: World == 7
       {
@@ -1534,7 +1534,7 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
         // Non-player entities
         switch (v1) {
         case 39:
-            CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(MODEL_SAW, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(16, AsObject(c), 0);
             break;
@@ -1543,7 +1543,7 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
             PlayBuffer(16, AsObject(c), 0);
             break;
         case 51:
-            CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(BITMAP_FIRE + 1, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(91, 0, 0);
             break;
@@ -1832,7 +1832,7 @@ label_26:
                 pos[0] = (float)(v12 - 64) + AsCharacter(c)->Object.Position[0];
                 pos[1] = AsCharacter(c)->Object.Position[1];
                 pos[2] = (float)(rand() % 50) + AsCharacter(c)->Object.Position[2] + 200.0f;
-                Particle_Spawn(1221, pos, c->Object.Angle, c->Object.Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_SMOKE + 1, pos, c->Object.Angle, c->Object.Light, 0, 1.0f, 0);
             }
         }
         PlayBuffer(105, 0, 0);
@@ -2049,14 +2049,14 @@ void __cdecl WorldObject_EmitFireSmoke(int param_1, OBJECT* object, float param_
         float v10 = (float)(rand() % 6 + 6) * 0.1f;
         float Light[3] = { v10, v10 * 0.60000002f, v10 * 0.40000001f };
         if ((rand() % 2) == 0)
-            Particle_Spawn(1195, out, v5, Light, rand() % 4, 1.0f, 0);
+            Particle_Spawn(BITMAP_FIRE, out, v5, Light, rand() % 4, 1.0f, 0);
         AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
     } else if (param_1 == 1) {
         if ((rand() % 2) == 0)
-            Particle_Spawn(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
+            Particle_Spawn(BITMAP_SMOKE, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
     } else if (param_1 == 2) {
         if ((rand() % 2) == 0)
-            Particle_Spawn(1220, out, v5, a2 + 58, 2, 1.0f, 0);
+            Particle_Spawn(BITMAP_SMOKE, out, v5, a2 + 58, 2, 1.0f, 0);
     }
 }
 

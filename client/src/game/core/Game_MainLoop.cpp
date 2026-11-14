@@ -326,7 +326,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         UIChatLogWindow_AddText((const char*)&DAT_083a7c94, nameBuf, 1);
 
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
-    if (gMapManager.GetCurrentMap() == 10) {
+    if (gMapManager.GetCurrentMap() == MAP_ICARUS) {
         // Sub-state 10: teal clear color
         Gfx::ClearColor(*(float*)"\x00\x00\x40\x3c", // 0.047f
                      *(float*)"\x00\x00\xc8\x3d", // 0.098f
@@ -429,7 +429,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
     if (Platform::GetSocket().IsOpen(SocketClientSocket) &&
-        (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
+        (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == MAP_ATLANS)) {
         static DWORD s_lastLive = 0;
         DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastLive >= 1000) {
@@ -472,7 +472,7 @@ static void Game_TickAmbientAudio()
 
     // ── Sonidos ambientales por mapa ───────────────────────────────────────
     switch (gMapManager.GetCurrentMap()) {
-    case 0:  // Lorencia
+    case MAP_LORENCIA:  // Lorencia
         if (DAT_07e118e8 == 4) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
@@ -481,41 +481,41 @@ static void Game_TickAmbientAudio()
                 PlayBuffer(1, 0, 1);
         }
         break;
-    case 1:  // Dungeon
+    case MAP_DUNGEON:  // Dungeon
         PlayBuffer(3, 0, 1);
         break;
-    case 2:  // Devias
+    case MAP_DEVIAS:  // Devias
         if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
             Sound_StopBuffer(0);
         else
             PlayBuffer(0, 0, 1);
         break;
-    case 3:  // Noria
+    case MAP_NORIA:  // Noria
         PlayBuffer(0, 0, 1);
         if ((_rand() & 0x1ff) == 0)
             PlayBuffer(2, 0, 0);  // ambient rare
         break;
-    case 4:
+    case MAP_LOST_TOWER:
         PlayBuffer(5, 0, 1); break;
-    case 7:
+    case MAP_ATLANS:
         PlayBuffer(6, 0, 1); break;
-    case 8:
+    case MAP_TARKAN:
         PlayBuffer(7, 0, 1); break;
-    case 10:
+    case MAP_ICARUS:
         PlayBuffer(0x14, 0, 1);
         if (_rand() % 100 != 0) _rand();
         break;
     }
 
     // Corta los ambientales de los otros mapas
-    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 2 && gMapManager.GetCurrentMap() != 3) Sound_StopBuffer(0);
-    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 9)                       Sound_StopBuffer(1);
-    if (gMapManager.GetCurrentMap() != 1)                                             Sound_StopBuffer(3);
-    if (gMapManager.GetCurrentMap() != 3)                                             Sound_StopBuffer(2);
-    if (gMapManager.GetCurrentMap() != 4)                                             Sound_StopBuffer(5);
-    if (gMapManager.GetCurrentMap() != 7)                                             Sound_StopBuffer(6);
-    if (gMapManager.GetCurrentMap() != 8)                                             Sound_StopBuffer(7);
-    if (gMapManager.GetCurrentMap() != 10)                                            Sound_StopBuffer(0x14);
+    if (gMapManager.GetCurrentMap() != MAP_LORENCIA && gMapManager.GetCurrentMap() != MAP_DEVIAS && gMapManager.GetCurrentMap() != MAP_NORIA) Sound_StopBuffer(0);
+    if (gMapManager.GetCurrentMap() != MAP_LORENCIA && gMapManager.GetCurrentMap() != MAP_DEVIL_SQUARE1)                       Sound_StopBuffer(1);
+    if (gMapManager.GetCurrentMap() != MAP_DUNGEON)                                             Sound_StopBuffer(3);
+    if (gMapManager.GetCurrentMap() != MAP_NORIA)                                             Sound_StopBuffer(2);
+    if (gMapManager.GetCurrentMap() != MAP_LOST_TOWER)                                             Sound_StopBuffer(5);
+    if (gMapManager.GetCurrentMap() != MAP_ATLANS)                                             Sound_StopBuffer(6);
+    if (gMapManager.GetCurrentMap() != MAP_TARKAN)                                             Sound_StopBuffer(7);
+    if (gMapManager.GetCurrentMap() != MAP_ICARUS)                                            Sound_StopBuffer(0x14);
 
     // Música de fondo del mapa (IDA 0x00526D0C..0x00527475): ver CMapManager.
     gMapManager.UpdateMusic();

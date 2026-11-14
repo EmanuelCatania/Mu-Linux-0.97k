@@ -193,7 +193,7 @@ def harness(revision=None):
     declaration = re.search(r"extern [^;\n]*\bDAT_05828d58\s*;", header).group()
     definition = re.search(r"^[^/\n]*\bDAT_05828d58\s*=\s*[^;]+;", globals_source, re.M).group()
     initializers = []
-    for path in ("src/platform/ClientEntry.cpp", "src/assets/model/Model_Items.cpp"):
+    for path in ("src/platform/ClientEntry.cpp", "src/assets/model/PlayerModels.cpp"):
         initializers.append(re.search(r"^[ \t]*DAT_05828d58\s*=\s*[^;]+;",
                                       read_source(path, revision), re.M).group())
     validate = ('if(DAT_05828d58 != reinterpret_cast<std::uintptr_t>(models)) '
@@ -233,9 +233,28 @@ HARNESS_LAYOUT = (
     "constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10))
 
 
+def shared_names(source):
+    """Constantes de nombre que el código del cliente usa sin incluir nada.
+
+    Las funciones que se copian al harness referencian MAP_* / IsBloodCastleMap
+    (game/core/MapNumber.h) y los ids de efecto (render/EffectIds.h); en el
+    cliente llegan por MapManager.h y functions.h. Se copian los headers reales
+    para no tener que mantener una lista aparte.
+    """
+    text = ""
+    for header, marker in (("src/game/core/MapNumber.h", "enum eMapNumber"),
+                           ("src/render/EffectIds.h", "constexpr int BITMAP_")):
+        path = ROOT / header
+        if marker in source or not path.exists():
+            continue
+        body = path.read_text(encoding="utf-8").replace("#pragma once", "")
+        text += body + chr(10)
+    return text
+
+
 def build_and_run(directory, source, args):
     directory.mkdir()
-    layout = HARNESS_LAYOUT
+    layout = HARNESS_LAYOUT + shared_names(source)
     if "ModelTypes.h" in source:   # el header real ya define BMD_STRIDE/BMD_FIELD_SHIFT
         layout = layout.replace(",BMD_STRIDE=188,BMD_FIELD_SHIFT=0", "")
         layout = layout.replace("constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10), "")

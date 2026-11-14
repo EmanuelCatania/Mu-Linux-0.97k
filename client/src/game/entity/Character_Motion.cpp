@@ -140,7 +140,7 @@ void __cdecl SetPlayerStop(CHARACTER* c) {
         // Sin helm/armor o cambiando clase fuera de mapas 11-16 → idle estándar
         if ((v5 == -1 && *(unsigned short *)&AsCharacter(c)->Weapon[1].Type == 0xFFFF)
             || (AsCharacter(c)->SafeZone
-                && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16))) {
+                && (!IsBloodCastleMap(gMapManager.GetCurrentMap())))) {
             bool isElf = ((AsCharacter(c)->Class & 7) == 2);
             SetAction_local(isElf ? 2 : 1);
             goto LABEL_129;
@@ -315,7 +315,7 @@ void __cdecl SetPlayerWalk(CHARACTER* param_1) {
         }
         // No weapons equipped (or dead in non-event-map world):
         bool noWeapons = ((unsigned short)LH == 0xFFFF) && ((unsigned short)RH == 0xFFFF);
-        bool bSafeZoneNonEvent = bSafeZone && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16);
+        bool bSafeZoneNonEvent = bSafeZone && (!IsBloodCastleMap(gMapManager.GetCurrentMap()));
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
@@ -417,7 +417,7 @@ void __cdecl SetPlayerWalk(CHARACTER* param_1) {
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
-    if (gMapManager.GetCurrentMap() != 8 && gMapManager.GetCurrentMap() != 10) {
+    if (gMapManager.GetCurrentMap() != MAP_TARKAN && gMapManager.GetCurrentMap() != MAP_ICARUS) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
             SetAction(AsObject(param_1), 32);
             goto label_119;
@@ -480,7 +480,7 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
     if (*(short*)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type == 0x333) {
-        if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10)
+        if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;
@@ -1079,18 +1079,18 @@ void __cdecl MoveCharacter(intptr_t p1)
     // Evento propio del Golden Archer (DLL MoveCharacter_GoldenArcherMovement,
     // hook en 0x44A31A): tambien en Noria, con la orientacion de Lorencia.
     if (AsObject(o)->Kind == 4
-        && (!gMapManager.GetCurrentMap() || gMapManager.GetCurrentMap() == 2 || (g_GoldenArcherCustom && gMapManager.GetCurrentMap() == 3))
+        && (!gMapManager.GetCurrentMap() || gMapManager.GetCurrentMap() == MAP_DEVIAS || (g_GoldenArcherCustom && gMapManager.GetCurrentMap() == MAP_NORIA))
         && AsObject(o)->Type == 390
         && AsObject(o)->SubType >= 206 && AsObject(o)->SubType <= 208)
     {
-        if (gMapManager.GetCurrentMap() == 2) {
+        if (gMapManager.GetCurrentMap() == MAP_DEVIAS) {
             *(DWORD *)&AsObject(o)->Angle[0] = 0;
             *(DWORD *)&AsObject(o)->Angle[1] = 0;
             *(DWORD *)&AsObject(o)->Angle[2] = 0;
         } else {
             *(DWORD *)&AsObject(o)->Angle[0] = 0;
             *(DWORD *)&AsObject(o)->Angle[1] = 0;
-            *(DWORD *)&AsObject(o)->Angle[2] = 1119092736;  // 90.0f
+            AsObject(o)->Angle[2] = 90.0f;  // 90.0f
         }
         bEventNpc = true;
     }
@@ -1137,7 +1137,7 @@ void __cdecl MoveCharacter(intptr_t p1)
 
     // ─── IDA L545-606: death-dissolve (c+765=ragdoll, c+820=alpha-decay timer)
     if (AsCharacter(c)->Dead) {
-        if (AsObject(o)->Type == 302 || gMapManager.GetCurrentMap() == 7)
+        if (AsObject(o)->Type == 302 || gMapManager.GetCurrentMap() == MAP_ATLANS)
             AsCharacter(c)->Rot += 0.050000001f;
         else
             AsCharacter(c)->Rot += 0.02f;
@@ -1153,7 +1153,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             DeleteCloth(AsCharacter(c), AsObject(o), nullptr);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) {
+        if (IsBloodCastleMap(gMapManager.GetCurrentMap()) && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = AsObject(o)->Direction[1]; in1[2] = 0.0f;
             AngleMatrix((float*)(o + EntityOffset(408)), in2);
@@ -1163,13 +1163,13 @@ void __cdecl MoveCharacter(intptr_t p1)
             AsObject(o)->Velocity -= 5.0f;
             AsObject(o)->Direction[2] -= 2.0f;
             AsObject(o)->Angle[0]  -= 5.0f;
-            if (AsObject(o)->Direction[2] < 1.0f) *(DWORD *)&AsObject(o)->Direction[2] = 1065353216;  // 1.0f
+            if (AsObject(o)->Direction[2] < 1.0f) AsObject(o)->Direction[2] = 1.0f;  // 1.0f
             AsObject(o)->Position[0] = out_[0] + *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[0];
             AsObject(o)->Position[1] = out_[1] + *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[1];
             AsObject(o)->Position[2] = *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[2] + AsObject(o)->Gravity;
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
-        if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7) {
+        if (SceneFlag == 5 && gMapManager.GetCurrentMap() == MAP_ATLANS) {
             for (int jj = 0; jj < 4; ++jj) {
                 v407[0] = (float)(rand() % 128 - 64);
                 v407[1] = (float)(rand() % 128 - 64);
@@ -1177,7 +1177,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 v407[0] += AsObject(o)->Position[0];
                 v407[1] += AsObject(o)->Position[1];
                 v407[2] += AsObject(o)->Position[2];
-                Particle_Spawn(1241, v407, (float*)(o + 28), (float*)(o + 232), 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_BUBBLE, v407, (float*)(o + 28), (float*)(o + 232), 0, 1.0f, 0);
             }
         }
     }
@@ -1236,25 +1236,25 @@ void __cdecl MoveCharacter(intptr_t p1)
                             if (action >= 90) {
                                 if (action >= 95) {
                                     if (action < 100) {
-                                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
+                                        TextIndex = (gMapManager.GetCurrentMap() == MAP_DEVIAS) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
                                             CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                         SetAction(AsObject(c), 105);
                                     }
                                 } else {
-                                    TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
+                                    TextIndex = (gMapManager.GetCurrentMap() == MAP_DEVIAS) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
                                         CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                     SetAction(AsObject(c), 111);
                                 }
                             } else {
-                                TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
+                                TextIndex = (gMapManager.GetCurrentMap() == MAP_DEVIAS) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
                                     CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                 SetAction(AsObject(c), 99);
                             }
                         } else {
-                            TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
+                            TextIndex = (gMapManager.GetCurrentMap() == MAP_DEVIAS) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
                                 CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                             SetAction(AsObject(c), 97);
@@ -1262,7 +1262,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                         skipIdleSelect = true;
                     }
                     if (!skipIdleSelect) {
-                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
+                        TextIndex = (gMapManager.GetCurrentMap() == MAP_DEVIAS) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
                             CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                     }
@@ -1271,7 +1271,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
-        else if (gMapManager.GetCurrentMap() == 1 && AsObject(o)->Type == 40) {
+        else if (gMapManager.GetCurrentMap() == MAP_DUNGEON && AsObject(o)->Type == 40) {
             SetAction(AsObject(o), 0);
         }
         else if (AsObject(o)->Type < 270 || AsObject(o)->Type >= 335) {
@@ -1311,7 +1311,7 @@ void __cdecl MoveCharacter(intptr_t p1)
     if (AsCharacter(c)->Dead) {
         unsigned char inc = (unsigned char)(++AsCharacter(c)->Dead);
         if (inc >= 0xFu) mc_SetPlayerDie(AsCharacter(c));
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) mc_SetPlayerDie(AsCharacter(c));
+        if (IsBloodCastleMap(gMapManager.GetCurrentMap()) && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) mc_SetPlayerDie(AsCharacter(c));
     }
 
     // L807-811: setup defaults
@@ -1386,14 +1386,14 @@ void __cdecl MoveCharacter(intptr_t p1)
             WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillY + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(5);
-            CreateEffect(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(BITMAP_FLAME, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(91, 0, 0);
             break;
         }
         case 8: {  // Heal
             int hk = FindHotKey(8);
-            CreateEffect(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(MODEL_STORM, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(86, 0, 0);
             break;
@@ -1414,9 +1414,9 @@ void __cdecl MoveCharacter(intptr_t p1)
         }
         case 10: {  // Defense
             int hk = FindHotKey(10);
-            CreateEffect(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(MODEL_CIRCLE, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
-            CreateEffect(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+            CreateEffect(MODEL_CIRCLE_LIGHT, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                          (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(89, 0, 0);
             break;
@@ -1434,22 +1434,22 @@ void __cdecl MoveCharacter(intptr_t p1)
             WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillY + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(13);
-            CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(MODEL_SKILL_BLAST, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
-            CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(MODEL_SKILL_BLAST, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)(hk & 0xFF), 0);
             break;
         }
         case 14: {  // Decay (bomb-ring)
             Effect_SpawnBombRing((float*)(o + 16));
             int hk = FindHotKey(14);
-            CreateEffect(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(MODEL_SKILL_INFERNO, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
             break;
         }
         case 30: case 31: case 32: case 33: case 34: case 35: case 36:  // Buff / Debuff
         case 37: case 38: case 39: case 40:  // invocaciones del orbe +7..+10 (Mu-Linux)
-            CreateEffect(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
+            CreateEffect(BITMAP_MAGIC + 1, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
                          (float*)(uintptr_t)-1, nullptr, 0);
             break;
         case 41: {  // Bow special 1
@@ -1480,7 +1480,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 v396[2] = AsObject(o)->Position[2] + 100.0f;
                 Joint_Create(1253, v396, v396, Angle, 2, (intptr_t)o, 60.0f, 0, 0);
                 if (!(kk % 20)) {
-                    CreateEffect(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
+                    CreateEffect(BITMAP_MAGIC + 1, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 }
             }
@@ -1493,7 +1493,7 @@ void __cdecl MoveCharacter(intptr_t p1)
         }
         case 49: {  // Magic — uses dword_5826D10 hotkey state
             int hk = (int)CurrentSkill;
-            CreateEffect(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(BITMAP_ADV_SMOKE + 1, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short *)&AsObject(o)->PKKey, (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(84, 0, 0);
             break;
@@ -1559,7 +1559,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                         WorldPosition[0] = (float)(rand() % 64 - 32) + *(float*)(Owner + 16);
                         WorldPosition[1] = (float)(rand() % 64 - 32) + *(float*)(Owner + 20);
                         WorldPosition[2] = (float)(rand() % 64 + 90) + *(float*)(Owner + 24);
-                        Particle_Spawn(1206, WorldPosition, (float*)(o + 28), Light, 0, 1.0f, 0);
+                        Particle_Spawn(BITMAP_BLOOD + 1, WorldPosition, (float*)(o + 28), Light, 0, 1.0f, 0);
                     }
                 }
                 if (*(short*)(Owner + 2) == 330) {
@@ -1569,7 +1569,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                             WorldPosition[1] = *(float*)(Owner + 20);
                             float v45 = *(float*)(Owner + 24) + 50.0f;
                             WorldPosition[2] = (float)(rand() % 30) + v45;
-                            CreateEffect(261, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                            CreateEffect(MODEL_STONECOFFIN2, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                          (float*)(uintptr_t)-1, nullptr, 0);
                         }
                     }
@@ -1598,29 +1598,29 @@ void __cdecl MoveCharacter(intptr_t p1)
             {
             case 1:
                 if (AsObject(o)->Type == 390)
-                    CreateEffect(192, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(MODEL_POISON, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 Light[0] = 0.40000001f; Light[1] = 0.60000002f; Light[2] = 1.0f;
                 for (int kk = 0; kk < 10; ++kk)
-                    Particle_Spawn(1220, (float*)(Owner + 16), (float*)(o + 28), Light, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SMOKE, (float*)(Owner + 16), (float*)(o + 28), Light, 1, 1.0f, 0);
                 if (AsCharacter(c)->SkillSuccess) *(DWORD*)(Owner + 120) |= 1u;
                 PlayBuffer(34, 0, 0);
                 break;
             case 2:
-                CreateEffect(191, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                CreateEffect(MODEL_FIRE, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 4:
-                CreateEffect(191, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
+                CreateEffect(MODEL_FIRE, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 7:
-                CreateEffect(190, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
+                CreateEffect(MODEL_ICE, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 for (int kk = 0; kk < 5; ++kk)
-                    CreateEffect(199, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(MODEL_ICE_SMALL, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 if (AsCharacter(c)->SkillSuccess && (*(DWORD*)(Owner + 120) & 2) != 2)
                     *(DWORD*)(Owner + 120) |= 2u;
@@ -1629,14 +1629,14 @@ void __cdecl MoveCharacter(intptr_t p1)
             case 11:
                 if (AsObject(o)->Type == 288) {
                     v389[2] += 10.0f;
-                    CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(MODEL_MAGIC2, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] -= 20.0f;
-                    CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(MODEL_MAGIC2, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] += 10.0f;
                 }
-                CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                CreateEffect(MODEL_MAGIC2, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(88, 0, 0);
                 break;
@@ -1670,7 +1670,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                         CreateEffect(212, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                     } else {
-                        CreateEffect(1180, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
+                        CreateEffect(BITMAP_ENERGY, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                         PlayBuffer(88, 0, 0);
                     }
@@ -1684,12 +1684,12 @@ void __cdecl MoveCharacter(intptr_t p1)
                 goto LABEL_720;
             }
             case 26:
-                CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
+                CreateEffect(BITMAP_MAGIC + 1, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 break;
             case 27:
                 if (AsCharacter(c)->SkillSuccess) {
-                    CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
+                    CreateEffect(BITMAP_MAGIC + 1, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     if ((*(DWORD*)(Owner + 120) & 8) == 8) {
                         if (!mc_JointFind(266, Owner, 4)) {
@@ -1710,7 +1710,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 }
                 break;
             case 28:
-                CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
+                CreateEffect(BITMAP_MAGIC + 1, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 if (AsCharacter(c)->SkillSuccess) *(DWORD*)(Owner + 120) |= 4u;
                 break;
@@ -2052,7 +2052,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     (float)(rand() % 32 - 16) + AsCharacter(entity_ptr)->Object.Position[2]
                 };
                 if (!(rand() % 10))
-                    Particle_Spawn(1221, position, (float *)(entity_ptr + 28), light, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SMOKE + 1, position, (float *)(entity_ptr + 28), light, 1, 1.0f, 0);
                 if (!(rand() % 10))
                     CreateEffect(rand() % 2 + 197, (float *)(entity_ptr + 16),
                                  (float *)(entity_ptr + 28), light, nullptr, nullptr,
@@ -2097,7 +2097,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             if (sparkWindow && !(rand() & 1)) {
                 float origin[3], local[3] = { 0.0f, -4.0f, 0.0f };
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1152), local, origin, '\x01');
-                Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_SMOKE, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
         }
@@ -2107,7 +2107,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 3 && AsCharacter(entity_ptr)->Object.AnimationFrame <= 4.0f) {
                 float p[3], local[3] = {0.0f, (float)(rand() % 32 + 32), 0.0f};
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), local, p, '\x01');
-                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
+                Particle_Spawn(BITMAP_FIRE, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
             }
             // IDA fall-through to LABEL_253.
         case 0x111:
@@ -2117,14 +2117,14 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float p[3];
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), WorldPosition, p, '\x01');
                 float spriteLight[3] = {Luminosity, Luminosity * 0.40000001f, Luminosity * 0.2f};
-                CreateSprite(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
+                CreateSprite(BITMAP_LIGHT, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
             }
             if (!AsCharacter(entity_ptr)->Dead && !(rand() & 3)) {
                 float p[3] = {(float)(rand() % 64 - 32) + AsCharacter(entity_ptr)->Object.Position[0],
                               (float)(rand() % 64 - 32) + AsCharacter(entity_ptr)->Object.Position[1],
                               (float)(rand() % 32 - 16) + AsCharacter(entity_ptr)->Object.Position[2]};
-                Particle_Spawn(gMapManager.GetCurrentMap() == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
-                              gMapManager.GetCurrentMap() == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
+                Particle_Spawn(gMapManager.GetCurrentMap() == MAP_DEVIAS ? 1220 : 1221, p, (float *)(entity_ptr + 28),
+                              gMapManager.GetCurrentMap() == MAP_DEVIAS ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
             }
             break;
 
@@ -2152,7 +2152,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                         BMD_TransformPosition(model,
                                      (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % numBones)),
                                      WorldPosition, origin, '\x01');
-                        Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                        Particle_Spawn(BITMAP_FIRE, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                     }
                 }
                 float L2[3] = { Luminosity, Luminosity * 0.2f, 0.0f };
@@ -2167,7 +2167,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             if (!(rand() & 3)) {
                 float local[3] = { 0.0f, 0.0f, 0.0f }, origin[3];
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1056), local, origin, '\x01');
-                Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_SMOKE, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
 
@@ -2183,7 +2183,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             if (!(rand() & 1)) {
                 float p[3];
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 96), WorldPosition, p, '\x01');
-                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_FIRE, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
 
@@ -2196,16 +2196,16 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             int bone = action == 3 ? 33 : action == 4 ? 20 : action == 8 ? 41 : action == 9 ? 49 : -1;
             if (bone >= 0) {
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * bone), local, origin, '\x01');
-                Particle_Spawn(1180, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_ENERGY, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
                 float whitePink[3] = { 1.0f, 0.60000002f, 1.0f };
-                Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_FIRE, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
             }
             if (action == 6 && AsCharacter(entity_ptr)->Object.AnimationFrame < 12.0f) {
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
                     const int randomBone = rand() % *(short *)(static_cast<BYTE*>(model) + 34);
                     BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
-                    Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_FIRE, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
             }
             break;
@@ -2217,7 +2217,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float p[3] = {(float)(rand() % 64 - 32) + AsCharacter(entity_ptr)->Object.Position[0],
                               (float)(rand() % 64 - 32) + AsCharacter(entity_ptr)->Object.Position[1],
                               (float)(rand() % 32 - 16) + AsCharacter(entity_ptr)->Object.Position[2]};
-                Particle_Spawn(1221, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_SMOKE + 1, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
 
@@ -2255,9 +2255,9 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             if (AsCharacter(entity_ptr)->Object.SubType == 1) {
                 float p[3];
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 288), WorldPosition, p, '\x01');
-                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_FIRE, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 624), WorldPosition, p, '\x01');
-                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_FIRE, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
             } else { Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr)); }
@@ -2315,11 +2315,11 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     float particleLight[3];
                     MoveHumming(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
                     particleLight[0] = Luminosity; // IDA sólo escribe este componente (Position[0] = v63).
-                    Particle_Spawn(1200, bones[linksA[link]], targetPosition, particleLight, 2,
+                    Particle_Spawn(BITMAP_FLAME, bones[linksA[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
                     MoveHumming(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    Particle_Spawn(1200, bones[linksB[link]], targetPosition, particleLight, 2,
+                    Particle_Spawn(BITMAP_FLAME, bones[linksB[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
                 }
 
@@ -2327,18 +2327,18 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     float particleLight[3];
                     MoveHumming(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    Particle_Spawn(1200, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
+                    Particle_Spawn(BITMAP_FLAME, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                     MoveHumming(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    Particle_Spawn(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
+                    Particle_Spawn(BITMAP_FLAME, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                 }
 
                 if (!((long long)WorldTime % 2)) {
                     float particleLight[3];
                     MoveHumming(bones[0], targetPosition, bones[30], 360.0f);
                     particleLight[0] = (float)WorldTime;
-                    Particle_Spawn(1200, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
-                    Particle_Spawn(1200, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
+                    Particle_Spawn(BITMAP_FLAME, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
+                    Particle_Spawn(BITMAP_FLAME, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
                 }
 
                 float darkness[3] = {-1.3f, -1.3f, -1.3f};
@@ -2352,12 +2352,12 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2640), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2976), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
-                Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
+                Particle_Spawn(BITMAP_FLAME, destination, targetPosition, light, 1, 0.2f, 0);
 
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3360), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
-                Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
+                Particle_Spawn(BITMAP_FLAME, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
                 Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             }
@@ -2438,7 +2438,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     Angle[1] = 0.0f;
                     Angle[2] = (float)(rand() % 30);
                     Joint_Create(1257, sparkOrigin, sparkOrigin, Angle, 0, 0, 10.0f, -1, 0);
-                    Particle_Spawn(1175, sparkOrigin, Angle, Light, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SPARK, sparkOrigin, Angle, Light, 0, 1.0f, 0);
                 }
             }
             break;
@@ -2464,7 +2464,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };
                     Joint_Create(1257, origin, origin, angle, 0, 0, 10.0f, -1, 0);
                     if (rand() & 1)
-                        Particle_Spawn(1175, origin, angle, white, 0, 1.0f, 0);
+                        Particle_Spawn(BITMAP_SPARK, origin, angle, white, 0, 1.0f, 0);
                 }
             }
             break;
@@ -2473,13 +2473,13 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x186:
         {
             float p[3];
-            if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
+            if (SceneFlag == 5 && gMapManager.GetCurrentMap() == MAP_ATLANS && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
                 BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
-                Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_BUBBLE, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
-            if (gMapManager.GetCurrentMap() == 9) {
+            if (gMapManager.GetCurrentMap() == MAP_DEVIL_SQUARE1) {
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
@@ -2487,7 +2487,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 const short n = *(short *)(static_cast<BYTE*>(model) + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
                     BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
-                    Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
+                    Particle_Spawn(BITMAP_FIRE,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
                 }
             }
             float tail[3] = {0.0f,-30.0f,0.0f};

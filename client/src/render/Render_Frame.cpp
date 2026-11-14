@@ -335,7 +335,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 void Render_GameFrame(void)
 {
 
-    if (gMapManager.GetCurrentMap() == 8) {
+    if (gMapManager.GetCurrentMap() == MAP_TARKAN) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
         GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)

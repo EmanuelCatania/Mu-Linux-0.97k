@@ -145,7 +145,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     // game-substate overrides; some cases return directly (skipping Entity_InitRenderState),
     // others call it and return; fall-through also calls it.
     switch (gMapManager.GetCurrentMap()) {
-    case 0:
+    case MAP_LORENCIA:
         switch (param_1) {
         default: goto lbl_skip_init;
         case 6: case 0x91: case 0x92: break;
@@ -164,7 +164,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             object.HiddenMesh=-2; return puVar3;
         }
         break;
-    case 1:
+    case MAP_DUNGEON:
         if (param_1==0x3b) break;
         if (param_1==0x3c) {
             Entity_InitRenderState(puVar3);
@@ -172,7 +172,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             object.HiddenMesh=-2;
         }
         return puVar3;
-    case 2:
+    case MAP_DEVIAS:
         switch (param_1) {
         default: goto lbl_skip_init;
         case 0x13: case 0x5c: case 0x5d: object.BlendMesh=0; return puVar3;
@@ -207,7 +207,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         // 22/25/40/45/55/73 de Devias tienen que quedar clickeables). No poner
         // `[[fallthrough]]`.
         break;
-    case 3:
+    case MAP_NORIA:
         switch (param_1) {
         default: goto lbl_skip_init;
         case 1: object.BlendMesh=1; return puVar3;
@@ -222,10 +222,10 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         break;
     default:
         goto lbl_skip_init;
-    case 7:
+    case MAP_ATLANS:
         if (param_1==0x27) { Entity_InitRenderState(puVar3); object.HiddenMesh=-2; return puVar3; }
         return puVar3;
-    case 8:
+    case MAP_TARKAN:
         if (param_1==0x4e) { Entity_InitRenderState(puVar3); goto lbl_skip_init; }
         return puVar3;
     }

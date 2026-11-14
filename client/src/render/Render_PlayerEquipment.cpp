@@ -421,7 +421,7 @@ static void RenderWeaponFX(intptr_t c, intptr_t o, intptr_t v121, float Targetj,
                 WorldPosition[1] = (float)(rand() % 20 - 10) - 90.0f;
                 WorldPosition[2] = (float)(rand() % 20 - 10);
                 TransformPos(model, boneMat, WorldPosition, v242);
-                Particle_Spawn(1175, v242, (float*)((char*)o + 28), L2, 1, 1.0f, 0);
+                Particle_Spawn(BITMAP_SPARK, v242, (float*)((char*)o + 28), L2, 1, 1.0f, 0);
                 v160--;
             } while (v160);
             int v164 = 0;
@@ -708,7 +708,7 @@ extern "C" void Render_PlayerHelper(intptr_t c, intptr_t o)
     unsigned char v101 = AsCharacter(c)->Helper.Level;   // Type@2 = level
     unsigned char v215 = AsCharacter(c)->Helper.Option1;   // Option1
     AsCharacter(c)->Helper.LinkBone = 34;                   // LinkBone = 34
-    *(int *)&AsCharacter(c)->Helper.PlaySpeed = 0x3F000000;                     // PlaySpeed = 0.5f
+    AsCharacter(c)->Helper.PlaySpeed = 0.5f;                     // PlaySpeed = 0.5f
     RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + EntityOffset(0x2B8),
                  817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
 

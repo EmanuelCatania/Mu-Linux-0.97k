@@ -106,11 +106,11 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
     if (DAT_083a410c == '\0') {
         // Per-world magic byte check (sanity vs distributed .att files).
         switch (gMapManager.GetCurrentMap()) {
-        case 0: if (TerrainWall[31623] != 5) Error = true; break;
-        case 1: if (TerrainWall[30947] != 4) Error = true; break;
-        case 2: if (TerrainWall[14288] != 5) Error = true; break;
-        case 3: if (TerrainWall[30650] != 5) Error = true; break;
-        case 4: if (TerrainWall[19393] != 5) Error = true; break;
+        case MAP_LORENCIA: if (TerrainWall[31623] != 5) Error = true; break;
+        case MAP_DUNGEON: if (TerrainWall[30947] != 4) Error = true; break;
+        case MAP_DEVIAS: if (TerrainWall[14288] != 5) Error = true; break;
+        case MAP_NORIA: if (TerrainWall[30650] != 5) Error = true; break;
+        case MAP_LOST_TOWER: if (TerrainWall[19393] != 5) Error = true; break;
         }
     }
     for (int i = 0; i < 65536; ++i) {
@@ -230,31 +230,31 @@ void __cdecl OpenWorldModels(void) {
 
     if (DAT_0055a7c4 == '\0') {
         switch (gMapManager.GetCurrentMap()) {
-        case 0:
+        case MAP_LORENCIA:
             break;
-        case 1:
-        case 4:
+        case MAP_DUNGEON:
+        case MAP_LOST_TOWER:
             break;
-        case 3:
+        case MAP_NORIA:
             break;
-        case 5:
+        case MAP_EXILE:
             break;
-        case 6:
+        case MAP_ARENA:
             *(unsigned char *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 178)->Actions + 0x1a) = 1;
             break;
-        case 7:
+        case MAP_ATLANS:
             for (int iVar7 = 0xbc; iVar7 < 0x69c; iVar7 += 0xbc)
                 *(unsigned char *)((intptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * (181 + iVar7 / 0xbc))->Actions + 10) = 1;
             break;
-        case 8:
+        case MAP_TARKAN:
             break;
-        case 10:
+        case MAP_ICARUS:
             OpenJPG("Effect/clouds.jpg",      0x4f4, 0x2601, 0x2900, 0, '\x01');
             AccessModel(0xb6, "Data/Object11/", "cloud", -1);
             OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
             OpenJPG("Effect/cloudLight.jpg",  0x4f5, 0x2601, 0x2900, 0, '\x01');
             break;
-        case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
+        case MAP_BLOOD_CASTLE1: case MAP_BLOOD_CASTLE2: case MAP_BLOOD_CASTLE3: case MAP_BLOOD_CASTLE4: case MAP_BLOOD_CASTLE5: case MAP_BLOOD_CASTLE6:
             OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
             LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
             DAT_0055a7c4 = '\x01';
@@ -265,13 +265,13 @@ void __cdecl OpenWorldModels(void) {
     // Object type texture/name registration (second pass, all maps)
     SetMaxTextures(0x69);
     switch (gMapManager.GetCurrentMap()) {
-    case 0:
+    case MAP_LORENCIA:
         AccessModel(0xae, "Data/Object1/", "bird", 1);
         OpenTexture(0xae, "Object1/", 0x2600, '\x01');
         AccessModel(0xb5, "Data/Object1/", "fish", 1);
         OpenTexture(0xb5, "Object1/", 0x2600, '\x01');
         break;
-    case 1: case 4:
+    case MAP_DUNGEON: case MAP_LOST_TOWER:
         AccessModel(0xd7, "Data/Object2/", "DungeonStone", 1);
         OpenTexture(0xd7, "Object2/", 0x2600, '\x01');
         AccessModel(0xb0, "Data/Object2/", "Bat", 1);
@@ -279,11 +279,11 @@ void __cdecl OpenWorldModels(void) {
         AccessModel(0xb1, "Data/Object2/", "mouse", 1);
         OpenTexture(0xb1, "Object2/", 0x2600, '\x01');
         break;
-    case 3:
+    case MAP_NORIA:
         AccessModel(0xaf, "Data/Object1/", "Butterfly", 1);
         OpenTexture(0xaf, "Object1/", 0x2600, '\x01');
         break;
-    case 5:
+    case MAP_EXILE:
         for (int i = 0xe4; i < 0xec; i++) {
             AccessModel(i, "Data/Object6/", "Meteo", i - 0xe3);
             OpenTexture(i, "Object6/", 0x2600, '\x01');
@@ -291,11 +291,11 @@ void __cdecl OpenWorldModels(void) {
         AccessModel(0xea, "Data/Object6/", "BossHead", 1);
         AccessModel(0xeb, "Data/Object6/", "Princess", 1);
         break;
-    case 6:
+    case MAP_ARENA:
         AccessModel(0xb2, "Data/Object7/", "SummonMonster", 1);
         OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
         break;
-    case 7:
+    case MAP_ATLANS:
         // IDA 0x50C4D0: ++v3; while (v3 - 181 < 9) loads 182..189
         // (Fish02..Fish09). Slot 190 is Ice01: loading its textures from
         // Object8 corrupts Ice Arrow for this map and subsequent maps.
@@ -321,14 +321,14 @@ void __cdecl OpenWorldModels(void) {
             }
         }
         break;
-    case 8:
+    case MAP_TARKAN:
         OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
         AccessModel(0xb3, "Data/Object9/", "SandPillar", 2);
         OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
-    case 10:
+    case MAP_ICARUS:
         // IDA 0050C4D0 L209-214 (segundo switch, el que corre siempre):
         //     OpenJPG("Effect\clouds.jpg",     0x4F4u, ...);
         //     AccessModelWithTextures(182, "Data\Object11", "cloud", -1);
@@ -344,7 +344,7 @@ void __cdecl OpenWorldModels(void) {
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
         OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
-    case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
+    case MAP_BLOOD_CASTLE1: case MAP_BLOOD_CASTLE2: case MAP_BLOOD_CASTLE3: case MAP_BLOOD_CASTLE4: case MAP_BLOOD_CASTLE5: case MAP_BLOOD_CASTLE6:
         // Blood Castle.  Port 1:1 de IDA 0x50C4D0 L228-242:
         //     AccessModelWithTextures(184, "Data\\Object12\\", "Crow", 1);
         //     OpenTexture(184, "Object12\\", 9728, 1);
@@ -376,7 +376,7 @@ void __cdecl OpenWorldModels(void) {
 
     // Object model loading for all maps (SetMaxTextures(0x2ee) then per-map loading)
     SetMaxTextures(0x2ee);
-    if (gMapManager.GetCurrentMap() == 0) {
+    if (gMapManager.GetCurrentMap() == MAP_LORENCIA) {
         // Lorencia (Object1) — load SMD models on first call
         if (DAT_0055a7c4 == '\0') {
             // IDA 0x0050C4D0: mushrooms are 26..27; stones are 30..34.
@@ -482,7 +482,7 @@ void __cdecl OpenWorldModels(void) {
         //     v33 = World + 1;
         //     if ( World >= 11 && World <= 16 ) v33 = 12;
         int objFolder = gMapManager.GetCurrentMap() + 1;
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16)
+        if (IsBloodCastleMap(gMapManager.GetCurrentMap()))
             objFolder = 12;
 
         // Dynamic map: load from per-map object file
@@ -513,9 +513,9 @@ void __cdecl OpenWorldModels(void) {
         for (int i = 0; i < 0xa0; i++)
             OpenTexture(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
-        if (gMapManager.GetCurrentMap() == 1)
+        if (gMapManager.GetCurrentMap() == MAP_DUNGEON)
             *(unsigned int *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 40)->Actions + sizeof(ModelAnimationAction) + 4) = 0x3ecccccd; // 0.4f
-        else if (gMapManager.GetCurrentMap() == 8) {
+        else if (gMapManager.GetCurrentMap() == MAP_TARKAN) {
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 11 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 12 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 13 + 0x88 + BMD_FIELD_SHIFT) = 0;

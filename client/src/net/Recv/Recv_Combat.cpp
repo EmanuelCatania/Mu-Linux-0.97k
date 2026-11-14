@@ -20,7 +20,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
     if (state == 1) {
         if ((effect & 0x10) != 0) {
             DeleteEffect(1150, (intptr_t)entity, 1);
-            CreateEffect(1150, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(BITMAP_LIGHT, (float*)(entity + 16), (float*)(entity + 28),
                          (float*)(entity + 232), (float*)1, (float*)entity,
                          (float*)-1, nullptr, 0);
         }
@@ -28,23 +28,23 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             DeleteEffect(190, (intptr_t)entity, 1);
             float angle[3] = { *(float*)(entity + 28), *(float*)(entity + 32),
                                *(float*)(entity + 36) };
-            CreateEffect(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            CreateEffect(MODEL_ICE, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)1, (float*)entity, (float*)-1, nullptr, 0);
             angle[2] += 180.0f;
-            CreateEffect(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            CreateEffect(MODEL_ICE, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)2, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x40) != 0 && (physicalEffects & 0x40) == 0) {
             DeleteEffect(1274, (intptr_t)entity, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(BITMAP_SKULL, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
             PlayBuffer(104, AsObject(entity), 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
             DeleteEffect(1274, (intptr_t)entity, 3);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(BITMAP_SKULL, (float*)(entity + 16), (float*)(entity + 28),
                          light, (float*)3, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x100) != 0 && (physicalEffects & 0x100) == 0 &&
@@ -102,8 +102,8 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
     BMD_TransformPosition(model, (float*)(uintptr_t)(bones + bone * 0x30),
                  offset, position, 1);
     float* const angle = AsObject(entity)->Angle;
-    Particle_Spawn(1231, position, angle, light, hand, 0.0f, (intptr_t)entity);
-    Particle_Spawn(1231, position, angle, light, hand + 2, 0.0f, (intptr_t)entity);
+    Particle_Spawn(BITMAP_SHINY + 1, position, angle, light, hand, 0.0f, (intptr_t)entity);
+    Particle_Spawn(BITMAP_SHINY + 1, position, angle, light, hand + 2, 0.0f, (intptr_t)entity);
 }
 
 // 0x15
@@ -256,7 +256,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                                           *(float*)(tgtSlot + 20));
         if (fabsf(fAngle - cm[9]) < 10.0f) {
             float ang[3] = { 0.0f, 0.0f, fAngle + 180.0f };
-            CreateEffect(259, (float*)(tgtSlot + 16), ang,
+            CreateEffect(MODEL_MAGIC_CAPSULE2, (float*)(tgtSlot + 16), ang,
                          (float*)(tgtSlot + 232),
                          (float*)0, (float*)tgtSlot,
                          (float*)(intptr_t)-1, (float*)0, 0);
@@ -777,7 +777,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // de la caida sale de si el tile de al lado (indice +1 o -1)
     // tiene 0x08 (TW_NOGROUND).
     entity[EntityOffset(405)] = 0;
-    if ((int)gMapManager.GetCurrentMap() >= 11 && (int)gMapManager.GetCurrentMap() <= 16) {
+    if (IsBloodCastleMap(gMapManager.GetCurrentMap())) {
         const int gx = (int)(AsCharacter(entity)->Object.Position[0] * 0.01f);
         const int gy = (int)(AsCharacter(entity)->Object.Position[1] * 0.01f);
         const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);

@@ -544,9 +544,9 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // las entidades del char-select. Asocia al Hero, copia clase/flags, y después reconstruye
     // desde CharacterMachine vía SetCharacterClass(). Acá dejamos sólo la
     // siembra de luz, porque CreateCharacterPointer deja Light en 0.
-    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[0] = 0x3e99999a; // 0.3f
-    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[1] = 0x3e99999a;
-    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[2] = 0x3e99999a;
+    AsCharacter(heroPtr)->Object.Light[0] = 0.3f; // 0.3f
+    AsCharacter(heroPtr)->Object.Light[1] = 0.3f;
+    AsCharacter(heroPtr)->Object.Light[2] = 0.3f;
     AsCharacter(heroPtr)->Skin = 0;
     AsCharacter(heroPtr)->PK = Msg[44];      // skill bonus / curse-of-equipment slot
     heroPtr[EntityOffset(448)] = Msg[45];      // magic bonus / second-pwd flag
@@ -726,7 +726,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
     //     de muerte; después el efecto visual de aparición.
     SetCharacterClass(AsCharacter(heroPtr));             // SetCharacterClass
     SetPlayerStop(AsCharacter(heroPtr));             // SetPlayerStop
-    CreateEffect(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
+    CreateEffect(BITMAP_MAGIC + 2, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
                  (float*)-1, nullptr, 0);              // CreateEffect(1265)
 
@@ -765,7 +765,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
         *(const WORD*)(heroPtr + EntityOffset(696)) != 819 ||        // sin Dinorant
         AsCharacter(heroPtr)->SafeZone != 0) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]);
-    } else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
+    } else if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 90.0f;
     } else {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 30.0f;
@@ -888,7 +888,7 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
                          (float*)(hero + 28), 0, (intptr_t)hero,
                          40.0f, 2, 0);
         }
-        CreateEffect(1264, (float*)(hero + 16), (float*)(hero + 28),
+        CreateEffect(BITMAP_MAGIC + 1, (float*)(hero + 16), (float*)(hero + 28),
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
     }
@@ -1523,7 +1523,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // teleport animation.
     float worldZ = RequestTerrainHeight(worldX, worldY);
     if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
-        worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
+        worldZ += (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 90.0f : 30.0f;
     AsCharacter(hero)->Object.Position[2] = worldZ;
     // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
     // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
@@ -1560,7 +1560,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // la altura de aterrizaje una segunda vez contra el mapa nuevo.
             worldZ = RequestTerrainHeight(worldX, worldY);
             if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
-                worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
+                worldZ += (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 90.0f : 30.0f;
             AsCharacter(hero)->Object.Position[2] = worldZ;
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.
@@ -1622,7 +1622,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         DAT_00559f5f = 0;
         DAT_07eaa14c = 0;
         EventWindowOpened = 0;
-        CreateEffect(1265, (float*)(hero + 16), (float*)(hero + 28),
+        CreateEffect(BITMAP_MAGIC + 2, (float*)(hero + 16), (float*)(hero + 28),
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
         *(DWORD *)&AsCharacter(hero)->Object.Alpha = 0;

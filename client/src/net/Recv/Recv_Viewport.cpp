@@ -481,7 +481,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // CreateFlag branch in Combat_PacketDispatch:
                 // la posición llegue de forma autoritativa, y recién ahí emitir el
                 // standard player teleport-in effect (1265).
-                CreateEffect(1265, (float*)(slot + 16), (float*)(slot + 28),
+                CreateEffect(BITMAP_MAGIC + 2, (float*)(slot + 16), (float*)(slot + 28),
                              (float*)(slot + 232), nullptr, (float*)slot,
                              (float*)-1, nullptr, 0);
                 *(DWORD *)&AsCharacter(slot)->Object.Alpha = 0;
@@ -560,10 +560,10 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if ((e[0] & 0x80) != 0) {
             // Rama CreateFlag: efecto de transformación 233 más su
             // partícula 1191, exactamente como el handler original.
-            CreateEffect(233, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(MODEL_MAGIC_CIRCLE1, (float*)(entity + 16), (float*)(entity + 28),
                          (float*)(entity + 232), nullptr, (float*)entity,
                          (float*)-1, nullptr, 0);
-            CreateSprite(1191, (float*)(entity + 16), 1.0f,
+            CreateSprite(BITMAP_LIGHTNING + 1, (float*)(entity + 16), 1.0f,
                          (float*)(entity + 232), (intptr_t)entity,
                          0.0f, 0);
             *(DWORD*)(entity + EntityOffset(360)) = 0;

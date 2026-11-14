@@ -152,7 +152,7 @@ void __stdcall MoveParticles(void)
             // High type range: 0x4c5..0x599
             switch (iVar5) {
 
-            case 0x4c5: {
+            case BITMAP_SMOKE + 1: {
                 fVar15 = (float)P_LIFE(iVar9) * _DAT_00552ae4;
                 P_LR(iVar9) = fVar15;
                 P_LG(iVar9) = fVar15;
@@ -204,7 +204,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4ce: {
+            case BITMAP_SHINY: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)fVar11;
                 if (P_SUB(iVar9) == 1) {
@@ -214,7 +214,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4cf: {
+            case BITMAP_SHINY + 1: {
                 if (P_SUB(iVar9) == 99) {
                     intptr_t entPtr = P_ENT(iVar9);
                     P_POSX(iVar9) = *(float*)(entPtr + 0x10);
@@ -236,14 +236,14 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4d0: {
+            case BITMAP_SHINY + 2: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540);
                 ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                 break;
             }
 
-            case 0x4d2: {
+            case BITMAP_SHINY + 4: {
                 if (P_SUB(iVar9) == 0) {
                     fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                     P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540 + (float10)_DAT_0055264c);
@@ -255,7 +255,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4d9: {
+            case BITMAP_BUBBLE: {
                 P_FRAME(iVar9) += 1;
                 iVar5 = _rand();
                 P_POSX(iVar9) += (float)(iVar5 % 0x14 - 10) * P_SCALE(iVar9) * _DAT_00552950;
@@ -266,9 +266,9 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4da:
-            case 0x4db:
-            case 0x4dc: {
+            case BITMAP_FLOWER01:
+            case BITMAP_FLOWER01 + 1:
+            case BITMAP_FLOWER01 + 2: {
                 if (P_FRAME(iVar9) == 0) {
                     uVar7 = _rand();
                     uVar7 = uVar7 & 0x8000001f;
@@ -304,12 +304,12 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4df: {
+            case BITMAP_FIRECRACKER: {
                 P_VELZ(iVar9) -= _DAT_00552504;
                 break;
             }
 
-            case 0x4e1: {
+            case BITMAP_FLARE: {
                 iVar5 = P_SUB(iVar9);
                 float lifeF = (float)P_LIFE(iVar9);
                 if (iVar5 == 0 || iVar5 == 3) {
@@ -367,7 +367,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x4f4: {
+            case BITMAP_CLOUD: {
                 if (P_SUB(iVar9) == 6) {
                     P_POSX(iVar9) += P_VELX(iVar9);
                     P_POSY(iVar9) += P_VELY(iVar9);
@@ -423,7 +423,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x565: {
+            case BITMAP_ADV_SMOKE: {
                 P_POSX(iVar9) += P_VELX(iVar9);
                 P_POSY(iVar9) += P_VELY(iVar9);
                 P_POSZ(iVar9) += P_VELZ(iVar9);
@@ -442,7 +442,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x566: {
+            case BITMAP_ADV_SMOKE + 1: {
                 P_POSX(iVar9) += P_VELX(iVar9);
                 P_POSY(iVar9) += P_VELY(iVar9);
                 P_POSZ(iVar9) += P_VELZ(iVar9);
@@ -474,7 +474,7 @@ void __stdcall MoveParticles(void)
                 break;
             }
 
-            case 0x567: {
+            case BITMAP_POUNDING_BALL: {
                 fVar15 = P_GRAV(iVar9) + _DAT_005524bc;
                 P_GRAV(iVar9) = fVar15;
                 P_SCALE(iVar9) -= _DAT_00552914;
@@ -947,7 +947,7 @@ void __stdcall MoveParticles(void)
         // ── Types 0x4a7..0x4c3 ───────────────────────────────────────────────
         switch (iVar5) {
 
-        case 0x4a7: {
+        case BITMAP_LIGHTNING + 1: {
             // Terrain light + positioning
             unsigned long long uv = (unsigned long long)(long long)(double)((float10)WorldTime * (float10)_DAT_00552500);
             P_ROT(iVar9) = (float)(int)((long long)(uv) % 1000) * _DAT_00552500;
@@ -972,8 +972,8 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4ab:
-        case 0x4ad: {
+        case BITMAP_FIRE:
+        case BITMAP_FIRE + 2: {
             float grav2 = P_GRAV(iVar9) + _DAT_005524bc;
             P_GRAV(iVar9) = grav2;
             switch (P_SUB(iVar9)) {
@@ -1019,7 +1019,7 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4ac: {
+        case BITMAP_FIRE + 1: {
             fVar15 = P_GRAV(iVar9) + _DAT_00552914;
             P_GRAV(iVar9) = fVar15;
             P_SCALE(iVar9) += fVar15;
@@ -1034,7 +1034,7 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4b0: {
+        case BITMAP_FLAME: {
             if (P_LIFE(iVar9) < 1) P_ACTIVE(iVar9) = '\0';
             switch (P_SUB(iVar9)) {
             case 1:
@@ -1081,8 +1081,8 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4b5:
-        case 0x4b6:
+        case BITMAP_BLOOD:
+        case BITMAP_BLOOD + 1:
         label_4b5: {
             fVar15 = P_VELX(iVar9) * _DAT_00552b44;
             P_VELX(iVar9) = fVar15;
@@ -1097,7 +1097,7 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4bf: {
+        case BITMAP_EXPLOTION: {
             P_FRAME(iVar9) = (0x14 - P_LIFE(iVar9)) / 2;
             if (P_SUB(iVar9) != 1) {
                 float ltBF = (float)P_LIFE(iVar9) * _DAT_00552a10;
@@ -1107,7 +1107,7 @@ void __stdcall MoveParticles(void)
             break;
         }
 
-        case 0x4c0: {
+        case BITMAP_EXPLOTION + 1: {
             P_FRAME(iVar9) = (0xc - P_LIFE(iVar9)) / 3;
             break;
         }

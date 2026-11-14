@@ -455,7 +455,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // de cada vertice segun su distancia al centro, para que el borde aporte
     // cero y quede un resplandor redondo.  Las UV repiten la textura, por eso
     // no sirve una vineta sobre la textura.
-    const bool thunderFlash = model == 182 && gMapManager.GetCurrentMap() == 10 &&
+    const bool thunderFlash = model == 182 && gMapManager.GetCurrentMap() == MAP_ICARUS &&
                               renderMode == MODE_TEXTURE && param_2_b0 == '\0' &&
                               mesh->VertexCount > 0;
     float flashColor[3] = {0.0f, 0.0f, 0.0f};

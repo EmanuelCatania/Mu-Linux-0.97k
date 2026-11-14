@@ -265,7 +265,7 @@ LAB_00501064:
             fStack_18 = *(float *)(DAT_07abf5d8 + 0x18) + _DAT_00552900;
             fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
             fStack_38 = 1.0f; fStack_34 = 1.0f; fStack_30 = 1.0f;
-            CreateEffect(0xbf, &fStack_20, &fStack_2c, &fStack_38,
+            CreateEffect(MODEL_FIRE, &fStack_20, &fStack_2c, &fStack_38,
                          (float *)0x3, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
             PlayBuffer(0x2e, 0, 0);
         }
@@ -275,7 +275,7 @@ LAB_00501064:
     }
 
     // ── World == 10: spawn distant lightning clouds ─────────────────
-    if ((gMapManager.GetCurrentMap() == 10) && (_rand() % 10 == 0)) {
+    if ((gMapManager.GetCurrentMap() == MAP_ICARUS) && (_rand() % 10 == 0)) {
         iVar12 = _rand();
         const int cloudOffsetX = iVar12 % 5000 - 2500;
         fStack_38 = (float)cloudOffsetX + *(float *)(DAT_07abf5d8 + 0x10);
@@ -285,7 +285,7 @@ LAB_00501064:
         fStack_30 = *(float *)(DAT_07abf5d8 + 0x18) - _DAT_00552ab8;
         fStack_20 = 1.0f; fStack_1c = 1.0f; fStack_18 = 1.0f;
         fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
-        CreateEffect(0x47e, &fStack_38, &fStack_2c, &fStack_20,
+        CreateEffect(BITMAP_LIGHT, &fStack_38, &fStack_2c, &fStack_20,
                      (float *)0x0, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
     }
 
@@ -685,7 +685,7 @@ LAB_00501cb5:
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*(OBJECT_STRIDE / 4)), (float *)(&DAT_0839bd40 + iVar2));
 
                     // Scale velocity by sub-state
-                    if (gMapManager.GetCurrentMap() == 7) {
+                    if (gMapManager.GetCurrentMap() == MAP_ATLANS) {
                         if (_DAT_00552660 <= WSF(DAT_0839bd30, iVar14*(OBJECT_STRIDE / 4))) {
                             uVar8 = _rand(); uVar8 &= 0x8000001f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xffffffe0)+1;
@@ -745,7 +745,7 @@ LAB_00501cb5:
                 }
 
                 // Loop-kill conditions (state 7, terrain type = grass)
-                if ((((int)(&DAT_0839bd10)[iVar14*(OBJECT_STRIDE / 4)] < 1) && (gMapManager.GetCurrentMap() == 7)) &&
+                if ((((int)(&DAT_0839bd10)[iVar14*(OBJECT_STRIDE / 4)] < 1) && (gMapManager.GetCurrentMap() == MAP_ATLANS)) &&
                     ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                     fVar25 = WSF(DAT_0839bcd4, iVar14*(OBJECT_STRIDE / 4)) + _DAT_005524ec;
                     bVar20 = (_DAT_0055286c <= fVar25);

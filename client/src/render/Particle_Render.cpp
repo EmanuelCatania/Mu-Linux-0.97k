@@ -165,7 +165,7 @@ void __cdecl Particle_RenderAll(void)
         GL_SetBlendAdditive();
 
         switch (typeCode) {
-        case 1191: {
+        case BITMAP_LIGHTNING + 1: {
             float newScale = scaleF;
             float color[3];
             color[0] = color[1] = color[2] = (float)counter * 0.1f;
@@ -173,14 +173,14 @@ void __cdecl Particle_RenderAll(void)
                                      color, -rot, 1.0f);
             break;
         }
-        case 1200: {
+        case BITMAP_FLAME: {
             float color[3];
             color[0] = color[1] = color[2] = sample.puff;
             RenderTerrainAlphaBitmap(1200, posX, posY, 2.0f, 2.0f,
                                      color, -rot, 1.0f);
             break;
         }
-        case 1264: {
+        case BITMAP_MAGIC + 1: {
             float v3 = 1.0f;
             if (counter < 5) v3 = 1.0f - (float)(5 - counter) * 0.2f;
             float v21;
@@ -222,7 +222,7 @@ void __cdecl Particle_RenderAll(void)
                                      color, -rot, 1.0f);
             break;
         }
-        case 1265: {
+        case BITMAP_MAGIC + 2: {
             // IDA repeats EnableAlphaBlend for type 1265.
             GL_SetBlendAdditive();
             float v24 = (float)(((std::int64_t)WorldTime) % 3600) * 0.1f;
