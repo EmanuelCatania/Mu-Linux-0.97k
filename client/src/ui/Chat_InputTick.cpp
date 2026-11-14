@@ -328,8 +328,8 @@ extern "C" void Chat_SendChatLine(const char* text)
 // IDA: Chat_InputTick (0x004B14F0)
 void __cdecl Chat_InputTick(void)
 {
-    int mouseX = (int)DAT_083a427c;
-    int mouseY = (int)DAT_083a4278;
+    int mouseX = (int)MouseX;
+    int mouseY = (int)MouseY;
 
     // ── 1. Entity tab-complete hover loop ──────────────────────────────────
     // Iterates up to 0x4e entity slots, stride 0x46.
@@ -376,7 +376,7 @@ void __cdecl Chat_InputTick(void)
                     DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
                     PlayBuffer(0x19, 0, 0);
                     // Re-read (loop continues from updated mouseX)
-                    mouseX = (int)DAT_083a427c;
+                    mouseX = (int)MouseX;
                 }
             }
             rowY += 0xd;
@@ -468,16 +468,16 @@ void __cdecl Chat_InputTick(void)
 
     // ── 4. Class-tab buttons + hot gate ─────────────────────────────────────
     // Guard condition: all of these must be true to process tab/hotkey/chat input:
-    //   bVar4(hash)==0, DAT_07eaa124==0, GuildInputEnable==0,
-    //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
+    //   bVar4(hash)==0, GuildCreatorOpened==0, GuildInputEnable==0,
+    //   ErrorMessage not 0x7e/0x98, GoldenArcherOpenType==0,
     //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        char bVar4 = DAT_07eaa11b;
+        char bVar4 = TradeOpened;
 
         if ((bVar4 == 0) &&
-            (DAT_07eaa124 == '\0') &&
+            (GuildCreatorOpened == '\0') &&
             (GuildInputEnable == '\0') &&
-            (DAT_083a7c24 != 0x7e) && (DAT_083a7c24 != 0x98) &&
+            (ErrorMessage != 0x7e) && (ErrorMessage != 0x98) &&
             (GoldenArcherOpenType == 0) &&
             (*(char *)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
             (ServerDivisionOpened == '\0'))
@@ -512,7 +512,7 @@ void __cdecl Chat_InputTick(void)
                     DAT_07e11d28 = 0;
                     if (IsClickPushed()) {
                         DAT_07db870c = (DAT_07db870c == '\0') ? '\x01' : '\0';
-                        DAT_083a4124 = '\0';
+                        MouseLButtonPush = '\0';
                         PlayBuffer(0x19, 0, 0);
                     }
                 }
@@ -536,7 +536,7 @@ void __cdecl Chat_InputTick(void)
                                 DAT_07d78094 = 1;
                                 DAT_0055a3e4 = uVar14;
                                 if (IsClickPushed()) {
-                                    DAT_083a4124 = '\0';
+                                    MouseLButtonPush = '\0';
                                     *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill = (char)uVar14;
                                     DAT_07db870c = '\0';
                                     PlayBuffer(0x19, 0, 0);
@@ -784,8 +784,8 @@ void __cdecl Chat_InputTick(void)
     // usa `HUD_HotkeyTick` (Player_InputTick.cpp).
     if (DAT_00559c84 != 0) return;   // g_TextMode  (input de texto activo)
     if (DAT_07e11d71 != 0) return;   // g_IME_Mode  (composición DBCS/coreano)
-    if (DAT_07eaa11b != 0) return;   // TradeOpened
-    if (DAT_07eaa124 != 0) return;   // GuildCreatorOpened
+    if (TradeOpened != 0) return;   // TradeOpened
+    if (GuildCreatorOpened != 0) return;   // GuildCreatorOpened
     if (GuildInputEnable != 0) return;   // g_ChatMode
 
     // ── 9. 'B' key — toggle body rendering / battle mode ────────────────────
@@ -797,7 +797,7 @@ void __cdecl Chat_InputTick(void)
                 DAT_07e119f4 = 1;
                 // HashTable ref-count noise (HashTable_GetNode/HashTable_Insert etc.) — skipped
                 // Core toggle:
-                char cVar3 = DAT_07eaa118;
+                char cVar3 = ShopOpened;
                 if (cVar3 == '\0') {
                     // B key didn't toggle — early exit conditions
                     return;
@@ -838,17 +838,17 @@ void __cdecl Chat_InputTick(void)
                 // reparacion directamente (LABEL_1507); si no, pide tienda
                 // cerrada, inventario abierto y nivel >= 80.  Al port le
                 // faltaban la primera rama y el `!ShopOpened` de la segunda.
-                if (DAT_07eaa118 != 0 && DAT_07eaa132 != 0 && DAT_07e91388 == 0) {
+                if (ShopOpened != 0 && DAT_07eaa132 != 0 && DAT_07e91388 == 0) {
                     DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
                     ((BYTE*)&DAT_07eaa150)[2] = (DAT_07eaa134 != 0) ? 2 : 0;
-                } else if (DAT_07eaa118 == 0 && DAT_07eaa117 != 0 && DAT_07cf1ff4 != nullptr) {
+                } else if (ShopOpened == 0 && InventoryOpened != 0 && DAT_07cf1ff4 != nullptr) {
                     unsigned short level =
                         *(unsigned short*)((char*)DAT_07cf1ff4 + 0x0e);
 
                     if (level >= 0x50 &&
-                        DAT_07eaa119 == 0 &&
-                        DAT_07eaa11a == 0 &&
-                        DAT_07eaa11c == 0 &&
+                        WarehouseOpened == 0 &&
+                        ChaosMixOpened == 0 &&
+                        EventWindowOpened == 0 &&
                         GoldenArcherOpenType == 0)
                     {
                         DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
@@ -885,7 +885,7 @@ void __cdecl Chat_InputTick(void)
                     int slot = (int)Item_FindQuickSlotByCategory(qwe[i].slotIdx);
                     if (slot != -1 &&
                         WarehouseOpened == '\0' &&
-                        DAT_07eaa11b == '\0')   // !TradeOpened
+                        TradeOpened == '\0')   // !TradeOpened
                     {
                         if ((int)EnableUse <= 0) {
                             EnableUse = 10;

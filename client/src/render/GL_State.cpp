@@ -212,7 +212,7 @@ void GL_EndOpenGL(void)
 
 
 // FUN_005142D0 @ 0x005142D0 — GL_SetFogHandle (legacy export: SetErrorMessage)
-// Manages fog texture handle slots DAT_083a7c24/28.
+// Manages fog texture handle slots ErrorMessage/28.
 // param_1 == 0: pop current into 0x24, clear 0x28.
 // param_1 != 0 and 0x24 already set: write into 0x28.
 // param_1 != 0 and 0x24 empty: write into 0x24.
@@ -221,17 +221,17 @@ void __cdecl SetErrorMessage(int param_1)
 {
   undefined4 uVar1;
 
-  uVar1 = DAT_083a7c28;
+  uVar1 = NextErrorMessage;
   if (param_1 == 0) {
-    DAT_083a7c28 = 0;
-    DAT_083a7c24 = uVar1;
+    NextErrorMessage = 0;
+    ErrorMessage = uVar1;
     return;
   }
-  if (DAT_083a7c24 != 0) {
-    DAT_083a7c28 = param_1;
+  if (ErrorMessage != 0) {
+    NextErrorMessage = param_1;
     return;
   }
-  DAT_083a7c24 = param_1;
+  ErrorMessage = param_1;
   return;
 }
 

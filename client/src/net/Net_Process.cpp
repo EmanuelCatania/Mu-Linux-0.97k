@@ -199,14 +199,14 @@
 //   case 0x53:  FUN_00434950(puVar8)
 //
 //   case 0x54:  Second password / PIN full reset:
-//               DAT_07eaa114-117 = 0
-//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118); DAT_07eaa118=0
-//               PACKET_ENCRYPT; DAT_07eaa119=0; DAT_00559f5f=0; DAT_07eaa14c=0
-//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b); DAT_07eaa11b=0
-//               PACKET_ENCRYPT; DAT_07eaa124=1; DAT_07eaa144=0
+//               GuildOpened-117 = 0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &ShopOpened); ShopOpened=0
+//               PACKET_ENCRYPT; WarehouseOpened=0; DAT_00559f5f=0; DAT_07eaa14c=0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &TradeOpened); TradeOpened=0
+//               PACKET_ENCRYPT; GuildCreatorOpened=1; DAT_07eaa144=0
 //
 //   case 0x55:  Character list change (delete/create result):
-//               DAT_07eaa124=1; DAT_07eaa144=1; GuildInputEnable=1
+//               GuildCreatorOpened=1; DAT_07eaa144=1; GuildInputEnable=1
 //               DAT_00559c84=0; ClearInput(0)
 //               InputTextMax=8; InputNumber=0
 //               *(DAT_07abf5d8+0x1da) = 999
@@ -226,7 +226,7 @@
 //               GuildWar_UpdateEntityRelation(entity)
 //
 //   case 0x5d:  entity = FindCharacterIndex(byte[3]*256 + byte[2])
-//               DAT_07eaa114 = 0
+//               GuildOpened = 0
 //               *(DAT_07abf5d0 + entity*0x394 + 0x1da) = 0xffff
 //               DAT_07eaa0d0 = 0xffffffff
 //

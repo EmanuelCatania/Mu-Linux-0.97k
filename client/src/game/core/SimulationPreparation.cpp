@@ -86,7 +86,7 @@ void PrepareCamera() {
     }
     // Se reutiliza la preparación GL/CPU existente, sin comandos de dibujo.
     // Los pushes se balancean aquí; no queda una pasada abierta entre ticks.
-    Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
+    Camera_BuildMouseRay(MouseX, MouseY, (float *)&DAT_083a4110);
     CaptureCamera();
     GL_EndOpenGL();
 }

@@ -354,12 +354,6 @@ struct SERVER_LIST_t
 
 // State
 // SceneFlag ya está declarado en stdafx.h; World en globals.h.
-#define MouseX              DAT_083a427c     // int
-#define MouseY              DAT_083a4278     // int
-#define MouseLButtonPop     DAT_083a413c     // bool
-#define MouseLButtonPush    DAT_083a4124     // bool
-#define MouseRButton        DAT_083a42ac     // bool (approx)
-#define MouseLButton        DAT_083a42c4     // bool
 
 // Character
 #define DAT_07abf5d8        Hero                // IDA: DAT_07abf5d8 (0x07ABF5D8)

@@ -83,7 +83,7 @@ bool CReconnect::OnConnectionLost()
 void CReconnect::GiveUp()
 {
     m_Status = STATUS_DISCONNECT;
-    DAT_083a7c24 = 0;   // ErrorMessage
+    ErrorMessage = 0;   // ErrorMessage
     if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         Platform::GetSocket().Close((SOCKET)SocketClientSocket);
         SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
@@ -103,7 +103,7 @@ void CReconnect::SendLogin()
 void CReconnect::Tick()
 {
     if (m_Status != STATUS_RECONNECT) return;
-    DAT_083a7c24 = ErrorMessageReconnect;   // ErrorMessage, como el DLL
+    ErrorMessage = ErrorMessageReconnect;   // ErrorMessage, como el DLL
     const DWORD now = Platform::GetTimer().Ticks();
     if (now - m_StartTime > ReconnectTimeout) { GiveUp(); return; }
     if (now - m_StepTime < m_RetryWait) return;
@@ -177,7 +177,7 @@ void CReconnect::OnCharacterInfo()
 {
     if (m_Status != STATUS_RECONNECT) return;
     m_Status = STATUS_NONE;
-    DAT_083a7c24 = 0;   // ErrorMessage
+    ErrorMessage = 0;   // ErrorMessage
     DbgLogPublic("Reconnect: de vuelta en el juego");
 }
 

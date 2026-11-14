@@ -19,12 +19,12 @@ struct State{DWORD hi,lo,local,click,x,y,cooldown,c24,c28,tick,reset,code;int lo
 #define ServerSelectHi state.hi
 #define ServerSelectLo state.lo
 #define ServerLocalSelect state.local
-#define DAT_083a4124 state.click
-#define DAT_083a427c state.x
-#define DAT_083a4278 state.y
+#define MouseLButtonPush state.click
+#define MouseX state.x
+#define MouseY state.y
 #define DAT_083a7c44 state.cooldown
-#define DAT_083a7c24 state.c24
-#define DAT_083a7c28 state.c28
+#define ErrorMessage state.c24
+#define NextErrorMessage state.c28
 #define DAT_083a7ac8 state.tick
 #define DAT_083a4320 state.reset
 #define DAT_083a4328 state.code

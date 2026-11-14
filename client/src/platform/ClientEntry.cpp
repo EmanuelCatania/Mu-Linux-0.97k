@@ -747,19 +747,19 @@ int main(int, char**)
 #endif
         {
             // ── CLICK-FLAG CLAMP (global) ───────────────────────────────────
-            // DAT_083a4124 (MouseLButtonPush) sólo debe valer {0,1} (lo
+            // MouseLButtonPush (MouseLButtonPush) sólo debe valer {0,1} (lo
             // settea WndProc en LBUTTONDOWN/UP).  En char-select aparecía
             // 0x4397355A cada frame → phantom clicks en TODAS las escenas
             // (login/server-select/char-select/in-game) que lo leen como
             // truthy.  Algún stub stompea via buffer overflow; mientras
             // localizo al culpable, este clamp suprime el wild value antes
             // del frame.  Misma protección para DAT_083a4299 (DBLCLK flag).
-            if (DAT_083a4124 != 0 && DAT_083a4124 != 1) {
+            if (MouseLButtonPush != 0 && MouseLButtonPush != 1) {
                 static unsigned s_corruptCnt = 0;
                 if (s_corruptCnt < 30) {
                     s_corruptCnt++;
                 }
-                DAT_083a4124 = 0;
+                MouseLButtonPush = 0;
             }
             if ((BYTE)DAT_083a4299 != 0 && (BYTE)DAT_083a4299 != 1) {
                 DAT_083a4299 = 0;

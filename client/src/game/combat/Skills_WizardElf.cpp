@@ -409,13 +409,13 @@ bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
             if (slot == -1) continue;  // no potion found
 
             // Check warehouse and trade are closed
-            if (DAT_07eaa119 != '\0') {  // WarehouseOpened
+            if (WarehouseOpened != '\0') {  // WarehouseOpened
                 UIChatLogWindow_AddText((const char*)&DAT_07e11dfc, (const char*)&DAT_07d4c89c, 2);
                 continue;
             }
 
             // anti-tamper hash table — skipped (HashTable_Insert_Short + TradeOpened check)
-            if (DAT_07eaa11b != '\0') {  // TradeOpened
+            if (TradeOpened != '\0') {  // TradeOpened
                 UIChatLogWindow_AddText((const char*)&DAT_07e11dfc, (const char*)&DAT_07d4c89c, 2);
                 continue;
             }

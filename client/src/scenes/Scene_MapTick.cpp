@@ -33,9 +33,9 @@ void Scene_MapTick(void)
     DAT_07eaa134 = 1;
   }
   if (DAT_07eaa160 == 0) {
-    if ((((DAT_07eaa13c == 1) && (_DAT_00552cac <= (float)DAT_083a427c)) &&
-        ((float)DAT_083a427c < _DAT_00552c24)) &&
-       ((_DAT_00552c14 <= (float)DAT_083a4278 && ((float)DAT_083a4278 < _DAT_00552ca8)))) {
+    if ((((DAT_07eaa13c == 1) && (_DAT_00552cac <= (float)MouseX)) &&
+        ((float)MouseX < _DAT_00552c24)) &&
+       ((_DAT_00552c14 <= (float)MouseY && ((float)MouseY < _DAT_00552ca8)))) {
       uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
       if (uVar2 == 0xffffffff) {
         pvVar3 = AntiTamper_HashNode();
@@ -48,7 +48,7 @@ void Scene_MapTick(void)
     goto LAB_004f6824;
   }
   if ((((int)MouseX < (int)InventoryStartX) || ((int)MouseX >= gWindow.PanelOrigin(Ui::WindowRight))) ||
-     ((DAT_083a4278 < DAT_07ea5284 || ((0x1df < DAT_083a4278 || (DAT_07eaa134 == 0)))))) {
+     ((MouseY < DAT_07ea5284 || ((0x1df < MouseY || (DAT_07eaa134 == 0)))))) {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = AntiTamper_HashNode();

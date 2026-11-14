@@ -1414,7 +1414,7 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
     // a float rompería el flip (1.0f tiene bits 0x3F800000, y 1 es un denormal).
 
     if (hover == 1) {
-        if (MouseLButton) {                        // DAT_083a42c4 — botón izq. mantenido
+        if (MouseLButton) {                        // MouseLButton — botón izq. mantenido
             // Apretado: sprite gris corrido 1px, UV 1px más chico.
             Gfx::Color4f(0.8f, 0.8f, 0.8f, alpha);
             float vOff   = 0.0f;
@@ -1601,27 +1601,27 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
             // Al cambiar la visibilidad de los whispers cambia la cantidad de
             // filas visibles, así que se re-scrollea con delta 0.
             ((FnInt2)vt[12])(self, 0, 0);
-            DAT_083a4124 = 0;                 // MouseLButtonPush = 0 (consumir click)
+            MouseLButtonPush = 0;                 // MouseLButtonPush = 0 (consumir click)
         }
 
         // Botón 2 — cicla el tamaño del historial (mismo que la tecla F4).
         if (FUN_0040c490(bx + 2 * gap, by, bw, bh, 1)) {
             Input_CycleChatSize();            // lo mismo que F4 (incluye reubicar el recuadro)
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
         }
 
         // Boton 4: abre o cierra el menu de emotes.
         if (FUN_0040c490(bx + 4 * gap, by, bw, bh, 1)) {
             EmoteMenu::Toggle(EmoteMenu::Fortnite);
             PlayBuffer(25, 0, 0);
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
         }
 
         // Boton de la izquierda: abre o cierra la lista de gestos clasicos.
         if (FUN_0040c490(bx, by, bw, bh, 1)) {
             EmoteMenu::Toggle(EmoteMenu::Classic);
             PlayBuffer(25, 0, 0);
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
         }
 
         // Botón 3 — transparencia: self[47] += 0.2, y al pasar 0.9 vuelve a 0.2.
@@ -1632,7 +1632,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
             *alpha += 0.2f;
             if (*alpha > 0.89999998f) *alpha = 0.2f;
             PlayBuffer(25, 0, 0);
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
         }
     }
     return 1;
@@ -2036,7 +2036,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                         MouseLButtonPush = 0;
                         PlayBuffer(25, 0, 0);                 // PlayBuffer(25)
                         int v9 = ((FnInt)vt[19])(self) - (int)self[34];
-                        DAT_083a7c24     = 126;   // ErrorMessage
+                        ErrorMessage     = 126;   // ErrorMessage
                         dword_5615E4     = v9 - v3 - 1;
                         ClearInput(0);                        // ClearInput(0)
                         InputEnable      = 0;

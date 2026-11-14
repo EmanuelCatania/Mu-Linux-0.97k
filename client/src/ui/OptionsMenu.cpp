@@ -65,7 +65,7 @@ void OpenDialogData()
 // engancha ahí (0x0051AF65) para volver a la lista cuando no hay cartel.
 void COptionsMenu::OnErrorMessageFrame()
 {
-    if (!DAT_083a7c24) m_Page = PAGE_MAIN;   // ErrorMessage
+    if (!ErrorMessage) m_Page = PAGE_MAIN;   // ErrorMessage
 }
 
 bool COptionsMenu::Clicked(int x, int y, int width, int height) const
@@ -313,8 +313,8 @@ bool COptionsMenu::UpdateMain()
         // DLL CheckClose: ErrorMessage = NextErrorMessage, como el 0.97k.
         ConsumeClick();
         m_Page = PAGE_MAIN;
-        DAT_083a7c24 = DAT_083a7c28;
-        DAT_083a7c28 = 0;
+        ErrorMessage = NextErrorMessage;
+        NextErrorMessage = 0;
     }
     return true;
 }

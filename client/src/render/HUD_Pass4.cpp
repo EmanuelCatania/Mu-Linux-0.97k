@@ -117,7 +117,6 @@ extern "C" DWORD  SetTextColor_0;
 extern "C" int    InputTextWidth;
 extern "C" int    RepairEnable_0;
 
-#define TradeOpened   DAT_07eaa11b
 
 static bool HUD_IsGuildCreationRuntime(void)
 {

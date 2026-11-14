@@ -779,11 +779,11 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
 
     // Botón de aceptar / continuar la quest.
     if (Ui::QuestProceed(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
-        (DAT_083a4124 != 0)) {
+        (MouseLButtonPush != 0)) {
         // IDA: sub_402850 (0x00402850).
         // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
         if (*(quest + 0x1c882) == 3) {
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
             goto closeButton;
@@ -799,8 +799,8 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[4] = 0x01;
         gNetwork.Send(pkt, 5);
 
-        DAT_083a4124 = 0;                       // MouseLButtonPush
-        DAT_083a42c4 = 0;                       // MouseLButton
+        MouseLButtonPush = 0;                       // MouseLButtonPush
+        MouseLButton = 0;                       // MouseLButton
         PlayBuffer(28, 0, 0);
     }
 
@@ -808,12 +808,12 @@ closeButton:
     // Botón de cerrar.
     if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         CSQuest_clearQuest(param_1);
     }
-    if (DAT_083a413c != 0) DAT_083a413c = 0;
+    if (MouseLButtonPop != 0) MouseLButtonPop = 0;
     return 1;
 }
 

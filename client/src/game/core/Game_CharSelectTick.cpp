@@ -17,8 +17,8 @@
 //   CameraTopViewEnabled  — special viewport mode flag
 //   g_bUseChatListBox  — flag enabling anti-tamper block
 //   World  — World
-//   DAT_07eaa11b  — anti-tamper sequence counter
-//   DAT_07eaa116/117 — anti-tamper flags
+//   TradeOpened  — anti-tamper sequence counter
+//   CharacterOpened/117 — anti-tamper flags
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
@@ -120,7 +120,7 @@ void Game_CharSelectTick(void)
     // DESVIACION (DLL Antilag, 0x00525483): sin interfaz se saltea como en la vista cenital.
     if (CameraTopViewEnabled == '\0' && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
         // Standard viewport mode
-        DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
+        DAT_07d78094 = (MouseY > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
         if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             // vtable[+0x14] = slot 5 = ChatLB_tick (__fastcall, takes this+arg).
@@ -146,23 +146,23 @@ void Game_CharSelectTick(void)
         // (IDA sub_40D610), así que mover el widget es lo único que las mueve.
         if (g_bUseChatListBox == 1) {
             int y, x;
-            if (DAT_07eaa117 == '\0') {
+            if (InventoryOpened == '\0') {
                 y = 0x1a4; x = 0xba;
             } else {
-                if (DAT_07eaa116 == '\0') {
-                    // Anti-tamper: track DAT_07eaa11b ref-count
-                    unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+                if (CharacterOpened == '\0') {
+                    // Anti-tamper: track TradeOpened ref-count
+                    unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &TradeOpened);
                     if (idx == 0xffffffff) {
                         void* node = AntiTamper_HashNode(); *((BYTE*)node+1)=1;
-                        HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_07eaa11b);
+                        HashTable_Insert(&MAIN_HASH_CLASS, node, &TradeOpened);
                     }
                     // TradeOpened (11b) + Warehouse (119) + ChaosMix (11a) +
                     // EventWindow (11c); después ShopOpened (118).  Per IDA,
                     // el primer grupo NO incluye 118 — acá se leía 118 en lugar
                     // de 11b.  Si TODOS están cerrados, el chat va a (186,420).
-                    if (DAT_07eaa11b == '\0' && DAT_07eaa119 == '\0' &&
-                        DAT_07eaa11a == '\0' && DAT_07eaa11c == '\0' &&
-                        ((BYTE*)&DAT_07eaa118)[0] == '\0')
+                    if (TradeOpened == '\0' && WarehouseOpened == '\0' &&
+                        ChaosMixOpened == '\0' && EventWindowOpened == '\0' &&
+                        ((BYTE*)&ShopOpened)[0] == '\0')
                     {
                         y = 0x1a4; x = 0xba;
                     } else {
@@ -183,7 +183,7 @@ void Game_CharSelectTick(void)
         }
     }
 
-    if (DAT_083a7c24 != 0)
+    if (ErrorMessage != 0)
         DAT_07d78094 = 1;
 
     if (CameraTopViewEnabled == '\0')

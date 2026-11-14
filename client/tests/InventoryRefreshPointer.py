@@ -13,8 +13,8 @@ from SceneObjectPointer import build_and_run, function, read_source
 
 SERVICES=r'''
 using uint=unsigned int;using ushort=unsigned short;using std::uintptr_t;
-DWORD DAT_00559bec,DAT_07d78094,DAT_07e11d28,DAT_07ea5284,DAT_07ea5288,DAT_07ea528c,DAT_07ea5290,DAT_07eaa0c8,DAT_07eaa0cc,DAT_07eaa138,DAT_07eaa140,DAT_07eaa164,DAT_083a4124,DAT_083a4278,DAT_083a427c,GoldenArcherOpenType;
-char DAT_07eaa117,DAT_07eaa118,DAT_07eaa119,DAT_07eaa11a,DAT_07eaa11b,DAT_07eaa11c,DAT_07eaa134,CharacterOpened,PartyOpened;
+DWORD DAT_00559bec,DAT_07d78094,DAT_07e11d28,DAT_07ea5284,DAT_07ea5288,DAT_07ea528c,DAT_07ea5290,DAT_07eaa0c8,DAT_07eaa0cc,DAT_07eaa138,DAT_07eaa140,DAT_07eaa164,MouseLButtonPush,MouseY,MouseX,GoldenArcherOpenType;
+char InventoryOpened,ShopOpened,WarehouseOpened,ChaosMixOpened,TradeOpened,EventWindowOpened,DAT_07eaa134,CharacterOpened,PartyOpened;
 #define InventoryStartX DAT_07ea5288
 #define InventoryStartY DAT_07ea5284
 void *DAT_07cf1ffc,*DAT_07cf1ff4;int MAIN_HASH_CLASS;
@@ -60,12 +60,12 @@ std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
   if(profile%4!=0)expectedNode[0x584]=1;
   for(unsigned pool=0;pool<6;++pool)for(unsigned i=0;i<cells[pool];++i){const unsigned at=offsets[pool]+i*68+64;const bool occupied=types[(profile+i+pool)%4]!=-1;if(!occupied)expectedGrids[at]=0;else if(pool!=5 || expectedGrids[at]!=99)expectedGrids[at]=1;}
   CharacterOpened=char(profile&1);PartyOpened=char(profile&2);click=(profile&4)!=0;
-  DAT_07eaa118=char(flags&1);DAT_07eaa119=char(flags&2);DAT_07eaa11a=char(flags&4);DAT_07eaa11b=char(flags&8);DAT_07eaa11c=char(flags&16);DAT_07eaa140=profile%3;GoldenArcherOpenType=flags&16?7:0;
+  ShopOpened=char(flags&1);WarehouseOpened=char(flags&2);ChaosMixOpened=char(flags&4);TradeOpened=char(flags&8);EventWindowOpened=char(flags&16);DAT_07eaa140=profile%3;GoldenArcherOpenType=flags&16?7:0;
   DAT_07ea5290=240;DAT_07ea528c=40;DAT_07eaa0c8=240;DAT_07eaa0cc=40;
-  DAT_07d78094=0x55;DAT_07eaa138=0x77;DAT_07eaa164=0x99;DAT_07eaa134=char(0x52);DAT_07eaa117=7;DAT_07e11d28=9;DAT_00559bec=10;DAT_083a4124=1;
+  DAT_07d78094=0x55;DAT_07eaa138=0x77;DAT_07eaa164=0x99;DAT_07eaa134=char(0x52);InventoryOpened=7;DAT_07e11d28=9;DAT_00559bec=10;MouseLButtonPush=1;
   const int origin=Origin(CharacterOpened||PartyOpened?Ui::InventoryPair:Ui::RightPanel);
   const int xs[]={-1,20,20,190,0,60,25,189},ys[]={-1,20,250,431,0,395,395,433};
-  const int x=origin+xs[mouse],y=ys[mouse];DAT_083a427c=static_cast<DWORD>(x);DAT_083a4278=static_cast<DWORD>(y);
+  const int x=origin+xs[mouse],y=ys[mouse];MouseX=static_cast<DWORD>(x);MouseY=static_cast<DWORD>(y);
   std::vector<int> expectedEvents={100+(CharacterOpened||PartyOpened?Ui::InventoryPair:Ui::RightPanel)};
   for(unsigned i=0;i<12;++i){expectedEvents.push_back(200+int(i));if(Missing(i)){expectedEvents.push_back(300);expectedEvents.push_back(301);}}
   expectedEvents.push_back(y<200?400:410);
@@ -83,8 +83,8 @@ std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
   Require(events==expectedEvents && hashSlot==12 && panelCalls==2);
   Require(DAT_07d78094==(onWindow?1u:0x55u) && DAT_07eaa138==unsigned(repair) && DAT_07eaa164==0);
   const bool closed=buttons&&backHit&&click;
-  Require(DAT_07eaa134==char(0x52^(repair&&repairHit&&click)) && DAT_07eaa117==(closed?0:7));
-  Require(DAT_07e11d28==(closed?0u:9u) && DAT_00559bec==(closed?6u:10u) && DAT_083a4124==((closed||(repair&&repairHit&&click))?0u:1u));
+  Require(DAT_07eaa134==char(0x52^(repair&&repairHit&&click)) && InventoryOpened==(closed?0:7));
+  Require(DAT_07e11d28==(closed?0u:9u) && DAT_00559bec==(closed?6u:10u) && MouseLButtonPush==((closed||(repair&&repairHit&&click))?0u:1u));
   Require(DAT_07ea5288==unsigned(origin) && DAT_07ea5284==0 && DAT_07eaa0c8==unsigned(Origin(Ui::InventoryPair)) && DAT_07eaa0cc==0);
   coverage|=profile%4==0?1u:2u;coverage|=buttons?(repair?4u:8u):0;
   if(repair&&repairHit&&click)coverage|=16;if(closed)coverage|=32;

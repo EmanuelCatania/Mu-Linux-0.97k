@@ -159,8 +159,8 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
     const int  a5  = slotIdx;
     const int  x0  = (int)DAT_07ea5288 + (int)sx;          // InventoryStartX + a1
     const int  y0  = (int)DAT_07ea5284 + (int)sy;          // InventoryStartY + a2
-    const int  mx  = (int)DAT_083a427c;
-    const int  my  = (int)DAT_083a4278;
+    const int  mx  = (int)MouseX;
+    const int  my  = (int)MouseY;
     const bool inside = mx >= x0 && (double)x0 + w > (double)mx &&
                         my >= y0 && (double)y0 + h > (double)my;
     BYTE* const CM   = (BYTE*)CharacterMachine;
@@ -176,7 +176,7 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
         DAT_07eaa164 = 1;                                   // byte_7EAA164
         // DESVIACION (DLL RightClickMove.cpp CheckUnequipItem): click derecho
         // manda el item al primer hueco libre del inventario.
-        const bool rightClick = !DAT_083a4124 && MouseRButtonPush != 0;
+        const bool rightClick = !MouseLButtonPush && MouseRButtonPush != 0;
         int unequipTarget = -1;
         if (rightClick) {
             MouseRButtonPush = 0;
@@ -184,7 +184,7 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
             unequipTarget = RightClickMove_FindInventorySlot(type);
             if (unequipTarget < 0) return;
         }
-        if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
+        if (!MouseLButtonPush && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
             DAT_07eaa160 = (uintptr_t)slot;          // CheckInventory
@@ -199,12 +199,12 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
                 kind == 143 || kind >= 448 || (kind >= 391 && kind <= 403) ||
                 (kind >= 430 && kind <= 435))
                 return;
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
             BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
             gNetwork.Send(pkt, sizeof(pkt));
             return;
         }
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         if ((int)gMapManager.GetCurrentMap() == MAP_ICARUS) {
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
@@ -248,17 +248,17 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
     const bool  invalid = !Equip_CanPlace(picked, a5);
     if (invalid) {                                          // LABEL_220
         slot[64] = 3;
-        if (DAT_083a4124) {
-            DAT_083a4124 = 0;
+        if (MouseLButtonPush) {
+            MouseLButtonPush = 0;
             if (!DAT_07eaa165) Item_ReturnPickedItem();     // sub_4CD3B0
         }
         return;
     }
 
     slot[64] = 2;
-    if (!DAT_083a4124) return;
+    if (!MouseLButtonPush) return;
     DAT_07eaa164 = 1;
-    DAT_083a4124 = 0;
+    MouseLButtonPush = 0;
     DAT_07e11e78 = (DWORD)a5;
     if (a5 == 1 && pt >= 0 && pt < 96 && left == -1)
         DAT_07e11e78 = 0;

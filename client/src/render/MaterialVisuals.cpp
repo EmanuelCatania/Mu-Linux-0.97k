@@ -151,8 +151,8 @@ void MaterialVisuals_TickUi() {
             }
         }
     }
-    if (DAT_083a7c24==0x97 && DAT_07eaa13c==1)
+    if (ErrorMessage==0x97 && DAT_07eaa13c==1)
         MaterialVisuals_PrepareUiItem(*(short *)DAT_07e91350,*(int *)(DAT_07e91350+4));
-    else if (DAT_083a7c24==0x99)
+    else if (ErrorMessage==0x99)
         MaterialVisuals_PrepareUiItem(*(short *)DAT_07ea5240,*(int *)(DAT_07ea5240+4));
 }

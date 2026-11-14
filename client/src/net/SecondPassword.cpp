@@ -24,15 +24,15 @@
 //   DAT_07eaa150  — ID de contexto del server, 2 bytes (va con el PIN en los casos 2 y 3)
 //   DAT_07eaa179  — "input active / submitted" flag:
 //                     1 = se setea al hacer click en el diálogo del PIN
-//                     0 = se limpia cuando se setea DAT_083a413c (diálogo cerrado)
-//   DAT_07eaa119  — anti-tamper gate byte (0 = proceed with hash-table block)
-//   DAT_07eaa11a  — anti-tamper check byte
-//   DAT_07eaa11c  — anti-tamper check byte
+//                     0 = se limpia cuando se setea MouseLButtonPop (diálogo cerrado)
+//   WarehouseOpened  — anti-tamper gate byte (0 = proceed with hash-table block)
+//   ChaosMixOpened  — anti-tamper check byte
+//   EventWindowOpened  — anti-tamper check byte
 //   DAT_07e91394  — character name table (short[N]): indexed by iVar5 (keycode?)
 //                   se usa en wsprintfA para formatear el nombre en el buffer del PIN
-//   DAT_083a4124  — flag de click del mouse (se setea con cualquier click)
-//   DAT_083a413c  — flag de "cerrar diálogo" (si está seteado → DAT_07eaa179 = 0)
-//   DAT_083a42c4  — byte de estado de la UI (queda en 0 si el envío salió bien)
+//   MouseLButtonPush  — flag de click del mouse (se setea con cualquier click)
+//   MouseLButtonPop  — flag de "cerrar diálogo" (si está seteado → DAT_07eaa179 = 0)
+//   MouseLButton  — byte de estado de la UI (queda en 0 si el envío salió bien)
 //   DAT_083a7acc  — parámetro de altura de la UI (se usa cuando DAT_07eaa14c == 6)
 //
 // ── ENTRY GUARD ──────────────────────────────────────────────────────────────
@@ -42,9 +42,9 @@
 // ── KEY INPUT PROCESSING ──────────────────────────────────────────────────────
 //
 //   FUN_004e9300()  → Keyboard_GetLastKey()
-//     Devuelve el código de tecla (iVar5). También setea DAT_083a4124 = flag de click.
+//     Devuelve el código de tecla (iVar5). También setea MouseLButtonPush = flag de click.
 //
-//   if (DAT_083a4124 != '\0'):  // a click or keypress happened
+//   if (MouseLButtonPush != '\0'):  // a click or keypress happened
 //     if (DAT_07eaa14c in {2, 3, 6}): uVar14 = DAT_083a7acc (largo de la UI)
 //     else: uVar14 = 4 (default PIN length)
 //     PlayBuffer(0x19, 0, 0)  → UI_SetScene(0x19 = ServerSelect clear?)
@@ -109,18 +109,18 @@
 //
 // ── POST-SEND ─────────────────────────────────────────────────────────────────
 //
-//   DAT_083a4124 = '\0'   (clear click flag)
-//   DAT_083a42c4 = 0      (clear UI state)
-//   if (DAT_083a4124 != '\0'): DAT_07eaa179 = 1
-//   if (DAT_083a413c != '\0'): DAT_07eaa179 = 0
+//   MouseLButtonPush = '\0'   (clear click flag)
+//   MouseLButton = 0      (clear UI state)
+//   if (MouseLButtonPush != '\0'): DAT_07eaa179 = 1
+//   if (MouseLButtonPop != '\0'): DAT_07eaa179 = 0
 //   return 1
 //
 // ── ANTI-TAMPER BLOCK (g_bUseChatListBox == 1 gate) ────────────────────────────────
 //
-//   If DAT_07eaa119 == '\0':
-//     HashTable operations on DAT_07eaa11b (ref-count maintain)
-//     If cStack_83d=='\0' && DAT_07eaa119=='\0' && DAT_07eaa11a=='\0' && DAT_07eaa11c=='\0':
-//       HashTable operations on DAT_07eaa118
+//   If WarehouseOpened == '\0':
+//     HashTable operations on TradeOpened (ref-count maintain)
+//     If cStack_83d=='\0' && WarehouseOpened=='\0' && ChaosMixOpened=='\0' && EventWindowOpened=='\0':
+//       HashTable operations on ShopOpened
 //   Este bloque es puro anti-tamper (el mismo patrón que Game_SceneUpdate).
 //
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
@@ -280,8 +280,8 @@ unsigned int __cdecl SecondPassword_Handler(void)
     // IDA LABEL_203: byte_7EAA179 marca el boton apretado (para el bitmap
     // "pressed" del render) y el click se consume aca.
     if (IsClickPushed()) DAT_07eaa179 = 1;
-    if (DAT_083a413c)    DAT_07eaa179 = 0;
-    DAT_083a4124 = 0;
-    DAT_083a42c4 = 0;
+    if (MouseLButtonPop)    DAT_07eaa179 = 0;
+    MouseLButtonPush = 0;
+    MouseLButton = 0;
     return 1;
 }

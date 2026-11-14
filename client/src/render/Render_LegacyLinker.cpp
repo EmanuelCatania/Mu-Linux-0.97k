@@ -166,8 +166,8 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
 
     // Hit-test: mouse over item rect (only when no item is picked-up, OR this IS the picked-up item).
     if (!DAT_07e91388 || PickUp) {
-        float fMouseX = (float)DAT_083a427c;   // MouseX
-        float fMouseY = (float)DAT_083a4278;   // MouseY
+        float fMouseX = (float)MouseX;   // MouseX
+        float fMouseY = (float)MouseY;   // MouseY
         if (fMouseX >= sx && fMouseX < sx + Width &&
             fMouseY >= sy && fMouseY < sy + Height) {
             Success = true;

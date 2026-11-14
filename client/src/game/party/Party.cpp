@@ -107,7 +107,7 @@
 //   When stage==1 and packet[6..10] are all != -1:
 //     GoldenArcherLuckyNumber = packet[6..9] (dword, guild target tile X)
 //     DAT_00559f5c  = packet[10..11] (word, guild target tile Y)
-//   Clears DAT_07eaa117 and DAT_07eaa116.
+//   Clears InventoryOpened and CharacterOpened.
 //
 // ── Guild update pos (opcode 0x95, FUN_00437380) ──────────────────────────────
 //   If packet[4..5] (ushort) != 0xFFFF:
@@ -396,7 +396,7 @@ void Guild_MemberList(BYTE* pkt)
 //   GoldenArcherLuckyNumber = pkt[6..9] (dword)
 //   DAT_00559f5c  = pkt[10..11] (word)
 //
-// Always clears DAT_07eaa117 and DAT_07eaa116.
+// Always clears InventoryOpened and CharacterOpened.
 // ============================================================
 void Guild_CharSelectResult(BYTE* pkt)
 {
@@ -418,8 +418,8 @@ void Guild_CharSelectResult(BYTE* pkt)
         GoldenArcherLuckyNumberTicket  = 1;
     }
 
-    DAT_07eaa117 = 0;
-    DAT_07eaa116 = 0;
+    InventoryOpened = 0;
+    CharacterOpened = 0;
 
     if (GoldenArcherOpenType == 1
         && *(short*)(pkt + 6)  != -1

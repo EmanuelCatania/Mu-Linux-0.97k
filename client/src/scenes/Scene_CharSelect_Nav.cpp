@@ -1197,7 +1197,7 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
     Quest_AnswerHitTest(param_1);
     if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
-        DAT_083a4124 = '\0';
+        MouseLButtonPush = '\0';
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         CSQuest_clearQuest(param_1);
@@ -1251,24 +1251,24 @@ void __fastcall Quest_AnswerHitTest(void *param_1)
                 + 0x42 + (int)DAT_083a4324 * 0x12;
     }
 
-    if ((int)DAT_083a4278 < 0)  return;
-    if ((int)DAT_083a7c0c * 0x12 <= (int)DAT_083a4278 - yBase)  return;
+    if ((int)MouseY < 0)  return;
+    if ((int)DAT_083a7c0c * 0x12 <= (int)MouseY - yBase)  return;
 
     int distS = Ui::QuestAnswerCenter(gWindow.GetRightShift()) - (int)MouseX;
     if (distS < 0) distS = -distS;
     if (0x6a < distS)  return;
 
     if (!IsClickPushed())  return;
-    DAT_083a4124 = 0;
+    MouseLButtonPush = 0;
 
-    int slot = ((int)DAT_083a4278 - yBase) / 0x12;
-    DAT_083a42c4 = 0;
+    int slot = ((int)MouseY - yBase) / 0x12;
+    MouseLButton = 0;
     DAT_07e11d28 = 0;
     DAT_00559bec = 6;
 
     if (slot < 0) {
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
         return;
     }
 
@@ -1297,12 +1297,12 @@ void __fastcall Quest_AnswerHitTest(void *param_1)
         }
         Quest_SendState(param_1);
     } else if (slotType == 2) {
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         CSQuest_clearQuest(param_1);
     } else if (slotType == 3) {
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         Quest_SendState(param_1);

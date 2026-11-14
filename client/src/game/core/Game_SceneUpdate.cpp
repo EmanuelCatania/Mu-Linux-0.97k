@@ -440,11 +440,11 @@ int Game_SceneUpdate(void)
         }
 
         // Click "back" button (0x11d-0x162, Y: 0x106-0x119)
-        if (DAT_083a427c >= 0x11d && DAT_083a427c <= 0x162 &&
-            DAT_083a4278 >= 0x106 && DAT_083a4278 <= 0x119 &&
+        if (MouseX >= 0x11d && MouseX <= 0x162 &&
+            MouseY >= 0x106 && MouseY <= 0x119 &&
             IsClickPushed())
         {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             if (DAT_083a7c14 == 1) {
                 DAT_083a7c14 = 0;
                 DAT_083a7c44 = 0;
@@ -472,14 +472,14 @@ int Game_SceneUpdate(void)
         {
             int entryY = dialogY + 0x32;
             for (int i = 0; i < InputNumber; i++, entryY += 0x14) {
-                if (DAT_083a427c > 0x124 && DAT_083a427c < 0x1a1 &&
-                    DAT_083a4278 >= entryY && DAT_083a4278 < entryY + 0x14 &&
+                if (MouseX > 0x124 && MouseX < 0x1a1 &&
+                    MouseY >= entryY && MouseY < entryY + 0x14 &&
                     IsClickPushed())
                 {
-                    DAT_083a4124 = '\0';
+                    MouseLButtonPush = '\0';
                     DAT_07e11d78 = (unsigned)i;
-                    DAT_083a7c24 = DAT_083a7c28;
-                    DAT_083a7c28 = 0;
+                    ErrorMessage = NextErrorMessage;
+                    NextErrorMessage = 0;
                 }
             }
         }
@@ -496,41 +496,41 @@ int Game_SceneUpdate(void)
         // Login button rect: MouseX in [0x143,0x188], Y in [dialogY+0x5f,+0x72].
         // IDA: if login-click THEN consume click + fall-through; else if (!v41)
         //      goto LABEL_194 (skip login logic).
-        bool loginClick = (DAT_083a427c >= 0x143 && DAT_083a427c <= 0x188 &&
-                           DAT_083a4278 >= dialogY + 0x5f &&
-                           DAT_083a4278 <= dialogY + 0x72 &&
+        bool loginClick = (MouseX >= 0x143 && MouseX <= 0x188 &&
+                           MouseY >= dialogY + 0x5f &&
+                           MouseY <= dialogY + 0x72 &&
                            IsClickPushed());
         if (loginClick) {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             loginTrigger = true;
         }
 
         if (loginTrigger && DAT_05826cb0 != 0) {
             // Reset slot selection
-            DAT_083a7c24 = DAT_083a7c28;
-            DAT_083a7c28 = 0;
+            ErrorMessage = NextErrorMessage;
+            NextErrorMessage = 0;
             PlayBuffer(0x19, 0, 0);
 
             // Check username empty
             int ulen = (int)strlen((char*)DAT_07db8710);
             if (ulen == 0) {
                 // No username: set slot error
-                if (DAT_083a7c24 == 0) { DAT_083a7c24 = 100; }
-                else                   { DAT_083a7c28 = 100; }
+                if (ErrorMessage == 0) { ErrorMessage = 100; }
+                else                   { NextErrorMessage = 100; }
                 DAT_07e11d78 = 0;
                 DAT_005616a0 = 1;
             } else {
                 int plen = (int)strlen((char*)DAT_07db8810);
                 if (plen == 0) {
-                    if (DAT_083a7c24 == 0) { DAT_083a7c24 = 0x65; }
-                    else                   { DAT_083a7c28 = 0x65; }
+                    if (ErrorMessage == 0) { ErrorMessage = 0x65; }
+                    else                   { NextErrorMessage = 0x65; }
                     DAT_07e11d78 = 1;
                     DAT_005616a0 = 1;
                 }
             }
 
         // Login packet send — ONLY when user actually pressed login.
-        if (DAT_083a7c24 == 0) {
+        if (ErrorMessage == 0) {
             int code = DAT_05826cb0;
             bool validCode = (code == 2 || code == 0xb || code == 0xc || code == 0xd ||
                               (code > 0x14 && code < 0x22));
@@ -615,15 +615,15 @@ int Game_SceneUpdate(void)
         // Exit X band, so we can see whether a click is hitting the button or
         // getting eaten by something earlier.
         if (IsClickPushed() &&
-            DAT_083a427c > 0x100 && DAT_083a427c < 0x180)
-        if (DAT_083a427c > 0x11c && DAT_083a427c < 0x163 &&
-            DAT_083a4278 >= dialogY + 0xb4 && DAT_083a4278 < dialogY + 200 &&
+            MouseX > 0x100 && MouseX < 0x180)
+        if (MouseX > 0x11c && MouseX < 0x163 &&
+            MouseY >= dialogY + 0xb4 && MouseY < dialogY + 200 &&
             IsClickPushed())
         {
             CErrorReport_Write(&DAT_055c9bf0, "> Login Scene - Exit");
-            DAT_083a4124 = '\0';
-            DAT_083a7c24 = DAT_083a7c28;
-            DAT_083a7c28 = 0;
+            MouseLButtonPush = '\0';
+            ErrorMessage = NextErrorMessage;
+            NextErrorMessage = 0;
             PlayBuffer(0x19, 0, 0);
             DAT_083a7c14 = 3;
             DAT_083a7c18 = 0x1d;
@@ -639,8 +639,8 @@ LAB_00520fd8:
     {
         int  state   = DAT_083a7c14;
         int  respCode = DAT_05826cb0;
-        int  slotA   = DAT_083a7c24;
-        int  slotB   = DAT_083a7c28;
+        int  slotA   = ErrorMessage;
+        int  slotB   = NextErrorMessage;
         int  iVar11  = 0;
 
         // Tabla de salto del binario (0x0052159C, `state - 2` en 0..9):
@@ -676,11 +676,11 @@ LAB_00520fd8:
                 DAT_07e11d78 = 0;
                 InputNumber = 2;
                 if (respCode == 0) {
-                    DAT_083a7c28 = 0; DAT_05826cb0 = 2; DAT_083a7c24 = slotB;
+                    NextErrorMessage = 0; DAT_05826cb0 = 2; ErrorMessage = slotB;
                 } else if (slotA == 0) {
-                    DAT_05826cb0 = 2; DAT_083a7c24 = respCode;
+                    DAT_05826cb0 = 2; ErrorMessage = respCode;
                 } else {
-                    DAT_05826cb0 = 2; DAT_083a7c28 = respCode;
+                    DAT_05826cb0 = 2; NextErrorMessage = respCode;
                 }
                 break;
 
@@ -691,14 +691,14 @@ LAB_00520fd8:
                 } else {
                     DAT_07e11d78 = 0;
                     if (respCode == 0) {
-                        DAT_083a7c28 = 0;
+                        NextErrorMessage = 0;
                         goto state_fail_common;
                     }
                 }
                 {
                     int r = respCode;
-                    if (slotA != 0) { DAT_083a7c28 = respCode; r = slotA; }
-                    DAT_083a7c24 = r;
+                    if (slotA != 0) { NextErrorMessage = respCode; r = slotA; }
+                    ErrorMessage = r;
                 }
 state_fail_common:
                 DAT_05826cb0 = 2;
@@ -739,14 +739,14 @@ state_fail_common:
                     DAT_07e11d78 = 0;
                     if (respCode == 0) {
                         DAT_083a7c14 = 2;
-                        DAT_083a7c28 = 0; DAT_05826cb0 = 2; DAT_083a7c24 = slotB;
+                        NextErrorMessage = 0; DAT_05826cb0 = 2; ErrorMessage = slotB;
                         break;
                     }
                 }
                 if (slotA == 0) {
-                    DAT_083a7c14 = 2; DAT_05826cb0 = 2; DAT_083a7c24 = respCode;
+                    DAT_083a7c14 = 2; DAT_05826cb0 = 2; ErrorMessage = respCode;
                 } else {
-                    DAT_083a7c14 = 2; DAT_05826cb0 = 2; DAT_083a7c28 = respCode;
+                    DAT_083a7c14 = 2; DAT_05826cb0 = 2; NextErrorMessage = respCode;
                 }
                 break;
 
@@ -764,18 +764,18 @@ state_fail_common:
 
             case 0x3d: // 0x3f
                 if (respCode != 0) goto state_alt_error;
-                DAT_083a7c14 = 2; DAT_083a7c28 = 0; DAT_05826cb0 = 2; DAT_083a7c24 = slotB;
+                DAT_083a7c14 = 2; NextErrorMessage = 0; DAT_05826cb0 = 2; ErrorMessage = slotB;
                 break;
 
             // Success variants 0x40-0x47
             case 0x3e: case 0x3f: case 0x40: case 0x41:
             case 0x42: case 0x43: case 0x44: case 0x45:
                 if (respCode == 0) {
-                    DAT_083a7c28 = 0;
+                    NextErrorMessage = 0;
                 } else {
                     int r = respCode;
-                    if (slotA != 0) { DAT_083a7c28 = respCode; r = slotA; }
-                    DAT_083a7c24 = r;
+                    if (slotA != 0) { NextErrorMessage = respCode; r = slotA; }
+                    ErrorMessage = r;
                 }
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 2;

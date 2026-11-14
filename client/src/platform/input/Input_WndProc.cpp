@@ -72,39 +72,39 @@ void Input_OnEvent(const Platform::InputEvent& event)
     switch (event.type)
     {
     case Platform::InputEventType::MouseMove:     // 0x200
-        // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
-        // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
+        // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → MouseX
+        // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → MouseY
         {
             // En pantalla ancha, sobre los costados la columna sale de 0..639
             // (negativa o mayor): se guarda con signo.
             DWORD sh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
-            DAT_083a427c = (DWORD)gWindow.UiXFromPixel(event.x);
-            DAT_083a4278 = ((DWORD)event.y * 480) / sh;
+            MouseX = (DWORD)gWindow.UiXFromPixel(event.x);
+            MouseY = ((DWORD)event.y * 480) / sh;
         }
         gCamera3D.Drag(event.x, event.y);
         break;
 
     case Platform::InputEventType::LeftDown:   // 0x201
-        DAT_083a413c = 0;                    // cancelar "dialog close" anterior
-        if (DAT_083a42c4 == 0) {
-            DAT_083a4124 = 1;                // g_ClickFlag = 1
+        MouseLButtonPop = 0;                    // cancelar "dialog close" anterior
+        if (MouseLButton == 0) {
+            MouseLButtonPush = 1;                // g_ClickFlag = 1
         }
-        DAT_083a42c4 = 1;                    // g_DblClickPending = 1
-        DAT_055ca03c = DAT_083a427c;         // snapshot posición al down
-        DAT_055ca040 = DAT_083a4278;
+        MouseLButton = 1;                    // g_DblClickPending = 1
+        DAT_055ca03c = MouseX;         // snapshot posición al down
+        DAT_055ca040 = MouseY;
         break;
 
     case Platform::InputEventType::LeftUp:     // 0x202
-        DAT_083a4124 = 0;                    // g_ClickFlag = 0
+        MouseLButtonPush = 0;                    // g_ClickFlag = 0
         // Si no hubo drag desde el down, marcar "dialog close / click confirmado"
-        if (DAT_055ca03c == DAT_083a427c && DAT_055ca040 == DAT_083a4278) {
-            DAT_083a413c = 1;
+        if (DAT_055ca03c == MouseX && DAT_055ca040 == MouseY) {
+            MouseLButtonPop = 1;
         } else {
-            DAT_083a413c = 0;                // fue drag
+            MouseLButtonPop = 0;                // fue drag
         }
-        DAT_083a42c4 = 0;                    // clear pending
-        DAT_055ca03c = DAT_083a427c;
-        DAT_055ca040 = DAT_083a4278;
+        MouseLButton = 0;                    // clear pending
+        DAT_055ca03c = MouseX;
+        DAT_055ca040 = MouseY;
         break;
 
     case Platform::InputEventType::LeftDoubleClick: // 0x203
@@ -115,17 +115,17 @@ void Input_OnEvent(const Platform::InputEvent& event)
         // 004149D0 WndProc: MouseRButtonPop = 0; if (!MouseRButton)
         // MouseRButtonPush = 1; MouseRButton = 1.  Attack (0049CBF0)
     // consume esos dos flags para arrancar y sostener el casteo de un skill.
-        if (DAT_083a42ac == 0) {
+        if (MouseRButton == 0) {
             MouseRButtonPush = 1;                // MouseRButtonPush
         }
-        DAT_083a42ac = 1;                    // MouseRButton
+        MouseRButton = 1;                    // MouseRButton
         break;
 
     case Platform::InputEventType::RightUp:     // 0x205
         // El original limpia Push y suelta MouseRButton (también setea el flag
         // Pop aparte, que hoy ningún camino de gameplay compilado lee).
         MouseRButtonPush = 0;
-        DAT_083a42ac = 0;
+        MouseRButton = 0;
         break;
 
     case Platform::InputEventType::Wheel:    // 0x20A
@@ -246,7 +246,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
             // ErrorMessage 126/152 está capturando un Personal Code; en esos
             // casos el input no puede abrir ni enviar chat.
             const bool guildDeleteCodeDialog =
-                DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
+                ErrorMessage == 126 || ErrorMessage == 152;
             if (SceneFlag == 5 && GuildInputEnable == 0 && !guildDeleteCodeDialog) {
                 bool empty = (lens[slot] == 0);
                 if (empty) {
@@ -317,7 +317,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
         // (el diálogo de zen del baúl abre con InputEnable=0 + GoldInputEnable=1,
         // sub_4EB5D0) y con GoldInputEnable sólo se aceptan dígitos '0'..'9'.
         const bool guildDeleteCodeDialog =
-            DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
+            ErrorMessage == 126 || ErrorMessage == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
             // DESVIACION (Fase 4): Ctrl+V pega el portapapeles carácter por
             // carácter, con los mismos filtros y topes que el tipeo.

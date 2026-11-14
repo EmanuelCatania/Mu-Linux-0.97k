@@ -818,16 +818,16 @@ extern DWORD   TradeRemoteGuildKey; // IDA: DAT_00559F54 durante Trade
 extern WORD    TradeRemoteLevel;    // IDA: DAT_07EAA0EC durante Trade
 extern DWORD   m_nMyTradeWait;   // shop/item selection A  [IDA 0x07EAA104]
 extern DWORD   StorageGoldFlag;   // shop/item selection B  [IDA 0x07EAA108]
-extern char    DAT_07eaa114;
-extern char    DAT_07eaa115;
-extern char    DAT_07eaa116;
-extern char    DAT_07eaa117;
-extern char    DAT_07eaa118;
-extern char    DAT_07eaa119;
-extern char    DAT_07eaa11a;
-extern char    DAT_07eaa11b;
-extern char    DAT_07eaa11c;
-extern DWORD   DAT_07eaa124;
+extern char    GuildOpened;  // IDA: GuildOpened (0x07EAA114)
+extern char    PartyOpened;  // IDA: PartyOpened (0x07EAA115)
+extern char    CharacterOpened;  // IDA: CharacterOpened (0x07EAA116)
+extern char    InventoryOpened;  // IDA: InventoryOpened (0x07EAA117)
+extern char    ShopOpened;  // IDA: ShopOpened (0x07EAA118)
+extern char    WarehouseOpened;  // IDA: WarehouseOpened (0x07EAA119)
+extern char    ChaosMixOpened;  // IDA: ChaosMixOpened (0x07EAA11A)
+extern char    TradeOpened;  // IDA: TradeOpened (0x07EAA11B)
+extern char    EventWindowOpened;  // IDA: EventWindowOpened (0x07EAA11C)
+extern DWORD   GuildCreatorOpened;  // IDA: GuildCreatorOpened (0x07EAA124)
 extern "C" DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
 extern "C" DWORD   DAT_07eaa13c;
 extern DWORD   MixType;   // guild join/select current selection index  [IDA 0x07EAA16C]
@@ -974,16 +974,16 @@ extern char    DAT_083a410c;   // Scene_Intro: normal-path flag
 // escribe out_ray[0..2]). DAT_083a4110 es referencia al [0].
 extern DWORD   DAT_083a4110_arr[3];
 extern DWORD&  DAT_083a4110;
-extern DWORD   DAT_083a4124;  // MouseLButtonPush flag — VALORES VÁLIDOS: {0,1}
-// Helper de defensa: usar IsClickPushed() en vez de truthy-check `&& DAT_083a4124`.
-// Algún stub stompea DAT_083a4124 con un valor wild (0x4397355A observado) que
+extern DWORD   MouseLButtonPush;  // IDA: MouseLButtonPush (0x083A4124) - MouseLButtonPush flag — VALORES VÁLIDOS: {0,1}
+// Helper de defensa: usar IsClickPushed() en vez de truthy-check `&& MouseLButtonPush`.
+// Algún stub stompea MouseLButtonPush con un valor wild (0x4397355A observado) que
 // pasaría como verdadero y dispara phantom clicks. La igualdad estricta == 1
 // suprime el síntoma mientras buscamos al culpable.
-static inline bool IsClickPushed() { return DAT_083a4124 == 1; }
+static inline bool IsClickPushed() { return MouseLButtonPush == 1; }  // IDA: MouseLButtonPush (0x083A4124)
 extern float   DAT_083a4130;   // cursor billboard screen X
 extern float   DAT_083a4134;   // cursor billboard screen Y
 extern float   DAT_083a4138;   // terrain pick Z result
-extern DWORD   DAT_083a413c;
+extern DWORD   MouseLButtonPop;  // IDA: MouseLButtonPop (0x083A413C)
 // CameraMatrix es un buffer de 48 bytes (matrix 3×4 floats) — ver globals.cpp.
 // DAT_083a414c / DAT_083a415c / DAT_083a416c son referencias a índices 3/7/11
 // del mismo array; comparten memoria para que GL_GetModelViewMatrix (que escribe 12
@@ -993,8 +993,8 @@ extern DWORD&  DAT_083a414c;
 extern DWORD&  DAT_083a415c;
 extern DWORD&  DAT_083a416c;
 extern char    GrabFileName[0x104];   // screenshot name buf (26 chars+)  [IDA 0x083A4174]
-extern DWORD   DAT_083a4278;
-extern DWORD   DAT_083a427c;
+extern DWORD   MouseY;  // IDA: MouseY (0x083A4278)
+extern DWORD   MouseX;  // IDA: MouseX (0x083A427C)
 extern DWORD   OpenglWindowWidth;   // viewport width (pixels)  [IDA 0x083A4280]
 // CameraRayOriginX_arr — 3-DWORD storage para camera world position (escrito por
 // Camera_MouseRay vía Vector_InverseRotate(...&CameraRayOriginX)). _CameraRayOriginX..428c son
@@ -1008,13 +1008,13 @@ extern DWORD   ViewportCenterX;        // DAT_083A429C
 extern DWORD   ViewportCenterY;        // DAT_083A42A0
 extern DWORD   DAT_083a42a4;
 extern DWORD   DAT_083a42a8;
-extern DWORD   DAT_083a42ac;   // UI flag: mouse button state
+extern DWORD   MouseRButton;  // IDA: MouseRButton (0x083A42AC) - UI flag: mouse button state
 extern DWORD   OpenglWindowHeight;   // viewport height (pixels)  [IDA 0x083A42B0]
 // CameraAngle/CameraPosition contiguous — DAT_ names are aliases (see globals.cpp)
 extern DWORD&  DAT_083a42b8;   // alias → CameraAngle[0]
 extern DWORD&  DAT_083a42bc;   // alias → CameraAngle[1]
 extern DWORD&  DAT_083a42c0;   // alias → CameraAngle[2]
-extern DWORD   DAT_083a42c4;
+extern DWORD   MouseLButton;  // IDA: MouseLButton (0x083A42C4)
 extern DWORD   OpenglWindowX;   // viewport x offset  [IDA 0x083A42C8]
 extern DWORD   OpenglWindowY;   // viewport y offset  [IDA 0x083A42CC]
 extern DWORD   MouseRButtonPush;   // UI flag: right-click / context menu  [IDA 0x083A42D0]
@@ -1083,8 +1083,8 @@ extern int     LoginSubState; // IDA: DAT_083a7c14 (0x083A7C14)
 extern DWORD   DAT_083a7c18;
 extern DWORD   DAT_083a7c1c;
 extern DWORD   DAT_083a7c20;
-extern DWORD   DAT_083a7c24;   // secondary in-game UI state machine
-extern DWORD   DAT_083a7c28;   // queued next UI state (applied at end of tick)
+extern DWORD   ErrorMessage;  // IDA: ErrorMessage (0x083A7C24) - secondary in-game UI state machine
+extern DWORD   NextErrorMessage;  // IDA: NextErrorMessage (0x083A7C28) - queued next UI state (applied at end of tick)
 // Chaos Machine category selected by the local ErrorMessage=143 modal:
 // 0 = general, 1 = Chaos Weapon.  It is not a server recipe/type byte.
 extern DWORD   DAT_083a7c2c;
@@ -1446,8 +1446,8 @@ extern char    DAT_00559d54;           // s__s___s: " %s - %s" style format stri
 extern char    DAT_00559d5c;           // player-list alternate format string
 
 // ── Guild system globals (opcodes 0x90-0x99) ──────────────────────────────────
-// DAT_07eaa117 — declared above as char
-// DAT_07eaa116 — declared above as char
+// InventoryOpened — declared above as char
+// CharacterOpened — declared above as char
 // GoldenArcherOpenType — declared above as DWORD
 extern int     GoldenArcherItemCount;           // g_shEventChipCount (IDA 0x07EAA12C)  [IDA 0x07EAA12C]
 // StorageGoldFlag — guild UI flag — declared above as DWORD
@@ -1484,8 +1484,8 @@ extern DWORD   DAT_083a42f8[10];       // UI panel descriptor array (set by guil
 #define DAT_083a42fc   (DAT_083a42f8[1])                 // entry0.x
 #define DAT_083a4304   (*(int*)&DAT_083a42f8[3])         // entry0.width
 #define DAT_083a430c   ((DWORD*)&DAT_083a42f8[5])        // entry1 base
-// DAT_083a7c24  — declared above as DWORD
-// DAT_083a7c28  — declared above as DWORD
+// ErrorMessage  — declared above as DWORD
+// NextErrorMessage  — declared above as DWORD
 extern int     DAT_083a7c30;           // guild member count for UI
 extern int     DAT_083a7c34;           // guild UI auxiliary param
 
@@ -1638,7 +1638,7 @@ extern char    DAT_083a4348[10][1][38];
 extern char    DAT_083a7c09;   // guild dialog flag B
 // DAT_083a7c0c — declared above as DWORD
 // Zona del cursor / hit-test (también se usa en otros paneles)
-// DAT_083a4124 — declared above as DWORD
+// MouseLButtonPush — declared above as DWORD
 // Y del cursor de selección en la lista de servers (también se usa en el panel 0x96)
 extern float  _DAT_00552cac;   // panel cursor bound Y-min
 // String literals at fixed addresses (Ghidra: s__s_xxx_address)
@@ -2547,20 +2547,10 @@ extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 
 // Los flags de los paneles de UI aliasan los bytes reales DAT_07eaa11x (per el
 // Offsets.h del proyecto companion de IDA). Los flags reales están en
-// DAT_07eaa116..11c (de un byte), no en 0x07e5ba84/88 (misidentificación de la
+// CharacterOpened..11c (de un byte), no en 0x07e5ba84/88 (misidentificación de la
 // época de Ghidra). Usamos #define para que tanto el código de toggle portado de
-// IDA (escribe DAT_07eaa117) como los gates de render del HUD (leen
+// IDA (escribe InventoryOpened) como los gates de render del HUD (leen
 // `if (InventoryOpened)`) peguen en el mismo byte de memoria.
-#define InventoryOpened    DAT_07eaa117
-#define CharacterOpened    DAT_07eaa116
-#define GuildOpened        DAT_07eaa114
-#define PartyOpened        DAT_07eaa115
-#define ShopOpened         DAT_07eaa118
-#define WarehouseOpened    DAT_07eaa119
-#define ChaosMixOpened     DAT_07eaa11a
-#define TradeOpened        DAT_07eaa11b
-#define EventWindowOpened  DAT_07eaa11c
-#define GuildCreatorOpened DAT_07eaa124
 
 // Inventory/Trade panel origin coords. Mismo patrón de unificación que los flags
 // *Opened de arriba — IDA escribe/lee vía DAT_07ea5284..5290 y los pases de render

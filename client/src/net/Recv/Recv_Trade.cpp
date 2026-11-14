@@ -41,7 +41,7 @@ void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     // `state == 4` con GlobalText[2108] seria de una version posterior (indice
     // FUERA del Text.bmd del 0.97k, que tiene 1000 filas).
 
-    DAT_07eaa11b = 0;
+    TradeOpened = 0;
     DAT_05826d30 = 0;
     DAT_07e91388 = 0;
     DAT_07eaa165 = 0;
@@ -58,10 +58,10 @@ void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     g_ItemMoveSourcePool = 0;
     g_ItemMoveTargetPool = 0;
     InitGuildWar();
-    DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
+    InventoryOpened = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
     CloseInventoryRelatedWindows();
 
-    if (DAT_083a7c24 == 116) {
+    if (ErrorMessage == 116) {
         SetErrorMessage(0);
         ClearInput(0);
         _InputTextMaxArr[0] = 42;
@@ -98,7 +98,7 @@ void NetRecv_37(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         CharacterOpened = 0;
         ShopOpened = 0;
         WarehouseOpened = 0;
-        DAT_07eaa11b = 1;
+        TradeOpened = 1;
         DAT_05826d30 = 1;
         DAT_07eaa0e8 = 0;
         DAT_07eaa0f0 = 0;

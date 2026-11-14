@@ -12,8 +12,8 @@
 //   Group 2 button:  X = 0x177..0x1bd (375..445)
 //   Server entries:  X = 0xe5..0x16c  (229..364), Y stacked by 0x14 per entry
 //
-// Mouse position: DAT_083a427c = cursor X, DAT_083a4278 = cursor Y
-// Click flag:     DAT_083a4124 — set by WndProc on left click, cleared here after handling
+// Mouse position: MouseX = cursor X, MouseY = cursor Y
+// Click flag:     MouseLButtonPush — set by WndProc on left click, cleared here after handling
 //
 // On group button click:
 //   Sends 4-byte packet [0xC1][0x04][0xF4][?] to select server group.
@@ -32,7 +32,7 @@
 //   Server select (6 bytes): { 0xC1, 0x06, 0xF4, subcode, portLo, portHi }
 //
 // Related globals:
-//   DAT_083a7c24 / _7c28 — UI flash/cooldown counters
+//   ErrorMessage / _7c28 — UI flash/cooldown counters
 //   DAT_083a7c44          — server click cooldown (decremented per frame)
 //   DAT_083a4320          — reset to 0 on server select
 //   DAT_083a4328          — updated with selected port
@@ -114,12 +114,12 @@ void CServerSelWin_UpdateWhileActive(void)
             }
 
             // Check mouse in button rect and click pending
-            if (iVar6 <= (int)DAT_083a427c && (int)DAT_083a427c < iVar6 + 0x46 &&
-                iVar9 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iVar3 &&
-                DAT_083a4124 != '\0')
+            if (iVar6 <= (int)MouseX && (int)MouseX < iVar6 + 0x46 &&
+                iVar9 <= (int)MouseY && (int)MouseY < iVar3 &&
+                MouseLButtonPush != '\0')
             {
                 CErrorReport_Write(&DAT_055c9bf0, "> Server group selected");
-                DAT_083a4124 = '\0';
+                MouseLButtonPush = '\0';
 
                 // Build and send 4-byte group-select packet
                 // IDA: buf[2]=-63(0xC1), buf[3]=4(len), v49=-12(0xF4), v50=2(subcode)
@@ -180,8 +180,8 @@ void CServerSelWin_UpdateWhileActive(void)
 
         do {
             // Check mouse in entry rect (X=0xe5..0x16c) and server not full (flag & 0x80 == 0)
-            if (0xe5 <= (int)DAT_083a427c && (int)DAT_083a427c < 0x16c &&
-                iVar8b <= (int)DAT_083a4278 && (int)DAT_083a4278 < iVar8b + 0x14)
+            if (0xe5 <= (int)MouseX && (int)MouseX < 0x16c &&
+                iVar8b <= (int)MouseY && (int)MouseY < iVar8b + 0x14)
             {
                 // Byte arith: DAT_083a4604 es *(DWORD*) y DAT_083a4606 *(WORD*) lvalues →
                 // `&DAT + i` / `(&DAT)[i]` escalarían el offset ×4/×2. Igual que en el render
@@ -193,8 +193,8 @@ void CServerSelWin_UpdateWhileActive(void)
                 bool full = ((*((unsigned char*)&DAT_083a4606 + iVar10b + local_830b)) & 0x80) == 0x80;
                 bool ping_ok = ((*((unsigned char*)&DAT_083a4606 + iVar10b + local_830b)) & 0x7f) < 100;
 
-                if (!full && DAT_083a4124 != '\0') {
-                    DAT_083a4124 = '\0';
+                if (!full && MouseLButtonPush != '\0') {
+                    MouseLButtonPush = '\0';
                     PlayBuffer(0x19, 0, 0);
 
                     if (ping_ok && DAT_083a7c44 == 0) {
@@ -204,8 +204,8 @@ void CServerSelWin_UpdateWhileActive(void)
                         CErrorReport_Write(&DAT_055c9bf0, "> Server selected");
 
                         DAT_083a7c44 = 0x32;
-                        DAT_083a7c24 = DAT_083a7c28;
-                        DAT_083a7c28 = 0;
+                        ErrorMessage = NextErrorMessage;
+                        NextErrorMessage = 0;
                         DAT_083a7ac8 = Platform::GetTimer().Ticks();
                         DAT_083a4320 = 0;
 
@@ -245,8 +245,8 @@ void CServerSelWin_UpdateWhileActive(void)
 
                     } else if (ping_ok) {
                         // Already has cooldown — flash counters
-                        if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x18;
-                        else                    DAT_083a7c28 = 0x18;
+                        if (ErrorMessage == 0) ErrorMessage = 0x18;
+                        else                    NextErrorMessage = 0x18;
                     }
                 }
             }
