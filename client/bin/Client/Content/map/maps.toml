@@ -15,6 +15,18 @@
 #   indoor_tiles          valores de HeroTile que cuentan como bajo techo: ahí no hay
 #                         clima, se ocultan los techos y se corta el viento ([])
 #   mini_map              "none", "mini" o "full" ("none")
+#   object_folder         carpeta de los objetos del mapa: Data/Object<N> (número de mapa + 1)
+#   load_from             usa las cargas [[map.N.load]] de otro mapa
+#
+# [map.N.objects]  nombre de cada modelo de objeto (slot = "archivo"), en el orden en que se
+#                  cargan. Sin esta sección los slots 0..159 cargan Object01..Object160.
+# [[map.N.load]]   cargas que el mapa hace al entrar, además de sus objetos. Se aplican en
+#                  el orden del archivo, también dentro de una misma tabla:
+#                    model   = [slot, "Data/ObjectN/", "archivo", número]
+#                    texture = [slot, "ObjectN/"]      (texturas del modelo de ese slot)
+#                    jpg     = ["archivo.jpg", slot, "clamp" | "repeat"]
+#                  El orden importa: en Exile, BossHead y Princess se cargan sobre los slots
+#                  de Meteo7 y Meteo8 después de sus texturas, igual que en el binario.
 
 [map.0]   # Lorencia
 music = "Lorencia.mp3"
@@ -45,6 +57,7 @@ ambient = [0, 2]
 mini_map = "full"
 
 [map.4]   # Lost Tower
+load_from = 1   # las mismas cargas que Dungeon
 ambient = [5]
 mini_map = "full"
 
@@ -82,16 +95,296 @@ mini_map = "full"
 mini_map = "full"
 
 [map.12]   # Blood Castle 2
+object_folder = 12
+load_from = 11   # las mismas cargas que Blood Castle 1
 mini_map = "full"
 
 [map.13]   # Blood Castle 3
+object_folder = 12
+load_from = 11   # las mismas cargas que Blood Castle 1
 mini_map = "full"
 
 [map.14]   # Blood Castle 4
+object_folder = 12
+load_from = 11   # las mismas cargas que Blood Castle 1
 mini_map = "full"
 
 [map.15]   # Blood Castle 5
+object_folder = 12
+load_from = 11   # las mismas cargas que Blood Castle 1
 mini_map = "full"
 
 [map.16]   # Blood Castle 6
+object_folder = 12
+load_from = 11   # las mismas cargas que Blood Castle 1
 mini_map = "full"
+
+[map.0.objects]   # Lorencia
+0 = "Tree01"
+1 = "Tree02"
+2 = "Tree03"
+3 = "Tree04"
+4 = "Tree05"
+5 = "Tree06"
+6 = "Tree07"
+7 = "Tree08"
+8 = "Tree09"
+9 = "Tree10"
+10 = "Tree11"
+11 = "Tree12"
+12 = "Tree13"
+20 = "Grass01"
+21 = "Grass02"
+22 = "Grass03"
+23 = "Grass04"
+24 = "Grass05"
+25 = "Grass06"
+26 = "Grass07"
+27 = "Grass08"
+30 = "Stone01"
+31 = "Stone02"
+32 = "Stone03"
+33 = "Stone04"
+34 = "Stone05"
+40 = "StoneStatue01"
+41 = "StoneStatue02"
+42 = "StoneStatue03"
+43 = "SteelStatue01"
+44 = "Tomb01"
+45 = "Tomb02"
+46 = "Tomb03"
+50 = "FireLight01"
+51 = "FireLight02"
+52 = "Bonfire01"
+56 = "MerchantAnimal01"
+57 = "MerchantAnimal02"
+55 = "DoungeonGate01"
+58 = "TreasureDrum01"
+59 = "TreasureChest01"
+60 = "Ship01"
+65 = "SteelWall01"
+66 = "SteelWall02"
+67 = "SteelWall03"
+68 = "SteelDoor01"
+69 = "StoneWall01"
+70 = "StoneWall02"
+71 = "StoneWall03"
+72 = "StoneWall04"
+73 = "StoneWall05"
+74 = "StoneWall06"
+75 = "StoneMuWall01"
+76 = "StoneMuWall02"
+77 = "StoneMuWall03"
+78 = "StoneMuWall04"
+80 = "Bridge01"
+85 = "BridgeStone01"
+81 = "Fence01"
+82 = "Fence02"
+83 = "Fence03"
+84 = "Fence04"
+90 = "StreetLight01"
+91 = "Cannon01"
+92 = "Cannon02"
+93 = "Cannon03"
+95 = "Curtain01"
+96 = "Sign01"
+97 = "Sign02"
+98 = "Carriage01"
+99 = "Carriage02"
+100 = "Carriage03"
+101 = "Carriage04"
+102 = "Straw01"
+103 = "Straw02"
+105 = "Waterspout01"
+106 = "Well01"
+107 = "Well02"
+108 = "Well03"
+109 = "Well04"
+110 = "Hanging01"
+111 = "Stair01"
+115 = "House01"
+116 = "House02"
+117 = "House03"
+118 = "House04"
+119 = "House05"
+120 = "Tent01"
+121 = "HouseWall01"
+122 = "HouseWall02"
+123 = "HouseWall03"
+124 = "HouseWall04"
+125 = "HouseWall05"
+126 = "HouseWall06"
+127 = "HouseEtc01"
+128 = "HouseEtc02"
+129 = "HouseEtc03"
+130 = "Light01"
+131 = "Light02"
+132 = "Light03"
+133 = "PoseBox01"
+140 = "Furniture01"
+141 = "Furniture02"
+142 = "Furniture03"
+143 = "Furniture04"
+144 = "Furniture05"
+145 = "Furniture06"
+146 = "Furniture07"
+150 = "Candle01"
+151 = "Beer01"
+152 = "Beer02"
+153 = "Beer03"
+
+[[map.0.load]]   # Lorencia
+model = [174, "Data/Object1/", "bird", 1]
+texture = [174, "Object1/"]
+
+[[map.0.load]]   # Lorencia
+model = [181, "Data/Object1/", "fish", 1]
+texture = [181, "Object1/"]
+
+[[map.1.load]]   # Dungeon
+model = [215, "Data/Object2/", "DungeonStone", 1]
+texture = [215, "Object2/"]
+
+[[map.1.load]]   # Dungeon
+model = [176, "Data/Object2/", "Bat", 1]
+texture = [176, "Object2/"]
+
+[[map.1.load]]   # Dungeon
+model = [177, "Data/Object2/", "mouse", 1]
+texture = [177, "Object2/"]
+
+[[map.3.load]]   # Noria
+model = [175, "Data/Object1/", "Butterfly", 1]
+texture = [175, "Object1/"]
+
+[[map.5.load]]   # Exile
+model = [228, "Data/Object6/", "Meteo", 1]
+texture = [228, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [229, "Data/Object6/", "Meteo", 2]
+texture = [229, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [230, "Data/Object6/", "Meteo", 3]
+texture = [230, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [231, "Data/Object6/", "Meteo", 4]
+texture = [231, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [232, "Data/Object6/", "Meteo", 5]
+texture = [232, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [233, "Data/Object6/", "Meteo", 6]
+texture = [233, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [234, "Data/Object6/", "Meteo", 7]
+texture = [234, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [235, "Data/Object6/", "Meteo", 8]
+texture = [235, "Object6/"]
+
+[[map.5.load]]   # Exile
+model = [234, "Data/Object6/", "BossHead", 1]
+
+[[map.5.load]]   # Exile
+model = [235, "Data/Object6/", "Princess", 1]
+
+[[map.6.load]]   # Arena
+model = [178, "Data/Object7/", "SummonMonster", 1]
+texture = [178, "Object7/"]
+
+[[map.7.load]]   # Atlans
+model = [182, "Data/Object8/", "Fish", 2]
+texture = [182, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [183, "Data/Object8/", "Fish", 3]
+texture = [183, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [184, "Data/Object8/", "Fish", 4]
+texture = [184, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [185, "Data/Object8/", "Fish", 5]
+texture = [185, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [186, "Data/Object8/", "Fish", 6]
+texture = [186, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [187, "Data/Object8/", "Fish", 7]
+texture = [187, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [188, "Data/Object8/", "Fish", 8]
+texture = [188, "Object8/"]
+
+[[map.7.load]]   # Atlans
+model = [189, "Data/Object8/", "Fish", 9]
+texture = [189, "Object8/"]
+
+[[map.8.load]]   # Tarkan
+jpg = ["Object9/sand01.jpg", 1172, "repeat"]
+
+[[map.8.load]]   # Tarkan
+jpg = ["Object9/sand02.jpg", 1173, "repeat"]
+
+[[map.8.load]]   # Tarkan
+jpg = ["Object9/Impack03.jpg", 1431, "clamp"]
+
+[[map.8.load]]   # Tarkan
+model = [179, "Data/Object9/", "SandPillar", 2]
+texture = [179, "Object9/"]
+
+[[map.10.load]]   # Icarus
+jpg = ["Effect/clouds.jpg", 1268, "clamp"]
+
+[[map.10.load]]   # Icarus
+model = [182, "Data/Object11/", "cloud", -1]
+texture = [182, "Object11/"]
+
+[[map.10.load]]   # Icarus
+jpg = ["Effect/cloudLight.jpg", 1269, "clamp"]
+
+[[map.11.load]]   # Blood Castle 1
+model = [184, "Data/Object12/", "Crow", 1]
+texture = [184, "Object12/"]
+
+[[map.11.load]]   # Blood Castle 1
+model = [262, "Data/Object12/", "Gate", 1]
+
+[[map.11.load]]   # Blood Castle 1
+model = [263, "Data/Object12/", "Gate", 2]
+
+[[map.11.load]]   # Blood Castle 1
+model = [260, "Data/Object12/", "StoneCoffin", 1]
+
+[[map.11.load]]   # Blood Castle 1
+model = [261, "Data/Object12/", "StoneCoffin", 2]
+
+[[map.11.load]]   # Blood Castle 1
+texture = [262, "Monster/"]
+
+[[map.11.load]]   # Blood Castle 1
+texture = [263, "Monster/"]
+
+[[map.11.load]]   # Blood Castle 1
+texture = [260, "Monster/"]
+
+[[map.11.load]]   # Blood Castle 1
+texture = [261, "Monster/"]
+
+[[map.11.load]]   # Blood Castle 1
+model = [185, "Data/Object12/", "Shine", 1]
+texture = [185, "Object12/"]
+
+[[map.11.load]]   # Blood Castle 1
+jpg = ["Effect/clouds.jpg", 1268, "clamp"]

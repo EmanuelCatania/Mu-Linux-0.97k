@@ -91,3 +91,8 @@ void SoundTable_LoadNpc(int model)
 {
     LoadSection("npc." + std::to_string(model));
 }
+
+void SoundTable_LoadMap(int map)
+{
+    LoadSection("map." + std::to_string(map));
+}

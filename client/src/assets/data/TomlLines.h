@@ -1,8 +1,8 @@
 #pragma once
 
-// Lector mínimo de los .toml de datos del cliente: secciones [nombre] y líneas
-// clave = valor, con comentarios #. Alcanza para tablas planas; no entiende
-// tablas en línea ni strings de varias líneas.
+// Lector mínimo de los .toml de datos del cliente: secciones [nombre], listas de
+// tablas [[nombre]] y líneas clave = valor, con comentarios #. Alcanza para
+// tablas planas; no entiende tablas en línea ni strings de varias líneas.
 
 #include <cstdlib>
 #include <fstream>
@@ -35,6 +35,7 @@ struct Line {
     std::string section;   // sin corchetes; vacío antes de la primera sección
     std::string key;
     std::string value;     // tal cual, sin el comentario
+    int         entry = 0; // [[sección]]: número de la tabla dentro del archivo (1, 2, ...); 0 en [sección]
 };
 
 // Devuelve false si el archivo no se pudo abrir. `bad` recibe las líneas que no
@@ -44,21 +45,27 @@ inline bool Read(const char* path, std::vector<Line>& lines, std::vector<Line>* 
     std::ifstream file(path);
     if (!file) return false;
     std::string text, section;
-    int number = 0;
+    int number = 0, entries = 0, entry = 0;
     while (std::getline(file, text)) {
         ++number;
         text = Trim(StripComment(text));
         if (text.empty()) continue;
         const auto equal = text.find('=');
+        if (text.rfind("[[", 0) == 0 && equal == std::string::npos) {
+            section = Trim(text.substr(2, text.find("]]") - 2));
+            entry = ++entries;
+            continue;
+        }
         if (text.front() == '[' && equal == std::string::npos) {
             section = Trim(text.substr(1, text.find(']') - 1));
+            entry = 0;
             continue;
         }
         if (equal == std::string::npos) {
-            if (bad) bad->push_back({number, section, {}, text});
+            if (bad) bad->push_back({number, section, {}, text, entry});
             continue;
         }
-        lines.push_back({number, section, Trim(text.substr(0, equal)), Trim(text.substr(equal + 1))});
+        lines.push_back({number, section, Trim(text.substr(0, equal)), Trim(text.substr(equal + 1)), entry});
     }
     return true;
 }
