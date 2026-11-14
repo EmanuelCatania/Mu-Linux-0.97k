@@ -658,6 +658,63 @@ void NetLog(const char* fmt, ...)
 // ============================================================================
 // Dispatcher principal
 // ============================================================================
+// ── Tabla de handlers por opcode ─────────────────────────────────────────────
+// Cada opcode tiene su NetRecv_XX en net/Recv/Recv_<tema>.cpp. Un opcode que no
+// está en la lista se loguea como "unhandled" y se descarta.
+namespace {
+
+struct NetRecvEntry {
+    BYTE           opcode;
+    NetRecvHandler handler;
+};
+
+constexpr NetRecvEntry kNetRecvEntries[] = {
+    {0x00, NetRecv_00}, {0x01, NetRecv_01}, {0x02, NetRecv_02}, {0x03, NetRecv_03},
+    {0x07, NetRecv_07}, {0x0B, NetRecv_0B}, {0x0C, NetRecv_0C}, {0x0D, NetRecv_0D},
+    {0x0E, NetRecv_0E}, {0x0F, NetRecv_0F}, {0x10, NetRecv_10}, {0x11, NetRecv_11},
+    {0x12, NetRecv_12}, {0x13, NetRecv_13}, {0x14, NetRecv_14}, {0x15, NetRecv_15},
+    {0x16, NetRecv_16}, {0x17, NetRecv_17}, {0x18, NetRecv_18}, {0x19, NetRecv_19},
+    {0x1A, NetRecv_1A}, {0x1B, NetRecv_1B}, {0x1C, NetRecv_1C}, {0x1E, NetRecv_1E},
+    {0x1F, NetRecv_1F}, {0x20, NetRecv_20}, {0x21, NetRecv_21}, {0x22, NetRecv_22},
+    {0x23, NetRecv_23}, {0x24, NetRecv_24}, {0x25, NetRecv_25}, {0x26, NetRecv_26},
+    {0x27, NetRecv_27}, {0x28, NetRecv_28}, {0x29, NetRecv_29}, {0x2A, NetRecv_2A},
+    {0x2C, NetRecv_2C}, {0x2F, NetRecv_2F}, {0x30, NetRecv_30}, {0x31, NetRecv_31},
+    {0x32, NetRecv_32}, {0x33, NetRecv_33}, {0x34, NetRecv_34}, {0x36, NetRecv_36},
+    {0x37, NetRecv_37}, {0x38, NetRecv_38}, {0x39, NetRecv_39}, {0x3A, NetRecv_3A},
+    {0x3B, NetRecv_3B}, {0x3C, NetRecv_3C}, {0x3D, NetRecv_3D}, {0x40, NetRecv_40},
+    {0x41, NetRecv_41}, {0x42, NetRecv_42}, {0x43, NetRecv_43}, {0x44, NetRecv_44},
+    {0x45, NetRecv_45}, {0x46, NetRecv_46}, {0x50, NetRecv_50}, {0x51, NetRecv_51},
+    {0x52, NetRecv_52}, {0x53, NetRecv_53}, {0x54, NetRecv_54}, {0x55, NetRecv_55},
+    {0x56, NetRecv_56}, {0x5A, NetRecv_5A}, {0x5B, NetRecv_5B}, {0x5C, NetRecv_5C},
+    {0x5D, NetRecv_5D}, {0x60, NetRecv_60}, {0x61, NetRecv_61}, {0x62, NetRecv_62},
+    {0x63, NetRecv_63}, {0x64, NetRecv_64}, {0x65, NetRecv_65}, {0x71, NetRecv_71},
+    {0x73, NetRecv_73}, {0x81, NetRecv_81}, {0x82, NetRecv_82}, {0x83, NetRecv_83},
+    {0x86, NetRecv_86}, {0x87, NetRecv_87}, {0x88, NetRecv_88}, {0x8E, NetRecv_8E},
+    {0x8F, NetRecv_8F}, {0x90, NetRecv_90}, {0x91, NetRecv_91}, {0x92, NetRecv_92},
+    {0x93, NetRecv_93}, {0x94, NetRecv_94}, {0x95, NetRecv_95}, {0x96, NetRecv_96},
+    {0x97, NetRecv_97}, {0x99, NetRecv_99}, {0x9A, NetRecv_9A}, {0x9B, NetRecv_9B},
+    {0x9C, NetRecv_9C}, {0x9D, NetRecv_9D}, {0xA0, NetRecv_A0}, {0xA1, NetRecv_A1},
+    {0xA2, NetRecv_A2}, {0xA3, NetRecv_A3}, {0xDD, NetRecv_DD}, {0xDE, NetRecv_DE},
+    {0xDF, NetRecv_DF}, {0xF1, NetRecv_F1}, {0xF3, NetRecv_F3}, {0xF4, NetRecv_F4},
+};
+
+struct NetRecvTable {
+    NetRecvHandler byOpcode[256] = {};
+    NetRecvTable()
+    {
+        for (const NetRecvEntry& entry : kNetRecvEntries)
+            byOpcode[entry.opcode] = entry.handler;
+    }
+};
+
+NetRecvHandler NetRecvHandlerFor(int opcode)
+{
+    static const NetRecvTable table;
+    return table.byOpcode[opcode & 0xFF];
+}
+
+} // namespace
+
 void Net_ProcessPacket(void)
 {
     while (true) {
@@ -789,122 +846,10 @@ void Net_ProcessPacket(void)
         // ── dispatch on opcode ───────────────────────────────────────────
         EquipWipe_Tick(HeadCode, sub);   // diagnostico del wipe de equipo
 
-        switch (HeadCode) {
-            case 0xF1: NetRecv_F1(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xF3: NetRecv_F3(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xF4: NetRecv_F4(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x0E: NetRecv_0E(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x01: NetRecv_01(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x02: NetRecv_02(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x53: NetRecv_53(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x54: NetRecv_54(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x55: NetRecv_55(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x56: NetRecv_56(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x10: NetRecv_10(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x03: NetRecv_03(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x11: NetRecv_11(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x12: NetRecv_12(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x45: NetRecv_45(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x13: NetRecv_13(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x14: NetRecv_14(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x15: NetRecv_15(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x18: NetRecv_18(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x07: NetRecv_07(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x19: NetRecv_19(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x1F: NetRecv_1F(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x1E: NetRecv_1E(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x1B: NetRecv_1B(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x16: NetRecv_16(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x17: NetRecv_17(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x25: NetRecv_25(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x24: NetRecv_24(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x2C: NetRecv_2C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x30: NetRecv_30(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x31: NetRecv_31(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x32: NetRecv_32(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x33: NetRecv_33(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x34: NetRecv_34(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x36: NetRecv_36(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x37: NetRecv_37(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x38: NetRecv_38(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x39: NetRecv_39(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x3A: NetRecv_3A(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x3B: NetRecv_3B(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x3C: NetRecv_3C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x3D: NetRecv_3D(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x44: NetRecv_44(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x40: NetRecv_40(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x41: NetRecv_41(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x42: NetRecv_42(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x43: NetRecv_43(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x46: NetRecv_46(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x50: NetRecv_50(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x51: NetRecv_51(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x52: NetRecv_52(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x71: NetRecv_71(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x81: NetRecv_81(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x82: NetRecv_82(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x83: NetRecv_83(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x86: NetRecv_86(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x87: NetRecv_87(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x88: NetRecv_88(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x73: NetRecv_73(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x8E: NetRecv_8E(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x8F: NetRecv_8F(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x90: NetRecv_90(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x91: NetRecv_91(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x92: NetRecv_92(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x93: NetRecv_93(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x94: NetRecv_94(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x95: NetRecv_95(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x96: NetRecv_96(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x97: NetRecv_97(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x9D: NetRecv_9D(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x99: NetRecv_99(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x9A: NetRecv_9A(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x9B: NetRecv_9B(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x9C: NetRecv_9C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x1A: NetRecv_1A(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x1C: NetRecv_1C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x23: NetRecv_23(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x22: NetRecv_22(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x26: NetRecv_26(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x27: NetRecv_27(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x28: NetRecv_28(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x29: NetRecv_29(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x2A: NetRecv_2A(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x2F: NetRecv_2F(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x5A: NetRecv_5A(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x5C: NetRecv_5C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x5D: NetRecv_5D(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x60: NetRecv_60(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x61: NetRecv_61(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x62: NetRecv_62(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x63: NetRecv_63(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x64: NetRecv_64(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x5B: NetRecv_5B(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x65: NetRecv_65(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x0B: NetRecv_0B(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x0C: NetRecv_0C(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x0D: NetRecv_0D(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x0F: NetRecv_0F(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x00: NetRecv_00(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x20: NetRecv_20(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0x21: NetRecv_21(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xA0: NetRecv_A0(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xA1: NetRecv_A1(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xA2: NetRecv_A2(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xA3: NetRecv_A3(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xDD: NetRecv_DD(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xDE: NetRecv_DE(Msg, Size, hdr, sub, bEncrypted); break;
-            case 0xDF: NetRecv_DF(Msg, Size, hdr, sub, bEncrypted); break;
+        if (const NetRecvHandler handler = NetRecvHandlerFor(HeadCode))
+            handler(Msg, Size, hdr, sub, bEncrypted);
+        else
+            NetLog("NET:  → op=%02X unhandled (in-game)", HeadCode);
 
-            default:
-                NetLog("NET:  → op=%02X unhandled (in-game)", HeadCode);
-                break;
-        }
-
-        (void)Size;
-        (void)bEncrypted;
     }
 }

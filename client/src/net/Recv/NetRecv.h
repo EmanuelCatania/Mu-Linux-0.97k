@@ -162,6 +162,9 @@ void ReceiveGuildBeginWar97k(const BYTE* packet, int size);
 void ReceiveGuildEndWar97k(const BYTE* packet, int size);
 
 // ── Handlers por opcode ─────────────────────────────────────────────────────
+// Todos tienen la misma firma; Net_ProcessPacket los busca en una tabla por opcode.
+using NetRecvHandler = void (*)(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
+
 // Recv_Account.cpp
 void NetRecv_F1(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_F4(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
