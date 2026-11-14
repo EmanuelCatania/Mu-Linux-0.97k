@@ -221,7 +221,7 @@
     <ClInclude Include="src\audio\SoundManager.h" />
     <ClInclude Include="src\game\core\MapManager.h" />
     <ClInclude Include="src\game\core\MapNumber.h" />
-    <ClInclude Include="srcender\EffectIds.h" />
+    <ClInclude Include="src\render\EffectIds.h" />
     <ClInclude Include="src\game\core\HeroVitals.h" />
     <ClInclude Include="src\net\Network.h" />
     <ClInclude Include="src\net\NetChannel.h" />
