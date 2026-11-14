@@ -131,7 +131,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
     if (!c || !o) return;
     BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer
     BYTE* object = (BYTE*)(uintptr_t)o;    // IDA: o / visual OBJECT
-    BYTE* attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4; // IDA: CharacterAttribute @ 0x07CF1FF4
+    BYTE* attributes = (BYTE*)(uintptr_t)CharacterAttribute; // IDA: CharacterAttribute @ 0x07CF1FF4
     const BYTE selectedSlot = (BYTE)DAT_07d7809c; // IDA: dword_7D7809C
     const BYTE skillType = (DAT_07d78098 && attributes) // IDA: v317
         ? attributes[selectedSlot + 87] : selectedSlot;
@@ -339,7 +339,7 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
 // Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
 // documented as SetPlayerDie in Entity/Character_Motion.cpp, so the old address label was misleading.
 // Handles landing after a teleport:
-//   If local player (param_1 == DAT_07abf5d8): clears teleport-state flag at DAT_07cf1ff4+0x1c.
+//   If local player (param_1 == DAT_07abf5d8): clears teleport-state flag at CharacterAttribute+0x1c.
 //   Spawns landing visual effects per class:
 //     0x186 (DarkWizard, sub_id 0xCE-0xD0): effect 0xD2 once + 0xD3 ×10, then sound 0x5E.
 //     0x127 (DarkElf): effects 0xE2+0xE3 ×8, then sound 0x5E.
@@ -351,7 +351,7 @@ void __cdecl Entity_TeleportEnd(intptr_t entity_idx) {
 
     // Local player: clear teleport in-flight state (hash-table ops are obfuscation noise)
     if ((void*)entity_idx == (void*)DAT_07abf5d8) {
-        *(short*)((char*)DAT_07cf1ff4 + 0x1c) = 0;
+        *(short*)((char*)CharacterAttribute + 0x1c) = 0;
     }
 
     short sVar2 = *(short*)(puVar3 + 2); // entity_type

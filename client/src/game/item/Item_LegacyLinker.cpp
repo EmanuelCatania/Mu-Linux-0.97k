@@ -80,7 +80,7 @@ void __cdecl CloseInventoryRelatedWindows(void) {
         }
     }
 
-    DAT_07e11d28 = 0;          // MouseUpdateTime
+    MouseUpdateTime = 0;          // MouseUpdateTime
     PlayBuffer(25, 0, 0);
     PlayBuffer(28, 0, 0);
 }

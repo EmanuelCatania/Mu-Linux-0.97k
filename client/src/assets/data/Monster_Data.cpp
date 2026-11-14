@@ -81,7 +81,7 @@ void Monster_LoadScriptTable(void)
 // Creates the monster via CreateMonster and sets field +0x84 = ' '.
 //
 // Globals:
-//   DAT_07d7806c  — file handle
+//   SMDFile_0  — file handle
 //   DAT_07d7807c  — next spawn slot index
 //   HeroKey  — max spawn slot (skips if equal)
 //   DAT_00559088  — sentinel string "END"
@@ -99,8 +99,8 @@ void __cdecl Monster_ParseSetBase2(LPCSTR param_1)
   longlong lVar8;
   longlong lVar9;
 
-  DAT_07d7806c = (FILE *)crt_fopen(param_1,DAT_005580ac);
-  if (DAT_07d7806c != (FILE *)0x0) {
+  SMDFile_0 = (FILE *)crt_fopen(param_1,DAT_005580ac);
+  if (SMDFile_0 != (FILE *)0x0) {
     TextParser_GetToken();
     while( true ) {
       iVar2 = TextParser_GetToken();
@@ -145,7 +145,7 @@ LAB_0047d09b:
         pcVar4[0x84] = ' ';
       }
     }
-    crt_fclose(DAT_07d7806c);
+    crt_fclose(SMDFile_0);
   }
   return;
 }

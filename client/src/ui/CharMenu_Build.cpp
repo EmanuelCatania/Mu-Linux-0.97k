@@ -10,9 +10,9 @@
 #include "functions.h"
 
 // GUARDA DE RANGO (no esta en IDA).
-// `DAT_07eaa154` es el numero de linea del panel y se usa como indice de TRES
-// arrays de 30 entradas: `lpString_07e90798` (30 x 100 bytes), `DAT_07e91708`
-// (color) y `DAT_07ea7b10` (negrita).  Aca se incrementa dentro de bucles cuya
+// `TextNum` es el numero de linea del panel y se usa como indice de TRES
+// arrays de 30 entradas: `lpString_07e90798` (30 x 100 bytes), `TextListColor`
+// (color) y `TextBold` (negrita).  Aca se incrementa dentro de bucles cuya
 // cantidad depende de los datos (skills del personaje, filas de stats), sin
 // ningun tope.  Se replica el criterio de `RenderItemInfo` (corta en 28): al
 // llegar al tope las lineas extra se pisan sobre la ultima en vez de
@@ -23,9 +23,6 @@
 
 // Aliases de los globals del binario que usa esta funcion.
 #define TextList       lpString_07e90798   // 30 x 100 bytes
-#define TextListColor  DAT_07e91708
-#define TextBold       DAT_07ea7b10
-#define TextNum        DAT_07eaa154
 
 // IDA: sub_4C3530 modo 1/2 -- una lista de lineas de ayuda de GlobalText.
 static void HelpWindow_BuildTextList(int title, int firstLine, int endLine)
@@ -185,8 +182,8 @@ void RenderHelpWindow(void)
 //
 // Globales:
 //   lpString_07e90798 (0x07E90798) líneas, stride 100 — corta en la 1ª vacía
-//   DAT_07e91708      (0x07E91708) TextListColor, color por línea
-//   DAT_07ea7b10      (0x07EA7B10) TextBold, negrita por línea
+//   TextListColor      (0x07E91708) color por línea
+//   TextBold      (0x07EA7B10) negrita por línea
 //   m_hFontDC         (0x055C9FEC) DC de medición
 //   DAT_055ca00c/010  g_hFont / g_hFontBold
 //   _DAT_055c9b70/74  g_fScreenRate_x / g_fScreenRate_y
@@ -299,7 +296,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
 
         // OJO — el glEnable(0xde1) CRUDO que DrawItemInfoBox hace despues del
         // recuadro (fiel al binario, 0x004C2698) deja DESINCRONIZADO el cache
-        // de estado de GL_SetAlphaTest/GL_SetBlendSrcOver: DAT_083a4125 (TextureEnable)
+        // de estado de GL_SetAlphaTest/GL_SetBlendSrcOver: TextureEnable
         // sigue diciendo "apagada" mientras GL la tiene encendida.  Si entramos
         // a GL_DrawRect asi, GL_SetAlphaTest se cree el cache, NO llama a
         // glDisable(0xde1), y la franja se dibuja modulada por la textura que
@@ -307,7 +304,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         // parpadeo.  Resincronizamos el cache con el estado real antes de
         // dibujar; GL_SetAlphaTest apaga la textura de verdad y ambos quedan
         // coherentes.
-        DAT_083a4125 = '\x01';
+        TextureEnable = '\x01';
 
         Gfx::Color4ub((unsigned char)( m_dwBackColor        & 0xff), // R (formato ABGR)
                    (unsigned char)((m_dwBackColor >>  8) & 0xff), // G
@@ -360,7 +357,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
     iVar1      = param_3;
     if (0 < param_3) {
         pCVar3 = lpString_07e90798;
-        piVar2 = DAT_07ea7b10;
+        piVar2 = TextBold;
         do {
             iVar1 = iVar4;
             if (*pCVar3 == '\0') break;          // corta el conteo en la 1ª vacía
@@ -425,7 +422,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         do {
             float fAdvance;
             pHVar9 = gFont.GetFont(FONT_NORMAL);
-            if (DAT_07ea7b10[iVar1] != 0) {
+            if (TextBold[iVar1] != 0) {
                 pHVar9 = gFont.GetFont(FONT_BOLD);
             }
             gFont.SelectFont(gFont.GetTextDC(), pHVar9);
@@ -439,12 +436,12 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
                 }
             }
             else {
-                iVar4 = DAT_07e91708[iVar1];
+                iVar4 = TextListColor[iVar1];
                 if ((unsigned int)iVar4 <= 6) {
                     Gfx::Color3f(DrawItemInfoBox_glColor[iVar4][0], DrawItemInfoBox_glColor[iVar4][1], DrawItemInfoBox_glColor[iVar4][2]);
                     m_dwTextColor = DrawItemInfoBox_TextColor[iVar4];
                 }
-                m_dwBackColor = (DAT_07e91708[iVar1] != 5) ? 0 : 0xff0000a0;
+                m_dwBackColor = (TextListColor[iVar1] != 5) ? 0 : 0xff0000a0;
                 fAdvance = RenderText_0040fb70((int)x, (int)y, pCVar3,
                                         (int)((local_18 - 2.0f) * fTexScaleX),
                                         param_5, 0x280);
@@ -467,7 +464,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
 // Checks hero's class (DAT_07abf5d8+0x1bc) vs required class per slot.
 // Formats each slot into lpString_07e90798 using crt_sprintf with format
 // strings from DAT_0055a400/DAT_0055a404.
-// Increments DAT_07eaa154 per entry.
+// Increments TextNum per entry.
 
 // IDA: RequireClass (0x004C2880)
 // pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
@@ -477,7 +474,7 @@ void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
 {
     const BYTE* hero  = (const BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!pItem || !hero) return;
-    if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas
+    if (TextNum > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas
 
     const BYTE heroSkin  = hero[EntityOffset(0x1BC)];
     const int  heroClass = heroSkin & 7;
@@ -492,43 +489,43 @@ void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
     for (int c = 0; c < 4; ++c) {
         if (pItem[56 + c]) { cls[count] = c; step[count] = pItem[56 + c] - 1; ++count; }
     }
-    DAT_07e91708[DAT_07eaa154 + 3] = 0;
-    DAT_07e91708[DAT_07eaa154 + 2] = 0;
+    TextListColor[TextNum + 3] = 0;
+    TextListColor[TextNum + 2] = 0;
     if (count < 1) return;
 
     if (heroClass == 3) {                                // Magic Gladiator
-        crt_sprintf(line(DAT_07eaa154), "\n");
-        ++DAT_07eaa154; ++DAT_07eaa158;
+        crt_sprintf(line(TextNum), "\n");
+        ++TextNum; ++DAT_07eaa158;
         const BYTE mgReq = pItem[59];
         if (mgReq && heroStep >= mgReq - 1) {
-            crt_sprintf(line(DAT_07eaa154), GlobalText[61], GlobalText[23]);
-            DAT_07e91708[DAT_07eaa154] = 0;
-            DAT_07ea7b10[DAT_07eaa154] = 0;
-            ++DAT_07eaa154;
+            crt_sprintf(line(TextNum), GlobalText[61], GlobalText[23]);
+            TextListColor[TextNum] = 0;
+            TextBold[TextNum] = 0;
+            ++TextNum;
             return;
         }
-        crt_sprintf(line(DAT_07eaa154), GlobalText[60], GlobalText[23]);
-        DAT_07e91708[DAT_07eaa154] = notMetColor;
-        DAT_07ea7b10[DAT_07eaa154] = 0;
-        ++DAT_07eaa154;
+        crt_sprintf(line(TextNum), GlobalText[60], GlobalText[23]);
+        TextListColor[TextNum] = notMetColor;
+        TextBold[TextNum] = 0;
+        ++TextNum;
         return;
     }
     if (count > 3) return;
 
-    crt_sprintf(line(DAT_07eaa154), "\n");
-    ++DAT_07eaa154; ++DAT_07eaa158;
+    crt_sprintf(line(TextNum), "\n");
+    ++TextNum; ++DAT_07eaa158;
     const bool okA = (heroClass == cls[0] && heroStep >= step[0]);
     if (count == 1) {
-        DAT_07e91708[DAT_07eaa154] = okA ? 0 : notMetColor;
-        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
+        TextListColor[TextNum] = okA ? 0 : notMetColor;
+        crt_sprintf(line(TextNum), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
     } else if (count == 2) {
         const bool ok = okA || (heroClass == cls[1] && heroStep >= step[1]);
-        DAT_07e91708[DAT_07eaa154] = ok ? 0 : notMetColor;
-        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
-        DAT_07ea7b10[DAT_07eaa154] = 0;
-        ++DAT_07eaa154;
-        DAT_07e91708[DAT_07eaa154] = ok ? 0 : notMetColor;
-        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[1], pItem[56 + cls[1]]));
+        TextListColor[TextNum] = ok ? 0 : notMetColor;
+        crt_sprintf(line(TextNum), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
+        TextBold[TextNum] = 0;
+        ++TextNum;
+        TextListColor[TextNum] = ok ? 0 : notMetColor;
+        crt_sprintf(line(TextNum), GlobalText[61], className(cls[1], pItem[56 + cls[1]]));
     } else {
         // Tres clases: "no puede ser equipado por <la que falta>".  El decompile
         // pasa `300 * v25 + 131249300`; se toma como el nombre de clase base de
@@ -536,11 +533,11 @@ void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
         // contra la direccion de GlobalText que da IDA.
         int missing = 0;
         while (pItem[56 + missing]) { if (++missing >= 4) return; }
-        DAT_07e91708[DAT_07eaa154] = notMetColor;
-        crt_sprintf(line(DAT_07eaa154), GlobalText[60], GlobalText[20 + missing]);
+        TextListColor[TextNum] = notMetColor;
+        crt_sprintf(line(TextNum), GlobalText[60], GlobalText[20 + missing]);
     }
-    DAT_07ea7b10[DAT_07eaa154] = 0;
-    ++DAT_07eaa154;
+    TextBold[TextNum] = 0;
+    ++TextNum;
 }
 
 
@@ -555,19 +552,19 @@ void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *valu
 {
     int last = (kind == 5) ? 0 : 11;
     for (int i = 0; i <= last; i++) {
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, (const char*)format,
+        crt_sprintf(lpString_07e90798 + TextNum * 100, (const char*)format,
                     DAT_07e91528[10 * i + column]);
-        DAT_07e91708[i] = (DAT_07e91528[10 * i + 1] == 1) ? 0 : 2;
-        DAT_07ea7b10[i] = 0;
-        ++DAT_07eaa154;
+        TextListColor[i] = (DAT_07e91528[10 * i + 1] == 1) ? 0 : 2;
+        TextBold[i] = 0;
+        ++TextNum;
     }
-    CharMenu_RenderTextList(*value, y, DAT_07eaa154, 0, 3, 0);
+    CharMenu_RenderTextList(*value, y, TextNum, 0, 3, 0);
 
     SIZE sz = { 0, 0 };
-    const char* ref = widthRef ? widthRef : lpString_07e90798 + (DAT_07eaa154 - 1) * 100;
+    const char* ref = widthRef ? widthRef : lpString_07e90798 + (TextNum - 1) * 100;
     gFont.MeasureText((HDC)gFont.GetTextDC(), ref, Platform::TextLength(ref), &sz);
     *value += (int)((double)sz.cx / gWindow.GetScreenRateX());
-    DAT_07eaa154 = DAT_07eaa154 - 1 - last;
+    TextNum = TextNum - 1 - last;
 }
 
 
@@ -594,12 +591,12 @@ void __cdecl CharMenu_AppendSkillDesc(int param_1, int param_2, int param_3)
     case 9:           text = GlobalText[168]; break;
     default:          break;   // IDA: sprintf(..., NULL); ningun caller pasa otro valor
     }
-    if (DAT_07eaa154 > CHARMENU_ROW_MAX - 1) DAT_07eaa154 = CHARMENU_ROW_MAX - 1;
-    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, "%s", text);
-    DAT_07e91708[DAT_07eaa154] = 1;
-    ++DAT_07eaa154;
-    CharMenu_RenderTextList(param_2, param_3, DAT_07eaa154, 0, 3, 0);
-    DAT_07eaa154 = 0;
+    if (TextNum > CHARMENU_ROW_MAX - 1) TextNum = CHARMENU_ROW_MAX - 1;
+    crt_sprintf(lpString_07e90798 + TextNum * 100, "%s", text);
+    TextListColor[TextNum] = 1;
+    ++TextNum;
+    CharMenu_RenderTextList(param_2, param_3, TextNum, 0, 3, 0);
+    TextNum = 0;
 }
 
 

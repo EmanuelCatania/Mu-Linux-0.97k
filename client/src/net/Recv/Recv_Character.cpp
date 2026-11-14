@@ -1236,8 +1236,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
             BYTE count = Msg[4];
             NetLog("NET:  → F3/11 SkillList count=%d size=%d", count, Size);
-            if (!DAT_07cf1ff4) break;
-            BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+            if (!CharacterAttribute) break;
+            BYTE* CA = (BYTE*)(uintptr_t)CharacterAttribute;
 
             // The server uses the same F3:11 packet for a delta:
             // count=0xFE adds one skill and count=0xFF removes one.
@@ -1602,11 +1602,11 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         // Temporizadores de "cargando mundo" (IDA LABEL_108).
-        // DAT_07e11d1c = LoadingWorld: Render_GameFrame saltea el
+        // LoadingWorld: Render_GameFrame saltea el
         // frame mientras sea > 30, que es la "pantalla de carga".
         DAT_07e11dc8 = Platform::GetTimer().Ticks();
         DAT_07e11dc4 = 0;
-        DAT_07e11d1c = 30;
+        LoadingWorld = 30;
 
         // ReceiveTeleport @ 00428210: restore the complete UI/
         // el estado de selección recién después de abrir el mundo nuevo. Las
@@ -1614,8 +1614,8 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // similarly named 07E119xx input-state variables.
         // (Aca habia un `DAT_05826d04 = 0` sin contraparte: la rama
         //  de gate de IDA, L476-503, no toca Teleport ni 0x5826D04.)
-        DAT_07e11d28 = 0;                 // MouseUpdateTime
-        DAT_00559bec = 6;                 // MouseUpdateTimeMax
+        MouseUpdateTime = 0;                 // MouseUpdateTime
+        MouseUpdateTimeMax = 6;                 // MouseUpdateTimeMax
         InventoryOpened = 0;
         ShopOpened = 0;
         WarehouseOpened = 0;
@@ -1626,7 +1626,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
         *(DWORD *)&AsCharacter(hero)->Object.Alpha = 0;
-        DAT_083a3ff0 = 0;                  // EnableEvent
+        EnableEvent = 0;                  // EnableEvent
         SelectedItem = -1;                 // SelectedItem
         SelectedNpc = -1;                 // SelectedNpc
         SelectedCharacter = -1;                 // SelectedCharacter
@@ -1663,8 +1663,8 @@ void NetRecv_26(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (Size < 6) return;
     sub = Msg[3];
     NetLog("NET:  → 0x26 Life sub=0x%02x", sub);
-    if (DAT_07cf1ff4 == 0) return;
-    BYTE* charAttr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    if (CharacterAttribute == 0) return;
+    BYTE* charAttr = (BYTE*)(uintptr_t)CharacterAttribute;
     if (sub == 0xFD) {
         EnableUse = 0;
     } else if (sub == 0xFE) {
@@ -1699,8 +1699,8 @@ void NetRecv_27(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (Size < 8) return;
     sub = Msg[3];
     NetLog("NET:  → 0x27 Mana sub=0x%02x", sub);
-    if (DAT_07cf1ff4 == 0) return;
-    BYTE* charAttr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    if (CharacterAttribute == 0) return;
+    BYTE* charAttr = (BYTE*)(uintptr_t)CharacterAttribute;
     if (sub == 0xFE) {
         *(WORD*)(charAttr + 34) = (WORD)((Msg[4] << 8) | Msg[5]);
         *(WORD*)(charAttr + 38) = (WORD)((Msg[6] << 8) | Msg[7]);

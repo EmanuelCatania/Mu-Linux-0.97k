@@ -120,7 +120,7 @@ std::uint64_t RunRender(BYTE* memory,BYTE* tableMemory) {
         const char wanted=next()%2?static_cast<char>(quest[0x1c882]):static_cast<char>(quest[0x1c882]+1);
         m_dwTextColor=0xabcdef01u; m_dwBackColor=0x12345678u; selectedFont=0;
         BYTE before[size]; std::memcpy(before,memory,size);
-        char beforeMessages[7*38],beforeAnswers[10*38]; std::memcpy(beforeMessages,DAT_083a44c4,sizeof(beforeMessages)); std::memcpy(beforeAnswers,DAT_083a4348,sizeof(beforeAnswers));
+        char beforeMessages[7*38],beforeAnswers[10*38]; std::memcpy(beforeMessages,DAT_083a44c4,sizeof(beforeMessages)); std::memcpy(beforeAnswers,g_lpszDialogAnswer,sizeof(beforeAnswers));
         events.clear(); int result=-1;
         if(path==0) CallAnswers(quest);
         else if(path==1 || path==2) result=Quest_RenderRequiredItems(quest,0,wanted,path==1?1:0);
@@ -128,7 +128,7 @@ std::uint64_t RunRender(BYTE* memory,BYTE* tableMemory) {
         else if(path==4) Quest_RenderListPanel(quest);
         else Require(Quest_RenderPanel(quest)==1);
         coverage|=1u<<path;
-        Require(std::memcmp(before,memory,size)==0 && std::memcmp(beforeMessages,DAT_083a44c4,sizeof(beforeMessages))==0 && std::memcmp(beforeAnswers,DAT_083a4348,sizeof(beforeAnswers))==0);
+        Require(std::memcmp(before,memory,size)==0 && std::memcmp(beforeMessages,DAT_083a44c4,sizeof(beforeMessages))==0 && std::memcmp(beforeAnswers,g_lpszDialogAnswer,sizeof(beforeAnswers))==0);
         const bool npc=path==3 || (path==5 && quest[0x1c87f]==1);
         const bool consume=npc && quest[0x1c882]==1 && static_cast<int>(MouseX)>=origin+35 && static_cast<int>(MouseX)<origin+155 && static_cast<int>(MouseY)>=355 && static_cast<int>(MouseY)<379 && oldPush && oldPop;
         if(consume) coverage|=1u<<6;
@@ -242,10 +242,10 @@ def harness(revision=None):
     for name in names:
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    for name in ("DAT_083a44c4","DAT_083a4348"):
+    for name in ("DAT_083a44c4","g_lpszDialogAnswer"):
         declaration=re.search(rf"extern [^;\n]*\b{name}\[[^;]+;",header).group()
         prefix+=declaration+declaration.replace("extern ","",1).replace(";"," = {};",1)
-    for name in ("m_dwTextColor","m_dwBackColor","g_iNumAnswer","g_iNumLineMessageBoxCustom","g_lpszMessageBoxCustom","g_lpszDialogAnswer"):
+    for name in ("m_dwTextColor","m_dwBackColor","g_iNumAnswer","g_iNumLineMessageBoxCustom","g_lpszMessageBoxCustom"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",header+structs,re.M).group()+"\n"
     prefix+="\nchar GlobalText[4000][300];\n"+SERVICES
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()

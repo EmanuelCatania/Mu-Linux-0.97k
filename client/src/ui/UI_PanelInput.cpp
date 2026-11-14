@@ -56,7 +56,7 @@ static bool GetGuildCreatorOrigin(int& originX, int& originY)
 }
 
 // IDA: sub_4E4760 (0x004E4760) — hit-test del creador de guild.
-//   - Chequea GuildCreatorOpened (hover habilitado). Si DAT_07eaa144==1: grilla de click para 8 botones
+//   - Chequea GuildCreatorOpened (hover habilitado). Si g_iKeyPadEnable==1: grilla de click para 8 botones
 //     (8×0x0F tiles con origen en DAT_07ea5b1c/20+100), escribe el array DAT_07ea51f5 con DAT_07eaa0dc.
 //   - Segunda pasada: itera los pasos de DAT_07ea5b18 (+0x32 cada uno), los compara con la posición del mouse para encontrar
 //     hovered button index, sets DAT_07ea51ed.
@@ -80,7 +80,7 @@ void __cdecl GuildCreator_HitTest(void) {
         DAT_07d78094 = 1;
     }
 
-    if (DAT_07eaa144 == 1) {
+    if (g_iKeyPadEnable == 1) {
         // IDA: GuildCreator_HitTest. La grilla de edición tiene 8 filas de 8 celdas;
         // cada celda conserva un índice de color completo en DAT_07ea51f5.
         // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
@@ -135,7 +135,7 @@ void __cdecl GuildCreator_HitTest(void) {
             //       BYTE Mark[32];       // +11
             //   };
             //
-            // `g_iKeyPadEnable` (= DAT_07eaa144, 0x7EAA144) distingue DOS MODOS del
+            // `g_iKeyPadEnable` (0x7EAA144) distingue DOS MODOS del
             // mismo panel, no autoriza nada — `ProtocolCore` L1253-1258:
             //     0x54 recibido -> GuildCreatorOpened=1, g_iKeyPadEnable=0
             //                      (dialogo previo "¿crear guild?", OK/Cancel)
@@ -146,7 +146,7 @@ void __cdecl GuildCreator_HitTest(void) {
             //     derecho:   modo 0 -> 0x54            |  modo 1 -> 0x57 cancelar
             //
             // La rama `== 0` de este gate es la del dialogo previo (manda su 0x54).
-            if (DAT_07eaa144) {
+            if (g_iKeyPadEnable) {
                 if (Chat_ValidateInputCommand()) {
                     // nombre invalido / vacio
                     SetErrorMessage(115);
@@ -190,8 +190,8 @@ void __cdecl GuildCreator_HitTest(void) {
                         // editor y reinicia el intervalo de mouse 0/6.
                         GuildCreator_CloseFromResult();
                         PlayBuffer(28, 0, 0);
-                        DAT_07e11d28 = 0;
-                        DAT_00559bec = 6;
+                        MouseUpdateTime = 0;
+                        MouseUpdateTimeMax = 6;
                     }
                 }
             } else {
@@ -218,7 +218,7 @@ void __cdecl GuildCreator_HitTest(void) {
             (int)MouseY < originY + 0x173 &&
             IsClickPushed()) {
             MouseLButtonPush = '\0';
-            if (DAT_07eaa144 == 0) {
+            if (g_iKeyPadEnable == 0) {
                 // IDA: C1:04:54:00 cancela la pregunta previa al Guild Master.
                 const BYTE pkt2[4] = { 0xC1, 0x04, 0x54, 0x00 };
                 gNetwork.SendC1(pkt2, sizeof(pkt2));
@@ -239,10 +239,10 @@ void __cdecl GuildCreator_HitTest(void) {
             InputTextMax = 10;
             GuildInputEnable = 0;
             GuildCreatorOpened = '\0';
-            DAT_07eaa144 = 0;
+            g_iKeyPadEnable = 0;
             PlayBuffer(0x1c, 0, 0);
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
         }
     }
 
@@ -267,8 +267,8 @@ LAB_FUN_004e4760_end:
             GuildOpened = '\0';
             PlayBuffer(0x19, 0, 0);
             PlayBuffer(0x1c, 0, 0);
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
         }
     }
 }
@@ -315,14 +315,14 @@ void __cdecl Party_MemberClickHandler(void) {
         PartyOpened = '\0';
         PlayBuffer(0x19, 0, 0);
         PlayBuffer(0x1c, 0, 0);
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
     }
 }
 // IDA: sub_4E5DE0 (0x004E5DE0) — hit-test del panel de personaje.
 // Envío del paquete de selección de personaje: por cada uno de los hasta 0x10 botones de personaje de la columna,
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
-// Guard de entrada: CharacterOpened tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
+// Guard de entrada: CharacterOpened tiene que ser distinto de cero. También chequea *(short*)(CharacterAttribute+0x54) != 0.
 // On click: sends 4-byte packet {0xC1,0x01,0x00,opcode_xored}.
 //   opcode plain byte = (byte)(row_index), XOR CNetwork::XorKey[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
 //   Después appendea el byte del índice de fila como byte 4 (si total_len+1 < 0x401).
@@ -330,7 +330,7 @@ void __cdecl Party_MemberClickHandler(void) {
 // After click: PlayBuffer(0x19,0,0).
 // HashTable ref-count noise around DAT_07cf1ffc is anti-tamper, skipped.
 // Back button [DAT_07ea982c+0x19,+0x31) x [DAT_07ea9830+0x18b,+0x1a3):
-//   → clear CharacterOpened, PlayBuffer(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
+//   → clear CharacterOpened, PlayBuffer(0x19/0x1c), MouseUpdateTime=0, MouseUpdateTimeMax=6.
 void __cdecl CharacterInfo_HitTest(void) {
     // IDA sub_4E5DE0 = hit-test del panel Character, con CharacterInfoStartX/Y
     // (DAT_07ea982c/30) como base. Mientras el origen no esté escrito (== 0) se
@@ -362,7 +362,7 @@ void __cdecl CharacterInfo_HitTest(void) {
     //   3. No usar `send()` crudo: sin serial ni CSM el server cierra el socket
     //      ("Protocol size error").
     // Gate `*(short*)(CharacterAttribute + 0x54) != 0` = LevelUpPoint, fiel.
-    if (*(short *)((BYTE*)DAT_07cf1ff4 + 0x54) != 0) {
+    if (*(short *)((BYTE*)CharacterAttribute + 0x54) != 0) {
         while (iRowAccum < 240) {
             int rowY = iRowAccum + (int)DAT_07ea9830 + 115;
             if (iX >= (int)(DAT_07ea982c + 125) &&
@@ -395,8 +395,8 @@ void __cdecl CharacterInfo_HitTest(void) {
         CharacterOpened = '\0';
         PlayBuffer(0x19, 0, 0);
         PlayBuffer(0x1c, 0, 0);
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
     }
 }
 // IDA: sub_4E6550 (0x004E6550) — hit-test de la ventana de inventario y de
@@ -413,12 +413,12 @@ void __cdecl Inventory_HitTest(void) {
     // Hit-test de la ventana de inventario.
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a Equipment_HitTestAll o InventoryGrid_Tick para renderizar la grilla.
-    // __ftol() Y-boundary → approximated as (int)DAT_07ea5284 (screen origin Y).
+    // __ftol() Y-boundary → approximated as (int)InventoryStartY (screen origin Y).
 
-    if ((int)DAT_07ea5288 <= (int)MouseX &&
-        (int)MouseX < (int)(DAT_07ea5288 + 0xbe) &&
-        (int)DAT_07ea5284 <= (int)MouseY &&
-        (int)MouseY < (int)(DAT_07ea5284 + 0x1b1)) {
+    if ((int)InventoryStartX <= (int)MouseX &&
+        (int)MouseX < (int)(InventoryStartX + 0xbe) &&
+        (int)InventoryStartY <= (int)MouseY &&
+        (int)MouseY < (int)(InventoryStartY + 0x1b1)) {
         DAT_07d78094 = 1;
     }
 
@@ -447,10 +447,10 @@ void __cdecl Inventory_HitTest(void) {
 
     char sv2 = TradeOpened;
     if (sv2 != '\0' &&
-        (int)DAT_07ea5290 <= (int)MouseX &&
-        (int)MouseX < (int)(DAT_07ea5290 + 0xbe) &&
-        (int)DAT_07ea528c <= (int)MouseY &&
-        (int)MouseY < (int)(DAT_07ea528c + 0x1b1)) {
+        (int)TradeInventoryStartX <= (int)MouseX &&
+        (int)MouseX < (int)(TradeInventoryStartX + 0xbe) &&
+        (int)TradeInventoryStartY <= (int)MouseY &&
+        (int)MouseY < (int)(TradeInventoryStartY + 0x1b1)) {
         DAT_07d78094 = 1;
     }
     if (EventWindowOpened != '\0' &&
@@ -504,15 +504,15 @@ void __cdecl Inventory_HitTest(void) {
     // IDA sub_4E6550 L232-240: por debajo de InventoryStartY + 200 esta la
     // grilla (sub_4D23B0); por arriba, los casilleros de equipo (sub_4D1FC0).
     DAT_07eaa164 = 0;
-    int lVal = (int)((double)(int)DAT_07ea5284 + 200.0);
+    int lVal = (int)((double)(int)InventoryStartY + 200.0);
     if ((int)MouseY < lVal) {
         Equipment_HitTestAll();
     } else {
         // inv_base = OffsetInventoryItems: en el binario original DAT_07ea8410 ES la
         // base del pool de inventario; en nuestro build es un DWORD de 4 bytes en
         // globals.cpp y el pool es OffsetInventoryItems.
-        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5288 + 0xf),
-                     (int)(DAT_07ea5284 + 200),
+        InventoryGrid_Tick((char*)(uintptr_t)(InventoryStartX + 0xf),
+                     (int)(InventoryStartY + 200),
                      (short*)OffsetInventoryItems, 8, 8, '\0');
     }
 
@@ -522,29 +522,29 @@ void __cdecl Inventory_HitTest(void) {
     if (sv3 == '\0') {
         char sv4 = ShopOpened;
         if (sv4 == '\0' && WarehouseOpened == '\0' && ChaosMixOpened == '\0' && GoldenArcherOpenType == 0) {
-            ushort uVar3 = *(ushort*)(static_cast<BYTE*>(DAT_07cf1ff4) + 0xe);
+            ushort uVar3 = *(ushort*)(static_cast<BYTE*>(CharacterAttribute) + 0xe);
             if (0x31 < uVar3) {
                 DAT_07eaa138 = 1;
-                if ((int)(DAT_07ea5288 + 0x3c) <= (int)MouseX &&
-                    (int)MouseX < (int)(DAT_07ea5288 + 0x54) &&
-                    (int)(DAT_07ea5284 + 0x18b) <= (int)MouseY &&
-                    (int)MouseY < (int)(DAT_07ea5284 + 0x1a3) &&
+                if ((int)(InventoryStartX + 0x3c) <= (int)MouseX &&
+                    (int)MouseX < (int)(InventoryStartX + 0x54) &&
+                    (int)(InventoryStartY + 0x18b) <= (int)MouseY &&
+                    (int)MouseY < (int)(InventoryStartY + 0x1a3) &&
                     IsClickPushed()) {
                     MouseLButtonPush = '\0';
                     DAT_07eaa134 ^= 1;
                 }
             }
             // Back button
-            if ((int)(DAT_07ea5288 + 0x19) <= (int)MouseX &&
-                (int)MouseX < (int)(DAT_07ea5288 + 0x31) &&
-                (int)(DAT_07ea5284 + 0x18b) <= (int)MouseY &&
-                (int)MouseY < (int)(DAT_07ea5284 + 0x1a3) &&
+            if ((int)(InventoryStartX + 0x19) <= (int)MouseX &&
+                (int)MouseX < (int)(InventoryStartX + 0x31) &&
+                (int)(InventoryStartY + 0x18b) <= (int)MouseY &&
+                (int)MouseY < (int)(InventoryStartY + 0x1a3) &&
                 IsClickPushed()) {
                 MouseLButtonPush = '\0';
                 InventoryOpened = 0;
                 CloseInventoryRelatedWindows();
-                DAT_07e11d28 = 0;
-                DAT_00559bec = 6;
+                MouseUpdateTime = 0;
+                MouseUpdateTimeMax = 6;
             }
         }
     }
@@ -556,11 +556,11 @@ void __cdecl Inventory_HitTest(void) {
         // pools de trade. Tal como 004D23B0: Inventory es la oferta remota
         // de sólo lectura (arriba) y OffsetTradeItems la oferta local
         // editable (abajo).
-        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
-                     (int)(DAT_07ea528c + 0x46),
+        InventoryGrid_Tick((char*)(uintptr_t)(TradeInventoryStartX + 0xf),
+                     (int)(TradeInventoryStartY + 0x46),
                      (short*)Inventory, 8, 4, '\0');
-        InventoryGrid_Tick((char*)(uintptr_t)(DAT_07ea5290 + 0xf),
-                     (int)(DAT_07ea528c + 0x10e),
+        InventoryGrid_Tick((char*)(uintptr_t)(TradeInventoryStartX + 0xf),
+                     (int)(TradeInventoryStartY + 0x10e),
                      (short*)OffsetTradeItems, 8, 4, '\0');
     }
     // El render de shop/warehouse/chaos (RenderShopInterface, HUD_Pass6.cpp) usa
@@ -582,7 +582,7 @@ void __cdecl Inventory_HitTest(void) {
                      (int)(DAT_07eaa0cc + 0x32),
                      (short*)OffsetWarehouseItems, 8, 0xf, '\0');
     }
-    if (ChaosMixOpened != '\0' && DAT_07eaa140 != 1) {
+    if (ChaosMixOpened != '\0' && MixState != 1) {
         // Chaos mix: 8x4 grid en OffsetMixItems.
         InventoryGrid_Tick((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
                      (int)(DAT_07eaa0cc + 0x6e),
@@ -704,8 +704,8 @@ void __cdecl ServerTransfer_HitTest(void) {
     if (mx >= gWindow.PanelOrigin(Ui::RightPanel) && mx < gWindow.PanelOrigin(Ui::WindowRight) && my >= 0 && my < 433)
         DAT_07d78094 = 1;         // MouseOnWindow
 
-    const int startX = (int)DAT_07ea5288;   // InventoryStartX
-    const int startY = (int)DAT_07ea5284;   // InventoryStartY
+    const int startX = (int)InventoryStartX;   // InventoryStartX
+    const int startY = (int)InventoryStartY;   // InventoryStartY
 
     // Casilla "acepto".
     if (mx >= startX + 25 && mx < startX + 41 && my >= 240 && my < 256 && MouseLButtonPush) {
@@ -736,8 +736,8 @@ void __cdecl ServerTransfer_HitTest(void) {
         CloseInventoryRelatedWindows();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
         gNetwork.SendC1(pkt, sizeof(pkt));
-        DAT_07e11d28 = 0;         // MouseUpdateTime
-        DAT_00559bec = 6;         // MouseUpdateTimeMax
+        MouseUpdateTime = 0;         // MouseUpdateTime
+        MouseUpdateTimeMax = 6;         // MouseUpdateTimeMax
         mx = (int)MouseX;
         my = (int)MouseY;
     }
@@ -750,15 +750,15 @@ void __cdecl ServerTransfer_HitTest(void) {
         GoldenArcherOpenType = 0;         // g_bEventChipDialogEnable
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
     }
 }
 // IDA: sub_4E9050 (0x004E9050) — botón de combinar del Chaos Mix: valida el
 // tipo de mezcla (MixType) y el espacio libre en el inventario y pide confirmar.
 // Guard: ChaosMixOpened must be non-zero (button active flag).
 // Hit-test: mouse within [DAT_07eaa0c8+0x4b, DAT_07eaa0c8+0x77) x [DAT_07eaa0cc+300, DAT_07eaa0cc+0x14c).
-// DAT_07eaa140 must be 0 (no timeout in progress), MouseLButtonPush must be non-zero (click pending).
+// MixState must be 0 (no timeout in progress), MouseLButtonPush must be non-zero (click pending).
 // Switch on MixType:
 //   0         → UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
 //   1,2,3,4,5,6,7,8,0xb → Inventory_HasFreeSpace(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
@@ -767,13 +767,13 @@ void __cdecl ServerTransfer_HitTest(void) {
 //     call ShowCheckBox(1, 0x21b, 0x97)
 //   0xfffffff8, 0xfffffffe → UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
 // After switch: PlayBuffer(0x19,0,0).
-// "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
-//   → ChaosMix_Close(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
+// "Back" button: [InventoryStartX+0x19,InventoryStartX+0x31) x [InventoryStartY+0x18b,InventoryStartY+0x1a3)
+//   → ChaosMix_Close(); MouseUpdateTime=0; MouseUpdateTimeMax=6; PlayBuffer(0x19,0,0).
 void __cdecl ChaosMix_HitTest(void) {
     if (ChaosMixOpened == '\0') return;
 
     // OK button hit-test
-    if (DAT_07eaa140 == 0 &&
+    if (MixState == 0 &&
         (int)MouseX >= (int)(DAT_07eaa0c8 + 0x4b) &&
         (int)MouseX <  (int)(DAT_07eaa0c8 + 0x77) &&
         (int)MouseY >= (int)(DAT_07eaa0cc + 300) &&
@@ -822,16 +822,16 @@ void __cdecl ChaosMix_HitTest(void) {
     }
 
     // Back button hit-test
-    if ((int)MouseX >= (int)(DAT_07ea5288 + 0x19) &&
-        (int)MouseX <  (int)(DAT_07ea5288 + 0x31) &&
-        (int)MouseY >= (int)(DAT_07ea5284 + 0x18b) &&
-        (int)MouseY <  (int)(DAT_07ea5284 + 0x1a3) &&
+    if ((int)MouseX >= (int)(InventoryStartX + 0x19) &&
+        (int)MouseX <  (int)(InventoryStartX + 0x31) &&
+        (int)MouseY >= (int)(InventoryStartY + 0x18b) &&
+        (int)MouseY <  (int)(InventoryStartY + 0x1a3) &&
         IsClickPushed()) {
 
         MouseLButtonPush = '\0';
         ChaosMix_Close();
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         PlayBuffer(0x19, 0, 0);
     }
 }
@@ -845,7 +845,7 @@ void __cdecl ChaosMix_HitTest(void) {
 //   2 → shuffle/new-PIN: shuffle DAT_07e91394 short[10] via Fisher-Yates (20 passes),
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
 //        DAT_07ea981c=0, DAT_07ea981e=0
-//   3 → exit: Net_Disconnect_Clean(); DAT_07e11d28=0; DAT_00559bec=6
+//   3 → exit: Net_Disconnect_Clean(); MouseUpdateTime=0; MouseUpdateTimeMax=6
 void __cdecl Warehouse_HitTest(void) {
     if (WarehouseOpened == '\0') return;
 
@@ -912,8 +912,8 @@ void __cdecl Warehouse_HitTest(void) {
     }
     case 3:
         Net_Disconnect_Clean();
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         break;
     }
 }
@@ -928,10 +928,10 @@ void __cdecl Trade_InputTick(void) {
     if (cGuard == '\0') return;
 
     // Botón Zen: [x+26,x+50) × [y+390,y+414).
-    if ((int)(DAT_07ea5290 + 0x1a) <= (int)MouseX &&
-        (int)MouseX < (int)(DAT_07ea5290 + 0x32) &&
-        (int)(DAT_07ea528c + 0x186) <= (int)MouseY &&
-        (int)MouseY < (int)(DAT_07ea528c + 0x19e) &&
+    if ((int)(TradeInventoryStartX + 0x1a) <= (int)MouseX &&
+        (int)MouseX < (int)(TradeInventoryStartX + 0x32) &&
+        (int)(TradeInventoryStartY + 0x186) <= (int)MouseY &&
+        (int)MouseY < (int)(TradeInventoryStartY + 0x19e) &&
         IsClickPushed()) {
         MouseLButtonPush = '\0';
         SetErrorMessage(0x74);
@@ -953,10 +953,10 @@ void __cdecl Trade_InputTick(void) {
 
     // Botón de confirmación: [x+97,x+121) × [y+390,y+414).
     if (TradeMyWait == 0 && DAT_07e91388 == 0 &&
-        (int)(DAT_07ea5290 + 0x61) <= (int)MouseX &&
-        (int)MouseX < (int)(DAT_07ea5290 + 0x79) &&
-        (int)(DAT_07ea528c + 0x186) <= (int)MouseY &&
-        (int)MouseY < (int)(DAT_07ea528c + 0x19e) &&
+        (int)(TradeInventoryStartX + 0x61) <= (int)MouseX &&
+        (int)MouseX < (int)(TradeInventoryStartX + 0x79) &&
+        (int)(TradeInventoryStartY + 0x186) <= (int)MouseY &&
+        (int)MouseY < (int)(TradeInventoryStartY + 0x19e) &&
         IsClickPushed()) {
         MouseLButtonPush = '\0';
         PlayBuffer(0x19, 0, 0);
@@ -985,10 +985,10 @@ void __cdecl Trade_InputTick(void) {
     }
 
     // Botón de cancelación: [x+137,x+161) × [y+390,y+414).
-    if ((int)(DAT_07ea5290 + 0x89) <= (int)MouseX &&
-        (int)MouseX < (int)(DAT_07ea5290 + 0xa1) &&
-        (int)(DAT_07ea528c + 0x186) <= (int)MouseY &&
-        (int)MouseY < (int)(DAT_07ea528c + 0x19e) &&
+    if ((int)(TradeInventoryStartX + 0x89) <= (int)MouseX &&
+        (int)MouseX < (int)(TradeInventoryStartX + 0xa1) &&
+        (int)(TradeInventoryStartY + 0x186) <= (int)MouseY &&
+        (int)MouseY < (int)(TradeInventoryStartY + 0x19e) &&
         IsClickPushed()) {
         MouseLButtonPush = '\0';
         PlayBuffer(0x19, 0, 0);
@@ -997,8 +997,8 @@ void __cdecl Trade_InputTick(void) {
             // CGTradeCancelButtonRecv: C1:3D, no payload.
             BYTE pkt3[3] = { 0xC1, 0x03, 0x3D };
             gNetwork.Send(pkt3, sizeof(pkt3));
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
         }
     }
 }
@@ -1063,17 +1063,17 @@ void __cdecl Shop_InputTick(void) {
             Item_RecalculateRepairCost();
         }
 
-        // Back/cancel button at [DAT_07ea5288+0x19, +0x31) x [DAT_07ea5284+0x18b, +0x1a3)
-        if ((int)(DAT_07ea5288 + 0x19) <= (int)MouseX &&
-            (int)MouseX < (int)(DAT_07ea5288 + 0x31) &&
-            (int)(DAT_07ea5284 + 0x18b) <= (int)MouseY &&
-            (int)MouseY < (int)(DAT_07ea5284 + 0x1a3) &&
+        // Back/cancel button at [InventoryStartX+0x19, +0x31) x [InventoryStartY+0x18b, +0x1a3)
+        if ((int)(InventoryStartX + 0x19) <= (int)MouseX &&
+            (int)MouseX < (int)(InventoryStartX + 0x31) &&
+            (int)(InventoryStartY + 0x18b) <= (int)MouseY &&
+            (int)MouseY < (int)(InventoryStartY + 0x1a3) &&
             IsClickPushed()) {
             MouseLButtonPush = '\0';
             InventoryOpened = 0;
             CloseInventoryRelatedWindows();
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
         }
     }
 }
@@ -1180,7 +1180,7 @@ undefined4 __cdecl ChaosMix_Close(void)
 // Limpia el estado de la UI y después manda un paquete de desconexión (C1 03 82) por el socket.
 uint __cdecl Net_Disconnect_Clean(void)
 {
-    if (DAT_07eaa165 != '\0') return 0;
+    if (EquipmentItem != '\0') return 0;
     InventoryOpened = 0;
     CloseInventoryRelatedWindows();
     if (0 < (int)DAT_07e91388) Item_ReturnPickedItem();

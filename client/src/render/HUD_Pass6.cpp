@@ -97,8 +97,7 @@ extern "C" char   DAT_07eaa0dc;
 extern "C" int    g_bServerDivisionEnable;
 extern "C" const char* Guild_GetMarkName(int row);
 extern "C" int GuildMark_FindRecordByKey(int key);
-// InventoryStartX/Y and TradeInventoryStartX/Y now #defined in globals.h
-// to DAT_07ea5288/5284 and DAT_07ea5290/528c respectively.
+// InventoryStartX/Y y TradeInventoryStartX/Y se declaran en globals.h.
 extern "C" int    dword_7EAA0CC, dword_7EAA0C8;
 extern "C" BYTE   Inventory[], OffsetInventoryItems[], OffsetTradeItems[], OffsetMixItems[], OffsetWarehouseItems[];
 extern "C" BYTE   ShopItems[];   // pool dedicado de la tienda
@@ -656,10 +655,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 }
 
-// Es el global real 0x7EAA144 (= DAT_07eaa144), no una copia del archivo: lo
+// Es el global real 0x7EAA144 (= g_iKeyPadEnable), no una copia del archivo: lo
 // setea el handler del 0x55 y lo lee el hit-test de la creacion de guild en
 // `GuildCreator_HitTest`.
-#define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
 // IDA: ProtocolCore 0x55. El servidor autoriza abrir la interfaz de creación
@@ -1416,7 +1414,7 @@ extern "C" void __cdecl RenderTrade(void)
                    (char*)Guild_GetMarkName(remoteGuildRow), 0, 0, 0);
     }
 
-    const DWORD gold[2] = { DAT_07eaa0f0, DAT_07eaa0f4 };
+    const DWORD gold[2] = { m_nYourTradeGold, m_nMyTradeGold };
     const int goldY[2] = { TradeInventoryStartY + 160, TradeInventoryStartY + 360 };
     for (int i = 0; i < 2; ++i) {
         const int x = TradeInventoryStartX + 50;
@@ -1598,7 +1596,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12, GlobalText[chaosTitle],
                120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-    if (DAT_07eaa140 >= 2) return; // el resultado/animación ocupa sólo la grilla
+    if (MixState >= 2) return; // el resultado/animación ocupa sólo la grilla
 
     const int mixType = (int)MixType;
     int rate = ChaosMixLegacyValue() / 20000;

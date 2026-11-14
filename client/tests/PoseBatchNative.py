@@ -15,7 +15,7 @@ SERVICES=r'''
 #include <unordered_map>
 #include <algorithm>
 using vec34_t=float[3][4];
-uintptr_t DAT_05828d58,DAT_07abf5d0,DAT_07abf5d8;int SceneFlag,DAT_07e11d30,DAT_005597c4;DWORD MoveSceneFrame;
+uintptr_t DAT_05828d58,DAT_07abf5d0,DAT_07abf5d8;int SceneFlag,EditFlag,DAT_005597c4;DWORD MoveSceneFrame;
 OBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}OBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}
 BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}
 const BMD* AsModel(const void* p){return static_cast<const BMD*>(p);}
@@ -55,7 +55,7 @@ int main(){
  if(sizeof(void*)==8)Require(DAT_07abf5d0>0xffffffffull&&DAT_05828d58>0xffffffffull&&reinterpret_cast<uintptr_t>(descriptors)>0xffffffffull&&reinterpret_cast<uintptr_t>(actions)>0xffffffffull&&reinterpret_cast<uintptr_t>(keys)>0xffffffffull&&reinterpret_cast<uintptr_t>(vertices)>0xffffffffull&&reinterpret_cast<uintptr_t>(normals)>0xffffffffull);
  for(unsigned trial=0;trial<32;++trial){
   ObjectPose_EndBatch();std::memset(characters,0,sizeof(characters));std::memset(models,0,sizeof(models));std::memset(descriptors,0,sizeof(descriptors));std::memset(actions,0,sizeof(actions));std::memset(meshes,0,sizeof(meshes));
-  SceneFlag=5;DAT_07e11d30=0;DAT_005597c4=int(trial%2);TransformWorkers::available=2;TransformWorkers::reverse=trial%2;
+  SceneFlag=5;EditFlag=0;DAT_005597c4=int(trial%2);TransformWorkers::available=2;TransformWorkers::reverse=trial%2;
   for(unsigned m=0;m<2;++m){
    models[m].NumBones=3;models[m].NumActions=2;models[m].NumMeshs=1;models[m].Bones=reinterpret_cast<BYTE*>(descriptors[m]);models[m].Actions=reinterpret_cast<BYTE*>(actions[m]);models[m].Meshs=reinterpret_cast<BYTE*>(meshes+m);models[m].BoneHead=-1;models[m].ShadowAngle[2]=float(trial%3)*15;
    meshes[m].VertexCount=4096;meshes[m].NormalCount=4;meshes[m].Vertices=reinterpret_cast<BYTE*>(vertices[m]);meshes[m].Normals=normals[m];
@@ -71,7 +71,7 @@ int main(){
   if(mode==4){characters[3].Object.Live=0;active=false;}
   if(mode==5){meshes[0].VertexCount=1;meshes[1].VertexCount=1;active=false;}
   if(mode==6){characters[3].Object.Alpha=0;active=false;}
-  if(mode==7){DAT_07e11d30=2;active=false;}
+  if(mode==7){EditFlag=2;active=false;}
   if(mode==8){SceneFlag=2;active=false;}
   if(mode==9){models[0].NumBones=0;models[1].NumBones=0;active=false;}
   if(mode==10){characters[3].Object.Visible=0;active=false;}

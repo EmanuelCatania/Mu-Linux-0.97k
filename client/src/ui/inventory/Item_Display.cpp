@@ -326,8 +326,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     // OffsetInventoryItems = DAT_07ea8410 (inventory item array base)
     // OffsetWarehouseItems = DAT_07ea5b30 (warehouse item array base, char type in globals)
     // OffsetMixItems    = DAT_07ea9848 (chaos mix item array base)
-    // MixState          = DAT_07eaa140 (chaos mix active flag)
-    // EquipmentItem     = DAT_07eaa165 (equipment move in-progress guard)
+    // MixState          (chaos mix active flag)
+    // EquipmentItem     (equipment move in-progress guard)
     // InventoryOpened   = (extern) InventoryOpened
     // WarehouseOpened   = WarehouseOpened
     // TradeOpened       = TradeOpened
@@ -388,7 +388,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     // (Pool aliases declared at file scope above.)
     // --- Check if target is MixItems with MixState active ---
     bool spaceFree = false;
-    if ((BYTE*)invBase == &OffsetMixItems[0] && DAT_07eaa140 != 0) {
+    if ((BYTE*)invBase == &OffsetMixItems[0] && MixState != 0) {
         // IDA sub_4D6470 L601-604: con MixState != 0 la grilla del Chaos se
         // trata como SIN lugar (`v487 = 0`).  Despues de un mix MixState queda
         // en >= 2 (ReceiveMix) hasta reabrir la maquina.  El port la daba por
@@ -605,8 +605,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         }
         // Origen inventario / baul / Chaos / trade: mismo 0x24 con destino 0.
         // (El m_nMyTradeWait = 150 de LABEL_288 lo aplica el helper de envio.)
-        if (DAT_07eaa165 != '\0') goto drop_done;
-        DAT_07eaa165 = '\x01';
+        if (EquipmentItem != '\0') goto drop_done;
+        EquipmentItem = '\x01';
         InventoryMove_SetPendingPools(sourceInvBase, invBase);
         SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
             (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
@@ -629,8 +629,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         gNetwork.Send(unconfirm, 4);
     }
 
-    if (DAT_07eaa165 != '\0') goto drop_done;
-    DAT_07eaa165 = '\x01';
+    if (EquipmentItem != '\0') goto drop_done;
+    EquipmentItem = '\x01';
     InventoryMove_SetPendingPools(sourceInvBase, invBase);
     SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
         (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);

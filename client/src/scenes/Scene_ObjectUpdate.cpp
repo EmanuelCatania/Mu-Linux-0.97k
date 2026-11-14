@@ -563,7 +563,6 @@ void EmitSceneFlames(char* object, const SceneFlamePreset& preset)
 // === FUN_004fdc00 / MoveObjects (0x004FDC00) ===
 // Alias locales para este port. #undef al final del bloque.
 #define Models      DAT_05828d58
-#define EditFlag    DAT_07e11d30
 extern void __cdecl Effect_PhysicsTick(std::uintptr_t Object); // Efectos del mapa 4
 extern "C" void DbgLogPublic(const char*);        // [DIAG activación temporal]
 void __cdecl FUN_004fdc00(OBJECT* object)

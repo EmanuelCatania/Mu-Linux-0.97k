@@ -18,7 +18,7 @@ extern void __cdecl operator_delete(void* ptr);
 // EnableDepthTest @ 0x005114D0 — GL_EnableDepthTest
 void __cdecl GL_EnableDepthTest(void) {
     if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::On;Materials::Apply(m);return;}
-    if (DAT_083a411e == '\0') { DAT_083a411e = '\x01'; Gfx::Enable(Gfx::Cap::DepthTest); }
+    if (DepthTestEnable == '\0') { DepthTestEnable = '\x01'; Gfx::Enable(Gfx::Cap::DepthTest); }
 }
 // DisableDepthTest @ 0x005114F0 — GL_DisableDepthTest
 // DIAG: el AV NVIDIA aparece acá no por el glDisable per se, sino por corrupción previa
@@ -28,40 +28,40 @@ void __cdecl GL_DisableDepthTest(void) {
     if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::Off;Materials::Apply(m);return;}
     static int s_call = 0;
     s_call++;
-    if (DAT_083a411e != '\0') { DAT_083a411e = '\0'; Gfx::Disable(Gfx::Cap::DepthTest); }
+    if (DepthTestEnable != '\0') { DepthTestEnable = '\0'; Gfx::Disable(Gfx::Cap::DepthTest); }
 }
 // EnableDepthMask @ 0x00511510 — GL_EnableDepthWrites
 void __cdecl GL_EnableDepthWrites(void) {
     if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::On;Materials::Apply(m);return;}
-    if (DAT_083a42e8 == '\0') { DAT_083a42e8 = '\x01'; Gfx::DepthMask(true); }
+    if (DepthMaskEnable == '\0') { DepthMaskEnable = '\x01'; Gfx::DepthMask(true); }
 }
 // FUN_00511530 @ 0x00511530 — GL_DisableDepthWrites
 void __cdecl GL_DisableDepthWrites(void) {
     if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::Off;Materials::Apply(m);return;}
-    if (DAT_083a42e8 != '\0') { DAT_083a42e8 = '\0'; Gfx::DepthMask(false); }
+    if (DepthMaskEnable != '\0') { DepthMaskEnable = '\0'; Gfx::DepthMask(false); }
 }
 // EnableCullFace @ 0x00511550 — GL_EnableCullFace
 // (Called by 3D blend setters GL_ResetState / GL_EnableLightMap per 5.2 source pattern.)
 void __cdecl GL_EnableCullFace(void) {
     if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::On;Materials::Apply(m);return;}
-    if (DAT_083a411c == '\0') { DAT_083a411c = '\x01'; Gfx::Enable(Gfx::Cap::CullFace); }
+    if (CullFaceEnable == '\0') { CullFaceEnable = '\x01'; Gfx::Enable(Gfx::Cap::CullFace); }
 }
 // DisableCullFace @ 0x00511570 — GL_DisableCullFace
 // (Called by 2D blend setters GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha.)
 void __cdecl GL_DisableCullFace(void) {
     if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::Off;Materials::Apply(m);return;}
-    if (DAT_083a411c != '\0') { DAT_083a411c = '\0'; Gfx::Disable(Gfx::Cap::CullFace); }
+    if (CullFaceEnable != '\0') { CullFaceEnable = '\0'; Gfx::Disable(Gfx::Cap::CullFace); }
 }
 // FUN_00511590 @ 0x00511590 — GL_SetAlphaTest
 void __cdecl GL_SetAlphaTest(char param_1) {
     if(Materials::Select(Materials::Preset::Untextured,param_1 == 1))return;
     GL_EnableDepthWrites();
     if (param_1 == '\x01') {
-        if (DAT_083a411d == '\0') { DAT_083a411d = '\x01'; Gfx::Enable(Gfx::Cap::AlphaTest); }
+        if (AlphaTestEnable == '\0') { AlphaTestEnable = '\x01'; Gfx::Enable(Gfx::Cap::AlphaTest); }
     } else {
-        if (DAT_083a411d != '\0') { DAT_083a411d = '\0'; Gfx::Disable(Gfx::Cap::AlphaTest); }
+        if (AlphaTestEnable != '\0') { AlphaTestEnable = '\0'; Gfx::Disable(Gfx::Cap::AlphaTest); }
     }
-    if (DAT_083a4125 != '\0') { DAT_083a4125 = '\0'; Gfx::Disable(Gfx::Cap::Texture2D); }
+    if (TextureEnable != '\0') { TextureEnable = '\0'; Gfx::Disable(Gfx::Cap::Texture2D); }
 }
 // glViewport2 @ 0x00511910 — GL_SetViewport
 void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) {

@@ -448,7 +448,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // IDA: SendMove @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
-// wp_count se limita a 0xe. Setea DAT_00559bec = pkt_size_code.
+// wp_count se limita a 0xe. Setea MouseUpdateTimeMax = pkt_size_code.
 // IDA: SendMove (0x00491C40) L436-788 — moverse con una ventana de NPC abierta
 // la cierra (el personaje igual camina: MuEmu no chequea la interfaz en
 // CGMoveRecv). Cada ventana avisa al server con su propio paquete.
@@ -473,7 +473,7 @@ static void SendMove_CloseWindows97k(void)
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };            // cancelar trade (C3)
         gNetwork.Send(pkt, sizeof(pkt));
     } else if (WarehouseOpened) {
-        if (!DAT_07eaa165) {                                 // EquipmentItem
+        if (!EquipmentItem) {                                 // EquipmentItem
             InventoryOpened = 0;
             CloseInventoryRelatedWindows();
             if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
@@ -532,7 +532,7 @@ static void SendMove_CloseWindows97k(void)
     }
 
     // LABEL_168 (sin el SetCursorPos, ver arriba).
-    DAT_00559bec = 6;                                        // MouseUpdateTimeMax
+    MouseUpdateTimeMax = 6;                                        // MouseUpdateTimeMax
     MouseLButton = 0;
 }
 
@@ -568,11 +568,11 @@ void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* objec
 
     unsigned char wpCount = AsCharacter(param_1)->PathNum;
     if (wpCount < 3)
-        DAT_00559bec = 0;
+        MouseUpdateTimeMax = 0;
     else if (wpCount == 3)
-        DAT_00559bec = 5;
+        MouseUpdateTimeMax = 5;
     else
-        DAT_00559bec = (unsigned int)wpCount * 3 + 4;
+        MouseUpdateTimeMax = (unsigned int)wpCount * 3 + 4;
 
     // IDA sigue aunque no haya camino (activa la ruta y cierra ventanas), pero
     // ahi solo se llama tras un PathFinding exitoso. Se conserva como resguardo:
@@ -1001,7 +1001,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
 // ── IDA L1485-2893: rama ELF (clase 2) ───────────────────────────────────────
 static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
 {
-    BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;        // IDA: CharacterAttribute
+    BYTE* const attr = (BYTE*)(uintptr_t)CharacterAttribute;        // IDA: CharacterAttribute
     if (!attr || !Hero)
         return AF_RETURN;
 
@@ -1093,7 +1093,7 @@ static void Attack_WarriorBranch97k(char* entity)
     if (heroClass != 1 && heroClass != 3)
         return;                                               // IDA L2896
 
-    BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE* const attr = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!attr || !Hero)
         return;
     const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];        // IDA L2915
@@ -1434,7 +1434,7 @@ static void Attack_WizardBranch97k(char* entity)
     if (heroClass != 0 && heroClass != 3)
         return;                                               // IDA L5921
 
-    BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE* const attr = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!attr || !Hero)
         return;
     const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];        // IDA L5950
@@ -1480,7 +1480,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     if (!entity) return;
 
     // 1) Early exits — anti-tamper / loading state ──────────────────────────────────────────────────────────────────────────
-    if (DAT_07e11d30 != 0) return;          // IDA L1236: EditFlag (0x07E11D30)
+    if (EditFlag != 0) return;          // IDA L1236: EditFlag (0x07E11D30)
 
     // 2) Stamina decay on entity (movement-tick interpolation) ────────────────────────────────────────────────
     // IDA L1240-1247.  c+124 es el estado de fade y c+360 (0x168) el Alpha:
@@ -1619,7 +1619,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                     if (helper == 818 || helper == 819) {
                         // Montado: solo 43/47/49 (IDA L1385-1390).
                         handAllowed = false;
-                        BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+                        BYTE* const attr = (BYTE*)(uintptr_t)CharacterAttribute;
                         if (attr && Hero) {
                             const BYTE sk = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
                             handAllowed = (sk == 43 || sk == 47 || sk == 49);
@@ -1703,7 +1703,7 @@ static BYTE Combat_ResolveQueuedSkillId97k()
     //   *(BYTE *)(*(BYTE *)(Hero + 913) + CharacterAttribute + 87)
     // Using DAT_07d7809c when no queued move existed made a regular RMB cast
     // resuelven al skill 0 y retornan antes de cualquier animación o envío de paquete.
-    BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
+    BYTE* charAttr = (BYTE*)CharacterAttribute;
     if (!Hero || !charAttr) return 0;
     return charAttr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
 }
@@ -1884,12 +1884,12 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 // It emits the common facing packet, snapshots MovementSkillTarget, and has
 // only two active families: 26..28 (targeted elf support) and 51 (Ice Arrow).
 void __cdecl Combat_UseElfSkill(intptr_t c, intptr_t o) {
-    if (!c || !o || !Hero || !DAT_07cf1ff4)
+    if (!c || !o || !Hero || !CharacterAttribute)
         return;
 
     BYTE* const character = (BYTE*)(uintptr_t)c;
     BYTE* const object = (BYTE*)(uintptr_t)o;
-    BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE* const attributes = (BYTE*)(uintptr_t)CharacterAttribute;
     const int targetIndex = (int)MovementSkillTarget;
     if (targetIndex < 0 || targetIndex >= 400)
         return;
@@ -2004,7 +2004,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         if (!autoGet && sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
             return;
 
-        DAT_00559bec = 6;                                      // IDA: MouseUpdateTimeMax
+        MouseUpdateTimeMax = 6;                                      // IDA: MouseUpdateTimeMax
         const WORD itemType = *(const WORD*)(groundItem + 4);  // IDA: Items[ItemKey][4]
         if (itemType != 463 && !FindEmptySlot(itemType, reinterpret_cast<const BYTE*>(OffsetInventoryItems), 8, 8)) {
             // 0x48F5B7-0x48F61B: report the full inventory and restart the
@@ -2050,7 +2050,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         //   byte_7EAA132 = (v162 == 243 || 246 || 251);
         //   if (g_csQuest[4] == 0xFF) send [C1][03][A0];     // CGQuestInfoRecv
         //   send [C1][05][30][KeyHi][KeyLo];                 // PMSG_NPC_TALK_RECV
-        DAT_00559bec = 12;                       // IDA L814: MouseUpdateTimeMax
+        MouseUpdateTimeMax = 12;                       // IDA L814: MouseUpdateTimeMax
         SetPlayerStop(AsCharacter(c));                    // IDA L815: SetPlayerStop
         AsCharacter(c)->Movement = 0;          // IDA L816
 
@@ -2178,7 +2178,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 // gate de debounce de Player_InputTick pasando en el tick
                 // siguiente, que es lo que permite encadenar ataques; sin esto
                 // habia que esperar a que el contador volviera a subir.
-                DAT_07e11d28 = DAT_00559bec;
+                MouseUpdateTime = MouseUpdateTimeMax;
                 SetPlayerAttack(AsCharacter(c), 0, 0, 0);
 
                 AsCharacter(c)->SkillStage = 1;  // attack pending
@@ -2451,7 +2451,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
     case 4: {
         // Action 0x48D640 does not always read Hero+913.  Its queued path
         // preserves the direct selector when dword_7D78098 is clear.
-        const BYTE* const attributes = (const BYTE*)(uintptr_t)DAT_07cf1ff4;
+        const BYTE* const attributes = (const BYTE*)(uintptr_t)CharacterAttribute;
         const int skillType = DAT_07d78098
             ? (attributes ? attributes[(BYTE)DAT_07d7809c + 87] : 0)
             : (int)DAT_07d7809c;                             // IDA: v62

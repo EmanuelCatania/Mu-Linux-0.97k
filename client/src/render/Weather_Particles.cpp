@@ -31,15 +31,15 @@
 //   3,7 = InGame map    — butterfly/bubble (same as 0)
 //   9  = logout/loading — snow: rotated velocity via Matrix_BuildFromEuler/4fa0b0,
 //                          splash effect (Particle_Spawn type 0x67/0x68) on ground hit
-//   10 = rain (dense)   — limited active count = (DAT_07c74ae4 * 200) / 100
+//   10 = rain (dense)   — limited active count = (RainCurrent * 200) / 100
 //
 // Wind/environment per frame:
 //   _DAT_00559b9c = (int)(fsin(tick * _DAT_00552500) + 3) * 10     — wind X speed
 //   DAT_07c74ae8  = (int)(fsin(tick * _DAT_00552a40 + offset) * 20) — rain Y offset
-//   DAT_07c74aec  = (DAT_07c74aec + 0x14) % 2000                   — rain Z counter
+//   RainPosition  = (RainPosition + 0x14) % 2000                   — rain Z counter
 //
-// Related: DAT_07c74ae0 = intensity target (set to 100 when substate→10)
-//          DAT_07c74ae4 = current intensity (interpolated toward ae0 each frame)
+// Related: RainTarget = intensity target (set to 100 when substate→10)
+//          RainCurrent = current intensity (interpolated toward ae0 each frame)
 
 #include "stdafx.h"
 #include "game/core/RenderFxSnapshots.h"
@@ -59,9 +59,9 @@ void WeatherParticles_Update(void)
 
     // ── Intensity ramp for sub-state 10 (dense rain) ─────────────────────────
     if (iVar7 == 10)
-        DAT_07c74ae0 = 100;
-    if (DAT_07c74ae4 < (int)DAT_07c74ae0)      DAT_07c74ae4++;
-    else if ((int)DAT_07c74ae4 > (int)DAT_07c74ae0) DAT_07c74ae4--;
+        RainTarget = 100;
+    if (RainCurrent < (int)RainTarget)      RainCurrent++;
+    else if ((int)RainCurrent > (int)RainTarget) RainCurrent--;
 
     // ── Per-frame wind / oscillation globals ─────────────────────────────────
     // IDA MoveLeaves (0x46CC80):
@@ -71,8 +71,8 @@ void WeatherParticles_Update(void)
     _DAT_00559b9c = (int)(10 * ((longlong)sin((double)WorldTime * 0.001) + 3));
     DAT_07c74ae8  = (int)(20 * (longlong)sin((double)WorldTime * 0.00050000002 + 50.0));
 
-    int iVar1 = DAT_07c74aec + 0x14;
-    DAT_07c74aec  = iVar1 % 2000;
+    int iVar1 = RainPosition + 0x14;
+    RainPosition  = iVar1 % 2000;
 
     // ── Compute active particle count ─────────────────────────────────────────
     // IDA: iMaxLeaves = World != 9 ? 80 : 200;
@@ -106,7 +106,7 @@ void WeatherParticles_Update(void)
                 } else {
                     pfVar10[-7] = (float)(_rand() % 0x640 - 800) + *(float *)(DAT_07abf5d8 + 0x10);
                     pfVar10[-6] = ((float)(_rand() % 300 + 1000) + *(float *)(DAT_07abf5d8 + 0x14))
-                                  - (float)DAT_07c74aec;
+                                  - (float)RainPosition;
                 }
                 pfVar10[-5] = (float)(_rand() % 200 + 300) + *(float *)(DAT_07abf5d8 + 0x18);
 
@@ -158,7 +158,7 @@ void WeatherParticles_Update(void)
             else if (iVar7 == 10)
             {
                 // Dense rain: limited active count
-                if (local_d4 < ((int)DAT_07c74ae4 * 200) / 100) {
+                if (local_d4 < ((int)RainCurrent * 200) / 100) {
                     pfVar10[-10] = 1.42932e-43f;
                     pfVar10[-7] = (float)(_rand() % 0x640 - 800) + *(float *)(DAT_07abf5d8 + 0x10);
                     pfVar10[-6] = (float)(_rand() % 0x578 - 500) + *(float *)(DAT_07abf5d8 + 0x14);

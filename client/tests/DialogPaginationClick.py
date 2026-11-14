@@ -22,7 +22,7 @@ using DWORD=std::uint32_t;using BYTE=unsigned char;
 void Require(bool ok){if(!ok){std::fputs("Clic perdido o repetido entre render y lógica\n",stderr);std::exit(1);}}
 int ErrorMessage,NextErrorMessage,MouseX,MouseY,DAT_083a42f8[10];
 BYTE MouseLButtonPush,MouseLButton,MouseLButtonPop,DAT_055ca038,DAT_083a7c08,DAT_083a7c09;
-DWORD DAT_083a7c04;char GlobalText[800][300],DAT_083a44c4[300];int g_iNumLineMessageBoxCustom,DAT_00559bec,DAT_07e11d28;
+DWORD DAT_083a7c04;char GlobalText[800][300],DAT_083a44c4[300];int g_iNumLineMessageBoxCustom,MouseUpdateTimeMax,MouseUpdateTime;
 unsigned sounds,updates,arrows;
 void GL_SetBlendSrcOver(char){}namespace Gfx{void Color3f(float,float,float){}}
 void GL_DrawRotatedRect(int id,float,float,float,float,int){Require(id==9);++arrows;}

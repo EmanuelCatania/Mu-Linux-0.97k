@@ -13,7 +13,7 @@ using longlong=long long;
 ENTRY
 char* table;
 #define SkillAttribute (*reinterpret_cast<_SkillAttrEntry*>(table))
-FILE* DAT_07d7806c;
+FILE* SMDFile_0;
 const char DAT_005580ac[]="rb", DAT_005597d4[]="wb";
 float ParserTokenNumber;
 char TokenString[256];
@@ -29,10 +29,10 @@ void Hash(std::uint64_t& h,const BYTE* p,unsigned n){for(unsigned i=0;i<n;++i){h
 std::uint64_t Run(BYTE* memory){table=reinterpret_cast<char*>(memory+16);std::uint64_t hash=14695981039346656037ull;unsigned queries=0;opened=std::tmpfile();Require(opened!=nullptr);
  for(row=0;row<9;++row)for(length=0;length<256;++length){if(row==8 && length>155)continue;for(unsigned fraction=0;fraction<4;++fraction){
   number=static_cast<float>(row)+fraction*.25f;std::memset(memory,0xa5,2592);BYTE expected[2592];std::memcpy(expected,memory,2592);for(unsigned i=0;i<length;++i)expected[16+row*300+4+i]=static_cast<BYTE>('a'+(i+row)%26);expected[16+row*300+4+length]=0;
-  failOpen=false;openCalls=tokenCalls=step=0;SkillAttribute_LoadNames("fixture.txt");Require(openCalls==1 && tokenCalls==5 && DAT_07d7806c==opened && std::memcmp(memory,expected,2592)==0);for(unsigned i=0;i<length;++i)Require(TokenString[i]==static_cast<char>('a'+(i+row)%26));Require(!TokenString[length]);
+  failOpen=false;openCalls=tokenCalls=step=0;SkillAttribute_LoadNames("fixture.txt");Require(openCalls==1 && tokenCalls==5 && SMDFile_0==opened && std::memcmp(memory,expected,2592)==0);for(unsigned i=0;i<length;++i)Require(TokenString[i]==static_cast<char>('a'+(i+row)%26));Require(!TokenString[length]);
   Hash(hash,memory,2592);++queries;
  }}
- Require(queries==8816);BYTE before[2592];std::memcpy(before,memory,2592);failOpen=true;openCalls=tokenCalls=step=0;SkillAttribute_LoadNames("fixture.txt");Require(openCalls==1 && tokenCalls==0 && !DAT_07d7806c && std::memcmp(memory,before,2592)==0);
+ Require(queries==8816);BYTE before[2592];std::memcpy(before,memory,2592);failOpen=true;openCalls=tokenCalls=step=0;SkillAttribute_LoadNames("fixture.txt");Require(openCalls==1 && tokenCalls==0 && !SMDFile_0 && std::memcmp(memory,before,2592)==0);
  openCalls=tokenCalls=0;SkillAttribute_SaveBin("fixture.txt");Require(openCalls==0 && tokenCalls==0 && std::memcmp(memory,before,2592)==0);Require(std::fseek(opened,0,SEEK_SET)==0);std::fclose(opened);return hash;
 }
 int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const auto expected=Run(low);if(sizeof(void*)>4){auto* high=static_cast<BYTE*>(Reserve(std::uint64_t(0x126000000ull)));Require(high);std::memset(low,0x7b,2592);Require(Run(high)==expected);for(unsigned i=0;i<2592;++i)Require(low[i]==0x7b);std::puts("destino legado alto; alias bajo intacto y saver sin efectos");}std::printf("Legacy text: 8816 consultas %016llx\n",static_cast<unsigned long long>(expected));}

@@ -3,16 +3,16 @@
 //
 // In-game per-frame tick called once the character enters the world.
 // Two phases:
-//   1) First call (DAT_083a7c4c == 0): send 0xC1/0xF3 char-select packet, init subsystems.
-//   2) Every call: wait for server ack (DAT_05826cb0 == 0x3d → DAT_083a7c10=1),
+//   1) First call (InitMainScene == 0): send 0xC1/0xF3 char-select packet, init subsystems.
+//   2) Every call: wait for server ack (DAT_05826cb0 == 0x3d → EnableMainRender=1),
 //      then run the full per-frame update pipeline.
 //
 // Packet sent (first call, if DAT_083a410c == 0):
 //   [0xC1][len][0xF3][charName(10B, zero-padded, XOR-enc)][slot_byte]
 //
 // Globals:
-//   DAT_083a7c4c  — one-time init guard
-//   DAT_083a7c10  — server ack flag (gates per-frame logic)
+//   InitMainScene  — one-time init guard
+//   EnableMainRender  — server ack flag (gates per-frame logic)
 //   DAT_05826cb0  — server response: 0x3c=sent, 0x3d=confirmed
 //   CameraTopViewEnabled  — special viewport mode flag
 //   g_bUseChatListBox  — flag enabling anti-tamper block
@@ -38,9 +38,9 @@ void Game_CharSelectTick(void)
 {
     EmoteMenu::ApplyPending();   // emote elegido en la lista del chat
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
-    if (DAT_083a7c4c == '\0') {
+    if (InitMainScene == '\0') {
         CErrorReport_Write(&DAT_055c9bf0, "> Character selected <%d> %s");
-        DAT_083a7c4c = 1;
+        InitMainScene = 1;
 
         // IDA 0x524E30 L80-219: el F3/03 (pedir entrar con el personaje) sale
         // ACA, antes del flush del chat y del clear del listbox. Asi la
@@ -95,13 +95,13 @@ void Game_CharSelectTick(void)
     }
 
     // ── WAIT FOR SERVER ACK ───────────────────────────────────────────────────
-    // IDA 0x524E30 L281-287: EnableMainRender (DAT_083a7c10) se prende recien
+    // IDA 0x524E30 L281-287: EnableMainRender se prende recien
     // cuando JoinMapServer deja CurrentProtocolState en 61. Mientras tanto no
     // corre el tick ni el render (Game_RenderTick tiene el mismo gate), asi que
     // queda en pantalla el ultimo frame de la carga.
     if (DAT_05826cb0 == 0x3d) {
-        DAT_083a7c10 = 1;
-    } else if (DAT_083a7c10 == 0) {
+        EnableMainRender = 1;
+    } else if (EnableMainRender == 0) {
         return;
     }
 
@@ -113,7 +113,7 @@ void Game_CharSelectTick(void)
 
     Terrain_Water();  // world tick
     Bisect_ChatMode("CST_post_4f95e0");
-    DAT_07eaa160  = 0;
+    CheckInventory  = 0;
     DAT_0055a3e4  = 0xffffffff;
     DAT_07d78094  = 0;
 
@@ -252,7 +252,7 @@ void Game_CharSelectTick(void)
     Effect_TickFlare();
 
     // IDA: Game_CharSelectTick (0x00524E30): conserva las dos llamadas de diagnóstico.
-    if (DAT_0839bc86 != '\0' && DAT_07e11d30 == 0) {
+    if (DAT_0839bc86 != '\0' && EditFlag == 0) {
         CWsctlc__LogPrintOn();
         CWsctlc__LogPrintOn();
     }

@@ -46,7 +46,7 @@
 //   DAT_060db65c = LightTransform RGB [vertex * 12 bytes = float R,G,B]
 //   DAT_0584621c = BoneVertex world positions [vertex * 3 floats]
 //   DAT_05828d5c = Chrome UV array [packed: U0,V0,U1,V1,...] (floats)
-//   DAT_0839bc8c = WaterTextureNumber (DWORD)
+//   WaterTextureNumber (DWORD)
 //   DAT_083a7cc8 = Texture table (stride 0x38, byte[0] = bpp/type)
 //
 // Texture special values:
@@ -198,7 +198,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         }
         local_10 = (int)bmd->Skin + 0x12d;  // BITMAP_SKIN + Skin
     } else if (local_10 == 0x41) {  // BITMAP_WATER
-        local_10 = DAT_0839bc8c + 0x41;  // BITMAP_WATER + WaterTextureNumber
+        local_10 = WaterTextureNumber + 0x41;  // BITMAP_WATER + WaterTextureNumber
     }
 
     // Override texture if specified
@@ -564,7 +564,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // Restaurar el depth-mask al salir: el path chrome (flag&0x40) llama
     // DisableDepthMask() arriba y, si no se restaura, los meshes siguientes del
     // mismo frame se dibujan sin depth-write (efecto "ghost"). El binario lo hace
-    // en los setters de estado entre meshes, pero acá el cache DAT_083a42e8 puede
+    // en los setters de estado entre meshes, pero acá el cache DepthMaskEnable puede
     // quedar desincronizado.
     BMDDevice::Select({BMDDevice::Pass::Exit});  // EnableDepthMask
 }

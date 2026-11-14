@@ -49,9 +49,9 @@ intptr_t models=0;
 std::uint64_t epoch=0;
 bool published=false;
 bool Ready() {
-    return SceneFlag==2 ? DAT_083a7c49!=0 : SceneFlag==4 ?
+    return SceneFlag==2 ? InitLogIn!=0 : SceneFlag==4 ?
         CharSelectSceneInitialized && DAT_05826cb0>50 :
-        SceneFlag==5 && DAT_083a7c10 && DAT_07e11d1c<=30;
+        SceneFlag==5 && EnableMainRender && LoadingWorld<=30;
 }
 bool Context() {
     return Ready() && scene==SceneFlag && world==gMapManager.GetCurrentMap() && models==DAT_05828d58;

@@ -7,7 +7,7 @@
 // Terrain_Water @ 0x004f95e0 — Terrain_ComputeLightMap
 //
 // Terrain light map:
-//   DAT_07eab200 — float[256][256] per-tile brightness (wave-modulated)
+//   TerrainGrassWind — float[256][256] per-tile brightness (wave-modulated)
 //   DAT_081cb608 — float[256][256][3] per-tile RGB light colour (bilinear)
 //   DAT_0828b608 — source RGB light colour table (read-only)
 //   DAT_0839bc84 — flag: light map enabled

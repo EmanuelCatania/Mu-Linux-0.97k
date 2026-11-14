@@ -43,14 +43,14 @@
 //   >13   (others/consumables): skips extra reads
 void __cdecl Item_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!SMDFile_0) return;
 
 LAB_loop:
     {
         int recType = TextParser_GetToken();
         if (recType == 2) {
-            crt_fclose(DAT_07d7806c);
+            crt_fclose(SMDFile_0);
             return;
         }
         // IDA: sub_47B130 (0x0047B130) convierte TokenNumber, no el reloj.

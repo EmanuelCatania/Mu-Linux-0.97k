@@ -58,7 +58,7 @@ std::uint64_t Run(BYTE* questMemory,BYTE* packetMemory,BYTE* heroMemory,BYTE* st
         for(int i=0;i<64;++i) packet[i]=static_cast<BYTE>(trial*73+i*40503);
         heroMemory[444]=static_cast<BYTE>(trial); statsMemory[11]=static_cast<BYTE>(trial*73);
         Hero=trial%3==0?reinterpret_cast<char*>(heroMemory):nullptr;
-        DAT_07cf1ff4=trial%3==1?statsMemory:nullptr;
+        CharacterAttribute=trial%3==1?statsMemory:nullptr;
         g_csQuest=trial%7==0?0:reinterpret_cast<std::uintptr_t>(quest);
         const int route=trial%3, length=static_cast<int>((trial/3)%67)-1;
         if(route==0) packet[3]=static_cast<BYTE>(trial); if(route==2) packet[4]=trial%2==0?0:1;
@@ -68,7 +68,7 @@ std::uint64_t Run(BYTE* questMemory,BYTE* packetMemory,BYTE* heroMemory,BYTE* st
         if(g_csQuest) {
             if(route==0 && length>=4) {
                 int n=packet[3]; if(n>50) n=50; if(length<4+n) n=length-4;
-                if(n>0) ExpectedList(expected+16,packet+4,n,Hero?heroMemory[444]:DAT_07cf1ff4?statsMemory[11]:-1);
+                if(n>0) ExpectedList(expected+16,packet+4,n,Hero?heroMemory[444]:CharacterAttribute?statsMemory[11]:-1);
             } else if(route==1 && length>=5) { ExpectedEntry(expected+16,packet[3],packet[4]); expectedWindows=1; }
             else if(route==2 && length>=6 && packet[4]==0) { ExpectedEntry(expected+16,packet[3],packet[5]); expectedWindows=1; }
         }
@@ -112,10 +112,10 @@ def harness(revision=None):
     prefix += "inline CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }\n"
     prefix += "inline CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }\n"
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    for name in ("g_csQuest", "Hero", "DAT_07cf1ff4"):
+    for name in ("g_csQuest", "Hero", "CharacterAttribute"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    for name in ("DAT_07abf5d8", "CharacterAttribute"):
+    for name in ("DAT_07abf5d8",):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", header + read_source("src/structs.h", revision), re.M).group() + "\n"
     prefix += SERVICES
     lists = function(read_source("src/app/core/Runtime_Medium.cpp", revision), "CSQuest__setQuestLists")

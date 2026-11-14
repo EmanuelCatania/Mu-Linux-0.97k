@@ -68,10 +68,10 @@ int __cdecl TextParser_GetToken(void)
     float& TokenNumber   = ParserTokenNumber;
 
     // Los data parsers (Item_Data, Monster_Data, Skill_Data, Filter_Data,
-    // NPC_Data, Gate_Data) abren su archivo vía DAT_07d7806c (= SMDFile_0 de IDA).
+    // NPC_Data, Gate_Data) abren su archivo vía SMDFile_0.
     // El otro símbolo "SMDFile" en DAT_0055c0a0 es un global distinto mal
     // nombrado — no se usa acá.
-    FILE* fp = DAT_07d7806c;
+    FILE* fp = SMDFile_0;
 
     char  TempString[100];
     int   cha;

@@ -201,9 +201,9 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 {
     float view_x = ((float)gWindow.PixelFromUiX(mouseX) - Ff(ViewportCenterX)) *
-                   Ff(DAT_083a42a4) * Ff(DAT_00561550);
+                   Ff(PerspectiveX) * Ff(DAT_00561550);
     float view_y = -((float)gWindow.GetHeight() * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
-                   Ff(DAT_083a42a8) * Ff(DAT_00561550);
+                   Ff(PerspectiveY) * Ff(DAT_00561550);
     float view_z = -Ff(DAT_00561550);
 
     // Camera forward (negated local-space)
@@ -414,9 +414,9 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   const float fogScale = Ff(DAT_00561550) > 3000.0f ? Ff(DAT_00561550) / 3000.0f : 1.0f;
   float fogStart, fogEnd;
   gContentCatalog.GetFogRange((int)gMapManager.GetCurrentMap(), fogStart, fogEnd);
-  if(Materials::Enabled() && (DAT_083a42ea=='\0'||gContentCatalog.HasMapFog())){
+  if(Materials::Enabled() && (FogEnable=='\0'||gContentCatalog.HasMapFog())){
     Materials::ViewState state;
-    if(DAT_083a42ea!='\0'){
+    if(FogEnable!='\0'){
       state.fog=Materials::ViewFog::Linear;state.fogStart=fogStart*fogScale;state.fogEnd=fogEnd*fogScale;
       gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
     }
@@ -429,17 +429,17 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   Gfx::Enable(Gfx::Cap::DepthTest);    // GL_DEPTH_TEST
   Gfx::Enable(Gfx::Cap::CullFace);    // GL_CULL_FACE (matches original binary)
   Gfx::DepthMask(true);
-  DAT_083a411d = 0;
-  DAT_083a4125 = 1;
-  DAT_083a411e = 1;
-  DAT_083a411c = 1;
-  DAT_083a42e8 = 1;
+  AlphaTestEnable = 0;
+  TextureEnable = 1;
+  DepthTestEnable = 1;
+  CullFaceEnable = 1;
+  DepthMaskEnable = 1;
   Gfx::DepthFunc(Gfx::Compare::LessEqual);
   // 0.25f literal: 0x3e800000 es el bit pattern de 0.25f y glAlphaFunc espera
   // GLclampf. Como int se convertiría a 1048576000.0f → clamp a 1.0 → el test
   // "alpha > 1.0" siempre falla y todo el UI con alpha-test queda invisible.
   Gfx::AlphaFunc(Gfx::Compare::Greater, 0.25f);
-  if (DAT_083a42ea != '\0' && gContentCatalog.HasMapFog()) {
+  if (FogEnable != '\0' && gContentCatalog.HasMapFog()) {
     // DESVIACION (DLL MapFog glEnableFog, ahora catálogo 0.97.20): niebla
     // lineal 2000..2700 con el color del mapa.
     float fog[4];
@@ -452,7 +452,7 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
-  if (DAT_083a42ea != '\0') {
+  if (FogEnable != '\0') {
     Gfx::Enable(Gfx::Cap::Fog);
     Gfx::SetFogMode(Gfx::FogMode::Exp2);
     Gfx::FogDensity(DAT_00561558);

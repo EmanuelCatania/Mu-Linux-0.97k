@@ -11,7 +11,7 @@ SERVICES=r'''
 #include <cmath>
 #include <algorithm>
 #include <array>
-BYTE* buffers;uintptr_t DAT_05828d58;unsigned DAT_0839bc8c;
+BYTE* buffers;uintptr_t DAT_05828d58;unsigned WaterTextureNumber;
 #define DAT_0584621c (*reinterpret_cast<DWORD*>(buffers))
 #define DAT_077e298c (*reinterpret_cast<DWORD*>(buffers+400000))
 #define DAT_060db65c (*reinterpret_cast<char*>(buffers+550000))
@@ -57,7 +57,7 @@ std::uint64_t Run(BYTE* modelMem,BYTE* tables,BYTE* data){buffers=data;std::uint
  for(unsigned mesh=0;mesh<2;++mesh){for(unsigned v=0;v<4;++v)for(unsigned a=0;a<3;++a){PutFloat(data+mesh*180000+v*12+a*4,float(int(mesh*10+v*3+a)-7)*.125f);PutFloat(data+1000000+mesh*180000+v*12+a*4,float(int(v+a)-3)*.0625f);}for(unsigned i=0;i<4;++i)PutFloat(data+400000+mesh*60000+i*4,float(i)*.25f);}
  std::vector<BYTE> original(data,data+1600000);
  for(unsigned trial=0;trial<4096;++trial){
-  std::memcpy(data,original.data(),1600000);std::memset(modelMem,0xa5,sizeof(BMD)+32);std::memset(tables,0x6d,2048);subject=reinterpret_cast<BMD*>(modelMem+16);const unsigned mesh=trial%2;wantedIndex=mesh;wantedModel=slots[(trial/2)%3];DAT_05828d58=reinterpret_cast<uintptr_t>(subject)-wantedModel*sizeof(BMD);DAT_0839bc8c=trial%4;WorldTime=float(int(trial)-2000)+.25f;
+  std::memcpy(data,original.data(),1600000);std::memset(modelMem,0xa5,sizeof(BMD)+32);std::memset(tables,0x6d,2048);subject=reinterpret_cast<BMD*>(modelMem+16);const unsigned mesh=trial%2;wantedIndex=mesh;wantedModel=slots[(trial/2)%3];DAT_05828d58=reinterpret_cast<uintptr_t>(subject)-wantedModel*sizeof(BMD);WaterTextureNumber=trial%4;WorldTime=float(int(trial)-2000)+.25f;
   subject->Meshs=tables;subject->IndexTexture=reinterpret_cast<short*>(tables+192);subject->LightEnable=(trial/7)%2;subject->StreamMesh=char(int((trial/13)%3)-1);subject->Skin=char(int(trial%7)-3);subject->HideSkin=(trial/19)%2;for(unsigned a=0;a<3;++a)subject->BodyLight[a]=float(a+1)*.25f;
   wantedMesh=reinterpret_cast<ClothModelMesh*>(tables)+mesh;wantedMesh->TextureIndex=short(mesh);wantedMesh->VertexCount=4;wantedMesh->NormalCount=4;wantedMesh->TexCoordCount=4;wantedMesh->TriangleCount=short((trial/2)%3);wantedMesh->Unknown0[0]=(trial/23)%5==0;wantedMesh->TexCoords=tables+256;wantedMesh->Triangles=tables+384;wantedMesh->TextureFlags=trial%7?tables+512:nullptr;wantedMesh->Vertices=tables+640;wantedMesh->Normals=tables+768;
   tables[512]=(trial/29)%2;tables[514]=(trial/19)%2;tables[515]=(trial/31)%2;

@@ -6,7 +6,7 @@
 //   2. Determine which entity/item is under the cursor and store hover targets.
 //
 // ── Cursor billboard ──────────────────────────────────────────────────────────
-// RenderTerrainTile(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
+// RenderTerrainTile(SelectXF, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
 // If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
 // then RenderTerrainAlphaBitmap(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
@@ -55,7 +55,7 @@ void Mouse_UpdateHoverTargets(void)
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // DESACTIVADO: el billboard 3D (sprite en el suelo del tile hovered) necesita
     // Terrain_RenderQuad, que leia BackTerrainHeight de un DWORD sin asignar
-    // (arreglado: ahora usa DAT_080cb2cc). Falta re-habilitarlo y verificarlo.
+    // (arreglado: ahora usa BackTerrainHeight). Falta re-habilitarlo y verificarlo.
     // El cursor 2D (Cursor_Render) no depende de esto.
 
     // ── 2. Reset hover targets ────────────────────────────────────────────────
@@ -214,22 +214,22 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     float param_2 = *(float*)&iparam_2;
     *(float*)&DAT_07feb258 = param_1 * _DAT_005524f0;
     *(float*)&DAT_07feb25c = param_2 * _DAT_005524f0;
-    DAT_07eab1ec = param_4 * 0x100 + param_3;
-    DAT_07eab1f0 = DAT_07eab1ec + param_6;
-    *(float*)&DAT_07feb260 = (float)DAT_080cb2cc[DAT_07eab1ec];
+    TerrainIndex1 = param_4 * 0x100 + param_3;
+    TerrainIndex2 = TerrainIndex1 + param_6;
+    *(float*)&DAT_07feb260 = (float)BackTerrainHeight[TerrainIndex1];
     _DAT_07feb264 = *(float*)&DAT_07feb258 + _DAT_005524f0;
-    DAT_07eab1f8 = (param_4 + param_6) * 0x100 + param_3;
-    DAT_07eab1f4 = param_6 + DAT_07eab1f8;
-    _DAT_07feb26c = (float)DAT_080cb2cc[DAT_07eab1f0];
+    TerrainIndex4 = (param_4 + param_6) * 0x100 + param_3;
+    TerrainIndex3 = param_6 + TerrainIndex4;
+    _DAT_07feb26c = (float)BackTerrainHeight[TerrainIndex2];
     _DAT_07feb274 = *(float*)&DAT_07feb25c + _DAT_005524f0;
-    _DAT_07feb278 = (float)DAT_080cb2cc[DAT_07eab1f4];
-    _DAT_07feb284 = (float)DAT_080cb2cc[DAT_07eab1f8];
+    _DAT_07feb278 = (float)BackTerrainHeight[TerrainIndex3];
+    _DAT_07feb284 = (float)BackTerrainHeight[TerrainIndex4];
     _DAT_07feb268 = *(float*)&DAT_07feb25c;
     _DAT_07feb270 = _DAT_07feb264;
     _DAT_07feb27c = *(float*)&DAT_07feb258;
     _DAT_07feb280 = _DAT_07feb274;
     if (param_7 == 0) {
-        if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 8) != 8)
+        if (((unsigned char)DAT_0838bc70[TerrainIndex1] & 8) != 8)
             RenderTerrainFace(param_1, param_2, param_3, param_4, param_5);   // RenderTerrainFace(xf,yf,xi,yi,lodf)
         return 0;
     }
@@ -245,7 +245,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
             float* tgt = (float*)&DAT_083a4110_arr[0];
         }
     }
-    if (DAT_07e11d30 != 5) {
+    if (EditFlag != 5) {
         GL_SetAlphaTest('\0');
         BufferedDraw::Color3f(0.0f, 0.0f, 0.0f);
         BufferedDraw::Begin(BufferedDraw::Primitive::LineStrip);
@@ -270,16 +270,16 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
         cVar1 = (char)uVar2;
     }
     if (cVar1 == '\x01') {
-        *(float*)&DAT_080ab288 = param_1;
+        *(float*)&SelectXF = param_1;
         *(float*)&DAT_080ab28c = param_2;
-        DAT_07eab1fc = 1;
+        SelectFlag = 1;
     }
-    if (DAT_07e11d30 == 3) {
+    if (EditFlag == 3) {
         bool draw = false;
         if (DAT_07e11d44 == 0) {
-            if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 4) == 4) draw = true;
+            if (((unsigned char)DAT_0838bc70[TerrainIndex1] & 4) == 4) draw = true;
         } else if (DAT_07e11d44 == 2) {
-            if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 1) == 1) draw = true;
+            if (((unsigned char)DAT_0838bc70[TerrainIndex1] & 1) == 1) draw = true;
         }
         if (draw) {
             GL_DisableDepthTest();
@@ -582,7 +582,7 @@ char __cdecl Party_HPBar_HoverCheck(void)
             // [HashTable obfuscation block skipped — anti-tamper, not game logic]
 
             // Get entity stat ID for this party slot
-            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill + 0x57 + (char*)DAT_07cf1ff4);
+            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill + 0x57 + (char*)CharacterAttribute);
 
             // Check if entity type is a hoverable icon (0x1a/0x1b/0x1c/0xf/0x10)
             UINT pVal = (UINT)(uintptr_t)puVar12;

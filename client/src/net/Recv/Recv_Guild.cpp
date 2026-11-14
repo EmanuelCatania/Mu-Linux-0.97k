@@ -282,8 +282,8 @@ void NetRecv_56(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (result == 1) {
         GuildCreator_CloseFromResult();
         PlayBuffer(28, 0, 0);
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
     } else if (result < _countof(textIndex) && textIndex[result] >= 0) {
         UIChatLogWindow_AddText(nullptr, GlobalText[textIndex[result]], 2);
     }
@@ -297,10 +297,10 @@ void NetRecv_50(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // clave y después abre el diálogo 119; la respuesta es C1:51, no el
     // C1:41 de party. Mantener este estado aislado de los pedidos de party.
     if (Size < 5) return;
-    DAT_07eaa0d8 = (DWORD)((Msg[3] << 8) | Msg[4]);
+    GuildPlayerKey = (DWORD)((Msg[3] << 8) | Msg[4]);
     SetErrorMessage(119);
     NetLog("NET: -> 0x50 GuildRequest inviter=%u",
-           (unsigned)DAT_07eaa0d8);
+           (unsigned)GuildPlayerKey);
 }
 
 // 0x51

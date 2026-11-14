@@ -89,11 +89,10 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 #define dword_5826D18      BuyCost
 
 // CheckInventory: aliasa el puntero al ITEM del slot bajo el mouse que usa Scene_MapTick
-// to dispatch RenderItemInfo (tooltip). El símbolo es `DAT_07eaa160` (Scene_MapTick
+// to dispatch RenderItemInfo (tooltip). El símbolo es `CheckInventory` (Scene_MapTick
 // lo pasa como 3er arg a RenderItemInfo), no `dword_7E11D24`, que es estado del
 // input de texto (sub_494520).
-extern uintptr_t DAT_07eaa160;                     // IDA `CheckInventory`
-#define CheckInventory     DAT_07eaa160
+extern uintptr_t CheckInventory;                     // IDA `CheckInventory`
 
 // Tabla de hotkeys en dword_559C60[3] (Q/W/E) — los globals ya están declarados como
 // `int` in globals.h.
@@ -375,9 +374,9 @@ static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
 
     // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
     RenderTerrain('\x01');                    // RenderTerrain(true): arma el rayo
-    const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
+    const int gridX = (int)*(float*)&SelectXF;   // SelectXF
     const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
-    if (!RenderTerrainTile(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+    if (!RenderTerrainTile(*(int*)&SelectXF, *(int*)&DAT_080ab28c,
                       gridX, gridY, 1.0f, 1, 1))
         return false;
     *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
@@ -409,7 +408,7 @@ void RestorePickedItemToSource(void)
     memset(pPickedItem, 0, 0x44);
     dword_7EA9800 = 0;
     DAT_07ea5b18  = 0xFFFFFFFFu;
-    DAT_07eaa165  = 0;
+    EquipmentItem  = 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -599,19 +598,19 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
     // llama desde el RENDER, despues del marcado del drop, y borraria esas marcas.
 
     if ((int)EnableUse > 0)         { return; }
-    // DAT_07eaa165 es el guard "item-move en vuelo": se setea al mandar el 0x24 y
+    // EquipmentItem es el guard "item-move en vuelo": se setea al mandar el 0x24 y
     // sólo lo limpia la RESPUESTA del server (ItemMove_ClearPickedState).
     // Desviación: timeout de seguridad, si lleva >2 s seteado se libera (si no, un
     // move perdido bloquearía el inventario/baúl para siempre).
-    if (DAT_07eaa165 != 0) {
+    if (EquipmentItem != 0) {
         static DWORD s_guardSince = 0;
         DWORD now = Platform::GetTimer().Ticks();
         if (s_guardSince == 0) s_guardSince = now;
         else if (now - s_guardSince > 2000) {
             s_guardSince = 0;
-            DAT_07eaa165 = 0;
+            EquipmentItem = 0;
         }
-        if (DAT_07eaa165 != 0) {
+        if (EquipmentItem != 0) {
             return;
         }
     } else {
@@ -930,7 +929,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     (useType >= 400 && useType <= 403))
                 {
                     // Class/level/stat requirement gate (per IDA L1278-1283).
-                    BYTE* CA = (BYTE*)DAT_07cf1ff4;
+                    BYTE* CA = (BYTE*)CharacterAttribute;
                     if (CA &&
                         (*(WORD*)(CA + 14) < attr[type].RequireLevel ||
                          *(WORD*)(CA + 26) < ((WORD*)rowSlot)[16]   ||
@@ -962,7 +961,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
 
                 // ── Item 431 (Pet egg) — open ShowCheckBox dialog ─────────
                 if (useType == 431) {
-                    BYTE* CA = (BYTE*)DAT_07cf1ff4;
+                    BYTE* CA = (BYTE*)CharacterAttribute;
                     if (CA && *(WORD*)(CA + 14) < 10) {
                         // Por debajo de nivel 10 — muestra el mensaje "todavía no podés usar esto"
                         CreateOkMessageBox(GlobalText[749]);
@@ -1008,7 +1007,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                             (int)(DAT_07eaa0cc + 50),
                             &OffsetWarehouseItems[0],
                             8, 15);
-                    } else if (DAT_07eaa165 == 0) {
+                    } else if (EquipmentItem == 0) {
                         // DESVIACION (DLL RightClickMove.cpp CheckEquipItem):
                         // sin ventana abierta, el item va a su casillero.
                         const int target = RightClickMove_FindEquipSlot((const ITEM*)pPickedItem);
@@ -1018,7 +1017,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                             UI_Main(abs, inv_base, grid_w);
                             CheckInventory = 0;
                             DAT_07e11e78 = (DWORD)target;
-                            DAT_07eaa165 = 1;                        // EquipmentItem
+                            EquipmentItem = 1;                        // EquipmentItem
                             g_ItemMoveSourcePool = &OffsetInventoryItems[0];
                             g_ItemMoveTargetPool = &OffsetInventoryItems[0];
                             SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
@@ -1163,7 +1162,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     // (IDA L200-217). Con ChaosMixOpened, refresca MixType según el contenido de la grilla.
     // Este bloque no depende del item levantado — corre en cada tick.
     extern char ChaosMixOpened;        // ChaosMixOpened
-    extern DWORD DAT_07eaa140;       // MixState
+    extern DWORD MixState;       // MixState
     if (ChaosMixOpened != 0) {
         // IDA 004DF410: la receta se deriva de la Chaos Box en cada tick. En
         // el cliente original el tipo 1 podía quedar reservado a variantes de
@@ -1175,7 +1174,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         gChaosMixRates.Update((int)MixType, (const ITEM*)OffsetMixItems);
     }
 
-    if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
+    if (EquipmentItem != 0) return;   // EquipmentItem in-flight
 
     // ── Respuestas de los diálogos de venta, suelo y confirmación de Trade ───
     extern DWORD DAT_07eaa13c;       // estado activo (1=venta, 2=suelo, 3=Trade)
@@ -1204,7 +1203,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // Machine (ChaosMix_HitTest, unico writer de dword_7EAA13C = 2).  El
             // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
             // se agrega el tipo de receta reconocido localmente.
-            DAT_07eaa140 = 1;
+            MixState = 1;
             Net_SendChaosBoxMix((BYTE)MixType);
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
@@ -1244,10 +1243,10 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     // Trade grid (8x4, origin = TradeStart + 15,270) if trade open
     unsigned int dropTrade = 0;
     if (TradeOpened != 0) {
-        extern DWORD DAT_07ea5290, DAT_07ea528c;   // TradeInventoryStartX/Y
+        extern DWORD TradeInventoryStartX, TradeInventoryStartY;   // TradeInventoryStartX/Y
         dropTrade = CallDropItem((int)a1,
-            (int)(DAT_07ea5290 + 15),
-            (int)(DAT_07ea528c + 270),
+            (int)(TradeInventoryStartX + 15),
+            (int)(TradeInventoryStartY + 270),
             &OffsetTradeItems[0], 8, 4, 1);
     }
 
@@ -1262,7 +1261,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
 
     // Grilla de mezcla del caos (8x4) si está abierta y la mezcla no se está procesando
     unsigned int dropMix = 0;
-    if (ChaosMixOpened != 0 && DAT_07eaa140 != 1) {
+    if (ChaosMixOpened != 0 && MixState != 1) {
         dropMix = CallDropItem((int)a1,
             (int)(DAT_07eaa0c8 + 15),
             (int)(DAT_07eaa0cc + 110),
@@ -1294,8 +1293,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             (int)MouseY <  (int)DAT_07eaa0cc + 450)
         {
             MouseLButtonPush = 0;
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
             RestorePickedItemToSource();
             return;
         }
@@ -1315,10 +1314,10 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         }
 
         MouseLButtonPush = 0;
-        // NB: MouseUpdateTime (DAT_07e11d28) and MouseUpdateTimeMax
-        // (DAT_00559bec) se resetea para hacer debounce de la UI en el frame siguiente.
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        // NB: MouseUpdateTime and MouseUpdateTimeMax
+        // (MouseUpdateTimeMax) se resetea para hacer debounce de la UI en el frame siguiente.
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
 
         if (!dropMain && !dropTrade && !dropWH && !dropMix) {
             short pickType = *(short*)pPickedItem;

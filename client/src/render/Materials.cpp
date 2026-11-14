@@ -23,8 +23,8 @@ template<class T> void Cached(Switch value,T& cache,Gfx::Cap cap) {
 void DepthWrite(Switch value) {
     if(value==Switch::Keep)return;
     const bool next=value==Switch::On;
-    if((DAT_083a42e8!=0)==next)return;
-    DAT_083a42e8=next?1:0;Gfx::DepthMask(next);
+    if((DepthMaskEnable!=0)==next)return;
+    DepthMaskEnable=next?1:0;Gfx::DepthMask(next);
 }
 }
 bool Enabled(){return enabled;}
@@ -52,12 +52,12 @@ bool Apply(const Material& m) {
             }
         }
     }
-    Cached(twoSidedDepth?Switch::Off:m.cull,DAT_083a411c,Gfx::Cap::CullFace);DepthWrite(m.depthWrite);
-    Cached(m.alphaTest,DAT_083a411d,Gfx::Cap::AlphaTest);Cached(m.texture,DAT_083a4125,Gfx::Cap::Texture2D);
-    Cached(m.depthTest,DAT_083a411e,Gfx::Cap::DepthTest);
+    Cached(twoSidedDepth?Switch::Off:m.cull,CullFaceEnable,Gfx::Cap::CullFace);DepthWrite(m.depthWrite);
+    Cached(m.alphaTest,AlphaTestEnable,Gfx::Cap::AlphaTest);Cached(m.texture,TextureEnable,Gfx::Cap::Texture2D);
+    Cached(m.depthTest,DepthTestEnable,Gfx::Cap::DepthTest);
     // FogEnable expresa política de escena, no un caché del estado real.
     // Si vale cero, los helpers históricos NO cambian la niebla.
-    if(DAT_083a42ea&&m.fog!=Fog::Keep)Gfx::SetEnabled(Gfx::Cap::Fog,m.fog==Fog::Scene);
+    if(FogEnable&&m.fog!=Fog::Keep)Gfx::SetEnabled(Gfx::Cap::Fog,m.fog==Fog::Scene);
     return true;
 }
 bool ApplySequence(const MaterialSequence& sequence){
@@ -70,13 +70,13 @@ TwoSidedScope::TwoSidedScope(bool twoSided){
     overrideCull=true;previousCull=Gfx::IsEnabled(Gfx::Cap::CullFace);++twoSidedDepth;
     // Corregir también una entrada con caché incoherente; la propiedad de
     // dos caras es explícita y se mantiene en los materiales interiores.
-    Gfx::Disable(Gfx::Cap::CullFace);DAT_083a411c=0;
+    Gfx::Disable(Gfx::Cap::CullFace);CullFaceEnable=0;
 }
 TwoSidedScope::~TwoSidedScope(){
     if(!overrideCull)return;
     --twoSidedDepth;const bool restore=twoSidedDepth?false:previousCull;
     Gfx::SetEnabled(Gfx::Cap::CullFace,restore);
-    DAT_083a411c=restore?1:0;
+    CullFaceEnable=restore?1:0;
 }
 bool BeginText(){
     if(!enabled)return false;
@@ -126,8 +126,8 @@ bool BeginView(const ViewState& s){
     Gfx::SetEnabled(Gfx::Cap::AlphaTest,s.alphaTest);Gfx::SetEnabled(Gfx::Cap::Texture2D,s.texture);
     Gfx::SetEnabled(Gfx::Cap::DepthTest,s.depthTest);Gfx::SetEnabled(Gfx::Cap::CullFace,s.cull);
     Gfx::DepthMask(s.depthWrite);
-    DAT_083a411d=s.alphaTest?1:0;DAT_083a4125=s.texture?1:0;
-    DAT_083a411e=s.depthTest?1:0;DAT_083a411c=s.cull?1:0;DAT_083a42e8=s.depthWrite?1:0;
+    AlphaTestEnable=s.alphaTest?1:0;TextureEnable=s.texture?1:0;
+    DepthTestEnable=s.depthTest?1:0;CullFaceEnable=s.cull?1:0;DepthMaskEnable=s.depthWrite?1:0;
     // Materials::Compare comparte el orden de Gfx::Compare.
     Gfx::DepthFunc(static_cast<Gfx::Compare>(s.depthFunction));
     Gfx::AlphaFunc(static_cast<Gfx::Compare>(s.alphaFunction),s.alphaReference);

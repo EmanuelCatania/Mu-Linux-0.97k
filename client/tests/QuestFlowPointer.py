@@ -56,7 +56,7 @@ std::uint64_t RunFlow(BYTE* memory,BYTE* packetMemory,BYTE* heroMemory,BYTE* att
         Put(record+336,moneyValues[(trial/25)%6]); Put(record+340,static_cast<short>(trial*40503u));
         Put(attributes+14,levels[(trial/3)%3]); Put(machine+0x548,moneyValues[trial%6]);
         hero[444]=static_cast<BYTE>(trial%4); attributes[11]=static_cast<BYTE>((trial*73)%4);
-        Hero=trial%2?reinterpret_cast<char*>(hero):nullptr; DAT_07cf1ff4=attributes; DAT_07cf1ffc=machine;
+        Hero=trial%2?reinterpret_cast<char*>(hero):nullptr; CharacterAttribute=attributes; DAT_07cf1ffc=machine;
         GoldenArcherOpenType=trial*40503u; InventoryOpened=static_cast<BYTE>(trial); CharacterOpened=static_cast<BYTE>(trial*73);
         const DWORD oldEvent=GoldenArcherOpenType; const auto oldInventory=InventoryOpened,oldCharacter=CharacterOpened;
         stage=0; inventoryCalls=0; missing=(trial/4)%2;
@@ -122,11 +122,11 @@ def harness(revision=None):
     prefix += "inline CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }\n"
     prefix += "inline CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }\n"
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    for name in ("g_csQuest", "Hero", "DAT_07cf1ff4", "DAT_07cf1ffc", "GoldenArcherOpenType", "InventoryOpened", "CharacterOpened"):
+    for name in ("g_csQuest", "Hero", "CharacterAttribute", "DAT_07cf1ffc", "GoldenArcherOpenType", "InventoryOpened", "CharacterOpened"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
     aliases = header + read_source("src/structs.h", revision)
-    for name in ("DAT_07abf5d8", "CharacterAttribute", "_g_bEventChipDialogEnable"):
+    for name in ("DAT_07abf5d8", "_g_bEventChipDialogEnable"):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", aliases, re.M).group() + "\n"
     prefix += SERVICES
     scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)

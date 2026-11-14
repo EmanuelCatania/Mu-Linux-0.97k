@@ -32,7 +32,7 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
         return;
 
     BYTE* const characterMachine = (BYTE*)(uintptr_t)DAT_07cf1ffc;
-    BYTE* const characterAttribute = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE* const characterAttribute = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!characterMachine || !characterAttribute)
         return;
 
@@ -48,7 +48,7 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     // arranca con `if (!EquipmentItem)`), pero UI_Main ya lo sacó de la
     // grilla, así que el pack queda invisible en el cliente y ocupado en el
     // server hasta reentrar.  Visto en las pruebas de 0.97.50.
-    if (DAT_07eaa165 != 0)   // IDA: EquipmentItem (0x07EAA165)
+    if (EquipmentItem != 0)   // IDA: EquipmentItem (0x07EAA165)
         return;
 
     // IDA sub_48B680 L120-146.  Los slots estaban invertidos:
@@ -96,7 +96,7 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     DAT_07e11e78 = (DWORD)targetEquipmentSlot;
     // IDA SendRequestEquipmentItem (0x43C250): `EquipmentItem = 1` antes de
     // enviar.  El port lo pone en cada call site.
-    DAT_07eaa165 = 1;
+    EquipmentItem = 1;
     SendRequestEquipmentItem(0, encodedSourceSlot, (ITEM*)DAT_07e91350,
                                   0, targetEquipmentSlot);
     UIChatLogWindow_AddText(chatId, GlobalText[250], 1);

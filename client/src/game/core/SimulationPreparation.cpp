@@ -63,7 +63,7 @@ void CaptureCamera() {
     camera.width = OpenglWindowWidth; camera.height = OpenglWindowHeight;
     camera.x = OpenglWindowX; camera.y = OpenglWindowY;
     camera.projection[0] = _DAT_083a42a4; camera.projection[1] = _DAT_083a42a8;
-    camera.projectionBits[0] = DAT_083a42a4; camera.projectionBits[1] = DAT_083a42a8;
+    camera.projectionBits[0] = PerspectiveX; camera.projectionBits[1] = PerspectiveY;
     camera.centerYFlip = ScreenCenterYFlip;
 }
 
@@ -171,9 +171,9 @@ void PrepareCharacter(CHARACTER &c) {
 }
 
 bool SceneReady() {
-    if (SceneFlag == 2) return DAT_083a7c49 != 0;
+    if (SceneFlag == 2) return InitLogIn != 0;
     if (SceneFlag == 4) return CharSelectSceneInitialized != 0 && DAT_05826cb0 > 50;
-    return SceneFlag == 5 && DAT_083a7c10 != 0 && DAT_07e11d1c <= 30;
+    return SceneFlag == 5 && EnableMainRender != 0 && LoadingWorld <= 30;
 }
 }
 
@@ -220,14 +220,14 @@ void Simulation_PrepareStep()
     }
     // El panel de creación dibuja otra CHARACTER fuera del pool de 400.
     if (SceneFlag == 4 && DAT_083a7c14 > 26 && DAT_083a7c14 < 29 && DAT_005616a4 >= 0) {
-        CHARACTER &preview = *(CHARACTER *)DAT_07abf050;
+        CHARACTER &preview = *(CHARACTER *)CharacterView;
         preview.Object.Angle[0] = 0.0f;
         preview.Object.Angle[1] = 5.0f;
         preview.Object.Scale = 1.0f;
         PrepareCharacter(preview);
     }
     // IDA: la pasada de picking del editor sigue a los personajes.
-    if (SceneFlag == 5 && DAT_07e11d30 != 0) RenderTerrain(1);
+    if (SceneFlag == 5 && EditFlag != 0) RenderTerrain(1);
     EffectPool_TickRenderState();
     memcpy(DAT_05826e18, quaternions, sizeof(quaternions));
     memcpy(g_BoneScratch, bonesScratch, sizeof(bonesScratch));
@@ -252,7 +252,7 @@ void Simulation_RestorePickingCamera()
     OpenglWindowWidth = camera.width; OpenglWindowHeight = camera.height;
     OpenglWindowX = camera.x; OpenglWindowY = camera.y;
     _DAT_083a42a4 = camera.projection[0]; _DAT_083a42a8 = camera.projection[1];
-    DAT_083a42a4 = camera.projectionBits[0]; DAT_083a42a8 = camera.projectionBits[1];
+    PerspectiveX = camera.projectionBits[0]; PerspectiveY = camera.projectionBits[1];
     ScreenCenterYFlip = camera.centerYFlip;
 }
 

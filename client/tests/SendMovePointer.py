@@ -15,7 +15,7 @@ struct CHARACTER{BYTE beforeMovement[0x2ec];BYTE Movement;BYTE beforeTarget[0x30
 #pragma pack(pop)
 static_assert(sizeof(CHARACTER)==916&&offsetof(CHARACTER,PathNum)==0x356&&offsetof(CHARACTER,Movement)==0x2ec&&offsetof(CHARACTER,TargetX)==0x306);
 CHARACTER* AsCharacter(uintptr_t p){return reinterpret_cast<CHARACTER*>(p);}CHARACTER* AsCharacter(void* p){return static_cast<CHARACTER*>(p);}
-int DAT_00559bec,ErrorMessage,closed;std::vector<BYTE> sent;
+int MouseUpdateTimeMax,ErrorMessage,closed;std::vector<BYTE> sent;
 void SendMove_CloseWindows97k(){++closed;}
 static bool SendMove_ChaosBoxBlocks97k(const CHARACTER*){return false;}
 struct CNetwork{static BYTE XorKey[32];void SendRaw(const char* bytes,int length){Require(sent.empty());sent.assign(bytes,bytes+length);}}gNetwork;
@@ -30,8 +30,8 @@ std::uint64_t Run(BYTE* actorMemory,BYTE* objectMemory){
   const int directions[9][2]={{-1,-1},{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{0,0}};
   for(int i=0;i<15;++i){actor[0x357+i]=BYTE(40+(i+1)*directions[profile][0]);actor[0x366+i]=BYTE(40+(i+1)*directions[profile][1]);}
   BYTE before[960],objectBefore[480];std::memcpy(before,actorMemory,960);std::memcpy(objectBefore,objectMemory,480);
-  DAT_00559bec=987;ErrorMessage=session;closed=0;sent.clear();Invoke(actor,object);
-  int expectedDelay=blocked?987:(count<3?0:(count==3?5:int(count*3+4)));Require(DAT_00559bec==expectedDelay);
+  MouseUpdateTimeMax=987;ErrorMessage=session;closed=0;sent.clear();Invoke(actor,object);
+  int expectedDelay=blocked?987:(count<3?0:(count==3?5:int(count*3+4)));Require(MouseUpdateTimeMax==expectedDelay);
   if(blocked||count==0){Require(sent.empty()&&closed==0);}else{
    unsigned n=count>14?14:count;Require(sent.size()==5+((n>>1)+1)&&closed==1);std::vector<BYTE> packet=sent;
    for(int i=int(packet.size())-1;i>=3;--i)packet[i]^=packet[i-1]^CNetwork::XorKey[i&31];
@@ -40,7 +40,7 @@ std::uint64_t Run(BYTE* actorMemory,BYTE* objectMemory){
    Require(packet==wanted);if(session!=113)before[16+0x2ec]=1;
   }
   Require(std::memcmp(actorMemory,before,960)==0&&std::memcmp(objectMemory,objectBefore,480)==0);
-  for(BYTE b:sent){hash^=b;hash*=1099511628211ull;}hash^=unsigned(DAT_00559bec);hash*=1099511628211ull;hash^=closed;hash*=1099511628211ull;hash^=actor[0x2ec];hash*=1099511628211ull;++cases;
+  for(BYTE b:sent){hash^=b;hash*=1099511628211ull;}hash^=unsigned(MouseUpdateTimeMax);hash*=1099511628211ull;hash^=closed;hash*=1099511628211ull;hash^=actor[0x2ec];hash*=1099511628211ull;++cases;
  }Require(cases==9216);return hash;
 }
 int main(){for(int i=0;i<32;++i)CNetwork::XorKey[i]=BYTE(i*53+19);auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* object=static_cast<BYTE*>(Reserve(0x28000000u));Require(low&&object);auto expected=Run(low,object);

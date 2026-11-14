@@ -23,7 +23,7 @@
 //     OpenJPG("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
 //     OpenJPG("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
 //
-//     DAT_083a42ea = 0;
+//     FogEnable = 0;
 //     GL_BeginViewport(0, 0, 0x280, 0x1e0);       // Viewport_Set(0,0,640,480)
 //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //     GL_Begin2D();                           // GL_SetupOrtho2D()
@@ -64,7 +64,7 @@
 //
 //     // PATH BYPASS: ir directo a InGame
 //     SceneFlag = 5;   // SceneFlag = InGame
-//     DAT_083a7c10 = 1;   // render enable flag
+//     EnableMainRender = 1;   // render enable flag
 //     Scene_LoadGameAssets() (IDA: OpenBasicData);
 //     OpenWorld();      // World_Load()
 //     HeroKey = 0;
@@ -91,7 +91,7 @@
 //   DAT_083a7cd0  — array reseteado al inicio (stride 0x38, hasta 0x83bba00)
 //   DAT_083a410c  — bypass flag (0=normal, 1=bypass a InGame)
 //   SceneFlag  — SceneFlag
-//   DAT_083a7c10  — render enable flag
+//   EnableMainRender  — render enable flag
 //   HeroKey  — counter reset
 //   DAT_0056156c  — screen_width (para posicionamiento centrado)
 //   DAT_005617a0  — debug string (mostrado si bypass activo)
@@ -155,7 +155,7 @@ void __cdecl Scene_Intro(HDC param_1)
     OpenJPG(s_Local_Webzenlogo_jpg_00561774, 0xc, 0x2600, 0x2900, 0, '\x01');
     OpenJPG(s_Local_Everyone_jpg_0056178c,   0xd, 0x2600, 0x2900, 0, '\x01');
 
-    DAT_083a42ea = 0;
+    FogEnable = 0;
     // Nota: el iTitle.wav (id 4) lo dispara el original con PlayBuffer(4,...)
     // en Game_SceneUpdate al entrar a Login — ruteado via PlayBuffer +
     // kUISounds mapping en Sound_DS3D.cpp. NO tocar aquí (sonaría 2x).
@@ -206,7 +206,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Bypass/debug path → skip login, go straight to InGame
     SceneFlag = 5;    // SceneFlag = InGame
-    DAT_083a7c10 = 1;
+    EnableMainRender = 1;
     Scene_LoadGameAssets();
     OpenWorld();      // World_Load
     HeroKey = 0;

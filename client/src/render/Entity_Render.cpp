@@ -88,7 +88,7 @@
 //     if sVar6 == 0x35f:
 //       n = ftol(sqrt(cantidad de Zen) / 2)  acotado a [3, 80]
 //       for i in 1..n:
-//         // desplazamiento en círculo tomado de RandomTable (DAT_055c9e58)
+//         // desplazamiento en círculo tomado de RandomTable
 //         local_60 = {random_angle, 0, 0}
 //         local_3c = {random_radius, 0, 0}
 //         Matrix_BuildFromEuler(local_60, local_3c+3) → Matrix_FromEuler
@@ -145,7 +145,7 @@
 //   Camera_ProjectWorldToScreen  → World_ToScreen(pos[3], out_x, out_y)
 //   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
-//   DAT_055c9e58  → RandomTable (100 ints; reparte en círculo las monedas del Zen)
+//   RandomTable  (100 ints; reparte en círculo las monedas del Zen)
 //   WorldTime  → frame oscillation counter (for Z bob in sub-state 10)
 //   DAT_0055284c  → Z bob amplitude constant
 //   DAT_00552488  → Z oscillation scale factor

@@ -10,9 +10,9 @@
 // switch blend func, cull face, depth mask, alpha test, texture-2D, and fog.
 //
 // Sub-functions (per 5.2 source helpers EnableCullFace/DisableCullFace/DepthMask):
-//   GL_EnableDepthWrites — EnableDepthMask   (glDepthMask(GL_TRUE),  cache DAT_083a42e8)
+//   GL_EnableDepthWrites — EnableDepthMask   (glDepthMask(GL_TRUE),  cache DepthMaskEnable)
 //   GL_DisableDepthWrites — DisableDepthMask  (glDepthMask(GL_FALSE))
-//   GL_EnableCullFace — EnableCullFace    (glEnable (GL_CULL_FACE=0xb44), cache DAT_083a411c)
+//   GL_EnableCullFace — EnableCullFace    (glEnable (GL_CULL_FACE=0xb44), cache CullFaceEnable)
 //   GL_DisableCullFace — DisableCullFace   (glDisable(GL_CULL_FACE))
 // 2D blend setters (types 2/3/4) call Disable*; 3D/reset setters (type 1 / reset)
 // call Enable*, mirroring the Main 5.2 pattern where every blend-mode wrapper
@@ -20,9 +20,9 @@
 //
 // Globals:
 //   DAT_083a412c  — current cached blend mode (int)
-//   DAT_083a411d  — alpha-test enabled cache
-//   DAT_083a4125  — texture-2D enabled cache
-//   DAT_083a42ea  — fog enabled cache
+//   AlphaTestEnable  — alpha-test enabled cache
+//   TextureEnable  — texture-2D enabled cache
+//   FogEnable  — fog enabled cache
 //
 // OpenGL enum constants:
 //   0xbe2 = GL_BLEND
@@ -48,15 +48,15 @@ void GL_SetBlendAdditive(void)
   }
   GL_DisableCullFace();
   GL_DisableDepthWrites();
-  if (DAT_083a411d != '\0') {
-    DAT_083a411d = '\0';
+  if (AlphaTestEnable != '\0') {
+    AlphaTestEnable = '\0';
     Gfx::Disable(Gfx::Cap::AlphaTest);
   }
-  if (DAT_083a4125 == '\0') {
-    DAT_083a4125 = '\x01';
+  if (TextureEnable == '\0') {
+    TextureEnable = '\x01';
     Gfx::Enable(Gfx::Cap::Texture2D);
   }
-  if (DAT_083a42ea != '\0') {
+  if (FogEnable != '\0') {
     Gfx::Disable(Gfx::Cap::Fog);
   }
   return;
@@ -74,15 +74,15 @@ void GL_SetBlendSrcAlpha(void)
   }
   GL_DisableCullFace();
   GL_DisableDepthWrites();
-  if (DAT_083a411d != '\0') {
-    DAT_083a411d = '\0';
+  if (AlphaTestEnable != '\0') {
+    AlphaTestEnable = '\0';
     Gfx::Disable(Gfx::Cap::AlphaTest);
   }
-  if (DAT_083a4125 == '\0') {
-    DAT_083a4125 = '\x01';
+  if (TextureEnable == '\0') {
+    TextureEnable = '\x01';
     Gfx::Enable(Gfx::Cap::Texture2D);
   }
-  if (DAT_083a42ea != '\0') {
+  if (FogEnable != '\0') {
     Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
@@ -140,15 +140,15 @@ void __cdecl GL_SetBlendSrcOver(char param_1)
   if (param_1 != '\0') {
     GL_EnableDepthWrites();
   }
-  if (DAT_083a411d == '\0') {
-    DAT_083a411d = '\x01';
+  if (AlphaTestEnable == '\0') {
+    AlphaTestEnable = '\x01';
     Gfx::Enable(Gfx::Cap::AlphaTest);
   }
-  if (DAT_083a4125 == '\0') {
-    DAT_083a4125 = '\x01';
+  if (TextureEnable == '\0') {
+    TextureEnable = '\x01';
     Gfx::Enable(Gfx::Cap::Texture2D);
   }
-  if (DAT_083a42ea != '\0') {
+  if (FogEnable != '\0') {
     Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
@@ -248,15 +248,15 @@ void GL_ResetState(void)
   }
   GL_EnableCullFace();
   GL_EnableDepthWrites();
-  if (DAT_083a411d != '\0') {
-    DAT_083a411d = '\0';
+  if (AlphaTestEnable != '\0') {
+    AlphaTestEnable = '\0';
     Gfx::Disable(Gfx::Cap::AlphaTest);
   }
-  if (DAT_083a4125 == '\0') {
-    DAT_083a4125 = '\x01';
+  if (TextureEnable == '\0') {
+    TextureEnable = '\x01';
     Gfx::Enable(Gfx::Cap::Texture2D);
   }
-  if (DAT_083a42ea != '\0') {
+  if (FogEnable != '\0') {
     Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
@@ -274,15 +274,15 @@ void GL_EnableLightMap(void) {
     }
     GL_EnableCullFace();
     GL_EnableDepthWrites();
-    if (DAT_083a411d != '\0') {
-        DAT_083a411d = '\0';
+    if (AlphaTestEnable != '\0') {
+        AlphaTestEnable = '\0';
         Gfx::Disable(Gfx::Cap::AlphaTest);  // IDA EnableLightMap 0x511890
     }
-    if (DAT_083a4125 == '\0') {
-        DAT_083a4125 = '\x01';
+    if (TextureEnable == '\0') {
+        TextureEnable = '\x01';
         Gfx::Enable(Gfx::Cap::Texture2D);
     }
-    if (DAT_083a42ea != '\0') {
+    if (FogEnable != '\0') {
         Gfx::Enable(Gfx::Cap::Fog);         // FogEnable does not enable fixed-function lighting
     }
 }

@@ -162,7 +162,7 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
                     do {
                         if ((*(reinterpret_cast<char*>(puVar12) - 3) == cVar1) ||
                             (*(reinterpret_cast<char*>(puVar12) - 3) == -1)) {
-                            ushort uVar3 = *(ushort *)((BYTE *)DAT_07cf1ff4 + 0xe);
+                            ushort uVar3 = *(ushort *)((BYTE *)CharacterAttribute + 0xe);
                             if (*puVar12 != 0 && uVar3 < *puVar12) {
                                 *(short *)(quest + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
                                 *(quest + 0x1c882) = 5;
@@ -763,8 +763,8 @@ int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5)
 // cada string de nombre en SkillAttribute[index*300 + 4].
 void __cdecl SkillAttribute_LoadNames(const char *param_1)
 {
-    DAT_07d7806c = (FILE *)Platform::GetFileSystem().Open(param_1, (const char *)DAT_005580ac);
-    if (DAT_07d7806c == NULL) return;
+    SMDFile_0 = (FILE *)Platform::GetFileSystem().Open(param_1, (const char *)DAT_005580ac);
+    if (SMDFile_0 == NULL) return;
 
     int iVar2;
     while ((iVar2 = GetToken()) != 2) {
@@ -1138,7 +1138,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
         (char *)&DAT_083a44c4, 7, 0x26);
 
     // Zero the name display buffer (0x5f DWORD-slots = 0x17c bytes)
-    int *puVar8 = (int *)DAT_083a4348;
+    int *puVar8 = (int *)g_lpszDialogAnswer;
     for (int i = 0x5f; i != 0; i--)
         *puVar8++ = 0;
 
@@ -1148,7 +1148,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
     int charCount = dlg->m_iNumAnswer;
     if (charCount > 10) charCount = 10;   // la tabla tiene 10 slots de respuesta
     if (charCount > 0) {
-        char *pbVar6 = (char *)DAT_083a4348;
+        char *pbVar6 = (char *)g_lpszDialogAnswer;
         int iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
@@ -1156,7 +1156,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
                       dlg->m_lpszAnswer[iVar7]);
             int iVar2 = SeparateTextIntoLines(local_48, pbVar6, 1, 0x26);
             if (iVar2 < 0) {
-                ((char *)DAT_083a4348)[(iVar2 + iVar7) * 0x26] = 0;
+                ((char *)g_lpszDialogAnswer)[(iVar2 + iVar7) * 0x26] = 0;
             }
             DAT_083a7c0c = DAT_083a7c0c + 1;
             pbVar6 += 0x26;
@@ -1168,11 +1168,11 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
         // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
         // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
         Platform::TextFormat((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
-        // Copy string to DAT_083a4348
+        // Copy string to g_lpszDialogAnswer
         uint uVar4 = (uint)strlen(local_48) + 1;
         DAT_083a7c0c = 1;
         char *pbVar6 = local_48;
-        char *pbVar9 = (char *)DAT_083a4348;
+        char *pbVar9 = (char *)g_lpszDialogAnswer;
         for (uint u5 = uVar4 >> 2; u5 != 0; u5--)
         { *(int *)pbVar9 = *(int *)pbVar6; pbVar6 += 4; pbVar9 += 4; }
         for (uint u4 = uVar4 & 3; u4 != 0; u4--)
@@ -1198,8 +1198,8 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
     if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
         MouseLButtonPush = '\0';
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         CSQuest_clearQuest(param_1);
     }
     return 1;
@@ -1263,8 +1263,8 @@ void __fastcall Quest_AnswerHitTest(void *param_1)
 
     int slot = ((int)MouseY - yBase) / 0x12;
     MouseLButton = 0;
-    DAT_07e11d28 = 0;
-    DAT_00559bec = 6;
+    MouseUpdateTime = 0;
+    MouseUpdateTimeMax = 6;
 
     if (slot < 0) {
         MouseLButtonPush = 0;
@@ -1298,13 +1298,13 @@ void __fastcall Quest_AnswerHitTest(void *param_1)
         Quest_SendState(param_1);
     } else if (slotType == 2) {
         MouseLButtonPush = 0;
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         CSQuest_clearQuest(param_1);
     } else if (slotType == 3) {
         MouseLButtonPush = 0;
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         Quest_SendState(param_1);
     }
 
@@ -2191,7 +2191,7 @@ int __cdecl Stats_CalcAddStrength(short *param_1) {
 int __cdecl CalculateAttackSpeed(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    const BYTE* charAttr = static_cast<const BYTE*>(CharacterAttribute);
     if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
@@ -2283,7 +2283,7 @@ int __cdecl CalculateAttackSpeed(BYTE* param_1) {
 const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    const BYTE* charAttr = static_cast<const BYTE*>(CharacterAttribute);
     if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
@@ -2335,7 +2335,7 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
 int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    const BYTE* charAttr = static_cast<const BYTE*>(CharacterAttribute);
     if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
     unsigned short vit = *(unsigned short*)(param_1 + 22);

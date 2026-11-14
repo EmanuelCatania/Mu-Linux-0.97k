@@ -11,7 +11,7 @@ namespace {
 bool active=false;
 float fraction=1;
 int CharacterSlot(const void *owner) {
-    if (owner==DAT_07abf050) return 400;
+    if (owner==CharacterView) return 400;
     const uintptr_t offset=(uintptr_t)owner-(uintptr_t)DAT_07abf5d0;
     return DAT_07abf5d0 && offset<400*sizeof(CHARACTER) && offset%sizeof(CHARACTER)==0 ? (int)(offset/sizeof(CHARACTER)) : -1;
 }
@@ -143,7 +143,7 @@ void RenderInterpolation_Begin(int remainder) {
         CameraDistance=RenderBlend(camera.previous.distance,camera.current.distance,fraction);
     }
     for (int slot=0;slot<401;++slot) {
-        auto *c=slot==400 ? (CHARACTER *)DAT_07abf050 : DAT_07abf5d0 ? (CHARACTER *)DAT_07abf5d0+slot : nullptr;
+        auto *c=slot==400 ? (CHARACTER *)CharacterView : DAT_07abf5d0 ? (CHARACTER *)DAT_07abf5d0+slot : nullptr;
         RenderPosePair pair;
         if (!c || !RenderSnapshots_Character(slot,RenderInterpolation_MaxDisplacement,pair)) continue;
         ApplyObject(c->Object,pair);

@@ -222,8 +222,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                          *(float*)(tgtSlot + 0x18) };
         float color[3] = { 1.0f, 0.0f, 0.0f };
         CreatePoint(pos, (int)damage, color, 15.0f);
-        if (targetId == g_HeroKey && DAT_07cf1ff4) {
-            WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
+        if (targetId == g_HeroKey && CharacterAttribute) {
+            WORD* pHP = (WORD*)((BYTE*)(uintptr_t)CharacterAttribute + 28);
             if (damage < *pHP) *pHP -= damage; else *pHP = 0;
             AsCharacter(tgtSlot)->Hit = (WORD)damage;
             SyncHeroLife(Msg, Size, pHP);
@@ -232,9 +232,9 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 
     // ── Hero HP decrement ────────────────────────────────────────
-    // CharacterAttribute del héroe en DAT_07cf1ff4; HP en el offset 28 (WORD).
-    if (targetId == g_HeroKey && DAT_07cf1ff4) {
-        WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
+    // CharacterAttribute del héroe en CharacterAttribute; HP en el offset 28 (WORD).
+    if (targetId == g_HeroKey && CharacterAttribute) {
+        WORD* pHP = (WORD*)((BYTE*)(uintptr_t)CharacterAttribute + 28);
         if (damage < *pHP) *pHP -= damage;
         else *pHP = 0;
         SyncHeroLife(Msg, Size, pHP);
@@ -957,8 +957,8 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 CreatePoint(pos, (int)dmg, color, 15.0f);
             }
             // Hero damaged: decrement HP
-            if (tgtId == g_HeroKey && DAT_07cf1ff4) {
-                WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
+            if (tgtId == g_HeroKey && CharacterAttribute) {
+                WORD* pHP = (WORD*)((BYTE*)(uintptr_t)CharacterAttribute + 28);
                 if (dmg && dmg <= *pHP) *pHP -= dmg;
                 else if (dmg) *pHP = 0;
             }

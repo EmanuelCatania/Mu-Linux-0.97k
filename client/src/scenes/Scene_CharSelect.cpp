@@ -11,7 +11,7 @@
 //
 // ── GUARDS ────────────────────────────────────────────────────────────────────
 //
-//   if (CharSelectSceneInitialized == '\0') return 0; // IDA: DAT_083a7c4b
+//   if (CharSelectSceneInitialized == '\0') return 0; // IDA: InitCharacterScene
 //   if (0x32 >= DAT_05826cb0) { ... }   // timer guard → solo setup parcial
 //
 // ── BRILLO OSCILANTE ──────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@
 //       DrawText(screenX - cx/2, screenY - cy - 3, class_name, font_small)
 //       DrawText(screenX - cx/2, screenY,           "%s %d", font_normal)
 //
-// ── WARNING TEXT (DAT_083a7c4d != '\0') ──────────────────────────────────────
+// ── WARNING TEXT (m_bAccountBlockItem != '\0') ──────────────────────────────────────
 //
 //   color = 0x80ffff00 (yellow)
 //   DrawText_Centered(0x140, 0x14a, lpString_07d49c14)   // "Cannot create..."
@@ -138,9 +138,9 @@
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //
-//   CharSelectSceneInitialized (IDA: DAT_083a7c4b) — init flag (guard)
+//   CharSelectSceneInitialized (IDA: InitCharacterScene) — init flag (guard)
 //   DAT_05826cb0   — timer guard (> 0x32 para renderizar)
-//   DAT_083a42ea   — frame counter reset
+//   FogEnable   — frame counter reset
 //   WorldTime   — frame time accumulator (usado en fsin para brillo)
 //   DAT_005616ac   — selected char index (-1=ninguno)
 //   DAT_005616b0   — hovered char index (-1=ninguno)
@@ -149,7 +149,7 @@
 //   DAT_083a4110   — camera matrix output
 //   MouseX   — mouse X
 //   MouseY   — mouse Y
-//   DAT_083a7c4d   — warning flag
+//   m_bAccountBlockItem   — warning flag
 //   DAT_07abf20c   — char class byte (low byte = slot)
 //   DAT_0056156c   — screen_width
 //   DAT_005597c4   — render sub-mode flag
@@ -236,7 +236,7 @@ int Scene_CharSelect(void)
         return (uint)uVar6 << 8;
 
     if (0x32 < DAT_05826cb0) {
-        DAT_083a42ea = 0;
+        FogEnable = 0;
         DAT_07e11d6e = 0;
         // 0x3f800000 son los bits de 1.0f, no la magnitud.
         Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -430,7 +430,7 @@ int Scene_CharSelect(void)
         }
 
         // ── Warning text ──────────────────────────────────────────────────────
-        if (DAT_083a7c4d != '\0') {
+        if (m_bAccountBlockItem != '\0') {
             SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000;
             gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
             iVar9 = Platform::TextLength((LPCSTR)lpString_07d49c14);
@@ -581,7 +581,7 @@ int Scene_CharSelect(void)
                 // no los bit-patterns 0x40a00000 / 0x3f800000.
                 // Escala y ángulos del preview preparados en el paso lógico.
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
-                RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
+                RenderCharacter((undefined4 *)&CharacterView, (undefined4 *)&CharacterView, (undefined4 *)0x0);
                 GL_PopMatrixAll();
                 DAT_005597c4 = 1;
             }

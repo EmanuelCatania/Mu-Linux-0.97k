@@ -85,16 +85,16 @@ void __cdecl SendChat(char* Text) {
             // Check "/whisperblock on" command (DAT_07d3d284)
             int len1 = (int)strlen(&DAT_07d3d284);
             if (len1 > 0 && strncmp(Text, &DAT_07d3d284, len1) == 0) {
-                // `m_bBlockWhisper_1` es el GLOBAL 0x07E11DAC (= DAT_07e11dac),
+                // `m_bBlockWhisper_1` es el GLOBAL 0x07E11DAC,
                 // que ya leen Net_Process (F3 toggle) y Chat_InputTick.
-                DAT_07e11dac = 1;
+                m_bBlockWhisper_1 = 1;
                 UIChatLogWindow_AddText((const char*)&lpDefault_00583d88, &DAT_07d3d608, 1);
                 return;
             }
             // Check "/whisperblock off" command (DAT_07d3d3b0)
             int len2 = (int)strlen(&DAT_07d3d3b0);
             if (len2 > 0 && strncmp(Text, &DAT_07d3d3b0, len2) == 0) {
-                DAT_07e11dac = 0;   // mismo global que el "on" (IDA L129/L135)
+                m_bBlockWhisper_1 = 0;   // mismo global que el "on" (IDA L129/L135)
                 UIChatLogWindow_AddText((const char*)&lpDefault_00583d88, &DAT_07d3d734, 1);
                 return;
             }

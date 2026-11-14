@@ -324,7 +324,7 @@ void __cdecl ClearCharacters(int param_1) {
 void __cdecl Effect_CollisionCheck(intptr_t Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
-    const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);  // CharacterAttribute
+    const BYTE* ca = static_cast<const BYTE*>(CharacterAttribute);  // CharacterAttribute
     if (ca == 0) return;
 
     if (*(unsigned char*)(T + 132) != 0) {
@@ -508,7 +508,7 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 // Scans up to 400 entities for those within radius param_3 of world pos param_2.
 // Collects up to kMaxMultiSkillTargets entity IDs matching type/team filter (IDA: 5).
 // If any found, sends C1-0x1d packet with entity list XOR-encrypted.
-// param_1  = char data stat slot index (indexes into DAT_07cf1ff4+0x57)
+// param_1  = char data stat slot index (indexes into CharacterAttribute+0x57)
 // param_2  = float[2] world position to search from
 // param_3  = search radius
 // param_4  = zone/flag byte written into packet
@@ -517,7 +517,7 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
 {
     // 1. Read character stat byte for this slot
-    BYTE uVar19 = *(BYTE*)((char*)DAT_07cf1ff4 + 0x57 + param_1);
+    BYTE uVar19 = *(BYTE*)((char*)CharacterAttribute + 0x57 + param_1);
 
     // IDA sub_45FEC0 L157-195.  El bucle ancla en `v16 = CharactersClient + 747`
     // y todos los campos salen relativos a ese puntero:

@@ -39,7 +39,7 @@ std::uint64_t RunSpeed(BYTE* machine, BYTE* attribute) {
         std::memset(machine, 0x5a, 1412); std::memset(attribute, 0, 64);
         attribute[11] = BYTE(Input() % 256); const unsigned short dex = static_cast<unsigned short>(trial);
         std::memcpy(machine + 22, &dex, 2); machine[40] = BYTE(Input() % 256);
-        DAT_07cf1ff4 = trial % 5 == 0 ? nullptr : attribute;
+        CharacterAttribute = trial % 5 == 0 ? nullptr : attribute;
         for(int offset : {536, 604, 876, 1080, 1148}) {
             auto* item = reinterpret_cast<ITEM*>(machine + offset); std::memset(item, 0, sizeof(*item));
             item->Type = types[Input() % 12]; item->Durability = durabilities[Input() % 3]; item->WeaponSpeed = BYTE(Input());
@@ -50,7 +50,7 @@ std::uint64_t RunSpeed(BYTE* machine, BYTE* attribute) {
         serverApply = trial % 11 == 0; serverAttack = static_cast<unsigned short>(Input()); serverMagic = static_cast<unsigned short>(Input()); applyCalls = 0;
         BYTE expected[1412], beforeAttribute[64]; std::memcpy(expected, machine, sizeof(expected)); std::memcpy(beforeAttribute, attribute, 64);
         if(serverApply) { std::memcpy(expected + 56, &serverAttack, 2); std::memcpy(expected + 68, &serverMagic, 2); }
-        else if(DAT_07cf1ff4) {
+        else if(CharacterAttribute) {
             const int cls = attribute[11] & 7;
             unsigned short attack = cls == 2 ? dex / 50 : cls == 1 || cls == 3 ? dex / 15 : dex / 20;
             unsigned short magic = cls == 2 ? dex / 50 : cls == 1 || cls == 3 ? dex / 20 : dex / 10;
@@ -94,7 +94,7 @@ def harness(revision=None):
     prefix = special_harness(revision).split("void CallPlus(unsigned short* value", 1)[0]
     prefix += function(SPECIAL_MAIN, "ExpectedPlus")
     header, globals_source = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    name = "DAT_07cf1ff4"
+    name = "CharacterAttribute"
     prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
     prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
     speed = function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CalculateAttackSpeed")

@@ -44,7 +44,7 @@ MAIN = r'''
 template<class T> void Put(BYTE* p,T value) { std::memcpy(p,&value,sizeof(value)); }
 std::uint64_t RunInput(BYTE* memory,BYTE* attributes,BYTE* machine) {
     constexpr std::size_t size=0x1c890+32;
-    BYTE* quest=memory+16; activeQuest=quest; DAT_07cf1ff4=attributes; DAT_07cf1ffc=machine;
+    BYTE* quest=memory+16; activeQuest=quest; CharacterAttribute=attributes; DAT_07cf1ffc=machine;
     std::uint64_t digest=14695981039346656037ull; coverage=0;
     const int margins[]={-120,0,107,320}, scripts[]={-1,0,199,200}, slotTypes[]={-1,0,1,2,3,2147483647}, links[]={-1,0,1,199,200,2147483647};
     const int xEdges[]={-1,0,24,25,34,35,106,144,155,189,190,212,300}, yEdges[]={-1,0,249,250,354,355,378,379,394,395,418,419,432,433}, rowEdges[]={-1,0,17,18};
@@ -70,7 +70,7 @@ std::uint64_t RunInput(BYTE* memory,BYTE* attributes,BYTE* machine) {
         const int y=trial%2?yBase+(static_cast<int>(next()%13)-2)*18+rowEdges[next()%4]:yEdges[next()%14];
         MouseX=static_cast<DWORD>(x); MouseY=static_cast<DWORD>(y);
         MouseLButtonPush=trial%5==0?2:trial%3==0?0:1; MouseLButton=next()%4;
-        DAT_07e11d28=next(); DAT_00559bec=next(); DAT_07d78094=next()%2; MouseLButtonPop=next()%4;
+        MouseUpdateTime=next(); MouseUpdateTimeMax=next(); DAT_07d78094=next()%2; MouseLButtonPop=next()%4;
         for(int script : {0,199}) {
             std::memset(&g_DialogScript[script],0,sizeof(DIALOG_SCRIPT));
             for(int slot=0;slot<10;++slot) {
@@ -91,7 +91,7 @@ std::uint64_t RunInput(BYTE* memory,BYTE* attributes,BYTE* machine) {
         if(events.empty()) coverage|=16; if(oldState!=5 && quest[0x1c882]==5) coverage|=32; if(oldScript!=g_iCurrentDialogScript) coverage|=64;
         for(int event : events) { digest^=static_cast<unsigned>(event); digest*=1099511628211ull; }
         for(int offset=0x1c87a;offset<=0x1c887;++offset) { digest^=quest[offset]; digest*=1099511628211ull; }
-        const DWORD values[]={MouseLButtonPush,MouseLButton,DAT_07e11d28,DAT_00559bec,DAT_07d78094,MouseLButtonPop,static_cast<DWORD>(g_iCurrentDialogScript),DAT_083a7c0c,DAT_083a4324};
+        const DWORD values[]={MouseLButtonPush,MouseLButton,MouseUpdateTime,MouseUpdateTimeMax,DAT_07d78094,MouseLButtonPop,static_cast<DWORD>(g_iCurrentDialogScript),DAT_083a7c0c,DAT_083a4324};
         for(DWORD value : values) { digest^=value; digest*=1099511628211ull; }
     }
     if(coverage!=127) std::fprintf(stderr,"cobertura de entrada: %u\n",coverage);
@@ -122,7 +122,7 @@ def harness(revision=None):
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     prefix += "\n" + re.search(r"^#define DIALOG_SCRIPT_COUNT[^\n]+", header, re.M).group() + "\n"
     prefix += re.search(r"struct DIALOG_SCRIPT\s*\{.*?\n\};", header, re.S).group() + "\nstatic_assert(sizeof(DIALOG_SCRIPT)==0x400);\n"
-    names=("DAT_07cf1ff4","DAT_07cf1ffc","DAT_005615dc","DAT_083a7c0c","DAT_083a4324","MouseY","MouseX","MouseLButtonPush","MouseLButton","DAT_07e11d28","DAT_00559bec","DAT_07d78094","MouseLButtonPop")
+    names=("CharacterAttribute","DAT_07cf1ffc","DAT_005615dc","DAT_083a7c0c","DAT_083a4324","MouseY","MouseX","MouseLButtonPush","MouseLButton","MouseUpdateTime","MouseUpdateTimeMax","DAT_07d78094","MouseLButtonPop")
     for name in names:
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()

@@ -12,8 +12,8 @@
 //   [1..32] Name   = 3er token (columna 3; el 2do se saltea)
 void __cdecl NPCName_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!SMDFile_0) return;
 
     while (1) {
         int tok = TextParser_GetToken();                    // GetToken → Type token
@@ -36,5 +36,5 @@ void __cdecl NPCName_LoadTextData(const char *path)
         // DESVIACION (Fase 4, texto Unicode): el archivo puede venir en UTF-8 o en 1252.
         TextEngine::NormalizeTextFileInPlace(dst, 32);
     }
-    crt_fclose(DAT_07d7806c);
+    crt_fclose(SMDFile_0);
 }

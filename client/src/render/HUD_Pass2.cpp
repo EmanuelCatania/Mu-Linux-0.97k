@@ -51,7 +51,7 @@ extern "C" {
 
 // `SummonLife` es DAT_05826d24 (`ida_xrefs_to("SummonLife")` = 0x05826D24),
 // escrita por InitGame, ReceiveRevival (3 sitios) y el F3/0x20 de
-// ProtocolCore, y leída por RenderEquipedHelperLife.  NO es DAT_07e11d28, que
+// ProtocolCore, y leída por RenderEquipedHelperLife.  NO es MouseUpdateTime, que
 // es el contador de debounce del walker (Player_InputTick.cpp).
 // (Pendiente: portar el F3/0x20 `SummonLife = ReceiveBuffer[4]`, el único
 //  productor del valor; hasta entonces queda en 0 y la barra no se dibuja.)

@@ -10,7 +10,7 @@ bool HasTextInput()
 }
 
 bool HasModalDialog() { return ErrorMessage != 0; } // ErrorMessage
-bool IsItemMovePending() { return DAT_07eaa165 != 0; } // EquipmentItem
+bool IsItemMovePending() { return EquipmentItem != 0; } // EquipmentItem
 bool IsMixBusy() { return MixState != 0; }
 
 // IDA: GetScreenWidth (0x004CB520), flag de apertura de quest.

@@ -63,7 +63,7 @@ std::uint64_t RunClass(CHARACTER* character, BYTE* machine, BYTE* attribute, BYT
         std::memset(character, 0x5a, sizeof(*character)); std::memset(machine, 0x5a, 1412); std::memset(attribute, 0, 64);
         character->Object.Type = trial % 3 ? 390 : 391; character->Object.CurrentAction = actions[Input() % 10];
         character->Class = BYTE(trial); character->Skin = BYTE(Input() % 2); character->Change = BYTE(Input() % 2);
-        attribute[11] = BYTE(Input()); DAT_07cf1ff4 = attribute; DAT_07cf1ffc = character->Object.Type == 390 ? machine : nullptr;
+        attribute[11] = BYTE(Input()); CharacterAttribute = attribute; DAT_07cf1ffc = character->Object.Type == 390 ? machine : nullptr;
         for(int slot = 0; slot < 12; ++slot) {
             auto* item = reinterpret_cast<ITEM*>(machine + 536 + 68*slot); std::memset(item, 0, sizeof(*item));
             item->Type = itemTypes[Input() % 22]; item->Durability = item->Type == -1 ? 0 : BYTE(Input());

@@ -81,7 +81,7 @@ static void LoginScene_ApplySafeObjectAnim()
         }
 
         if (type == 162) {
-            float ramp = (DAT_083a7af4 != 0) ? 1.5f : ((float)(int)DAT_005615e8 * 0.002f);
+            float ramp = (CameraWalkCut != 0) ? 1.5f : ((float)(int)CurrentCameraCount * 0.002f);
             AsObject(obj)->Light[0] = ramp;
             AsObject(obj)->Light[1] = ramp;
             AsObject(obj)->Light[2] = ramp;
@@ -144,8 +144,8 @@ extern "C" { void DbgLogPublic(const char*); }
 int Game_SceneUpdate(void)
 {
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
-    if (DAT_083a7c49 == '\0') {
-        DAT_083a7c49 = 1;
+    if (InitLogIn == '\0') {
+        InitLogIn = 1;
         gMapManager.SetCurrentMap(0xffffffff);
         DAT_05826cb0  = 0;
 
@@ -330,15 +330,15 @@ int Game_SceneUpdate(void)
         // CameraWalk_005615ec[]: se leen vía float* para no convertir int→float.
         _DAT_083a42d4 = 0; _DAT_083a42d8 = 0; _DAT_083a42dc = 0;
         DAT_083a42b8 = 0;
-        DAT_083a7ad0  = *((float*)&DAT_005615f8 + DAT_083a7c3c * 6);
-        DAT_083a7ad4  = *((float*)&DAT_005615fc + DAT_083a7c3c * 6);
-        DAT_083a7ad8  = *((float*)&DAT_00561600 + DAT_083a7c3c * 6);
-        DAT_083a432c  = (&DAT_005615ec)[DAT_083a7c3c * 6];   // DWORD&=DWORD ok
-        DAT_083a4330  = (&DAT_005615f0)[DAT_083a7c3c * 6];   // DWORD&=DWORD ok
-        _DAT_083a4334 = *((float*)&DAT_005615f4 + DAT_083a7c3c * 6);
+        DAT_083a7ad0  = *((float*)&DAT_005615f8 + CurrentCameraNumber * 6);
+        DAT_083a7ad4  = *((float*)&DAT_005615fc + CurrentCameraNumber * 6);
+        DAT_083a7ad8  = *((float*)&DAT_00561600 + CurrentCameraNumber * 6);
+        DAT_083a432c  = (&DAT_005615ec)[CurrentCameraNumber * 6];   // DWORD&=DWORD ok
+        DAT_083a4330  = (&DAT_005615f0)[CurrentCameraNumber * 6];   // DWORD&=DWORD ok
+        _DAT_083a4334 = *((float*)&DAT_005615f4 + CurrentCameraNumber * 6);
         DAT_083a42bc = 0;
         DAT_083a42c0 = 0;
-        DAT_005615e8 = -1;
+        CurrentCameraCount = -1;
 
         // Los defaults de camara (FOV/Near/Far) salen de globals.cpp (valores
         // del .data del PE: 55.0 / 20.0 / 2000.0) y MoveCamera arma pose+angulo
@@ -395,8 +395,8 @@ int Game_SceneUpdate(void)
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 111);
     }
 
-    // Optional UI scene load if DAT_083a7af4 == 1 && no server selected
-    if (DAT_083a7af4 == 1 && DAT_005615e8 == 0)
+    // Optional UI scene load if CameraWalkCut == 1 && no server selected
+    if (CameraWalkCut == 1 && CurrentCameraCount == 0)
         PlayBuffer(4, 0, 0);
 
     // ── STATE 0: SERVER SELECT ────────────────────────────────────────────────

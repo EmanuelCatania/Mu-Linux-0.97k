@@ -202,7 +202,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
         return true;
     }
     if (WarehouseOpened) {                                     // WarehouseOpened
-        if (DAT_07eaa165) return false;                     // EquipmentItem
+        if (EquipmentItem) return false;                     // EquipmentItem
         InventoryOpened = 0;                                   // InventoryOpened
         CloseInventoryRelatedWindows();
         if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
@@ -564,11 +564,11 @@ static void HUD_HotkeyTick(void)
 //
 // Procesador de input del jugador por frame. Se llama desde el camino de render del HUD/UI en cada frame.
 // Responsibilities:
-//   1. Cooldown gate (DAT_07e11d1c must be <= 0x1e)
+//   1. Cooldown gate (LoadingWorld must be <= 0x1e)
 //   2. Second-password auto-fill from hover entity name
 //   3. Camera update + facing angle packet [0xC1][0x18][0x66]
 //   4. Sub-tick via CheckGate
-//   5. Movement debounce (DAT_07e11d28 >= DAT_00559bec and !DAT_07e11dc0)
+//   5. Movement debounce (MouseUpdateTime >= MouseUpdateTimeMax and !DAT_07e11dc0)
 //   6. Animation state exit: swimming, normal walk, cancel
 //   7. Click sobre mob/jugador (SelectedCharacter): pathfind + Combat_SendMovePathPacket
 //   8. Click sobre NPC (SelectedNpc): pathfind alternativo
@@ -588,8 +588,8 @@ static void HUD_HotkeyTick(void)
 //   _DAT_00552890         — speed scale (dt multiplier)
 //   _DAT_00552b6c         — max facing dt threshold
 //   _DAT_00552928         — min entity speed for facing packet
-//   DAT_00559bec          — movement debounce threshold
-//   DAT_07e11d28          — movement debounce counter
+//   MouseUpdateTimeMax          — movement debounce threshold
+//   MouseUpdateTime          — movement debounce counter
 //   DAT_07e11db8          — contador de pasos (tiene que ser > 0x27 para el facing)
 //   SelectedCharacter          — hover mob/player entity index
 //   SelectedNpc          — hover NPC entity index
@@ -632,10 +632,10 @@ void __cdecl Player_ProcessInput(void)
     // this same global to be exactly zero.  Omitting the decrement left the
     // value written by ReceiveTeleport (30) permanently nonzero, preventing
     // every subsequent automatic map gate from ever sending C3:06:1C.
-    if (DAT_07e11d1c > 0)
-        --DAT_07e11d1c;
+    if (LoadingWorld > 0)
+        --LoadingWorld;
 
-    if (DAT_07e11d1c > 0x1e)
+    if (LoadingWorld > 0x1e)
         return;
 
     // ── Second-password auto-fill from hover entity name ──────────────────────
@@ -821,7 +821,7 @@ void __cdecl Player_ProcessInput(void)
     // ── Salida temprana si el movimiento está bloqueado o la UI activa (post-walker) ──
     // El gate va DESPUÉS del walker, así el walker siempre avanza incluso con
     // DAT_07d78094 seteado (mouse sobre la barra de skills).
-    if (DAT_07e11d30 != 0 || g_MouseOnWindow != 0)
+    if (EditFlag != 0 || g_MouseOnWindow != 0)
         goto end_tick;
 
     // ── Movement debounce gate (controla envío de packets/clicks, NO walker) ─
@@ -836,7 +836,7 @@ void __cdecl Player_ProcessInput(void)
     // se fuerza acá porque se observó corrompido (-44) por un buffer adyacente.
     // Revisar al portar Attack.
     DAT_07e11dc0 = 0;
-    if ((DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
+    if ((MouseUpdateTimeMax <= MouseUpdateTime) && DAT_07e11dc0 == '\0') {
 
         // Un click = un GroundClick.
         //
@@ -1131,7 +1131,7 @@ void __cdecl Player_ProcessInput(void)
         // y pisaba la ruta.  Como el heroe quedaba siempre caminando,
         // `AsCharacter(ent)->MovementType==3 && AsCharacter(ent)->PathNum==0` nunca se cumplia, Action nunca corria
         // y el cursor parpadeaba entre ataque y movimiento.
-        DAT_07e11d28 = 0;
+        MouseUpdateTime = 0;
 
         // ── Movement/attack packet for swimming anim ─────────────────────────
         // Si la entidad está viva y CanAct y en movimiento de nado:
@@ -1461,7 +1461,7 @@ void __cdecl Player_ProcessInput(void)
             //     if (bVar32) MouseLButtonPush = false;      // consume el flanco
             //     bVar31 = MouseLButton != false || bVar32;  // ESTADO SOSTENIDO || flanco
             //     if (MouseLButton == false && !bVar32) { ...sale sin mover... }
-            // La repetición la limita el debounce (DAT_00559bec <= DAT_07e11d28), igual
+            // La repetición la limita el debounce (MouseUpdateTimeMax <= MouseUpdateTime), igual
             // que el original la limita con MouseUpdateTimeMax <= MouseUpdateTime.
             //
             // Se lee MouseLButton EN VIVO, no la copia bClickHeld: más arriba se limpian
@@ -1505,16 +1505,16 @@ void __cdecl Player_ProcessInput(void)
                     // quedó de un frame previo, CollisionDetectLineToFace rechaza todos los hits.
                     extern void Map_InitRayCast(void);
                     Map_InitRayCast();
-                    DAT_07eab1fc = 0;             // reset hit flag
+                    SelectFlag = 0;             // reset hit flag
                     RenderTerrain('\x01');         // iterate tiles + raycast
 
-                    char cHit = (DAT_07eab1fc != 0) ? '\x01' : '\0';
+                    char cHit = (SelectFlag != 0) ? '\x01' : '\0';
 
                     if (cHit != '\0') {
-                        // DAT_080ab288/28c ya viene en grid coords (e.g. 218.0): el picker
+                        // SelectXF/28c ya viene en grid coords (e.g. 218.0): el picker
                         // (RenderTerrain) hace la conversión interna con _DAT_005524f0. Cast directo a
                         // int, sin dividir por 100.
-                        float pickWX = *(float*)&DAT_080ab288;
+                        float pickWX = *(float*)&SelectXF;
                         float pickWY = *(float*)&DAT_080ab28c;
                         TargetX = (DWORD)(int)pickWX;
                         TargetY = (DWORD)(int)pickWY;
@@ -1572,7 +1572,7 @@ void __cdecl Player_ProcessInput(void)
                                 }
                                 if (bMoving &&
                                     srcX == (int)TargetX && srcY == (int)TargetY) {
-                                    DAT_07e11d28 = 0;          // IDA LABEL_389
+                                    MouseUpdateTime = 0;          // IDA LABEL_389
                                     goto end_tick_inc;
                                 }
                             }
@@ -1586,7 +1586,7 @@ void __cdecl Player_ProcessInput(void)
                                 goto end_tick_inc;
                             }
                         }
-                        DAT_07e11d28 = 0;
+                        MouseUpdateTime = 0;
                     }
                 }
             }
@@ -1601,7 +1601,7 @@ void __cdecl Player_ProcessInput(void)
     // procesa el primer tick que pase el gate.
 
 end_tick_inc:
-    DAT_07e11d28 = DAT_07e11d28 + 1;
+    MouseUpdateTime = MouseUpdateTime + 1;
 
     }
 end_tick:

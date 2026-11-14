@@ -39,7 +39,7 @@ std::uint64_t RunConvert(BYTE* memory,BYTE* tableMemory,BYTE* attributeMemory) {
     constexpr std::size_t tableBytes=8192*sizeof(ITEM_ATTRIBUTE);
     std::memset(tableMemory,0xa5,tableBytes+80); std::memset(table,0,tableBytes);
     std::vector<BYTE> expectedTable(tableBytes,0);
-    DAT_07d78068=0; DAT_07cf1ff4=nullptr; Convert(nullptr,0,0);
+    DAT_07d78068=0; CharacterAttribute=nullptr; Convert(nullptr,0,0);
     std::uint64_t digest=14695981039346656037ull;
     const short types[]={-32768,-1,0,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,31,34,65,67,68,69,70,96,97,100,103,105,106,127,128,134,135,136,143,145,146,159,160,167,170,195,196,223,224,255,256,384,385,386,387,388,389,390,391,395,399,411,418,419,423,424,425,426,427,428,429,430,511,512,513,1000,8191};
     const WORD requirements[]={0,1,255,32768,65535};
@@ -51,7 +51,7 @@ std::uint64_t RunConvert(BYTE* memory,BYTE* tableMemory,BYTE* attributeMemory) {
         item->Type=type; item->Durability=static_cast<BYTE>(next()); item->byColorState=static_cast<BYTE>(trial);
         item->x=static_cast<BYTE>(trial); item->y=static_cast<BYTE>(trial>>8);
         const WORD level=static_cast<WORD>(next()); std::memcpy(attribute+14,&level,2);
-        DAT_07cf1ff4=attribute; DAT_07d78068=trial%17==0?0:reinterpret_cast<std::uintptr_t>(table);
+        CharacterAttribute=attribute; DAT_07d78068=trial%17==0?0:reinterpret_cast<std::uintptr_t>(table);
         const int a1=static_cast<int>((trial&255)|(trial%13==0?0x80000000u:trial%13==1?0x7fffff00u:0));
         const int a2=static_cast<int>((trial>>8)|(trial%11==0?0x80000000u:trial%11==1?0x7fffff00u:0));
         ITEM_ATTRIBUTE beforeRow{};
@@ -132,10 +132,9 @@ def harness(revision=None):
     catalog=read_source("src/assets/data/ContentCatalog.h",revision)
     prefix+=re.search(r"struct CatalogWing\s*\{.*?\n\};",catalog,re.S).group()
     header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
-    for name in ("DAT_07d78068","DAT_07cf1ff4"):
+    for name in ("DAT_07d78068","CharacterAttribute"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
-    prefix+="\n"+re.search(r"^#define\s+CharacterAttribute\s+[^\n]+",header,re.M).group()+"\n"
     prefix+=SERVICES+function(catalog,"ItemBehaviorType")
     convert=function(read_source("src/game/item/Item_LegacyLinker.cpp",revision),"ItemConvert")
     arg="item" if "ITEM* ip" in convert.split("{",1)[0] else "static_cast<int>(reinterpret_cast<std::uintptr_t>(item))"

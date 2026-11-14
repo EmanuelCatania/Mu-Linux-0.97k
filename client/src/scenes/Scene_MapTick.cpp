@@ -14,7 +14,7 @@
 // Scene_MapTick — Scene_MapTick
 // Updates the tile hash table entry for the local player's tile position.
 // If the player has moved outside the current map tile bounds, reloads the map:
-//   - Checks bounds: x in [DAT_07ea5284..0x27f], y in [DAT_07ea5288..0x1df]
+//   - Checks bounds: x in [InventoryStartY..0x27f], y in [InventoryStartX..0x1df]
 //   - Calls RenderItemInfo or RenderRepairInfo to reload walk/alt map
 // Also handles DAT_0055a3e4 as a pending map-change request.
 void Scene_MapTick(void)
@@ -32,7 +32,7 @@ void Scene_MapTick(void)
   if (DAT_07eaa134 != 0) {
     DAT_07eaa134 = 1;
   }
-  if (DAT_07eaa160 == 0) {
+  if (CheckInventory == 0) {
     if ((((DAT_07eaa13c == 1) && (_DAT_00552cac <= (float)MouseX)) &&
         ((float)MouseX < _DAT_00552c24)) &&
        ((_DAT_00552c14 <= (float)MouseY && ((float)MouseY < _DAT_00552ca8)))) {
@@ -48,14 +48,14 @@ void Scene_MapTick(void)
     goto LAB_004f6824;
   }
   if ((((int)MouseX < (int)InventoryStartX) || ((int)MouseX >= gWindow.PanelOrigin(Ui::WindowRight))) ||
-     ((MouseY < DAT_07ea5284 || ((0x1df < MouseY || (DAT_07eaa134 == 0)))))) {
+     ((MouseY < InventoryStartY || ((0x1df < MouseY || (DAT_07eaa134 == 0)))))) {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = AntiTamper_HashNode();
       static_cast<BYTE*>(pvVar3)[0x584] = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
-    RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
+    RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)CheckInventory,(int)DAT_07ea9844);
     puVar5 = (undefined4*)DAT_07cf1ffc;
   }
   else {
@@ -65,7 +65,7 @@ void Scene_MapTick(void)
       static_cast<BYTE*>(pvVar3)[0x584] = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
-    RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
+    RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)CheckInventory);
     puVar5 = (undefined4*)DAT_07cf1ffc;
   }
 LAB_004f6824:

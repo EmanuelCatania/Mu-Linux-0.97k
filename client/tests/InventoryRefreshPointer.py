@@ -13,11 +13,9 @@ from SceneObjectPointer import build_and_run, function, read_source
 
 SERVICES=r'''
 using uint=unsigned int;using ushort=unsigned short;using std::uintptr_t;
-DWORD DAT_00559bec,DAT_07d78094,DAT_07e11d28,DAT_07ea5284,DAT_07ea5288,DAT_07ea528c,DAT_07ea5290,DAT_07eaa0c8,DAT_07eaa0cc,DAT_07eaa138,DAT_07eaa140,DAT_07eaa164,MouseLButtonPush,MouseY,MouseX,GoldenArcherOpenType;
+DWORD MouseUpdateTimeMax,DAT_07d78094,MouseUpdateTime,InventoryStartY,InventoryStartX,TradeInventoryStartY,TradeInventoryStartX,DAT_07eaa0c8,DAT_07eaa0cc,DAT_07eaa138,MixState,DAT_07eaa164,MouseLButtonPush,MouseY,MouseX,GoldenArcherOpenType;
 char InventoryOpened,ShopOpened,WarehouseOpened,ChaosMixOpened,TradeOpened,EventWindowOpened,DAT_07eaa134,CharacterOpened,PartyOpened;
-#define InventoryStartX DAT_07ea5288
-#define InventoryStartY DAT_07ea5284
-void *DAT_07cf1ffc,*DAT_07cf1ff4;int MAIN_HASH_CLASS;
+void *DAT_07cf1ffc,*CharacterAttribute;int MAIN_HASH_CLASS;
 BYTE *OffsetInventoryItems,*OffsetTradeItems,*OffsetWarehouseItems,*OffsetMixItems,*ShopItems,*Inventory,*node;
 BYTE *machine,*attributes,*grids;BYTE expectedMachine[1536],expectedNode[1536],expectedAttributes[64],expectedGrids[28672];
 unsigned profile,hashSlot,panelCalls;bool click;std::vector<int> events;
@@ -34,8 +32,8 @@ void HashTable_Insert(int* table,void* value,void* key){Require(table==&MAIN_HAS
 void Equipment_HitTestAll(){Check();events.push_back(400);}
 void InventoryGrid_Tick(char* x,int y,short* pool,int width,int height,char mode){
  Check();Require(width==8);unsigned id=0;while(id<6 && reinterpret_cast<BYTE*>(pool)!=grids+offsets[id])++id;Require(id<6);
- const int expectedX=id==0?int(DAT_07ea5288)+15:id==1||id==5?int(DAT_07ea5290)+15:Origin(Ui::InventoryPair)+15;
- const int expectedY=id==0?200:id==1?int(DAT_07ea528c)+270:id==5?int(DAT_07ea528c)+70:id==3?110:50;
+ const int expectedX=id==0?int(InventoryStartX)+15:id==1||id==5?int(TradeInventoryStartX)+15:Origin(Ui::InventoryPair)+15;
+ const int expectedY=id==0?200:id==1?int(TradeInventoryStartY)+270:id==5?int(TradeInventoryStartY)+70:id==3?110:50;
  Require(reinterpret_cast<uintptr_t>(x)==static_cast<uintptr_t>(expectedX) && y==expectedY && height==int(cells[id]/8) && mode==(id==4?1:0));events.push_back(410+int(id));
 }
 bool IsClickPushed(){events.push_back(500);return click;}
@@ -44,7 +42,7 @@ void CloseInventoryRelatedWindows(){events.push_back(600);}
 MAIN=r'''
 bool Inside(int x,int y,int left,int top,int width,int height){return x>=left && x<left+width && y>=top && y<top+height;}
 std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
- machine=m;attributes=a;node=n;grids=g;DAT_07cf1ffc=m;DAT_07cf1ff4=a;
+ machine=m;attributes=a;node=n;grids=g;DAT_07cf1ffc=m;CharacterAttribute=a;
  OffsetInventoryItems=g+offsets[0];OffsetTradeItems=g+offsets[1];OffsetWarehouseItems=g+offsets[2];OffsetMixItems=g+offsets[3];ShopItems=g+offsets[4];Inventory=g+offsets[5];
  const ushort levels[]={0,49,50,51,255,32768,65535,100};const short types[]={-1,0,32767,short(-32768)};const BYTE colors[]={0,1,2,99,255};
  std::uint64_t hash=14695981039346656037ull;unsigned cases=0,coverage=0;
@@ -60,9 +58,9 @@ std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
   if(profile%4!=0)expectedNode[0x584]=1;
   for(unsigned pool=0;pool<6;++pool)for(unsigned i=0;i<cells[pool];++i){const unsigned at=offsets[pool]+i*68+64;const bool occupied=types[(profile+i+pool)%4]!=-1;if(!occupied)expectedGrids[at]=0;else if(pool!=5 || expectedGrids[at]!=99)expectedGrids[at]=1;}
   CharacterOpened=char(profile&1);PartyOpened=char(profile&2);click=(profile&4)!=0;
-  ShopOpened=char(flags&1);WarehouseOpened=char(flags&2);ChaosMixOpened=char(flags&4);TradeOpened=char(flags&8);EventWindowOpened=char(flags&16);DAT_07eaa140=profile%3;GoldenArcherOpenType=flags&16?7:0;
-  DAT_07ea5290=240;DAT_07ea528c=40;DAT_07eaa0c8=240;DAT_07eaa0cc=40;
-  DAT_07d78094=0x55;DAT_07eaa138=0x77;DAT_07eaa164=0x99;DAT_07eaa134=char(0x52);InventoryOpened=7;DAT_07e11d28=9;DAT_00559bec=10;MouseLButtonPush=1;
+  ShopOpened=char(flags&1);WarehouseOpened=char(flags&2);ChaosMixOpened=char(flags&4);TradeOpened=char(flags&8);EventWindowOpened=char(flags&16);MixState=profile%3;GoldenArcherOpenType=flags&16?7:0;
+  TradeInventoryStartX=240;TradeInventoryStartY=40;DAT_07eaa0c8=240;DAT_07eaa0cc=40;
+  DAT_07d78094=0x55;DAT_07eaa138=0x77;DAT_07eaa164=0x99;DAT_07eaa134=char(0x52);InventoryOpened=7;MouseUpdateTime=9;MouseUpdateTimeMax=10;MouseLButtonPush=1;
   const int origin=Origin(CharacterOpened||PartyOpened?Ui::InventoryPair:Ui::RightPanel);
   const int xs[]={-1,20,20,190,0,60,25,189},ys[]={-1,20,250,431,0,395,395,433};
   const int x=origin+xs[mouse],y=ys[mouse];MouseX=static_cast<DWORD>(x);MouseY=static_cast<DWORD>(y);
@@ -84,8 +82,8 @@ std::uint64_t Run(BYTE* m,BYTE* a,BYTE* n,BYTE* g){
   Require(DAT_07d78094==(onWindow?1u:0x55u) && DAT_07eaa138==unsigned(repair) && DAT_07eaa164==0);
   const bool closed=buttons&&backHit&&click;
   Require(DAT_07eaa134==char(0x52^(repair&&repairHit&&click)) && InventoryOpened==(closed?0:7));
-  Require(DAT_07e11d28==(closed?0u:9u) && DAT_00559bec==(closed?6u:10u) && MouseLButtonPush==((closed||(repair&&repairHit&&click))?0u:1u));
-  Require(DAT_07ea5288==unsigned(origin) && DAT_07ea5284==0 && DAT_07eaa0c8==unsigned(Origin(Ui::InventoryPair)) && DAT_07eaa0cc==0);
+  Require(MouseUpdateTime==(closed?0u:9u) && MouseUpdateTimeMax==(closed?6u:10u) && MouseLButtonPush==((closed||(repair&&repairHit&&click))?0u:1u));
+  Require(InventoryStartX==unsigned(origin) && InventoryStartY==0 && DAT_07eaa0c8==unsigned(Origin(Ui::InventoryPair)) && DAT_07eaa0cc==0);
   coverage|=profile%4==0?1u:2u;coverage|=buttons?(repair?4u:8u):0;
   if(repair&&repairHit&&click)coverage|=16;if(closed)coverage|=32;
   coverage|=y<200?64u:128u;coverage|=onWindow?256u:512u;

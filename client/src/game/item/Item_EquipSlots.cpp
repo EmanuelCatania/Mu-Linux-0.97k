@@ -153,12 +153,12 @@ extern "C" void __cdecl SyncPickedItemVisualState(void);
 // IDA: sub_4CDC70 (0x004CDC70); Ghidra: FUN_004cdc70
 extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float h, int slotIdx)
 {
-    if ((int)EnableUse > 0 || DAT_07eaa165 /* EquipmentItem */) return;
+    if ((int)EnableUse > 0 || EquipmentItem /* EquipmentItem */) return;
     if (!CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return;
 
     const int  a5  = slotIdx;
-    const int  x0  = (int)DAT_07ea5288 + (int)sx;          // InventoryStartX + a1
-    const int  y0  = (int)DAT_07ea5284 + (int)sy;          // InventoryStartY + a2
+    const int  x0  = (int)InventoryStartX + (int)sx;          // InventoryStartX + a1
+    const int  y0  = (int)InventoryStartY + (int)sy;          // InventoryStartY + a2
     const int  mx  = (int)MouseX;
     const int  my  = (int)MouseY;
     const bool inside = mx >= x0 && (double)x0 + w > (double)mx &&
@@ -187,7 +187,7 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
         if (!MouseLButtonPush && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
-            DAT_07eaa160 = (uintptr_t)slot;          // CheckInventory
+            CheckInventory = (uintptr_t)slot;          // CheckInventory
             DAT_07ea8408 = (DWORD)y0;                       // sy
             DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
             return;
@@ -228,13 +228,13 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
         slot[27] = 0;
         DAT_07ea5b18 = (DWORD)a5;                           // Inventory[32].Type
         SetCharacterClass(AsCharacter(DAT_07abf5d8));         // SetCharacterClass(Hero)
-        DAT_07eaa160 = 0;                                   // CheckInventory
+        CheckInventory = 0;                                   // CheckInventory
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
             DeleteBug((intptr_t)DAT_07abf5d8);
         if (rightClick) {
             DAT_07e11e78 = (DWORD)(unequipTarget + 12);
-            DAT_07eaa165 = 1;                               // EquipmentItem
+            EquipmentItem = 1;                               // EquipmentItem
             g_ItemMoveTargetPool = &OffsetInventoryItems[0];
             SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
         }
@@ -250,7 +250,7 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
         slot[64] = 3;
         if (MouseLButtonPush) {
             MouseLButtonPush = 0;
-            if (!DAT_07eaa165) Item_ReturnPickedItem();     // sub_4CD3B0
+            if (!EquipmentItem) Item_ReturnPickedItem();     // sub_4CD3B0
         }
         return;
     }
@@ -291,8 +291,8 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
         return;
     }
 
-    if (DAT_07eaa165) return;                               // EquipmentItem
-    DAT_07eaa165 = 1;
+    if (EquipmentItem) return;                               // EquipmentItem
+    EquipmentItem = 1;
     g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
                                         : &OffsetInventoryItems[0];
     g_ItemMoveTargetPool = &OffsetInventoryItems[0];

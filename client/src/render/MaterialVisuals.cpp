@@ -72,7 +72,7 @@ void MaterialVisuals_PrepareWeaponObject(OBJECT* entity, int model) {
 void MaterialVisuals_TickObjectDraw(const OBJECT* entity) {
     const OBJECT &o=*entity;
     if (gMapManager.GetCurrentMap()!=MAP_LOST_TOWER || o.Alpha<_DAT_005524f8 ||
-        o.RenderType==0x80 || (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
+        o.RenderType==0x80 || (EditFlag==0 && o.HiddenMesh==-2)) return;
     if (o.Type==23 || o.Type==19 || o.Type==20 || o.Type==3 || o.Type==4)
         rand(); // IDA: Draw_RenderObject (0x004FAE00), muestra descartada.
 }
@@ -127,9 +127,9 @@ void MaterialVisuals_TickWingPreviews() {
 }
 
 void MaterialVisuals_TickUi() {
-    const bool ready=SceneFlag==2 ? DAT_083a7c49!=0 :
+    const bool ready=SceneFlag==2 ? InitLogIn!=0 :
         SceneFlag==4 ? CharSelectSceneInitialized && DAT_05826cb0>50 :
-        SceneFlag==5 && DAT_083a7c10 && DAT_07e11d1c<=30;
+        SceneFlag==5 && EnableMainRender && LoadingWorld<=30;
     if (!ready) return;
     if (SceneFlag==5 && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
         ItemMaterials_PrepareQuestUi();

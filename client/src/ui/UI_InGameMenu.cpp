@@ -39,7 +39,7 @@ extern "C" {
     void Net_SendWarehouseMoney(BYTE type, DWORD money);
 }
 // g_iCurrentDialogScript es un macro sobre DAT_005615dc (globals.h)
-// g_lpszDialogAnswer es un macro sobre DAT_083a4348 (globals.h): 10 x 38.
+// g_lpszDialogAnswer (globals.h): 10 x 38.
 
 // ---------------------------------------------------------------------------
 // Local helpers
@@ -129,7 +129,7 @@ void __cdecl UI_InGameMenu(void)
     // ErrorMessage ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
     // EquipmentItem (0x07EAA165) = movimiento de equipo pendiente con el server.
     int escHit = PressKey(27);  // PressKey(27)
-    if (escHit && !DAT_07eaa165) {            // EquipmentItem
+    if (escHit && !EquipmentItem) {            // EquipmentItem
         if (ErrorMessage) {                   // ErrorMessage
             if (ErrorMessage == 110 || ErrorMessage == 150) {
                 ErrorMessage = NextErrorMessage;  // ErrorMessage = NextErrorMessage
@@ -433,7 +433,7 @@ void __cdecl UI_InGameMenu(void)
         // DESVIACION (fix del DLL, Patchs.cpp 0x00515BF3/0x00515BFB/0x0051667C): máximo del server y errores en el cartel activo.
         const bool invalidGold = gold < 0 || gold > 2000000000;
         const bool insufficientTradeGold = !invalidGold && StorageGoldFlag == 2 &&
-            (unsigned long long)gold > (unsigned long long)DAT_07eaa0f4 +
+            (unsigned long long)gold > (unsigned long long)m_nMyTradeGold +
                 *(DWORD*)((BYTE*)CharacterMachine + 1352);
         if (invalidGold || insufficientTradeGold) {
             ErrorMessage = invalidGold ? 118 : 117;
@@ -443,8 +443,8 @@ void __cdecl UI_InGameMenu(void)
             InputNumber = 2;           // InputNumber
             GoldInputEnable = 0;           // GoldInputEnable
             DAT_00559c84 = 0;           // InputEnable
-            DAT_07e11d28 = 0;           // MouseUpdateTime
-            DAT_00559bec = 6;           // MouseUpdateTimeMax
+            MouseUpdateTime = 0;           // MouseUpdateTime
+            MouseUpdateTimeMax = 6;           // MouseUpdateTimeMax
             InputGold = 0;
             PlayBuffer(0x19, 0, 0);
             return; // Conservar el cartel activo; tail lo reemplazaría por el estado pendiente.
@@ -463,7 +463,7 @@ void __cdecl UI_InGameMenu(void)
             // IDA: UI_InGameMenu 0x51628F/0x5162A2 — el ACK 0x3A no trae el
             // importe: confirma este temporal. Si ya había Zen local, activa
             // durante 150 ticks el indicador rojo de oferta modificada.
-            if (DAT_07eaa0f4 != 0)
+            if (m_nMyTradeGold != 0)
                 TradeMyWait = 150;
             m_nTempMyTradeGold = (DWORD)gold; // IDA: m_nTempMyTradeGold
 
@@ -507,7 +507,7 @@ void __cdecl UI_InGameMenu(void)
         MouseLButtonPush = 0;
         MouseLButton = 0;
         MouseLButtonPop = 0;
-        const WORD key = (WORD)DAT_07eaa0d8;
+        const WORD key = (WORD)GuildPlayerKey;
         // 0x51 pide Encrypt=0 (C1 plano). Acá el chain-XOR sí importa: el
         // paquete tiene payload, y el server lo descifra con XorData.
         BYTE pkt[6] = { 0xC1, 0x06, 0x51, (BYTE)(yes ? 1 : 0),
@@ -659,10 +659,10 @@ void __cdecl UI_InGameMenu(void)
         } else if (clicked < 0) {
             return;                                      // persiste
         }
-        DAT_00559bec = 6;                                // MouseUpdateTimeMax
+        MouseUpdateTimeMax = 6;                                // MouseUpdateTimeMax
         ErrorMessage = NextErrorMessage;                     // ErrorMessage = NextErrorMessage
         NextErrorMessage = 0;
-        DAT_07e11d28 = 0;                                // MouseUpdateTime
+        MouseUpdateTime = 0;                                // MouseUpdateTime
         PlayBuffer(0x19, 0, 0);
         return;
     }
@@ -695,8 +695,8 @@ void __cdecl UI_InGameMenu(void)
                 if (numAnswer <= 1) numAnswer = 1;   // IDA L3910-3912
                 if (v353 < numAnswer) {
                     MouseLButtonPush = 0;
-                    DAT_07e11d28 = 0;
-                    DAT_00559bec = 6;
+                    MouseUpdateTime = 0;
+                    MouseUpdateTimeMax = 6;
                     PlayBuffer(25, 0, 0);   // IDA L3917: un solo sonido, el 25
 
                     // IDA L3918-3931:
@@ -747,8 +747,8 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c2c = (DWORD)choice;
         ErrorMessage = NextErrorMessage;
         NextErrorMessage = 0;
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         PlayBuffer(0x19, 0, 0);
         return;
     }
@@ -761,8 +761,8 @@ void __cdecl UI_InGameMenu(void)
         if (!gOptionsMenu.UpdateMouse()) {
             MouseLButton = 0;   // MouseLButton
             MouseLButtonPush = 0;   // MouseLButtonPush
-            DAT_07e11d28 = 0;   // MouseUpdateTime
-            DAT_00559bec = 6;   // MouseUpdateTimeMax
+            MouseUpdateTime = 0;   // MouseUpdateTime
+            MouseUpdateTimeMax = 6;   // MouseUpdateTimeMax
         }
         return;
 
@@ -1031,7 +1031,7 @@ tail:
     // Pattern: ErrorMessage = NextErrorMessage; NextErrorMessage = 0
     ErrorMessage  = NextErrorMessage;
     NextErrorMessage  = 0;
-    DAT_07e11d28  = 0;
-    DAT_00559bec  = 6;
+    MouseUpdateTime  = 0;
+    MouseUpdateTimeMax  = 6;
     PlayBuffer(0x19, 0, 0);
 }
