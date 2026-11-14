@@ -223,6 +223,9 @@
     <ClInclude Include="src\game\core\MapNumber.h" />
     <ClInclude Include="src\render\EffectIds.h" />
     <ClInclude Include="src\audio\SoundTable.h" />
+    <ClInclude Include="src\game\monster\MonsterSpawnTable.h" />
+    <ClInclude Include="src\assets\data\TomlLines.h" />
+    <ClInclude Include="src\assets\model\NpcModelTable.h" />
     <ClInclude Include="src\game\core\HeroVitals.h" />
     <ClInclude Include="src\net\Network.h" />
     <ClInclude Include="src\net\NetChannel.h" />
@@ -617,6 +620,8 @@
     <ClCompile Include="src\assets\model\NPC_ModelLoad.cpp" />
     <ClCompile Include="src\render\Font_Layout.cpp" />
     <ClCompile Include="src\game\monster\Monster.cpp" />
+    <ClCompile Include="src\game\monster\MonsterSpawnTable.cpp" />
+    <ClCompile Include="src\assets\model\NpcModelTable.cpp" />
     <ClCompile Include="src\net\SecondPassword.cpp" />
     <ClCompile Include="src\game\party\Party.cpp" />
     <ClCompile Include="src\game\core\Party_NameMatch.cpp" />

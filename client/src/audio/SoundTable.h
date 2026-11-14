@@ -11,3 +11,6 @@ void SoundTable_LoadStartup();
 
 // Carga la sección [monster.N] del monstruo de tipo N, si existe.
 void SoundTable_LoadMonster(int type);
+
+// Carga la sección [npc.N] del NPC de modelo N, si existe.
+void SoundTable_LoadNpc(int model);

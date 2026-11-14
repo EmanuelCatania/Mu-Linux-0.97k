@@ -1,0 +1,92 @@
+# Cómo se carga cada modelo de NPC (OpenNpc). El número de la sección es el
+# slot del modelo, el mismo que usa `model` en monster/spawn.toml.
+#
+#   model       ["archivo", índice]: Data/Npc/<archivo><índice>.bmd
+#   part_count  cuántas variantes tiene cada parte
+#   part.X      una parte del cuerpo: la variante i va al slot <valor> + i.
+#               Para cada i se cargan primero los modelos de todas las partes y
+#               después sus texturas, en el orden de las líneas. Algunos slots se
+#               pisan entre variantes; el orden es el del binario.
+#   texture     cargar también la textura del modelo desde Data/Npc
+#   marks_loaded  deja marcada la carga de modelos (DAT_0055a7c4)
+#
+# Los sonidos de cada NPC están en [npc.N] de audio/sound/sounds.toml.
+
+[npc.335]   # Female
+model = ["Female", 1]
+part_count = 3
+part.FemaleHead = 349
+part.FemaleUpper = 351
+part.FemaleLower = 353
+part.FemaleBoots = 357
+
+[npc.336]   # Man
+model = ["Man", 1]
+part_count = 3
+part.ManHead = 359
+part.ManUpper = 361
+part.ManGloves = 363
+part.ManBoots = 365
+
+[npc.337]   # Girl
+model = ["Girl", 1]
+part_count = 3
+part.GirlHead = 367
+part.GirlUpper = 369
+part.GirlLower = 371
+
+[npc.338]   # Smith
+model = ["Smith", 1]
+
+[npc.339]   # Wizard
+model = ["Wizard", 1]
+
+[npc.340]   # SnowMerchant
+model = ["SnowMerchant", 1]
+
+[npc.341]   # SnowSmith
+model = ["SnowSmith", 1]
+
+[npc.342]   # SnowWizard
+model = ["SnowWizard", 1]
+
+[npc.343]   # ElfWizard
+model = ["ElfWizard", 1]
+
+[npc.344]   # ElfMerchant
+model = ["ElfMerchant", 1]
+
+[npc.345]   # Master
+model = ["Master", 1]
+
+[npc.346]   # Storage
+model = ["Storage", 1]
+
+[npc.347]   # Tournament
+model = ["Tournament", 1]
+
+[npc.348]   # MixNpc
+model = ["MixNpc", 1]
+
+[npc.349]   # DevilNpc
+model = ["DevilNpc", 1]
+
+[npc.374]   # Sevina
+model = ["Sevina", 1]
+texture = true
+marks_loaded = true
+
+[npc.375]   # BloodCastle
+model = ["BloodCastle", 1]
+texture = true
+marks_loaded = true
+
+[npc.376]   # BloodCastle
+model = ["BloodCastle", 2]
+texture = true
+marks_loaded = true
+
+[npc.377]   # DeviasTrader
+model = ["DeviasTrader", 1]
+texture = true
+marks_loaded = true

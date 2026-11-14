@@ -126,8 +126,8 @@ std::uint64_t RunMonsters(BYTE* pool, BYTE* models, bool safe) {
     for(unsigned index = 0; index < 259; ++index)
     for(int world : worlds) for(int mode = 0; mode < 3; ++mode) {
         const unsigned type = index < 256 ? index : index == 256 ? 256u : index == 257 ? 511u : 0xffffffffu;
-        const auto& def = type < MonsterDefinitions.size() ? MonsterDefinitions[type] : DefaultMonsterDefinition;
-        if(safe && mode != 1 && def.Initialize == InitializeMonsterJoints) continue;
+        DEFINITION_LOOKUP
+        if(safe && mode != 1 && IS_INIT(def, Joints)) continue;
         std::memset(pool, 0xa5, 401*916); for(int i = 0; i < 400; ++i) AsCharacter(pool + 916*i)->Object.Live = 0;
         const int slot = int(index % 400), key = 5000 + int(index); expectedSlot = pool + slot*916;
         const bool allocate = !safe && index % 2 == 0;
@@ -137,7 +137,7 @@ std::uint64_t RunMonsters(BYTE* pool, BYTE* models, bool safe) {
         const int x = int(index * 13 % 512) - 128, y = int(index * 7 % 512) - 128;
         expectedX = BYTE(x); expectedY = BYTE(y); expectedRotation = 0;
         std::memcpy(models, canonical.data(), canonical.size()); auto expectedModels = canonical;
-        if(mode != 1 && def.Initialize == InitializeMonster77) expectedModels[61236] = 0;
+        if(mode != 1 && IS_INIT(def, 77)) expectedModels[61236] = 0;
         gMapManager.world = world; gContentCatalog.mode = mode; HeroIndex = 0x12345678u;
         events.clear(); savedName.clear(); ctorCalls = cleanupCalls = jointCalls = 0;
         char* created = CreateMonster(type, x, y, key, -123);
@@ -145,7 +145,7 @@ std::uint64_t RunMonsters(BYTE* pool, BYTE* models, bool safe) {
         Require(std::memcmp(models, expectedModels.data(), expectedModels.size()) == 0);
         Require(AsCharacter(created)->MonsterIndex == BYTE(type) && WORD(AsCharacter(created)->TargetCharacter) == WORD(HeroIndex));
         const char* name = getMonsterName(int(type)); if(mode == 1 && !name[0]) name = "custom"; Require(savedName == name);
-        if(mode != 1 && def.Initialize == InitializeMonsterJoints) Require(jointCalls == 2); else Require(jointCalls == 0);
+        if(mode != 1 && IS_INIT(def, Joints)) Require(jointCalls == 2); else Require(jointCalls == 0);
         digest = HashBytes(digest, created, 916); for(int event : events) digest = HashBytes(digest, &event, 4);
         digest = HashBytes(digest, savedName.data(), int(savedName.size())); ++cases;
     }
@@ -197,7 +197,28 @@ def harness(revision=None):
     monster = read_source("src/game/monster/Monster.cpp", revision)
     factory = monster[monster.index("// IDA: CreateCharacter (0x0045BFA0)"):]
     call = "return reinterpret_cast<std::uintptr_t>(CreateCharacter(key, type, x, y, rotation));" if "CHARACTER* __cdecl CreateCharacter" in factory else "return CreateCharacter(key, type, x, y, rotation);"
-    return prefix + model_view(["Meshs"], revision) + CLOTH_MODEL_MESH + factory + MAIN.replace("CALL_CREATE", call)
+    main = MAIN.replace("CALL_CREATE", call)
+    if "MonsterSpawn_Get" in factory:
+        # Desde T5 las definiciones salen de Content/monster/spawn.toml: se incluye el
+        # lector real (en su propio namespace) y el .toml se copia junto al binario.
+        spawn = read_source("src/game/monster/MonsterSpawnTable.cpp", revision)
+        spawn_header = read_source("src/game/monster/MonsterSpawnTable.h", revision).replace("#pragma once", "")
+        toml = read_source("src/assets/data/TomlLines.h", revision).replace("#pragma once", "")
+        for include in ('#include "stdafx.h"', '#include "game/monster/MonsterSpawnTable.h"',
+                        '#include "assets/data/TomlLines.h"'):
+            spawn = spawn.replace(include, "")
+        spawn = re.sub(r"^#include <[^>]+>\s*$", "", spawn, flags=re.M)
+        spawn = spawn.replace('extern "C" void DbgLogPublic(const char* msg);', "")
+        prefix += ("\n#include <array>\n#include <string>\n#include <vector>\n" + toml +
+                   'extern "C" void DbgLogPublic(const char*) {}\n' +
+                   "namespace spawn_tu {\n" + spawn_header + spawn + "\n}\nusing namespace spawn_tu;\n")
+        main = main.replace("DEFINITION_LOOKUP", "const auto& def = MonsterSpawn_Get(int(type));")
+        main = "\n#define IS_INIT(d, name) ((d).Init == \"Monster\" #name)\n" + main
+    else:
+        main = main.replace("DEFINITION_LOOKUP", "const auto& def = type < MonsterDefinitions.size() ? "
+                                                 "MonsterDefinitions[type] : DefaultMonsterDefinition;")
+        main = "\n#define IS_INIT(d, name) ((d).Initialize == InitializeMonster##name)\n" + main
+    return prefix + model_view(["Meshs"], revision) + CLOTH_MODEL_MESH + factory + main
 
 
 def main():
@@ -210,10 +231,13 @@ def main():
         parser.error("La referencia unsigned int sólo se compara en Windows x86")
     with tempfile.TemporaryDirectory(prefix="mu-character-creation-") as temp:
         directory = Path(temp)
-        current = build_and_run(directory / "current", harness(), args)
+        spawn = (Path(__file__).resolve().parents[1] / "bin/Client/Content/monster/spawn.toml").read_bytes()
+        current = build_and_run(directory / "current", harness(), args,
+                                files={"Content/monster/spawn.toml": spawn})
         print(current, end="")
         if args.reference_ref:
-            reference = build_and_run(directory / "reference", harness(args.reference_ref), args)
+            reference = build_and_run(directory / "reference", harness(args.reference_ref), args,
+                                      files={"Content/monster/spawn.toml": spawn})
             if current != reference:
                 raise RuntimeError("Diferencia con la referencia x86")
             print(f"Equivalencia de bytes/eventos con {args.reference_ref}: OK")

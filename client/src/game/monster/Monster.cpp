@@ -487,6 +487,8 @@
 #include "assets/data/ContentCatalog.h"
 #include "game/physics/ClothTypes.h"
 #include "game/monster/Monster.h"
+#include "game/monster/MonsterSpawnTable.h"
+#include <string>
 
 // IDA: CreateMonster (0x0045CCF0).
 // La definición vanilla carga el modelo y configura escala, equipo y flags.
@@ -537,46 +539,13 @@ static inline CHARACTER* CreateChar5(int Key, int Type, int PosX, int PosY)
 }
 
 
+extern "C" void DbgLogPublic(const char* msg);
+
 namespace {
-// IDA: CreateMonster (0x0045CCF0). Los campos ausentes conservan lo que dejó CreateCharacter.
-constexpr int KeepSpawnValue = -32768;
+// IDA: CreateMonster (0x0045CCF0). Los datos de cada tipo están en
+// Content/monster/spawn.toml (game/monster/MonsterSpawnTable.h); acá quedan
+// los ajustes que no entran en esos campos, que el .toml nombra con `init`.
 using SpawnInitializer = void (*)(CHARACTER*);
-enum class SpawnLoader { None, Monster, Npc };
-
-struct MonsterDefinition {
-    int Model = 270;
-    SpawnLoader Loader = SpawnLoader::Monster;
-    int Resource = 0;
-    int ExtraResource = -1;
-    float Scale = 0.0f;
-    int Right = -1, Left = -1;
-    int RightLevel = -1, LeftLevel = -1, RightExcellent = -1;
-    int BlendMesh = KeepSpawnValue;
-    float BlendLight = -1.0f;
-    int Subtype = -1, HiddenMesh = KeepSpawnValue;
-    int State446 = -1, Flag766 = -1;
-    SpawnInitializer Initialize = nullptr;
-
-    constexpr MonsterDefinition() = default;
-    constexpr MonsterDefinition(int model, SpawnLoader loader, int resource = 0)
-        : Model(model), Loader(loader), Resource(resource) {}
-    constexpr MonsterDefinition& WithScale(float value) { Scale = value; return *this; }
-    constexpr MonsterDefinition& WithRight(int model, int level = -1, int excellent = -1) {
-        Right = model; RightLevel = level; RightExcellent = excellent; return *this;
-    }
-    constexpr MonsterDefinition& WithLeft(int model, int level = -1) {
-        Left = model; LeftLevel = level; return *this;
-    }
-    constexpr MonsterDefinition& WithBlend(int mesh, float light = -1.0f) {
-        BlendMesh = mesh; BlendLight = light; return *this;
-    }
-    constexpr MonsterDefinition& WithSubtype(int value) { Subtype = value; return *this; }
-    constexpr MonsterDefinition& WithHiddenMesh(int value) { HiddenMesh = value; return *this; }
-    constexpr MonsterDefinition& WithState446(int value) { State446 = value; return *this; }
-    constexpr MonsterDefinition& WithFlag766(int value) { Flag766 = value; return *this; }
-    constexpr MonsterDefinition& WithExtraResource(int value) { ExtraResource = value; return *this; }
-    constexpr MonsterDefinition& WithInitializer(SpawnInitializer value) { Initialize = value; return *this; }
-};
 
 // IDA: CreateMonster (0x0045CCF0), monstruos que crean el par de joints 1258.
 void InitializeMonsterJoints(CHARACTER* character)
@@ -767,282 +736,48 @@ void InitializeMonster255(CHARACTER* character)
 // Tabla indexada por tipo vanilla; los huecos y los tipos extendidos sin modelo propio
 // conservan el caso default. El nombre sigue saliendo de getMonsterName/MonsterScript,
 // sin reintroducir los strings fijos omitidos por el port. Los inicializadores se ejecutan después de los datos comunes.
-constexpr std::array<MonsterDefinition, 256> MakeMonsterDefinitions()
+struct NamedInitializer {
+    const char*      name;
+    SpawnInitializer function;
+};
+
+constexpr NamedInitializer kInitializers[] = {
+    { "MonsterJoints", InitializeMonsterJoints },
+    { "Monster8", InitializeMonster8 },
+    { "Monster11", InitializeMonster11 },
+    { "Monster25", InitializeMonster25 },
+    { "Monster34", InitializeMonster34 },
+    { "Monster42", InitializeMonster42 },
+    { "Monster73", InitializeMonster73 },
+    { "Monster77", InitializeMonster77 },
+    { "Monster88", InitializeMonster88 },
+    { "Monster131", InitializeMonster131 },
+    { "Monster230", InitializeMonster230 },
+    { "Monster232", InitializeMonster232 },
+    { "Monster234", InitializeMonster234 },
+    { "Monster242", InitializeMonster242 },
+    { "Monster247", InitializeMonster247 },
+    { "Monster248", InitializeMonster248 },
+    { "Monster250", InitializeMonster250 },
+    { "Monster253", InitializeMonster253 },
+    { "Monster255", InitializeMonster255 },
+};
+
+SpawnInitializer FindInitializer(const std::string& name)
 {
-    std::array<MonsterDefinition, 256> definitions{};
-    definitions[0] = MonsterDefinition(270, SpawnLoader::Monster, 0).WithScale(0.8f).WithRight(MODEL_AXE + 6).WithHiddenMesh(0);
-    definitions[1] = MonsterDefinition(271, SpawnLoader::Monster, 1).WithScale(0.85f).WithRight(MODEL_SWORD + 4).WithHiddenMesh(0);
-    definitions[2] = MonsterDefinition(272, SpawnLoader::Monster, 2).WithScale(0.5f);
-    definitions[3] = MonsterDefinition(279, SpawnLoader::Monster, 9).WithScale(0.4f);
-    definitions[4] = MonsterDefinition(270, SpawnLoader::Monster, 0).WithScale(1.15f).WithRight(MODEL_SPEAR + 7).WithState446(1);
-    definitions[5] = MonsterDefinition(271, SpawnLoader::Monster, 1)
-        .WithScale(1.1f)
-        .WithRight(MODEL_SWORD + 7)
-        .WithLeft(MODEL_SHIELD + 9)
-        .WithHiddenMesh(1)
-        .WithState446(1);
-    definitions[6] = MonsterDefinition(274, SpawnLoader::Monster, 4).WithScale(0.85f).WithRight(MODEL_STAFF + 2);
-    definitions[7] = MonsterDefinition(275, SpawnLoader::Monster, 5).WithScale(1.6f).WithRight(MODEL_AXE + 2).WithLeft(MODEL_AXE + 2);
-    definitions[8] = MonsterDefinition(270, SpawnLoader::Monster, 0)
-        .WithScale(1.0f)
-        .WithRight(MODEL_SPEAR + 8)
-        .WithState446(2)
-        .WithInitializer(InitializeMonster8);
-    definitions[9] = MonsterDefinition(274, SpawnLoader::Monster, 4).WithScale(1.1f).WithRight(MODEL_STAFF + 3).WithState446(1);
-    definitions[10] = MonsterDefinition(273, SpawnLoader::Monster, 3).WithScale(0.8f).WithRight(MODEL_SWORD + 13).WithState446(1);
-    definitions[11] = MonsterDefinition(277, SpawnLoader::Monster, 7).WithFlag766(1).WithInitializer(InitializeMonster11);
-    definitions[12] = MonsterDefinition(276, SpawnLoader::Monster, 6).WithScale(0.6f);
-    definitions[13] = MonsterDefinition(278, SpawnLoader::Monster, 8).WithScale(1.1f).WithRight(MODEL_STAFF + 2);
-    definitions[14] = MonsterDefinition(390, SpawnLoader::None)
-        .WithScale(0.95f)
-        .WithRight(MODEL_SWORD + 6)
-        .WithLeft(MODEL_SHIELD + 4)
-        .WithSubtype(206)
-        .WithFlag766(1);
-    definitions[15] = MonsterDefinition(390, SpawnLoader::None)
-        .WithScale(1.1f)
-        .WithLeft(MODEL_BOW + 2)
-        .WithSubtype(207)
-        .WithState446(1)
-        .WithFlag766(1);
-    definitions[16] = MonsterDefinition(390, SpawnLoader::None)
-        .WithScale(1.2f)
-        .WithRight(MODEL_AXE + 3)
-        .WithLeft(MODEL_SHIELD + 6)
-        .WithSubtype(208)
-        .WithState446(1)
-        .WithFlag766(1);
-    definitions[17] = MonsterDefinition(280, SpawnLoader::Monster, 10).WithRight(MODEL_AXE + 8);
-    definitions[18] = MonsterDefinition(281, SpawnLoader::Monster, 11).WithScale(1.5f).WithRight(MODEL_STAFF + 4).WithBlend(1, 1.0f);
-    definitions[19] = MonsterDefinition(282, SpawnLoader::Monster, 12).WithScale(1.1f);
-    definitions[20] = MonsterDefinition(283, SpawnLoader::Monster, 13).WithScale(1.4f);
-    definitions[21] = MonsterDefinition(284, SpawnLoader::Monster, 14).WithScale(0.95f);
-    definitions[22] = MonsterDefinition(285, SpawnLoader::Monster, 15).WithBlend(0, 1.0f);
-    definitions[23] = MonsterDefinition(286, SpawnLoader::Monster, 16).WithScale(1.15f).WithRight(MODEL_AXE + 7).WithLeft(MODEL_SHIELD + 10);
-    definitions[24] = MonsterDefinition(287, SpawnLoader::Monster, 17);
-    definitions[25] = MonsterDefinition(288, SpawnLoader::Monster, 18)
-        .WithScale(1.1f)
-        .WithRight(MODEL_STAFF + 1)
-        .WithBlend(2, 1.0f)
-        .WithState446(3)
-        .WithInitializer(InitializeMonster25);
-    definitions[26] = MonsterDefinition(289, SpawnLoader::Monster, 19).WithScale(0.8f).WithRight(MODEL_AXE);
-    definitions[27] = MonsterDefinition(290, SpawnLoader::Monster, 20).WithScale(1.1f);
-    definitions[28] = MonsterDefinition(291, SpawnLoader::Monster, 21).WithScale(0.8f).WithRight(MODEL_SPEAR + 1).WithBlend(1);
-    definitions[29] = MonsterDefinition(292, SpawnLoader::Monster, 22).WithScale(0.95f).WithRight(MODEL_BOW + 10);
-    definitions[30] = MonsterDefinition(293, SpawnLoader::Monster, 23).WithScale(0.75f);
-    definitions[31] = MonsterDefinition(294, SpawnLoader::Monster, 24).WithScale(1.3f).WithRight(MODEL_SWORD + 8).WithLeft(MODEL_SWORD + 8);
-    definitions[32] = MonsterDefinition(295, SpawnLoader::Monster, 25);
-    definitions[33] = MonsterDefinition(289, SpawnLoader::Monster, 19)
-        .WithScale(1.2f)
-        .WithRight(MODEL_MACE + 1)
-        .WithLeft(MODEL_SHIELD + 1)
-        .WithState446(1);
-    definitions[34] = MonsterDefinition(390, SpawnLoader::None)
-        .WithRight(MODEL_STAFF + 5)
-        .WithLeft(MODEL_SHIELD + 14)
-        .WithInitializer(InitializeMonster34);
-    definitions[35] = MonsterDefinition(281, SpawnLoader::Monster, 11)
-        .WithScale(1.3f)
-        .WithRight(MODEL_AXE + 8)
-        .WithLeft(MODEL_AXE + 8)
-        .WithBlend(1, 1.0f)
-        .WithState446(2);
-    definitions[36] = MonsterDefinition(298, SpawnLoader::Monster, 28).WithScale(1.2f);
-    definitions[37] = MonsterDefinition(296, SpawnLoader::Monster, 26).WithScale(1.1f);
-    definitions[38] = MonsterDefinition(297, SpawnLoader::Monster, 27).WithScale(1.6f).WithRight(MODEL_SPEAR + 9, 9);
-    definitions[39] = MonsterDefinition(298, SpawnLoader::Monster, 28).WithScale(1.2f).WithState446(1);
-    definitions[40] = MonsterDefinition(299, SpawnLoader::Monster, 29).WithScale(1.3f).WithRight(MODEL_SWORD + 14);
-    definitions[41] = MonsterDefinition(300, SpawnLoader::Monster, 30).WithScale(1.1f).WithRight(MODEL_MACE + 3);
-    definitions[42] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(1.3f).WithInitializer(InitializeMonster42);
-    definitions[43] = MonsterDefinition(272, SpawnLoader::Monster, 2).WithScale(0.7f);
-    definitions[44] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(0.9f);
-    definitions[45] = MonsterDefinition(303, SpawnLoader::Monster, 33).WithScale(0.6f);
-    definitions[46] = MonsterDefinition(304, SpawnLoader::Monster, 34).WithScale(1.0f);
-    definitions[47] = MonsterDefinition(305, SpawnLoader::Monster, 35).WithScale(1.1f).WithRight(MODEL_BOW + 13).WithBlend(0, 1.0f);
-    definitions[48] = MonsterDefinition(306, SpawnLoader::Monster, 36).WithScale(1.4f).WithRight(MODEL_STAFF + 6);
-    definitions[49] = MonsterDefinition(307, SpawnLoader::Monster, 37).WithScale(1.0f).WithBlend(5, 0.0f);
-    definitions[50] = MonsterDefinition(308, SpawnLoader::Monster, 38).WithScale(1.8f);
-    definitions[51] = MonsterDefinition(303, SpawnLoader::Monster, 33).WithScale(1.0f).WithState446(1);
-    definitions[52] = MonsterDefinition(305, SpawnLoader::Monster, 35).WithScale(1.4f).WithRight(MODEL_BOW + 13);
-    definitions[53] = MonsterDefinition(309, SpawnLoader::Monster, 39)
-        .WithScale(1.8f)
-        .WithBlend(2, 1.0f)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[54] = MonsterDefinition(310, SpawnLoader::Monster, 40).WithScale(1.1f).WithLeft(MODEL_BOW + 14);
-    definitions[55] = MonsterDefinition(390, SpawnLoader::None)
-        .WithScale(1.4f)
-        .WithRight(MODEL_SPEAR + 9)
-        .WithSubtype(206)
-        .WithState446(1)
-        .WithFlag766(1);
-    definitions[56] = MonsterDefinition(390, SpawnLoader::None).WithScale(0.8f).WithRight(MODEL_SPEAR + 8).WithSubtype(206).WithFlag766(1);
-    definitions[57] = MonsterDefinition(311, SpawnLoader::Monster, 41)
-        .WithScale(1.4f)
-        .WithRight(MODEL_BOW + 14)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[58] = MonsterDefinition(312, SpawnLoader::Monster, 42)
-        .WithScale(1.8f)
-        .WithRight(MODEL_SWORD + 16)
-        .WithBlend(2, 1.0f)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[59] = MonsterDefinition(312, SpawnLoader::Monster, 42)
-        .WithScale(2.1f)
-        .WithRight(MODEL_STAFF + 8)
-        .WithBlend(2, 1.0f)
-        .WithSubtype(1)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[60] = MonsterDefinition(313, SpawnLoader::Monster, 43).WithScale(2.2f).WithInitializer(InitializeMonsterJoints);
-    definitions[61] = MonsterDefinition(314, SpawnLoader::Monster, 44).WithScale(1.5f).WithInitializer(InitializeMonsterJoints);
-    definitions[62] = MonsterDefinition(315, SpawnLoader::Monster, 45).WithScale(1.5f).WithInitializer(InitializeMonsterJoints);
-    definitions[63] = MonsterDefinition(314, SpawnLoader::Monster, 44)
-        .WithScale(1.9f)
-        .WithBlend(-2, 1.0f)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[64] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.2f).WithLeft(MODEL_BOW + 3, 3);
-    definitions[65] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.3f);
-    definitions[66] = MonsterDefinition(318, SpawnLoader::Monster, 48).WithScale(1.7f);
-    definitions[67] = MonsterDefinition(297, SpawnLoader::Monster, 27).WithScale(1.6f).WithRight(MODEL_SPEAR + 9, 9);
-    definitions[68] = MonsterDefinition(319, SpawnLoader::Monster, 49).WithScale(1.4f);
-    definitions[69] = MonsterDefinition(320, SpawnLoader::Monster, 50).WithScale(1.0f).WithBlend(0);
-    definitions[70] = MonsterDefinition(321, SpawnLoader::Monster, 51).WithScale(1.3f).WithBlend(-2, 1.0f);
-    definitions[71] = MonsterDefinition(322, SpawnLoader::Monster, 52)
-        .WithScale(1.1f)
-        .WithRight(MODEL_SWORD + 18, 5)
-        .WithLeft(MODEL_SHIELD + 14, 0)
-        .WithBlend(1, 1.0f);
-    definitions[72] = MonsterDefinition(323, SpawnLoader::Monster, 53).WithScale(1.45f).WithRight(MODEL_SWORD + 17, 5);
-    definitions[73] = MonsterDefinition(324, SpawnLoader::Monster, 54).WithScale(0.8f).WithInitializer(InitializeMonster73);
-    definitions[74] = MonsterDefinition(322, SpawnLoader::Monster, 52)
-        .WithScale(1.3f)
-        .WithRight(MODEL_SWORD + 18, 9)
-        .WithLeft(MODEL_SHIELD + 14, 9)
-        .WithBlend(1, 1.0f);
-    definitions[75] = MonsterDefinition(324, SpawnLoader::Monster, 54).WithScale(1.0f).WithInitializer(InitializeMonster73);
-    definitions[77] = MonsterDefinition(325, SpawnLoader::Monster, 55)
-        .WithExtraResource(56)
-        .WithScale(1.0f)
-        .WithInitializer(InitializeMonster77);
-    definitions[78] = MonsterDefinition(289, SpawnLoader::Monster, 19).WithScale(0.8f).WithRight(MODEL_AXE, 9);
-    definitions[79] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(0.9f);
-    definitions[80] = MonsterDefinition(306, SpawnLoader::Monster, 36).WithScale(1.4f).WithRight(MODEL_STAFF + 7, -1, 63);
-    definitions[81] = MonsterDefinition(304, SpawnLoader::Monster, 34).WithScale(1.0f);
-    definitions[82] = MonsterDefinition(312, SpawnLoader::Monster, 42)
-        .WithScale(1.8f)
-        .WithRight(MODEL_SWORD + 16, -1, 63)
-        .WithBlend(2, 1.0f)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[83] = MonsterDefinition(311, SpawnLoader::Monster, 41)
-        .WithScale(1.4f)
-        .WithRight(MODEL_BOW + 14, -1, 63)
-        .WithInitializer(InitializeMonsterJoints);
-    definitions[84] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[85] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[86] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[87] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[88] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[89] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[90] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[91] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[92] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[93] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[94] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[95] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[96] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[97] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[98] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[99] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[100] = MonsterDefinition(39, SpawnLoader::None);
-    definitions[101] = MonsterDefinition(40, SpawnLoader::None);
-    definitions[102] = MonsterDefinition(51, SpawnLoader::None);
-    definitions[103] = MonsterDefinition(25, SpawnLoader::None);
-    definitions[111] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[112] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[113] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[114] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[115] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[116] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[117] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[118] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[119] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[120] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[121] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[122] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[123] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[124] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[125] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
-    definitions[126] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
-    definitions[127] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
-    definitions[128] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
-    definitions[129] = MonsterDefinition(327, SpawnLoader::Monster, 57)
-        .WithScale(1.19f)
-        .WithRight(MODEL_MACE + 6)
-        .WithInitializer(InitializeMonster88);
-    definitions[130] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
-    definitions[131] = MonsterDefinition(331, SpawnLoader::Monster, 61).WithScale(0.8f).WithInitializer(InitializeMonster131);
-    definitions[132] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
-    definitions[133] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
-    definitions[134] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
-    definitions[150] = MonsterDefinition(302, SpawnLoader::Monster, 32).WithScale(0.12f);
-    definitions[151] = MonsterDefinition(310, SpawnLoader::Monster, 40).WithScale(1.3f).WithLeft(MODEL_BOW + 14);
-    definitions[200] = MonsterDefinition(236, SpawnLoader::None).WithScale(1.8f).WithBlend(2).WithState446(1);
-    definitions[230] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster230);
-    definitions[231] = MonsterDefinition(377, SpawnLoader::Npc, 377);
-    definitions[232] = MonsterDefinition(375, SpawnLoader::Npc, 375).WithScale(1.0f).WithInitializer(InitializeMonster232);
-    definitions[233] = MonsterDefinition(376, SpawnLoader::Npc, 376).WithScale(1.0f).WithInitializer(InitializeMonster232);
-    definitions[234] = MonsterDefinition(289, SpawnLoader::Monster, 19)
-        .WithScale(1.5f)
-        .WithRight(MODEL_STAFF, 4)
-        .WithInitializer(InitializeMonster234);
-    definitions[235] = MonsterDefinition(374, SpawnLoader::Npc, 374).WithScale(1.0f).WithInitializer(InitializeMonster232);
-    definitions[236] = MonsterDefinition(390, SpawnLoader::Npc, 390)
-        .WithScale(1.0f)
-        .WithSubtype(207)
-        .WithState446(8)
-        .WithInitializer(InitializeMonster232);
-    definitions[237] = MonsterDefinition(349, SpawnLoader::Npc, 349);
-    definitions[238] = MonsterDefinition(348, SpawnLoader::Npc, 348).WithBlend(1);
-    definitions[239] = MonsterDefinition(347, SpawnLoader::Npc, 347);
-    definitions[240] = MonsterDefinition(346, SpawnLoader::Npc, 346);
-    definitions[241] = MonsterDefinition(345, SpawnLoader::Npc, 345);
-    definitions[242] = MonsterDefinition(343, SpawnLoader::Npc, 343).WithBlend(1).WithInitializer(InitializeMonster242);
-    definitions[243] = MonsterDefinition(344, SpawnLoader::Npc, 344);
-    definitions[244] = MonsterDefinition(340, SpawnLoader::Npc, 340);
-    definitions[245] = MonsterDefinition(342, SpawnLoader::Npc, 342);
-    definitions[246] = MonsterDefinition(341, SpawnLoader::Npc, 341);
-    definitions[247] = MonsterDefinition(390, SpawnLoader::None)
-        .WithRight(MODEL_BOW + 11)
-        .WithLeft(MODEL_BOW + 7)
-        .WithInitializer(InitializeMonster247);
-    definitions[248] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster248);
-    definitions[249] = MonsterDefinition(390, SpawnLoader::None).WithRight(MODEL_SPEAR + 7).WithInitializer(InitializeMonster247);
-    definitions[250] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster250);
-    definitions[251] = MonsterDefinition(338, SpawnLoader::Npc, 338).WithScale(0.95f);
-    definitions[253] = MonsterDefinition(337, SpawnLoader::Npc, 337).WithInitializer(InitializeMonster253);
-    definitions[254] = MonsterDefinition(339, SpawnLoader::Npc, 339);
-    definitions[255] = MonsterDefinition(335, SpawnLoader::Npc, 335).WithInitializer(InitializeMonster255);
-    return definitions;
+    if (name.empty()) return nullptr;
+    for (const NamedInitializer& entry : kInitializers)
+        if (name == entry.name) return entry.function;
+    static std::string warned;
+    if (warned != name) {
+        warned = name;
+        DbgLogPublic(("MonsterSpawn: init desconocido: " + name).c_str());
+    }
+    return nullptr;
 }
-constexpr auto MonsterDefinitions = MakeMonsterDefinitions();
-constexpr MonsterDefinition DefaultMonsterDefinition{};
 
 // IDA: CreateMonster (0x0045CCF0), escrituras comunes después de CreateCharacter.
-CHARACTER* CreateMonsterFromDefinition(const MonsterDefinition& def, int key, int x, int y)
+CHARACTER* CreateMonsterFromDefinition(const MonsterSpawn& def, int key, int x, int y)
 {
     if (def.Loader == SpawnLoader::Monster) OpenMonsterModel(def.Resource);
     else if (def.Loader == SpawnLoader::Npc) OpenNpc(def.Resource);
@@ -1060,7 +795,7 @@ CHARACTER* CreateMonsterFromDefinition(const MonsterDefinition& def, int key, in
     if (def.HiddenMesh != KeepSpawnValue) AsCharacter(c)->Object.HiddenMesh = def.HiddenMesh;
     if (def.State446 >= 0) AsCharacter(c)->Level = (unsigned short)def.State446;
     if (def.Flag766 >= 0) AsCharacter(c)->Blood = (unsigned char)def.Flag766;
-    if (def.Initialize) def.Initialize(c);
+    if (const SpawnInitializer initialize = FindInitializer(def.Init)) initialize(c);
     return c;
 }
 } // namespace
@@ -1093,8 +828,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         return reinterpret_cast<char*>(c);
     }
 
-    const MonsterDefinition& definition = (Type_ < MonsterDefinitions.size())
-        ? MonsterDefinitions[Type_] : DefaultMonsterDefinition;
+    const MonsterSpawn& definition = MonsterSpawn_Get(Type);
     c = reinterpret_cast<BYTE*>(CreateMonsterFromDefinition(definition, Key, PositionX, PositionY));
 
     // Ajuste de escala por mundo para los tipos 84..136; se conserva el límite original.
