@@ -105,33 +105,21 @@ void __cdecl OpenNpc(int Type) {
         AccessModelWithTextures(0x15d, "Data\\Npc\\", "DevilNpc", 1);
         break;
     case 0x176:
-        if (DAT_0055a7c4 == '\0') {
-            OpenModel(0x176, "Data2\\Npc\\", "Sevina", "Sevina", (void*)&DAT_00559088);
-        }
         AccessModelWithTextures(0x176, "Data\\Npc\\", "Sevina", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
     case 0x177:
-        if (DAT_0055a7c4 == '\0') {
-            OpenModel(0x177, "Data2\\Npc\\", "BloodCastle1", "BloodCastle1", (void*)&DAT_00559088);
-        }
         AccessModelWithTextures(0x177, "Data\\Npc\\", "BloodCastle", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
     case 0x178:
-        if (DAT_0055a7c4 == '\0') {
-            OpenModel(0x178, "Data2\\Npc\\", "BloodCastle2", "BloodCastle2", (void*)&DAT_00559088);
-        }
         AccessModelWithTextures(0x178, "Data\\Npc\\", "BloodCastle", 2);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
     case 0x179:
-        if (DAT_0055a7c4 == '\0') {
-            OpenModel(0x179, "Data2\\Npc\\", "DeviasTrader1", "DeviasTrader1", "DeviasTrader1", (void*)&DAT_00559088);
-        }
         AccessModelWithTextures(0x179, "Data\\Npc\\", "DeviasTrader", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';

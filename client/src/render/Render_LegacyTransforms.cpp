@@ -18,31 +18,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // EulerToMatrix @ 0x004F9E90 — EulerToMatrix(angles[3], out_mat[12])
 // Converts Euler angles (in game units × π/180) to 3×4 rotation matrix.
 // Row-major: out[0..2]=X-row, out[4..6]=Y-row, out[8..10]=Z-row; out[3,7,11]=0.
@@ -137,7 +112,6 @@ void __cdecl QuatSlerp(const float* q1, float* q2, float t, float* out) {
     }
     for (int i=0;i<4;i++) out[i] = scale0*q1[i] + scale1*q2[i];
 }
-
 
 // Entity_InitRenderState @ 0x004FF580 — Entity_InitRenderState(entity)
 // Scans render-state pool at DAT_083a2370 (stride 0xc, 128 slots).

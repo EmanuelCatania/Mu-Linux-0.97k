@@ -21,9 +21,6 @@
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
 // IDA `qmemcpy` is just memcpy with size_t hint.
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH: Small unmapped functions (1-60 bytes), sorted by size
@@ -40,8 +37,6 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 // FillBuffer @ 0x00404A00 (3 bytes) — always returns S_OK (unused sound fill)
 HRESULT __cdecl FillBuffer(int Buffer, int MaxChannel, BOOL Enable) { return 0; }
 
-
-
 // ── 7-byte: vtable setters ──────────────────────────────────────────────────
 
 // FUN_00403310 @ 0x00403310 (7 bytes)
@@ -56,7 +51,6 @@ void __cdecl ClothNode_SetVTable(void *_this)
   ClothPoint(_this).VTable = g_ClothNodeVTable;
 }
 
-
 // ClothBody_SetBaseVTable @ 0x00407DE0 (7 bytes)
 // ClothBody_SetBaseVTable (IDA-activated)
 // IDA: sub_407DE0 (0x00407DE0); Ghidra: FUN_00407de0
@@ -65,25 +59,11 @@ void __cdecl ClothBody_SetBaseVTable(DWORD *_this)
   ClothBody(_this).VTable = reinterpret_cast<void**>(&DAT_00552508);
 }
 
-
 // FUN_0040f690 @ 0x0040F690 (7 bytes)
 void __fastcall FUN_0040f690(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
 
 // FUN_0040f680 @ 0x0040F680 (9 bytes) — same vtable as 0040f690 (duplicate entry)
 void __fastcall FUN_0040f680(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ClothAnchor_Destruct @ 0x00407EC0 (11 bytes)
 // ClothAnchor_Destruct (IDA-activated)
@@ -95,21 +75,11 @@ void __cdecl ClothAnchor_Destruct(DWORD *_this)
   ClothBody_SetBaseVTable(_this);
 }
 
-
-
 // FUN_0040a6e0 @ 0x0040A6E0 (11 bytes)
 void __fastcall FUN_0040a6e0(void *This) {
     *(int *)This = (intptr_t)&PTR_LAB_005524e8;
     WidgetB_SetVtable(This);
 }
-
-
-
-
-
-
-
-
 
 // ── 13-byte: named game functions ───────────────────────────────────────────
 
@@ -127,17 +97,12 @@ void __cdecl CenterMouseX(void) { MouseX = (unsigned int)gWindow.GetWidth() >> 1
 // CenterMouseY @ 0x005110F0 (13 bytes)
 void __cdecl CenterMouseY(void) { MouseY = (unsigned int)gWindow.GetHeight() >> 1; }
 
-
 // ── 15-byte ─────────────────────────────────────────────────────────────────
 
 // CErrorReport::AddSeparator @ 0x00405580 (15 bytes)
 void __fastcall CErrorReport__AddSeparator(intptr_t This) {
     CErrorReport__Write(This, (char *)"---------------------------------------");
 }
-
-
-
-
 
 // ClearNotice @ 0x0047FAC0 (17 bytes) — zero-fill notice text array
 // Notice vive en 0x07DB80D8 (= DAT_07db80d8, 6 x 0x108).  DAT_083a2370 + 0x10
@@ -154,15 +119,12 @@ void __fastcall FUN_00406de0_impl(int *param_1) {
     param_1[2] = 0;
 }
 
-
 // GameGuard_QueryHealth @ 0x0053D580 (18 bytes) — GameGuard query wrapper
 // IDA: sub_53D580 (0x0053D580); Ghidra: FUN_0053d580
 int __stdcall GameGuard_QueryHealth(void) {
     if (lpParameter == NULL) return 0;
     return GameGuard_HealthCheck(lpParameter);
 }
-
-
 
 // ── 19-byte ─────────────────────────────────────────────────────────────────
 
@@ -210,8 +172,6 @@ extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const IT
         }
     }
 }
-
-
 
 // CalcDurabilityPercent @ 0x0047D330 (159 bytes) — port FIEL desde IDA.
 // Returns durability degradation factor for stat reduction:
@@ -453,11 +413,6 @@ skip_wings: ;
     return *atkMinL;
 }
 
-
-
-
-
-
 // ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
 void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, sizeof(WhisperRegistID)); }
 
@@ -474,8 +429,6 @@ void __fastcall CUIRenderText_SetFont(intptr_t ecx, int /*edx*/, int param_1) {
 
 // ── 22-byte ─────────────────────────────────────────────────────────────────
 
-
-
 // HashWidget_InitFields @ 0x00406D20 (22 bytes) — initialize hash table fields
 // IDA: sub_406D20 (0x00406D20); Ghidra: FUN_00406d20
 void __fastcall HashWidget_InitFields(intptr_t param_1) {
@@ -485,12 +438,6 @@ void __fastcall HashWidget_InitFields(intptr_t param_1) {
     *(int *)(param_1 + 8) = 0;
     *(int *)(param_1 + 0x18) = 0;
 }
-
-
-
-
-
-
 
 // FUN_004cbdd0 @ 0x004CBDD0 (29 bytes) — clear one of the item-slot tables.
 //
@@ -523,10 +470,7 @@ void __cdecl ReleaseMainData(void) {
     ClearCharacters(-1);
 }
 
-
-
 // waveIO__CloseWaveFile @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
-
 
 // HashWidget_ScalarDtor @ 0x00406CB0 — HashWidget ~dtor
 // IDA: sub_406CB0 (0x00406CB0); Ghidra: FUN_00406cb0
@@ -548,8 +492,6 @@ void __fastcall ClothAnchor_ScalarDtor(void* ecx, int /*edx*/, BYTE param_1) {
     ClothAnchor_Destruct(static_cast<DWORD*>(ecx));
     if (param_1 & 1) operator_delete(ecx);
 }
-
-
 
 // FUN_0040a6c0 @ 0x0040A6C0 — WidgetC derived ~dtor
 void __fastcall FUN_0040a6c0(intptr_t ecx, int /*edx*/, BYTE param_1) {
@@ -586,10 +528,6 @@ void __fastcall FUN_0040f840(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040f950((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
-
-
-
-
 
 // ── 30-byte: other ──────────────────────────────────────────────────────────
 
@@ -628,7 +566,6 @@ void __fastcall FUN_00406e60(intptr_t param_1) {
     operator_delete(*(void **)(param_1 + 4));
     *(int *)(param_1 + 0xc) = 0;
 }
-
 
 // ── 34-byte ─────────────────────────────────────────────────────────────────
 
@@ -673,7 +610,6 @@ void __fastcall FUN_0040a830(intptr_t param_1) {
 bool __cdecl getEqualMonster(int addV) {
     return m_iKillMonster <= m_iMaxKillMonster + addV;
 }
-
 
 // ── 42-byte ─────────────────────────────────────────────────────────────────
 
@@ -799,7 +735,6 @@ char *__cdecl getMonsterName(int type) {
     }
     return NULL;
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH: ~80 functions implemented (1-52 bytes range)

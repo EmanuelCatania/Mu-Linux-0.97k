@@ -242,7 +242,6 @@ set(MU_SOURCES
     src/game/math/Math_LegacyTransforms.cpp
     src/render/Render_LegacyLinker.cpp
     src/scenes/Scene_LegacyCleanup.cpp
-    src/scenes/Scene_ObjectLegacy.cpp
     src/render/Terrain_LegacyRender.cpp
     src/ui/UI_LegacyText.cpp
     src/render/BMD_FilterData.cpp
@@ -274,7 +273,6 @@ set(MU_SOURCES
     src/game/entity/ClothPresentation.cpp
     src/game/entity/ObjectPose.cpp
     src/render/Entity_AnimationLegacy.cpp
-    src/game/combat/Combat_LegacyAttackEffects.cpp
     src/game/entity/Entity_LegacyPoolCleanup.cpp
     src/game/item/Item_LegacyGridInsert.cpp
     src/game/item/Item_TypeLegacy.cpp
@@ -400,7 +398,6 @@ set(MU_SOURCES
     src/ui/UI_SkillHotkeys.cpp
     src/ui/UI_GuildMark.cpp
     src/ui/RenderItemInfo.cpp
-    src/scenes/Scene_Objects.cpp
     src/scenes/Scene_ObjectInteraction.cpp
     src/scenes/Scene_ObjectUpdate.cpp
     src/render/BMD_SkinUpdate.cpp

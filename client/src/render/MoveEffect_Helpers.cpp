@@ -39,41 +39,6 @@ void __cdecl Effect_SpawnSmokeBurst(float *param_1, char param_2)
     Particle_Spawn(1215, position, angle, light, 0, 1.0f, 0);
   return;
 
-#if 0 // superseded approximation kept only as historical reference
-  int iVar1;
-  int iVar2;
-  float local_24[4];   // color/alpha: [0]=R,[1]=G,[2]=B,[3]=size
-  undefined4 local_14; // unused/padding
-  float local_10;      // position[0] copy
-  float local_c;       // position[1] copy (unused output of rand)
-  float local_8;       // position[2] copy
-  float local_4;       // Z offset position
-
-  local_24[0] = 1.0f;
-  local_24[1] = 1.0f;
-  local_24[2] = 1.0f;
-  local_c = *param_1;
-  local_8 = param_1[1];
-  local_4 = param_1[2] + _DAT_00552878;
-  iVar2 = 0x14;  // spawn 20 smoke particles
-  do {
-    iVar1 = _rand();
-    local_14 = 0;
-    local_24[3] = (float)(iVar1 % 0x3c + 0x96);  // size: 150-209
-    iVar1 = _rand();
-    local_10 = (float)(iVar1 % 0x1e);             // random float (0..29, unused by spawn)
-    Particle_Spawn(0x497, &local_c, local_24 + 3, local_24, 2, 1.0f, 0);
-    iVar2 = iVar2 + -1;
-  } while (iVar2 != 0);
-
-  local_24[0] = 0.7f;
-  local_24[1] = 0.7f;
-  local_24[2] = 0.7f;
-  if (param_2 != '\0') {
-    Particle_Spawn(0x4bf, &local_c, local_24 + 3, local_24, 0, 1.0f, 0);
-  }
-  return;
-#endif
 }
 
 
@@ -103,41 +68,6 @@ void __cdecl Effect_SpawnSmokeExplosion(undefined4 *param_1, char param_2)
   }
   return;
 
-#if 0 // superseded approximation kept only as historical reference
-  int iVar1;
-  int iVar2;
-  float local_24[7];   // [0-2]=color, [3-5]=velocity/direction, [6]=pos[0]
-  undefined4 local_8;  // pos[1]
-  float local_4;       // pos[2] + Z offset
-
-  local_24[0] = 1.0f;
-  local_24[1] = 1.0f;
-  local_24[2] = 1.0f;
-  local_24[6] = (float)*param_1;
-  local_8 = param_1[1];
-  local_4 = (float)param_1[2] + _DAT_0055284c;
-  iVar2 = 0x14;  // spawn 20 smoke particles
-  do {
-    iVar1 = _rand();
-    local_24[4] = 0.0f;
-    local_24[3] = (float)(iVar1 % 0x3c + 0x96);  // size: 150-209
-    iVar1 = _rand();
-    local_24[5] = (float)(iVar1 % 0x1e);
-    Particle_Spawn(0x497, local_24 + 6, local_24 + 3, local_24, 2, 1.0f, 0);
-    iVar2 = iVar2 + -1;
-  } while (iVar2 != 0);
-
-  local_24[0] = 1.0f;
-  local_24[1] = 1.0f;
-  local_24[2] = 1.0f;
-  local_24[3] = 0.0f;
-  local_24[4] = 0.0f;
-  local_24[5] = 0.0f;
-  if (param_2 != '\0') {
-    Particle_Spawn(0x4c0, local_24 + 6, local_24 + 3, local_24, 0, 4.0f, 0);
-  }
-  return;
-#endif
 }
 
 

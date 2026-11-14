@@ -515,7 +515,6 @@
     <ClCompile Include="src\game\math\Math_LegacyTransforms.cpp" />
     <ClCompile Include="src\render\Render_LegacyLinker.cpp" />
     <ClCompile Include="src\scenes\Scene_LegacyCleanup.cpp" />
-    <ClCompile Include="src\scenes\Scene_ObjectLegacy.cpp" />
     <ClCompile Include="src\render\Terrain_LegacyRender.cpp" />
     <ClCompile Include="src\ui\UI_LegacyText.cpp" />
     <ClCompile Include="src\render\BMD_FilterData.cpp" />
@@ -547,7 +546,6 @@
     <ClCompile Include="src\game\entity\ClothPresentation.cpp" />
     <ClCompile Include="src\game\entity\ObjectPose.cpp" />
     <ClCompile Include="src\render\Entity_AnimationLegacy.cpp" />
-    <ClCompile Include="src\game\combat\Combat_LegacyAttackEffects.cpp" />
     <ClCompile Include="src\game\entity\Entity_LegacyPoolCleanup.cpp" />
     <ClCompile Include="src\game\item\Item_LegacyGridInsert.cpp" />
     <ClCompile Include="src\game\item\Item_TypeLegacy.cpp" />
@@ -681,7 +679,6 @@
     <ClCompile Include="src\ui\UI_SkillHotkeys.cpp" />
     <ClCompile Include="src\ui\UI_GuildMark.cpp" />
     <ClCompile Include="src\ui\RenderItemInfo.cpp" />
-    <ClCompile Include="src\scenes\Scene_Objects.cpp" />
     <ClCompile Include="src\scenes\Scene_ObjectInteraction.cpp" />
     <ClCompile Include="src\scenes\Scene_ObjectUpdate.cpp" />
     <ClCompile Include="src\render\BMD_SkinUpdate.cpp" />

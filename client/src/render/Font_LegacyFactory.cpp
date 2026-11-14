@@ -19,31 +19,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // Font_CreateTextDib (FUN_0050f5f0) — implemented in src/render/Font_Layout.cpp
 // FUN_0040f570 @ 0x0040F570 — Font_CreateRenderer(this, type, dc)
 // Creates a font rendering object: if type==1, allocates a 0x2C4-byte widget (FUN_0040f730),

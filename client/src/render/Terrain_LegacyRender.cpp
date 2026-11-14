@@ -8,28 +8,6 @@ extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cp
 extern void __cdecl operator_delete(void* ptr);
 extern void ClearActionObject(void);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
 #define ITEM_SPECIAL_SKILL_OPTION             0
 #define ITEM_SPECIAL_LUCK_OPTION              1
 #define ITEM_OPTION_ADD_PHYSI_DAMAGE_CODE     60
@@ -158,6 +136,5 @@ void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
         fy += _DAT_0055256c;
     }
 }
-
 
 // RenderTerrainAlphaBitmap (0x004F8BB0) vive en Render/Render_LegacyBillboards.cpp.

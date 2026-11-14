@@ -403,54 +403,6 @@ void Render_GameFrame(void)
 // for reference — was a placeholder approximation that wrote a 30×4 red
 // quad over every visible entity; the real function only does it for
 // party members.
-#if 0
-void Render_HPBars_OLD(void)
-{
-    // 2026-04-29 DISABLED: corrompía GL state.
-    return;
-    if (SceneFlag != 5) return;
-    if (DAT_07abf5d8 == nullptr) return;
-    if (DAT_07abf5d0 == 0) return;
-    BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
-    for (int s = 0; s < 400; ++s) {
-        BYTE* slot = basePtr + s * CHARACTER_STRIDE;
-        if (slot[0] == 0) continue;                 // inactive
-        if (slot == (BYTE*)DAT_07abf5d8) continue;  // skip hero
-        if (slot[0x84] == 0) continue;              // not visible
-
-        // World pos at +0x10 (xyz floats). Add height offset so bar floats above head.
-        float worldPos[3];
-        worldPos[0] = *(float*)(slot + 0x10);
-        worldPos[1] = *(float*)(slot + 0x14);
-        worldPos[2] = *(float*)(slot + 0x18) + 200.0f;
-
-        int sx = 0, sy = 0;
-        Camera_ProjectWorldToScreen(worldPos, &sx, &sy);
-        if (sx < 0 || sx > 640 || sy < 0 || sy > 480) continue;  // off-screen
-
-        // Draw black shadow + red bar (HP placeholder = 50%)
-        // For now: fixed 30×4 bar
-        GL_SetBlendSrcOver('\0');     // disable alpha blend (solid)
-        BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.7f);
-        // Black BG quad
-        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
-        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 8));
-        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 8));
-        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 4));
-        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 4));
-        BufferedDraw::End();
-        // Red foreground (50% wide as placeholder)
-        BufferedDraw::Color3f(0.9f, 0.1f, 0.1f);
-        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
-        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 7));
-        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 7));
-        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 5));
-        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 5));
-        BufferedDraw::End();
-    }
-    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);  // restore color
-}
-#endif
 
 // Render_CharPartyInfo (sub_4BEC00 = RenderEquipedHelperLife) is implemented
 // in src/render/HUD_Pass2.cpp.  IDA name disagrees with the old "party

@@ -29,10 +29,6 @@
 
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -87,8 +83,6 @@ int __cdecl LevelConvert(BYTE Level) {
     }
 }
 
-
-
 // OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt en MacroText[10][0x100].
 // Abre con "rt", como IDA (aRt).
 //
@@ -120,7 +114,6 @@ void __fastcall CSQuest__setQuestLists(BYTE* ecx, int /*edx*/, BYTE *byList, int
     memcpy((void *)(ecx + 0x1c848), byList, num);
 }
 
-
 // GameGuard_SeedRandom @ 0x005404C0 (71 bytes) — GameGuard: seed RNG from system time
 // IDA: sub_5404C0 (0x005404C0); Ghidra: FUN_005404c0
 int __fastcall GameGuard_SeedRandom(int param_1) {
@@ -128,8 +121,6 @@ int __fastcall GameGuard_SeedRandom(int param_1) {
     // DAT_083bbb74 = (st.wSecond | ((int)st.wMinute << 16)) * st.wMonth * st.wYear ^ 0xdad53a;
     return param_1;
 }
-
-
 
 // CheckMouseIn @ 0x0040C490 (110 bytes) — check if mouse is within rectangle
 int __cdecl CheckMouseIn(int x, int y, int width, int height, int direction) {
@@ -230,7 +221,6 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
     *param_1 = 0;
 }
 
-
 // ClothWidget_Destruct @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
 // IDA: sub_408070 (0x00408070); Ghidra: FUN_00408070
 void __fastcall ClothWidget_Destruct(void *param_1_raw) {
@@ -319,7 +309,6 @@ void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) 
     CSQuest__ShowDialogText((int)*(short *)(quest + 0x1c880), 0);
 }
 
-
 // ChatFilter_Matches @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
 // IDA: sub_40E730 (0x0040E730); Ghidra: FUN_0040e730
 int __fastcall ChatFilter_Matches(void *This, int /*edx*/, char *param_1) {
@@ -376,7 +365,6 @@ void RenderTerrainAlphaBitmaps()
 
 }
 
-
 // MoveCharacterCamera @ 0x0051E450 (195 bytes) — update camera from character origin
 void __cdecl MoveCharacterCamera(float *Origin, float *Position, float *Angle) {
     float angles[3];
@@ -417,9 +405,6 @@ bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip) {
     return result;
 }
 
-
-
-
 // FUN_004112b0 @ 0x004112B0 (73 bytes) — BST iterator: advance to next (in-order successor)
 void __fastcall FUN_004112b0_impl(int *param_1) {
     int *puVar1 = *(int **)(*param_1 + 8);
@@ -455,8 +440,6 @@ void __cdecl FUN_00411420_impl(int *param_1) {
         } while ((void *)piVar1 != DAT_055c9b98);
     }
 }
-
-
 
 // BSTIterator_PostIncrement @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
 // BSTIterator_PostIncrement (IDA-activated)
@@ -495,7 +478,6 @@ DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
   }
   return result;
 }
-
 
 // FUN_00411870 @ 0x00411870 (95 bytes) — BST iterator: pre-decrement
 void __fastcall FUN_00411870_impl(int *param_1) {
@@ -575,7 +557,6 @@ int *__fastcall List_InsertNode(void *This, int /*edx*/, int *param_1, void *par
     return param_1;
 }
 
-
 // FUN_00410d90 @ 0x00410D90 (78 bytes) — list: destroy all + free sentinel
 void __fastcall FUN_00410d90_impl(intptr_t param_1) {
     int *piVar1 = *(int **)(param_1 + 4);
@@ -623,7 +604,6 @@ LABEL_6:
   *((BYTE *)_this + _this[50] + 208) = 1;
   return _this[50] + 10000;
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH 3

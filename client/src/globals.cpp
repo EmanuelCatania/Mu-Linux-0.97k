@@ -2028,7 +2028,6 @@ float   _DAT_00552aac  = 0.0833333358f;
 // IDA: Pointers (0x07C82CD0), 100 slots de 0x70 compartidos por alta/tick/draw.
 char    g_PointerPool[100 * 0x70] = {};
 // Spark-effect pool — Effect_TickSpark itera 100 slots × 0x70 bytes.
-char    DAT_07c80128[100 * 0x70] = {};
 
 // ── Terrain_Light globals ─────────────────────────────────────────────────────
 DWORD   DAT_0839bc84   = 0;
@@ -2456,7 +2455,7 @@ FILE*  ParserFileHandle       = nullptr;  // DAT_083A40FC — file handle for cu
 char   ParserTokenString[256] = {};       // DAT_083A3FF4 — token read buffer
 char   DAT_083a4100       = 0;            // Lorencia models-loaded flag
 // Icarus water-tile name table — 32 entries × 0x38 bytes (= 0x700 bytes total).
-// Was 1 byte → Scene_Objects.cpp case 7 (Icarus map) wrote 32 filename strings
+// Was 1 byte → OpenWorldModels case 7 (Icarus map) wrote 32 filename strings
 // past the global → heap corruption on map enter. IDA bound: 0x83a91d8 - 0x83a8ad8 = 0x700.
 char   DAT_083a8ad8[32 * 0x38] = {0};
 

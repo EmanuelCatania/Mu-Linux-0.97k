@@ -18,31 +18,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // Connection_Check @ 0x004E3D60 — Connection_Check(ctx, cols, rows)
 // Scans a 2D grid of short-based structs (stride 0x22 each element).
 // Returns 1 (clear) if every entry is -1 or has ≤0 at offset+0x1c.

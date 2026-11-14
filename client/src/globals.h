@@ -1068,16 +1068,6 @@ extern float&  DAT_083a7ad0;   // alias → CurrentCameraAngle[0]
 extern float&  DAT_083a7ad4;   // alias → CurrentCameraAngle[1]
 extern float&  DAT_083a7ad8;   // alias → CurrentCameraAngle[2]
 extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
-// ── FUN_004fdc00 / MoveObjects (sub_4FDC00): gate del port completo de IDA ──────
-// El port completo vive en Scene/Scene_ObjectUpdate.cpp (sin #if); esta macro
-// sólo desactiva la versión mínima de Scene/Scene_ObjectLegacy.cpp (#ifndef).
-#define IDA_PORT_004FDC00 1
-
-// ── AttackEffect (0x00445230): gate del port completo de IDA ──────────────────
-// El port fiel vive en Combat/Combat_AttackEffect.cpp (sin #if, con sus shims
-// anti-tamper locales); esta macro desactiva la versión parcial de
-// Combat/Combat_LegacyAttackEffects.cpp (`#if !defined(IDA_PORT_00445230)`).
-#define IDA_PORT_00445230 1
 #define CameraWalkCut       DAT_083a7af4
 #define CurrentCameraCount  DAT_005615e8
 extern DWORD   MoveSceneFrame; // IDA: MoveSceneFrame (0x083A7C00)
@@ -2049,7 +2039,6 @@ extern BYTE    DAT_07ea5240[0x44];
 extern float   _DAT_00552aac;  // effect tick float constant
 // IDA: MovePlanes usa g_PlayerRenderPool +0x60; no tiene otra asignación.
 extern char    g_PointerPool[100 * 0x70]; // IDA: Pointers (0x07C82CD0).
-extern char    DAT_07c80128[100 * 0x70];   // Spark-effect pool: 100 × 0x70
 
 // ── Terrain_Light globals ─────────────────────────────────────────────────────
 extern DWORD   DAT_0839bc84;

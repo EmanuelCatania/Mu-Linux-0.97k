@@ -30,33 +30,12 @@ extern "C" int dword_7EAA0C8;             // HUD_Pass3.cpp
 extern "C" int dword_7EAA0CC;             // HUD_Pass3.cpp
 
 // IDA Hex-Rays intrinsic shims.
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SHIBYTE(x)           (*(((char*)&(x))+1))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
 #ifndef COERCE_FLOAT
 #define COERCE_FLOAT(x)      (*(float*)&(x))
 #endif
 #ifndef __PAIR64__
 #define __PAIR64__(hi,lo)    (((std::uint64_t)(DWORD)(hi)<<32)|(DWORD)(lo))
 #endif
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH 16 — Inventory, equipment, item management, gold formatting

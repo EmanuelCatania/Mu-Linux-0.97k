@@ -1174,47 +1174,6 @@ undefined4 __cdecl ChaosMix_Close(void)
 {
     if (!ChaosMixOpened) return 0;
     return ChaosBoxRequestClose() ? 1 : 0;
-#if 0
-    bool bVar1 = true;
-    // El bound `< 0x7eaa0c8` es una direccion absoluta del binario
-    // fuente.  Es el mismo pool de 32 slots de 0x44 que resetea Net_PacketSession
-    // (DAT_07ea9880), abordado 0x38 antes: (0x7EAA0C8 - 0x7EA9848) / 0x44 = 32,
-    // o sea 4 vueltas del bucle externo por 8 del interno.
-    short *psVar2 = (short *)&DAT_07ea9848;
-    for (int nRow = 0; nRow < 4; ++nRow) {
-        int iVar6 = 8;
-        do {
-            if ((*psVar2 != -1) && (0 < *(int *)((char*)psVar2 + 0x1c * 2))) bVar1 = false;
-            psVar2 += 0x22;
-            iVar6--;
-        } while (iVar6 != 0);
-    }
-    if ((!bVar1) || (0 < (int)DAT_07e91388)) {
-        UIChatLogWindow_AddText((const char*)&lpDefault_00583d88, (const char*)&DAT_07d55410, 2);
-        return 0;
-    }
-    // Send C1 03 87 logout/cancel packet
-    char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x87;
-    unsigned int uVar8 = 3;
-    int iVar6 = 0;
-    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
-        do {
-            int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
-            if (iVar3 == -1) {
-                iVar6 = Platform::GetSocket().LastError();
-                if (iVar6 != 0x2733) { Net_Disconnect(SocketClient); break; }
-                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(SocketClient); break; }
-                memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar8);
-                SocketClientSendBufferLength += uVar8;
-                break;
-            }
-            if (iVar3 == 0) break;
-            if (SocketClientLogPrint != 0) FUN_0043de60();
-            uVar8 -= iVar3; iVar6 += iVar3;
-        } while (0 < (int)uVar8);
-    }
-    return CONCAT31((int3)(SocketClientSocket >> 8), 1);
-#endif
 }
 
 // Net_Disconnect_Clean @ 0x004F6A70 — Net_Disconnect_Clean

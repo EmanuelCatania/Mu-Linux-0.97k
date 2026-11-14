@@ -1197,7 +1197,6 @@ void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFl
 void  __cdecl RenderTerrainFrustrum(bool EditFlag);                 // 0x004F97E0
 void  __cdecl MoveObject_Special(OBJECT* object); // Actualización especial del objeto (0x004FA5F0).
 char* __stdcall PickObject_Mouse(void);                             // 0x004FA7C0
-float* __cdecl MoveObject_PerWorld(OBJECT* object);                      // 0x004FDC00, resumen sin llamadas activas
 int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
 void  __stdcall MoveObjects(void);                                  // 0x004FF260
 void  __stdcall MoveBugs(void);                                     // 0x005001F0
@@ -1280,7 +1279,6 @@ void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); //
 // Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, LookAtTarget
 void  __cdecl OpenTexture(int id, void *path, int flags, bool param);   // 0x00505C80
 // LoadWaveFile declared above with real signature — real impl in src/audio/Sound.cpp.
-void  __cdecl OpenModel(int id, char *path, ...);                       // 0x00505E90 (varargs: texName, normName, etc.)
 void  __cdecl RenderItem3D(float sx, float sy, float w, float h, int Type, int Level, int Option1, int ExtOption, bool PickUp); // IDA: RenderItem3D (0x004E1BE0)
 // InventoryColor = InventoryColor
 // RenderEquipmentPart3D = RenderEquipmentPart3D

@@ -66,13 +66,6 @@ void Scene_LoadAccountResources(void)
   OpenJPG(s_Logo_0Box_jpg_00560728,0x12,0x2600,0x2900,0,'\x01');
   OpenJPG(s_Interface_Progress_Back_jpg_0056070c,0x13,0x2600,0x2900,0,'\x01');
   OpenJPG(s_Interface_Progress_jpg_005606f4,0x14,0x2600,0x2900,0,'\x01');
-  if (DAT_0055a7c4 == '\0') {
-    OpenModel(0x3c,s_Data2_Object1__0055f120,s_ship_smd_0055ee54);
-    OpenModel(0xa0,s_Data2_Logo__005606dc,(const char*)&DAT_005606e8);
-    OpenModel(0xa1,s_Data2_Logo__005606dc,(const char*)&DAT_005606d0);
-    OpenModel(0xa2,s_Data2_Logo__005606dc,s_mu_smd_005606c8);
-    OpenModel(0xa3,s_Data2_Logo__005606dc,s_sun_smd_005606b4);
-  }
   AccessModel(0x3c,s_Data_Object1__0055f360,(const char*)&DAT_0055e834,1);
   iVar2 = 0xa0;
   do {
@@ -120,13 +113,6 @@ void Scene_LoadCharSelectResources(void)
   OpenJPG(s_Logo_New_Character002_jpg_005608d8,0x1b,0x2600,0x2900,0,'\x01');
   OpenJPG(s_Logo_New_Character003_jpg_005608bc,0x1c,0x2600,0x2900,0,'\x01');
   OpenJPG(s_Logo_New_Character004_jpg_005608a0,0x1d,0x2600,0x2900,0,'\x01');
-  if (DAT_0055a7c4 == '\0') {
-    OpenModel(0xa4,s_Data2_Logo__005606dc,s_main_smd_00560894);
-    OpenModel(0xaa,s_Data2_Logo__005606dc,(const char*)&DAT_0056085c);
-    OpenModel(0xab,s_Data2_Logo__005606dc,s_warrior_smd_00560828);
-    OpenModel(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
-    OpenModel(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
-  }
   // El diorama clásico termina en los bordes del encuadre 4:3. La variante
   // amplia agrega suelo y bosque lateral para el viewport real del mundo.
   AccessModel(0xa4,SelectBackdropPath(),(const char*)&DAT_005606ac,5);

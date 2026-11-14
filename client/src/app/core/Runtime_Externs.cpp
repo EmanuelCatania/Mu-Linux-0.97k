@@ -19,31 +19,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // ChatListBox_ScrollByN @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
 // del historial del ChatListBox (tecla F4 y botón 2 del popup del chat).
 // Cicla this[35] (visible row count, +0x8C): 3 → 6 → 30 → 6 …, alternando

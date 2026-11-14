@@ -28,27 +28,6 @@
 
 extern void __cdecl operator_delete(void* ptr);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
 // ── In-game render helpers (declared in functions.h, called from Render_Scene3D) ──
 // RenderBoids @ 0x00500AA0 — RenderBoids
 // Port FIEL del IDA: itera DAT_0839BE18 pool stride 444B (40 entries).
@@ -504,7 +483,6 @@ void __cdecl ItemDrop_Render(void)
     GL_ResetState();   // DisableAlphaBlend after all
 }
 
-
 // NPC interaction packet helpers
 // =============================================
 // Wire formats per server source Mu-linux-97K/Source/MuServer/GameServer/
@@ -648,7 +626,6 @@ extern "C" BOOL ChaosBoxRequestClose(void) {
 extern "C" void ChaosBoxCloseAck(void) {
     s_ChaosBoxClosePending = FALSE;
 }
-
 
 // RenderMonsterName @ 0x004CB6F0 — Target_Render (sub_4CB6F0)
 // Renderiza el nombre del target hovered (NPC/mob/item) sobre la HUD 2D.
@@ -1139,10 +1116,7 @@ bool __cdecl MoveMainCamera(void) {
     return false;
 }
 
-
 void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); }
-
-
 
 // BMD__RotationPosition @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
 // ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp

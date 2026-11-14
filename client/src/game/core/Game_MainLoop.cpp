@@ -418,18 +418,6 @@ void __cdecl Game_MainLoop(HDC param_1)
     // es un buffer estático sin esa estructura, así que este chequeo leería basura.
     // La desconexión se detecta por el FD_CLOSE en WinMain, que setea
     // DAT_055ca018 y ya bloquea Game_MainLoop al inicio.
-    #if 0
-    if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
-        if (CWsctlc_GetSocket(reinterpret_cast<uintptr_t>(SocketClient)) == -1) {
-            if (DAT_083a7c58 == 0) {
-                DAT_083a7c58 = 1;
-                CErrorReport_Write(&DAT_055c9bf0, "> Connection closed...");
-                CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
-            }
-            SetErrorMessage(0x71);
-        }
-    }
-    #endif
 
     // ── LIVECLIENT KEEPALIVE (opcode 0x0E) ────────────────────────────────────
     // El server MuEmu (CGLiveClientRecv) espera C3/0E cada ~1-3 s después de

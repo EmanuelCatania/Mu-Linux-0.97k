@@ -179,60 +179,6 @@ Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4
 }
 
 
-// RenderPlane — Effect_DrawQuad
-// Draws a world-space textured quad (GL_QUADS) at param_2 position,
-// rotated by param_4 around Z axis, with half-size param_3.
-// Uses GL_SetBlendAdditive to set blend mode.
-void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined4 param_4)
-{
-  float local_30;
-  float local_2c;
-  undefined4 local_28;
-  float local_24;
-  float local_20;
-  undefined4 local_1c;
-  float local_18;
-  float local_14;
-  undefined4 local_10;
-  float local_c;
-  float local_8;
-  undefined4 local_4;
-
-  GL_BindTextureSlot(param_1);
-  GL_SetBlendAdditive();
-  Gfx::PushMatrix();
-  Gfx::Translate(*(float*)&param_2[0], *(float*)&param_2[1], *(float*)&param_2[2]);
-  // 0x3f800000 son los bits de 1.0f: pasarlos como int haría int→float
-  // (1065353216.0f) en el eje Z y en los UVs. Van como floats.
-  Gfx::Rotate(*(float*)&param_4, 0.0f, 0.0f, 1.0f);
-  local_30 = -param_3;
-  local_28 = 0;
-  local_24 = param_3;
-  local_1c = 0;
-  local_14 = param_3;
-  local_10 = 0;
-  local_c = param_3;
-  local_8 = param_3;
-  local_4 = 0;
-  local_2c = local_30;
-  local_20 = local_30;
-  local_18 = local_30;
-  BufferedDraw::Begin(BufferedDraw::Primitive::Quads);   // GL_QUADS
-  BufferedDraw::TexCoord2f(0.0f, 1.0f);
-  BufferedDraw::Vertex3fv(&local_30);
-  BufferedDraw::TexCoord2f(1.0f, 1.0f);
-  BufferedDraw::Vertex3fv(&local_18);
-  BufferedDraw::TexCoord2f(1.0f, 0.0f);
-  BufferedDraw::Vertex3fv(&local_c);
-  BufferedDraw::TexCoord2f(0.0f, 0.0f);
-  BufferedDraw::Vertex3fv(&local_24);
-  BufferedDraw::End();
-  Gfx::PopMatrix();
-  GL_ResetState();
-  return;
-}
-
-
 // IDA: MovePlanes (0x00475090), mismo pool que Player_Render (100 OBJECT).
 void Effect_TickFade(void)
 {
