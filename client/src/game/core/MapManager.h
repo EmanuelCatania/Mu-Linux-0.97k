@@ -27,6 +27,7 @@
 // no fijó un tema para ese mapa.
 
 #include <string>
+#include "game/core/MapNumber.h"
 
 class CMapManager {
 public:

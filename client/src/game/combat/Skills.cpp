@@ -345,7 +345,7 @@ void PacketHandler_0x19(BYTE* pkt)
             // que se cuelgan de los huesos del personaje (MoveParticles).
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
                 DeleteEffect(1150, (intptr_t)target, 1);
-                CreateEffect(1150, (float*)(target + 16),
+                CreateEffect(BITMAP_LIGHT, (float*)(target + 16),
                              (float*)(target + 28), (float*)(target + 232),
                              (float*)1, (float*)target, (float*)-1, nullptr, 0);
             }
@@ -358,7 +358,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x31:  // 49 Fire Breath
     {
         SetAction(AsObject(caster),
-                     (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
+                     (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) ? 65 : 64);
         goto common_tail;
     }
 
@@ -374,10 +374,10 @@ void PacketHandler_0x19(BYTE* pkt)
             float angle[3] = {
                 AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
-            CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
+            CreateEffect(MODEL_ICE, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)1, (float*)target, (float*)-1, nullptr, 0);
             angle[2] += 180.0f;
-            CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
+            CreateEffect(MODEL_ICE, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)2, (float*)target, (float*)-1, nullptr, 0);
             // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
             target[EntityOffset(748)] = 0;
@@ -394,7 +394,7 @@ void PacketHandler_0x19(BYTE* pkt)
         {
             DeleteEffect(1274, (intptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
+            CreateEffect(BITMAP_SKULL, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);
             // Set lightning status bit
             PlayBuffer(104, AsObject(target), 0);

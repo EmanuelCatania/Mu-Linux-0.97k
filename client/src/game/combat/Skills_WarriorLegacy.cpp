@@ -150,7 +150,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
         } else if (skillType == 47) {
             SetAction(AsObject(o), 66);
         } else if (skillType == 49) {
-            if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
+            if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
                 SetAction(AsObject(o), 65);
             } else {
                 SetAction(AsObject(o), 64);
@@ -170,7 +170,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
     // que es OTRA funcion, y ademas pasaba `o+0xE8` como luz en vez del {1,1,1}
     // local.  1232 = 0x4D0 es un tipo de PARTICULA, no de efecto.
     float Light[3] = { 1.0f, 1.0f, 1.0f };            // IDA: Light[3]
-    Particle_Spawn(1232, (float*)(o + 16), (float*)(o + 28), Light, 0, 0.0f, o);
+    Particle_Spawn(BITMAP_SHINY + 2, (float*)(o + 16), (float*)(o + 28), Light, 0, 0.0f, o);
 
     // Play random sword sound (0x28 or 0x29)
     PlayBuffer((_rand() & 1) + 0x28, 0, 0);
@@ -245,7 +245,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
             int skillIndex = 0;
             if (attributes) for (; skillIndex < 20 && attributes[skillIndex + 87] != 56; ++skillIndex) {}
             for (int part = 0; part < 5; ++part) {
-                CreateEffect(203, (float*)(o + 16), angle, (float*)(o + 232),
+                CreateEffect(MODEL_MAGIC2, (float*)(o + 16), angle, (float*)(o + 232),
                               (float*)(intptr_t)2, (float*)o,
                               (float*)(intptr_t)*(WORD*)(o + 134),
                               (float*)(intptr_t)skillIndex, 0);
@@ -260,7 +260,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
     if ((*(DWORD*)(o + 120) & 0x20) == 0) {
         int tileX = (int)(AsCharacter(c)->TargetPosition[0] * 0.01f);
         int tileY = (int)(AsCharacter(c)->TargetPosition[1] * 0.01f);
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
+        if (IsBloodCastleMap(gMapManager.GetCurrentMap())) {
             switch (abs((int)(*(float*)(o + 36) * 0.022222223f)) & 7) {
             case 0: ++tileY; break; case 1: --tileX; ++tileY; break;
             case 2: --tileX; break; case 3: --tileX; --tileY; break;
@@ -285,7 +285,7 @@ void __cdecl Entity_WeaponHit(intptr_t param_1) {
     SetAction(AsObject(param_1), 0x57);
     *(DWORD *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
-    CreateEffect(0x498,
+    CreateEffect(BITMAP_SPARK + 1,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
     PlayBuffer(0x58, 0, 0);
@@ -441,7 +441,7 @@ void __cdecl Entity_MeleeAttackStart(intptr_t param_1) {
     AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000
     AsObject(param_1)->Teleport  = 3;      // melee attack mode
     AsObject(param_1)->AlphaTarget = 1.0f;   // 0x3F800000
-    CreateEffect(0x498,
+    CreateEffect(BITMAP_SPARK + 1,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
     PlayBuffer(0x58, 0, 0);

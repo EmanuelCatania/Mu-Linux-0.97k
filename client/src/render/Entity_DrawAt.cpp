@@ -135,21 +135,21 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
     else if (param_11 == 1) {
         // Shadow draw: two-pass with different alpha
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3ca3d70a;  // 0.02
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3dcccccd;  // 0.1
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0.02f;  // 0.02
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0.1f;  // 0.1
         } else {
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3dcccccd;  // 0.1
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3cf5c28f;  // 0.03
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0.1f;  // 0.1
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0.03f;  // 0.03
         }
         *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
 
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3e23d70a;  // 0.16
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3f333333;  // 0.7
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0.16f;  // 0.16
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0.7f;  // 0.7
         } else {
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3f333333;  // 0.7
-            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3e4ccccd;  // 0.2
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0.7f;  // 0.7
+            ((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0.2f;  // 0.2
         }
         *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2

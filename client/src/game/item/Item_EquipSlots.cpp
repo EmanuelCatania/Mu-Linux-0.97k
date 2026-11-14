@@ -106,9 +106,9 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     if (part == 7) {
         if (pt >= 392 && pt < 416) invalid = true;
     } else if (part == 8) {
-        if ((int)gMapManager.GetCurrentMap() == 7) {
+        if ((int)gMapManager.GetCurrentMap() == MAP_ATLANS) {
             if (pt == 418 || pt == 419) invalid = true;
-        } else if ((int)gMapManager.GetCurrentMap() == 10 && pt == 418) {
+        } else if ((int)gMapManager.GetCurrentMap() == MAP_ICARUS && pt == 418) {
             invalid = true;
         }
     }
@@ -205,7 +205,7 @@ extern "C" void __cdecl Equipment_SlotHitTest(float sx, float sy, float w, float
             return;
         }
         DAT_083a4124 = 0;
-        if ((int)gMapManager.GetCurrentMap() == 10) {
+        if ((int)gMapManager.GetCurrentMap() == MAP_ICARUS) {
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
             int flying = 0;

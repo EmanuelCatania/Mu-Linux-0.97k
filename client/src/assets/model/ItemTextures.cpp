@@ -2,8 +2,6 @@
 // Binds texture paths to item/skill model slots using OpenTexture
 // (Model_LoadTextures).  Covers all equipment slots (0x1a1-0x3bd range)
 // and skill slots (0x333).  Slot 500 is initialised as the texture-slot base.
-// Note: the function name is misleading — it assigns texture prefix paths
-// to already-loaded mesh slots, not particle/effect geometry.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"

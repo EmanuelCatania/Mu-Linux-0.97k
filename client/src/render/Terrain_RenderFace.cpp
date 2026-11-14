@@ -225,7 +225,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         // constante de .data que en el binario vale 1.
         if (TER_ALPHA[TER_IDX1] <= 0.0f && TER_ALPHA[TER_IDX2] <= 0.0f &&
             TER_ALPHA[TER_IDX3] <= 0.0f && TER_ALPHA[TER_IDX4] <= 0.0f &&
-            !DAT_0814b2dc && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16))   // CurrentLayer
+            !DAT_0814b2dc && (!IsBloodCastleMap(gMapManager.GetCurrentMap())))   // CurrentLayer
         {
             int slot = (int)(unsigned char)TER_L1[TER_IDX1] + 50;
             BITMAP_t* bmp = &Bitmaps[slot];
@@ -290,7 +290,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         CaptureUV(tile,false);
     } else RenderFace(tex);                // RenderFace
 
-    if (gMapManager.GetCurrentMap() == 7 && (unsigned char)TER_L2[TER_IDX1] == 5 &&
+    if (gMapManager.GetCurrentMap() == MAP_ATLANS && (unsigned char)TER_L2[TER_IDX1] == 5 &&
         (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
          TER_ALPHA[TER_IDX3] > 0.0f || TER_ALPHA[TER_IDX4] > 0.0f))
     {

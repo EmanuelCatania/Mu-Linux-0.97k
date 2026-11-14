@@ -62,7 +62,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             Position[0] = tx; Position[1] = ty; Position[2] = tz + 30.0f;
             const float rot = (float)(rand() % 360);
             const float sc  = (float)(rand() % 8 + 8) * 0.2f;
-            CreateSprite(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
+            CreateSprite(BITMAP_SHINY + 1, Position, sc, (float *)(o + 52), 0, rot, 0);
             const int life = AsJoint(o)->LifeTime;
             if (life > 10) {
                 Light[0] = 0.5f; Light[1] = 0.5f; Light[2] = 0.5f;
@@ -197,12 +197,12 @@ static void MoveJoint_GenericTail(unsigned char *o)
         } else if (AsJoint(o)->Velocity * 1.5f > v295 &&
                    sub3 != 6 && sub3 != 9 && sub3 != 7) {
             if (*(int *)&AsJoint(o)->Scale == 1112014848) {           // Scale == 50.0f
-                Particle_Spawn(1180, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_ENERGY, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
                 if ((rand() % 8) == 0) {
                     angles[0] = (float)(rand() % 64 - 32) + tgt[0];
                     angles[1] = (float)(rand() % 64 - 32) + tgt[1];
                     angles[2] = (float)(rand() % 64 - 32) + tgt[2];
-                    Particle_Spawn(1220, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SMOKE, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
                 }
                 if (AsJoint(o)->SubType == 0 && ((long long)WorldTime) % 1000 < 500) {
                     if ((rand() % 16) == 0) {
@@ -300,7 +300,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
 
     // Default movement: rotate velocity by euler matrix and apply to position.
     // Type 0x4ee overrides this entirely (has its own path below).
-    if (AsJoint(param_1)->Type != 0x4ee) {
+    if (AsJoint(param_1)->Type != BITMAP_MOTION_BLUR_R2) {
         Matrix_BuildFromEuler(AsJoint(param_1)->Angle, local_30);
         local_b0 = -AsJoint(param_1)->Velocity;
         local_b4 = 0.0f;
@@ -342,7 +342,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             AsJoint(param_1)->Position[2] += rotated_4e8[2];
         } else {
             *param_1 = 0;
-            Particle_Spawn(1215, pfVar15, AsJoint(param_1)->Angle,
+            Particle_Spawn(BITMAP_EXPLOTION, pfVar15, AsJoint(param_1)->Angle,
                          AsJoint(param_1)->Light, 0, 1.0f, 0);
         }
         goto switchD_caseD_4ef;
@@ -646,8 +646,8 @@ LAB_0047036e:
             goto switchD_caseD_4ef;
         }
         if (iVar16 == 1) {
-            *(unsigned int *)&AsJoint(param_1)->Light[0] = 0x3e4ccccd;  // 0.2f
-            *(unsigned int *)&AsJoint(param_1)->Light[1] = 0x3e4ccccd;
+            AsJoint(param_1)->Light[0] = 0.2f;  // 0.2f
+            AsJoint(param_1)->Light[1] = 0.2f;
             AsJoint(param_1)->Position[0] =
                 (float)(fVar24 * (double)_DAT_00552938 + (double)*pfVar14);
             AsJoint(param_1)->Position[1] =
@@ -675,7 +675,7 @@ LAB_0047036e:
         const intptr_t subtype_4e5 = AsJoint(param_1)->SubType;
         if (subtype_4e5 == 1) {
             float light_4e5_1[3] = { 0.8f, 0.4f, 1.0f };
-            CreateSprite(1150, pfVar15, 4.0f, light_4e5_1,
+            CreateSprite(BITMAP_LIGHT, pfVar15, 4.0f, light_4e5_1,
                           (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
@@ -686,9 +686,9 @@ LAB_0047036e:
             *pfVar15 += orbit_4e5_3[0] * 50.0f;
             AsJoint(param_1)->Position[1] += orbit_4e5_3[1] * 50.0f;
             AsJoint(param_1)->Position[2] += orbit_4e5_3[2] * 50.0f;
-            CreateSprite(1150, pfVar15, 3.0f, light_4e5_3,
+            CreateSprite(BITMAP_LIGHT, pfVar15, 3.0f, light_4e5_3,
                           (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
-            CreateSprite(1231, pfVar15, 1.5f, light_4e5_3,
+            CreateSprite(BITMAP_SHINY + 1, pfVar15, 1.5f, light_4e5_3,
                           (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
@@ -718,14 +718,14 @@ LAB_0047036e:
                 light_4e5_2[2] = fade_4e5_2;
             }
             const float scale_4e5_2 = (float)((20 - lifetime_4e5_2) / 5) + 4.0f;
-            CreateSprite(1150, pfVar15, scale_4e5_2, light_4e5_2,
+            CreateSprite(BITMAP_LIGHT, pfVar15, scale_4e5_2, light_4e5_2,
                           (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             AsJoint(param_1)->Velocity += 5.0f;
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 0 || subtype_4e5 == 5) {
             if (*(int *)&AsJoint(param_1)->Scale == 1117782016) {
-                CreateEffect(205, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light,
+                CreateEffect(MODEL_LASER, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light,
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
                 if ((AsJoint(param_1)->LifeTime % 15) == 0 && (intptr_t)AsJoint(param_1)->Target == (intptr_t)Hero) {
                     Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, pfVar15, 150.0f,
@@ -878,7 +878,7 @@ LAB_0047036e:
                         AsJoint(param_1)->Velocity -= 10.0f;
                 } else {
                     *param_1 = 0;
-                    Particle_Spawn(1191, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_LIGHTNING + 1, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 1, 1.0f, 0);
                     PlayBuffer(35, 0, 0);
                 }
             } else {
@@ -894,9 +894,9 @@ LAB_0047036e:
             float terrainLight_4ea[3] = { brightness_4ea * 0.4f, brightness_4ea, brightness_4ea * 0.8f };
             AddTerrainLight(*pfVar15, AsJoint(param_1)->Position[1], (float*)terrainLight_4ea, 2, (float*)&DAT_081cb608[0]);
             if (subtype_4ea == 6 || subtype_4ea == 9)
-                Particle_Spawn(1191, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 3, 0.05f, 0);
+                Particle_Spawn(BITMAP_LIGHTNING + 1, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 3, 0.05f, 0);
             else
-                Particle_Spawn(1191, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_LIGHTNING + 1, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 0, 1.0f, 0);
             goto switchD_caseD_4ef;
         }
         if (subtype_4ea == 2 || subtype_4ea == 3 || subtype_4ea == 4 || subtype_4ea == 5 || subtype_4ea == 8) {
@@ -919,7 +919,7 @@ LAB_0047036e:
             if (subtype_4ea == 2 || subtype_4ea == 3) {
                 const float pulse_4ea = sinf((float)WorldTime * 0.002f) * 0.3f + 0.8f;
                 float light_4ea[3] = { pulse_4ea * 0.5f, pulse_4ea * 0.1f, pulse_4ea };
-                Particle_Spawn(1191, pfVar15, AsJoint(param_1)->Angle, light_4ea, 0, 1.0f, 0);
+                Particle_Spawn(BITMAP_LIGHTNING + 1, pfVar15, AsJoint(param_1)->Angle, light_4ea, 0, 1.0f, 0);
             }
         }
         goto switchD_caseD_4ef;
@@ -980,10 +980,10 @@ LAB_0047036e:
         if (subtype_4eb == 6 && lifetime_4eb <= 10) {
             const float pulse_4eb = (float)(6 - abs(lifetime_4eb - 6)) * 0.15f;
             float light_4eb[3] = { pulse_4eb, pulse_4eb, pulse_4eb };
-            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
+            CreateSprite(BITMAP_SHINY + 1, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
                           light_4eb, (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
         } else if (subtype_4eb != 7 && lifetime_4eb == 1) {
-            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
+            CreateSprite(BITMAP_SHINY + 1, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
                           AsJoint(param_1)->Light, (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
         }
         goto switchD_caseD_4ef;
@@ -1048,7 +1048,7 @@ LAB_0047036e:
             if (AsJoint(param_1)->Velocity * 2.0f >= targetDistance) {
                 if ((rand() & 1) == 0) {
                     (void)rand(); (void)rand(); (void)rand();
-                    Particle_Spawn(1195, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_FIRE, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 0, 1.0f, 0);
                 }
                 break;
             }
@@ -1104,7 +1104,7 @@ LAB_0047036e:
                 Joint_SegmentTick((intptr_t)param_1, matrix);
                 AsJoint(param_1)->Direction[2] -= 11.0f;
                 if ((rand() & 1) == 0) {
-                    Particle_Spawn(1195, AsJoint(param_1)->Position,
+                    Particle_Spawn(BITMAP_FIRE, AsJoint(param_1)->Position,
                                  AsJoint(param_1)->Angle, AsJoint(param_1)->Light, 0, 1.0f, 0);
                 }
                 Joint_Create(1254, previousPosition, AsJoint(param_1)->Position,
@@ -1400,16 +1400,16 @@ switchD_caseD_4fd:
             }
             {
                 float *ppos = AsJoint(param_1)->Position;
-                CreateSprite(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
+                CreateSprite(BITMAP_SHINY + 1, ppos, (float)(_rand() % 2 + 8) * 0.1f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(BITMAP_LIGHT, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(BITMAP_LIGHT, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
                 if (jsub != 11 && AsJoint(param_1)->LifeTime == 1) {
                     float jzero[3]  = { 0.0f, 0.0f, 0.0f };
                     float jwhite[3] = { 1.0f, 1.0f, 1.0f };
-                    Particle_Spawn(1215, ppos, jzero, jwhite, 1, 0.60000002f, 0);
+                    Particle_Spawn(BITMAP_EXPLOTION, ppos, jzero, jwhite, 1, 0.60000002f, 0);
                 }
             }
             goto _skipLabel182;   // IDA: LABEL_447 -> LABEL_487, saltea LABEL_182

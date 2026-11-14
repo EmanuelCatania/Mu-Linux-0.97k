@@ -2,7 +2,6 @@
 // Loads player skin textures (slots 0x12d-0x133) and binds texture paths to
 // all class/tier equipment model slots using OpenTexture (Model_LoadTextures).
 // Also loads robe textures at the end.
-// Note: despite the name, this loads textures for player gear, not monster models.
 // Monster models are handled by Monster_Data.cpp (Monster_LoadStartupData, IDA: Monster_Data_Load).
 #include "stdafx.h"
 #include "globals.h"

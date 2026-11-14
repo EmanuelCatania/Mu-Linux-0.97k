@@ -71,7 +71,7 @@ void MaterialVisuals_PrepareWeaponObject(OBJECT* entity, int model) {
 }
 void MaterialVisuals_TickObjectDraw(const OBJECT* entity) {
     const OBJECT &o=*entity;
-    if (gMapManager.GetCurrentMap()!=4 || o.Alpha<_DAT_005524f8 ||
+    if (gMapManager.GetCurrentMap()!=MAP_LOST_TOWER || o.Alpha<_DAT_005524f8 ||
         o.RenderType==0x80 || (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
     if (o.Type==23 || o.Type==19 || o.Type==20 || o.Type==3 || o.Type==4)
         rand(); // IDA: Draw_RenderObject (0x004FAE00), muestra descartada.

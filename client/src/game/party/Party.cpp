@@ -252,7 +252,7 @@ void Terrain_TileUpdate(BYTE* pkt)
     if (pkt[3] == 0x00)
     {
         // Rectangle update
-        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11 && pkt[4] == 8)
+        if (gMapManager.GetCurrentMap() > MAP_ICARUS && gMapManager.GetCurrentMap() < 0x11 && pkt[4] == 8)
             SetActionObject(gMapManager.GetCurrentMap(), 0x24, 0, 1);  // map zone transition
 
         int count = (BYTE)pkt[6];

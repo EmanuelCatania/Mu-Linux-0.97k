@@ -116,7 +116,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     {
         // Normal spawn
     }
-    else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
+    else if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
         terrainH += (float)_DAT_00552848;
     }
     else {
@@ -130,8 +130,8 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     o->Angle[2]          = Rotation;
 
     // IDA L641-642: -1032847360 = 0xC2700000 = -60.0f.
-    *(int *)&o->BoundingBoxMin[0] = 0xc2700000;   // -60.0f
-    *(int *)&o->BoundingBoxMin[1] = 0xc2700000;
+    o->BoundingBoxMin[0] = -60.0f;   // -60.0f
+    o->BoundingBoxMin[1] = -60.0f;
     *(int *)&c->Light[0]          = 0;   // IDA L645 (+800)
     *(int *)&c->Light[1]          = 0;
     *(int *)&c->Light[2]          = 0;
@@ -143,45 +143,45 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // ── Per-Type bounding box (IDA L652-704) ─────────────────────────────────
     switch ((int)entity_type) {
         case 272: case 276: case 279: case 287: case 289: case 290:
-            *(int *)&o->BoundingBoxMax[0] = 1112014848;
-            *(int *)&o->BoundingBoxMax[1] = 1112014848;
-            *(int *)&o->BoundingBoxMax[2] = 1117782016;
+            o->BoundingBoxMax[0] = 50.0f;
+            o->BoundingBoxMax[1] = 50.0f;
+            o->BoundingBoxMax[2] = 80.0f;
             break;
         case 281: case 301: case 309: case 312: case 314:
-            *(int *)&o->BoundingBoxMax[0] = 1116471296;
-            *(int *)&o->BoundingBoxMax[1] = 1116471296;
-            *(int *)&o->BoundingBoxMax[2] = 1132068864;
+            o->BoundingBoxMax[0] = 70.0f;
+            o->BoundingBoxMax[1] = 70.0f;
+            o->BoundingBoxMax[2] = 250.0f;
             break;
         case 307:
-            *(int *)&o->BoundingBoxMax[0] = 1120403456;
-            *(int *)&o->BoundingBoxMax[1] = 1120403456;
-            *(int *)&o->BoundingBoxMax[2] = 1125515264;
+            o->BoundingBoxMax[0] = 100.0f;
+            o->BoundingBoxMax[1] = 100.0f;
+            o->BoundingBoxMax[2] = 150.0f;
             break;
         case 330:
             *(int *)&o->BoundingBoxMin[0] = (int)0xC2380000;  // -46.0
             *(int *)&o->BoundingBoxMin[1] = (int)0xC2200000;  // -40.0
             *(int *)&o->BoundingBoxMin[2] = 0;
-            *(int *)&o->BoundingBoxMax[0] = 1119092736;
-            *(int *)&o->BoundingBoxMax[1] = 1112014848;
-            *(int *)&o->BoundingBoxMax[2] = 1128792064;
+            o->BoundingBoxMax[0] = 90.0f;
+            o->BoundingBoxMax[1] = 50.0f;
+            o->BoundingBoxMax[2] = 200.0f;
             break;
         case 331:
             *(int *)&o->BoundingBoxMin[2] = 0;
             *(int *)&o->BoundingBoxMin[0] = (int)0xC2C00000;
             *(int *)&o->BoundingBoxMin[1] = (int)0xC2C00000;
-            *(int *)&o->BoundingBoxMax[0] = 1120403456;
-            *(int *)&o->BoundingBoxMax[1] = 1120403456;
-            *(int *)&o->BoundingBoxMax[2] = 1133903872;
+            o->BoundingBoxMax[0] = 100.0f;
+            o->BoundingBoxMax[1] = 100.0f;
+            o->BoundingBoxMax[2] = 300.0f;
             break;
         case 390:  // hero (CRITICAL for char-select rendering)
-            *(int *)&o->BoundingBoxMax[0] = 1109393408;  // 40.0f
-            *(int *)&o->BoundingBoxMax[1] = 1109393408;  // 40.0f
-            *(int *)&o->BoundingBoxMax[2] = 1123024896;  // 120.0f
+            o->BoundingBoxMax[0] = 40.0f;  // 40.0f
+            o->BoundingBoxMax[1] = 40.0f;  // 40.0f
+            o->BoundingBoxMax[2] = 120.0f;  // 120.0f
             break;
         default:
-            *(int *)&o->BoundingBoxMax[0] = 1112014848;
-            *(int *)&o->BoundingBoxMax[1] = 1112014848;
-            *(int *)&o->BoundingBoxMax[2] = 1125515264;
+            o->BoundingBoxMax[0] = 50.0f;
+            o->BoundingBoxMax[1] = 50.0f;
+            o->BoundingBoxMax[2] = 150.0f;
             break;
     }
 
@@ -240,7 +240,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     c->Flag.Type                 = (short)0xffff;
     c->LongRangeAttack           = -1;              // 0xffffffff
     c->CollisionTime             = 0;
-    *(int *)&o->CollisionRange   = 0x43480000;      // 200.0f
+    o->CollisionRange = 200.0f;      // 200.0f
     *(int *)&c->Rot              = 0;
     *(short *)&c->Level          = 0;
     c->Item                      = -1;

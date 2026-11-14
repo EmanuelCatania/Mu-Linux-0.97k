@@ -696,7 +696,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     case 0x1af:  // MODEL_BOW+18 equivalent — wing trail particles
     {
-        if ((*(char *)&AsCharacter(param_4)->Object.CurrentAction == 'P') && (gMapManager.GetCurrentMap() != 10))
+        if ((*(char *)&AsCharacter(param_4)->Object.CurrentAction == 'P') && (gMapManager.GetCurrentMap() != MAP_ICARUS))
         {
             unsigned int uv = (unsigned int)rand() & 0x80000001u;
             bool bEven = (uv == 0);
@@ -721,7 +721,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                     afStack_264[2] = AsCharacter(param_4)->Object.Angle[2];
                     afStack_264[0] = (float)(r3 % 0x3c + 0x96);
                     Joint_Create(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
-                    Particle_Spawn(0x497, afStack_264 + 6, afStack_264, Light, 0, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SPARK, afStack_264 + 6, afStack_264, Light, 0, 1.0f, 0);
                     iVar8--;
                 } while (iVar8 != 0);
             }

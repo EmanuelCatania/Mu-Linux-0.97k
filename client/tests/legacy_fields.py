@@ -13,15 +13,18 @@ def parse(block):
 ob=parse(h[h.index('struct OBJECT {'):h.index('struct PART_t')])
 ch=parse(h[h.index('struct CHARACTER {'):h.index('#pragma pack(pop)')])
 tab={}
-def add(off,expr,st): tab[off]=(st,expr)
+ftype={}
+def add(off,expr,st,ty=None):
+    tab[off]=(st,expr)
+    if ty: ftype[(st,expr)]=ty
 for o,t,p,n,a in ob:
     if n.startswith('_unk') or o<0xFC: continue
     if t=='vec3_t' and not a:
-        for i in range(3): add(o+4*i,f'{n}[{i}]','OBJECT')
+        for i in range(3): add(o+4*i,f'{n}[{i}]','OBJECT','float')
     elif a: 
         if n=='OBB':
-            for i in range(12): add(o+4*i,f'OBB[{i}]','OBJECT')
-    else: add(o,n,'OBJECT')
+            for i in range(12): add(o+4*i,f'OBB[{i}]','OBJECT','float')
+    else: add(o,n,'OBJECT',None if p else t)
 part=[(0,'Type'),(2,'Level'),(3,'Option1'),(4,'LinkBone'),(5,'CurrentAction'),(6,'PriorAction'),(8,'AnimationFrame'),(0xC,'PriorAnimationFrame'),(0x10,'PlaySpeed'),(0x14,'Cloth')]
 for o,t,p,n,a in ch:
     if n.startswith('_unk') or n=='Object': continue
@@ -30,10 +33,10 @@ for o,t,p,n,a in ch:
         for i in range(c):
             for d,f in part: add(o+0x18*i+d,f'{n}[{i}].{f}' if a else f'{n}.{f}','CHARACTER')
     elif t=='vec3_t':
-        for i in range(3): add(o+4*i,f'{n}[{i}]','CHARACTER')
+        for i in range(3): add(o+4*i,f'{n}[{i}]','CHARACTER','float')
     elif a:
         for i in range(int(a[1:-1])): add(o+i,f'{n}[{i}]','CHARACTER')
-    else: add(o,n,'CHARACTER')
+    else: add(o,n,'CHARACTER',None if p else t)
 
 
 def unk(block,st):
@@ -46,5 +49,14 @@ unk(h[h.index('struct CHARACTER {'):h.index('#pragma pack(pop)')],'CHARACTER')
 reverse={(st,e):o for o,(st,e) in tab.items()}
 pattern=re.compile(r'\*\(([^()]*\*)\)&\(\((OBJECT|CHARACTER)\*\)\(uintptr_t\)\((\w+)\)\)->(\w+(?:\[\d+\])?(?:\.\w+)?)')
 
+# Acceso directo a un campo escalar: ((OBJECT*)(uintptr_t)(o))->Alpha = 1.0f;
+direct=re.compile(r'(?<![&\w])\(\((OBJECT|CHARACTER)\*\)\(uintptr_t\)\((\w+)\)\)->(\w+(?:\[\d+\])?)(?![\w.\[])')
+SCALARS={'float','int','short','WORD','BYTE','char','DWORD'}
+
 def lower(source):
-    return pattern.sub(lambda m:'*(%s)(%s + %d)'%(m[1],m[3],reverse[(m[2],m[4])]),source)
+    source=pattern.sub(lambda m:'*(%s)(%s + %d)'%(m[1],m[3],reverse[(m[2],m[4])]),source)
+    def d(m):
+        key=(m[1],m[3]); ty=ftype.get(key)
+        if key not in reverse or ty not in SCALARS: return m.group(0)
+        return '(*(%s*)(%s + %d))'%(ty,m[2],reverse[key])
+    return direct.sub(d,source)

@@ -74,55 +74,55 @@ void __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, W
     //   10 = type 10 (legend bow)     -> effect 0xF2
     switch (adjType0) {
     case 0x218:
-        CreateEffect(0xD9, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_STEEL, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x219:
-        CreateEffect(0xD9, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_STEEL, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21A:
-        CreateEffect(0xDD, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_SAW, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21B:
-        CreateEffect(0xDB, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_LASER, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21C:
-        CreateEffect(0xDA, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_THUNDER, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21D:
-        CreateEffect(0xE0, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_WING, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21E:
-        CreateEffect(0xDF, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_BOMB, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x220:
-        CreateEffect(0xF2, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_DOUBLE, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x222:
-        CreateEffect(0xF2, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_DOUBLE, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
@@ -139,21 +139,21 @@ void __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, W
     case 0x213:
     case 0x214:
     case 0x215:
-        CreateEffect(0xD8, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x212:
-        CreateEffect(0xDC, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_V, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x216:
-        CreateEffect(0xDE, oPos, oAngle, oLight,
+        CreateEffect(MODEL_ARROW_NATURE, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);

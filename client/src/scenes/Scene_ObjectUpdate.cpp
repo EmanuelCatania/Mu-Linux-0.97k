@@ -131,10 +131,10 @@ void __stdcall MoveObjects(void) {
     // In World 10 with thunder active, spawns lightning joints on random objects.
 
     float Scale = 0.0f;
-    if (gMapManager.GetCurrentMap() == 10) {
+    if (gMapManager.GetCurrentMap() == MAP_ICARUS) {
         Scale = (float)MoveHeavenThunder();
     }
-    else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
+    else if (gMapManager.GetCurrentMap() > MAP_ICARUS && gMapManager.GetCurrentMap() < 0x11) {
         // Worlds 11..16: spawn ambient particle near hero
         // IDA 004FF260: Angle is cleared and Light is full white.
         float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -150,7 +150,7 @@ void __stdcall MoveObjects(void) {
             // Signature confirmed from Ghidra:
             //   int CreateParticle(Type, float Position[3], float Angle[3], float Light[3],
             //                      int SubType, float Scale, DWORD Owner)
-            Particle_Spawn(0x4E1, pos, angle, light, 3, 0.19f, 0);
+            Particle_Spawn(BITMAP_FLARE, pos, angle, light, 3, 0.19f, 0);
         }
     }
 
@@ -208,7 +208,7 @@ void __stdcall MoveObjects(void) {
                         //   }
                         //
                         // Son los rayos de tormenta que caen sobre los objetos del mapa en Icarus.
-                        if (gMapManager.GetCurrentMap() == 10 && Scale != 0.0f) {
+                        if (gMapManager.GetCurrentMap() == MAP_ICARUS && Scale != 0.0f) {
                             int r2 = rand();
                             if (r2 % 10 == 0 &&
                                 *(short*)(pcVar6 + 2) >= 0 &&
@@ -218,7 +218,7 @@ void __stdcall MoveObjects(void) {
                                 light[0] = (float)(rand() % 10) * 0.02f;
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
-                                CreateSprite(1269, (float*)(pcVar6 + 16), 0.5f,
+                                CreateSprite(BITMAP_CLOUD + 1, (float*)(pcVar6 + 16), 0.5f,
                                              light, (intptr_t)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
@@ -369,7 +369,7 @@ void __stdcall MoveBugs(void) {
                     v45[0] = v45[0] + AsObject(e)->Position[0];
                     v45[1] = v45[1] + AsObject(e)->Position[1];
                     v45[2] = (float)(v27 - 8) + AsObject(e)->Position[2];
-                    Particle_Spawn(1175, v45, (float*)(e + 0x1c), v49, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SPARK, v45, (float*)(e + 0x1c), v49, 1, 1.0f, 0);
                 }
                 v36 = 150.0f;
             } else if (v25 == 1) {
@@ -392,7 +392,7 @@ void __stdcall MoveBugs(void) {
                     AsObject(e)->Alpha = v10;
                     if (v10 < 0.0f) *(DWORD *)&AsObject(e)->Alpha = 0;
                 } else {
-                    *(DWORD *)&AsObject(e)->Alpha = 0x3F800000;   // 1.0f
+                    AsObject(e)->Alpha = 1.0f;   // 1.0f
                 }
                 *(DWORD *)&AsObject(e)->Position[0] = *(DWORD*)(v8 + 16);   // posX
                 short v11 = AsObject(e)->Type;               // type
@@ -411,35 +411,35 @@ void __stdcall MoveBugs(void) {
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 3);
                     else                                       SetAction(AsObject(e), 2);
-                    if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != 10) {
+                    if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != MAP_ICARUS) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
                         Position[0] = (float)(rand() % 64 - 32) + AsObject(e)->Position[0];
                         Position[1] = (float)(rand() % 64 - 32) + AsObject(e)->Position[1];
                         Position[2] = (float)(rand() % 32 - 16) + AsObject(e)->Position[2];
-                        if (gMapManager.GetCurrentMap() == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
-                        else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        if (gMapManager.GetCurrentMap() == MAP_DEVIAS) Particle_Spawn(BITMAP_SMOKE, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        else            Particle_Spawn(BITMAP_SMOKE + 1, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
-                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;        // animSpeed = 0.34f
+                    AsObject(e)->Velocity = 0.34f;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)owner;               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 7);
                     else                       SetAction(AsObject(e), 6);
-                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
+                    AsObject(e)->Velocity = 0.34f;
                     *(BYTE*)e = *(BYTE*)owner;
                 } else if (v14 < 0x22 || v14 > 0x37) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 1);
                     else                                       SetAction(AsObject(e), 0);
-                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
+                    AsObject(e)->Velocity = 0.34f;
                     *(BYTE*)e = *(BYTE*)owner;
                 } else if (v11 == 267) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 5);
                     else                       SetAction(AsObject(e), 4);
-                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
+                    AsObject(e)->Velocity = 0.34f;
                     *(BYTE*)e = *(BYTE*)owner;
                 } else {
                     SetAction(AsObject(e), 3);
-                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
+                    AsObject(e)->Velocity = 0.34f;
                     *(BYTE*)e = *(BYTE*)owner;
                 }
             }
@@ -451,7 +451,7 @@ void __stdcall MoveBugs(void) {
                 v36 = 100.0f;
                 float Light[3] = { 0.40000001f, 0.60000002f, 1.0f };
                 if ((rand() & 1) == 0) {
-                    Particle_Spawn(1220, (float*)(e + 0x10), (float*)(e + 0x1c), Light, 1, 1.0f, 0);
+                    Particle_Spawn(BITMAP_SMOKE, (float*)(e + 0x10), (float*)(e + 0x1c), Light, 1, 1.0f, 0);
                 }
             }
             // else: v4 no es 175/195/267 → cae a LABEL_72 con v36=0
@@ -604,7 +604,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
   float oa; // [esp+44h] [ebp+4h]
   float ob; // [esp+44h] [ebp+4h]
 
-  if ( gMapManager.GetCurrentMap() == 9 )
+  if ( gMapManager.GetCurrentMap() == MAP_DEVIL_SQUARE1 )
   {
     if ( (std::int64_t)WorldTime % 4000 < 1000 && !(rand() % 100) )
     {
@@ -631,10 +631,10 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     }
     else
     {
-      *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
+      ((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1.0f;
     }
   }
-  if ( gMapManager.GetCurrentMap() == 2 )
+  if ( gMapManager.GetCurrentMap() == MAP_DEVIAS )
   {
     v4 = *(WORD *)(o + 2);
     if ( v4 == 81 || v4 == 82 || v4 == 96 || v4 == 98 || v4 == 99 )
@@ -645,7 +645,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
       }
       else
       {
-        *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
+        ((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1.0f;
       }
     }
   }
@@ -658,7 +658,7 @@ LABEL_22:
   v5 = Models + BMD_STRIDE * *(short *)(o + 2);
   *(BYTE *)(v5 + 160 + BMD_FIELD_SHIFT) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
   oa = *(float *)(o + 204);
-  if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(o + 2) == 8 )
+  if ( gMapManager.GetCurrentMap() == MAP_TARKAN && *(WORD *)(o + 2) == 8 )
   {
     oa = oa * 4.0;
   }
@@ -703,7 +703,7 @@ LABEL_22:
 LABEL_38:
   switch ( gMapManager.GetCurrentMap() )
   {
-    case 0:
+    case MAP_LORENCIA:
       switch ( *(WORD *)(o + 2) )
       {
         case 0x32: case 0x33: case 0x34: case 0x37: case 0x50:
@@ -730,7 +730,7 @@ LABEL_38:
           return;
       }
       break;
-    case 1:
+    case MAP_DUNGEON:
       switch ( *(WORD *)(o + 2) )
       {
         case 0x16:
@@ -770,7 +770,7 @@ LABEL_38:
           return;
       }
       break;
-    case 2:
+    case MAP_DEVIAS:
       v13 = *(WORD *)(o + 2);
       switch ( v13 )
       {
@@ -845,7 +845,7 @@ LABEL_59:
           return;
       }
       break;
-    case 3:
+    case MAP_NORIA:
       v17 = *(short *)(o + 2);
       switch ( *(WORD *)(o + 2) )
       {
@@ -870,7 +870,7 @@ LABEL_59:
           return;
       }
       break;
-    case 4:
+    case MAP_LOST_TOWER:
       switch ( *(WORD *)(o + 2) )
       {
         case 3:
@@ -897,7 +897,7 @@ LABEL_92:
           }
           if ( v18 )
           {
-            CreateEffect(1200, v7, v6, (float *)(o + 232), 0, 0, (float *)-1, 0, 0);
+            CreateEffect(BITMAP_FLAME, v7, v6, (float *)(o + 232), 0, 0, (float *)-1, 0, 0);
           }
           break;
         case 0x19:
@@ -910,7 +910,7 @@ LABEL_92:
           return;
       }
       break;
-    case 5:
+    case MAP_EXILE:
       if ( *(WORD *)(o + 2) == 2 )
       {
 LABEL_111:
@@ -922,7 +922,7 @@ LABEL_111:
         *(float *)(o + 104) = (double)(rand() % 4 + 6) * 0.1;
       }
       break;
-    case 6:
+    case MAP_ARENA:
       v20 = *(short *)(o + 2);
       if ( v20 == 21 )
       {
@@ -934,7 +934,7 @@ LABEL_111:
         *(DWORD *)(o + 88) = -2;
       }
       break;
-    case 7:
+    case MAP_ATLANS:
       switch ( *(WORD *)(o + 2) )
       {
         case 0x16:
@@ -947,7 +947,7 @@ LABEL_111:
           }
           if ( *(float *)(o + 128) > 5.0 )
           {
-            Particle_Spawn(1241, v7, v6, (float *)(o + 232), 0, 1.0, 0);
+            Particle_Spawn(BITMAP_BUBBLE, v7, v6, (float *)(o + 232), 0, 1.0, 0);
           }
           break;
         case 0x17:
@@ -971,7 +971,7 @@ LABEL_111:
           return;
       }
       break;
-    case 8:
+    case MAP_TARKAN:
       switch ( *(WORD *)(o + 2) )
       {
         case 2:
@@ -1040,12 +1040,12 @@ LABEL_123:
           return;
       }
       break;
-    case 11:
-    case 12:
-    case 13:
-    case 14:
-    case 15:
-    case 16:
+    case MAP_BLOOD_CASTLE1:
+    case MAP_BLOOD_CASTLE2:
+    case MAP_BLOOD_CASTLE3:
+    case MAP_BLOOD_CASTLE4:
+    case MAP_BLOOD_CASTLE5:
+    case MAP_BLOOD_CASTLE6:
       v27 = *(short *)(o + 2);
       if ( v27 >= 9 && v27 <= 10 && *(WORD *)(o + 134) != 4 )
       {

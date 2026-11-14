@@ -59,7 +59,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
             BMD_TransformPosition(model,
                 (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (r % nBones) * 0x30),
                 &local_48, &local_54, '\x01');
-            Particle_Spawn(0x498, &local_54, (float *)(puVar13 + 7),
+            Particle_Spawn(BITMAP_SPARK + 1, &local_54, (float *)(puVar13 + 7),
                          &local_60, 3, 1.0f, 0);
         }
     }
@@ -101,7 +101,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
     else if (bVar7 == 0x4b) {
         BMD_TransformPosition(model, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + 0x360),
                      &local_48, &local_54, '\x01');
-        Particle_Spawn(0x4ab, &local_54, (float *)(puVar13 + 7),
+        Particle_Spawn(BITMAP_FIRE, &local_54, (float *)(puVar13 + 7),
                      &local_60, 0, 0.3f, 0);
     }
 }
@@ -167,7 +167,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
                 // Random 1/4 chance: add spark if walking
                 BYTE bAnimState = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
                 if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
-                    Particle_Spawn(0x49c, &local_54, (float *)(puVar13 + 7),
+                    Particle_Spawn(BITMAP_ENERGY, &local_54, (float *)(puVar13 + 7),
                                  &local_60, 0, 1.0f, 0);
             }
             iVar9  += 0x8c;
@@ -368,7 +368,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
 
         if (EquipmentLevelSet == 10) {
             // Single lightning particle around the entity
-            Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
+            Particle_Spawn(BITMAP_FLARE, (float *)(puVar13 + 4),
                          (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (intptr_t)puVar13);
         } else if (EquipmentLevelSet == 11) {
             // 1/8: lightning joint, 7/8: particle
@@ -382,7 +382,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
                              (float *)(puVar13 + 4), (float *)(puVar13 + 7),
                              0, (intptr_t)puVar13, 10.0f, -1, 0);
             } else {
-                Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
+                Particle_Spawn(BITMAP_FLARE, (float *)(puVar13 + 4),
                              (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (intptr_t)puVar13);
             }
         }

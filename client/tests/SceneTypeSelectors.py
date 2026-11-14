@@ -9,7 +9,8 @@ def harness(revision=None):
  source=read_source('src/render/Entity_Render_3D.cpp',revision)
  source=re.sub(r'//[^\n]*|/\*.*?\*/','',source,flags=re.S)
  wrappers=[]
- for name,marker,kind in [('Range','case 4:', 'if'),('Map8','case 8:', 'switch'),('Map10','case 0xa:', 'switch')]:
+ for name,markers,kind in [('Range',('case MAP_LOST_TOWER:','case 4:'), 'if'),('Map8',('case MAP_TARKAN:','case 8:'), 'switch'),('Map10',('case MAP_ICARUS:','case 0xa:'), 'switch')]:
+  marker=next(m for m in markers if m in source)   # el nombre nuevo o, en una revisión vieja, el número
   section=source[source.index(marker):];start=section.index('pfVar3 = (float *)(int)*(short *)(param_1 + 2);');section=section[start:]
   match=re.search(r'\b'+kind+r'\s*\(',section);begin=match.end();end=begin;depth=1
   while depth:depth+=(section[end]=='(')-(section[end]==')');end+=1

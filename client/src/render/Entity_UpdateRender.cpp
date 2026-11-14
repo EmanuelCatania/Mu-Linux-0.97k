@@ -92,7 +92,7 @@ static void RenderAttackBuffSparkles(BYTE* entity)
         for (int back : { 0, 6, 7 }) {
             float position[3];
             BMD_TransformPosition(model, (float*)(bones + 12 * (bone - back)), offset, position, 1);
-            CreateSprite(1231, position, 1.5f, light, (intptr_t)entity, 0.0f, 0);
+            CreateSprite(BITMAP_SHINY + 1, position, 1.5f, light, (intptr_t)entity, 0.0f, 0);
         }
     }
 }
@@ -149,11 +149,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
             v11 != 59 && v11 != 63 &&
-            gMapManager.GetCurrentMap() != 10 && alpha >= 0.3f)
+            gMapManager.GetCurrentMap() != MAP_ICARUS && alpha >= 0.3f)
         {
             // Blood Castle (11..16): clamp Z to terrain height when
             // entity is dead+action-start (Blood Castle special case).
-            if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
+            if (IsBloodCastleMap(gMapManager.GetCurrentMap())) {
                 if (*(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->ActionStart != 0 &&     // o+405 m_bActionStart
                     *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Dead != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
@@ -286,14 +286,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)&((OBJECT*)(uintptr_t)(o))->Alpha >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
+        if (*(float *)&((OBJECT*)(uintptr_t)(o))->Alpha >= 0.5f && gMapManager.GetCurrentMap() != MAP_ICARUS &&
             *(short *)(o + 2) == 390)
         {
             const unsigned short helper = *(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type;
             if (helper < 818 || helper > 819 || *((char *)param_1 + EntityOffset(846)) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
-                if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 &&
+                if (IsBloodCastleMap(gMapManager.GetCurrentMap()) &&
                     *(BYTE *)&((OBJECT*)(uintptr_t)(o))->ActionStart != 0 && *((BYTE *)param_1 + EntityOffset(765)) != 0)
                 {
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
@@ -443,7 +443,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         if (subType >= 206 && subType <= 208) {
             float alphaST = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha;
             int   flags   = 0;
-            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
+            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == MAP_LORENCIA) {
                 flags = 8 * (int)*(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Level;
             }
             RenderPartObject((intptr_t)param_1, subType, 0,
@@ -532,7 +532,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // La capa NO es una malla del modelo: es un objeto de **tela**
         // (cloth/verlet) construido con `sub_408130`, texturizado con
         // Robe01.jpg/Robe02.jpg = slots 490/491 (los carga `OpenPlayerTextures`
-        // 0x507610, en Model/Model_Monsters.cpp).
+        // 0x507610, en assets/model/PlayerTextures.cpp).
         //
         //   Targetd = 0;
         //   if ((c[444] & 7) == 3 && o->Type == 390) Targetd = 1;   // clase 3 = MG
@@ -608,7 +608,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         short *psVar1 = (short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4)));
         *psVar1 = 0xea;
         *(char *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 9;
-        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd; // 0.2f alpha
+        ((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0.2f; // 0.2f alpha
         RenderLinkObject(0.0f, 0.0f, -40.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      0xea, '\0', 0, '\0', '\x01', 0);
         *psVar1 = 0xeb;
@@ -620,7 +620,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         // Special class shield / weapon glow
         short *psVar1 = (short *)((int *)((char *)param_1 + EntityOffset(0xa8 * 4)));
         *(char *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 1;
-        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd;
+        ((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0.2f;
         if (bVar7 == 0x84) *psVar1 = 0x23a;
         if (bVar7 == 0x85) *psVar1 = 0x1a3;
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
@@ -643,7 +643,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
         if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
-        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
+        if (gMapManager.GetCurrentMap() > MAP_ICARUS && gMapManager.GetCurrentMap() < 0x11)
             local_74 = (void *)0;
     }
 
@@ -712,7 +712,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
         // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
         // siempre se alcanza.
-        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
+        if (IsBloodCastleMap(gMapManager.GetCurrentMap()) &&
             (*(char *)((int *)((char *)param_1 + EntityOffset(0xba * 4))) != 0)) {
             *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xa9 * 4))) = 0x2f;   // LinkBone = 47
             BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
@@ -747,7 +747,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         // Wings / shield bone (slot 0xae == 0x331)
         if (*(short *)((int *)((char *)param_1 + EntityOffset(0xae * 4))) == 0x331) {
             *(BYTE *)((int *)((char *)param_1 + EntityOffset(0xaf * 4))) = 0x22;
-            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Helper.PlaySpeed = 0x3f000000; // 0.5f
+            ((CHARACTER*)(uintptr_t)param_1)->Helper.PlaySpeed = 0.5f; // 0.5f
             RenderLinkObject(20.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)((int *)((char *)param_1 + EntityOffset(0xae * 4))),
                          0x331,
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,

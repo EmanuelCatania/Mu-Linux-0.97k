@@ -36,7 +36,7 @@ static void Terrain_ProcessObjects(bool simulation)
     // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
     if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
     float z_offset = 0.0f;
-    if (gMapManager.GetCurrentMap() == 10) {
+    if (gMapManager.GetCurrentMap() == MAP_ICARUS) {
         z_offset = -10.0f;
     }
 
@@ -87,7 +87,7 @@ static void Terrain_ProcessObjects(bool simulation)
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
                             if (simulation) {
-                                if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
+                                if (gMapManager.GetCurrentMap() == MAP_DEVIAS && *(short*)(entity + 2) == 100)
                                 {
                                     void *pvSlot = AntiTamper_HashNode();
                                     *(unsigned char*)((char*)pvSlot + 0x584) = 1;

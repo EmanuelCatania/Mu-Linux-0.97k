@@ -6,6 +6,7 @@
 #include "platform/CompilerCompat.h"
 #include <cstdint>
 #include "game/physics/ClothTypes.h"
+#include "render/EffectIds.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct BMD;
 struct OBJECT;

@@ -295,14 +295,14 @@ set(MU_SOURCES
     src/render/Render_WorldHelpers.cpp
     src/render/BMD_Load.cpp
     src/globals.cpp
-    src/assets/model/Model_Items.cpp
+    src/assets/model/PlayerModels.cpp
     src/assets/model/Model_CustomAnim.cpp
-    src/assets/model/Model_Monsters.cpp
-    src/assets/model/Model_Players.cpp
-    src/assets/model/Model_Effects.cpp
-    src/assets/model/Model_Misc.cpp
-    src/assets/model/Model_SkillEffects.cpp
-    src/assets/model/Model_Gates.cpp
+    src/assets/model/PlayerTextures.cpp
+    src/assets/model/ItemModels.cpp
+    src/assets/model/ItemTextures.cpp
+    src/assets/model/SkillModels.cpp
+    src/assets/model/InterfaceTextures.cpp
+    src/audio/GameSounds.cpp
     src/game/combat/Combat.cpp
     src/game/combat/Combat_AttackStage.cpp
     src/game/combat/Combat_Projectiles.cpp
@@ -519,6 +519,8 @@ set(MU_HEADERS
     src/ui/MoveList.h
     src/audio/SoundManager.h
     src/game/core/MapManager.h
+    src/game/core/MapNumber.h
+    src/render/EffectIds.h
     src/game/core/HeroVitals.h
     src/net/Network.h
     src/net/NetChannel.h

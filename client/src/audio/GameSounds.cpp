@@ -1,8 +1,7 @@
 // IDA: OpenSounds @ 0x0050F030 — Sound_LoadGameSamples
 //
 // Precarga los sonidos globales del juego (ids 0..109) via LoadWaveFile
-// (LoadWaveFile).  El nombre del archivo viene del port anterior; a pesar de
-// llamarse "Gates", esta funcion carga audio, no geometria de puertas.
+// (LoadWaveFile).
 //
 // Firma: LoadWaveFile(id, path, nChannels, b3D)
 //

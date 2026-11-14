@@ -359,7 +359,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     // IDA: Particle_Spawn (0x00475220). Despacho directo por tipo;
     // cada familia conserva sus subtipos y el orden de inicialización.
     switch (param_1) {
-    case 1220: {
+    case BITMAP_SMOKE: {
         // 0x4c4 — fire/ember type; sub_type selects variant
         switch (param_5) {
         case 0: case 4: case 9:
@@ -446,7 +446,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         *(float *)(pcVar11 + 0x18) = *(float *)(pcVar11 + 0x18) + _DAT_005529e0;
         return iVar6;
     }
-    case 1175: {
+    case BITMAP_SPARK: {
         // 0x497 — matrix-transformed directional burst
         uVar8 = _rand() % 4;
         iVar7 = *(int *)(pcVar11 + 8);
@@ -509,7 +509,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 100) * _DAT_00552890;
         return iVar6;
     }
-    case 1150: {
+    case BITMAP_LIGHT: {
         // 0x47e — misc bubble/spark
         if (param_5 == 0 || param_5 == 2) {
             iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 10;
@@ -537,7 +537,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             ((float)(iVar7 % 0x32) + _DAT_00552598) * param_6 * _DAT_00552594;
         return iVar6;
     }
-    case 1176: {
+    case BITMAP_SPARK + 1: {
         // 0x498 — directional smoke/mist
         if (param_5 == 1) {
             iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
@@ -569,7 +569,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         }
         return iVar6;
     }
-    case 1177: case 1205: case 1206: {
+    case 1177: case BITMAP_BLOOD: case BITMAP_BLOOD + 1: {
         *(int*)(pcVar11 + ParticleLifetimeOffset) = 12;
         uVar8 = _rand() % 4;
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 8) * _DAT_00552874;
@@ -587,14 +587,14 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         }
         return iVar6;
     }
-    case 1180: {
+    case BITMAP_ENERGY: {
         uVar8 = _rand() % 8;
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 6) * param_6 * _DAT_005524f4;
         iVar7 = _rand();
         *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
         return iVar6;
     }
-    case 0x4a7: {
+    case BITMAP_LIGHTNING + 1: {
         if (param_5 >= 0 && param_5 < 4) {
             const auto& preset = ParticleScalePresets[param_5];
             if (preset.Lifetime >= 0)
@@ -607,16 +607,16 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         return iVar6;
     }
 
-    case 0x4ab:
-    case 0x4ad:
+    case BITMAP_FIRE:
+    case BITMAP_FIRE + 2:
         goto switchD_4ab_impl;
 
-    case 0x4ac:
-    case 0x567:
+    case BITMAP_FIRE + 1:
+    case BITMAP_POUNDING_BALL:
         ApplyParticleLinearMotion(pcVar11, ParticleLinearMotions[param_1 == 0x4ac ? 0 : 1]);
         return iVar6;
 
-    case 0x4b0: {
+    case BITMAP_FLAME: {
         switch (param_5) {
         case 0:
             *(int*)(pcVar11 + ParticleLifetimeOffset) = 20;
@@ -704,23 +704,23 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         return iVar6;
     }
 
-    case 0x4bf: case 0x4c0: case 0x4ce: case 0x4cf:
-    case 0x4d0: case 0x4d2: case 0x596:
+    case BITMAP_EXPLOTION: case BITMAP_EXPLOTION + 1: case BITMAP_SHINY: case BITMAP_SHINY + 1:
+    case BITMAP_SHINY + 2: case BITMAP_SHINY + 4: case 0x596:
         ApplyParticlePreset(pcVar11, param_1, param_5);
         return iVar6;
 
-    case 0x4c5: case 0x4c6: {
+    case BITMAP_SMOKE + 1: case 0x4c6: {
         const auto& trajectory = ParticleTrajectories[param_1 - 1221];
         *(int*)(pcVar11 + ParticleLifetimeOffset) = trajectory.Lifetime;
         trajectory.Initialize(pcVar11, param_5, param_3);
         return iVar6;
     }
 
-    case 0x4d9: case 0x4da: case 0x4db: case 0x4dc:
+    case BITMAP_BUBBLE: case BITMAP_FLOWER01: case BITMAP_FLOWER01 + 1: case BITMAP_FLOWER01 + 2:
         ApplyParticleDispersion(pcVar11, param_1);
         return iVar6;
 
-    case 0x4df:
+    case BITMAP_FIRECRACKER:
         *(float*)(pcVar11 + ParticleAngleOffset + 8) = 0.0f;
         *(float*)(pcVar11 + ParticleAngleOffset + 4) = 0.0f;
         *pfVar2 = 0.0f;
@@ -740,7 +740,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         *(float*)(pcVar11 + ParticleScaleOffset) = 0.25f;
         return iVar6;
 
-    case 0x4e1: {
+    case BITMAP_FLARE: {
         *(int*)(pcVar11 + ParticleLifetimeOffset) = 60;
         if ((param_5 == 0) || (param_5 == 3)) {
             iVar7 = _rand();
@@ -772,7 +772,7 @@ lab_4e1_skip_size:
         return iVar6;
     }
 
-    case 0x4f4:
+    case BITMAP_CLOUD:
         if (param_5 != 6) {
             *(int*)(pcVar11 + ParticleLifetimeOffset) = 30;
             iVar7 = _rand(); *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 1000);
@@ -793,11 +793,11 @@ lab_4e1_skip_size:
         InitializeRotatingImpulse(pcVar11, 0.2f);
         return iVar6;
 
-    case 0x565:
+    case BITMAP_ADV_SMOKE:
         InitializeParticleImpulse(pcVar11, param_5);
         return iVar6;
 
-    case 0x566:
+    case BITMAP_ADV_SMOKE + 1:
         InitializeRotatingImpulse(pcVar11, 0.5f);
         return iVar6;
 

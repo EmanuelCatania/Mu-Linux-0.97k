@@ -237,7 +237,7 @@ extern "C" void __cdecl Render_MapLoadText_(void);
 void Render_MapLoadText_(void)
 {
     if (!m_byMatchType) return;
-    if ((int)gMapManager.GetCurrentMap() < 11 || (int)gMapManager.GetCurrentMap() > 16) return;
+    if (!IsBloodCastleMap(gMapManager.GetCurrentMap())) return;
 
     GL_ResetState();
     EnableAlphaTest(false);

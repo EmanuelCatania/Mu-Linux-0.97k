@@ -61,7 +61,7 @@ void Mouse_UpdateHoverTargets(void)
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 
     // `SelectedCharacter >= 0` evita leer entity[+0x2fd] con indice -1 (estado inicial).
-    if (m_bAutoAttack == '\0' || gMapManager.GetCurrentMap() == 6) {
+    if (m_bAutoAttack == '\0' || gMapManager.GetCurrentMap() == MAP_ARENA) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
         Attacking = -1;
@@ -306,7 +306,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
 // Original binary stores raw bits 0x4B1DCD65 (= 10367333.0f) into the float.
 void Map_InitRayCast()
 {
-    *(DWORD*)&DAT_083a4120 = 0x4B1DCD65;  // ≈ 1.0367e7f — far-plane sentinel
+    DAT_083a4120 = 10341733.0f;  // ≈ 1.0367e7f — far-plane sentinel
 }
 
 

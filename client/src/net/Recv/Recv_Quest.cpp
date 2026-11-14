@@ -106,7 +106,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
                          (float*)(c + 28), 0, (intptr_t)c,
                          40.0f, 2, 0);
-        CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
+        CreateEffect(BITMAP_MAGIC + 1, (float*)(c + 16), (float*)(c + 28),
                      (float*)(c + 232), nullptr, (float*)c,
                      (float*)-1, nullptr, 0);
         PlayBuffer(71, 0, 0);
@@ -139,7 +139,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                          (float*)(c + 28), 10, (intptr_t)c,
                          40.0f, 2, 0);
         }
-        CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
+        CreateEffect(BITMAP_MAGIC + 1, (float*)(c + 16), (float*)(c + 28),
                      (float*)(c + 232), nullptr, (float*)c,
                      (float*)-1, nullptr, 0);
         Character_UpdateEquipSlotAnimations(AsCharacter(c));   // rebuild de body-parts

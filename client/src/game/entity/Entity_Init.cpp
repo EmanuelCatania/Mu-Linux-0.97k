@@ -30,9 +30,9 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   CreateCharacterPointer(puVar1, 0x186, 0, 0, Rotate);
 
   // Object.Light[0..2] = 0.3f (0x3e99999a)
-  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[0] = 0x3e99999a;
-  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[1] = 0x3e99999a;
-  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[2] = 0x3e99999a;
+  AsCharacter(puVar1)->Object.Light[0] = 0.3f;
+  AsCharacter(puVar1)->Object.Light[1] = 0.3f;
+  AsCharacter(puVar1)->Object.Light[2] = 0.3f;
 
   // Object.Position[0..1] = (x, y) — world coords for char-preview slots
   AsCharacter(puVar1)->Object.Position[0] = x;

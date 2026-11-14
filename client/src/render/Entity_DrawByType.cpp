@@ -249,7 +249,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
     // ── Tint overrides based on game sub-state / type ──────────────────────────
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
-    if (gMapManager.GetCurrentMap() == 10 && AsObject(param_1)->Type == 0x12d) {
+    if (gMapManager.GetCurrentMap() == MAP_ICARUS && AsObject(param_1)->Type == 0x12d) {
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.02f;          // 0x3ca3d70a R
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.05f;          // 0x3d4ccccd G
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.15f;          // 0x3e19999a B
@@ -257,7 +257,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
     }
 
     // Sub-state 9 (snow) + type 0x120 → icy tint
-    if (gMapManager.GetCurrentMap() == 9 && AsObject(param_1)->Type == 0x120) {
+    if (gMapManager.GetCurrentMap() == MAP_DEVIL_SQUARE1 && AsObject(param_1)->Type == 0x120) {
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.0f;
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;           // 0x3e99999a G
         *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;            // 0x3f800000 B
@@ -306,7 +306,7 @@ LAB_render_dispatch:
     if (sType == 0x10b)
         goto LAB_simple_render;
 
-    if (gMapManager.GetCurrentMap() == 0) {
+    if (gMapManager.GetCurrentMap() == MAP_LORENCIA) {
         if (sType == 0x69) {
             // IDA 0x004FAE00: Waterspout01 in Lorencia renders 4 explicit mesh
             // passes with mesh indices 0..3 and object fields as the remaining
@@ -329,7 +329,7 @@ LAB_render_dispatch:
             BMDDevice::EndModel();
             return;
         }
-    } else if (gMapManager.GetCurrentMap() == 4) {
+    } else if (gMapManager.GetCurrentMap() == MAP_LOST_TOWER) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
             sType = AsObject(param_1)->Type;
@@ -383,7 +383,7 @@ LAB_substate4_done:
                          0xffffffff);
             return;
         }
-    } else if (gMapManager.GetCurrentMap() == 8) {
+    } else if (gMapManager.GetCurrentMap() == MAP_TARKAN) {
         if (sType == 0x51) {
             // Map transition portal
             BMD__BeginRender();
@@ -398,7 +398,7 @@ LAB_substate4_done:
             BMDDevice::EndModel();
             return;
         }
-    } else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
+    } else if (gMapManager.GetCurrentMap() > MAP_ICARUS && gMapManager.GetCurrentMap() < 0x11) {
         if (sType == 0x1c || sType == 0x1d) {
             // Map-load transition: render + shadow drop
             BMD__BeginRender();

@@ -65,7 +65,7 @@ void __cdecl Alpha(OBJECT* object)
     fVar1 = *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha + _DAT_00552874;
     *(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = fVar1;
     if (_DAT_0055256c < fVar1) {
-      *(undefined4 *)&((OBJECT*)(uintptr_t)(param_1))->Alpha = 0x3f800000;
+      ((OBJECT*)(uintptr_t)(param_1))->Alpha = 1.0f;
     }
   }
   if (*(float *)&((OBJECT*)(uintptr_t)(param_1))->Alpha < *(float *)(param_1 + 0x68)) {

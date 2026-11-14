@@ -122,7 +122,7 @@ void __cdecl RenderBoids(void)
                 // Sprites de fauna publicados durante SIM.
 
                 // World != 10: render shadow on terrain.
-                if (gMapManager.GetCurrentMap() != 10) {
+                if (gMapManager.GetCurrentMap() != MAP_ICARUS) {
                     BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * entType);
                     // DESVIACION R4k: habilitar mezcla sin cambiar sus factores,
                     // y recuperar activación/caché al salir de esta sombra.
@@ -261,7 +261,7 @@ void __cdecl Entity_Render(void)
                 float v21 = *(float*)(v1 + 20);
                 float v22 = *(float*)(v1 + 24);
 
-                if (gMapManager.GetCurrentMap() == 10) {  // World 10 (Icarus) — bamboleo
+                if (gMapManager.GetCurrentMap() == MAP_ICARUS) {  // World 10 (Icarus) — bamboleo
                     // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
                     *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)WorldTime)
                                                      * (double)_DAT_005528e0)
@@ -443,7 +443,7 @@ void __cdecl ItemDrop_Render(void)
                             pos[0] += p[-1]; pos[1] += p[0]; pos[2] += p[1];
                         }
                         pos[0] *= 0.25f; pos[1] *= 0.25f; pos[2] *= 0.25f;
-                        CreateSprite(1277, pos, 0.69999999f, c, 0, 0.0f, 0);
+                        CreateSprite(BITMAP_FLARE_BLUE, pos, 0.69999999f, c, 0, 0.0f, 0);
                     }
                 } else if (type == 1255) {
                     float lz = light[2];
@@ -864,7 +864,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     // flota 100 unidades sobre su posición y fija angle[1] = 90°.
     const float spin = AsObject(o)->Direction[2];
     AsObject(o)->Angle[2]  = spin + AsObject(o)->Angle[2];
-    *(int *)&AsObject(o)->Angle[1]  = 1119092736;              // 90.0f
+    AsObject(o)->Angle[1] = 90.0f;              // 90.0f
     const float zUp    = AsObject(o)->Position[2] + 100.0f;
     AsObject(o)->Position[2]  = zUp;
 
@@ -980,7 +980,7 @@ void __cdecl EffectPool_RenderAll(void)
             float xf = v0[-6], yf = v0[-5], zf = v0[-4];
             for (int n = 0; n < 30; ++n) {
                 float pos[3] = { xf, yf, zf };
-                CreateSprite(1176, pos, v0[-7], v0 + 48,
+                CreateSprite(BITMAP_SPARK + 1, pos, v0[-7], v0 + 48,
                              (intptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
@@ -1019,7 +1019,7 @@ void __cdecl EffectPool_RenderAll(void)
                 // independent sprite pool (004795C0), not CreateParticle
                 // (00475220); the latter interprets its second argument as
                 // a position and dereferences the previous nullptr.
-                CreateSprite(1176, pos, v0[-7], v0 + 48,
+                CreateSprite(BITMAP_SPARK + 1, pos, v0[-7], v0 + 48,
                               (intptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
@@ -1075,7 +1075,7 @@ bool __cdecl MoveMainCamera(void) {
     CameraFOV = gCamera3D.GetFov();
     CameraAngle[0] = 0.0f;
     CameraAngle[1] = 0.0f;
-    if (gMapManager.GetCurrentMap() == 10) {
+    if (gMapManager.GetCurrentMap() == MAP_ICARUS) {
         CameraAngle[0] = 0.0f;
         CameraAngle[1] = 0.0f;
     }
@@ -1106,7 +1106,7 @@ bool __cdecl MoveMainCamera(void) {
         CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - gCamera3D.GetHeight();
         CameraAngle[0] = EarthQuake - gCamera3D.GetPitch();       // pitch después de la posición
     }
-    if (gMapManager.GetCurrentMap() == 5) {
+    if (gMapManager.GetCurrentMap() == MAP_EXILE) {
         float v1 = (float)sin((double)WorldTime * 0.00050000002);
         CameraAngle[0] = v1 + v1 + CameraAngle[0];
         CameraAngle[1] = (float)sin((double)WorldTime * 0.00079999998) * 2.5f + CameraAngle[1];
@@ -1161,7 +1161,7 @@ void Fauna_TickSprites() {
             if (!o.Visible || (o.Type != 175 && o.Type != 184)) continue;
             float brightness = (float)(rand() % 32 + (o.Type == 175 ? 64 : 128)) * 0.01f;
             float color[3] = {brightness * 0.2f, brightness * 0.4f, brightness * 0.4f};
-            if (o.Type == 175) { CreateSprite(1150, o.Position, 1.0f, color, entity, 0, 0); continue; }
+            if (o.Type == 175) { CreateSprite(BITMAP_LIGHT, o.Position, 1.0f, color, entity, 0, 0); continue; }
             void *model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
             EquipmentModelContext context(model);
             const float angle = o.Angle[2];
@@ -1172,7 +1172,7 @@ void Fauna_TickSprites() {
             for (int side = 0; side < 2; ++side) {
                 float offset[3] = {side ? 5.0f : -5.0f, 0, 0}, position[3];
                 BMD_TransformPosition(model, (float *)(g_BoneScratch + 0x30), offset, position, 1);
-                CreateSprite(1150, position, 0.1f, color, entity, 0, 0);
+                CreateSprite(BITMAP_LIGHT, position, 0.1f, color, entity, 0, 0);
             }
         }
     }
@@ -1185,7 +1185,7 @@ void Fauna_TickSprites() {
         if (!o.Visible || o.Type != 816) continue;
         float brightness = (float)(rand() % 30 + 70) * 0.01f;
         float light[3] = {brightness * 0.5f, brightness * 0.8f, brightness * 0.6f};
-        CreateSprite(1150, o.Position, 1.0f, light, entity, 0, 0);
+        CreateSprite(BITMAP_LIGHT, o.Position, 1.0f, light, entity, 0, 0);
     }
 }
 

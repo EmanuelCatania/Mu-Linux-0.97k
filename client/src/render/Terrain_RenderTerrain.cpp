@@ -90,7 +90,7 @@ static void Terrain_EndWavePass() {
 // El picking conserva sus llamadas adicionales dentro de SIM.
 void Terrain_TickRenderWater() {
     if (SceneFlag != 5 || DAT_07e11d1c > 30 || !DAT_07abf5d8) return;
-    if (gMapManager.GetCurrentMap() != 10 && !gUserSettings.GetAntilag(ANTILAG_FLOOR)) {
+    if (gMapManager.GetCurrentMap() != MAP_ICARUS && !gUserSettings.GetAntilag(ANTILAG_FLOOR)) {
         Terrain_BeginWavePass();
         Terrain_EndWavePass();
     }
@@ -103,7 +103,7 @@ void __cdecl RenderTerrain(char EditFlag) {
     if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
     if (EditFlag) Terrain_BeginWavePass();
 
-    if (gMapManager.GetCurrentMap() == 8)
+    if (gMapManager.GetCurrentMap() == MAP_TARKAN)
         DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
     else
         DAT_07eeb214 = (float)((long long)WorldTime % 20000) * 0.000049999999f;  // WaterMove
@@ -132,7 +132,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         }
     } else {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
-        if (DAT_0055a76c && gMapManager.GetCurrentMap() != 7) { // overlay (inerte: unk_55A76C nunca seteado)
+        if (DAT_0055a76c && gMapManager.GetCurrentMap() != MAP_ATLANS) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             // DESVIACION: el pasto (billboards) recibe sombra pero no la proyecta.
             Gfx::SetShadowCasting(false);

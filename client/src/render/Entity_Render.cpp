@@ -364,22 +364,22 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
     }
     else if (param_11 == 1) {
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3ca3d70a;
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3dcccccd;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.02f;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.1f;
       }
       else {
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3dcccccd;
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3cf5c28f;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.1f;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.03f;
       }
       *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f99999a);
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3e23d70a;
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3f333333;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.16f;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.7f;
       }
       else {
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3f333333;
-        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3e4ccccd;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0.7f;
+        ((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0.2f;
       }
       *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);

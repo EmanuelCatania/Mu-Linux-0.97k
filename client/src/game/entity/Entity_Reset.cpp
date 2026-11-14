@@ -51,30 +51,30 @@ static int ItemObjectAttributeImpl(OBJECT* object, const int *samples)
   *(undefined4 *)&AsObject(param_1)->BlendMesh = 0xffffffff;          // lifetime = -1 (no limit)
   *(undefined4 *)&AsObject(param_1)->HiddenMesh = 0xffffffff;          // render type = default
   sVar1 = AsObject(param_1)->Type;                       // entity type
-  *(undefined4 *)&AsObject(param_1)->Light[0] = 0x3e99999a;          // color R = 0.3f
-  *(undefined4 *)&AsObject(param_1)->Light[1] = 0x3e99999a;          // color G = 0.3f
-  *(undefined4 *)&AsObject(param_1)->Light[2] = 0x3e99999a;          // color B = 0.3f
+  AsObject(param_1)->Light[0] = 0.3f;          // color R = 0.3f
+  AsObject(param_1)->Light[1] = 0.3f;          // color G = 0.3f
+  AsObject(param_1)->Light[2] = 0.3f;          // color B = 0.3f
   iVar2 = 0;
   AsObject(param_1)->LightEnable = 1;                   // visible = true
   AsObject(param_1)->AlphaEnable = 0;                  // active flag = 0
   AsObject(param_1)->EnableShadow = 0;                   // extra flag = 0
   *(undefined4 *)&AsObject(param_1)->Velocity = 0;                   // color flags = 0
-  *(undefined4 *)&AsObject(param_1)->CollisionRange = 0x42480000;          // max lifetime = 50.0f
+  AsObject(param_1)->CollisionRange = 50.0f;          // max lifetime = 50.0f
   *(undefined4 *)&AsObject(param_1)->PriorAnimationFrame = 0;
   *(undefined4 *)&AsObject(param_1)->AnimationFrame = 0;
   AsObject(param_1)->PriorAction = 0;                  // anim state = 0
   AsObject(param_1)->CurrentAction = 0;                  // anim state prev = 0
   *(undefined4 *)&AsObject(param_1)->Gravity = 0;
-  *(undefined4 *)&AsObject(param_1)->Alpha = 0x3f800000;         // alpha = 1.0f
-  *(undefined4 *)&AsObject(param_1)->BlendMeshLight = 0x3f800000;          // scale = 1.0f
+  AsObject(param_1)->Alpha = 1.0f;         // alpha = 1.0f
+  AsObject(param_1)->BlendMeshLight = 1.0f;          // scale = 1.0f
   *(undefined4 *)&AsObject(param_1)->BlendMeshTexCoordU = 0;                   // spin X = 0
   *(undefined4 *)&AsObject(param_1)->BlendMeshTexCoordV = 0;                   // spin Y = 0
-  *(undefined4 *)&AsObject(param_1)->Scale = 0x3f4ccccd;           // color mul = 0.8f
+  AsObject(param_1)->Scale = 0.8f;           // color mul = 0.8f
   *(undefined4 *)(param_1 + 0x78) = 0;                   // flags = 0
 
   // Reduce color multiplier for entity types 0x1f0..0x24f
   if ((0x1ef < sVar1) && (sVar1 < 0x250)) {
-    *(undefined4 *)&AsObject(param_1)->Scale = 0x3f333333;         // color mul = 0.7f
+    AsObject(param_1)->Scale = 0.7f;         // color mul = 0.7f
   }
 
   iVar3 = (int)sVar1;
@@ -143,13 +143,13 @@ switchD_00502c73_caseD_220:
 switchD_00502c73_caseD_196:
           return iVar2;
         case 0x351:
-          *(undefined4 *)&AsObject(param_1)->Scale = 0x3f800000;   // color mul = 1.0f
+          AsObject(param_1)->Scale = 1.0f;   // color mul = 1.0f
           return iVar2;
         case 0x365:
-          *(undefined4 *)&AsObject(param_1)->Scale = 0x3f000000;   // color mul = 0.5f
+          AsObject(param_1)->Scale = 0.5f;   // color mul = 0.5f
           return iVar2;
         case 0x370:
-          *(undefined4 *)&AsObject(param_1)->Scale = 0x3f333333;   // color mul = 0.7f
+          AsObject(param_1)->Scale = 0.7f;   // color mul = 0.7f
           return iVar2;
         }
       }
@@ -169,7 +169,7 @@ switchD_00502c73_caseD_196:
         case 0x310:
           break;
         case 0x313:
-          *(undefined4 *)&AsObject(param_1)->Scale = 0x3f000000;   // color mul = 0.5f
+          AsObject(param_1)->Scale = 0.5f;   // color mul = 0.5f
         }
       }
 switchD_00502c73_caseD_1d5:
