@@ -200,6 +200,7 @@ MaxCharacterLevel=400
 ; Experience table curve exponent (range: 1.0 - 3.0, decimals allowed)
 ;   exp(level) = ((DWORD_MAX * 0.95) / MaxCharacterLevel^N) * level^N
 ; N=3 is the original curve. Lower values flatten the curve.
+; This requires to increment the experience received if changed.
 ExperienceExponent=3
 
 ; Maximum simultaneous levels increase per experience gained
