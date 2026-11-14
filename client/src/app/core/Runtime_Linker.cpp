@@ -8,28 +8,6 @@ extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cp
 extern void __cdecl operator_delete(void* ptr);
 extern void ClearActionObject(void);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
 #define ITEM_SPECIAL_SKILL_OPTION             0
 #define ITEM_SPECIAL_LUCK_OPTION              1
 #define ITEM_OPTION_ADD_PHYSI_DAMAGE_CODE     60
@@ -68,7 +46,6 @@ void __cdecl Crt_Free(void *ptr) {
     free(ptr);
 }
 
-
 // StopBuffer @ 0x00404C60 — implementado en Render/Render_WorldHelpers.cpp (delega a Sound_StopBuffer).
 
 // StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/audio/Music.cpp).
@@ -76,7 +53,6 @@ void __cdecl Crt_Free(void *ptr) {
 void __cdecl StopMp3(char *cmd, int param) {
     Music_StopTrack(cmd, param);
 }
-
 
 // crt_exit @ 0x00543839 (4 lines) — CRT _cinit wrapper
 // Forwards to internal CRT initializer with default params.

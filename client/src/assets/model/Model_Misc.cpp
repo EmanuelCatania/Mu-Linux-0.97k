@@ -10,62 +10,6 @@
 void __cdecl Model_LoadSkillEffectAssets(void)
 {
     // ── Korean-locale SMD skill meshes ────────────────────────────────────────
-    if (DAT_0055a7c4 == '\0') {
-        OpenModel((int)0xbe, "Data2\\Skill\\", "ice.smd");
-        OpenModel((int)0xbf, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");       // freeze aura
-        OpenModel((int)0xc0, "Data2\\Skill\\", "wall.smd");
-        OpenModel((int)0xc5, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xc6, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xc7, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xc8, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xc9, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xca, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xcb, "Data2\\Skill\\", "magic_c.smd");
-        OpenModel((int)0xcc, "Data2\\Skill\\", "typhoon.smd");
-        OpenModel((int)0xcd, "Data2\\Skill\\", "dargon_magic.smd");
-        OpenModel((int)0xce, "Data2\\Skill\\", "bones_warrior.smd");
-        OpenModel((int)0xcf, "Data2\\Skill\\", "bone_a.smd");
-        OpenModel((int)0xd0, "Data2\\Skill\\", "bone_c.smd");
-        OpenModel((int)0xd1, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");       // saw
-        OpenModel((int)0xd2, "Data2\\Skill\\", "bons_p01.smd");
-        OpenModel((int)0xd3, "Data2\\Skill\\", "bons_p02.smd");
-        OpenModel((int)0xd4, "Data2\\Skill\\", "snow_p01.smd");
-        OpenModel((int)0xd5, "Data2\\Skill\\", "snow_p02.smd");
-        OpenModel((int)0xd6, "Data2\\Skill\\", "snow_p03.smd");
-        OpenModel((int)0xc3, "Data2\\Skill\\", "unicon.smd");
-        OpenModel((int)0x10c, "Data2\\Skill\\", "wall.smd");   // PhoenixShield reuse
-        OpenModel((int)0xd8, "Data2\\Skill\\", "arrow.smd");
-        OpenModel((int)0xd9, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xda, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xdb, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xdc, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xdd, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xde, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x103, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xe1, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xe2, "Data2\\Skill\\", "mston_a.smd");
-        OpenModel((int)0xe3, "Data2\\Skill\\", "mston_b.smd");
-        OpenModel((int)0xe9, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xdf, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xe0, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xec, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf0, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf1, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf2, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x10a, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf5, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf6, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf7, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf8, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf9, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfa, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfb, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfc, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfd, "Data2\\Skill\\", "magic2.smd");
-        OpenModel((int)0xfe, "Data2\\Skill\\", "magic3.smd");
-        if (DAT_0055a7c4 == '\0')
-            OpenModel((int)0xff, "Data2\\Skill\\", "piercing.smd");
-    }
 
     // ── Compressed-asset (BMD) skill loads ────────────────────────────────────
     DAT_0055a7c4 = '\x01';
@@ -96,8 +40,6 @@ void __cdecl Model_LoadSkillEffectAssets(void)
         AccessModel(i, "Data\\Skill\\", "Snow",  i - 0xd3);
     AccessModel(0xc3,  "Data\\Skill\\", "Rider", 1);
 
-    if (DAT_0055a7c4 == '\0')
-        OpenModel((int)0x10b, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
     AccessModel(0x10b, "Data\\Skill\\", "Rider", 2);
     DAT_0055a7c4 = '\x01';
 
@@ -132,16 +74,6 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     AccessModel(0xf2,  "Data\\Skill\\", "ArrowDouble", 1);
 
     // EarthQuake variants (Korean SMD re-load before BMD)
-    if (DAT_0055a7c4 == '\0') {
-        OpenModel((int)0xf5, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf6, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf7, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xf9, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfb, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfc, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0xfd, "Data2\\Skill\\", "magic2.smd");
-        OpenModel((int)0xfe, "Data2\\Skill\\", "magic3.smd");
-    }
     AccessModel(0xf5, "Data\\Skill\\", "EarthQuake", 1);
     AccessModel(0xf6, "Data\\Skill\\", "EarthQuake", 2);
     AccessModel(0xf7, "Data\\Skill\\", "EarthQuake", 3);

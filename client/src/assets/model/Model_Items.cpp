@@ -185,15 +185,6 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
         }
 
         // High-tier (slot 0x29f/0x2bf/0x2df/0x2ff/0x280 etc.) — single-slot SMD loads
-        OpenModel((int)0x29f, "Data2\\Player\\Armor\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2bf, "Data2\\Player\\Pant\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2df, "Data2\\Player\\Glove\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2ff, "Data2\\Player\\Boot\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x280, "Data2\\Player\\Helm\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2a0, "Data2\\Player\\Armor\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2c0, "Data2\\Player\\Pant\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x2e0, "Data2\\Player\\Glove\\", "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x300, "Data2\\Player\\Boot\\",  "\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd");
 
         // Shadow model
         OpenModels((int)0x187, "Data2\\Player\\Shadow\\Shadow", 1);
@@ -274,27 +265,6 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     AccessModel(0x300, "Data\\Player\\", "BootMale",  0x11);
 
     // Dark/Soul/Muz/Ma unique armour (Korean SMD only)
-    if (DAT_0055a7c4 == '\0') {
-        OpenModel((int)0x281, "Data2\\Player\\Helm\\",  "DarkP_Head.smd");
-        OpenModel((int)0x2a1, "Data2\\Player\\Armor\\", "DarkP_Armor.smd");
-        OpenModel((int)0x2c1, "Data2\\Player\\Pant\\",  "DarkP_Pant.smd");
-        OpenModel((int)0x2e1, "Data2\\Player\\Glove\\", "DarkP_Glove.smd");
-        OpenModel((int)0x301, "Data2\\Player\\Boot\\",  "DarkP_Boot.smd");
-        OpenModel((int)0x282, "Data2\\Player\\Helm\\",  "Soul_Helm.smd");
-        OpenModel((int)0x2a2, "Data2\\Player\\Armor\\", "Soul_Armor.smd");
-        OpenModel((int)0x2c2, "Data2\\Player\\Pant\\",  "Soul_Pants.smd");
-        OpenModel((int)0x2e2, "Data2\\Player\\Glove\\", "Soul_Gloves.smd");
-        OpenModel((int)0x302, "Data2\\Player\\Boot\\",  "Soul_Boots.smd");
-        OpenModel((int)0x283, "Data2\\Player\\Helm\\",  "Muz_Helm.smd");
-        OpenModel((int)0x2a3, "Data2\\Player\\Armor\\", "Muz_Armor.smd");
-        OpenModel((int)0x2c3, "Data2\\Player\\Pant\\",  "Muz_Pants.smd");
-        OpenModel((int)0x2e3, "Data2\\Player\\Glove\\", "Muz_Gloves.smd");
-        OpenModel((int)0x303, "Data2\\Player\\Boot\\",  "Muz_Boots.smd");
-        OpenModel((int)0x2a4, "Data2\\Player\\Armor\\", "Ma_Armor.smd");
-        OpenModel((int)0x2c4, "Data2\\Player\\Pant\\",  "Ma_Pant.smd");
-        OpenModel((int)0x2e4, "Data2\\Player\\Glove\\", "Ma_Gloves.smd");
-        OpenModel((int)0x304, "Data2\\Player\\Boot\\",  "Ma_Boots.smd");
-    }
 
     // Final slot range (0x12-0x15 suffix) — includes helm only for first 3
     // IDA 0x00506170 L104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).

@@ -31,37 +31,10 @@ extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const IT
 int __cdecl LevelConvert(BYTE Level);
 int __cdecl Net_Disconnect(void* ctx);
 
-
-
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-
 // IDA Hex-Rays intrinsic shims.
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SHIBYTE(x)           (*(((char*)&(x))+1))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
 
 // ── Char-select slot navigation helpers ────────────────────────────────────────
 
@@ -230,7 +203,6 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
     return (static_cast<uint>(iVar8) & 0xffffff00u) | 1u;
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Math utilities
 // ─────────────────────────────────────────────────────────────────────────────
@@ -249,7 +221,6 @@ double __cdecl Math_Fmin(float a1, float a2)
   }
 }
 
-
 // Math_Fmax @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
 // Math_Fmax (IDA-activated)
 double __cdecl Math_Fmax(float a1, float a2)
@@ -263,7 +234,6 @@ double __cdecl Math_Fmax(float a1, float a2)
     return a1;
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Vec3 math helpers
@@ -359,7 +329,6 @@ char __cdecl HotkeyBar_FindFreeSlot(char *_this)
   return 1;
 }
 
-
 // Character_FindByKey_WithClear @ 0x0045ACC0 — Character_FindByKey_WithClear
 // Scans entity array (stride 0x394, 400 entries) for an entity whose
 // la clave (short en +0x1dc) coincide con param_1. Limpia el byte +0x2e8 de cada
@@ -388,7 +357,6 @@ int __cdecl Character_FindByKey_WithClear(int a1)
   return result;
 }
 
-
 // Characters_SetActionAll @ 0x0045AD10 — Characters_SetActionAll
 // Setea la acción dada en todas las entidades vivas de tipo DK (0x186).
 // Resetea el Angle a (0, 0, 180°) antes de aplicar la acción.
@@ -416,7 +384,6 @@ void __cdecl Characters_SetActionAll(int Action)
   }
 }
 
-
 // Characters_FreeAllBMDBuffers @ 0x0045AD60 — Characters_FreeAllBMDBuffers
 // Libera los buffers de heap de BMD por entidad (puntero en entity+0x114) de todo el array,
 // y después libera el buffer BMD extra compartido (DAT_07abf164).
@@ -441,7 +408,6 @@ void Characters_FreeAllBMDBuffers()
     DAT_07abf164 = 0;
   }
 }
-
 
 // Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
@@ -530,7 +496,6 @@ char Sound_PlayFootstep()
   }
   return result;
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Network helpers
@@ -731,7 +696,6 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
   *(float *)(Object + 36) = v9 + *(float *)(Object + 36);
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Floating labels
 // ─────────────────────────────────────────────────────────────────────────────
@@ -789,7 +753,6 @@ int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5)
   }
   return result;
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SkillAttribute loaders
@@ -927,7 +890,6 @@ int __cdecl Terrain_WaterWaveUpdate(int a1)
   while ( v2 < 65280 );
   return result;
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collision / intersection helpers
@@ -1108,7 +1070,6 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const
   }
   return 0;
 }
-
 
 // Collision_ObbAxisOverlap @ 0x005130F0 — AABB_IntersectOBB
 // Separating-axis test between an OBB (param_4..param_15) and an AABB defined
@@ -1321,7 +1282,6 @@ void __fastcall Quest_AnswerHitTest(void *param_1)
     if (curScript >= 0 && curScript < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10)
         slotType = g_DialogScript[curScript].m_iReturnForAnswer[slot];
 
-
     if (slotType == 1) {
         short *slotData = reinterpret_cast<short*>(quest
                           + (uint)*(quest + 0x1c87a) * 0x248 + 8);
@@ -1374,7 +1334,6 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     // Usa la clave XOR de 32 bytes (la misma que la encriptación del login).
     // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
     // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
-
 
     // Build packet buffer (max 0x401 bytes)
     unsigned char pktBuf[0x401];

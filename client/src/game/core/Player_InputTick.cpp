@@ -817,53 +817,6 @@ void __cdecl Player_ProcessInput(void)
     }
 
     // ── obsolete inline mini-attack disabled below ──────────────────────────
-    #if 0
-    {
-        unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        if (ent && AsCharacter(ent)->MovementType == 3 && AsCharacter(ent)->PathNum == 0) {
-            int targetIdx = (int)DAT_00559ce8;
-            if (targetIdx >= 0 && targetIdx < 400) {
-                unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * CHARACTER_STRIDE);
-                if (AsCharacter(tgt)->Object.Live != 0 && AsCharacter(tgt)->SafeZone == 0) {
-                    int hxg = (int)AsCharacter(ent)->PositionX;
-                    int hyg = (int)AsCharacter(ent)->PositionY;
-                    int txg = (int)AsCharacter(tgt)->PositionX;
-                    int tyg = (int)AsCharacter(tgt)->PositionY;
-                    int dx = (hxg - txg < 0) ? -(hxg - txg) : (hxg - txg);
-                    int dy = (hyg - tyg < 0) ? -(hyg - tyg) : (hyg - tyg);
-                    int cheb = (dx > dy) ? dx : dy;
-                    if (cheb <= 2) {
-                        WORD targetId = AsCharacter(tgt)->Key;
-                        extern float __cdecl CreateAngle(float, float, float, float);
-                        float ex = AsCharacter(ent)->Object.Position[0];
-                        float ey = AsCharacter(ent)->Object.Position[1];
-                        float ttx = AsCharacter(tgt)->Object.Position[0];
-                        float tty = AsCharacter(tgt)->Object.Position[1];
-                        float facing = CreateAngle(ex, ey, ttx, tty);
-                        AsCharacter(ent)->Object.Angle[2] = facing;
-                        int dirCode = ((int)((facing + 22.5f) * (1.0f / 45.0f))) & 7;
-                        unsigned char pkt[8];
-                        pkt[0] = 0xC1;
-                        pkt[1] = 0x07;
-                        pkt[2] = 0x15;
-                        pkt[3] = (unsigned char)((targetId >> 8) & 0xFF);
-                        pkt[4] = (unsigned char)(targetId & 0xFF);
-                        pkt[5] = 0x64;
-                        pkt[6] = (unsigned char)dirCode;
-                        for (int i = 3; i < 7; ++i) {
-                            pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
-                        }
-                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
-                            ::send(SocketClientSocket, (const char*)pkt, 7, 0);
-                        }
-                        SetPlayerAttack(AsCharacter(ent), 0, 0, 0);
-                    }
-                }
-            }
-            AsCharacter(ent)->MovementType = 0;  // consume attack mode
-        }
-    }
-    #endif // obsolete inline mini-attack disabled
 
     // ── Salida temprana si el movimiento está bloqueado o la UI activa (post-walker) ──
     // El gate va DESPUÉS del walker, así el walker siempre avanza incluso con

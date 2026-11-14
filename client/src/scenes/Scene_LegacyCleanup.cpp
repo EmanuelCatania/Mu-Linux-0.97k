@@ -7,28 +7,6 @@ extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cp
 extern void __cdecl operator_delete(void* ptr);
 extern void ClearActionObject(void);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
 #define ITEM_SPECIAL_SKILL_OPTION             0
 #define ITEM_SPECIAL_LUCK_OPTION              1
 #define ITEM_OPTION_ADD_PHYSI_DAMAGE_CODE     60
@@ -39,7 +17,6 @@ extern void ClearActionObject(void);
 // DeleteObjects, DeleteNpcs, DeleteMonsters, ClearItems y ClearCharacters
 // viven en Render/SMD_Parser.cpp y Terrain/Terrain_LegacyLoad.cpp (con el
 // nombre de IDA); acá no hay puentes.
-
 
 // CSQuest__CheckQuestState @ 0x00401730
 // Delega en el port fiel de la misma dirección, CSQuest_CheckQuestState

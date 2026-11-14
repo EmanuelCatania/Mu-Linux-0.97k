@@ -19,31 +19,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // ── PF_AStar — sustituto del PATH::FindPath original (0x0043F500) ────────────
 //
 // Criterio de bloqueo del binario: COMPARACIÓN NUMÉRICA contra `iWall`, restando
@@ -429,8 +404,6 @@ float __cdecl FarAngle(float a1, float a2, char a3)
   return result;
 }
 
-
-
 // IDA: MovePath @ 0x0043EA20 — Entity_MovePath(entity, flag)
 // Advances entity along its Catmull-Rom waypoint path.
 // path_wp_x/y arrays at entity+0x357/0x366 (grid coords); path_substep 0-3 per segment.
@@ -505,104 +478,6 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     char *ent = (char *)entity;
     return MovePath_IDA_0043EA20(ent, flag);
 
-#if 0
-
-    // 2026-04-30 BUG-FIX: cuando no hay path (wp_count <= cur_wp), DEBE
-    // retornar 1 ("arrived/idle"), NO 0.  El caller hace:
-    //     if (moveOk == 0) MoveCharacterPosition(ent);   // mueve al hero
-    //     else             SetPlayerStop(ent);   // detiene
-    // Si retornábamos 0 cuando no hay path → caller llamaba al mover →
-    // hero caminaba en facing direction sin importar si había path.
-    // Por eso "se movía solo" sin click.
-    if (AsCharacter(ent)->PathNum <= AsCharacter(ent)->PathCurrent)
-        return 1;
-
-    byte cur_wp   = AsCharacter(ent)->PathCurrent;
-    byte wp_count = AsCharacter(ent)->PathNum;
-    byte substep  = AsCharacter(ent)->PathSubstep;
-
-    // path_substep == 0: initialize cached waypoint grid coords
-    if (substep == 0) {
-        int next_wp = (int)cur_wp + 1;
-        int max_wp  = (int)wp_count - 1;
-        if (max_wp < next_wp) next_wp = max_wp;
-        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + EntityOffset(0x357) + next_wp);
-        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + EntityOffset(0x366) + next_wp);
-    }
-
-    // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes
-    // _DAT_00552880..88c daba targets atrás del hero / dirección opuesta y
-    // hacía giros en círculo), ir directamente al siguiente waypoint con
-    // lerp lineal.  Pierde "smoothness" del spline pero hace que el walker
-    // efectivamente avance.
-    int next_wp = (int)cur_wp + 1;
-    if (next_wp >= (int)wp_count) {
-        return 1;   // arrived
-    }
-    float target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
-    float target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
-
-    // Distance check
-    float dx   = AsCharacter(ent)->Object.Position[0] - target_x;
-    float dy   = AsCharacter(ent)->Object.Position[1] - target_y;
-    float dist = sqrtf(dx * dx + dy * dy);
-
-    // Threshold: ~25 units tight enough to prevent overshoot, generous
-    // enough to consume waypoints quickly. Original used _DAT_005524fc.
-    float threshold = _DAT_005524fc;
-    if (threshold < 25.0f) threshold = 25.0f;
-
-    if (dist <= threshold) {
-        // Arrived at this waypoint — snap to it and advance
-        AsCharacter(ent)->Object.Position[0] = target_x;
-        AsCharacter(ent)->Object.Position[1] = target_y;
-        cur_wp++;
-        AsCharacter(ent)->PathCurrent = cur_wp;
-        AsCharacter(ent)->PathSubstep = 0;
-        if ((int)(wp_count - 1) <= (int)cur_wp) {
-            return 1;   // arrived at final
-        }
-        // Update target for facing calc this frame (so hero turns immediately)
-        next_wp = (int)cur_wp + 1;
-        if (next_wp < (int)wp_count) {
-            target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
-            target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
-        }
-    }
-
-    // 2026-04-30 BUG-FIX (v3): actualizar facing.  Convención REAL de MU
-    // (verificada con la rotación de matriz en MoveCharacterPosition):
-    //   0°   = NORTH (-Y)
-    //   90°  = EAST  (+X)
-    //   180° = SOUTH (+Y)
-    //   270° = WEST  (-X)
-    //
-    // MoveCharacterPosition hace: vel_local=(0,-speed,0), rotated by facing (Z-axis).
-    // Result: out_x = +speed*sin(θ), out_y = -speed*cos(θ).
-    // → θ=0 ⇒ out=(0,-speed) = north ✓
-    // → θ=90 ⇒ out=(+speed,0)  = east  ✓
-    //
-    // Para que `atan2(...)` devuelva 0° cuando dy<0 (target al norte),
-    // necesitamos `atan2(dx, -dy)`.
-    //
-    // (Versión v2 usaba atan2(dx, dy) que daba ángulo OPUESTO — click
-    //  arriba mandaba al hero hacia abajo y caminaba infinito al sur.)
-    if (flag != '\0') {
-        float ent_x = AsCharacter(ent)->Object.Position[0];
-        float ent_y = AsCharacter(ent)->Object.Position[1];
-        float ddx = target_x - ent_x;
-        float ddy = target_y - ent_y;
-        if (ddx * ddx + ddy * ddy > 0.01f) {
-            float facingDeg = (float)(atan2((double)ddx, -(double)ddy) * 57.29577951);
-            // Normalize to [0..360)
-            if (facingDeg < 0.0f) facingDeg += 360.0f;
-            AsCharacter(ent)->Object.Angle[2] = facingDeg;
-        }
-    }
-    return 0;
-}
-
-#endif // obsolete non-IDA linear MovePath reconstruction
 }
 
 // IDA: CheckWall @ 0x004830B0 — bool __cdecl CheckWall(int sx1, int sy1, int sx2, int sy2)

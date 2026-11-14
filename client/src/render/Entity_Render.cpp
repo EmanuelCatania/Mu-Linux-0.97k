@@ -197,54 +197,6 @@ void __cdecl MoveCharacterClient(float *param_1)
 
 // Entity_RenderAll_3D — Entity_TickAll  (desactivada: definición duplicada;
 // la versión activa está en src/render/Entity_RenderAll_3D.cpp)
-#if 0
-void Entity_RenderAll_3D(void)
-{
-  char *pcVar1;
-  int iVar2;
-  int iVar3;
-  undefined4 *puVar4;
-
-  iVar3 = 0;
-  DAT_07abf5d4 = 0;
-  _DAT_07abf5e8 = 0;
-  iVar2 = 0;
-  do {
-    pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
-    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[EntityOffset(0x1c0)] & 4U) != 0)) && (SceneFlag == 5)) {
-      pcVar1[EntityOffset(0x130)] = '\0';
-      pcVar1[EntityOffset(0x131)] = '\0';
-      pcVar1[EntityOffset(0x132)] = 'z';
-      pcVar1[EntityOffset(0x133)] = 'D';
-      pcVar1[EntityOffset(0x15c)] = '\0';
-      pcVar1[EntityOffset(0x15d)] = '\0';
-      pcVar1[EntityOffset(0x15e)] = -0x80;
-      pcVar1[EntityOffset(0x15f)] = '?';
-      pcVar1[EntityOffset(0x14c)] = '\0';
-      pcVar1[EntityOffset(0x14d)] = '\0';
-      pcVar1[EntityOffset(0x14e)] = -0x80;
-      pcVar1[EntityOffset(0x14f)] = '?';
-      pcVar1[EntityOffset(0x13c)] = '\0';
-      pcVar1[EntityOffset(0x13d)] = '\0';
-      pcVar1[EntityOffset(0x13e)] = -0x80;
-      pcVar1[EntityOffset(0x13f)] = '?';
-    }
-    else if ((*pcVar1 != '\0') && (pcVar1[EntityOffset(0x160)] != '\0')) {
-      DAT_07abf5d4 = DAT_07abf5d4 + 1;
-      if ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc)) {
-        puVar4 = (undefined4 *)0x1;
-      }
-      else {
-        puVar4 = (undefined4 *)0x0;
-      }
-      RenderCharacter((undefined4 *)pcVar1,(undefined4 *)pcVar1,puVar4);
-    }
-    iVar3 = iVar3 + CHARACTER_STRIDE;
-    iVar2 = iVar2 + 1;
-  } while (iVar3 < 400 * CHARACTER_STRIDE);
-  return;
-}
-#endif  // duplicate Entity_RenderAll_3D disabled — use Entity_RenderAll_3D.cpp
 
 
 // RenderBugs — RenderBugs (Entity_VisibilityCheckAll)

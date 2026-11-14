@@ -57,30 +57,6 @@ void Mouse_UpdateHoverTargets(void)
     // Terrain_RenderQuad, que leia BackTerrainHeight de un DWORD sin asignar
     // (arreglado: ahora usa DAT_080cb2cc). Falta re-habilitarlo y verificarlo.
     // El cursor 2D (Cursor_Render) no depende de esto.
-    #if 0
-    if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
-    {
-        float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
-        if (visible != '\0') {
-            GL_SetBlendAdditive();
-            int frame = (SceneFlag == 2) ? 1 : (DAT_07e11d5c + 1);
-            float sz = (float)frame;
-            RenderTerrainAlphaBitmap(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
-        }
-    }
-    if (SceneFlag == 1 || SceneFlag == 3) {
-        float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
-        if (visible != '\0') {
-            GL_SetBlendAdditive();
-            float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
-            float szX = ((int)base / 100) * 100 + _DAT_00552598;
-            float szY = ((int)base / 100) * 100 + _DAT_00552598;
-            RenderTerrainAlphaBitmap(8, szX, szY, base, base, color, 0, 1.0f);
-        }
-    }
-    #endif
 
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 

@@ -53,13 +53,6 @@ void Monster_LoadScriptTable(void)
 
   SetMaxTextures(0x41a);
   if (DAT_0055a7c4 == '\0') {
-    OpenModel((int)0x13d,s_Data2_Monster__0055e06c,s_swordbasic_smd_0055e07c);
-    OpenModel((int)0x147,s_Data2_Monster__0055e06c,&DAT_0055dff0);
-    OpenModel((int)0x148,s_Data2_Monster__0055e06c,&DAT_0055df70);
-    OpenModel((int)0x149,s_Data2_Monster__0055e06c,&DAT_0055dee0);
-    OpenModel((int)0x14a,s_Data2_Monster__0055e06c,&DAT_0055dec0);
-    OpenModel((int)0x14b,s_Data2_Monster__0055e06c,&DAT_0055de84);
-    OpenModel((int)0x14c,s_Data2_Monster__0055e06c,&DAT_0055de10);
     iVar1 = 0x32;
     do {
       OpenMonsterModel(iVar1);

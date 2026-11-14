@@ -2,8 +2,7 @@
 // Combat_AttackEffect.cpp
 //
 // AttackEffect (IDA 0x00445230) -- los efectos visuales del ataque de los
-// MONSTRUOS.  Es el port crudo del decompile (la macro IDA_PORT_00445230 está
-// definida en globals.h, así que este código está vivo).
+// MONSTRUOS.  Es el port crudo del decompile.
 //
 // El selector del switch es `Owner+747`, el TIPO DE MONSTRUO de Monster.txt.
 // Para el heroe ese byte vale 0xFF, asi que no matchea ningun case: la funcion
@@ -19,7 +18,6 @@
 
 
 // === AttackEffect (0x00445230) ===
-// Gateada por IDA_PORT_00445230, que esta definida.
 extern "C" void DbgLogPublic(const char* msg);   // probe AEDBG (temporal)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +102,7 @@ void __cdecl AttackEffect(intptr_t Owner)
 {
   // Guard de port (no esta en IDA): si la tabla de modelos todavia no esta
   // cargada, `Models + 188*type` seria un puntero basura que TransformPosition
-  // deferenciaria. La version parcial de Combat_LegacyAttackEffects.cpp tenia el mismo guard.
+  // deferenciaria.
   if (!Owner || !DAT_05828d58) return;
 
   intptr_t v2; // edi

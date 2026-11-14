@@ -35,7 +35,6 @@ void __cdecl OpenWorld(void) {
     memset(DAT_07b11670, 0, sizeof(DAT_07b11670));   // effect pool (124×0x1bc)
     memset(DAT_07b27150, 0, sizeof(DAT_07b27150));   // joint pool (200×0x9d8)
     memset(g_PlayerRenderPool, 0, sizeof(g_PlayerRenderPool)); // planos: 100×0x1bc
-    memset(DAT_07c80128, 0, sizeof(DAT_07c80128));   // spark pool (100×0x70)
     memset(g_PointerPool, 0, sizeof(g_PointerPool)); // pointers: 100×0x70
     memset(DAT_083a2e90, 0, sizeof(DAT_083a2e90));   // boids + partículas ambientales (10×0x1bc)
     memset(DAT_07e016f8, 0, sizeof(DAT_07e016f8));   // tooltip pool (26×0x254)

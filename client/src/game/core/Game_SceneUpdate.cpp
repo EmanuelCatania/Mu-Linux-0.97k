@@ -324,13 +324,6 @@ int Game_SceneUpdate(void)
         // tradujo como DAT_07abf5d8 == 0 (byte en offset 0x8 de entity 0) que
         // SÍ es 0 tras el spawn → escribiría a 0x10/0x14/0x18 (null deref).
         // Branch muerto en el exe real; lo deshabilitamos.
-        #if 0
-        if (DAT_07abf5d8 == 0) {
-            _DAT_00000010 = 0;
-            _DAT_00000014 = 0;
-            _DAT_00000018 = 0;
-        }
-        #endif
 
         // Camera initial position from server-slot table
         // DAT_005615ec/f0/f4/f8/fc/600 son aliases DWORD& sobre el storage float

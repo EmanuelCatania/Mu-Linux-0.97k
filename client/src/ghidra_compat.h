@@ -34,6 +34,12 @@
 #endif
 
 // `delete__` es el `operator delete` del binario original (0x0054158C).
+// Flag de overflow de una resta que Hex-Rays deja en los saltos con signo;
+// en el código portado siempre se evalúa como 0.
+#ifndef __OFSUB__
+#define __OFSUB__(x, y)  (0)
+#endif
+
 #ifndef delete__
 extern void __cdecl operator_delete(void* ptr);
 #define delete__(p)  operator_delete((unsigned char*)(p))

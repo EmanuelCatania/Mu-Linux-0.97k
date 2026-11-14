@@ -345,42 +345,6 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             Particle_Spawn(1215, pfVar15, AsJoint(param_1)->Angle,
                          AsJoint(param_1)->Light, 0, 1.0f, 0);
         }
-#if 0 // Former approximation, retained only as source history.
-        float *pfVar26 = AsJoint(param_1)->Angle;
-        // MoveHumming computes angle/distance and returns result via pfOut;
-        // Ghidra shows its return used as float — call with a temp output.
-        float arc_out = 0.0f;
-        MoveHumming(pfVar15, pfVar26, pfVar14, 0.0f);  // result in pfVar14[2] area; use arc_out
-        // In the decompile: local_e4 = (undefined4*)(float)fVar24 where fVar24 = MoveHumming(...)
-        // The function signature is void in functions.h so we approximate the distance check
-        // using AsJoint(param_1)->Velocity vs the 3D distance already computed above.
-        local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
-        Matrix_BuildFromEuler(pfVar26, local_a8 + 6);
-        Joint_SegmentTick((intptr_t)param_1, local_a8 + 6);
-        if (AsJoint(param_1)->Velocity < local_e4_f) {
-            uVar7 = _rand();
-            uVar7 = uVar7 & 0x80000003;
-            if ((int)uVar7 < 0) {
-                uVar7 = (uVar7 - 1 | 0xfffffffc) + 1;
-            }
-            local_e8_f = (float)(int)(uVar7 + 4);
-            local_d8[3] = local_e8_f * _DAT_005524f4;
-            local_d8[4] = local_d8[3] * _DAT_00552534;
-            local_d8[5] = local_d8[3] * _DAT_005526e4;
-            AddTerrainLight(*pfVar15, AsJoint(param_1)->Position[1], (float*)((local_d8 + 3)), 4, (float*)&DAT_081cb608[0]);
-            local_d8[7] = -AsJoint(param_1)->Velocity;
-            local_d8[6] = 0.0f;
-            local_b8    = 0.0f;
-            Vector_Rotate(local_d8 + 6, local_a8 + 6, &local_b4);
-            *pfVar15                   = local_b4 + *pfVar15;
-            AsJoint(param_1)->Position[1] = local_b0 + AsJoint(param_1)->Position[1];
-            AsJoint(param_1)->Position[2] = local_ac + AsJoint(param_1)->Position[2];
-        }
-        else {
-            *param_1 = 0;
-            Particle_Spawn(0x4bf, pfVar15, pfVar26, AsJoint(param_1)->Light, 0, 1.0f, 0);
-        }
-#endif
         goto switchD_caseD_4ef;
     }
 
@@ -431,58 +395,6 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
                 AsJoint(param_1)->Light[2] *= 2.0f / 3.0f;
             }
         }
-#if 0 // Former non-IDA reconstruction.
-        pcVar11 = ((char *)AsJoint(param_1)->Target);
-        if (*pcVar11 == '\0') {
-            // Linked entity is dead — snap to anchor + height offset, kill slot
-            float fVar28 = AsJoint(param_1)->TargetPosition[2] + _DAT_00552598;
-            *(unsigned int *)&AsJoint(param_1)->LifeTime = 0xffffffff;
-            *pfVar15                            = *pfVar14;
-            *(undefined4 *)&AsJoint(param_1)->Position[1]    = *(undefined4 *)&AsJoint(param_1)->TargetPosition[1];
-            AsJoint(param_1)->Position[2]          = fVar28;
-            goto switchD_caseD_4ef;
-        }
-        // Compute target velocity delta (current_pos - prev_pos from entity +0x10/0x170)
-        local_d8[0] = *(float *)(pcVar11 + 0x10)  - *(float *)(pcVar11 + EntityOffset(0x170));
-        local_d8[1] = *(float *)(pcVar11 + 0x14)  - *(float *)(pcVar11 + EntityOffset(0x174));
-        local_d8[2] = *(float *)(pcVar11 + 0x18)  - *(float *)(pcVar11 + EntityOffset(0x178));
-        *pfVar14                         = *(float *)(pcVar11 + EntityOffset(0x170));
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(pcVar11 + EntityOffset(0x174));
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[2] = *(undefined4 *)(pcVar11 + EntityOffset(0x178));
-        local_a8[3] = *(float *)(pcVar11 + 0x28);
-        local_a8[4] = *(float *)(pcVar11 + 0x2c);
-        local_a8[5] = *(float *)(pcVar11 + 0x30);
-        Matrix_BuildFromEuler(AsJoint(param_1)->Angle, local_60);
-        local_d8[0] *= _DAT_005529d4;
-        iVar16       = 3;
-        local_d8[1] *= _DAT_005529d4;
-        local_d8[2] *= _DAT_005529d4;
-        local_a8[4] = (AsJoint(param_1)->Velocity - _DAT_00552848) + local_a8[4];
-        do {
-            local_a8[4] += _DAT_0055284c;
-            AsJoint(param_1)->TargetPosition[0] += local_d8[0];
-            AsJoint(param_1)->TargetPosition[1] += local_d8[1];
-            AsJoint(param_1)->TargetPosition[2] += local_d8[2];
-            Matrix_BuildFromEuler(local_a8 + 3, local_a8 + 6);
-            Vector_Rotate(AsJoint(param_1)->Direction, local_a8 + 6, local_a8);
-            *pfVar15                        = local_a8[0] + AsJoint(param_1)->TargetPosition[0];
-            AsJoint(param_1)->Position[1]      = local_a8[1] + AsJoint(param_1)->TargetPosition[1];
-            AsJoint(param_1)->Position[2]      = local_a8[2] + AsJoint(param_1)->TargetPosition[2];
-            if ((AsJoint(param_1)->NumTails < AsJoint(param_1)->MaxTails + -1) ||
-                (*(char *)&AsJoint(param_1)->Skill != '\0'))
-            {
-                Joint_SegmentTick((intptr_t)param_1, local_60);
-            }
-            iVar16--;
-        } while (iVar16 != 0);
-        if (0xe < AsJoint(param_1)->LifeTime) goto switchD_caseD_4ef;
-        AsJoint(param_1)->Light[0] *= _DAT_00552a8c;
-        AsJoint(param_1)->Light[1] *= _DAT_00552a8c;
-        {
-            float fVar28 = AsJoint(param_1)->Light[2] * _DAT_00552a8c;
-            AsJoint(param_1)->Light[2] = fVar28;
-        }
-#endif
         goto switchD_caseD_4ef;
     }
 
@@ -1223,38 +1135,6 @@ LAB_0047036e:
     // LABEL TARGETS for redirect cases
     // ─────────────────────────────────────────────────────────────────
 
-#if 0 // Superseded: 0x4ED/0x48E are handled by IDA LABEL_286 above.
-    // Firefly: random wander — nudge X and Y randomly each frame
-    {
-        uVar7 = _rand();
-        uVar7 = uVar7 & 0x80000001;
-        bVar21 = (uVar7 == 0);
-        if ((int)uVar7 < 0) {
-            bVar21 = ((uVar7 - 1 | 0xfffffffe) == 0xffffffff);
-        }
-        if (!bVar21) {
-            AsJoint(param_1)->Position[0] += _DAT_005524f0;
-        }
-        else {
-            AsJoint(param_1)->Position[0] -= _DAT_005524f0;
-        }
-        uVar7 = _rand();
-        uVar7 = uVar7 & 0x80000001;
-        bVar21 = (uVar7 == 0);
-        if ((int)uVar7 < 0) {
-            bVar21 = ((uVar7 - 1 | 0xfffffffe) == 0xffffffff);
-        }
-        if (!bVar21) {
-            AsJoint(param_1)->Position[1] += _DAT_005524f0;
-        }
-        else {
-            AsJoint(param_1)->Position[1] -= _DAT_005524f0;
-        }
-        Joint_SegmentTick((intptr_t)param_1, local_30);
-        goto switchD_caseD_4ef;
-    }
-
-#endif
 switchD_caseD_4fd:
     // ── IDA LABEL_301 — movimiento compartido por los tipos 1249 (0x4E1) y
     // 1277 (0x4FD). Es un switch sobre el SubType (+0x08).
@@ -1623,29 +1503,6 @@ _skipLabel182:;
     }
     *param_1 = 0;
     return (char *)(intptr_t)remainingLife;
-#if 0 // Former decompiler-artifact formulation of the same epilogue.
-    pcVar11 = (char *)(AsJoint(param_1)->LifeTime + -1);
-    AsJoint(param_1)->LifeTime = (intptr_t)pcVar11;
-
-    if (-1 < (int)(intptr_t)pcVar11) {
-        // Recursive self-call on types 0x4e1/0x4fd at sub-frame boundaries (modes 4 or 0xc)
-        pcVar12 = (char *)((int)(intptr_t)pcVar11 / 0xc);
-        if ((((int)(intptr_t)pcVar11 % 0xc != 0) &&
-             ((AsJoint(param_1)->Type == 0x4e1) ||
-              ((pcVar12 = (char *)(AsJoint(param_1)->Type + -0x4fd),
-                pcVar12 == (char *)0x0)))) &&
-            ((pcVar12 = *(char **)(param_1 + 8),
-              (pcVar12 == (char *)0x4) || (pcVar12 == (char *)0xc))))
-        {
-            pcVar12 = MoveJoint(param_1, param_2);
-        }
-        return pcVar12;
-    }
-
-    // Lifetime expired — deactivate slot
-    *param_1 = 0;
-    return pcVar11;
-#endif
 }
 
 // end of MoveJoint

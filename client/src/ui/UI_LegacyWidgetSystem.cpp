@@ -20,31 +20,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // Widget / skill-beam system
 // Widget_Release @ 0x004086E0 — Widget_Release(widget_ptr) [__fastcall]
 // Releases a widget/beam linked-list container.  Clean decompile, 35 lines, __fastcall(int).
@@ -160,7 +135,6 @@ float __fastcall SpringNode_Delta(void *nodeA, uintptr_t nodeB_ptr, float *out_d
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node); // IDA-port: returns this
 void  __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
-
 
 // IDA: Widget_CheckState (0x00408900)
 // Widget_CheckState(widget, hash, flags)

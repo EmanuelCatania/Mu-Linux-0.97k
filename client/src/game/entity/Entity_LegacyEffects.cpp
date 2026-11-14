@@ -17,31 +17,6 @@ extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
-#ifndef __OFSUB__
-#define __OFSUB__(x,y)       (0)
-#endif
-
-#ifndef LODWORD
-#define LODWORD(x)           (*((DWORD*)&(x)))
-#define HIDWORD(x)           (*(((DWORD*)&(x))+1))
-#define SLOBYTE(x)           (*((char*)&(x)))
-#define SLOWORD(x)           (*((short*)&(x)))
-#define SLODWORD(x)          (*((int*)&(x)))
-#endif
-#ifndef LOBYTE
-#define LOBYTE(x)            (*((unsigned char*)&(x)))
-#define HIBYTE(x)            (*(((unsigned char*)&(x))+1))
-#define LOWORD(x)            (*((unsigned short*)&(x)))
-#define HIWORD(x)            (*(((unsigned short*)&(x))+1))
-#endif
-
-
 // ItemAngle @ 0x005030C0 — Entity_GravityInit(entity_ptr)
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
@@ -145,7 +120,6 @@ void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
         Particle_Spawn(0x4ce, outPos, pfVar1, size, 1, 1.0f, 0);
     }
 }
-
 
 // Sound_UpdateChannel3D_Tick @ 0x00408940 — Sound_UpdateChannel3D_Tick(channel)
 // Updates 3D sound position sin/cos from entity facing angle at param_1[1]+0x24,

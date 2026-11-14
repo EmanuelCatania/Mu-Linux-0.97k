@@ -58,75 +58,7 @@ static BYTE GetHeroTooltipStepClass()
     return 1;
 }
 
-struct INVENTORY_ITEM_ADD_OPTION
-{
-    BYTE  m_byOption1;
-    WORD  m_byValue1;
-    BYTE  m_byOption2;
-    WORD  m_byValue2;
-    BYTE  m_Type;
-    DWORD m_Time;
-};
-
-static bool GetInventoryItemAddOption(short type, INVENTORY_ITEM_ADD_OPTION& out)
-{
-    static bool s_attempted = false;
-    static bool s_loaded = false;
-    static INVENTORY_ITEM_ADD_OPTION s_table[1024] = {};
-
-    if (!s_attempted) {
-        s_attempted = true;
-
-        char exePath[MAX_PATH] = {};
-        char localPath[MAX_PATH] = {};
-        char relPath1[MAX_PATH] = "Data\\Local\\ItemAddOption.bmd";
-        char relPath2[MAX_PATH] = "bin\\Client\\Data\\Local\\ItemAddOption.bmd";
-
-        if (Platform::GetFileSystem().ExecutablePath(exePath, MAX_PATH) > 0) {
-            char* slash = strrchr(exePath, '\\');
-            if (slash) {
-                *slash = '\0';
-                snprintf(localPath, MAX_PATH, "%s\\Data\\Local\\ItemAddOption.bmd", exePath);
-            }
-        }
-
-        const char* tryPaths[3] = {
-            localPath[0] ? localPath : nullptr,
-            relPath1,
-            relPath2,
-        };
-
-        for (const char* path : tryPaths) {
-            if (!path || !path[0]) {
-                continue;
-            }
-
-            FILE* fp = Platform::GetFileSystem().Open(path, "rb");
-            if (!fp) {
-                continue;
-            }
-
-            const size_t want = sizeof(s_table);
-            const size_t got = fread(s_table, 1, want, fp);
-            fclose(fp);
-
-            if (got == want) {
-                BuxConvert_0(s_table, (int)want);
-                s_loaded = true;
-                break;
-            }
-
-            memset(s_table, 0, sizeof(s_table));
-        }
-    }
-
-    if (!s_loaded || type < 0 || type >= (short)(sizeof(s_table) / sizeof(s_table[0]))) {
-        return false;
-    }
-
-    out = s_table[type];
-    return true;
-}
+;
 
 static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned int level, char* dst, size_t dstSize)
 {

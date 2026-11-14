@@ -32,9 +32,6 @@ char  __fastcall VerletSystem_Flush(uintptr_t a1);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 extern void __cdecl operator_delete(void* ptr);
-#ifndef delete__
-#define delete__(p) operator_delete((unsigned char*)(p))
-#endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
 void __fastcall CSQuest_clearQuest(void* param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
@@ -43,9 +40,6 @@ float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
 static void __cdecl FUN_0053cc00_impl(void* param_1);
-
-
-
 
 // Packet_DecryptByte — Packet_DecryptByte
 // Decrypts a single byte: *param_2 → *param_1
@@ -70,7 +64,6 @@ void __cdecl Packet_DecryptByte(void *param_1_v,void *param_2_v)
   return;
 }
 
-
 // Packet_EncryptByte — Packet_EncryptByte
 // Encrypts a single byte (param_2) into param_1.
 // Encrypt steps: b += 0x47; b ^= key[b]; randomize *param_2
@@ -93,7 +86,6 @@ void __cdecl Packet_EncryptByte(void *param_1_v,void *param_2_v)
   operator_delete(pbVar2);
   return;
 }
-
 
 // Packet_EncryptDword — Packet_EncryptDword
 // Encrypts a 4-byte block (param_2) into param_1.
@@ -137,7 +129,6 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
   return;
 }
 
-
 // Buffer_XorKey3 — Buffer_XorKey3
 // Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
 void __cdecl Buffer_XorKey3(int param_1,int param_2)
@@ -153,7 +144,6 @@ void __cdecl Buffer_XorKey3(int param_1,int param_2)
   }
   return;
 }
-
 
 // Packet_EncryptBuffer — Packet_EncryptBuffer
 // Encrypts a 0x584-byte (1412-byte) buffer param_2 into param_1.
@@ -209,7 +199,6 @@ void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
   return;
 }
 
-
 // Packet_DecryptDword — Packet_DecryptDword
 // Decrypts a 4-byte block param_2 into param_1.
 // Reverse chain-XOR then: b = (key[i%16] ^ (b-0x23)) + 0xb9
@@ -247,7 +236,6 @@ void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
   operator_delete((undefined *)puVar2);
   return;
 }
-
 
 // IDA: HashTable_Insert (0x00403F80)
 // Inserta (clave=param_1, valor=return_addr) en la hash table (this).
@@ -334,7 +322,6 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
   return;
 }
 
-
 // IDA: HashTable_GetNode (0x00404280)
 // Busca param_1 en la hash table (this), devuelve el valor asociado o 0.
 // Devuelve 0 (no encontrado) sin error; a diferencia de Insert, que avisa si está llena.
@@ -411,7 +398,6 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   return (void*)0;
 }
-
 
 // IDA: CWsctlc::GetSocket (0x0043DCC0)
 int __fastcall CWsctlc_GetSocket(uintptr_t param_1)
@@ -769,7 +755,6 @@ void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
 }
 
 int  __cdecl    Cloth_Solve(DWORD *a1);
-
 
 // sub_402850 @ 0x00402850 (1774 bytes) — input de la ventana de quest del NPC.
 // IDA, sacando el ruido anti-tamper del armado del paquete:
