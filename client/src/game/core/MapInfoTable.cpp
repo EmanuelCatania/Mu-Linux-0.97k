@@ -80,6 +80,39 @@ bool ParseField(const std::string& key, const std::string& value, MapInfo& info)
     if (key == "ambient") return ParseInts(value, info.ambient);
     if (key == "indoor_tiles") return ParseTiles(value, info.indoorTiles);
     if (key == "mini_map") return ParseMiniMap(value, info.miniMap);
+    if (key == "object_folder") return TomlLines::ParseInt(value, info.objectFolder) && info.objectFolder >= 0;
+    if (key == "load_from") return TomlLines::ParseInt(value, info.loadFrom) && info.loadFrom >= 0;
+    return false;
+}
+
+// [[map.N.load]]: cada clave es una carga; una tabla puede traer varias.
+//   model   = [slot, "Data/ObjectN/", "nombre", índice]
+//   texture = [slot, "ObjectN/"]
+//   jpg     = ["archivo.jpg", slot, "clamp" | "repeat"]
+bool ParseLoad(const std::string& key, const std::string& value, MapLoad& load)
+{
+    std::vector<std::string> items;
+    if (!TomlLines::SplitArray(value, items)) return false;
+    if (key == "model") {
+        load.kind = MapLoad::Kind::Model;
+        return items.size() == 4 && TomlLines::ParseInt(items[0], load.slot) &&
+               TomlLines::ParseString(items[1], load.path) && TomlLines::ParseString(items[2], load.name) &&
+               TomlLines::ParseInt(items[3], load.index);
+    }
+    if (key == "texture") {
+        load.kind = MapLoad::Kind::Texture;
+        return items.size() == 2 && TomlLines::ParseInt(items[0], load.slot) &&
+               TomlLines::ParseString(items[1], load.path);
+    }
+    if (key == "jpg") {
+        std::string wrap;
+        load.kind = MapLoad::Kind::Jpg;
+        if (items.size() != 3 || !TomlLines::ParseString(items[0], load.path) ||
+            !TomlLines::ParseInt(items[1], load.slot) || !TomlLines::ParseString(items[2], wrap))
+            return false;
+        load.repeat = wrap == "repeat";
+        return wrap == "repeat" || wrap == "clamp";
+    }
     return false;
 }
 
@@ -94,11 +127,46 @@ MapTable Read()
     for (const auto& line : bad)
         Warn("línea " + std::to_string(line.number) + " inválida: " + line.value);
     for (const auto& line : lines) {
+        // "map.N", "map.N.objects" o "map.N.load"
         int map = -1;
-        const bool inMap = line.section.rfind("map.", 0) == 0
-                        && TomlLines::ParseInt(line.section.substr(4), map) && map >= 0;
-        if (!inMap || !ParseField(line.key, line.value, table.maps[map]))
-            Warn("línea " + std::to_string(line.number) + " inválida: " + line.key + " = " + line.value);
+        std::string part;
+        bool ok = line.section.rfind("map.", 0) == 0;
+        if (ok) {
+            const std::string rest = line.section.substr(4);
+            const auto dot = rest.find('.');
+            ok = TomlLines::ParseInt(rest.substr(0, dot), map) && map >= 0;
+            if (dot != std::string::npos) part = rest.substr(dot + 1);
+        }
+        if (ok) {
+            MapInfo& info = table.maps[map];
+            if (part.empty()) {
+                ok = line.entry == 0 && ParseField(line.key, line.value, info);
+            } else if (part == "objects") {
+                int slot = 0;
+                std::string name;
+                ok = line.entry == 0 && TomlLines::ParseInt(line.key, slot) && slot >= 0 &&
+                     TomlLines::ParseString(line.value, name);
+                if (ok) info.objects.emplace_back(slot, name);
+            } else if (part == "load") {
+                MapLoad load;
+                // Las claves de una misma [[map.N.load]] se aplican en el orden del archivo.
+                ok = line.entry > 0 && ParseLoad(line.key, line.value, load);
+                if (ok) info.loads.push_back(load);
+            } else {
+                ok = false;
+            }
+        }
+        if (!ok) Warn("línea " + std::to_string(line.number) + " inválida: " + line.key + " = " + line.value);
+    }
+    // load_from: las cargas de otro mapa (Blood Castle 2..6 usan las del 1).
+    for (auto& entry : table.maps) {
+        MapInfo& info = entry.second;
+        if (info.loadFrom < 0) continue;
+        const auto source = table.maps.find(info.loadFrom);
+        if (source == table.maps.end() || source->second.loadFrom >= 0 || !info.loads.empty())
+            Warn("[map." + std::to_string(entry.first) + "] load_from inválido");
+        else
+            info.loads = source->second.loads;
     }
     for (const auto& entry : table.maps)
         for (int sound : entry.second.ambient)
@@ -120,6 +188,12 @@ const MapInfo& MapInfo_Get(int map)
     static const MapInfo fallback{};
     const auto found = Table().maps.find(map);
     return found == Table().maps.end() ? fallback : found->second;
+}
+
+int MapInfo_ObjectFolder(int map)
+{
+    const int folder = MapInfo_Get(map).objectFolder;
+    return folder >= 0 ? folder : map + 1;
 }
 
 const std::vector<int>& MapInfo_AllAmbient()

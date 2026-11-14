@@ -243,3 +243,4 @@ tests/MonsterSpawnPointer.py --architecture x64
 tests/NpcModelPointer.py --architecture x64
 tests/InventoryPosePointer.py --architecture x64
 tests/MapInfoPointer.py --architecture x64
+tests/WorldModelsPointer.py --architecture x64

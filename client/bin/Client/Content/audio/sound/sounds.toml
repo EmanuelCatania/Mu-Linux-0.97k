@@ -6,6 +6,7 @@
 # [sound] se carga al arrancar. [monster.N] se carga la primera vez que se abre
 # el modelo del monstruo de tipo N; dos tipos pueden repetir la misma lista.
 # [npc.N] se carga con el modelo de NPC N (npc/models.toml).
+# [map.N] se carga al entrar al mapa N, con sus modelos (map/maps.toml).
 
 [sound]
 0 = ["aWind.wav", 1]   # a바람.wav
@@ -439,3 +440,21 @@
 
 [npc.348]   # MixNpc
 121 = ["nMix.wav", 1]
+
+[map.11]   # Blood Castle 1
+110 = ["iBloodCastle.wav", 1]
+
+[map.12]   # Blood Castle 2
+110 = ["iBloodCastle.wav", 1]
+
+[map.13]   # Blood Castle 3
+110 = ["iBloodCastle.wav", 1]
+
+[map.14]   # Blood Castle 4
+110 = ["iBloodCastle.wav", 1]
+
+[map.15]   # Blood Castle 5
+110 = ["iBloodCastle.wav", 1]
+
+[map.16]   # Blood Castle 6
+110 = ["iBloodCastle.wav", 1]

@@ -14,3 +14,6 @@ void SoundTable_LoadMonster(int type);
 
 // Carga la sección [npc.N] del NPC de modelo N, si existe.
 void SoundTable_LoadNpc(int model);
+
+// Carga la sección [map.N] al entrar al mapa N, si existe.
+void SoundTable_LoadMap(int map);

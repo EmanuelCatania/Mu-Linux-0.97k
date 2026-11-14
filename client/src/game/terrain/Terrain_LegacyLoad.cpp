@@ -1,6 +1,7 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
+#include "audio/SoundTable.h"
 #include "platform/Text.h"
 #include "platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -262,47 +263,25 @@ void __cdecl OpenWorldModels(void) {
         }
     }
 
-    // Object type texture/name registration (second pass, all maps)
+    // Cargas propias de cada mapa (IDA 0x50C4D0, segundo switch, el que corre en
+    // cada entrada): [[map.N.load]] de Content/map/maps.toml, en su orden.
     SetMaxTextures(0x69);
-    switch (gMapManager.GetCurrentMap()) {
-    case MAP_LORENCIA:
-        AccessModel(0xae, "Data/Object1/", "bird", 1);
-        OpenTexture(0xae, "Object1/", 0x2600, '\x01');
-        AccessModel(0xb5, "Data/Object1/", "fish", 1);
-        OpenTexture(0xb5, "Object1/", 0x2600, '\x01');
-        break;
-    case MAP_DUNGEON: case MAP_LOST_TOWER:
-        AccessModel(0xd7, "Data/Object2/", "DungeonStone", 1);
-        OpenTexture(0xd7, "Object2/", 0x2600, '\x01');
-        AccessModel(0xb0, "Data/Object2/", "Bat", 1);
-        OpenTexture(0xb0, "Object2/", 0x2600, '\x01');
-        AccessModel(0xb1, "Data/Object2/", "mouse", 1);
-        OpenTexture(0xb1, "Object2/", 0x2600, '\x01');
-        break;
-    case MAP_NORIA:
-        AccessModel(0xaf, "Data/Object1/", "Butterfly", 1);
-        OpenTexture(0xaf, "Object1/", 0x2600, '\x01');
-        break;
-    case MAP_EXILE:
-        for (int i = 0xe4; i < 0xec; i++) {
-            AccessModel(i, "Data/Object6/", "Meteo", i - 0xe3);
-            OpenTexture(i, "Object6/", 0x2600, '\x01');
+    const int map = gMapManager.GetCurrentMap();
+    const MapInfo& info = gMapManager.Info(map);
+    for (const MapLoad& load : info.loads) {
+        switch (load.kind) {
+        case MapLoad::Kind::Model:
+            AccessModel(load.slot, load.path.c_str(), load.name.c_str(), load.index);
+            break;
+        case MapLoad::Kind::Texture:
+            OpenTexture(load.slot, load.path.c_str(), 0x2600, '\x01');
+            break;
+        case MapLoad::Kind::Jpg:
+            OpenJPG(load.path.c_str(), load.slot, 0x2601, load.repeat ? 0x2901 : 0x2900, 0, '\x01');
+            break;
         }
-        AccessModel(0xea, "Data/Object6/", "BossHead", 1);
-        AccessModel(0xeb, "Data/Object6/", "Princess", 1);
-        break;
-    case MAP_ARENA:
-        AccessModel(0xb2, "Data/Object7/", "SummonMonster", 1);
-        OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
-        break;
-    case MAP_ATLANS:
-        // IDA 0x50C4D0: ++v3; while (v3 - 181 < 9) loads 182..189
-        // (Fish02..Fish09). Slot 190 is Ice01: loading its textures from
-        // Object8 corrupts Ice Arrow for this map and subsequent maps.
-        for (int i = 182; i < 190; ++i) {
-            AccessModel(i, "Data/Object8/", "Fish", i - 0xb4);
-            OpenTexture(i, "Object8/", 0x2600, '\x01');
-        }
+    }
+    if (map == MAP_ATLANS) {
         // Texturas de agua de Atlans (IDA L175-199). Carga wt00..wt31 en Bitmaps[65..96] y además
         // copia el nombre corto en Bitmaps[n].FileName (offset 0 del slot,
         // stride 0x38), que es de donde lo lee el render de tiles de agua.
@@ -320,171 +299,35 @@ void __cdecl OpenWorldModels(void) {
                 Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * TEXTURE_STRIDE], Buffer, 0x20);
             }
         }
-        break;
-    case MAP_TARKAN:
-        OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
-        OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
-        OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
-        AccessModel(0xb3, "Data/Object9/", "SandPillar", 2);
-        OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
-        break;
-    case MAP_ICARUS:
-        // IDA 0050C4D0 L209-214 (segundo switch, el que corre siempre):
-        //     OpenJPG("Effect\clouds.jpg",     0x4F4u, ...);
-        //     AccessModelWithTextures(182, "Data\Object11", "cloud", -1);
-        //     OpenTexture(182, "Object11\\", 9728, 1);
-        //     OpenJPG("Effect\cloudLight.jpg", 0x4F5u, ...);
-        //
-        // Al port le faltaban las DOS texturas: solo las cargaba el PRIMER
-        // switch, gateado por `DAT_0055a7c4 == 0`, que ya no corre cuando se
-        // llega a Icarus. La textura 1268 quedaba sin handle GL y las ~6800
-        // nubes por frame se dibujaban invisibles.
-        OpenJPG("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
-        AccessModel(0xb6, "Data/Object11/", "cloud", -1);
-        OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
-        OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
-        break;
-    case MAP_BLOOD_CASTLE1: case MAP_BLOOD_CASTLE2: case MAP_BLOOD_CASTLE3: case MAP_BLOOD_CASTLE4: case MAP_BLOOD_CASTLE5: case MAP_BLOOD_CASTLE6:
-        // Blood Castle.  Port 1:1 de IDA 0x50C4D0 L228-242:
-        //     AccessModelWithTextures(184, "Data\\Object12\\", "Crow", 1);
-        //     OpenTexture(184, "Object12\\", 9728, 1);
-        //     AccessModelWithTextures(262/263, "Data\\Object12\\", "Gate", 1/2);
-        //     AccessModelWithTextures(260/261, "Data\\Object12\\", "StoneCoffin", 1/2);
-        //     for (k=0;k<2;k++) OpenTexture(k+262, "Monster\\", 9728, 1);
-        //     for (m=0;m<2;m++) OpenTexture(m+260, "Monster\\", 9728, 1);
-        //     AccessModelWithTextures(185, "Data\\Object12\\", "Shine", 1);
-        //     OpenTexture(185, "Object12\\", 9728, 1);
-        AccessModel(0xb8, "Data/Object12/", "Crow", 1);
-        OpenTexture(0xb8, "Object12/", 0x2600, '\x01');
-        AccessModel(0x106, "Data/Object12/", "Gate", 1);
-        AccessModel(0x107, "Data/Object12/", "Gate", 2);
-        AccessModel(0x104, "Data/Object12/", "StoneCoffin", 1);
-        AccessModel(0x105, "Data/Object12/", "StoneCoffin", 2);
-        for (int k = 0; k < 2; ++k)
-            OpenTexture(k + 0x106, "Monster/", 0x2600, '\x01');
-        for (int m = 0; m < 2; ++m)
-            OpenTexture(m + 0x104, "Monster/", 0x2600, '\x01');
-        AccessModel(0xb9, "Data/Object12/", "Shine", 1);
-        OpenTexture(0xb9, "Object12/", 0x2600, '\x01');
-        // Van en este switch, fuera del `if (!unk_55A7C4)` interno, como en IDA
-        // (0x50C4D0 L243-245): se ejecutan en cada entrada al mapa. El LoadWaveFile hace
-        // falta para el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B (música del evento).
-        OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
-        LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
-        break;
     }
+    // El sonido del evento de Blood Castle (PlayBuffer(110) del estado 0 del 0x9B).
+    SoundTable_LoadMap(map);
 
     // Object model loading for all maps (SetMaxTextures(0x2ee) then per-map loading)
     SetMaxTextures(0x2ee);
-    if (gMapManager.GetCurrentMap() == MAP_LORENCIA) {
-        // Lorencia (Object1) — load SMD models on first call
-        if (DAT_0055a7c4 == '\0') {
+    const int objFolder = MapInfo_ObjectFolder(map);
+    char objectDir[32], textureDir[32];
+    crt_sprintf(objectDir, "Data/Object%d/", objFolder);
+    crt_sprintf(textureDir, "Object%d/", objFolder);
+    if (!info.objects.empty()) {
+        // Objetos con nombre propio ([map.N.objects]; en vanilla, Lorencia).
+        if (map == MAP_LORENCIA && DAT_0055a7c4 == '\0') {
             // IDA 0x0050C4D0: mushrooms are 26..27; stones are 30..34.
             // These IDs are consumed directly as Models[Object.Type].
             DAT_083a4100 = 1;
         }
-        // IDA OpenWorldModels (0x50C4D0): la tabla de BMD de Object1 sigue al bloque
-        // opcional de SMD. Se conservan los IDs de modelo originales y todas sus
-        // entradas; los nombres SMD difieren (jar_01.smd es Well01.bmd, por ejemplo).
-        struct LorenciaSlot { int slot; const char* bmd; };
-        static const LorenciaSlot lorenciaSlots[] = {
-            // Trees (slots 0x00..0x0c → Tree01..Tree13)
-            { 0x00, "Tree01" }, { 0x01, "Tree02" },
-            { 0x02, "Tree03" }, { 0x03, "Tree04" }, { 0x04, "Tree05" },
-            { 0x05, "Tree06" }, { 0x06, "Tree07" }, { 0x07, "Tree08" },
-            { 0x08, "Tree09" }, { 0x09, "Tree10" }, { 0x0a, "Tree11" },
-            { 0x0b, "Tree12" }, { 0x0c, "Tree13" },
-            // IDA: ocho modelos de pasto, slots 20..27.
-            { 0x14, "Grass01" }, { 0x15, "Grass02" }, { 0x16, "Grass03" },
-            { 0x17, "Grass04" }, { 0x18, "Grass05" }, { 0x19, "Grass06" },
-            { 0x1a, "Grass07" }, { 0x1b, "Grass08" },
-            // Stones — IDA 0x0050C4D0: object/model IDs 30..34 (0x1e..0x22).
-            // The .obj record type is used directly as the Models[] index by
-            // Draw_RenderObject (0x004FAE00); these are not file ordinals.
-            { 0x1e, "Stone01" }, { 0x1f, "Stone02" }, { 0x20, "Stone03" },
-            { 0x21, "Stone04" }, { 0x22, "Stone05" },
-            // Statues / Tomb
-            { 0x28, "StoneStatue01" }, { 0x29, "StoneStatue02" },
-            { 0x2a, "StoneStatue03" },
-            { 0x2b, "SteelStatue01" },
-            { 0x2c, "Tomb01" }, { 0x2d, "Tomb02" }, { 0x2e, "Tomb03" },
-            // Fire / Light
-            { 0x32, "FireLight01" }, { 0x33, "FireLight02" },
-            { 0x34, "Bonfire01" },
-            // Merchant animals
-            { 0x38, "MerchantAnimal01" }, { 0x39, "MerchantAnimal02" },
-            // Doungeon / drum / chest / ship
-            { 0x37, "DoungeonGate01" },
-            { 0x3a, "TreasureDrum01" }, { 0x3b, "TreasureChest01" },
-            { 0x3c, "Ship01" },
-            // Steel barred wall variants → SteelWall + SteelDoor in distrib
-            { 0x41, "SteelWall01" }, { 0x42, "SteelWall02" },
-            { 0x43, "SteelWall03" }, { 0x44, "SteelDoor01" },
-            // Town walls → StoneWall in distrib (no plain Wall*.bmd)
-            { 0x45, "StoneWall01" }, { 0x46, "StoneWall02" }, { 0x47, "StoneWall03" },
-            { 0x48, "StoneWall04" }, { 0x49, "StoneWall05" }, { 0x4a, "StoneWall06" },
-            // Castle/city walls → StoneMuWall in distrib (only 4 exist)
-            { 0x4b, "StoneMuWall01" }, { 0x4c, "StoneMuWall02" },
-            { 0x4d, "StoneMuWall03" }, { 0x4e, "StoneMuWall04" },
-            // Bridge / fence
-            { 0x50, "Bridge01" }, { 0x55, "BridgeStone01" },
-            { 0x51, "Fence01" }, { 0x52, "Fence02" },
-            { 0x53, "Fence03" }, { 0x54, "Fence04" },
-            // Streetlight / cannon
-            { 0x5a, "StreetLight01" },
-            { 0x5b, "Cannon01" }, { 0x5c, "Cannon02" }, { 0x5d, "Cannon03" },
-            { 0x5f, "Curtain01" },
-            // Signboard → Sign in distrib
-            { 0x60, "Sign01" }, { 0x61, "Sign02" },
-            // Carriage
-            { 0x62, "Carriage01" }, { 0x63, "Carriage02" },
-            { 0x64, "Carriage03" }, { 0x65, "Carriage04" },
-            // Paja / caño de agua / pozos (IDs de modelo de IDA 106..109).
-            { 0x66, "Straw01" }, { 0x67, "Straw02" },
-            { 0x69, "Waterspout01" },
-            { 0x6a, "Well01" }, { 0x6b, "Well02" },
-            { 0x6c, "Well03" }, { 0x6d, "Well04" },
-            // Hanging / stair
-            { 0x6e, "Hanging01" }, { 0x6f, "Stair01" },
-            // Houses (0x73..0x77 → House01..House05)
-            { 0x73, "House01" }, { 0x74, "House02" }, { 0x75, "House03" },
-            { 0x76, "House04" }, { 0x77, "House05" },
-            { 0x78, "Tent01" },
-            // House walls
-            { 0x79, "HouseWall01" }, { 0x7a, "HouseWall02" }, { 0x7b, "HouseWall03" },
-            { 0x7c, "HouseWall04" }, { 0x7d, "HouseWall05" }, { 0x7e, "HouseWall06" },
-            // House etc
-            { 0x7f, "HouseEtc01" }, { 0x80, "HouseEtc02" }, { 0x81, "HouseEtc03" },
-            // Light / posebox per IDA AccessModel slots
-            { 0x82, "Light01" }, { 0x83, "Light02" }, { 0x84, "Light03" },
-            { 0x85, "PoseBox01" },
-            // Furniture lives in 0x8c..0x92 in the original Object1 table
-            { 0x8c, "Furniture01" }, { 0x8d, "Furniture02" }, { 0x8e, "Furniture03" },
-            { 0x8f, "Furniture04" }, { 0x90, "Furniture05" }, { 0x91, "Furniture06" },
-            { 0x92, "Furniture07" },
-            // Beer / Candle / Bonfire
-            { 0x96, "Candle01" },
-            { 0x97, "Beer01" }, { 0x98, "Beer02" }, { 0x99, "Beer03" },
-            // Bird/Fish/Butterfly handled by switch case 0 explicit calls above
-        };
-        for (size_t i = 0; i < sizeof(lorenciaSlots)/sizeof(lorenciaSlots[0]); ++i) {
-            int slotIdx = lorenciaSlots[i].slot;
-            char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + (uintptr_t)BMD_STRIDE * slotIdx);
+        // Los IDs de modelo son los del binario; los nombres son los .bmd del
+        // pack (jar_01.smd es Well01.bmd, por ejemplo).
+        for (const auto& object : info.objects) {
+            char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + (uintptr_t)BMD_STRIDE * object.first);
             if (AsModel(slotPtr)->NumBones > 0) continue;  // already loaded (e.g. SMD worked)
-            AccessModel(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
+            AccessModel(object.first, objectDir, object.second.c_str(), -1);
         }
-
-        // Register all Object1 slots 0..0x9f
         for (int i = 0; i < 0xa0; i++)
-            OpenTexture(i, "Object1/", 0x2600, '\x01');
+            OpenTexture(i, textureDir, 0x2600, '\x01');
     } else {
-        // Numero de carpeta de objetos.  IDA 0x50C4D0:
-        //     v33 = World + 1;
-        //     if ( World >= 11 && World <= 16 ) v33 = 12;
-        int objFolder = gMapManager.GetCurrentMap() + 1;
-        if (IsBloodCastleMap(gMapManager.GetCurrentMap()))
-            objFolder = 12;
-
+        // Carpeta de objetos (IDA 0x50C4D0: World + 1, 12 en Blood Castle):
+        // object_folder de maps.toml.
         // Dynamic map: load from per-map object file
         if (DAT_0055a7c4 == '\0') {
             char local_384[32];
@@ -504,18 +347,15 @@ void __cdecl OpenWorldModels(void) {
             }
         }
         // Register data paths for all 0xa0 object slots
-        char local_384[32];
-        crt_sprintf(local_384, "Data/Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
-            AccessModel(i, local_384, "Object", i + 1);
+            AccessModel(i, objectDir, "Object", i + 1);
         SetMaxTextures(0x2ee);
-        crt_sprintf(local_384, "Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
-            OpenTexture(i, local_384, 0x2600, '\x01');
+            OpenTexture(i, textureDir, 0x2600, '\x01');
         // Map-specific post-load fixups
-        if (gMapManager.GetCurrentMap() == MAP_DUNGEON)
+        if (map == MAP_DUNGEON)
             *(unsigned int *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 40)->Actions + sizeof(ModelAnimationAction) + 4) = 0x3ecccccd; // 0.4f
-        else if (gMapManager.GetCurrentMap() == MAP_TARKAN) {
+        else if (map == MAP_TARKAN) {
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 11 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 12 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 13 + 0x88 + BMD_FIELD_SHIFT) = 0;
