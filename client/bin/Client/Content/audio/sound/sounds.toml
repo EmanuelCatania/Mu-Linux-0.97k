@@ -1,0 +1,431 @@
+# Sonidos con id: el número es el slot que usan PlayBuffer y la tabla de
+# sonidos de cada modelo. Cada línea es id = ["archivo", canales] y, si el
+# sonido es 3D, un tercer valor true. Los archivos se buscan en Data/Sound (o
+# donde lo mande alias.toml).
+#
+# [sound] se carga al arrancar. [monster.N] se carga la primera vez que se abre
+# el modelo del monstruo de tipo N; dos tipos pueden repetir la misma lista.
+
+[sound]
+0 = ["aWind.wav", 1]   # a바람.wav
+1 = ["aRain.wav", 1]   # a비.wav
+3 = ["aDungeon.wav", 1]   # a던젼.wav
+2 = ["aForest.wav", 1]   # a숲.wav
+5 = ["aTower.wav", 1]   # a탑.wav
+6 = ["aWater.wav", 1]   # a물.wav
+7 = ["desert.wav", 1]
+8 = ["pWalk(Soil).wav", 2]   # p걷기(땅).wav
+9 = ["pWalk(Grass).wav", 2]   # p걷기(풀).wav
+10 = ["pWalk(Snow).wav", 2]   # p걷기(눈).wav
+11 = ["pSwim.wav", 2]   # p수영.wav
+12 = ["aBird1.WAV", 1, true]   # a새1.wav
+13 = ["aBird2.WAV", 1, true]   # a새2.wav
+14 = ["aBat.wav", 1, true]   # a박쥐.wav
+15 = ["aMouse.WAV", 1, true]   # a쥐.wav
+16 = ["aGrate.wav", 1, true]   # a쇠창살.wav
+17 = ["aDoor.wav", 1]   # a문.wav
+18 = ["aCastleDoor.wav", 1]   # a성문.wav
+20 = ["aHeaven.wav", 1]
+21 = ["aThunder01.wav", 1]
+22 = ["aThunder02.wav", 1]
+23 = ["aThunder03.wav", 1]
+50 = ["eShortBlow1.wav", 2]   # e짧은타격1.wav
+51 = ["eShortBlow2.wav", 2]   # e짧은타격2.wav
+52 = ["eShortBlow3.wav", 2]   # e짧은타격3.wav
+53 = ["eBlow1.wav", 2]   # e타격1.wav
+54 = ["eBlow2.wav", 2]   # e타격2.wav
+55 = ["eBlow3.wav", 2]   # e타격3.wav
+56 = ["eBlow4.wav", 2]   # e타격4.wav
+40 = ["eSwingWeapon1.wav", 2]   # e무기휘두르기1.wav
+41 = ["eSwingWeapon2.wav", 2]   # e무기휘두르기2.wav
+42 = ["eSwingLightSword.wav", 2]   # e광선검휘두르기.wav
+65 = ["eBow.wav", 2]   # e활.wav
+66 = ["eCrossbow.wav", 2]   # e석궁.wav
+67 = ["eMix.wav", 2]   # e믹스.wav
+32 = ["pDrink.wav", 1]   # p마시기.wav
+33 = ["pEatApple.wav", 1]   # p사과먹기.wav
+34 = ["pHeartBeat.wav", 1]   # p심장소리.wav
+35 = ["pEnergy.wav", 1]   # p에너지.wav
+75 = ["pMaleScream1.wav", 2]   # p남자비명1.wav
+76 = ["pMaleScream2.wav", 2]   # p남자비명2.wav
+77 = ["pMaleScream3.wav", 2]   # p남자비명3.wav
+78 = ["pMaleDie.wav", 2]   # p남자죽기.wav
+79 = ["pFemaleScream1.wav", 2]   # p여자비명1.wav
+80 = ["pFemaleScream2.wav", 2]   # p여자비명2.wav
+30 = ["pDropItem.wav", 1]   # p아이템떨어트리기.wav
+31 = ["pDropMoney.wav", 1]   # p금화떨어트리기.wav
+49 = ["eGem.wav", 1]   # e보석.wav
+29 = ["pGetItem.wav", 1]   # p아이템가지기.wav
+81 = ["sKnightDefense.wav", 1]   # s전사방어.wav
+82 = ["sKnightSkill1.wav", 1]   # s전사내려찍기.wav
+83 = ["sKnightSkill2.wav", 1]   # s전사찌르기.wav
+84 = ["sKnightSkill3.wav", 1]   # s전사올려치기.wav
+85 = ["sKnightSkill4.wav", 1]   # s전사돌려치기.wav
+286 = ["mShadowAttack1.wav", 1]   # m쉐도우공격1.wav
+86 = ["sTornado.wav", 2, true]   # s토네이도.wav
+87 = ["sEvil.wav", 2, true]   # s영혼.wav
+88 = ["sMagic.wav", 2, true]   # s마법.wav
+89 = ["sHellFire.wav", 2, true]   # s헬파이어.wav
+90 = ["sIce.wav", 2, true]   # s얼음.wav
+91 = ["sFlame.wav", 2, true]   # s불기둥.wav
+92 = ["sAquaFlash.wav", 2, true]   # s아쿠아플래쉬.wav
+48 = ["eBreak.wav", 1, true]   # e부서짐.wav
+44 = ["eExplosion.wav", 1, true]   # e폭파.wav
+46 = ["eMeteorite.wav", 2, true]   # e운석떨어지기.wav
+60 = ["eThunder.wav", 1, true]   # e번개.wav
+93 = ["mBone1.WAV", 2, true]   # m해골1.wav
+94 = ["mBone2.wav", 2, true]   # m해골2.wav
+19 = ["mAssassin1.wav", 1, true]   # m암살자1.wav
+68 = ["eFirecracker1.wav", 1, true]
+69 = ["eFirecracker2.wav", 1, true]
+70 = ["eMedal.wav", 1, true]
+73 = ["ePhoenixExp.wav", 1, true]
+95 = ["eRidingSpear.wav", 1]
+96 = ["eRaidShoot.wav", 1]
+97 = ["eSwellLife.wav", 1]
+98 = ["eBlow.wav", 1]
+100 = ["ePiercing.wav", 1]
+101 = ["eIceArrow.wav", 1]
+102 = ["eTelekinesis.wav", 1]
+103 = ["eSoulBarrier.wav", 1]
+104 = ["eBloodAttack.wav", 1]
+105 = ["eHitGate.wav", 1]
+106 = ["eHitGate2.wav", 1]
+107 = ["eHitCristal.wav", 1]
+118 = ["aTamajjang1.wav", 1, true]
+119 = ["aTamajjang2.wav", 1, true]
+108 = ["eDownGate.wav", 1]
+109 = ["eCrow.wav", 1]
+
+[monster.0]
+170 = ["mBull1.wav", 2, true]
+171 = ["mBull2.wav", 2, true]
+172 = ["mBullAttack1.wav", 2, true]
+173 = ["mBullAttack2.wav", 2, true]
+174 = ["mBullDie.wav", 2, true]
+
+[monster.1]
+175 = ["mHound1.wav", 2, true]
+176 = ["mHound2.wav", 2, true]
+177 = ["mHoundAttack1.wav", 2, true]
+178 = ["mHoundAttack2.wav", 2, true]
+179 = ["mHoundDie.wav", 2, true]
+
+[monster.2]
+180 = ["mBudge1.wav", 2, true]
+181 = ["mBudgeAttack1.wav", 2, true]
+182 = ["mBudgeDie.wav", 2, true]
+
+[monster.3]
+185 = ["mDarkKnight1.wav", 2, true]
+186 = ["mDarkKnight2.wav", 2, true]
+187 = ["mDarkKnightAttack1.wav", 2, true]
+188 = ["mDarkKnightAttack2.wav", 2, true]
+189 = ["mDarkKnightDie.wav", 2, true]
+
+[monster.4]
+190 = ["mWizard1.wav", 2, true]
+191 = ["mWizard2.wav", 2, true]
+192 = ["mWizardAttack1.wav", 2, true]
+193 = ["mWizardAttack2.wav", 2, true]
+194 = ["mWizardDie.wav", 2, true]
+
+[monster.5]
+195 = ["mGiant1.wav", 2, true]
+196 = ["mGiant2.wav", 2, true]
+197 = ["mGiantAttack1.wav", 2, true]
+198 = ["mGiantAttack2.wav", 2, true]
+199 = ["mGiantDie.wav", 2, true]
+
+[monster.6]
+200 = ["mLarva1.wav", 2, true]
+201 = ["mLarva2.wav", 2, true]
+
+[monster.7]
+205 = ["mGhost1.wav", 2, true]
+206 = ["mGhost2.wav", 2, true]
+207 = ["mGhostAttack1.wav", 2, true]
+208 = ["mGhostAttack2.wav", 2, true]
+209 = ["mGhostDie.wav", 2, true]
+
+[monster.8]
+202 = ["mHellSpider1.wav", 2, true]
+203 = ["mHellSpiderAttack1.wav", 2, true]
+204 = ["mHellSpiderDie.wav", 2, true]
+
+[monster.9]
+183 = ["mSpider1.wav", 2, true]
+
+[monster.10]
+210 = ["mOgre1.wav", 2, true]
+211 = ["mOgre2.wav", 2, true]
+212 = ["mOgreAttack1.wav", 2, true]
+213 = ["mOgreAttack2.wav", 2, true]
+214 = ["mOgreDie.wav", 2, true]
+
+[monster.11]
+215 = ["mGorgon1.wav", 2, true]
+216 = ["mGorgon2.wav", 2, true]
+217 = ["mGorgonAttack1.wav", 2, true]
+218 = ["mGorgonAttack2.wav", 2, true]
+219 = ["mGorgonDie.wav", 2, true]
+
+[monster.12]
+238 = ["mYeti1.wav", 2, true]
+239 = ["mYeti2.wav", 2, true]
+240 = ["mYetiAttack1.wav", 2, true]
+241 = ["mYetiDie.wav", 2, true]
+
+[monster.13]
+238 = ["mYeti1.wav", 2, true]
+239 = ["mYeti2.wav", 2, true]
+240 = ["mYetiAttack1.wav", 2, true]
+241 = ["mYetiDie.wav", 2, true]
+
+[monster.14]
+235 = ["mAssassinAttack1.wav", 2, true]
+236 = ["mAssassinAttack2.wav", 2, true]
+237 = ["mAssassinDie.wav", 2, true]
+
+[monster.15]
+220 = ["mIceMonster1.wav", 2, true]
+221 = ["mIceMonster2.wav", 2, true]
+222 = ["mIceMonsterDie.wav", 2, true]
+
+[monster.16]
+226 = ["mHomord1.wav", 2, true]
+227 = ["mHomord2.wav", 2, true]
+228 = ["mHomordAttack1.wav", 2, true]
+229 = ["mHomordDie.wav", 2, true]
+
+[monster.17]
+223 = ["mWorm1.wav", 2, true]
+224 = ["mWorm2.wav", 2, true]
+225 = ["mWormDie.wav", 2, true]
+
+[monster.18]
+230 = ["mIceQueen1.wav", 2, true]
+231 = ["mIceQueen2.wav", 2, true]
+232 = ["mIceQueenAttack1.wav", 2, true]
+233 = ["mIceQueenAttack2.wav", 2, true]
+234 = ["mIceQueenDie.wav", 2, true]
+
+[monster.19]
+242 = ["mGoblin1.wav", 2, true]
+243 = ["mGoblin2.wav", 2, true]
+244 = ["mGoblinAttack1.wav", 2, true]
+245 = ["mGoblinAttack2.wav", 2, true]
+246 = ["mGoblinDie.wav", 2, true]
+
+[monster.20]
+247 = ["mScorpion1.wav", 2, true]
+248 = ["mScorpion2.wav", 2, true]
+249 = ["mScorpionAttack1.wav", 2, true]
+250 = ["mScorpionAttack2.wav", 2, true]
+251 = ["mScorpionDie.wav", 2, true]
+
+[monster.21]
+252 = ["mBeetle1.wav", 2, true]
+253 = ["mBeetleAttack1.wav", 2, true]
+254 = ["mBeetleDie.wav", 2, true]
+
+[monster.22]
+255 = ["mHunter1.wav", 2, true]
+256 = ["mHunter2.wav", 2, true]
+257 = ["mHunterAttack1.wav", 2, true]
+258 = ["mHunterAttack2.wav", 2, true]
+259 = ["mHunterDie.wav", 2, true]
+
+[monster.23]
+260 = ["mWoodMon1.wav", 2, true]
+261 = ["mWoodMon2.wav", 2, true]
+262 = ["mWoodMonAttack1.wav", 2, true]
+263 = ["mWoodMonAttack2.wav", 2, true]
+264 = ["mWoodMonDie.wav", 2, true]
+
+[monster.24]
+265 = ["mArgon1.wav", 2, true]
+266 = ["mArgon2.wav", 2, true]
+267 = ["mArgonAttack1.wav", 2, true]
+268 = ["mArgonAttack2.wav", 2, true]
+269 = ["mArgonDie.wav", 2, true]
+
+[monster.25]
+270 = ["mGolem1.wav", 2, true]
+271 = ["mGolem2.wav", 2, true]
+272 = ["mGolemAttack1.wav", 2, true]
+273 = ["mGolemAttack2.wav", 2, true]
+274 = ["mGolemDie.wav", 2, true]
+
+[monster.26]
+275 = ["mYeti1.wav", 2, true]
+276 = ["mSatanAttack1.wav", 2, true]
+277 = ["mYetiDie.wav", 2, true]
+
+[monster.27]
+278 = ["mBalrog1.wav", 2, true]
+279 = ["mBalrog2.wav", 2, true]
+280 = ["mWizardAttack2.wav", 2, true]
+281 = ["mGorgonAttack2.wav", 2, true]
+282 = ["mBalrogDie.wav", 2, true]
+
+[monster.28]
+283 = ["mShadow1.wav", 2, true]
+284 = ["mShadow2.wav", 2, true]
+285 = ["mShadowAttack1.wav", 2, true]
+286 = ["mShadowAttack2.wav", 2, true]
+287 = ["mShadowDie.wav", 2, true]
+
+[monster.29]
+185 = ["mDarkKnight1.wav", 2, true]
+186 = ["mDarkKnight2.wav", 2, true]
+187 = ["mDarkKnightAttack1.wav", 2, true]
+188 = ["mDarkKnightAttack2.wav", 2, true]
+189 = ["mDarkKnightDie.wav", 2, true]
+
+[monster.30]
+170 = ["mBull1.wav", 2, true]
+171 = ["mBull2.wav", 2, true]
+172 = ["mBullAttack1.wav", 2, true]
+173 = ["mBullAttack2.wav", 2, true]
+174 = ["mBullDie.wav", 2, true]
+
+[monster.31]
+293 = ["mYeti1.wav", 2, true]
+294 = ["mBullAttack1.wav", 2, true]
+295 = ["mYetiDie.wav", 2, true]
+
+[monster.32]
+296 = ["mBali1.wav", 2, true]
+297 = ["mBali2.wav", 2, true]
+298 = ["mBaliAttack1.wav", 2, true]
+299 = ["mBaliAttack2.wav", 2, true]
+
+[monster.33]
+300 = ["mBahamut1.wav", 2, true]
+301 = ["mYeti1.wav", 2, true]
+
+[monster.34]
+302 = ["mBepar1.wav", 2, true]
+303 = ["mBepar2.wav", 2, true]
+304 = ["mBalrog1.wav", 2, true]
+
+[monster.35]
+305 = ["mValkyrie1.wav", 2, true]
+306 = ["mBaliAttack2.wav", 2, true]
+307 = ["mValkyrieDie.wav", 2, true]
+
+[monster.36]
+308 = ["mLizardKing1.wav", 2, true]
+309 = ["mLizardKing2.wav", 2, true]
+310 = ["mGorgonDie.wav", 2, true]
+
+[monster.37]
+311 = ["mHydra1.wav", 2, true]
+312 = ["mHydraAttack1.wav", 2, true]
+
+[monster.39]
+185 = ["mDarkKnight1.wav", 2, true]
+186 = ["mDarkKnight2.wav", 2, true]
+187 = ["mDarkKnightAttack1.wav", 2, true]
+188 = ["mDarkKnightAttack2.wav", 2, true]
+189 = ["mDarkKnightDie.wav", 2, true]
+
+[monster.40]
+308 = ["mLizardKing1.wav", 2, true]
+309 = ["mLizardKing2.wav", 2, true]
+310 = ["mGorgonDie.wav", 2, true]
+
+[monster.41]
+313 = ["iron1.wav", 2, true]
+314 = ["iron_attack1.wav", 2, true]
+
+[monster.42]
+315 = ["jaikan1.wav", 2, true]
+316 = ["jaikan2.wav", 2, true]
+317 = ["jaikan_attack1.wav", 2, true]
+318 = ["jaikan_attack2.wav", 2, true]
+319 = ["jaikan_die.wav", 2, true]
+
+[monster.43]
+320 = ["blood1.wav", 2, true]
+321 = ["blood_attack1.wav", 2, true]
+322 = ["blood_attack2.wav", 2, true]
+323 = ["blood_die.wav", 2, true]
+
+[monster.44]
+324 = ["death1.wav", 2, true]
+325 = ["death_attack1.wav", 2, true]
+326 = ["death_die.wav", 2, true]
+
+[monster.45]
+327 = ["mutant1.wav", 2, true]
+328 = ["mutant2.wav", 2, true]
+329 = ["mutant_attack1.wav", 2, true]
+
+[monster.46]
+332 = ["mOrcArcherAttack1.wav", 2, true]
+174 = ["mBullDie.wav", 2, true]
+
+[monster.47]
+256 = ["mHunter2.wav", 2, true]
+174 = ["mBullDie.wav", 2, true]
+331 = ["mOrcCapAttack1.wav", 2, true]
+
+[monster.48]
+330 = ["mCursedKing1.wav", 2, true]
+334 = ["mCursedKing2.wav", 2, true]
+333 = ["mCursedKingDie1.wav", 2, true]
+
+[monster.49]
+347 = ["mMolt1.wav", 2, true]
+348 = ["mMoltAttack1.wav", 2, true]
+349 = ["mMoltDie.wav", 2, true]
+
+[monster.50]
+345 = ["mAlquamosAttack1.wav", 2, true]
+346 = ["mAlquamosDie.wav", 2, true]
+
+[monster.51]
+341 = ["mRainner1.wav", 2, true]
+342 = ["mRainnerAttack1.wav", 2, true]
+343 = ["mRainnerDie.wav", 2, true]
+
+[monster.52]
+350 = ["mMegaCrust1.wav", 2, true]
+351 = ["mMegaCrustAttack1.wav", 2, true]
+352 = ["mMegaCrustDie.wav", 2, true]
+
+[monster.53]
+338 = ["mPhantom1.wav", 2, true]
+339 = ["mPhantomAttack1.wav", 2, true]
+340 = ["mPhantomDie.wav", 2, true]
+
+[monster.54]
+335 = ["mDrakan1.wav", 2, true]
+336 = ["mDrakanAttack1.wav", 2, true]
+337 = ["mDrakanDie.wav", 2, true]
+
+[monster.55]
+353 = ["mPhoenix1.wav", 2, true]
+354 = ["mPhoenix1.wav", 2, true]
+355 = ["mPhoenixAttack1.wav", 2, true]
+
+[monster.57]
+362 = ["mRedSkull.wav", 2, true]
+363 = ["mRedSkullDie.wav", 2, true]
+364 = ["mRedSkullAttack.wav", 2, true]
+
+[monster.58]
+358 = ["mHunter2.wav", 2, true]
+361 = ["mGhaintOrgerDie.wav", 2, true]
+
+[monster.59]
+174 = ["mBullDie.wav", 2, true]
+358 = ["mHunter2.wav", 2, true]
+359 = ["mBlackSkullDie.wav", 2, true]
+360 = ["mBlackSkullAttack.wav", 2, true]
+
+[monster.62]
+356 = ["mMagicSkull.wav", 2, true]
+357 = ["mMagicSkull.wav", 2, true]
