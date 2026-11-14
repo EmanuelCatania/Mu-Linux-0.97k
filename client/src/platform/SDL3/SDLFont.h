@@ -34,7 +34,7 @@ public:
     // Igual que Load, pero FreeType lee el archivo bajo demanda en vez de
     // cargarlo entero (fuentes del sistema de 10-20 MB usadas como respaldo).
     bool LoadFile(const std::string& path, int height, std::string& error, long faceIndex = 0);
-    // Respaldo en Data/Font, relativo a la carpeta del cliente o a MU_ASSET_ROOT.
+    // Respaldo en System/Font, relativo a la carpeta del cliente o a MU_ASSET_ROOT.
     bool LoadFamily(const char* family, bool bold, bool italic, int height,
                     int width, bool underline, bool strikeOut, std::string& error,
                     const char* assetRoot = nullptr);

@@ -29,7 +29,7 @@ repositorio (el port bajo src/).
 
 NO cubre:
 
-  - Los assets del juego incluidos en bin/Client/Data/ (modelos .bmd, texturas
+  - Los assets del juego incluidos en bin/Client/System/ y bin/Client/Content/ (modelos .bmd, texturas
     .ozj/.ozt, mapas, sonidos, música) ni MuPlayer.exe. Copyright (c) WebZen Inc.
   - El cliente original de Mu Online 0.97k (main.exe) ni ningún binario
     derivado de el. Copyright (c) WebZen Inc.

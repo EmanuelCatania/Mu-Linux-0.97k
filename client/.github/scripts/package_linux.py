@@ -66,7 +66,7 @@ def main():
         shutil.copy2(repo / ".github/scripts/launch-linux.sh", package / "launch.sh")
         (package / "main").chmod(0o755)
         (package / "launch.sh").chmod(0o755)
-        assets = subprocess.check_output(["git", "-C", str(repo), "ls-files", "-z", "bin/Client/Data", "bin/Client/Content"])
+        assets = subprocess.check_output(["git", "-C", str(repo), "ls-files", "-z", "bin/Client/System", "bin/Client/Content"])
         for raw in assets.split(b"\0"):
             if not raw:
                 continue

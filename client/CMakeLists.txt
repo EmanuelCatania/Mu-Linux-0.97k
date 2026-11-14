@@ -887,7 +887,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     target_include_directories(mu_text_shaper_test PRIVATE src)
     target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
     target_compile_definitions(mu_text_shaper_test PRIVATE
-        MU_TEST_FONT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/bin/Client/Data/Font")
+        MU_TEST_FONT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/bin/Client/System/Font")
     target_link_libraries(mu_text_shaper_test PRIVATE mu_platform_sdl)
     if(MSVC)
         target_compile_options(mu_text_shaper_test PRIVATE /utf-8 /EHsc)

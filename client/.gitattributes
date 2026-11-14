@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────
 #  Reglas de tratamiento de archivos
 #
-#  CRÍTICO: los assets de bin/Client/Data/ tienen que viajar byte
+#  CRÍTICO: los assets de bin/Client/System/ y Content/ tienen que viajar byte
 #  por byte. Si git los toma por texto, convierte LF <-> CRLF y los
 #  CORROMPE en silencio: el modelo no carga, la textura sale rota y
 #  el bug parece del código.
@@ -60,8 +60,9 @@ CMakeLists.txt text eol=lf
 
 # Los .txt de Data/ son data files que parsea GetToken: se preservan
 # tal cual, sin normalizar finales de línea.
-bin/Client/Data/**/*.txt binary
-bin/Client/Data/*.txt    binary
+bin/Client/System/**/*.txt binary
+bin/Client/System/*.txt    binary
+bin/Client/Content/**/*.txt binary
 
 # Upstream stb headers: stable bytes for the documented SHA256 on every OS.
 lib/stb/*.h -text

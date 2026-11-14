@@ -6,7 +6,7 @@
 // de Data/.  En Linux el lanzador ya corre el cliente desde la carpeta del
 // usuario (MU_CLIENT_ROOT, ~/.local/share/mu97k): ahí no cambia nada.
 //
-// El Config.ini y el Data/Macro.txt que traen los paquetes quedan como
+// El Config.ini y el System/Macro.txt que traen los paquetes quedan como
 // plantillas: en el primer arranque se COPIAN a User/, y desde entonces el
 // cliente sólo lee y escribe en User/.  Extraer una versión nueva encima pisa
 // la plantilla y no las preferencias.  Cache/ y Screenshots/ son del usuario:
@@ -34,10 +34,11 @@ inline void UserPath(char* out, std::size_t capacity, const char* name)
 template <std::size_t N>
 inline void UserPath(char (&out)[N], const char* name) { UserPath(out, N, name); }
 
-// Macros de chat: en Linux siguen en Data\Macro.txt como hasta ahora.
+// Macros de chat. En Linux el cliente ya corre desde la carpeta del usuario
+// (MU_CLIENT_ROOT): van ahí, no dentro de los datos del paquete.
 inline const char* UserMacroPath()
 {
-    return *UserDir() ? "User/Macro.txt" : "Data\\Macro.txt";
+    return *UserDir() ? "User/Macro.txt" : "Macro.txt";
 }
 
 namespace UserPathDetail {
@@ -72,9 +73,15 @@ inline void PrepareUserDir()
     static bool done = false;
     if (done) return;
     done = true;
-    if (!*UserDir()) return;
+    if (!*UserDir()) {
+        // Linux: plantilla del paquete (o del Data/ de una instalación vieja).
+        UserPathDetail::CopyIfMissing("System/Macro.txt", "Macro.txt");
+        UserPathDetail::CopyIfMissing("Data/Macro.txt", "Macro.txt");
+        return;
+    }
     GetFileSystem().EnsureDirectory("User");
     UserPathDetail::CopyIfMissing("Config.ini", "User/Config.ini");
+    UserPathDetail::CopyIfMissing("System/Macro.txt", "User/Macro.txt");
     UserPathDetail::CopyIfMissing("Data/Macro.txt", "User/Macro.txt");
     if (!GetFileSystem().Exists("User/Cache") && GetFileSystem().Exists("Cache"))
         std::rename("Cache", "User/Cache");

@@ -14,6 +14,8 @@ struct State {
     std::string server;                    // "Servers/<id>" o vacío
     std::vector<std::string> packs;        // "Packs/<nombre>"
     bool content = false;                  // existe Content/
+    bool system = false;                   // existe System/
+    bool legacy = false;                   // existe Data/ (instalación vieja)
     // Alias en minúsculas y con '/', ordenados del prefijo más largo al más corto.
     std::vector<std::pair<std::string, std::string>> aliases;
     // Alias de archivo generados por el registro (ver ReadEntities):
@@ -152,6 +154,8 @@ void Init()
             [](const std::string& a, const std::string& b) { return Lower(a) < Lower(b); });
     }
     state->content = IsDirectory("Content");
+    state->system = IsDirectory("System");
+    state->legacy = IsDirectory("Data");
     if (state->content) { ReadAliases(*state); ReadEntities(*state); }
     std::lock_guard<std::mutex> lock(mutex);
     state->server = current->server;
@@ -176,7 +180,7 @@ std::vector<Candidate> Candidates(const char* path)
         std::lock_guard<std::mutex> lock(mutex);
         state = current;
     }
-    if (!path || (state->server.empty() && state->packs.empty() && !state->content)) return {};
+    if (!path || (state->server.empty() && state->packs.empty() && !state->content && !state->system)) return {};
     const std::string normalized = Normalize(path);
     // Sólo "Data/...": relativas al directorio del cliente.
     if (normalized.size() < 6 || Lower(normalized.substr(0, 5)) != "data/") return {};
@@ -202,7 +206,10 @@ std::vector<Candidate> Candidates(const char* path)
     if (!state->server.empty()) add(state->server);
     for (const auto& pack : state->packs) add(pack);
     if (state->content) add("Content");
-    out.push_back({ path, layer });
+    // La base: System/ y, si quedó, el Data/ de una instalación vieja. Comparten
+    // capa: las dos son "el clásico" para la regla de las -hd.
+    if (state->system) out.push_back({ "System/" + inner, layer });
+    if (state->legacy || !state->system) out.push_back({ path, layer });
     return out;
 }
 
@@ -261,7 +268,7 @@ std::vector<Entry> List(const char* dir, const Resolver& resolve)
     const std::string normalized = Normalize(dir);
     const std::string lowerDir = Lower(normalized);
     const bool layered = (lowerDir == "data" || lowerDir.compare(0, 5, "data/") == 0) &&
-        (!state->server.empty() || !state->packs.empty() || state->content);
+        (!state->server.empty() || !state->packs.empty() || state->content || state->system);
     int layer = 0;
     if (layered) {
         const std::string inner = normalized.size() > 5 ? normalized.substr(5) : std::string();
@@ -290,8 +297,9 @@ std::vector<Entry> List(const char* dir, const Resolver& resolve)
         if (!state->server.empty()) addRoot(state->server);
         for (const auto& pack : state->packs) addRoot(pack);
         if (state->content) addRoot("Content");
+        if (state->system) addFolder(inner.empty() ? std::string("System") : "System/" + inner, layer);
     }
-    addFolder(dir, layer);
+    if (!layered || state->legacy || !state->system) addFolder(dir, layer);
     std::sort(out.begin(), out.end(), [](const Entry& a, const Entry& b) {
         const std::string la = Lower(a.name), lb = Lower(b.name);
         return la != lb ? la < lb : a.name < b.name;
@@ -308,8 +316,11 @@ void Walk(const char* root, const std::function<bool(const std::string&)>& visit
         if (!state->server.empty()) roots.push_back(state->server);
         roots.insert(roots.end(), state->packs.begin(), state->packs.end());
         if (state->content) roots.push_back("Content");
+        if (state->system) roots.push_back("System");
+        if (state->legacy || !state->system) roots.push_back(root);
+    } else {
+        roots.push_back(root);
     }
-    roots.push_back(root);
     for (const std::string& folder : roots) {
         const std::string real = Real(folder, resolve);
         if (real.empty()) continue;
@@ -335,7 +346,8 @@ std::string Describe()
     if (state->content)
         text += " Content(" + std::to_string(state->aliases.size()) + " alias, " +
             std::to_string(state->entities) + " entidades, " + std::to_string(state->files.size()) + " archivos)";
-    text += " Data";
+    if (state->system) text += " System";
+    if (state->legacy) text += " Data(instalación vieja: migrar con tools/migrar_data.py)";
     return text;
 }
 } // namespace Platform::ContentLayers

@@ -435,15 +435,18 @@ They are used with `HDTextures = 1`; with `0` no extra file is looked up. It is 
 
 ### Data layers
 
-Besides `Data/`, the client looks for each data file in other folders next to
-`main.exe`, in this order (the first one that has it wins):
+The code asks for files with `Data/...` paths (the original 0.97k layout).
+`Data` is no longer a folder: the client looks for each file in these folders
+next to `main.exe`, in this order (the first one that has it wins):
 
 1. `Servers/<ip>_<port>/`: content of the server you are connected to.
 2. `Packs/<name>/`: the player's optional packs, in alphabetical order.
-3. `Content/`: game content in the new layout (being migrated).
-4. `Data/`: the usual layout.
+3. `Content/`: game content in the new layout.
+4. `System/`: the minimum needed to start (fonts, network keys, macro
+   template). An old install with `Data/` is still read as this layer;
+   `tools/migrar_data.py` moves it to the new layout.
 
-The first three mirror the inside of `Data`: `Packs/MyPack/Object8/house.OZJ`
+All four mirror the inside of `Data`: `Packs/MyPack/Object8/house.OZJ`
 replaces `Data/Object8/house.OZJ`. `Content/alias.toml` maps old folders to the
 new ones (`"Object8" = "map/atlans/objects"`). A `-hd` version is only used if
 it is in the same layer as the classic file or in one that wins: a pack can
@@ -500,10 +503,10 @@ end**.
 Text goes through HarfBuzz (glyph shaping, ligatures), SheenBidi (right-to-left
 scripts such as Arabic and Hebrew) and libunibreak (where a line may break in
 chat, bubbles and dialogs). Whatever the chosen font lacks is looked up,
-character by character, in the fallback fonts in `bin/Client/Data/Font/`
+character by character, in the fallback fonts in `bin/Client/System/Font/`
 (Chinese, Japanese, Korean, Arabic, Hebrew, Thai, Devanagari and emoji) and then
 in the system's. More `.ttf` or `.otf` files can be added to that folder; the
-details are in [`Respaldo-README.md`](bin/Client/Data/Font/Respaldo-README.md).
+details are in [`Respaldo-README.md`](bin/Client/System/Font/Respaldo-README.md).
 
 `[Font]` in `Config.ini` picks the main font, its size, the smoothing
 (`FontQuality`), a shadow (`TextShadow=1`) and an outline (`TextOutline=1`); it
@@ -873,7 +876,7 @@ WebZen Inc.
 Third-party libraries keep their own licenses: stb and miniaudio (public domain /
 MIT-0), utf8proc (MIT), libunibreak (zlib), SDL3 (zlib), FreeType (FreeType
 License), HarfBuzz (MIT), SheenBidi (Apache 2.0) and Dawn (BSD 3-Clause). The
-fonts in `bin/Client/Data/Font/` carry theirs next to them (SIL OFL 1.1 or
+fonts in `bin/Client/System/Font/` carry theirs next to them (SIL OFL 1.1 or
 Apache 2.0). The Linux package includes the licenses in `licenses/`.
 
 ---

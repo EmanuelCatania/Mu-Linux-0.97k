@@ -129,6 +129,38 @@ int main()
         CHECK(only == 2);
     }
 
+    // System/: la base de una instalación nueva. Con Data/ al lado (instalación
+    // vieja sin migrar) se leen las dos, System primero.
+    Put("System/Font/LiberationSans-Regular.ttf", "system");
+    Put("System/Enc1.dat", "clave");
+    Init();
+    {
+        const auto list = List("Data/Font");
+        const Entry* font = Find(list, "LiberationSans-Regular.ttf");
+        CHECK(font && font->layer == 3 && Read(font->path) == "system");
+        const auto candidates = Candidates("Data/Enc1.dat");
+        CHECK(candidates.size() >= 2);
+        CHECK(candidates.size() >= 2 && candidates[candidates.size() - 2].path == "System/Enc1.dat");
+        CHECK(candidates.size() >= 2 && candidates.back().path == "Data/Enc1.dat");
+        // La música sigue saliendo de las capas de arriba y del Data/ viejo.
+        CHECK(Find(List("Data/Music"), "Noria.mp3") == nullptr && Find(List("Data/Music"), "noria.mp3") != nullptr);
+    }
+    // Sin Data/ (instalación nueva) no queda ningún candidato con la ruta vieja.
+    fs::remove_all("Data", error);
+    Init();
+    {
+        const auto candidates = Candidates("Data/Enc1.dat");
+        CHECK(!candidates.empty() && candidates.back().path == "System/Enc1.dat");
+        CHECK(Find(List("Data/Monster"), "Monster02.bmd") == nullptr);
+        int walked = 0;
+        Walk("Data", [&](const std::string& path) {
+            CHECK(fs::path(path).generic_string().rfind("Data/", 0) != 0);
+            ++walked;
+            return true;
+        });
+        CHECK(walked == 12);
+    }
+
     fs::current_path(fs::temp_directory_path());
     fs::remove_all(root, error);
     if (failures) { std::printf("%d fallas\n", failures); return 1; }

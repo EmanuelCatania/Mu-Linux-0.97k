@@ -646,7 +646,9 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
         // Igual que el resto de los assets: relativo a la carpeta del cliente.
         std::filesystem::path base = root && *root ? std::filesystem::path(root) : std::filesystem::path();
         const char* style = bold ? (italic ? "BoldItalic" : "Bold") : (italic ? "Italic" : "Regular");
-        path = (base / "Data/Font" / (std::string("LiberationSans-") + style + ".ttf")).generic_string();
+        // Sin raíz de assets es la ruta lógica (pasa por las capas: System/Font).
+        path = (base / (base.empty() ? "Data/Font" : "System/Font") /
+            (std::string("LiberationSans-") + style + ".ttf")).generic_string();
         loaded = Load(ReadFont(path), height, error);
     }
     if (!loaded) {
