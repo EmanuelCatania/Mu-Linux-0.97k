@@ -176,14 +176,14 @@ void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 50;               // CurrentProtocolState
         // RESET de las guardas de init de escena. EnterWorldTick (state=4) y
-        // CharSelectTick (state=5) tienen guardas de init (IDA: DAT_083a7c4b/4c) que
+        // CharSelectTick (state=5) tienen guardas de init (IDA: InitCharacterScene/4c) que
         // sólo permiten re-inicializar la escena la PRIMERA vez. Sin reset, el
         // substate DAT_083a7c14 heredado del primer login (0x1c, post-OK-click)
         // dispararía un F3/03 select-char inmediato → el server respondería con
         // JoinMapServer → el cliente recargaría el mapa en vez de mostrar char-select.
         CharSelectSceneInitialized = 0;
-        DAT_083a7c4c = 0;                // CharSelect per-tick init
-        DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
+        InitMainScene = 0;                // CharSelect per-tick init
+        EnableMainRender = 0;                // IDA: EnableMainRender (0x083A7C10)
         DAT_083a4299 = 0;                // double-click flag
         MouseLButtonPush = 0;                // single-click flag
         DAT_005616ac = -1;               // selected slot
@@ -225,10 +225,10 @@ void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 0;                // CurrentProtocolState
         DAT_083a7c48 = 0;                // ConnectionCheckEnable
-        DAT_083a7c49 = 0;                // InitLogIn
+        InitLogIn = 0;                // InitLogIn
         CharSelectSceneInitialized = 0;
-        DAT_083a7c4c = 0;                // InitMainScene
-        DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
+        InitMainScene = 0;                // InitMainScene
+        EnableMainRender = 0;                // IDA: EnableMainRender (0x083A7C10)
         InitGame();
         return;
     }

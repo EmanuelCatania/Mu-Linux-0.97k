@@ -86,7 +86,7 @@ void __stdcall InitGame(void)
     // DAT_07E11D24 (el tipo de item de la ventana F1, el que indexa sub_4C2E20).
     // Si no se limpia, el tooltip queda dibujado encima del char-select y del
     // select-server.
-    DAT_07eaa160 = 0;     // CheckInventory
+    CheckInventory = 0;     // CheckInventory
 
     // IDA InitGame tiene ADEMAS esta linea, sobre otro global (ojo: D20, no
     // D24).  Es el modo de la ventana de ayuda F1.

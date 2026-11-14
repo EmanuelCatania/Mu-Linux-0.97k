@@ -15,7 +15,7 @@
 //   0xb7  = snow variant B
 //   0xb8  = tree leaves / debris
 //   0x10a = firefly / butterfly (circular orbit with sin/cos)
-//   0x12d = thunder cloud (DAT_083a3ff0 == rain-mode)
+//   0x12d = thunder cloud (EnableEvent == rain-mode)
 //   0x1f  = thunder sound (played via OpenMonsterModel)
 //
 // Slot layout (all offsets relative to iVar14, stride=0x1bc):
@@ -70,7 +70,7 @@
 //   DAT_0839bcb0   — weather slot table base (40 slots × 0x1bc bytes)
 //   DAT_05828d58   — particle model table base (stride 0xbc, indexed by type)
 //   DAT_07abf5d8   — local player entity ptr
-//   DAT_083a3ff0   — weather mode (0=sun/clear, 1=rain, 2=snow, 3=storm)
+//   EnableEvent   — weather mode (0=sun/clear, 1=rain, 2=snow, 3=storm)
 //   DAT_0838bc70   — per-tile terrain attribute array
 //   World   — World
 //   MAIN_HASH_CLASS   — HashTable context (anti-tamper)
@@ -250,9 +250,9 @@ LAB_00500f34:
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00501064:
 
-    // ── Weather-mode: random rain effects (DAT_083a3ff0 != 0) ─────────────────
+    // ── Weather-mode: random rain effects (EnableEvent != 0) ─────────────────
     const char* const rainHero = DAT_07abf5d8;
-    if (DAT_083a3ff0 != 0) {
+    if (EnableEvent != 0) {
         // Spawn occasional rain splash particle (1/40 chance)
         iVar12 = _rand();
         if (iVar12 % 0x28 == 0) {
@@ -311,7 +311,7 @@ LAB_00501064:
 
         if ((&DAT_0839bcb0)[iVar14 * OBJECT_STRIDE] == '\0') {
             // ── Free slot: try to spawn new weather object ───────────────────
-            if (DAT_083a3ff0 != 0) {
+            if (EnableEvent != 0) {
                 // Thunder/storm mode: random thunder cloud (1/300 chance)
                 iVar11 = _rand();
                 uVar8  = iVar11 / 300;
@@ -336,7 +336,7 @@ LAB_00501064:
                     (&DAT_0839bd10)[iVar14 * (OBJECT_STRIDE / 4)] = uVar8 + 0x80;
                     iVar11 = _rand();
                     (&DAT_0839bccc)[iVar14 * (OBJECT_STRIDE / 4)] = 0;
-                    iVar12 = DAT_083a3ff0;
+                    iVar12 = EnableEvent;
                     (&DAT_0839bcd0)[iVar14 * (OBJECT_STRIDE / 4)] = 0;
                     (&DAT_0839bcd4)[iVar14 * (OBJECT_STRIDE / 4)] = 0xc2b40000;
                     WSF(DAT_0839bd30, iVar14 * (OBJECT_STRIDE / 4)) = (float)((float)(iVar11 % 10) * _DAT_005524f4);
@@ -535,7 +535,7 @@ LAB_00501734:
             pvVar9 = (void *)(DAT_05828d58 + sVar5 * BMD_STRIDE);
             if (sVar5 == 0x12d) fVar25 = 0.5f;
 
-            if ((DAT_083a3ff0 == 0) || (sVar5 != 0x12d)) {
+            if ((EnableEvent == 0) || (sVar5 != 0x12d)) {
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * (OBJECT_STRIDE / 4));
                 *(static_cast<unsigned char*>(pvVar9) + 0xa0 + BMD_FIELD_SHIFT) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
@@ -785,7 +785,7 @@ LAB_00501cb5:
                     }
                 }
             } else {
-                // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
+                // EnableEvent != 0 && type == 0x12d: thunder cloud — full animation
                 SetAction(AsObject(pcVar3), 7);
                 *(static_cast<unsigned char*>(pvVar9) + 0xa0 + BMD_FIELD_SHIFT) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,

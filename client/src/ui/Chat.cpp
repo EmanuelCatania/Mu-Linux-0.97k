@@ -10,10 +10,10 @@
 // UI_TickHoverBubbles @ 0x004821a0 — UI_TickTooltips
 // Chat_ValidateInputCommand @ 0x00513570 — Chat_ValidateCommand
 //
-// Chat message ring buffer: DAT_07db80d8, 6 slots × 0x108 bytes each
+// Chat message ring buffer: Notice, 6 slots × 0x108 bytes each
 //   Slot layout: [0x100] char name[], [0x104] flags byte, [0x108] next slot
 // Current message count: DAT_07e11d9c (max 6)
-// Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
+// Chat scroll timer: NoticeTime (reset to 300 on new message)
 
 #include "stdafx.h"
 #include "game/entity/EntityName.h"
@@ -143,10 +143,10 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
 // FUN_0047FAE0 @ 0x0047FAE0 (IDA)
 // UI_AddNotice — Chat_AddMessage
 // Appends a chat message string param_1 (with flag param_2) to the ring buffer.
-// Ring buffer: DAT_07db80d8, 6 slots × 0x108 bytes.
+// Ring buffer: Notice, 6 slots × 0x108 bytes.
 // If count > 5: shifts buffer down (oldest discarded). Handles long lines by
 // splitting via CutText into first/overflow parts.
-// Resets scroll timer DAT_00559cdc to 300.
+// Resets scroll timer NoticeTime to 300.
 // IDA: FUN_0047FAE0
 void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 {
@@ -155,7 +155,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     // parte con CutText: la primera mitad va al slot actual y la segunda al
     // siguiente, los dos con el mismo color.
     if (!param_1) return;
-    char *notice = (char *)&DAT_07db80d8[0];
+    char *notice = (char *)&Notice[0];
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
@@ -196,7 +196,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
         dst = notice + 264 * cur;
         DAT_07e11d9c = cur + 1;
     }
-    DAT_00559cdc = 300;          // NoticeTime
+    NoticeTime = 300;          // NoticeTime
     strcpy(dst, text);
     return;
 }
@@ -204,7 +204,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 
 // FUN_0047FCE0 @ 0x0047FCE0 (IDA)
 // UI_RenderNotices — Chat_DrawMessages
-// Renders all system/global messages from DAT_07db80d8 in the 2D overlay.
+// Renders all system/global messages from Notice in the 2D overlay.
 // Iterates up to 6 slots starting at y=300, spacing 13 pixels.
 // Colour: DAT_00559c78/80 set per-slot based on flag byte [0x104].
 // Also measures text extent for cursor/scroll calculations.
@@ -213,7 +213,7 @@ void UI_RenderNotices(void)
 {
     // DESVIACION (DLL Antilag, ret en 0x0047FCE0): sin interfaz no hay avisos.
     if (gUserSettings.GetAntilag(ANTILAG_INTERFACE)) return;
-  // DAT_07db80d8 tiene 6 slots × 0x108: se recorre con un contador explícito
+  // Notice tiene 6 slots × 0x108: se recorre con un contador explícito
   // de 6 iteraciones, no con el bound literal del binario (`< 0x7db8708`).
   int iVar1;
   LPCSTR lpString;
@@ -227,7 +227,7 @@ void UI_RenderNotices(void)
   gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
   Gfx::Color3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
-  lpString = (LPCSTR)&DAT_07db80d8[0];
+  lpString = (LPCSTR)&Notice[0];
   for (int slot = 0; slot < 6; ++slot) {
     SetBackgroundTextColor = 0x80000000;
     if (lpString[0x104] == '\0') {
@@ -576,9 +576,9 @@ LAB_00513792:
 void ChatListBox_TickPresentation();
 // DESVIACION: parpadeos y alpha avanzan con los pasos SIM, no con los draws.
 void Chat_TickPresentation() {
-    const bool ready = SceneFlag == 2 ? DAT_083a7c49 != 0 :
+    const bool ready = SceneFlag == 2 ? InitLogIn != 0 :
         SceneFlag == 4 ? CharSelectSceneInitialized && DAT_05826cb0 > 50 :
-        SceneFlag == 5 && DAT_083a7c10 && DAT_07e11d1c <= 30;
+        SceneFlag == 5 && EnableMainRender && LoadingWorld <= 30;
     if (!ready) return;
     if (!gUserSettings.GetAntilag(ANTILAG_INTERFACE)) ++DAT_07e11da0;
     if (g_bUseChatListBox == 1 || SceneFlag != 5) ++DAT_07e11da8;
@@ -591,7 +591,7 @@ void Chat_TickPresentation() {
         (int)DAT_005616b0>=0 && index==0) ++cursors;
     if (SceneFlag==5 && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
         if ((InputEnable || DAT_07e11d71) && (index==0 || index==1)) ++cursors;
-        if (GuildCreatorOpened && DAT_07eaa144 && index==0) ++cursors;
+        if (GuildCreatorOpened && g_iKeyPadEnable && index==0) ++cursors;
         if (GoldenArcherOpenType==3 && index==0) ++cursors;
     }
     if (index==0 && (ErrorMessage==0x74 || ErrorMessage==0x72 ||

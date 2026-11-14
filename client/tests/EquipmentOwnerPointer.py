@@ -18,7 +18,7 @@ struct CHARACTER{OBJECT Object;BYTE beforeKey[32];unsigned short Key;BYTE tail[4
 #pragma pack(pop)
 static_assert(sizeof(OBJECT)==444&&sizeof(CHARACTER)==916);
 ACCESSORS
-BYTE* DAT_07abf5d0;BYTE* DAT_07abf050;int SceneFlag;
+BYTE* DAT_07abf5d0;BYTE* CharacterView;int SceneFlag;
 struct Map{int current;int GetCurrentMap(){return current;}}gMapManager;
 struct Mesh{}; // Sólo se prueba la cola de sprites; no se ejecuta AddMesh/draw.
 SPRITE
@@ -37,12 +37,12 @@ MAIN=r'''
 constexpr unsigned bytes=400*916+32;
 void Hash(std::uint64_t& h,unsigned value){h^=value;h*=1099511628211ull;}
 std::uint64_t Run(BYTE* pool,BYTE* preview){
- DAT_07abf5d0=pool+16;DAT_07abf050=preview+16;std::uint64_t hash=14695981039346656037ull;unsigned count=0;
+ DAT_07abf5d0=pool+16;CharacterView=preview+16;std::uint64_t hash=14695981039346656037ull;unsigned count=0;
  scene=-1;world=-1;for(auto& f:frames){f.valid=false;f.commands.clear();f.sprites.clear();}for(auto& f:previousFrames){f.valid=false;f.commands.clear();f.sprites.clear();}
  for(unsigned profile=0;profile<8;++profile){
   SceneFlag=profile<4?5:4;gMapManager.current=profile<6?2:10;Equipment_BeginStep();
   for(unsigned slot=0;slot<401;++slot){
-   auto* actor=new(slot==400?DAT_07abf050:DAT_07abf5d0+slot*916) CHARACTER{};
+   auto* actor=new(slot==400?CharacterView:DAT_07abf5d0+slot*916) CHARACTER{};
    actor->Object.Live=BYTE((profile+slot)%4);actor->Object.Type=short(int(slot%5)*177-1);actor->Object.InitialSceneFrame=int(profile*10000+slot);actor->Key=static_cast<unsigned short>(slot*257+profile);
    BYTE before[916];std::memcpy(before,actor,916);const unsigned stages[]={0,7,23};
    Require(Slot(actor)==int(slot));
@@ -63,7 +63,7 @@ std::uint64_t Run(BYTE* pool,BYTE* preview){
    Hash(hash,unsigned(frames[slot].spawn));Hash(hash,unsigned(frames[slot].type));Hash(hash,unsigned(frames[slot].key));Hash(hash,unsigned(DrawFor(actor)));++count;
   }
   Equipment_BeginStep();
-  for(unsigned slot=0;slot<401;++slot){Require(!frames[slot].valid&&frames[slot].commands.empty()&&frames[slot].sprites.empty()&&previousFrames[slot].valid&&previousFrames[slot].commands.size()==3);Equipment_Invalidate(slot==400?DAT_07abf050:DAT_07abf5d0+slot*916);Require(!previousFrames[slot].valid);}
+  for(unsigned slot=0;slot<401;++slot){Require(!frames[slot].valid&&frames[slot].commands.empty()&&frames[slot].sprites.empty()&&previousFrames[slot].valid&&previousFrames[slot].commands.size()==3);Equipment_Invalidate(slot==400?CharacterView:DAT_07abf5d0+slot*916);Require(!previousFrames[slot].valid);}
   const CHARACTER* invalid[]={nullptr,reinterpret_cast<const CHARACTER*>(DAT_07abf5d0-1),reinterpret_cast<const CHARACTER*>(DAT_07abf5d0+1),reinterpret_cast<const CHARACTER*>(DAT_07abf5d0+400*916)};
   for(auto* actor:invalid){BeginFor(actor);Require(!recording&&!DrawFor(actor));Equipment_Invalidate(actor);}
  }
@@ -81,7 +81,7 @@ int main(){
   auto* newActor=new(high+16) CHARACTER(*oldActor);DAT_07abf5d0=high+16;Require(!DrawFor(newActor));
   auto* oldPreview=reinterpret_cast<CHARACTER*>(preview+16);oldPreview->Object.Live=1;
   BeginFor(oldPreview);Equipment_EndCharacter();Require(DrawFor(oldPreview));
-  auto* newPreview=new(highPreview+16) CHARACTER(*oldPreview);DAT_07abf050=highPreview+16;Require(!DrawFor(newPreview));
+  auto* newPreview=new(highPreview+16) CHARACTER(*oldPreview);CharacterView=highPreview+16;Require(!DrawFor(newPreview));
   std::memset(low,0x7b,bytes);std::memset(preview,0x6d,948);Require(Run(high,highPreview)==expected);
   for(unsigned i=0;i<bytes;++i)Require(low[i]==0x7b);for(unsigned i=0;i<948;++i)Require(preview[i]==0x6d);
   auto* sign=Pool(0x8e000000u);auto* signPreview=static_cast<BYTE*>(Reserve(0x92000000u));Require(signPreview&&Run(sign,signPreview)==expected);

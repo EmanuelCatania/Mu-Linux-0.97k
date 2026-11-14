@@ -784,8 +784,8 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
         if (*(quest + 0x1c882) == 3) {
             MouseLButtonPush = 0;
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
+            MouseUpdateTime = 0;
+            MouseUpdateTimeMax = 6;
             goto closeButton;
         }
         // Mismo paquete que las respuestas del diálogo (ver Quest_SendState en
@@ -809,8 +809,8 @@ closeButton:
     if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
         MouseLButtonPush = 0;
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
+        MouseUpdateTime = 0;
+        MouseUpdateTimeMax = 6;
         CSQuest_clearQuest(param_1);
     }
     if (MouseLButtonPop != 0) MouseLButtonPop = 0;

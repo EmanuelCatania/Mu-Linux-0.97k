@@ -77,7 +77,7 @@ struct Map {
     MapInfoStub Info(int map) const { return MapInfoFor(map); }
 } gMapManager;
 float WorldTime;
-int HeroTile, SceneFlag, CameraWalkCut, CurrentCameraCount, DAT_07e11d30;
+int HeroTile, SceneFlag, CameraWalkCut, CurrentCameraCount, EditFlag;
 DWORD DAT_05828d58;
 alignas(16) char hero[0x1bc];
 char* Hero = hero;
@@ -120,7 +120,6 @@ void* Reserve(std::uintptr_t address, std::size_t size) {
 #endif
 }
 #define Models DAT_05828d58
-#define EditFlag DAT_07e11d30
 #define LODWORD(x) (*reinterpret_cast<std::uint32_t*>(&(x)))
 '''
 
@@ -158,7 +157,7 @@ std::uint64_t Run(char* object, char* models) {
         SceneFlag = state == 0 ? 2 : state == 1 ? 4 : 5;
         CameraWalkCut = state & 1;
         CurrentCameraCount = 37;
-        DAT_07e11d30 = state == 3;
+        EditFlag = state == 3;
         WorldTime = state == 0 ? 512.0f : state == 1 ? 4001.0f : 9999.0f;
         Put(object, 2, static_cast<short>(type));
         Put(object, 16, 100.0f); Put(object, 20, 200.0f);

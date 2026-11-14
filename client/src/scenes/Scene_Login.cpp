@@ -36,9 +36,9 @@
 //   GL_EndOpenGL → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
-//   DAT_083a7c49   — InitLogIn (guard)
+//   InitLogIn   — guard
 //   DAT_083a7c14   — login sub-state
-//   DAT_083a42ea   — FogEnable
+//   FogEnable
 //   DAT_07e11d6e   — byte flag reset
 //   DAT_00559c8c   — InputTextWidth
 //   DAT_00559c78   — m_dwTextColor
@@ -48,8 +48,8 @@
 //   DAT_005616a4   — base Y panel credenciales
 //   MouseX/4278 — MouseX/MouseY
 //   DAT_083a7ac8   — tick base progress bar
-//   DAT_083a7af4   — fade state
-//   DAT_005615e8   — fade counter
+//   CameraWalkCut   — fade state
+//   CurrentCameraCount   — fade counter
 //   DAT_0056156c   — WindowWidth
 //   g_bUseChatListBox   — g_bUseChatListBox
 //   SceneFlag   — SceneFlag
@@ -78,10 +78,10 @@ uint Scene_Login(void)
     tagSIZE  tStack_74, tStack_6c;
     char     acStack_64[100];
 
-    if (DAT_083a7c49 == '\0')
+    if (InitLogIn == '\0')
         return 0;
 
-    DAT_083a42ea = 0;
+    FogEnable = 0;
     DAT_07e11d6e = 0;
     Gfx::ClearColor(0, 0, 0, 1.0f);
     GL_BeginViewport(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
@@ -287,12 +287,12 @@ uint Scene_Login(void)
     }
 
     // ── Fade-in effect ────────────────────────────────────────────────────────
-    if (DAT_083a7af4 == 1) {
-        if (DAT_005615e8 < 0x10) {
-            tStack_74.cx = (LONG)((float)(0x10 - DAT_005615e8) * _DAT_005526dc);
+    if (CameraWalkCut == 1) {
+        if (CurrentCameraCount < 0x10) {
+            tStack_74.cx = (LONG)((float)(0x10 - CurrentCameraCount) * _DAT_005526dc);
             Gfx::Color3f((float)tStack_74.cx, (float)tStack_74.cx * _DAT_005526e8, (float)tStack_74.cx * _DAT_00552530);
         } else {
-            DAT_083a7af4 = 2;
+            CameraWalkCut = 2;
         }
     }
 

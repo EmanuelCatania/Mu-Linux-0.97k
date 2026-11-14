@@ -13,8 +13,8 @@
 void __stdcall GL_SetBlendInvSrcColor(void) {
     if(Materials::Select(Materials::Preset::InverseAdd))return;
     // 0x00511810 — factores reales: ONE_MINUS_SRC_COLOR, ONE.
-    // Cache de estado real (IDA): DAT_083a412c (AlphaBlendType), DAT_083a411d
-    // (AlphaTestEnable), DAT_083a4125 (TextureEnable). Ojo: DAT_07eaa160/164/168
+    // Cache de estado real (IDA): DAT_083a412c (AlphaBlendType), AlphaTestEnable
+    // (AlphaTestEnable), TextureEnable. Ojo: CheckInventory/164/168
     // son CheckInventory + punteros ITEM vecinos, NO estado GL.
     if (DAT_083a412c != 5) {           // AlphaBlendType
         DAT_083a412c = 5;
@@ -23,12 +23,12 @@ void __stdcall GL_SetBlendInvSrcColor(void) {
     }
     GL_DisableCullFace();                    // DisableCullFace
     GL_DisableDepthWrites();                    // DisableDepthMask
-    if (DAT_083a411d) {                // AlphaTestEnable
-        DAT_083a411d = 0;
+    if (AlphaTestEnable) {                // AlphaTestEnable
+        AlphaTestEnable = 0;
         Gfx::Disable(Gfx::Cap::AlphaTest);             // GL_ALPHA_TEST
     }
-    if (!DAT_083a4125) {               // TextureEnable
-        DAT_083a4125 = 1;
+    if (!TextureEnable) {               // TextureEnable
+        TextureEnable = 1;
         Gfx::Enable(Gfx::Cap::Texture2D);              // GL_TEXTURE_2D
     }
     if (FogEnable) {

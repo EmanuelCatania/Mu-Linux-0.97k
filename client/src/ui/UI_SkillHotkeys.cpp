@@ -11,7 +11,7 @@
 // Returns hotkey slot index (0..19), or 0 if not found (igual que IDA).
 // Original wraps access in anti-tamper encrypt/decrypt; we skip that.
 // Ghidra: CharacterAttribute->Skill[iVar5+4] == unaff_retaddr (phantom param = Skill)
-// Real access: *(BYTE*)(DAT_07cf1ff4 + 0x57 + iVar5) == Skill
+// Real access: *(BYTE*)(CharacterAttribute + 0x57 + iVar5) == Skill
 // IDA: FindHotKey @ 0x004B1170 — int __cdecl FindHotKey(int Skill)
 //   v17 = 0;                                        // <- valor por defecto
 //   v4  = 0;
@@ -32,7 +32,7 @@
 int __stdcall FindHotKey(int Skill) {
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
-    char* charAttr = (char*)DAT_07cf1ff4;  // IDA: CharacterAttribute
+    char* charAttr = (char*)CharacterAttribute;  // IDA: CharacterAttribute
     if (!charAttr)
         return 0;
 
@@ -58,13 +58,13 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
 
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
-    // Skill ID = CharacterAttribute->Skill[iIndex] (CharacterAttribute = DAT_07cf1ff4,
+    // Skill ID = CharacterAttribute->Skill[iIndex] (CharacterAttribute,
     // el array Skill arranca en +0x57; Ghidra lo muestra como Skill[unaff_retaddr + 4]).
     // Se acota iIndex (puede venir de Hero[913] con basura): sin eso
     // CA[0x57+iIndex] se sale del buffer y el skillId basura indexa
     // SkillAttribute fuera de rango.
     if (iIndex < 0 || iIndex >= 60) return;
-    char* charAttr = (char*)DAT_07cf1ff4;
+    char* charAttr = (char*)CharacterAttribute;
     if (!charAttr) return;
     unsigned int skillId = (unsigned char)*(charAttr + 0x57 + iIndex);
 

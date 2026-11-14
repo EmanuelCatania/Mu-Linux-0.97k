@@ -118,17 +118,17 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
 
 
 // Chat_TickNoticeTimer @ 0x0047fcb0 — Sound_Countdown1
-// Decrements counter DAT_00559cdc each frame.
+// Decrements counter NoticeTime each frame.
 // When it underflows below 1, resets to 300 and calls UI_AddNotice (queue advance).
 // IDA: MoveNotices
 void Chat_TickNoticeTimer(void)
 {
   bool bVar1;
 
-  bVar1 = DAT_00559cdc < 1;
-  DAT_00559cdc = DAT_00559cdc + -1;
+  bVar1 = NoticeTime < 1;
+  NoticeTime = NoticeTime + -1;
   if (bVar1) {
-    DAT_00559cdc = 300;
+    NoticeTime = 300;
     UI_AddNotice((char*)DAT_07e11dd0, (unsigned char)0);   // ahora es char[256]
   }
   return;

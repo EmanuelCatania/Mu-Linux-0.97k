@@ -33,16 +33,16 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, const floa
     float verts[4][3];
     verts[0][0] = p1 * scale;
     verts[0][1] = p2 * scale;
-    verts[0][2] = DAT_080cb2cc[idx0]; // IDA: BackTerrainHeight (0x080CB2CC)
+    verts[0][2] = BackTerrainHeight[idx0]; // IDA: BackTerrainHeight (0x080CB2CC)
     verts[1][0] = verts[0][0] + p3 * scale;
     verts[1][1] = verts[0][1];
-    verts[1][2] = DAT_080cb2cc[idx1];
+    verts[1][2] = BackTerrainHeight[idx1];
     verts[2][0] = verts[1][0];
     verts[2][1] = verts[0][1] + p3 * scale;
-    verts[2][2] = DAT_080cb2cc[idx2];
+    verts[2][2] = BackTerrainHeight[idx2];
     verts[3][0] = verts[0][0];
     verts[3][1] = verts[2][1];
-    verts[3][2] = DAT_080cb2cc[idx3];
+    verts[3][2] = BackTerrainHeight[idx3];
 
     float light[4][3];
     if (p6 != '\0') {

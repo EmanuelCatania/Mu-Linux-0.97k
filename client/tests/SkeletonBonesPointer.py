@@ -20,7 +20,7 @@ float* positions;float* normals;float* lighting;
 #define DAT_05846224 (*(positions+2))
 #define DAT_06f433bc (*normals)
 #define DAT_077e298c (*lighting)
-int SceneFlag=0,DAT_07e11d30=2;char DAT_005597c4;
+int SceneFlag=0,EditFlag=2;char DAT_005597c4;
 unsigned invalidations,captures,expectedSources;const void* expectedModel;const float* expectedBones;
 namespace Platform{constexpr int TruncateText=0;template<class...T>void TextFormatTruncated(T...){Require(false);}}
 void DbgLogPublic(const char*){Require(false);}

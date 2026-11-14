@@ -64,10 +64,10 @@ std::uint64_t RunMaterials(BYTE* memory) {
         const short tickTypes[]={23,19,20,3,4,0,239}; object->Type=tickTypes[trial%7];
         std::memcpy(&object->Alpha,&alpha,4); object->RenderType=trial%3==0?0x80:0;
         object->HiddenMesh=trial%5==0?-2:trial%5==1?-1:0;
-        worldValue=trial%2==0?4:0; DAT_07e11d30=trial%4==0?0:1;
+        worldValue=trial%2==0?4:0; EditFlag=trial%4==0?0:1;
         OBJECT before; std::memcpy(&before,object,sizeof(before)); MaterialVisualSample sampleBefore=actual;
         randomIndex=0;
-        const bool expectedTick=worldValue==4 && !(object->Alpha<_DAT_005524f8) && object->RenderType!=0x80 && !(DAT_07e11d30==0 && object->HiddenMesh==-2) && object->Type!=0 && object->Type!=239;
+        const bool expectedTick=worldValue==4 && !(object->Alpha<_DAT_005524f8) && object->RenderType!=0x80 && !(EditFlag==0 && object->HiddenMesh==-2) && object->Type!=0 && object->Type!=239;
         Tick(object); Require(randomIndex==(expectedTick?1:0) && std::memcmp(object,&before,sizeof(before))==0);
         Require(std::memcmp(&actual,&sampleBefore,sizeof(actual))==0 && current==&outer);
         for(int i=0;i<16;++i) Require(memory[i]==0x5a && memory[16+sizeof(OBJECT)+i]==0x5a);
@@ -108,7 +108,7 @@ def harness(revision=None):
     prefix+=re.search(r"^const MaterialVisualSample \*MaterialVisuals_Current\([^\n]+",source,re.M).group()
     prefix+="\n".join(re.findall(r"^MaterialVisualScope::[^\n]+",source,re.M))
     globals_header,definitions=read_source("src/globals.h",revision),read_source("src/globals.cpp",revision)
-    for name in ("_DAT_005524f8","DAT_07e11d30"):
+    for name in ("_DAT_005524f8","EditFlag"):
         prefix+=re.search(rf"extern [^;\n]*\b{name}\s*;",globals_header).group()
         prefix+=re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;",definitions,re.M).group()
     prefix+=SERVICES

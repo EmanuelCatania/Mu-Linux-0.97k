@@ -12,10 +12,10 @@
 //        DAT_081cb608[tile*3+1] = DAT_0828b60c[tile*3+0]  (G or Y)
 //        DAT_081cb608[tile*3+2] = DAT_0828b610[tile*3+0]  (B or Z)
 //
-//   2) Compute sine-wave height offsets into DAT_07eab200 (float table, row*256+col)
+//   2) Compute sine-wave height offsets into TerrainGrassWind (float table, row*256+col)
 //      for each tile in the same viewport rectangle.
-//      If DAT_083a3ff0 == 0: fast ocean waves (period 720000 sub-ticks, scale _DAT_005528e0)
-//      If DAT_083a3ff0 != 0: slow terrain waves (period 36000, scale _DAT_005524f8)
+//      If EnableEvent == 0: fast ocean waves (period 720000 sub-ticks, scale _DAT_005528e0)
+//      If EnableEvent != 0: slow terrain waves (period 36000, scale _DAT_005524f8)
 //      Per-tile wave: sin(col * waveFreq + timePhase) * _DAT_00552488
 //      waveFreq = _DAT_00552660 (normal) or _DAT_00552598 (game state 8 = CharSelectInit)
 //      col step = _DAT_0055256c
@@ -23,9 +23,9 @@
 // Globals:
 //   FrustrumBoundMinX_1/94  — viewport top-left (col, row)
 //   FrustrumBoundMaxX_1/778 — viewport extents (+3 gives inclusive max)
-//   DAT_083a3ff0     — 0=ocean wave mode, else terrain mode
+//   EnableEvent     — 0=ocean wave mode, else terrain mode
 //   World     — World
-//   DAT_07eab200     — water height table [row][col] floats
+//   TerrainGrassWind     — water height table [row][col] floats
 //   DAT_081cb608     — live per-tile lighting buffer (3 floats/tile)
 //   DAT_0828b608/0c/10 — shadow/pre-computed lighting buffers
 
@@ -75,7 +75,7 @@ int __cdecl Terrain_Water(void)
 
     // IDA: Terrain_Water (0x004F95E0): la fase usa WorldTime, no otra lectura del reloj.
     // DESVIACION: mantener 64 bits hasta el módulo evita truncar el uptime a 32 bits.
-    if (DAT_083a3ff0 == 0) {
+    if (EnableEvent == 0) {
         // Ocean / water mode: long period (720000 units)
         uVar14 = (long long)WorldTime;
         iVar4  = (int)((long long)uVar14 / 720000);
@@ -109,7 +109,7 @@ int __cdecl Terrain_Water(void)
                 fVar12+=(float10)_DAT_0055256c;
             }
             do {
-                pfVar6=(float*)((char*)&DAT_07eab200+(iVar9+FrustrumBoundMinX_1)*4);
+                pfVar6=(float*)((char*)&TerrainGrassWind+(iVar9+FrustrumBoundMinX_1)*4);
                 std::memcpy(pfVar6,waveColumns.data(),waveColumns.size()*sizeof(float));
                 iVar9+=0x100;
             } while(--rowCount!=0);

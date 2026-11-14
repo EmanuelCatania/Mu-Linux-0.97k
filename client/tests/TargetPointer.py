@@ -26,7 +26,7 @@ static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, TargetPosition) == 788)
 CHARACTER* AsCharacter(CHARACTER* p) { return p; }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 int SelectedCharacter;
-DWORD TargetX, TargetY, DAT_080ab288, DAT_080ab28c;
+DWORD TargetX, TargetY, SelectXF, DAT_080ab28c;
 float DAT_083a4130, DAT_083a4134, DAT_083a4138;
 bool terrainHit;
 int terrainCalls, tileCalls;
@@ -34,8 +34,8 @@ float Float(DWORD bits) { float f; std::memcpy(&f, &bits, 4); return f; }
 DWORD Bits(float f) { DWORD bits; std::memcpy(&bits, &f, 4); return bits; }
 void RenderTerrain(char mode) { Require(mode == 1); ++terrainCalls; }
 int RenderTerrainTile(int x, int y, int gx, int gy, float size, int a, int b) {
-    Require(DWORD(x) == DAT_080ab288 && DWORD(y) == DAT_080ab28c);
-    Require(gx == int(Float(DAT_080ab288)) && gy == int(Float(DAT_080ab28c)));
+    Require(DWORD(x) == SelectXF && DWORD(y) == DAT_080ab28c);
+    Require(gx == int(Float(SelectXF)) && gy == int(Float(DAT_080ab28c)));
     Require(size == 1.0f && a == 1 && b == 1); ++tileCalls; return terrainHit;
 }
 std::uint64_t digest;
@@ -61,7 +61,7 @@ std::uint64_t Run(BYTE* pool, CHARACTER* character) {
         SelectedCharacter = test < 400 ? test : -1;
         terrainHit = (test % 2) != 0;
         terrainCalls = tileCalls = 0;
-        DAT_080ab288 = Bits(-12.75f); DAT_080ab28c = Bits(234.5f);
+        SelectXF = Bits(-12.75f); DAT_080ab28c = Bits(234.5f);
         DAT_083a4130 = (test - 405) * 99.75f;
         DAT_083a4134 = (test - 402) * -150.25f; DAT_083a4138 = 345.125f;
         TargetX = 0x12345678; TargetY = 0x98765432;

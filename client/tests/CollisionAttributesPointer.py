@@ -15,7 +15,7 @@ from legacy_fields import lower_names
 SERVICES=r'''
 #include <cmath>
 using std::uintptr_t;
-void *DAT_07cf1ff4,*DAT_07abf5d8,*DAT_07abf5d0;
+void *CharacterAttribute,*DAT_07abf5d8,*DAT_07abf5d0;
 BYTE *memory,*target;BYTE before[512],expected[512];unsigned rngCalls,skillIndex;int firstRand,soundRand;bool packetHit;
 std::vector<int> events;
 void* AsObject(int value){return reinterpret_cast<void*>(static_cast<uintptr_t>(value));}
@@ -44,7 +44,7 @@ std::uint64_t Run(BYTE* allocation,BYTE* attributes,BYTE* poolStorage){
  for(unsigned profile=0;profile<8;++profile)for(skillIndex=0;skillIndex<256;++skillIndex)for(unsigned scenario=0;scenario<16;++scenario){
   for(unsigned i=0;i<512;++i){memory[i]=static_cast<BYTE>(profile+i*37);attributes[i]=static_cast<BYTE>(profile+i*13);}
   attributes[87+skillIndex]=skills[profile];BYTE tableBefore[512];std::memcpy(tableBefore,attributes,512);
-  DAT_07cf1ff4=scenario==1?nullptr:attributes;
+  CharacterAttribute=scenario==1?nullptr:attributes;
   const bool directed=scenario<10;const short type=scenario==6||scenario==7?243:scenario==8?223:types[(profile+scenario)%5];const int subtype=scenario==6||scenario==7||scenario==8||scenario==11||scenario==12?2:0;
   const int cooldown=scenario==4?cooldowns[2+profile%2]:cooldowns[profile%2];
   firstRand=scenario==2?randoms[1+2*(profile%2)]:scenario==9?randoms[2]:0;soundRand=sounds[profile];packetHit=scenario!=5;

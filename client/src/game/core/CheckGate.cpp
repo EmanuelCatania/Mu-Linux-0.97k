@@ -58,7 +58,7 @@ void __cdecl CheckGate(void)
         const int heroY = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY;
         if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
             continue;
-        if (DAT_07e11d1c != 0 || hero[EntityOffset(773)] != 0)          // LoadingWorld
+        if (LoadingWorld != 0 || hero[EntityOffset(773)] != 0)          // LoadingWorld
             continue;
 
         // DESVIACION (Fase 5): con gates del server el nivel viene en 16 bits.
@@ -102,17 +102,17 @@ void __cdecl CheckGate(void)
         }
 
         if (level < requiredLevel) {
-            DAT_07e11d1c = 50;                                  // LoadingWorld
+            LoadingWorld = 50;                                  // LoadingWorld
             char message[100];
             Platform::TextFormatSecure(message, GlobalText[350], requiredLevel);
             UIChatLogWindow_AddText("", message, 2);
             continue;
         }
 
-        DAT_07e11d1c = 9999999;                                 // LoadingWorld
+        LoadingWorld = 9999999;                                 // LoadingWorld
         if (Teleport || DAT_07e11dc4 || Platform::GetTimer().Ticks() - DAT_07e11dc8 < 3000) {
             DAT_07e11dc4 = 0;
-            DAT_07e11d1c = 0;
+            LoadingWorld = 0;
             continue;
         }
 

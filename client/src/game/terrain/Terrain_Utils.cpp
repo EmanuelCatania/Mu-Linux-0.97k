@@ -8,7 +8,7 @@
 //
 // Terrain_HeightAt:
 //   Bilinear-interpolates the terrain height at a given (x, y) position.
-//   Height map is a 256x256 float array at DAT_080cb2cc.
+//   Height map is a 256x256 float array at BackTerrainHeight.
 //   Only active in game state 5 (in-game); returns 0.0 otherwise.
 //   Parameters arrive on the x87 FPU stack (extraout_ST0 = x frac,
 //   extraout_ST1 = y frac); Ghidra cannot represent this in the
@@ -16,7 +16,7 @@
 //
 // Globals:
 //   SceneFlag — current game state (5 = in-game)
-//   DAT_080cb2cc — terrain height map float[256][256]
+//   BackTerrainHeight — terrain height map float[256][256]
 //   _DAT_00552580 — float constant 0.0
 
 #include "stdafx.h"
@@ -34,7 +34,7 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
 {
     // Desviación: IDA retorna si SceneFlag != 5, pero Recv_JoinMapServer llama a
     // CreateCharacterPointer antes de que la escena pase a 5. Acá alcanza con que
-    // el mundo esté cargado (World válido y DAT_080cb2cc con el height map).
+    // el mundo esté cargado (World válido y BackTerrainHeight con el height map).
     if ((int)gMapManager.GetCurrentMap() < 0) return 0.0f;
 
     float gx = xf * 0.01f;
@@ -49,10 +49,10 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
     float fy = gy - (float)iy;
 
     // Bilinear: lerp(lerp(h00, h01, fy), lerp(h10, h11, fy), fx)
-    float h00 = DAT_080cb2cc[iy0 * 0x100 + ix0];
-    float h10 = DAT_080cb2cc[iy0 * 0x100 + ix1];
-    float h01 = DAT_080cb2cc[iy1 * 0x100 + ix0];
-    float h11 = DAT_080cb2cc[iy1 * 0x100 + ix1];
+    float h00 = BackTerrainHeight[iy0 * 0x100 + ix0];
+    float h10 = BackTerrainHeight[iy0 * 0x100 + ix1];
+    float h01 = BackTerrainHeight[iy1 * 0x100 + ix0];
+    float h11 = BackTerrainHeight[iy1 * 0x100 + ix1];
 
     float a = (h01 - h00) * fy + h00;
     float b = (h11 - h10) * fy + h10;

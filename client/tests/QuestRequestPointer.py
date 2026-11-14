@@ -19,7 +19,7 @@ template<class T> void Put(BYTE* p,T value) { std::memcpy(p,&value,sizeof(value)
 std::uint64_t RunRequest(BYTE* memory,BYTE* recordMemory,BYTE* attributes,BYTE* machine,bool inside) {
     constexpr std::size_t size=0x1c890+32;
     BYTE* quest=memory+16; BYTE* record=inside?quest+8:recordMemory+16;
-    DAT_07cf1ff4=attributes; DAT_07cf1ffc=machine;
+    CharacterAttribute=attributes; DAT_07cf1ffc=machine;
     std::uint64_t digest=14695981039346656037ull; unsigned coverage=0;
     const short levels[]={-32768,-1,0,1,99,100,32767};
     const ushort actualLevels[]={0,1,99,100,32767,32768,65535};
@@ -110,7 +110,7 @@ def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
     prefix += "\n#ifndef _WIN32\n#define __fastcall\nusing ULONG_PTR=std::uintptr_t;\n#endif\nusing uint=unsigned int; using ushort=unsigned short; using std::uintptr_t;\n"
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    for name in ("DAT_07cf1ff4", "DAT_07cf1ffc"):
+    for name in ("CharacterAttribute", "DAT_07cf1ffc"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
     return prefix + function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "CSQuest_CheckRequestCondition") + MAIN

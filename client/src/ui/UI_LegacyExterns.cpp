@@ -61,8 +61,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 extern "C++" {
 extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
 extern char    lpString_07e90798[];
-extern int     DAT_07e91708[30];
-extern int     DAT_07ea7b10[30];
+extern int     TextListColor[30];
+extern int     TextBold[30];
 }
 
 static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int count)
@@ -226,46 +226,46 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     }
 
     crt_sprintf(TextListN(idx), "\n");
-    DAT_07e91708[idx] = 0;
-    DAT_07ea7b10[idx] = 0;
+    TextListColor[idx] = 0;
+    TextBold[idx] = 0;
     idx++;
 
     Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", szName);
-    DAT_07e91708[idx] = 1;
-    DAT_07ea7b10[idx] = 1;
+    TextListColor[idx] = 1;
+    TextBold[idx] = 1;
     idx++;
 
     crt_sprintf(TextListN(idx), "\n");
-    DAT_07e91708[idx] = 0;
-    DAT_07ea7b10[idx] = 0;
+    TextListColor[idx] = 0;
+    TextBold[idx] = 0;
     idx++;
 
     if (piMinDamage > 0 || piMaxDamage > 0) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
-        DAT_07e91708[idx] = 0;
-        DAT_07ea7b10[idx] = 0;
+        TextListColor[idx] = 0;
+        TextBold[idx] = 0;
         idx++;
     }
     if (piDistance > 0) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(174, "Range: %d"), piDistance);
-        DAT_07e91708[idx] = 0;
-        DAT_07ea7b10[idx] = 0;
+        TextListColor[idx] = 0;
+        TextBold[idx] = 0;
         idx++;
     }
     {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(175, "Mana: %d"), piMana);
-        DAT_07e91708[idx] = 0;
-        DAT_07ea7b10[idx] = 0;
+        TextListColor[idx] = 0;
+        TextBold[idx] = 0;
         idx++;
     }
     if (piSkillMana > 0) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(360, "AG: %d"), piSkillMana);
-        DAT_07e91708[idx] = 0;
-        DAT_07ea7b10[idx] = 0;
+        TextListColor[idx] = 0;
+        TextBold[idx] = 0;
         idx++;
     }
 
@@ -273,14 +273,14 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
     if (Hero && ((AsCharacter((char*)Hero)->Class & 7) == 1) && skillType == 47) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
-        DAT_07e91708[idx] = 5;
-        DAT_07ea7b10[idx] = 0;
+        TextListColor[idx] = 5;
+        TextBold[idx] = 0;
         idx++;
     }
 
     crt_sprintf(TextListN(idx), "\n");
-    DAT_07e91708[idx] = 0;
-    DAT_07ea7b10[idx] = 0;
+    TextListColor[idx] = 0;
+    TextBold[idx] = 0;
     idx++;
 
     // Posicion Y — port literal de 0x004C9DF7..0x004C9E36:

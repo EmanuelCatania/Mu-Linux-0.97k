@@ -50,9 +50,9 @@ void SaveObject(void *address, std::size_t size, bool registered=false) {
 // suprimen llamadas a creadores. Los sprites conservan su Capture/ReplayStep.
 void RenderDerivedState_Begin() {
     active=false; used=0; savedObjects.Reset();
-    const bool ready=SceneFlag==2 ? DAT_083a7c49!=0 :
+    const bool ready=SceneFlag==2 ? InitLogIn!=0 :
         SceneFlag==4 ? CharSelectSceneInitialized && DAT_05826cb0>50 :
-        SceneFlag==5 && DAT_083a7c10 && DAT_07e11d1c<=30;
+        SceneFlag==5 && EnableMainRender && LoadingWorld<=30;
     if (!ready) return;
     active=true; scene=SceneFlag; world=gMapManager.GetCurrentMap(); models=DAT_05828d58;
     // DESVIACION: los slots libres de personajes e items no se dibujan ni se
@@ -61,7 +61,7 @@ void RenderDerivedState_Begin() {
         auto *character=(CHARACTER *)DAT_07abf5d0+slot;
         if (character->Object.Live) SaveObject(character,sizeof(CHARACTER));
     }
-    SaveObject(DAT_07abf050,sizeof(CHARACTER));
+    SaveObject(CharacterView,sizeof(CHARACTER));
     if (DAT_07e12840) for (int slot=0; slot<1000; ++slot) {
         auto *item=(BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72;
         if (AsObject(item)->Live) SaveObject(item,sizeof(OBJECT));

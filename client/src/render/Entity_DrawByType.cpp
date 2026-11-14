@@ -175,7 +175,7 @@ void MoltSilhouette_Invalidate(const void *entity) { moltSamples.erase(entity); 
 void MoltSilhouette_Tick(OBJECT* entity, void *model, float *bones, char translate) {
     OBJECT &o=*AsObject(entity);
     if (!o.Live || o.Type!=319 || o.Alpha<_DAT_005524f8 || o.RenderType==0x80 ||
-        (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
+        (EditFlag==0 && o.HiddenMesh==-2)) return;
     float bounds[15];
     const float lod=_DAT_005597c8;
     _DAT_005597c8=1.0f;
@@ -241,9 +241,9 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
     // Invisible guard — IDA Draw_RenderObject L82:
     //     if ( !EditFlag && *(_DWORD *)(o + 88) == -2 ) return;
     // `+0x58` (88) es HiddenMesh; -2 = objeto entero invisible (marcadores como
-    // PoseBox01 / Light01-03). `DAT_07e11d30` es EditFlag y vale 0 fuera del
+    // PoseBox01 / Light01-03). `EditFlag` vale 0 fuera del
     // editor, así que este return SÍ dispara.
-    if (DAT_07e11d30 == 0 && AsObject(param_1)->HiddenMesh == -2)
+    if (EditFlag == 0 && AsObject(param_1)->HiddenMesh == -2)
         return;
 
     // ── Tint overrides based on game sub-state / type ──────────────────────────

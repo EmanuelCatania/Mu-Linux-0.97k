@@ -69,10 +69,9 @@ def harness(revision=None):
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))
     prefix+=re.search(r'constexpr int ITEM_MODEL_BASE\s*=\s*[^;]+;',read_source('src/game/item/ItemDefines.h',revision)).group()
     globals_header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
-    for name in ['DAT_07cf1ff4','DAT_07cf1ffc']:
+    for name in ['CharacterAttribute','DAT_07cf1ffc']:
         prefix+=re.search(rf'extern [^;\n]*\b{name}\s*;',globals_header).group()
         prefix+=re.search(rf'^[^/\n]*\b{name}\s*=\s*[^;]+;',definitions,re.M).group()
-    prefix+='\n'+re.search(r'^#define CharacterAttribute[^\n]+',globals_header,re.M).group()+'\n'
     prefix+=re.search(r'^int g_bAddDefense\s*=\s*[^;]+;',source,re.M).group()+SERVICES
     code=function(source,'CheckFullSet_Tail')+function(source,'CheckFullSet')
     arg='reinterpret_cast<uintptr_t>(entity)' if 'CheckFullSet(uintptr_t' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(entity))'

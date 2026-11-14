@@ -645,7 +645,7 @@ extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* 
 extern "C" int __cdecl GetScreenWidth(void);
 static int s_altNameToggle = 0;
 void ItemNames_TickInput() {
-    if (SceneFlag == 5 && DAT_083a7c10 && DAT_07e11d1c <= 30 && PressKey(VK_MENU))
+    if (SceneFlag == 5 && EnableMainRender && LoadingWorld <= 30 && PressKey(VK_MENU))
         s_altNameToggle = !s_altNameToggle;
 }
 void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)

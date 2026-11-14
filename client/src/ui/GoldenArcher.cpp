@@ -54,10 +54,10 @@ extern "C" int g_GoldenArcherCustom = 0;
 #define GA_MouseLButtonPop   MouseLButtonPop
 #define GA_MouseLButton      MouseLButton
 #define GA_MouseOnWindow     DAT_07d78094
-#define GA_MouseUpdateTime   DAT_07e11d28
-#define GA_MouseUpdateMax    DAT_00559bec
-#define GA_InventoryStartX   (*(int*)&DAT_07ea5288)
-#define GA_InventoryStartY   (*(int*)&DAT_07ea5284)
+#define GA_MouseUpdateTime   MouseUpdateTime
+#define GA_MouseUpdateMax    MouseUpdateTimeMax
+#define GA_InventoryStartX   (*(int*)&InventoryStartX)
+#define GA_InventoryStartY   (*(int*)&InventoryStartY)
 #define GA_InputEnable       DAT_00559c84
 #define GA_GoldInputEnable   GoldInputEnable
 #define GA_InputGold         InputGold

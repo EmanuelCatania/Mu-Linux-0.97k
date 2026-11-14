@@ -18,16 +18,16 @@
 //   0x1c  — slide out to transition / back to char list
 //
 // Globals:
-//   CharSelectSceneInitialized (IDA: DAT_083a7c4b) — one-time init guard
-//   DAT_083a7c4a   — clear before Loading transition
+//   CharSelectSceneInitialized (IDA: InitCharacterScene) — one-time init guard
+//   InitLoading   — clear before Loading transition
 //   DAT_005616ac   — selected character slot (-1 = none)
 //   DAT_005616b0   — selected char confirmation (-1 = pending)
 //   DAT_005616a4   — animated dialog Y (lerped each frame)
 //   DAT_005616a8   — animated camera X offset (lerped each frame)
-//   DAT_07abf050   — character state struct for slot 0
+//   CharacterView   — character state struct for slot 0
 //   DAT_07abf20c   — character page/slot counter
 //   DAT_07cf1ffc   — character data pointer
-//   DAT_07cf1ff4   — character name buffer
+//   CharacterAttribute   — character name buffer
 //   GuildOpened..  — anti-tamper counters
 //   DAT_05826cb0   — server response code
 //     0x33 = char list received
@@ -171,7 +171,7 @@ void Game_EnterWorldTick(void)
         float pos3[3] = {0,0,0}, rot3[3] = {0,0,0};
         CreateObject(0xa4, pos3, rot3, 1.0f);
 
-        CreateCharacterPointer((unsigned char*)&DAT_07abf050, 0xab, 0, 0, 0.0f);
+        CreateCharacterPointer((unsigned char*)&CharacterView, 0xab, 0, 0, 0.0f);
         DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | 1;
         DAT_07abf0d4  = 0;
 
@@ -203,7 +203,7 @@ void Game_EnterWorldTick(void)
 
         // Clear char data buffers
         {
-            char* p = (char*)DAT_07cf1ff4;
+            char* p = (char*)CharacterAttribute;
             for (int i = 0x56; i <= 0x6a; i++) p[i] = '\0';
             int* q = (int*)((char*)DAT_07cf1ffc + 0x87 * 4);
             for (int i = 7; i >= 0; i--, q += 0x11) *q = 0;
@@ -224,7 +224,7 @@ void Game_EnterWorldTick(void)
         CharacterOpened = 0; InventoryOpened = 0;
         ShopOpened = 0; WarehouseOpened = 0;
         TradeOpened = 0;
-        GuildCreatorOpened = 0; DAT_07eaa144 = 0;
+        GuildCreatorOpened = 0; g_iKeyPadEnable = 0;
         DAT_07eaa14c = 0;
 
         GuildInputEnable = 0; DAT_07e11d71 = 0; GoldInputEnable = 0;
@@ -250,9 +250,9 @@ void Game_EnterWorldTick(void)
         DAT_083a7ad0  = *(float*)&DAT_00561670;
         DAT_083a7ad4  = *(float*)&DAT_00561674;
         DAT_083a7ad8  = *(float*)&DAT_00561678;
-        DAT_083a7c38 = 0;
-        DAT_083a7c3c = 5;
-        DAT_005615e8 = 0;
+        CurrentCameraWalkType = 0;
+        CurrentCameraNumber = 5;
+        CurrentCameraCount = 0;
         DAT_083a432c  = DAT_00561664;     // DWORD&=DWORD ok
         DAT_083a4330  = DAT_00561668;     // DWORD&=DWORD ok
         _DAT_083a4334 = *(float*)&DAT_0056166c;
@@ -279,7 +279,7 @@ void Game_EnterWorldTick(void)
     Effect_TickAll();            // MoveEffects (0x0046B790)
     Joint_TickAll();             // MoveJoints  (0x004736E0)
     MoveParticles();        CLK_WATCH("after-MoveParticles");
-    MoveCharacterClient((float*)&DAT_07abf050); CLK_WATCH("after-MoveCharacterClient");
+    MoveCharacterClient((float*)&CharacterView); CLK_WATCH("after-MoveCharacterClient");
 
     // ── Per-character animation tick ──────────────────────────────────────────
     // En el binario original MoveCharactersClient (0x00455010) itera todas las
@@ -501,7 +501,7 @@ void Game_EnterWorldTick(void)
             } else {
                 BYTE b = (BYTE)((char)DAT_07abf20c - 1);
                 DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
-                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                CreateCharacterPointer((unsigned char*)&CharacterView, b + 0xaa, 0, 0, 0.0f);
                 DAT_07abf0d4 = 0;
                 PlayBuffer(0x19, 0, 0);
             }
@@ -524,7 +524,7 @@ void Game_EnterWorldTick(void)
             } else {
                 BYTE b = (BYTE)((char)DAT_07abf20c + 1);
                 DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
-                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                CreateCharacterPointer((unsigned char*)&CharacterView, b + 0xaa, 0, 0, 0.0f);
                 DAT_07abf0d4 = 0;
                 PlayBuffer(0x19, 0, 0);
             }
@@ -647,10 +647,10 @@ void Game_EnterWorldTick(void)
                     // queda en EntityName::Selected().
                     const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     EntityName::SetSelected(charName);
-                    TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
-                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
-                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
-                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
+                    TextEngine::CopyTruncated((char*)CharacterAttribute, 11, charName);
+                    *(ushort*)((char*)CharacterAttribute + 0xe) = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
+                    ((char*)CharacterAttribute)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    ((char*)CharacterAttribute)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
                 // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
                 // datos del personaje y pasa a Loading. Lo manda el init de
@@ -668,7 +668,7 @@ void Game_EnterWorldTick(void)
                 // 0x00521D80:1150); fuera del switch correría cada frame.
                 {
                     const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
-                    char* charData = (char*)DAT_07cf1ff4;
+                    char* charData = (char*)CharacterAttribute;
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated(charData, 11, charName);
                     *(ushort*)(charData + 0xe) = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
@@ -677,7 +677,7 @@ void Game_EnterWorldTick(void)
                 }
 
                 SceneFlag  = 3;  // SceneFlag = Loading
-                DAT_083a7c4a  = 0;  // reset Scene_Loading init guard
+                InitLoading  = 0;  // reset Scene_Loading init guard
                 ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0) — world loading kickoff
                 Sound_StopBuffer(5);
             }

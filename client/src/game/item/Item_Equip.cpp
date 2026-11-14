@@ -21,7 +21,7 @@
 // pero UseSkillWarrior usa el mismo global y conviene mantenerlos atados.
 static BYTE ItemEquip_SelectedSkill()            // IDA: v13
 {
-    BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;   // IDA: CharacterAttribute
+    BYTE* const attributes = (BYTE*)(uintptr_t)CharacterAttribute;   // IDA: CharacterAttribute
     if (!attributes)
         return 0;
     return attributes[(BYTE)DAT_07d7809c + 87];
@@ -111,7 +111,7 @@ static char ItemEquip_UseSelectedTargetSkill(intptr_t character /* IDA: sy */,
 // cuando el item trae la opcion Skill (Attribute1 & 0x80).
 static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t object, BYTE* item)
 {
-    BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE* const attributes = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!attributes || !Hero || !item)
         return 0;
 
@@ -219,7 +219,7 @@ char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA:
 
     if (useDirectPath) {
         // IDA L284-522.
-        BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+        BYTE* const attributes = (BYTE*)(uintptr_t)CharacterAttribute;
         int piMana = 0, piSkillMana = 0;
         GetSkillInformation((int)skill, 1, 0, &piMana, 0, &piSkillMana);
         if (!attributes)

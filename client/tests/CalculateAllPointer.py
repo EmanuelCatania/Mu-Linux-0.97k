@@ -49,7 +49,7 @@ std::uint64_t RunCalculate(BYTE* machine, BYTE* attribute, BYTE* allocation) {
     Require(CallCalculate(nullptr) == 0 && calcEvents.empty() && randomCount == 0 && applyCalls == 0);
     for(int trial = 0; trial < 16384; ++trial) {
         std::memset(machine, 0x5a, 1412); std::memset(attribute, 0, 64); attribute[11] = BYTE(Input());
-        DAT_07cf1ff4 = trial % 7 == 0 ? nullptr : attribute;
+        CharacterAttribute = trial % 7 == 0 ? nullptr : attribute;
         for(int offset : {14, 20, 22, 26, 1374, 1376, 1378, 1382, 1384, 1388, 1390}) WriteWord(machine, offset, static_cast<unsigned short>(Input()));
         if(trial % 4 == 0) { WriteWord(machine, 1374, 100); WriteWord(machine, 1376, 99); }
         if(trial % 4 == 1) { WriteWord(machine, 1374, 0); WriteWord(machine, 1376, 0); }

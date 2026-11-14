@@ -20,7 +20,7 @@ std::uint64_t Hash(const BYTE* bytes, std::size_t size, std::uint64_t digest) {
     return digest;
 }
 std::uint64_t Run(BYTE* stats, BYTE* models, BYTE* actions) {
-    DAT_07cf1ff4=stats; DAT_05828d58=reinterpret_cast<std::uintptr_t>(models);
+    CharacterAttribute=stats; DAT_05828d58=reinterpret_cast<std::uintptr_t>(models);
     std::memset(stats,0x5a,128); std::memset(models,0xa5,80000);
     const std::uint32_t address=static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(actions));
     std::memcpy(models+73368,&address,4);
@@ -60,7 +60,7 @@ std::uint64_t Run(BYTE* stats, BYTE* models, BYTE* actions) {
     }
     // Las tres guardas deben retornar sin tocar la tabla.
     BYTE before[1600]; std::memcpy(before,actions,1600);
-    DAT_07cf1ff4=nullptr; SetAttackSpeed(); DAT_07cf1ff4=stats;
+    CharacterAttribute=nullptr; SetAttackSpeed(); CharacterAttribute=stats;
     DAT_05828d58=0; SetAttackSpeed(); DAT_05828d58=reinterpret_cast<std::uintptr_t>(models);
     std::memset(models+73368,0,4); SetAttackSpeed(); Require(std::memcmp(before,actions,1600)==0);
     return digest;
@@ -89,7 +89,7 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    for name in ("DAT_07cf1ff4", "DAT_05828d58", "_DAT_005524bc"):
+    for name in ("CharacterAttribute", "DAT_05828d58", "_DAT_005524bc"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
     source = read_source("src/game/combat/Combat_LegacyAnimation.cpp", revision)

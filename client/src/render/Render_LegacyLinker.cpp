@@ -20,7 +20,7 @@ extern void ClearActionObject(void);
 // EnableAlphaBlend @ 0x00511710 — GL additive blending setup.
 // Delega en la versión canónica cacheada GL_SetBlendAdditive (GL_State.cpp,
 // misma dirección). No llamar glDepthMask/glDisable(GL_CULL_FACE) directos:
-// desincroniza los caches DAT_083a42e8 (depth mask) y DAT_083a411c (cull) y
+// desincroniza los caches DepthMaskEnable (depth mask) y CullFaceEnable (cull) y
 // el objeto opaco siguiente puede quedar sin escribir depth. El source 5.2
 // (ZzzOpenglUtil.cpp:468) confirma que EnableAlphaBlend usa el DisableDepthMask
 // CACHEADO, nunca glDepthMask directo.

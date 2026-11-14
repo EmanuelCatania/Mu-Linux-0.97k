@@ -27,11 +27,11 @@
 //   DAT_083a7c48  — connection check enable
 //   DAT_083a7c58  — disconnect dialog shown flag
 //   DAT_07e118e8  — world/map type
-//   DAT_07c74ae4  — BGM track 1 enable flag
+//   RainCurrent  — BGM track 1 enable flag
 //   DAT_07abf5d8  — local player entity pointer
 //   ChatTime  — countdown counter A
-//   DAT_07e11d7c  — countdown counter B
-//   DAT_0839bc8c  — frame index mod 32
+//   MacroTime  — countdown counter B
+//   WaterTextureNumber  — frame index mod 32
 
 #include "stdafx.h"
 #include <algorithm>
@@ -214,10 +214,10 @@ void __cdecl Game_MainLoop(HDC param_1)
         // Decrement countdown counters
         if (ChatTime > 0) ChatTime--;
         EmoteSound_Update();   // sonidos de los emotes propios
-        if (DAT_07e11d7c > 0) DAT_07e11d7c--;
+        if (MacroTime > 0) MacroTime--;
 
         // Frame index mod 32
-        DAT_0839bc8c = (DAT_0839bc8c + 1) & 0x1f;
+        WaterTextureNumber = (WaterTextureNumber + 1) & 0x1f;
 
         // Anti-tamper: track MoveSceneFrame ref-count, then increment
         {
@@ -355,19 +355,19 @@ void __cdecl Game_MainLoop(HDC param_1)
     // Defaults elegidos para coincidir con lo que GL_BeginViewport deja tras su
     // primer push (Scene_Login llama GL_BeginViewport como primera acción).
     Gfx::Disable(Gfx::Cap::Blend);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
-    Gfx::Enable(Gfx::Cap::CullFace);    DAT_083a411c = 1;
-    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
-    Gfx::Disable(Gfx::Cap::AlphaTest);  DAT_083a411d = 0;
-    Gfx::Enable(Gfx::Cap::DepthTest);   DAT_083a411e = 1;
-    Gfx::DepthMask(true);      DAT_083a42e8 = 1;
-    Gfx::Disable(Gfx::Cap::Fog);         /* DAT_083a42ea es "fog-is-on" flag global del scene */
+    Gfx::Enable(Gfx::Cap::CullFace);    CullFaceEnable = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   TextureEnable = 1;
+    Gfx::Disable(Gfx::Cap::AlphaTest);  AlphaTestEnable = 0;
+    Gfx::Enable(Gfx::Cap::DepthTest);   DepthTestEnable = 1;
+    Gfx::DepthMask(true);      DepthMaskEnable = 1;
+    Gfx::Disable(Gfx::Cap::Fog);         /* FogEnable es "fog-is-on" flag global del scene */
     Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     // Invalidar cache de última textura ligada para forzar rebind
     DAT_00561574 = 0xFFFFFFFFu;
 
     // NOTA: el workaround `glDisable(GL_CULL_FACE)` aquí era no-op: cada
     // Scene_* llama GL_BeginViewport después y ese re-habilita GL_CULL_FACE
-    // (+ cache DAT_083a411c=1). Movido al inicio de cada scene render
+    // (+ cache CullFaceEnable=1). Movido al inicio de cada scene render
     // (ver Scene_Login.cpp / Scene_CharSelect.cpp) donde sí surte efecto.
     // Los blend-setters 2D (GL_SetBlendSrcOver/710/790) ya llaman GL_DisableCullFace
     // (DisableCullFace) antes de dibujar sprites, pero la geometría 3D
@@ -478,7 +478,7 @@ static void Game_TickAmbientAudio()
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
             PlayBuffer(0, 0, 1);
-            if (DAT_07c74ae4 > 0)
+            if (RainCurrent > 0)
                 PlayBuffer(1, 0, 1);
         }
         break;

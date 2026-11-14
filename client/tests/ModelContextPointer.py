@@ -48,7 +48,7 @@ static_assert(alignof(BMD)==1&&std::is_standard_layout_v<BMD>&&std::is_trivially
 void Require(bool x){if(!x){std::fputs("Contexto BMD/canario/selección incorrectos\n",stderr);std::abort();}}
 OBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}BMD* AsModel(void* p){return static_cast<BMD*>(p);}BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}
 namespace Platform{struct Timer{DWORD Ticks(){return 1;}}timer;Timer& GetTimer(){return timer;}}
-std::uintptr_t DAT_05828d58;int DAT_07e11d30;
+std::uintptr_t DAT_05828d58;int EditFlag;
 float globalBones[12];
 float rotationParent[12];
 #define DAT_06989c9c rotationParent[0]
@@ -126,9 +126,9 @@ int main(){
  std::puts("RotationPosition: 32768 casos, aliases y matriz padre equivalentes");
  for(unsigned trial=0;trial<1024;++trial){
   std::memset(&owner,0,sizeof(owner));owner.Type=short(trial%512);owner.EnableBoneMatrix=BYTE(trial%3);owner.BoneMatrices=trial%5?privateBones:nullptr;
-  const float alpha[]={0,.0001f,.5f,1.f};owner.Alpha=alpha[trial%4];DAT_07e11d30=int(trial%3);wantedTranslate=char(trial%2);
+  const float alpha[]={0,.0001f,.5f,1.f};owner.Alpha=alpha[trial%4];EditFlag=int(trial%3);wantedTranslate=char(trial%2);
   DAT_05828d58=reinterpret_cast<uintptr_t>(models);wantedOwner=&owner;wantedModel=models+owner.Type;wantedBones=owner.EnableBoneMatrix?reinterpret_cast<float*>(owner.BoneMatrices):globalBones;
-  wantedModel->BodyHeight=99;const bool skip=owner.Alpha<_DAT_005524f8;const bool editor=DAT_07e11d30==2;
+  wantedModel->BodyHeight=99;const bool skip=owner.Alpha<_DAT_005524f8;const bool editor=EditFlag==2;
   bonesCalls=boundsCalls=editorCalls=0;ObjectPose_PrepareSimulation(&owner,wantedTranslate);
   Require(bonesCalls==unsigned(!skip&&!editor)&&boundsCalls==bonesCalls&&editorCalls==unsigned(!skip&&editor));
   Require(wantedModel->BodyHeight==(!skip&&!editor?0:99));

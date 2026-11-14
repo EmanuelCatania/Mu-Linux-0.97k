@@ -59,7 +59,7 @@ void NetRecv_02(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // Canal **0** (como IDA) → negro sobre fondo celeste (0x9632C8FF), el look
     // clásico de whisper.
     const int MSG = 3 + (int)NetText::CharacterNameSize;
-    if (Size >= MSG + 1 && DAT_07e11dac == 0) {   // m_bBlockWhisper (toggle F3)
+    if (Size >= MSG + 1 && m_bBlockWhisper_1 == 0) {   // m_bBlockWhisper (toggle F3)
         char wname[NetText::CharacterNameSize + 1] = {0};
         char wmsg[NetText::ChatMessageSize + 1] = {0};
         NetText::FromServer(wname, sizeof(wname), Msg + 3, NetText::CharacterNameSize);

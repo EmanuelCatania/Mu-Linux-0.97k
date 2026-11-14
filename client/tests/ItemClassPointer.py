@@ -12,7 +12,7 @@ SERVICES=r'''
 uintptr_t DAT_07abf5d8;
 char GlobalText[1040][32];
 char lpString_07e90798[3200];
-int DAT_07e91708[32],DAT_07ea7b10[32],DAT_07eaa154,DAT_07eaa158;
+int TextListColor[32],TextBold[32],TextNum,DAT_07eaa158;
 '''
 MAIN=r'''
 void Invoke(const BYTE* item){ItemHelp_RequireClass(ARG);}
@@ -22,9 +22,9 @@ std::uint64_t Run(BYTE* itemMem,BYTE* heroMem){
  for(unsigned skin=0;skin<256;++skin)for(unsigned pattern=0;pattern<256;++pattern){
   std::memset(itemMem,0xa5,96);std::memset(heroMem,0xc3,512);for(unsigned c=0;c<4;++c)item[56+c]=(pattern>>(2*c))&3;hero[444]=static_cast<BYTE>(skin);
   BYTE itemBefore[96],heroBefore[512];std::memcpy(itemBefore,itemMem,96);std::memcpy(heroBefore,heroMem,512);
-  std::memset(lpString_07e90798,0x5a,sizeof(lpString_07e90798));for(unsigned r=0;r<32;++r){DAT_07e91708[r]=37+r;DAT_07ea7b10[r]=73+r;}
-  const int rows[]={0,1,24,25};const int start=rows[(pattern+skin)%4];DAT_07eaa154=start;DAT_07eaa158=17;DAT_07abf5d8=reinterpret_cast<uintptr_t>(hero);
-  char expected[3200];int color[32],bold[32],row=start,blanks=17;std::memcpy(expected,lpString_07e90798,sizeof(expected));std::memcpy(color,DAT_07e91708,sizeof(color));std::memcpy(bold,DAT_07ea7b10,sizeof(bold));
+  std::memset(lpString_07e90798,0x5a,sizeof(lpString_07e90798));for(unsigned r=0;r<32;++r){TextListColor[r]=37+r;TextBold[r]=73+r;}
+  const int rows[]={0,1,24,25};const int start=rows[(pattern+skin)%4];TextNum=start;DAT_07eaa158=17;DAT_07abf5d8=reinterpret_cast<uintptr_t>(hero);
+  char expected[3200];int color[32],bold[32],row=start,blanks=17;std::memcpy(expected,lpString_07e90798,sizeof(expected));std::memcpy(color,TextListColor,sizeof(color));std::memcpy(bold,TextBold,sizeof(bold));
   if(start<=24){
    color[start+2]=color[start+3]=0;unsigned eligible[4],n=0;for(unsigned c=0;c<4;++c)if(item[56+c])eligible[n++]=c;
    const unsigned cls=skin%8,level=skin/8;const int unmet=item[56+cls]?2:5;
@@ -35,10 +35,10 @@ std::uint64_t Run(BYTE* itemMem,BYTE* heroMem){
     else{bool ok=false;for(unsigned i=0;i<n;++i){const unsigned c=eligible[i];ok|=cls==c && level>=static_cast<unsigned>(item[56+c]-1);}for(unsigned i=0;i<n;++i){const unsigned c=eligible[i];std::sprintf(expected+100*row,"ok:%s",GlobalText[4*item[56+c]+16+c]);color[row]=ok?0:unmet;bold[row++]=0;}}
    }
   }
-  Invoke(item);Require(DAT_07eaa154==row && DAT_07eaa158==blanks && std::memcmp(expected,lpString_07e90798,sizeof(expected))==0 && std::memcmp(color,DAT_07e91708,sizeof(color))==0 && std::memcmp(bold,DAT_07ea7b10,sizeof(bold))==0 && std::memcmp(itemMem,itemBefore,96)==0 && std::memcmp(heroMem,heroBefore,512)==0);
+  Invoke(item);Require(TextNum==row && DAT_07eaa158==blanks && std::memcmp(expected,lpString_07e90798,sizeof(expected))==0 && std::memcmp(color,TextListColor,sizeof(color))==0 && std::memcmp(bold,TextBold,sizeof(bold))==0 && std::memcmp(itemMem,itemBefore,96)==0 && std::memcmp(heroMem,heroBefore,512)==0);
   Hash(digest,expected,sizeof(expected));Hash(digest,color,sizeof(color));Hash(digest,bold,sizeof(bold));Hash(digest,&row,4);Hash(digest,&blanks,4);++cases;
  }
- char before[3200];std::memcpy(before,lpString_07e90798,sizeof(before));const int row=DAT_07eaa154,blank=DAT_07eaa158;Invoke(nullptr);DAT_07abf5d8=0;Invoke(item);Require(DAT_07eaa154==row && DAT_07eaa158==blank && std::memcmp(before,lpString_07e90798,sizeof(before))==0);
+ char before[3200];std::memcpy(before,lpString_07e90798,sizeof(before));const int row=TextNum,blank=DAT_07eaa158;Invoke(nullptr);DAT_07abf5d8=0;Invoke(item);Require(TextNum==row && DAT_07eaa158==blank && std::memcmp(before,lpString_07e90798,sizeof(before))==0);
  Require(cases==65536);return digest;
 }
 int main(){for(unsigned i=0;i<1040;++i)std::sprintf(GlobalText[i],"g%04u",i);std::strcpy(GlobalText[60],"no:%s");std::strcpy(GlobalText[61],"ok:%s");

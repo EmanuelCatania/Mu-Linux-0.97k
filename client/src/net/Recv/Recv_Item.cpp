@@ -253,13 +253,13 @@ bool ItemMove_LooksLikeStackMerge(BYTE* targetPool, int targetSlot, const BYTE* 
 void ItemMove_ClearPickedState()
 {
     DAT_07e91388 = 0;
-    DAT_07eaa165 = 0;
+    EquipmentItem = 0;
     EnableUse = 0;
     DAT_07ea5b18 = 0xFFFFFFFFu;
     DAT_07e11e78 = 0xFFFFFFFFu;
     DAT_07ea9844 = 0;
     DAT_07ea9800 = 0;
-    DAT_07eaa160 = 0;
+    CheckInventory = 0;
     MouseLButtonPush = 0;
     DAT_083a42eb = 0;
     g_ItemMoveSourcePool = 0;
@@ -406,7 +406,7 @@ void NetRecv_30(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             gChaosMixRates.Reset();
             ChaosBoxCloseAck();   // mecanismo de cierre de MuEmu (catalogo A)
             ChaosMixOpened = 1;
-            DAT_07eaa140 = 0;     // MixState = 0
+            MixState = 0;     // MixState = 0
             for (int i = 0; i < 4; i++)
                 DAT_0055a3e8[i] = Msg[4 + i];
             SetErrorMessage(143);
@@ -463,7 +463,7 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // sounds 67/48).  The server also uses type=3 for the initial
         // open snapshot, so preserve that case by requiring a mix
         // request already in flight.
-        const bool mixFailedSnapshot = (DAT_07eaa140 == 1);
+        const bool mixFailedSnapshot = (MixState == 1);
 
         for (int i = 0; i < 32; ++i) {
             BYTE* cell = OffsetMixItems + i * 0x44;
@@ -487,7 +487,7 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         if (mixFailedSnapshot) {
-            DAT_07eaa140 = 2;
+            MixState = 2;
             UIChatLogWindow_AddText("", GlobalText[594], 2);
             PlayBuffer(67, 0, 0);
             PlayBuffer(48, 0, 0);
@@ -578,7 +578,7 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (sub == 3 || sub == 5) {
         ClearItemPool(OffsetMixItems, 32);
         if (sub == 3 || sub == 5) {
-            DAT_07eaa140 = 0;
+            MixState = 0;
         }
         for (int i = 0; i < count && cursor + 13 <= Size; ++i) {
             BYTE slot = Msg[cursor];
@@ -681,7 +681,7 @@ void NetRecv_33(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         //
         // Desviacion consciente: en vez de dejarlo pegado al cursor lo
         // devolvemos a su slot de origen. El efecto observable es el mismo
-        // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165,
+        // (no se pierde) y ademas libera `EquipmentItem` (0x07EAA165,
         // el mismo global de IDA 0x07EAA165), que si queda seteado
         // bloquea los drops siguientes.
         RestorePickedItemToSource();
@@ -759,7 +759,7 @@ void NetRecv_83(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 if ((int)DAT_07ea9804 == -1) {
                     Send_ActionRequest((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
                 } else {
-                    DAT_07eaa165 = 1;   // EquipmentItem
+                    EquipmentItem = 1;   // EquipmentItem
                     g_ItemMoveSourcePool = &OffsetWarehouseItems[0];
                     g_ItemMoveTargetPool = &OffsetInventoryItems[0];
                     SendRequestEquipmentItem((int)DAT_07ea9804, (int)DAT_07ea9808,
@@ -785,7 +785,7 @@ void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const BYTE result = Msg[3];
     switch (result) {
     case 1:
-        DAT_07eaa140 = 2;
+        MixState = 2;
         for (int slot = 0; slot < 32; ++slot) {
             BYTE* item = OffsetMixItems + slot * 0x44;
             *(short*)item = (short)0xFFFF;
@@ -799,19 +799,19 @@ void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         break;
     case 2:
     case 0x0B:
-        DAT_07eaa140 = 0;
+        MixState = 0;
         UIChatLogWindow_AddText("", GlobalText[596], 2);
         break;
     case 4:
         CreateOkMessageBox(GlobalText[649]);
-        DAT_07eaa140 = 2;
+        MixState = 2;
         break;
     case 9:
         CreateOkMessageBox(GlobalText[689]);
-        DAT_07eaa140 = 2;
+        MixState = 2;
         break;
     default:
-        DAT_07eaa140 = 2;
+        MixState = 2;
         break;
     }
 }

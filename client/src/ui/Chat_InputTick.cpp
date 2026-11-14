@@ -320,7 +320,7 @@ extern "C" void Chat_SendChatLine(const char* text)
 // calls CloseInventoryRelatedWindows or Connection_Check + sends a second 3-byte packet.
 // pkt0/pkt1/pkt2 = first 3-byte packet bytes.
 // pkt_b0/b1/b2 = second 3-byte packet (Connection_Check branch).
-// pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
+// pkt_c0/c1/c2 = second 3-byte packet (EquipmentItem branch).
 
 // ---------------------------------------------------------------------------
 // Chat_InputTick — Chat_InputTick
@@ -499,7 +499,7 @@ void __cdecl Chat_InputTick(void)
             // Hotkey area: X=[0x12f..0x150], Y=[0x1bb..0x1e0] — click → open grid.
             // Item cells: stride 0x20, hit Y=[0x171..0x19c].
             // Keys 1-9: write to chardata+0xd7+slot (value 1..9); clear old.
-            if (*(char *)((char *)DAT_07cf1ff4 + 0x56) != '\0')
+            if (*(char *)((char *)CharacterAttribute + 0x56) != '\0')
             {
                 // Outer click area (open toggle)
                 if ((0x12f < mouseX) && (mouseX < 0x150) &&
@@ -509,7 +509,7 @@ void __cdecl Chat_InputTick(void)
                     DAT_07ea840c = 0x140;
                     DAT_07ea8408 = 0x1bc;
                     DAT_07d78094 = 1;
-                    DAT_07e11d28 = 0;
+                    MouseUpdateTime = 0;
                     if (IsClickPushed()) {
                         DAT_07db870c = (DAT_07db870c == '\0') ? '\x01' : '\0';
                         MouseLButtonPush = '\0';
@@ -520,11 +520,11 @@ void __cdecl Chat_InputTick(void)
                 // Item cell grid (visible when DAT_07db870c != 0)
                 if (DAT_07db870c != '\0')
                 {
-                    DWORD numSlots = (DWORD)*(BYTE *)((char *)DAT_07cf1ff4 + 0x56);
+                    DWORD numSlots = (DWORD)*(BYTE *)((char *)CharacterAttribute + 0x56);
                     int   cellOff  = 0;
                     for (DWORD uVar14 = 0; (int)uVar14 < 0x14; ++uVar14)
                     {
-                        if (*(char *)((char *)DAT_07cf1ff4 + 0x57 + uVar14) != '\0')
+                        if (*(char *)((char *)CharacterAttribute + 0x57 + uVar14) != '\0')
                         {
                             int cellX0 = cellOff - (int)(numSlots * 0x20) / 2;
                             int cellX1 = cellX0 + 0x20;
@@ -540,8 +540,8 @@ void __cdecl Chat_InputTick(void)
                                     *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill = (char)uVar14;
                                     DAT_07db870c = '\0';
                                     PlayBuffer(0x19, 0, 0);
-                                    DAT_07e11d28 = 0;
-                                    DAT_00559bec = 6;
+                                    MouseUpdateTime = 0;
+                                    MouseUpdateTimeMax = 6;
                                 }
                                 // IDA L2406-2589: con Ctrl apretado, las teclas
                                 // 1..9 y 0 asignan ese numero a la skill bajo el
@@ -555,13 +555,13 @@ void __cdecl Chat_InputTick(void)
                                             continue;
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
-                                            char *slot_ptr = (char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + j;
+                                            char *slot_ptr = (char *)CharacterAttribute + charRow * 0x40 + 0xd7 + j;
                                             if (*slot_ptr == (char)key) {
                                                 *slot_ptr = (char)0xff;
                                                 charRow = (int)DAT_005616ac;
                                             }
                                         }
-                                        *((char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
+                                        *((char *)CharacterAttribute + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
                                     }
                                 }
                                 break;
@@ -601,15 +601,15 @@ void __cdecl Chat_InputTick(void)
             //             If > 0x32, reject (too fast). Resets to 0x46 on send.
             // Duplicate check: compare buffer vs DAT_05826adc (last sent).
             // Command parsing (prefix '/'):
-            //   /whisper → DAT_07e11dac=1, UIChatLogWindow_AddText with DAT_07d3d608
-            //   /pvp     → DAT_07e11dac=0, UIChatLogWindow_AddText with DAT_07d3d734
+            //   /whisper → m_bBlockWhisper_1=1, UIChatLogWindow_AddText with DAT_07d3d608
+            //   /pvp     → m_bBlockWhisper_1=0, UIChatLogWindow_AddText with DAT_07d3d734
             //   GM cmd   → if +0x2fd!=0 and strncmp to DAT_07d3cdd4 → discard
             // Normal send:
             //   Build C1 packet: [0xC1][len][opcode][sub][player_name][chat_text][0x00]
             //   XOR-encrypt payload from byte offset 3 onward, CSimpleModulus_Encode + send.
             // El disparo es ALT + el numero, NO Enter: el texto que se tipea
             // en el chat vive en InputText (DAT_07db8710) y lo envia el WndProc.
-            if (DAT_07e11d7c == 0 &&
+            if (MacroTime == 0 &&
                 ((unsigned short)Platform::GetInput().KeyState(VK_MENU) >> 8) != 0)
             {
                 {
@@ -619,7 +619,7 @@ void __cdecl Chat_InputTick(void)
                         if (((unsigned short)Platform::GetInput().KeyState('1' + ch) >> 8) == 0)
                             continue;
                         BYTE *chBuf = (BYTE *)&MacroText + ch * 0x100;
-                        if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
+                        if (chBuf[0] == '\0') { MacroTime = 100; continue; }
                         if ((char)FUN_00494520(chBuf, '\x01') != '\0')
                             continue;
 
@@ -634,7 +634,7 @@ void __cdecl Chat_InputTick(void)
 
                         // Rate-limit and duplicate check
                         if (ChatTime >= 0x33) {
-                            DAT_07e11d7c = 100;
+                            MacroTime = 100;
                             continue;
                         }
 
@@ -672,7 +672,7 @@ void __cdecl Chat_InputTick(void)
                                     strncmp((char *)chBuf, &DAT_07d3d284,
                                             strlen(&DAT_07d3d284)) == 0) {
                                     // /whisper command
-                                    DAT_07e11dac = 1;
+                                    m_bBlockWhisper_1 = 1;
                                     UIChatLogWindow_AddText((const char*)&lpDefault_00583d88,&DAT_07d3d608, 1);
                                     goto chat_done;
                                 }
@@ -680,7 +680,7 @@ void __cdecl Chat_InputTick(void)
                                     strncmp((char *)chBuf, &DAT_07d3d3b0,
                                             strlen(&DAT_07d3d3b0)) == 0) {
                                     // /pvp command
-                                    DAT_07e11dac = 0;
+                                    m_bBlockWhisper_1 = 0;
                                     UIChatLogWindow_AddText((const char*)&lpDefault_00583d88,&DAT_07d3d734, 1);
                                     goto chat_done;
                                 }
@@ -701,7 +701,7 @@ void __cdecl Chat_InputTick(void)
                         if (chBuf[0] != '/')
                             Chat_SendChatLine((const char*)chBuf);
                         chat_done:
-                        DAT_07e11d7c = 100;
+                        MacroTime = 100;
                     }
                 }
 
@@ -753,7 +753,7 @@ void __cdecl Chat_InputTick(void)
                                 }
                             } // end if (!bDupWhisper)
                         } else {
-                            DAT_07e11d7c = 100;
+                            MacroTime = 100;
                         }
                         }
                         whisper_done:;
@@ -841,9 +841,9 @@ void __cdecl Chat_InputTick(void)
                 if (ShopOpened != 0 && DAT_07eaa132 != 0 && DAT_07e91388 == 0) {
                     DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
                     ((BYTE*)&DAT_07eaa150)[2] = (DAT_07eaa134 != 0) ? 2 : 0;
-                } else if (ShopOpened == 0 && InventoryOpened != 0 && DAT_07cf1ff4 != nullptr) {
+                } else if (ShopOpened == 0 && InventoryOpened != 0 && CharacterAttribute != nullptr) {
                     unsigned short level =
-                        *(unsigned short*)((char*)DAT_07cf1ff4 + 0x0e);
+                        *(unsigned short*)((char*)CharacterAttribute + 0x0e);
 
                     if (level >= 0x50 &&
                         WarehouseOpened == 0 &&

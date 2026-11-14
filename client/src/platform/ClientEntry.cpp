@@ -255,7 +255,7 @@ void GameGuard_TickCheck(void)
 //         local_9ac    = new(0x584)           → DAT_07cf1ffc (HashTable object)
 //                                               cleared 0x161*4 bytes
 //
-//  20.  DAT_07cf1ff4 = DAT_07cf1ffc
+//  20.  CharacterAttribute = DAT_07cf1ffc
 //       CHARACTER_MACHINE_Init(DAT_07cf1ffc)  — HashTable_Init
 //  21.  DAT_07abf5d8 = DAT_07abf5d0  — player ptr = entity array base (slot 0)
 //  22.  vtable constructions:
@@ -649,7 +649,7 @@ int main(int, char**)
     }
 
     // 20-21: CharacterAttribute = CharacterMachine; Hero = entity array slot 0
-    DAT_07cf1ff4 = DAT_07cf1ffc;
+    CharacterAttribute = DAT_07cf1ffc;
     // También hay que setear el global C++ `CharacterMachine` (definido en
     // globals.cpp, separado de DAT_07cf1ffc): HUD_Pass5 (Render_HudPass_4BD650_)
     // chequea `if (!CharacterMachine || !CharacterAttribute) return;` y sin esto el

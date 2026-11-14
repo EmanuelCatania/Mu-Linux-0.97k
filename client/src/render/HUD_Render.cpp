@@ -251,10 +251,10 @@
 //
 //   void Render_MacroTimer(void)
 //   {
-//     // Barra de macro activo (DAT_07e11d7c > 0)
-//     if (0 < DAT_07e11d7c) {
+//     // Barra de macro activo (MacroTime > 0)
+//     if (0 < MacroTime) {
 //       iVar2 = Screen_GetWidth();
-//       iVar5 = DAT_07e11d7c * 50;   // progress en pixels
+//       iVar5 = MacroTime * 50;   // progress en pixels
 //       fVar1 = ((float)iVar2 - _DAT_00552598) * 0.5f;
 //       GL_SetMode(1);
 //       DrawText(ftol(), 0x188, "Macro Time", 0,1,0);   // s_Macro_Time_00559f30
@@ -284,7 +284,7 @@
 //   }
 //
 //   Globals:
-//   DAT_07e11d7c   — macro timer restante (decrementado en Game_MainLoop)
+//   MacroTime   — macro timer restante (decrementado en Game_MainLoop)
 //   DAT_07e11d8c   — skill notification type (0=ninguno)
 //   DAT_07e11d90   — tick cuando empezó la notificación
 //   DAT_07d589f8   — tabla de nombres skill (stride 300, grupos 0-3 y 8+)

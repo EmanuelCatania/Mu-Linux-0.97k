@@ -10,7 +10,7 @@ from SceneObjectPointer import build_and_run, read_source
 
 SERVICES=r'''
 using uint=unsigned int;
-char* DAT_07abf5d8;int DAT_083a3ff0;float DAT_081cb608[1];
+char* DAT_07abf5d8;int EnableEvent;float DAT_081cb608[1];
 const float _DAT_00552900=300.0f,_DAT_00552ab8=1000.0f;
 unsigned trial,randomAt;std::vector<DWORD> actual;
 DWORD Bits(float f){DWORD b;std::memcpy(&b,&f,4);return b;}
@@ -37,7 +37,7 @@ std::uint64_t Run(BYTE* memory){
   for(unsigned i=0;i<128;++i)memory[i]=BYTE(i*37+trial);
   const float pos[]={float(int(trial)-2500)*.125f,float(int(trial)*3-512)*.25f,float(int(trial%32)-16)*.5f};
   std::memcpy(DAT_07abf5d8+16,pos,12);BYTE before[128];std::memcpy(before,memory,128);
-  gMapManager.world=world;DAT_083a3ff0=rain;randomAt=0;actual.clear();std::vector<DWORD> wanted;unsigned used=0;
+  gMapManager.world=world;EnableEvent=rain;randomAt=0;actual.clear();std::vector<DWORD> wanted;unsigned used=0;
   auto random=[&](){int r=Random(used++);wanted.insert(wanted.end(),{1,DWORD(r)});return r;};
   auto effect=[&](int type,int sub,float x,float y,float z){wanted.insert(wanted.end(),{3,DWORD(type),DWORD(sub),Bits(x),Bits(y),Bits(z),0,0,0,Bits(1),Bits(1),Bits(1)});};
   if(rain){

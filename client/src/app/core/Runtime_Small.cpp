@@ -105,9 +105,9 @@ void __fastcall CErrorReport__AddSeparator(intptr_t This) {
 }
 
 // ClearNotice @ 0x0047FAC0 (17 bytes) — zero-fill notice text array
-// Notice vive en 0x07DB80D8 (= DAT_07db80d8, 6 x 0x108).  DAT_083a2370 + 0x10
+// Notice vive en 0x07DB80D8 (6 x 0x108).  DAT_083a2370 + 0x10
 // es otra cosa (la lista de objetos interactuables, Operates).
-void __cdecl ClearNotice(void) { memset(DAT_07db80d8, 0, 0x630); }
+void __cdecl ClearNotice(void) { memset(Notice, 0, 0x630); }
 
 // ── 18-byte ─────────────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ int __fastcall Stats_CalcBase(BYTE* a1) {
     // `(a1 + 604)` (slots de arma) sin chequear.
     if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
-    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    const BYTE* charAttr = static_cast<const BYTE*>(CharacterAttribute);
     if (!charAttr || reinterpret_cast<uintptr_t>(charAttr) < 0x100000) return 0;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese

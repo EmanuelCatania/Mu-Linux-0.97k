@@ -89,7 +89,7 @@ static void Terrain_EndWavePass() {
 // DESVIACION: la pasada visual avanza el agua una vez por paso de 40 ms.
 // El picking conserva sus llamadas adicionales dentro de SIM.
 void Terrain_TickRenderWater() {
-    if (SceneFlag != 5 || DAT_07e11d1c > 30 || !DAT_07abf5d8) return;
+    if (SceneFlag != 5 || LoadingWorld > 30 || !DAT_07abf5d8) return;
     if (gMapManager.GetCurrentMap() != MAP_ICARUS && !gUserSettings.GetAntilag(ANTILAG_FLOOR)) {
         Terrain_BeginWavePass();
         Terrain_EndWavePass();
@@ -109,13 +109,13 @@ void __cdecl RenderTerrain(char EditFlag) {
         DAT_07eeb214 = (float)((long long)WorldTime % 20000) * 0.000049999999f;  // WaterMove
 
     if (EditFlag) {
-        DAT_07eab1fc = 0;                 // SelectFlag = 0
+        SelectFlag = 0;                 // SelectFlag = 0
         Map_InitRayCast();                   // Map_InitRayCast (sub_512D30)
     } else {
         GL_ResetState();                   // DisableAlphaBlend
     }
 
-    DAT_0838bc44 = 0;                     // TerrainFlag = 0
+    TerrainFlag = 0;                     // TerrainFlag = 0
     const bool modern=!EditFlag && TerrainDraw::Requested() && !DAT_0839bc86;
     if(modern)Terrain_BeginBufferedPass();
     else if(!EditFlag)Terrain_BeginBatch();
@@ -124,8 +124,8 @@ void __cdecl RenderTerrain(char EditFlag) {
     if(modern && !TerrainDraw::End())RenderTerrainFrustrum(false);
 
     if (EditFlag) {
-        if (DAT_07eab1fc) {               // SelectFlag → render del tile pickeado
-            float sxf = *(float*)&DAT_080ab288;   // SelectXF
+        if (SelectFlag) {               // SelectFlag → render del tile pickeado
+            float sxf = *(float*)&SelectXF;   // SelectXF
             float syf = *(float*)&DAT_080ab28c;   // SelectYF
             RenderTerrainTile(*(int*)&sxf, *(int*)&syf, (int)sxf, (int)syf,
                          1.0f, 1, (int)(unsigned char)EditFlag);
@@ -133,7 +133,7 @@ void __cdecl RenderTerrain(char EditFlag) {
     } else {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && gMapManager.GetCurrentMap() != MAP_ATLANS) { // overlay (inerte: unk_55A76C nunca seteado)
-            DAT_0838bc44 = 2;             // TerrainFlag = 2
+            TerrainFlag = 2;             // TerrainFlag = 2
             // DESVIACION: el pasto (billboards) recibe sombra pero no la proyecta.
             Gfx::SetShadowCasting(false);
             Terrain_BeginBatch();

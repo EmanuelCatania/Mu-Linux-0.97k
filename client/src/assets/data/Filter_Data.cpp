@@ -12,8 +12,8 @@
 // IDA: sub_4799D0 (0x004799D0)
 void __cdecl Filter_LoadTextFile(const char *path)
 {
-    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!SMDFile_0) return;
 
     while (TextParser_GetToken() != 2) {
         // token string is in TextParserTokenString; copy to filter table entry
@@ -33,5 +33,5 @@ void __cdecl Filter_LoadTextFile(const char *path)
         }
         DAT_07d78070++;
     }
-    crt_fclose(DAT_07d7806c);
+    crt_fclose(SMDFile_0);
 }

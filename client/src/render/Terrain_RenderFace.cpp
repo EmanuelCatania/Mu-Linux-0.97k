@@ -17,11 +17,11 @@
 //                          que Terrain_Water puebla per-frame desde BackTerrainLight 0x0828b608).
 //   TerrainVertex        = g_TilePickBuf[12]   (4 corners contiguos)
 //   TerrainTextureCoord  = g_TerrainTexCoord[8] (4 UV pairs)
-//   TerrainGrassWind     = DAT_07eab200 (float[256²])     (mislabel "water-wave heights")
+//   TerrainGrassWind     (float[256²])     (mislabel "water-wave heights")
 //   TerrainGrassTexture[(yi&0xFF)+1] = DAT_0810b2cc[yi&0xFF]
-//   WaterMove=DAT_07eeb214  WaterTextureNumber=DAT_0839bc8c  CurrentLayer=DAT_0814b2dc
-//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World
-//   TerrainIndex1..4 = DAT_07eab1ec/f0/f4/f8
+//   WaterMove=DAT_07eeb214  WaterTextureNumber  CurrentLayer=DAT_0814b2dc
+//   TerrainFlag  unk_839BC86=DAT_0839bc86  World
+//   TerrainIndex1..4
 
 #include "stdafx.h"
 #include "render/BufferedDraw.h"
@@ -34,15 +34,15 @@
 
 
 // ── Aliases locales que mapean los nombres IDA a nuestros globals ────────────
-#define TER_FLAG    DAT_0838bc44
-#define TER_IDX1    DAT_07eab1ec
-#define TER_IDX2    DAT_07eab1f0
-#define TER_IDX3    DAT_07eab1f4
-#define TER_IDX4    DAT_07eab1f8
+#define TER_FLAG    TerrainFlag
+#define TER_IDX1    TerrainIndex1
+#define TER_IDX2    TerrainIndex2
+#define TER_IDX3    TerrainIndex3
+#define TER_IDX4    TerrainIndex4
 #define TER_ALPHA   TerrainMappingAlpha                          // TerrainMappingAlpha (float)
 #define TER_L1      TerrainMappingLayer1                           // TerrainMappingLayer1 (BYTE)
 #define TER_L2      TerrainMappingLayer2                           // TerrainMappingLayer2 (BYTE)
-#define TER_WIND    DAT_07eab200                           // TerrainGrassWind (float)
+#define TER_WIND    TerrainGrassWind                           // TerrainGrassWind (float)
 #define TER_VERT    ((float(*)[3])&g_TilePickBuf[0])       // TerrainVertex[4][3]
 #define TER_TEX     ((float(*)[2])&g_TerrainTexCoord[0])   // TerrainTextureCoord[4][2]
 #define TER_LIGHT   ((float(*)[3])&DAT_081cb608[0])        // PrimaryTerrainLight[N][3]
@@ -120,8 +120,8 @@ static void ReplayTerrain(const TerrainDraw::Tile& tile,const TerrainDraw::Frame
 void Terrain_BeginBufferedPass() {
     TerrainDraw::FrameData f;
     f.map=gMapManager.GetCurrentMap();f.scale=_DAT_005524f0;
-    f.heights=(const float*)&DAT_080cb2cc[0];f.light=(const float*)&DAT_081cb608[0];
-    f.alpha=TerrainMappingAlpha;f.fogPolicy=DAT_083a42ea!=0;
+    f.heights=(const float*)&BackTerrainHeight[0];f.light=(const float*)&DAT_081cb608[0];
+    f.alpha=TerrainMappingAlpha;f.fogPolicy=FogEnable!=0;
     TerrainDraw::Begin(f,ReplayTerrain);
 }
 
@@ -294,7 +294,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
          TER_ALPHA[TER_IDX3] > 0.0f || TER_ALPHA[TER_IDX4] > 0.0f))
     {
-        int t = (int)DAT_0839bc8c + 30;      // WaterTextureNumber + 30
+        int t = (int)WaterTextureNumber + 30;      // WaterTextureNumber + 30
         FaceTexture(t, xf, yf, 0, 1);       // FaceTexture
         if(capture){captured->upper=CaptureTexture(t);captured->layer=TerrainDraw::Layer::Water;CaptureUV(*captured,true);}
         else RenderFaceBlend(t);                // RenderFaceBlend

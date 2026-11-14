@@ -71,7 +71,7 @@
 //
 //   case 0x0d:  FUN_00427a00(puVar8)
 //
-//   case 0x0f:  DAT_07c74ae0 = (byte[3] & 0xf) != 0 ? (byte[3]&0xf)*6 : 0
+//   case 0x0f:  RainTarget = (byte[3] & 0xf) != 0 ? (byte[3]&0xf)*6 : 0
 //               → chat/channel color/type mapping
 //
 //   case 0x10:  FUN_00427b90(puVar8)
@@ -160,9 +160,9 @@
 //   case 0x39:  InsertInventoryItem(&DAT_07ea5298, 8, 4, byte[3], puVar8+2, 1)
 //               PlayBuffer(0x1d, 0, 0)
 //
-//   case 0x3a:  DAT_07eaa0f4 = -(byte[3]!=0) & m_nTempMyTradeGold — toggle effect bit
+//   case 0x3a:  m_nMyTradeGold = -(byte[3]!=0) & m_nTempMyTradeGold — toggle effect bit
 //
-//   case 0x3b:  DAT_07eaa0f0 = *(puVar8+2)   — 4-byte misc update
+//   case 0x3b:  m_nYourTradeGold = *(puVar8+2)   — 4-byte misc update
 //
 //   case 0x3c:  PIN/SecondPassword UI control:
 //               0 → m_bYourConfirm = 0
@@ -191,7 +191,7 @@
 //   case 0x45:  FUN_00429c50((float)puVar8)
 //   case 0x46:  FUN_00436d60(puVar8)
 //
-//   case 0x50:  DAT_07eaa0d8 = byte[3]*0x100 + byte[2]
+//   case 0x50:  GuildPlayerKey = byte[3]*0x100 + byte[2]
 //               SetErrorMessage(0x77)   — ShowErrorDialog(0x77)
 //
 //   case 0x51:  FUN_00434780(puVar8)
@@ -203,10 +203,10 @@
 //               HashTable_Insert_Short(&MAIN_HASH_CLASS, &ShopOpened); ShopOpened=0
 //               PACKET_ENCRYPT; WarehouseOpened=0; DAT_00559f5f=0; DAT_07eaa14c=0
 //               HashTable_Insert_Short(&MAIN_HASH_CLASS, &TradeOpened); TradeOpened=0
-//               PACKET_ENCRYPT; GuildCreatorOpened=1; DAT_07eaa144=0
+//               PACKET_ENCRYPT; GuildCreatorOpened=1; g_iKeyPadEnable=0
 //
 //   case 0x55:  Character list change (delete/create result):
-//               GuildCreatorOpened=1; DAT_07eaa144=1; GuildInputEnable=1
+//               GuildCreatorOpened=1; g_iKeyPadEnable=1; GuildInputEnable=1
 //               DAT_00559c84=0; ClearInput(0)
 //               InputTextMax=8; InputNumber=0
 //               *(DAT_07abf5d8+0x1da) = 999

@@ -117,10 +117,10 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
     RequestTerrainLight(AsObject(entity)->Position[0], AsObject(entity)->Position[1], scratch.light);
     // ── 8. Death / PvP color tint ────────────────────────────────────────────
     // [hash-table obfuscation blocks skipped — anti-tamper, not game logic]
-    if ((*(BYTE *)((char *)DAT_07cf1ff4 + 0x28) & 1) != 0) {
+    if ((*(BYTE *)((char *)CharacterAttribute + 0x28) & 1) != 0) {
         local_44 = 0.9f; local_40 = 0.5f; local_3c = 0.5f;
     }
-    if ((*(BYTE *)((char *)DAT_07cf1ff4 + 0x28) & 2) != 0) {
+    if ((*(BYTE *)((char *)CharacterAttribute + 0x28) & 2) != 0) {
         local_44 *= _DAT_00552504;
         local_40 *= _DAT_005526e8;
         local_3c *= _DAT_00552504;

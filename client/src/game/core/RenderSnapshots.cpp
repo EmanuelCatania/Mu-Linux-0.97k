@@ -103,11 +103,11 @@ void End(Track& track, const Sample& sample, bool sameScene) {
     track.published = true;
 }
 CHARACTER* Character(int slot) {
-    if (slot == 400) return (CHARACTER*)DAT_07abf050;
+    if (slot == 400) return (CHARACTER*)CharacterView;
     return DAT_07abf5d0 ? ((CHARACTER*)DAT_07abf5d0) + slot : nullptr;
 }
 int CharacterSlot(const void* entity) {
-    if (entity == DAT_07abf050) return 400;
+    if (entity == CharacterView) return 400;
     const std::uintptr_t address = (std::uintptr_t)entity, base = (std::uintptr_t)DAT_07abf5d0;
     if (!base || address < base || address - base >= 400 * sizeof(CHARACTER)) return -1;
     const std::uintptr_t offset = address - base;

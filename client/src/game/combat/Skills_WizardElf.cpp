@@ -17,7 +17,7 @@ static BYTE ResolveQueuedSkillId97k()
     // UseSkillWizard @ 488A53 always dereferences the selected slot in
     // CharacterAttribute; its result is not conditional on the queued-action
     // flag.  The flag only controls how Attack/Action seed the slot.
-    BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
+    BYTE* charAttr = (BYTE*)CharacterAttribute;
     if (charAttr) {
         return charAttr[DAT_07d7809c + 87];
     }
@@ -355,8 +355,8 @@ bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
 
     bool result = false;
 
-    // CharacterAttribute = DAT_07cf1ff4, Hero = DAT_07abf5d8
-    char* charAttrBase = (char*)DAT_07cf1ff4;
+    // Hero = DAT_07abf5d8
+    char* charAttrBase = (char*)CharacterAttribute;
     char* heroEntity   = DAT_07abf5d8;
 
     if (charAttrBase == nullptr || heroEntity == nullptr) {

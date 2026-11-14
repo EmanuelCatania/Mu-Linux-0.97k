@@ -10,9 +10,9 @@
 //
 // ── GLOBALS ──────────────────────────────────────────────────────────────────
 //
-//   DAT_083a7c10  — server-ack gate (return immediately if 0)
-//   DAT_07e11d1c  — frame render counter (HashTable ref; return if > 0x1e = 30)
-//   DAT_083a42ea  — cleared to 0 at frame start
+//   EnableMainRender  — server-ack gate (return immediately if 0)
+//   LoadingWorld  — frame render counter (HashTable ref; return if > 0x1e = 30)
+//   FogEnable  — cleared to 0 at frame start
 //   CameraTopViewEnabled  — special/debug view flag (affects viewport + skips some passes)
 //   DAT_083a4110  — out: world-space mouse ray direction [3 floats]
 //   MouseX  — mouse X (screen coords)
@@ -20,7 +20,7 @@
 //   DAT_07abf5d8  — entity array (stride 0x394); slot used for camera
 //   DAT_0055283c  — float: viewport→FOV scale factor
 //   World  — World (drives clear color)
-//   DAT_07e11d30  — depth-test override flag
+//   EditFlag  — depth-test override flag
 //   g_bUseChatListBox  — anti-tamper gate
 //   SceneFlag  — SceneFlag
 //   DAT_055c9ff8  — object with flag at +8 (render watchdog?)
@@ -28,8 +28,8 @@
 //
 // ── ENTRY GUARD ──────────────────────────────────────────────────────────────
 //
-//   if (DAT_083a7c10 == '\0') return;   // server not yet confirmed
-//   HashTable ref-count block on DAT_07e11d1c (anti-tamper / frame limiter)
+//   if (EnableMainRender == '\0') return;   // server not yet confirmed
+//   HashTable ref-count block on LoadingWorld (anti-tamper / frame limiter)
 //   if (iVar5 > 0x1e) return;           // skip frame if counter too high
 //
 // ── CAMERA POSITION ──────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
 //                         tipo != 0x10a (cofre): actualiza float pos
 //   Entity_RenderAll_3D()    → Entity_RenderAll_3D()      — geometría 3D chars/NPCs
-//   if DAT_07e11d30:    RenderTerrain('\x01')       → GL_DepthTest(true)
+//   if EditFlag:    RenderTerrain('\x01')       → GL_DepthTest(true)
 //   if !debug_view:     Entity_Render()             → Entity_Render_Sprites() (billboards)
 //   RenderFishs()    → Entity_PrepareVisibleList() — proyecta world→screen, cull off-screen
 //                         itera DAT_083a2e92; llama TestFrustrum2D (frustum cull);
@@ -115,7 +115,7 @@
 //                         (_DAT_00552cac, _DAT_00552c24, _DAT_00552c14, _DAT_00552ca8)
 //   UI_RenderNotices()    → PlayerName_Render()         — nombres de jugadores con parpadeo
 //                         SetBlendMode + gFont.SelectFont(bold) + glColor3f(1,1,1)
-//                         itera DAT_07db80d8 stride 0x104; parpadeo via DAT_07e11da0 % 10
+//                         itera Notice stride 0x104; parpadeo via DAT_07e11da0 % 10
 //   if (g_bUseChatListBox == 1) || (SceneFlag != 5): UI_RenderChatLogOverlay()
 //                     → SystemText_Render()         — notificaciones del sistema
 //                         glColor3f(1,1,1) + gFont.SelectFont(normal_font)
@@ -124,7 +124,7 @@
 //                         gFont.SelectFont(normal_font); timeGetTime() % 1000:
 //                         si > 999ms: resetea DAT_07e016f0 + TotalPacketSize=0 (frame counter)
 //   RenderHelpWindow()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
-//                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
+//                         GL_ResetState() + TextNum=0; operaciones de string
 //   Cursor_Render()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
 //                         SetBlendMode + glColor3f(1,1,1)
 //                         ftol()%6 → UV offset: {1,3,5}→local_4=0.5; {2,3,4}→local_8=0.5
@@ -245,13 +245,13 @@ unsigned int Game_RenderTick(void)
 {
     // IDA 0x525A00: if (!EnableMainRender) return 0; sin swap se mantiene el
     // ultimo frame (la pantalla de carga) hasta que llega JoinMapServer.
-    if (DAT_083a7c10 == 0) return 0;
+    if (EnableMainRender == 0) return 0;
 
     // IDA L62-65: con LoadingWorld > 30 (portal pedido al server, CheckGate lo
     // pone en 9999999) devuelve 0 -> sin SwapBuffers, queda el ultimo frame.
     // El port cortaba adentro de Render_Scene3D pero devolvia 1, y el swap
     // mostraba un buffer sin dibujar (pantalla negra al usar un gate).
-    if (DAT_07e11d1c > 30) return 0;
+    if (LoadingWorld > 30) return 0;
 
     // Drena errores GL residuales antes del frame (pops sin push del frame previo
     // durante la transición login→in-game).
@@ -496,14 +496,14 @@ void Render_Scene3D(void)
     }
 
     // ── 1. Anti-tamper LoadingWorld counter (skip frame if > 30) ─────────────
-    if (DAT_07e11d1c > 0x1e) return;
+    if (LoadingWorld > 0x1e) return;
 
-    DAT_083a42ea = 0;   // FogEnable = false
+    FogEnable = 0;   // FogEnable = false
     // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
     // el server se prende (el DLL parcheaba este 0 por un 1).
     // Con la cámara 3D y la niebla por profundidad, ésta reemplaza a la del
     // server: bruma hacia el color de fondo propio del mapa, sin teñir el fondo.
-    if (gContentCatalog.HasMapFog() && !(gCamera3D.IsEnabled() && Gfx::DepthFog())) DAT_083a42ea = 1;
+    if (gContentCatalog.HasMapFog() && !(gCamera3D.IsEnabled() && Gfx::DepthFog())) FogEnable = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     // Cámara autoritativa preparada al finalizar el paso de simulación.
@@ -540,7 +540,7 @@ void Render_Scene3D(void)
     } else if (worldId == 10) {
         cr = 0.012f; cg = 0.099f;  cb = 0.172f;
     }
-    if (DAT_083a42ea) {
+    if (FogEnable) {
         // DLL MapFog glClearColorFog: el fondo toma el color de la niebla.
         float fog[4];
         gContentCatalog.GetFogColor(worldId, fog);

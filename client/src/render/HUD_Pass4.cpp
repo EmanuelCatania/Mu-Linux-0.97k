@@ -42,7 +42,6 @@ extern "C" {
 // 0x07db8710 and InputLength at 0x07d780a8). See globals.h.
 // MacroTime es 0x07E11D7C (IDA lo decrementa en Game_MainLoop y lo pone en
 // 100 al disparar una macro): tiene que ser el global, no una variable propia.
-#define MacroTime   DAT_07e11d7c
 
 #define InputText   DAT_07db8710                    // char[10][256]
 #define InputLength ((int*)(void*)DAT_07d780a8)     // 10 × DWORD lengths
@@ -56,7 +55,7 @@ extern "C" {
     DWORD m_dwMatchCountDownStart = 0;
     // m_iMatchTime vive en globals.cpp (0x00559CCC): lo escribe SetMatchInfo
     // desde el handler 0x9B.
-    // MixState vive en globals.h como alias de DAT_07eaa140 (0x07EAA140): lo
+    // MixState vive en globals.h (0x07EAA140): lo
     // escriben Item_ClickHandler al mandar el mix (= 1) y el handler del 0x86
     // (0 o 2), y lo leen la animacion de la caja de Chaos de abajo y el
     // `++MixState` que la hace avanzar.
@@ -109,7 +108,7 @@ extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderBar(float, float, float, float, float, bool, bool);
 extern "C" SIZE*  __cdecl RenderCenteredText(int, int, const char*);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
-// TradeInventoryStartX/Y now #defined in globals.h to DAT_07ea5290/528c.
+// TradeInventoryStartX/Y se declaran en globals.h.
 extern "C" BYTE   OffsetMixItems[];
 extern "C" BYTE   Inventory[];
 extern "C" int*   g_pRenderText;
@@ -420,7 +419,7 @@ void HUD_BeginGridPass(int pass) { gridCursor[pass] = 0; }
 // DESVIACION: reproducir en SIM la multiplicidad de ambas pasadas de grillas.
 void HUD_TickGridPresentation() {
     gridCount[0] = gridCount[1] = 0;
-    if (SceneFlag != 5 || !DAT_083a7c10 || DAT_07e11d1c > 30 ||
+    if (SceneFlag != 5 || !EnableMainRender || LoadingWorld > 30 ||
         gUserSettings.GetAntilag(ANTILAG_INTERFACE)) return;
     bool pools[7]; int count=0;
     if (InventoryOpened) pools[count++]=false;
@@ -697,11 +696,11 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     GL_DrawRect(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
 
     Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
-    // CACHE (2026-10-03): este glEnable no tocaba DAT_083a4125, asi que el GL
+    // CACHE (2026-10-03): este glEnable no tocaba TextureEnable, asi que el GL
     // quedaba texturado con el cache diciendo lo contrario y el proximo
     // DisableTexture salteaba su glDisable.  Mismo patron que la fuga de blend
     // que volvia traslucidos a los monstruos de Atlans.
-    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   TextureEnable = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     UI_DrawText(sx, sy, (char*)Text, 0, 1, 0, (size_t)n + 1);

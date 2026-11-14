@@ -9,7 +9,7 @@
 
 void ReceiveTradeExit97k(const BYTE* Msg, int Size)
 {
-    if (DAT_07eaa165) {                              // EquipmentItem
+    if (EquipmentItem) {                              // EquipmentItem
         if (!s_bPacketAfterEquipmentItem) {
             s_bPacketAfterEquipmentItem = true;
             memcpy(s_byPacketAfterEquipmentItem, Msg, 4);
@@ -44,9 +44,9 @@ void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     TradeOpened = 0;
     DAT_05826d30 = 0;
     DAT_07e91388 = 0;
-    DAT_07eaa165 = 0;
-    DAT_07eaa0f0 = 0;
-    DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
+    EquipmentItem = 0;
+    m_nYourTradeGold = 0;
+    m_nMyTradeGold = 0; // IDA: m_nMyTradeGold
     m_bYourConfirm = 0;
     m_bMyConfirm = 0;
     TradeYourWait = 0;
@@ -101,8 +101,8 @@ void NetRecv_37(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         TradeOpened = 1;
         DAT_05826d30 = 1;
         DAT_07eaa0e8 = 0;
-        DAT_07eaa0f0 = 0;
-        DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
+        m_nYourTradeGold = 0;
+        m_nMyTradeGold = 0; // IDA: m_nMyTradeGold
         m_bYourConfirm = 0;
         m_bMyConfirm = 0;
         TradeYourWait = 0;
@@ -155,7 +155,7 @@ void NetRecv_3A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // IDA: ProtocolCore 0x43B3D0 — ACK del importe propio. El
     // servidor sólo devuelve un resultado; el valor está en el
     // temporal m_nTempMyTradeGold que UI_InGameMenu guardó antes del envío.
-    DAT_07eaa0f4 = (Msg[3] != 0) ? m_nTempMyTradeGold : 0;
+    m_nMyTradeGold = (Msg[3] != 0) ? m_nTempMyTradeGold : 0;
 }
 
 // 0x3B
@@ -165,7 +165,7 @@ void NetRecv_3B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // es decir dinero en +4. El byte +3 es el relleno de alineación
     // de PMSG_TRADE_MONEY_SEND (PBMSG_HEAD + DWORD).
     if (Size >= 8) {
-        DAT_07eaa0f0 = *(DWORD*)(Msg + 4);
+        m_nYourTradeGold = *(DWORD*)(Msg + 4);
     }
 }
 

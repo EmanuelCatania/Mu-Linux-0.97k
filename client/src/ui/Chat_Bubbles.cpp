@@ -21,7 +21,7 @@ extern "C" const char* Guild_GetMarkName(int row);
 
 // Nivel del heroe tal cual lo leen sub_47FED0 y RegistWhisperID.
 static int Whisper_HeroLevel() {
-    const BYTE* ca = (const BYTE*)(uintptr_t)DAT_07cf1ff4;   // IDA: CharacterAttribute
+    const BYTE* ca = (const BYTE*)(uintptr_t)CharacterAttribute;   // IDA: CharacterAttribute
     return ca ? *(const unsigned short*)(ca + 14) : 0;
 }
 

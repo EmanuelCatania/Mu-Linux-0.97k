@@ -386,7 +386,6 @@ struct SERVER_LIST_t
 #define CameraViewNear      (*(float*)&DAT_0056154c)
 #define CameraViewFar       (*(float*)&DAT_00561550)
 #define EarthQuake          _DAT_083a0210    // float
-#define FogEnable           DAT_083a42ea     // bool
 
 // Connection: g_bGameServerConnected is declared in globals.h.
 #define ServerList          (*(SERVER_LIST_t(*)[MAX_SERVER_HI])&DAT_083a45d8)

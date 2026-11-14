@@ -26,17 +26,17 @@
 // Each skill entry is 0x29 bytes; [0x28] = 1 (alive flag).
 void __cdecl Skill_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!SMDFile_0) return;
 
     // Streaming text parser — logic mirrors Ghidra decompile of FUN_0047a5b0.
     // The real loop calls TextParser_GetToken to tokenize floats/strings from the
-    // open file handle DAT_07d7806c, using TextParserTokenString as a temp string buf.
+    // open file handle SMDFile_0, using TextParserTokenString as a temp string buf.
     // Skill records are stored at DAT_07d29d20 + index*0x28 (stride 0x28).
     // Each record written is also registered in the hash table (MAIN_HASH_CLASS).
     // Stub: call parser until EOF.
     while (TextParser_GetToken() != 2) { /* parse handled by TextParser_GetToken side-effects */ }
-    crt_fclose(DAT_07d7806c);
+    crt_fclose(SMDFile_0);
 }
 
 // IDA: FUN_0047A970

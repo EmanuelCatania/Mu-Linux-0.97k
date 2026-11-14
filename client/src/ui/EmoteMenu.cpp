@@ -88,8 +88,8 @@ void Consume()
 {
     s_swallow = true;
     MouseLButtonPush = 0;
-    DAT_07e11d28 = 0;   // MouseUpdateTime
-    DAT_00559bec = 6;   // MouseUpdateTimeMax
+    MouseUpdateTime = 0;   // MouseUpdateTime
+    MouseUpdateTimeMax = 6;   // MouseUpdateTimeMax
     PlayBuffer(25, 0, 0);
 }
 

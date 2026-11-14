@@ -160,8 +160,8 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 void __stdcall RenderEquipmentBox(void) {
     EnableAlphaTest(true);
 
-    float sx = (float)(int)DAT_07ea5288;  // InventoryStartX
-    float sy = (float)(int)DAT_07ea5284;  // InventoryStartY
+    float sx = (float)(int)InventoryStartX;  // InventoryStartX
+    float sy = (float)(int)InventoryStartY;  // InventoryStartY
     float rowTop = sy + _DAT_00552c18;
     float rowMid = sy + _DAT_00552c0c;
     float rowBottom = sy + _DAT_00552c08;
@@ -264,8 +264,8 @@ void __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, f
 void __stdcall RenderEquipment3D(void) {
     if (!CharacterAttribute) return;
 
-    float sx = (float)(int)DAT_07ea5288;
-    float sy = (float)(int)DAT_07ea5284;
+    float sx = (float)(int)InventoryStartX;
+    float sy = (float)(int)InventoryStartY;
     float rowTop = sy + _DAT_00552c18;
     float rowMid = sy + _DAT_00552c0c;
     float rowBottom = sy + _DAT_00552c08;
@@ -328,9 +328,9 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
     // p4=gridWidth, p5=gridHeight, p6=mode (0=normal 3D render, 1=show arrow count + mix sparkles)
     // ItemAttribute = (ITEM_ATTRIBUTE*)DAT_07d78068, stride 0x40
     // _DAT_005524fc = cell size (20.0f), _DAT_005527dc = arrow count X offset
-    // OffsetMixItems = DAT_07ea9848, MixState = DAT_07eaa140
+    // OffsetMixItems = DAT_07ea9848, MixState
     // Inventory = DAT_07ea5298, WorldTime = WorldTime
-    // TradeInventoryStartX = DAT_07ea5290, TradeInventoryStartY = DAT_07ea528c
+    // TradeInventoryStartX, TradeInventoryStartY
 
     ITEM_ATTRIBUTE* itemAttr = (ITEM_ATTRIBUTE*)DAT_07d78068;
 
@@ -370,7 +370,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                         }
                         // Mix sparkle effects when mixing
                         if (p6 != '\0' && p3 == (short*)&DAT_07ea9848 &&
-                            DAT_07eaa140 > 0 && DAT_07eaa140 < 0x33) {
+                            MixState > 0 && MixState < 0x33) {
                             EnableAlphaBlend();
                             unsigned int r1 = rand();
                             unsigned int rMod = r1 & 0x80000003;
@@ -413,10 +413,10 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                 cell->Color == 'c') {
                 Gfx::Color3f(0.0f, 1.0f, 1.0f);
                 float glowX = (float)((unsigned int)cell->x * 0x14)
-                              + (float)DAT_07ea5290 + _DAT_00552834;
+                              + (float)TradeInventoryStartX + _DAT_00552834;
                 float sinVal = (float)sin((double)((float)WorldTime * _DAT_005529cc));
                 float glowY = (float)((unsigned int)cell->y * 0x14)
-                              + (float)DAT_07ea528c + _DAT_00552938 + sinVal + _DAT_00552660;
+                              + (float)TradeInventoryStartY + _DAT_00552938 + sinVal + _DAT_00552660;
                 GL_DrawTexture(9, glowX, glowY, 24.0f, 24.0f, 0.0f, 0.4f, 1.0f, 1.0f, 1, 1);
                 Gfx::Color3f(1.0f, 1.0f, 1.0f);
                 // Text rendering for new item label — simplified
@@ -427,8 +427,8 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
     }
 
     // Advance MixState counter
-    if (DAT_07eaa140 > 1) {
-        DAT_07eaa140 = DAT_07eaa140 + 1;
+    if (MixState > 1) {
+        MixState = MixState + 1;
     }
 }
 

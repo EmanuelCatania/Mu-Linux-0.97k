@@ -245,8 +245,8 @@ void NetRecv_0B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // IDA llena antes no tiene lectores en el binario; se omite.
     if (Size < 5) return;
     NetLog("NET:  → 0x0B EventState state=%d event=%d", Msg[3], Msg[4]);
-    if (Msg[4] == 1)      DAT_083a3ff0 = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
-    else if (Msg[4] == 3) DAT_083a3ff0 = (Msg[3] != 0) ? 3 : 0;
+    if (Msg[4] == 1)      EnableEvent = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
+    else if (Msg[4] == 3) EnableEvent = (Msg[3] != 0) ? 3 : 0;
     // event 2 = Tamachan.  No existe en el 0.97k; viene del 0.98j
     // (ProtocolCore 0x4437A0, bloque en 0x444299):
     //     if (state) { sub_46C220(); sub_46C190(); }   // limpiar + aparecer

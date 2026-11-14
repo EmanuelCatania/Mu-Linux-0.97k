@@ -48,7 +48,7 @@ void ObjectPose_PrepareBounds(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
-    if (DAT_07e11d30 == 2) {
+    if (EditFlag == 2) {
         Calc_RenderObject(entity, translate, 0);
         return;
     }
@@ -62,7 +62,7 @@ void ObjectPose_PrepareSimulation(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
-    if (DAT_07e11d30 == 2) {
+    if (EditFlag == 2) {
         Calc_RenderObject(entity, translate, 0);
         return;
     }
@@ -337,7 +337,7 @@ void PrepareRange(void*,std::size_t begin,std::size_t end) {
 // consume copias validadas y conserva todas sus escrituras en el orden original.
 void ObjectPose_BeginBatch() {
     batchActive=false; geometryPose=nullptr; batchCount=0; jobs.clear();
-    if(SceneFlag!=5 || DAT_07e11d30==2 || !DAT_07abf5d0) return;
+    if(SceneFlag!=5 || EditFlag==2 || !DAT_07abf5d0) return;
     // Medición de lotes pequeños: con 4 poses la coordinación era más cara.
     // Contar trabajo antes de copiar fuentes y reservar el equipo para lotes útiles.
     int visible=0;

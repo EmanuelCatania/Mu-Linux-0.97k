@@ -87,7 +87,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     BYTE *c    = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE;
     BYTE *hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-    BYTE *attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    BYTE *attr = (BYTE*)(uintptr_t)CharacterAttribute;
     // Clase codificada igual que en la lista de personajes:
     //   ((b >> 4) | (b & 0x10)) >> 1
     BYTE klass = (BYTE)((((Msg[6] >> 4) | (Msg[6] & 0x10))) >> 1);

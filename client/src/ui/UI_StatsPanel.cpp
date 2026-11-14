@@ -624,7 +624,7 @@ LAB_0051c13d:
     // (GlobalText[418] = "%s").  El port descartaba el indice y no pasaba el
     // argumento -> AV de lectura dentro de ucrtbase.
     {
-    int nameIdx = FindCharacterIndex(DAT_07eaa0d8);
+    int nameIdx = FindCharacterIndex(GuildPlayerKey);
     crt_sprintf(local_c8,(const char *)DAT_07d486fc,
                 EntityName::Get(CharactersClient + CHARACTER_STRIDE * nameIdx));
     }
@@ -806,7 +806,7 @@ LAB_0051c13d:
       local_d4 = -NAN;
     }
     if ((ErrorMessage == 0x8e) && (local_dc = 0, 0 < DAT_083a7c0c)) {
-      const char* answer = (const char*)DAT_083a4348;
+      const char* answer = (const char*)g_lpszDialogAnswer;
       do {
         if (((int)local_d4 == (int)local_dc) &&
            (uVar5 = (int)(0x13fU - MouseX) >> 0x1f,

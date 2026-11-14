@@ -8,13 +8,13 @@
 //
 //   void __cdecl Scene_Loading(HDC param_1)
 //   {
-//     if (DAT_083a7c4a == '\0') {
-//       DAT_083a7c4a = '\x01';
+//     if (InitLoading == '\0') {
+//       InitLoading = '\x01';
 //       OpenJPG("Local/Loading01.jpg", 0x1e, 0x2600, 0x2900, 0, '\x01');
 //       OpenJPG("Local/Loading02.jpg", 0x1f, 0x2600, 0x2900, 0, '\x01');
 //       OpenJPG("Local/Loading03.jpg", 0x20, 0x2600, 0x2900, 0, '\x01');
 //     }
-//     DAT_083a42ea = 0;
+//     FogEnable = 0;
 //     GL_BeginViewport(0, 0, 0x280, 0x1e0);
 //     glClear(0x4100);
 //     GL_Begin2D();
@@ -43,8 +43,8 @@
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //
-//   DAT_083a7c4a  — init flag (carga solo una vez)
-//   DAT_083a42ea  — reset a 0 cada frame
+//   InitLoading  — init flag (carga solo una vez)
+//   FogEnable  — reset a 0 cada frame
 //   SceneFlag  — SceneFlag → seteado a 5 (InGame) al final
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
@@ -68,14 +68,14 @@ void __cdecl Scene_Loading(HDC param_1)
     int iVar1;
 
     // Load textures once (guarded by init flag)
-    if (DAT_083a7c4a == '\0') {
-        DAT_083a7c4a = '\x01';
+    if (InitLoading == '\0') {
+        InitLoading = '\x01';
         OpenJPG(s_Local_Loading01_jpg_00561a88, 0x1e, 0x2600, 0x2900, 0, '\x01');
         OpenJPG(s_Local_Loading02_jpg_00561a9c, 0x1f, 0x2600, 0x2900, 0, '\x01');
         OpenJPG(s_Local_Loading03_jpg_00561ab0, 0x20, 0x2600, 0x2900, 0, '\x01');
     }
 
-    DAT_083a42ea = 0;
+    FogEnable = 0;
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
     Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer);
     GL_Begin2D();                       // GL_SetupOrtho2D

@@ -138,7 +138,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         Vector_InverseRotate(local_54 + 3, local_30, local_54 + 6);
     }
     // init AABB for bounding-box mode
-    if (DAT_07e11d30 == 2) {
+    if (EditFlag == 2) {
         local_54[0]=999999.0f; local_54[1]=999999.0f; local_54[2]=999999.0f;
         local_54[3]=-999999.0f; local_54[4]=-999999.0f; local_54[5]=-999999.0f;
     }
@@ -165,7 +165,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     // DESVIACION: agrupar sólo matemática independiente (IDA 0x004404E0).
     // Editor y datos inválidos conservan el recorrido original y sus diagnósticos.
     std::size_t transformCount = 0;
-    bool parallelSafe = DAT_07e11d30 != 2;
+    bool parallelSafe = EditFlag != 2;
     for (int i=0; parallelSafe && i<meshCount; ++i) {
         const char* mesh=(const char*)(uintptr_t)(uintptr_t)((BMD*)(uintptr_t)(this_))->Meshs+i*sizeof(ClothModelMesh);
         const int vc=*(const short*)(mesh+4), nc=*(const short*)(mesh+6);
@@ -294,7 +294,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
                     pfDst[0] *= sc; pfOut[-1] *= sc; *pfOut *= sc;
                 }
             }
-            if (DAT_07e11d30 == 2) {
+            if (EditFlag == 2) {
                 // update AABB (min/max per axis)
                 if (pfDst[0] < local_54[0]) local_54[0] = pfDst[0];
                 if (local_54[3] < pfDst[0]) local_54[3] = pfDst[0];
@@ -365,8 +365,8 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         param_5?(float*)((char*)this_+0x6c + BMD_FIELD_SHIFT):zero,local_54+6,coefficients,skinSources.data(),skinSources.size());
     if (diagInGame && s_xform_dbg < 200) s_xform_dbg++;
     // El editor usa los extremos de la malla; la ruta normal, los bounds locales.
-    const float* boundsMin = DAT_07e11d30 == 2 ? local_54 : param_2;
-    const float* boundsMax = DAT_07e11d30 == 2 ? local_54 + 3 : param_3;
+    const float* boundsMin = EditFlag == 2 ? local_54 : param_2;
+    const float* boundsMax = EditFlag == 2 ? local_54 + 3 : param_3;
     ObjectBounds_Build(boundsMin, boundsMax, (float*)((char*)this_ + 0x6c + BMD_FIELD_SHIFT), param_4);
     // compute largest dimension for bounding radius
     float dx=local_54[3]-local_54[0], dy=local_54[4]-local_54[1], dz=local_54[5]-local_54[2];

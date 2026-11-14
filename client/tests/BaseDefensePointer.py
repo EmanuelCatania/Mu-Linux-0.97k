@@ -21,7 +21,7 @@ std::uint64_t RunDefense(BYTE* machine, BYTE* attribute, ITEM_ATTRIBUTE* items) 
     for(int trial = 0; trial < 32768; ++trial) {
         std::memset(machine, 0x5a, 1412); std::memset(attribute, 0, 64); std::memset(items, 0, 32 * 64);
         attribute[11] = BYTE(Input()); const unsigned short dex = static_cast<unsigned short>(Input()); std::memcpy(machine + 22, &dex, 2);
-        DAT_07cf1ff4 = trial % 5 == 0 ? nullptr : attribute;
+        CharacterAttribute = trial % 5 == 0 ? nullptr : attribute;
         for(int offset : {604, 672, 740, 808, 876, 944, 1216, 1284}) {
             auto* item = reinterpret_cast<ITEM*>(machine + offset); std::memset(item, 0, sizeof(*item));
             item->Type = Input() % 5 == 0 ? -1 : short(Input() % 32); item->Durability = BYTE(Input());
@@ -35,7 +35,7 @@ std::uint64_t RunDefense(BYTE* machine, BYTE* attribute, ITEM_ATTRIBUTE* items) 
         BYTE expected[1412], beforeItems[32 * 64], beforeAttribute[64]; std::memcpy(expected, machine, 1412); std::memcpy(beforeItems, items, sizeof(beforeItems)); std::memcpy(beforeAttribute, attribute, 64);
         const ITEM* expectedReturn = nullptr;
         if(serverApply) std::memcpy(expected + 76, &serverRate, 2);
-        else if(DAT_07cf1ff4) {
+        else if(CharacterAttribute) {
             unsigned short defense = (attribute[11] & 7) == 2 ? dex / 4 : dex / 3;
             auto* shield = reinterpret_cast<ITEM*>(machine + 604);
             if(shield->Type != -1 && shield->Durability) {

@@ -12,8 +12,8 @@
 // Total 100 entries (900 bytes, loop runs while off < 900).
 void __cdecl Gate_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE *)crt_fopen(path, DAT_005580ac);
+    if (!SMDFile_0) return;
 
     do {
         while (true) {
@@ -33,7 +33,7 @@ void __cdecl Gate_LoadTextData(const char *path)
     } while (true);
 
 EOF_done:
-    crt_fclose(DAT_07d7806c);
+    crt_fclose(SMDFile_0);
 }
 
 // IDA: FUN_0047A170

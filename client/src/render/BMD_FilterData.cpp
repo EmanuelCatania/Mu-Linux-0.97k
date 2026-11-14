@@ -105,8 +105,8 @@ void __cdecl OpenFilterFile(const char* path)
 // DAT_07d27610 (stride 0x14), incrementing DAT_07d78074 per token.
 void __cdecl FilterName_LoadData(const char* path)
 {
-    DAT_07d7806c = (FILE*)Platform::GetFileSystem().Open(path, DAT_005580ac);
-    if (!DAT_07d7806c) return;
+    SMDFile_0 = (FILE*)Platform::GetFileSystem().Open(path, DAT_005580ac);
+    if (!SMDFile_0) return;
     int iVar2;
     while ((iVar2 = ParseNextToken()) != 2) {
         char* dst = DAT_07d27610 + DAT_07d78074 * 0x14;
@@ -114,7 +114,7 @@ void __cdecl FilterName_LoadData(const char* path)
         memcpy(dst, ParserTokenString, len);
         DAT_07d78074++;
     }
-    fclose(DAT_07d7806c);
+    fclose(SMDFile_0);
 }
 
 // FilterName_SaveBMD @ 0x00479D70 — FilterName_SaveBMD
