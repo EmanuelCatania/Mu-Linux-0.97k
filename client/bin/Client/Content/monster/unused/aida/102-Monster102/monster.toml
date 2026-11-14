@@ -1,0 +1,4 @@
+# Modelo de monstruo que ningún monstruo del 0.97k usa. En MU 5.2 lo crea GMAida.cpp (Aida) (MODEL_MONSTER01+101).
+# Queda disponible para contenido custom.
+source = "Monster"
+model = "monster102.bmd"

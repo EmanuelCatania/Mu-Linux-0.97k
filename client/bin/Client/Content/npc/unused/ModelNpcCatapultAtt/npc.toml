@@ -1,0 +1,4 @@
+# Modelo de NPC que el 0.97k no carga (OpenNpc 0x5091D0 no lo pide): viene de
+# versiones posteriores. Queda disponible para contenido custom.
+source = "NPC"
+model = "model_npc_catapult_att.bmd"

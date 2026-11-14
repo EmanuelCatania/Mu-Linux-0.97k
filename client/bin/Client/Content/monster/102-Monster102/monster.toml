@@ -1,4 +1,0 @@
-# Monstruo (registro de la Fase 5): los archivos de esta carpeta responden por
-# los de Data/Monster con el mismo nombre.
-source = "Monster"
-model = "monster102.bmd"

@@ -450,12 +450,26 @@ trazer só `-hd`, mas o `-hd` de `Data` não substitui o que um pacote trocou. A
 camadas são lidas ao iniciar e ficam no `User/debug.log`.
 
 Itens, monstros, NPCs e sets já estão por entidade: cada um é uma pasta
-(`Content/item/00-swords/000/`, `Content/monster/01-BullFighter/`, `Content/npc/Smith/`,
+(`Content/item/00-swords/000/`, `Content/monster/01-BullFighter/`, `Content/npc/251-HanzoTheBlacksmith/`,
 `Content/set/01-Dragon/`) com o modelo, as texturas e um `.toml` do tipo
 (`item.toml`, `monster.toml`, `npc.toml`, `set.toml`) que diz qual pasta de Data substitui (`source`). O esqueleto, os
 corpos por classe, asas e helpers ficam em `Content/player/base/`. Ao
 iniciar, cada arquivo dessas pastas passa a responder por
 `Data/<source>/<arquivo>`, então não é preciso escrever alias à mão.
+
+O resto de `Content/`:
+
+- `text/<idioma>/` (`spn`, `eng`, `por`, `kor`): `Text.bmd`, `Dialog.bmd` e
+  `NPCName.txt` de cada idioma, sem sufixo no nome. `text/filter/` tem os
+  filtros de palavras do chat e de nomes.
+- As tabelas ficam com o seu tema: `item/item.bmd`, `skill/skill.bmd`,
+  `map/Gate.bmd` e `quest/quest.bmd`. As três primeiras também são o fallback
+  do que o server manda no catálogo.
+- `audio/sound/<tipo>/`: os sons separados em `ambient`, `effect`,
+  `interface`, `monster`, `npc`, `player` e `skill`.
+- `monster/unused/` e `npc/unused/`: modelos que o 0.97k não carrega, de
+  versões posteriores (os monstros, pelo mapa do 5.2 que os cria: Kalima,
+  Aida, Castle Siege, Crywolf...). Ficam para conteúdo custom.
 
 ---
 
