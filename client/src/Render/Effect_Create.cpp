@@ -216,7 +216,7 @@ LAB_00460dd8:
       case 0xf7: case 0xfa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 35;
         AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
-        return (float *)(int)(short)(uintptr_t)param_7;
+        return (float *)(intptr_t)(short)(uintptr_t)param_7;
       case 0xf8: case 0xfb:
         *(int*)&pfVar17[EffectLifetimeIndex] = param_1 == 0xf8 ? 35 : 40;
         AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
@@ -267,7 +267,7 @@ LAB_00460dd8:
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,3,(intptr_t)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
-        pfVar12 = (float *)PlayBuffer(0x5c,0,0);
+        pfVar12 = (float *)(intptr_t)PlayBuffer(0x5c,0,0);
         AsObject(pfVar17)->Scale = 1.0;
         return pfVar12;
       case 0x100:
@@ -366,7 +366,7 @@ LAB_004649e0:
         AsObject(pfVar17)->Direction[1] = (float)(intptr_t)param_8;
         AsObject(pfVar17)->Direction[2] = 26.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 12;
-        pfVar12 = (float *)PlayBuffer(0x44, AsObject(pfVar17),0);
+        pfVar12 = (float *)(intptr_t)PlayBuffer(0x44, AsObject(pfVar17),0);
         return pfVar12;
       case 0x4e0:
         AsObject(pfVar17)->Angle[0] = 0.0;
@@ -434,7 +434,7 @@ LAB_004649e0:
         AsObject(pfVar17)->StartPosition[0] = fVar27;
         AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
         AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
-        pfVar12 = (float *)PlayBuffer(0x2e,0,0);
+        pfVar12 = (float *)(intptr_t)PlayBuffer(0x2e,0,0);
         return pfVar12;
       case 0x4fa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 1000;

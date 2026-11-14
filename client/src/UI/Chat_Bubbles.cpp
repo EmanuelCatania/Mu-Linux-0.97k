@@ -67,9 +67,9 @@ void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
 
     int Length = (int)strlen(param_2);
 
-    char* displayEnd;
+    intptr_t displayEnd;
     if (param_3 == 0) {
-        displayEnd = (char*)((unsigned int)Length + (unsigned int)Length + 0xa0);
+        displayEnd = (intptr_t)((unsigned int)Length + (unsigned int)Length + 0xa0);
     } else if (param_3 == 1) {
         // System message: dispatch slot 28 (vtable +0x70) = ChatLB_AddText
         // (__fastcall this + 4 args).  Previous cdecl form left ECX = junk
@@ -83,22 +83,22 @@ void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
             ((FnAddText)vt[28])(obj, 0, (const char*)param_1,
                                 (const char*)param_2, 3, 0);
         }
-        displayEnd = (char*)0x3e8;
+        displayEnd = 0x3e8;
     } else {
-        displayEnd = param_2;
+        displayEnd = (intptr_t)param_2;
     }
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
         CutText(param_2, param_1->Text[0], param_1->Text[1], Length);
-        param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
-        param_1->LifeTime[1] = (int)(uintptr_t)displayEnd;
+        param_1->LifeTime[0] = (int)displayEnd;
+        param_1->LifeTime[1] = (int)displayEnd;
         return;
     }
 
     // Short text: direct memcpy to offset 0x2c
     memcpy(param_1->Text[0], param_2, Length + 1);
-    param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
+    param_1->LifeTime[0] = (int)displayEnd;
 }
 
 // CreateChat @ 0x00481BA0 (~396 lines) — creates chat bubble above entity

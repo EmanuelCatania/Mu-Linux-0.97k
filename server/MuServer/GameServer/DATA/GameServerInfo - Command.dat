@@ -43,10 +43,10 @@ CommandResetMoney_AL2=0
 CommandResetMoney_AL3=0
 
 ; Amount of points gain after utilizing "/reset"
-CommandResetPoint_AL0=0
-CommandResetPoint_AL1=0
-CommandResetPoint_AL2=0
-CommandResetPoint_AL3=0
+CommandResetPoint_AL0=1000
+CommandResetPoint_AL1=1000
+CommandResetPoint_AL2=1000
+CommandResetPoint_AL3=1000
 
 ; Percentage of points gain after utilizing "/reset"
 CommandResetPointRateDW=100
@@ -130,10 +130,10 @@ CommandGrandResetStartLevel_AL2=1
 CommandGrandResetStartLevel_AL3=1
 
 ; Required Reset to use "/grandreset" 
-CommandGrandResetReset_AL0=400
-CommandGrandResetReset_AL1=400
-CommandGrandResetReset_AL2=400
-CommandGrandResetReset_AL3=400
+CommandGrandResetReset_AL0=50
+CommandGrandResetReset_AL1=50
+CommandGrandResetReset_AL2=50
+CommandGrandResetReset_AL3=50
 
 ; Character Reset after utilizing "/grandreset"
 CommandGrandResetStartReset_AL0=1
@@ -148,10 +148,10 @@ CommandGrandResetMoney_AL2=0
 CommandGrandResetMoney_AL3=0
 
 ; Amount of points gain after utilizing "/grandreset"
-CommandGrandResetPoint_AL0=0
-CommandGrandResetPoint_AL1=0
-CommandGrandResetPoint_AL2=0
-CommandGrandResetPoint_AL3=0
+CommandGrandResetPoint_AL0=5000
+CommandGrandResetPoint_AL1=5000
+CommandGrandResetPoint_AL2=5000
+CommandGrandResetPoint_AL3=5000
 
 ; Percentage of points gain after utilizing "/grandreset"
 CommandGrandResetPointRateDW=100

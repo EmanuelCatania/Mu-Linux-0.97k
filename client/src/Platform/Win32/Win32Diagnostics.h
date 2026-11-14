@@ -26,7 +26,11 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
 {
     // Anti-recursion guard: Si DbgLog crashea (e.g., WriteFile AV),
     // el filter se reentra → recursion infinita → otra AV en KernelBase.
+#if defined(_MSC_VER)
     static __declspec(thread) int s_handlerDepth = 0;
+#else
+    static thread_local int s_handlerDepth = 0;
+#endif
     if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
     s_handlerDepth++;
 

@@ -154,6 +154,7 @@ public:
 	int m_ShopItemBlockExc;
 	int m_ShopItemBlockSellOnMaxMoney;
 	int m_MaxCharacterLevel;
+	double m_ExperienceExponent;
 	int m_MaxLevelUp;
 	int m_MaxLevelUpEvent;
 	int m_MaxStatPoint[MAX_ACCOUNT_LEVEL];

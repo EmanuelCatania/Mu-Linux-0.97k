@@ -157,7 +157,7 @@ int Shop_RegisterItem(DWORD entity_id, DWORD* name, BYTE* item_data)
 
 write_slot:
     {
-        DWORD* slot_base = (DWORD*)(0x07e919b8 + slot * SHOP_SLOT_STRIDE);
+        DWORD* slot_base = (DWORD*)(uintptr_t)(0x07e919b8 + slot * SHOP_SLOT_STRIDE);
         slot_base[0] = entity_id;          // +0x00 entity_id
         *(DWORD*)(entry + 0)  = name[0];   // +0x04 name[0..3]
         *(DWORD*)(entry + 4)  = name[1];   // +0x08 name[4..7]

@@ -189,7 +189,7 @@ void CServerInfo::ReadCommonInfo()
 	gMessage.Load(gPath.GetFullPath("Message_Spn.txt"), LANGUAGE_SPANISH);
 	gMessage.Load(gPath.GetFullPath("Message_Por.txt"), LANGUAGE_PORTUGUESE);
 
-	gObjSetExperienceTable();
+	gObjSetExperienceTable(gServerInfo.m_ExperienceExponent);
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Common loaded successfully");
 }
@@ -1684,6 +1684,10 @@ void CServerInfo::ReadCommonInfo(const char* section, const char* path)
 	this->m_MaxCharacterLevel = GetPrivateProfileInt(section, "MaxCharacterLevel", 400, path);
 
 	this->m_MaxCharacterLevel = ((this->m_MaxCharacterLevel < 1) ? 1 : ((this->m_MaxCharacterLevel > MAX_CHARACTER_LEVEL) ? MAX_CHARACTER_LEVEL : this->m_MaxCharacterLevel));
+
+	this->m_ExperienceExponent = GetPrivateProfileDouble(section, "ExperienceExponent", 3.0, path);
+
+	this->m_ExperienceExponent = ((this->m_ExperienceExponent < 1.0) ? 1.0 : ((this->m_ExperienceExponent > 3.0) ? 3.0 : this->m_ExperienceExponent));
 
 	this->m_MaxLevelUp = GetPrivateProfileInt(section, "MaxLevelUp", 0, path);
 

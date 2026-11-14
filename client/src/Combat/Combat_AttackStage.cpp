@@ -265,7 +265,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
 
         CreateEffect(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
                      (float*)(o + 0xE8), (float*)(intptr_t)hotKey, (float*)o,
-                     (float*)(intptr_t)(int)pkKey, NULL, NULL);
+                     (float*)(intptr_t)(int)pkKey, nullptr, (byte)0);
 
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt)
 

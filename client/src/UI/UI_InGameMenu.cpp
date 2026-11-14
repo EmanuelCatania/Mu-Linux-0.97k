@@ -262,7 +262,7 @@ void __cdecl UI_InGameMenu(void)
                         }
                         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-                            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+                            SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
                         }
                         DAT_083a7c1c = 1;
                         DAT_083a7c20 = 50;   // 50 ticks = 5 s at 10 FPS refresh

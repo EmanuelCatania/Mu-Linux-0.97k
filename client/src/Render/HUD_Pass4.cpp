@@ -358,22 +358,6 @@ void Render_QuickButtons_(void)
         }
     }
 
-    if (HUD_IsCharacterInfoRuntime()) {
-        float iconX = (float)DAT_07ea982c + 25.0f;
-        float iconY = (float)DAT_07ea9830 + 395.0f;
-        Gfx::Color3f(1.0f, 1.0f, 1.0f);
-        GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        GL_DrawTexture(280, iconX, iconY, 24.0f, 24.0f,
-                     0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
-            (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-            m_dwTextColor = 0xFFFFFFFFu;
-            m_dwBackColor = 0xFF000000u;
-            RenderTipText((int)iconX, (int)iconY - 13, GlobalText[225]);
-        }
-    }
-
     // En el original (sub_4F5820) hay 3 `if` sites antes/alrededor de RenderParty
     // que llaman a RenderCharacterInfoWindow/RenderGuildList/RenderGuildCreation
     // cuando los flags correspondientes están seteados.
@@ -388,6 +372,30 @@ void Render_QuickButtons_(void)
     RenderParty(gWindow.PanelOrigin(Ui::Party), 0);
 
     if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(gWindow.PanelOrigin(Ui::Character), 0);
+
+    // Boton de cierre del panel de personaje.  En IDA este bloque va ANTES de
+    // RenderCharacterInfoWindow y la textura del panel (alcanza y=433) lo
+    // tapaba, dejando un hitbox invisible; se dibuja DESPUES del panel para
+    // que sea visible (el origen DAT_07ea982c/30 lo escribe el propio
+    // RenderCharacterInfoWindow este mismo frame).  El click lo atiende
+    // CharacterInfo_HitTest en [panelX+25,+49) x [panelY+395,+419).
+    // GlobalText[222] = "Cerrar Info de Personaje (C)" (GlobalText[225] es
+    // "Cerrar (I,V)", del panel de inventario).
+    if (HUD_IsCharacterInfoRuntime()) {
+        float iconX = (float)DAT_07ea982c + 25.0f;
+        float iconY = (float)DAT_07ea9830 + 395.0f;
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
+        GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(280, iconX, iconY, 24.0f, 24.0f,
+                     0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
+            (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            m_dwTextColor = 0xFFFFFFFFu;
+            m_dwBackColor = 0xFF000000u;
+            RenderTipText((int)iconX, (int)iconY - 13, GlobalText[222]);
+        }
+    }
     // DESVIACION: panel H de horarios en la misma columna (se alterna con los anteriores).
     gEventTimer.RenderPanel();
     RenderInventoryWindow();

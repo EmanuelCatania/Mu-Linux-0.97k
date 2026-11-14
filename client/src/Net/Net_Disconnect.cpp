@@ -14,7 +14,7 @@ int __cdecl Net_Disconnect(void* ctx) {
     (void)ctx;
     if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-        SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+        SocketClientSocket = static_cast<SOCKET>(Platform::InvalidSocket);
     }
     return 0;
 }

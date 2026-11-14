@@ -183,11 +183,11 @@ int Game_SceneUpdate(void)
         // Load login-scene resources (sounds, textures)
         Scene_LoadAccountResources(); // OpenLogoSceneData (IDA)
 
-        // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
+        // Clear 8 entity slots at base entity array + 0x168 (stride sizeof(CHARACTER))
         {
-            char* p = (char*)&AsCharacter(DAT_07abf5d0)->Object.Alpha;
-            for (int i = 7; i >= 0; i--, p += CHARACTER_STRIDE)
-                *(int*)p = 0;
+            CHARACTER* chars = AsCharacter(DAT_07abf5d0);
+            for (int i = 7; i >= 0; i--)
+                chars[i].Object.Alpha = 0.0f;
         }
 
         // Spawn background world objects.

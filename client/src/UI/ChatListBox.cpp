@@ -205,7 +205,7 @@ static void ChatWidget_Free(void* widget)
 
 extern "C" void** ChatWidget_GetVTable(void* widget) { return ChatWidget_Pointers(widget).vtable; }
 
-extern "C" BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; // mirror del staging byte_55C95F8
+extern "C" { BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; } // mirror del staging byte_55C95F8
 
 // Alias para que los nombres estilo IDA sub_XXXX sigan siendo legibles en el cuerpo.
 #define dword_55C9B78  g_ChatListBox_NextID
@@ -1763,8 +1763,10 @@ static int __stdcall ChatLB_isRowVisible(const BYTE* rowData)
 // resetea a 0 al principio de su propio tick (MouseOnWindow_Update), que corre
 // DESPUÉS del tick del ChatListBox.  Así que MouseOnWindow_Update consulta el
 // latch, que se reescribe entero en cada tick del widget (no se queda pegado).
-extern "C" int MouseOnWindow = 0;
-extern "C" int g_ChatLB_MouseOnWindow = 0;
+extern "C" {
+int MouseOnWindow = 0;
+int g_ChatLB_MouseOnWindow = 0;
+}
 
 // ===========================================================================
 // ===  WIDGET DE LISTA DE GUILD (dword_55C9FF4, vtable off_5526EC)         ===
@@ -1820,8 +1822,10 @@ extern "C" BYTE  InputTextHide[10];
 // armar el paquete de expulsar.  `sub_40EF10` lee `byte_7E91790` a secas, que es
 // el nombre del registro 0.  En el binario son 0x22C bytes entre 0x07E91790 y
 // 0x07E919BC = 42 registros.
-extern "C" char  byte_7E91790[kGuildMemberRecordCount * kGuildMemberRecordSize] = {0};
-extern "C" int   dword_5615E4     = 0;     // 0x005615E4 — indice del miembro elegido
+extern "C" {
+char  byte_7E91790[kGuildMemberRecordCount * kGuildMemberRecordSize] = {0};
+int   dword_5615E4     = 0;     // 0x005615E4 — indice del miembro elegido
+}
 
 // ── slot 19 — sub_410D50 — cantidad de filas del listado activo ─────────────
 static int __fastcall GuildLB_countVisible(DWORD* self)

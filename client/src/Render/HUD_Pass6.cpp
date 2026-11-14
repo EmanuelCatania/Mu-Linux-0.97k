@@ -1126,9 +1126,10 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
-    // The original IDA function ends here; close button is NOT drawn by
-    // this function (the C panel close is handled via the bottom-HUD
-    // "C" button toggle in Player_InputTick, NOT via an X overlay).
+    // The original IDA function ends here.  The visible close control is drawn
+    // by Render_QuickButtons_ (sub_4F5820) AFTER this panel, so the button is
+    // not covered by the panel texture; the click hitbox is served by
+    // CharacterInfo_HitTest at [panelX+25,+49) x [panelY+395,+419).
 }
 
 // =============================================================================
@@ -1377,7 +1378,7 @@ extern "C" void __cdecl RenderTrade(void)
     }
 
     const DWORD gold[2] = { DAT_07eaa0f0, DAT_07eaa0f4 };
-    const int goldY[2] = { TradeInventoryStartY + 160, TradeInventoryStartY + 360 };
+    const int goldY[2] = { (int)TradeInventoryStartY + 160, (int)TradeInventoryStartY + 360 };
     for (int i = 0; i < 2; ++i) {
         const int x = TradeInventoryStartX + 50;
         GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);

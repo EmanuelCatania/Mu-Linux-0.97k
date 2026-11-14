@@ -40,7 +40,7 @@ extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 
-extern "C" int g_GoldenArcherCustom = 0;
+extern "C" { int g_GoldenArcherCustom = 0; }
 
 // ── Globales (nombres de IDA) ───────────────────────────────────────────────
 #define GA_OpenType          (*(int*)&GoldenArcherOpenType)        // g_bEventChipDialogEnable

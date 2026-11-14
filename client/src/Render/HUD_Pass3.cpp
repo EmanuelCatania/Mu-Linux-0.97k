@@ -128,7 +128,7 @@ extern "C" {
 // Render-text engine stub — must be at namespace scope (extern "C" with
 // initialiser inside another extern "C" was tripping MSVC).
 static int g_RenderTextStubObj[16] = {0};
-extern "C" int*  g_pRenderText = g_RenderTextStubObj;
+extern "C" { int*  g_pRenderText = g_RenderTextStubObj; }
 
 // Externs for globals defined in HUD_Pass2.cpp.
 // (UI flags are now #defined in globals.h to DAT_07eaa11x bytes.)

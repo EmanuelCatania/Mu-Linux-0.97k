@@ -588,22 +588,38 @@ int __fastcall CWsctlc_nRecv(void *context)
         DbgLogPublic(dbg);
         return 1;
     }
+    // Port del fix del cliente 0.97.32: conservar los bytes crudos del header
+    // (antes del descifrado) para el log de diagnóstico, y el tamaño del buffer
+    // antes de recibir.
+    const int bufferedBefore = *(int *)(param_1 + 0x4010);
+    BYTE rawHead[4] = { 0, 0, 0, 0 };
     // MuEmu: decrypt the fresh chunk in place (no-op for vanilla servers).
     // Esto tiene que pasar ANTES de que el parser de headers C1/C2/C3/C4 vea nada,
     // porque cada byte del cable — headers incluidos — viene encriptado.
     {
         BYTE *pNew = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
+        const int rawCount = iVar2 < (int)sizeof(rawHead) ? iVar2 : (int)sizeof(rawHead);
+        memcpy(rawHead, pNew, (size_t)rawCount);
         MuEmu::DecryptRecv(pNew, iVar2);
     }
     {
-        char dbg[256];
         BYTE *p = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
         int nShow = iVar2 > 24 ? 24 : iVar2;
-        char hexbuf[128]; hexbuf[0] = 0;
-        for (int hi = 0; hi < nShow; ++hi) {
-            char tmp[8]; Platform::TextFormat(tmp, "%02X ", p[hi]);
-            Platform::TextConcat(hexbuf, sizeof(hexbuf), tmp);
+        char hex[73] = "";
+        char text[25] = "";
+        int hex_len = 0;
+
+        for (int i = 0; i < nShow; ++i) {
+            hex_len += Platform::TextFormat(hex + hex_len, "%02X ", p[i]);
+            text[i] = (p[i] >= 32 && p[i] <= 126) ? p[i] : '.';
         }
+
+        text[nShow] = '\0';
+
+        char dbg[256];
+        Platform::TextFormat(dbg, "NET: recv socket=%d bytes=%d data=%s | %s",
+            (int)*(SOCKET *)((param_1 + 8)), iVar2, hex, text);
+        DbgLogPublic(dbg);
     }
 
     iVar2 = *(int *)(param_1 + 0x4010) + iVar2;
@@ -624,8 +640,14 @@ int __fastcall CWsctlc_nRecv(void *context)
             // Después de MuEmu::DecryptRecv los bytes nuevos ya son texto plano,
             // así que cualquier cosa que no arranque con C1/C2/C3/C4 es un error real
             // de protocolo — se descarta el buffer y se sale.
-            char dbg[96];
-            Platform::TextFormat(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
+            // (Port del fix del 0.97.32: el log incluye el conteo del buffer,
+            // los bytes crudos del header y el estado de las claves MuEmu.)
+            char dbg[192];
+            Platform::TextFormat(dbg,
+                "NET: Net_Recv UNKNOWN hdr=%02X off=%d buffered=%d raw=%02X %02X %02X %02X keys=%02X/%02X active=%d → discard",
+                hdr, iOff, bufferedBefore, rawHead[0], rawHead[1], rawHead[2], rawHead[3],
+                MuEmu::g_EncKey1, MuEmu::g_EncKeyAdd,
+                MuEmu::IsActive() ? 1 : 0);
             DbgLogPublic(dbg);
             *(int *)(param_1 + 0x4010) = 0;
             return 0;

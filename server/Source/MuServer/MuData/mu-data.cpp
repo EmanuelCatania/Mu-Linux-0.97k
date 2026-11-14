@@ -69,6 +69,25 @@
 
 namespace fs = std::filesystem;
 
+static fs::path Utf8Path(const std::string& value)
+{
+#if defined(__cpp_char8_t)
+	return fs::path(std::u8string(reinterpret_cast<const char8_t*>(value.data()), value.size()));
+#else
+	return fs::u8path(value);
+#endif
+}
+
+static std::string PathToUtf8(const fs::path& path)
+{
+	auto value = path.u8string();
+#if defined(__cpp_char8_t)
+	return std::string(reinterpret_cast<const char*>(value.data()), value.size());
+#else
+	return value;
+#endif
+}
+
 static int Fail(const std::string& message)
 {
 	std::fprintf(stderr, "mu-data: %s\n", message.c_str());
@@ -80,7 +99,7 @@ static int Fail(const std::string& message)
 // nombre, el texto entre comillas.
 static bool ReadMapNames(const std::string& path, std::map<int, std::string>& names, std::string& error)
 {
-	std::ifstream file(fs::u8path(path), std::ios::binary);
+	std::ifstream file(Utf8Path(path), std::ios::binary);
 
 	if (!file)
 	{
@@ -124,7 +143,7 @@ static bool PrepareOutput(const fs::path& file, bool force, std::string& error)
 
 	if (!force && fs::exists(file, ec))
 	{
-		error = file.u8string() + " ya existe (usar --force para pisarlo)";
+		error = PathToUtf8(file) + " ya existe (usar --force para pisarlo)";
 
 		return false;
 	}
@@ -133,7 +152,7 @@ static bool PrepareOutput(const fs::path& file, bool force, std::string& error)
 
 	if (ec)
 	{
-		error = "no se pudo crear " + file.parent_path().u8string() + ": " + ec.message();
+		error = "no se pudo crear " + PathToUtf8(file.parent_path()) + ": " + ec.message();
 
 		return false;
 	}
@@ -180,26 +199,26 @@ static int ImportSpawns(const std::string& txt, const std::string& mapManager, c
 	{
 		std::string name = names.count(map) ? names[map] : ("Map" + std::to_string(map));
 
-		fs::path file = fs::u8path(MapSpawns_MapsPath(dataDir)) / fs::u8path(MapSpawns_FolderName(map, name)) / "Spawns.toml";
+		fs::path file = Utf8Path(MapSpawns_MapsPath(dataDir)) / Utf8Path(MapSpawns_FolderName(map, name)) / "Spawns.toml";
 
-		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteToml(file.u8string(), map, name, list, error))
+		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteToml(PathToUtf8(file), map, name, list, error))
 		{
 			return Fail(error);
 		}
 
-		std::printf("%-48s %4zu entradas\n", file.u8string().c_str(), list.size());
+		std::printf("%-48s %4zu entradas\n", PathToUtf8(file).c_str(), list.size());
 	}
 
 	if (invasions > 0)
 	{
-		fs::path file = fs::u8path(MapSpawns_InvasionsPath(dataDir));
+		fs::path file = Utf8Path(MapSpawns_InvasionsPath(dataDir));
 
-		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteInvasions(file.u8string(), entries, names, error))
+		if (!PrepareOutput(file, force, error) || !MapSpawns_WriteInvasions(PathToUtf8(file), entries, names, error))
 		{
 			return Fail(error);
 		}
 
-		std::printf("%-48s %4zu entradas\n", file.u8string().c_str(), invasions);
+		std::printf("%-48s %4zu entradas\n", PathToUtf8(file).c_str(), invasions);
 	}
 
 	std::printf("%zu entradas: %zu en %zu mapas y %zu de invasiones\n", entries.size(), entries.size() - invasions, byMap.size(), invasions);

@@ -51,15 +51,16 @@ int RenderErrorMessage(void)
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
     if (DAT_083a7c24 == 0x6e) {
+      int menuItemCount;
       if (SceneFlag == 5) {
-        pCVar6 = (LPCSTR)0x5;
+        menuItemCount = 5;
       }
       else {
-        pCVar6 = (LPCSTR)((SceneFlag == 4) + 3);
+        menuItemCount = (SceneFlag == 4) + 3;
       }
-      if (pCVar6 != (LPCSTR)0x0) {
+      if (menuItemCount != 0) {
         local_dc = 0x3c;
-        local_d8 = (unsigned int)(uintptr_t)pCVar6;
+        local_d8 = (unsigned int)menuItemCount;
         do {
           fVar1 = (float)(int)local_dc;
           local_e4.cx = (LONG)fVar1;
@@ -887,7 +888,7 @@ LAB_0051d2dd:
       if (4 < (int)uVar5) goto LAB_0051d2dd;
     }
     ptVar17 = &local_d0;
-    pCVar6 = &DAT_07d29d24 + iVar3 * 300;
+    pCVar6 = GlobalText[iVar3];
     iVar3 = Platform::TextLength(pCVar6);
     gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,

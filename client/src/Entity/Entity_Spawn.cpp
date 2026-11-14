@@ -215,22 +215,18 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // ── Partes ────────────────────────────────────────────────────────────────
     // Weapon[0..1]
     {
-        unsigned char *slot = (unsigned char *)&c->Weapon[0].Level;
         for (int i = 0; i < 2; i++) {
-            *(short *)(slot - 2) = (short)0xffff;
-            slot[0] = 0;
-            slot[1] = 0;
-            slot += sizeof(PART_t);
+            c->Weapon[i].Type = (short)0xffff;
+            c->Weapon[i].Level = 0;
+            c->Weapon[i].Option1 = 0;
         }
     }
     // BodyPart[0..5]
     {
-        unsigned char *slot = (unsigned char *)&c->BodyPart[0].Level;
         for (int i = 0; i < 6; i++) {
-            *(short *)(slot - 2) = (short)0xffff;
-            slot[0] = 0;
-            slot[1] = 0;
-            slot += sizeof(PART_t);
+            c->BodyPart[i].Type = (short)0xffff;
+            c->BodyPart[i].Level = 0;
+            c->BodyPart[i].Option1 = 0;
         }
     }
 
