@@ -17,6 +17,10 @@ char* Hero;int EnableGuildWar;DWORD selSlot=7;
 struct Selected{BYTE PK;short GuildMarkIndex;}selected;
 unsigned queries,nameCalls;int names[2];
 Selected* AsCharacter(DWORD key){Require(key==selSlot);++queries;return &selected;}
+#pragma pack(push,1)
+struct HeroView{char pad[474];short GuildMarkIndex;};
+#pragma pack(pop)
+const HeroView* AsCharacter(const char* p){return reinterpret_cast<const HeroView*>(p);}
 CONSTANTS
 char DAT_07e919bc[0x13C30];char s_GuildMarkName[kGuildMarkRecordCount][guildNameSize+1];
 RECORD
@@ -65,7 +69,9 @@ def condition(source):
         first=start.end();end=first;depth=1
         while depth:depth+=(body[end]=='(')-(body[end]==')');end+=1
         expression=body[first:end-1]
-        if 'Guild_GetMarkName' in expression and '474' in expression:found.append(expression)
+        # El guild del héroe: offset 474 o, desde T8, el campo GuildMarkIndex sobre Hero.
+        hero='474' in expression or ('GuildMarkIndex' in expression and 'Hero' in expression)
+        if 'Guild_GetMarkName' in expression and hero:found.append(expression)
     if len(found)!=1:raise ValueError('Condición de guild inesperada')
     return found[0]
 

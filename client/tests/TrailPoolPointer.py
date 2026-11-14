@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from legacy_fields import lower_names
 
 SERVICES=r'''
 std::uintptr_t g_TrailOwner[100];   // dueño completo por estela
@@ -45,7 +46,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);BYTE*
 
 def harness(revision=None):
     source=read_source('src/render/Render_LegacyTrails.cpp',revision)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+SERVICES+function(source,'Particle_Update')+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x40000')+SERVICES+lower_names(function(source,'Particle_Update'))+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

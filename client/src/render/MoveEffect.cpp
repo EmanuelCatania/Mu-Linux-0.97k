@@ -2424,7 +2424,7 @@ switchD_00466b93_caseD_c1:
         pvVar1 = (void *)(DAT_05828d58 + sVar3 * BMD_STRIDE);
         fVar13 = AsObject(param_1)->Velocity;
         *(undefined1 *)((intptr_t)pvVar1 + 0xa0 + BMD_FIELD_SHIFT) = AsObject(param_1)->CurrentAction;
-        BMD__PlayAnimation(pvVar1,&AsObject(param_1)->AnimationFrame,&AsObject(param_1)->PriorAnimationFrame,(undefined1 *)((intptr_t)param_1 + EntityOffset(0x106)),fVar13);
+        BMD__PlayAnimation(pvVar1,&AsObject(param_1)->AnimationFrame,&AsObject(param_1)->PriorAnimationFrame,(undefined1*)&AsObject((intptr_t)param_1)->PriorAction,fVar13);
       }
       sVar3 = AsObject(param_1)->Type;
       if ((sVar3 < 0x4ba) || (0x4bc < sVar3)) {

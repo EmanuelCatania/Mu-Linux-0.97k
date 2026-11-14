@@ -1731,7 +1731,7 @@ static void Combat_SendPartyRecall97k(char* entity, int targetIdx,
 {
     if (!entity || targetIdx < 0) return;
     DWORD selOff = CHARACTER_STRIDE * targetIdx;
-    unsigned short tgtKey = *(unsigned short*)(CharactersClient + selOff + EntityOffset(476));
+    unsigned short tgtKey = AsCharacter(CharactersClient + selOff)->Key;
     unsigned char pkt[7];
     pkt[0] = 0xC1;
     pkt[1] = 7;

@@ -346,12 +346,12 @@ int __cdecl Character_FindByKey_WithClear(int a1)
   {
     if ( *(BYTE *)(i + CharactersClient) )
     {
-      if ( *(short *)(i + CharactersClient + EntityOffset(476)) == a1 )
+      if ( *(short*)&AsCharacter(i + CharactersClient)->Key == a1 )
       {
         result = v1;
       }
     }
-    *(BYTE *)(i + CharactersClient + EntityOffset(744)) = 0;
+    AsCharacter(i + CharactersClient)->EtcPart = 0;
     ++v1;
   }
   return result;

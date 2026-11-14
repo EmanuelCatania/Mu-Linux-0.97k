@@ -349,7 +349,7 @@ void __stdcall MoveParticles(void)
                 }
 
                 if (iVar5 == 0) {
-                    unsigned char animState = *(unsigned char*)(P_ENT(iVar9) + EntityOffset(0x105));
+                    unsigned char animState = AsObject(P_ENT(iVar9))->CurrentAction;
                     if ((animState > 0xc && animState < 0x22) || (animState > 0x37 && animState < 0x3d)) {
                         P_SUB(iVar9) = 1;
                         if ((int)lifeF > 0x14) {
@@ -399,7 +399,7 @@ void __stdcall MoveParticles(void)
                     P_ROT(iVar9) += (float)(int)uVar7 + _DAT_0055256c;
                 } else {
                     // Non-sub6: check entity death flag
-                    if (*(char*)(P_ENT(iVar9) + EntityOffset(0x160)) == '\x01') {
+                    if (*(char*)&AsObject(P_ENT(iVar9))->Visible == '\x01') {
                         P_LIFE(iVar9) = 0x32;
                     }
                     if (P_LIFE(iVar9) < 1) {

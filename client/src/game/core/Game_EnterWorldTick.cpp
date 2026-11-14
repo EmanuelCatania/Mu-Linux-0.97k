@@ -368,7 +368,7 @@ void Game_EnterWorldTick(void)
             IsClickPushed())
         {
             DAT_083a4124 = '\0';
-            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+            ushort lvl = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
             BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
 
             if (lvl < 40) {
@@ -648,7 +648,7 @@ void Game_EnterWorldTick(void)
                     const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
-                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
                     ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
                     ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
@@ -671,7 +671,7 @@ void Game_EnterWorldTick(void)
                     char* charData = (char*)DAT_07cf1ff4;
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated(charData, 11, charName);
-                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    *(ushort*)(charData + 0xe) = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
                     charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
                     charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
