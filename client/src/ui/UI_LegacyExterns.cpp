@@ -271,7 +271,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
-    if (Hero && ((*(BYTE*)((char*)Hero + EntityOffset(0x1BC)) & 7) == 1) && skillType == 47) {
+    if (Hero && ((AsCharacter((char*)Hero)->Class & 7) == 1) && skillType == 47) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;

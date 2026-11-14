@@ -398,7 +398,7 @@ static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
             {
                 SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(g_LocalEntity))->GuildMarkIndex;
                 *ent = 0;
-                if (local_slot != -1 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == local_slot)
+                if (local_slot != -1 && *(SHORT*)&AsCharacter(ent - EntityOffset(0x2e9))->GuildMarkIndex == local_slot)
                     *ent = 1;
             }
         }
@@ -484,9 +484,9 @@ static void LegacyMisclassified_TradeOpen(BYTE* pkt)
         {
             SHORT local_slot = *(SHORT*)&((CHARACTER*)(uintptr_t)(g_LocalEntity))->GuildMarkIndex;
             *ent = 0;
-            if (local_slot != -1 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == local_slot)
+            if (local_slot != -1 && *(SHORT*)&AsCharacter(ent - EntityOffset(0x2e9))->GuildMarkIndex == local_slot)
                 *ent = 1;
-            if (g_cached_shop_slot >= 0 && *(SHORT*)(ent - EntityOffset(0x2e9) + EntityOffset(0x1da)) == g_cached_shop_slot)
+            if (g_cached_shop_slot >= 0 && *(SHORT*)&AsCharacter(ent - EntityOffset(0x2e9))->GuildMarkIndex == g_cached_shop_slot)
                 *ent = 2;
         }
     }

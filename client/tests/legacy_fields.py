@@ -65,7 +65,7 @@ def lower(source):
 # AsObject(x)->Campo / AsCharacter(x)->Campo -> offset x86 crudo, para los harnesses
 # que trabajan con memoria en el layout x86 y OBJECT/CHARACTER sin definir. No se
 # aplica en read_source: los tests que compilan los structs reales no lo necesitan.
-_named = re.compile(r'(&?)\b(AsObject|AsCharacter)\((\w+)\)->(\w+(?:\[\d+\])?(?:\.\w+(?:\[\d+\])?)?)(?![\w.\[])')
+_named = re.compile(r'(&?)\b(AsObject|AsCharacter)\((\w+(?:\[\w+\])?)\)->(\w+(?:\[\d+\])?(?:\.\w+(?:\[\d+\])?)?)(?![\w.\[])')
 _size = {'BYTE': 1, 'char': 1, 'short': 2, 'WORD': 2, 'int': 4, 'float': 4, 'DWORD': 4}
 
 

@@ -322,11 +322,11 @@ char Render_CharInfoPanel_(void)
     float v24_y0 = 4.0f;
     float x = 0.0f;
 
-    if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + EntityOffset(474)) != 0xFFFF) {
+    if (EnableGuildWar && Hero && *(WORD*)&AsCharacter((BYTE*)(uintptr_t)Hero)->GuildMarkIndex != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        int v20 = *(short*)((BYTE*)(uintptr_t)Hero + EntityOffset(474));
+        int v20 = AsCharacter((BYTE*)(uintptr_t)Hero)->GuildMarkIndex;
         if (v20 < 0 || (size_t)v20 >= sizeof(DAT_07e919bc) / 80) return ret;
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);

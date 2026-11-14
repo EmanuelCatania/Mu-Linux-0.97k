@@ -402,7 +402,7 @@ int Scene_CharSelect(void)
                     gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
                     {
                         BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + EntityOffset(0x1bc)];
-                        WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + EntityOffset(0x1be));
+                        WORD lvl   = AsCharacter((BYTE*)DAT_07abf5d0 + iVar9)->Level;
                         int  cidx  = (klass & 7) + 4 * (klass >> 3);
                         // 0.97k tiene DW/DK/ELF/MG y evolved SM/BK/ME (no DL).
                         static const char* kClassNames[16] = {

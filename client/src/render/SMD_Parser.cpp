@@ -838,7 +838,7 @@ unsigned int __cdecl CheckAttack(void) {
     if (targetPkLevel >= 6) {
         const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
-            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + EntityOffset(474));
+            const short heroGuild = AsCharacter((BYTE*)(uintptr_t)DAT_07abf5d8)->GuildMarkIndex;
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
                        DAT_07e919bc + 80 * targetGuild) == 0) {
                 return 0;

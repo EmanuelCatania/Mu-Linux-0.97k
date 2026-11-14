@@ -71,10 +71,10 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     // path-list sender at 0x491C40.
     if (skillId != 15) {
         BYTE movement[6] = { 0xC1, 6, 0x10,
-            *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(904)), *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(908)),
+            *(BYTE*)&AsCharacter((BYTE*)(uintptr_t)Hero)->PositionX, *(BYTE*)&AsCharacter((BYTE*)(uintptr_t)Hero)->PositionY,
             (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
         gNetwork.SendC1(movement, sizeof(movement));
-        *(BYTE*)((BYTE*)(uintptr_t)c + EntityOffset(748)) = 0;
+        AsCharacter((BYTE*)(uintptr_t)c)->Movement = 0;
     }
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
@@ -156,7 +156,7 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
         // The entity index IS the key in some sense, but Ghidra shows .Key as a field.
         // Looking at Combat.cpp and other code: entity key is used as network ID.
         // From DAT_07abf5d0 + idx * 0x394 — the Key field in Ghidra is likely at offset 0x00.
-        WORD targetKey = *(WORD*)(entityBase + targetIdx * CHARACTER_STRIDE + EntityOffset(476)); // IDA: *v38
+        WORD targetKey = AsCharacter(entityBase + targetIdx * CHARACTER_STRIDE)->Key; // IDA: *v38
 
         // Real server recv:
         //   PMSG_SKILL_ATTACK_RECV { PBMSG_HEAD // C3:19, BYTE skill, BYTE index[2] }
@@ -196,7 +196,7 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
         // DESVIACION (fix del DLL, Patchs.cpp 0x00489769): enviar dirección y key del objetivo seleccionado válido.
         WORD targetKey = 0xFFFF;
         if (CheckAttack())
-            targetKey = *(WORD*)(entityBase + SelectedCharacter * CHARACTER_STRIDE + EntityOffset(476));
+            targetKey = AsCharacter(entityBase + SelectedCharacter * CHARACTER_STRIDE)->Key;
         const BYTE dir = (BYTE)(int)(AsCharacter(heroEntity)->Object.Angle[2] / 360.0f * 256.0f);
         SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
         break;
@@ -456,7 +456,7 @@ bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
         // IDA: SkillElf (0x0048BD70).
         // DESVIACION (fix del DLL, Patchs.cpp 0x0048C6F9): usar SelectedCharacter si CheckAttack permite atacarlo; conservar la ruta sin blanco.
         const int targetIndex = CheckAttack() ? (int)SelectedCharacter : (int)MovementSkillTarget;
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * CHARACTER_STRIDE + EntityOffset(476));
+        WORD targetKey = AsCharacter((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * CHARACTER_STRIDE)->Key;
         if (targetKey == 0xFFFF) {
             continue;
         }

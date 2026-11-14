@@ -221,13 +221,13 @@ void NetRecv_53(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         UIChatLogWindow_AddText(nullptr, GlobalText[textIndex[result]], 2);
     if (result == 1 || result == 4) {
         if (result == 4 && Hero) {
-            const short row = *(short*)((BYTE*)Hero + EntityOffset(474));
+            const short row = AsCharacter((BYTE*)Hero)->GuildMarkIndex;
             if (row >= 0 && row < kGuildMarkRecordCount) {
                 s_GuildRecordKey[row] = -1;
                 GuildMark_Record(row)[0] = 0;
                 s_GuildMarkName[row][0] = 0;
             }
-            *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
+            AsCharacter((BYTE*)Hero)->GuildMarkIndex = -1;
         }
         g_nGuildMemberCount = -1;
         GuildOpened = 0;
@@ -443,7 +443,7 @@ void NetRecv_5D(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const int entitySlot = FindCharacterIndex(entityKey);
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400)
-        *(short*)(base + entitySlot * CHARACTER_STRIDE + EntityOffset(474)) = -1;
+        AsCharacter(base + entitySlot * CHARACTER_STRIDE)->GuildMarkIndex = -1;
     GuildOpened = 0;
     g_nGuildMemberCount = -1;
     NetLog("NET: GuildMark clear entity=%u", (unsigned)entityKey);
@@ -528,7 +528,7 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // Mismo guild que el heroe.  IDA no excluye al heroe: el
             // propio personaje tambien queda marcado con 1.
             if (DAT_07abf5d8) {
-                const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + EntityOffset(474));
+                const short heroGuild = AsCharacter((BYTE*)DAT_07abf5d8)->GuildMarkIndex;
                 if (heroGuild != -1 && AsCharacter(slot)->GuildMarkIndex == heroGuild)
                     AsCharacter(slot)->GuildTeam = 1;
             }

@@ -1359,7 +1359,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 && AsCharacter(selSlot)->PK >= 6u
                 && AsCharacter(selSlot)->GuildMarkIndex != -1
                 && Hero
-                && !strcmp(Guild_GetMarkName(*(const short*)(static_cast<const char*>(Hero) + EntityOffset(474))),
+                && !strcmp(Guild_GetMarkName(*(const short*)&AsCharacter(static_cast<const char*>(Hero))->GuildMarkIndex),
                            Guild_GetMarkName(AsCharacter(selSlot)->GuildMarkIndex)))
             {
                 AsObject(o)->PKKey = -1;
