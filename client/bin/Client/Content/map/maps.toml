@@ -1,0 +1,97 @@
+# Propiedades de cada mapa. El número de la sección es el del mapa (el World
+# del binario, el mismo que usa el server). Un mapa sin sección, o una clave
+# que no está, usa el valor por defecto.
+#
+#   name                  nombre para el chat y el panel de party (por defecto, GlobalText)
+#   music                 tema del mapa en Data/Music (por defecto, el mp3 que lleve el
+#                         nombre del mapa, si hay)
+#   music_safe_zone_only  el tema arranca sólo en zona segura (false)
+#   swimmable             se nada en vez de caminar (false)
+#   mount_flies           el Dinorant vuela alto: +90 sobre el piso en vez de +30 (false)
+#   auto_attack           el ataque automático funciona (true)
+#   weather               hojas, nieve o lluvia según el mapa (false)
+#   ambient               sonidos ambientales (ids de audio/sound/sounds.toml) que el
+#                         mapa deja sonar; los demás se cortan al entrar ([])
+#   indoor_tiles          valores de HeroTile que cuentan como bajo techo: ahí no hay
+#                         clima, se ocultan los techos y se corta el viento ([])
+#   mini_map              "none", "mini" o "full" ("none")
+
+[map.0]   # Lorencia
+music = "Lorencia.mp3"
+music_safe_zone_only = true
+weather = true
+ambient = [0, 1]
+indoor_tiles = ["4"]
+mini_map = "full"
+
+[map.1]   # Dungeon
+music = "Dungeon.mp3"
+ambient = [3]
+mini_map = "full"
+
+[map.2]   # Devias
+music = "Devias.mp3"
+music_safe_zone_only = true
+weather = true
+ambient = [0]
+indoor_tiles = ["3", "10-255"]
+mini_map = "full"
+
+[map.3]   # Noria
+music = "Noria.mp3"
+music_safe_zone_only = true
+weather = true
+ambient = [0, 2]
+mini_map = "full"
+
+[map.4]   # Lost Tower
+ambient = [5]
+mini_map = "full"
+
+[map.5]   # Exile (el binario le pone la música del Dungeon)
+music = "Dungeon.mp3"
+mini_map = "full"
+
+[map.6]   # Arena
+auto_attack = false
+mini_map = "full"
+
+[map.7]   # Atlans
+swimmable = true
+weather = true
+ambient = [6]
+mini_map = "full"
+
+[map.8]   # Tarkan
+mount_flies = true
+ambient = [7]
+mini_map = "full"
+
+[map.9]   # Devil Square
+weather = true
+ambient = [1]
+mini_map = "full"
+
+[map.10]   # Icarus
+mount_flies = true
+weather = true
+ambient = [20]
+mini_map = "full"
+
+[map.11]   # Blood Castle 1
+mini_map = "full"
+
+[map.12]   # Blood Castle 2
+mini_map = "full"
+
+[map.13]   # Blood Castle 3
+mini_map = "full"
+
+[map.14]   # Blood Castle 4
+mini_map = "full"
+
+[map.15]   # Blood Castle 5
+mini_map = "full"
+
+[map.16]   # Blood Castle 6
+mini_map = "full"

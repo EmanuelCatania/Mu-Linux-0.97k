@@ -112,7 +112,7 @@ char __cdecl SelectSkillByHotkey(int a1)
             playerEnt[EntityOffset(913)] = (char)i;
             found = 1;
         }
-        if (m_bAutoAttack != 0 && gMapManager.GetCurrentMap() != MAP_ARENA) {
+        if (m_bAutoAttack != 0 && gMapManager.Current().autoAttack) {
             const char skillType = CA[(unsigned char)playerEnt[EntityOffset(913)] + 87];
             if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;

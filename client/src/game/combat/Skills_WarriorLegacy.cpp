@@ -150,7 +150,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
         } else if (skillType == 47) {
             SetAction(AsObject(o), 66);
         } else if (skillType == 49) {
-            if (gMapManager.GetCurrentMap() == MAP_TARKAN || gMapManager.GetCurrentMap() == MAP_ICARUS) {
+            if (gMapManager.Current().mountFlies) {
                 SetAction(AsObject(o), 65);
             } else {
                 SetAction(AsObject(o), 64);

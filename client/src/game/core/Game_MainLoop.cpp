@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include <algorithm>
 #include "platform/UserPath.h"
 #include "game/entity/EntityName.h"
 #include "render/Gfx.h"
@@ -473,7 +474,7 @@ static void Game_TickAmbientAudio()
     // ── Sonidos ambientales por mapa ───────────────────────────────────────
     switch (gMapManager.GetCurrentMap()) {
     case MAP_LORENCIA:  // Lorencia
-        if (DAT_07e118e8 == 4) {
+        if (gMapManager.Current().IsIndoor(DAT_07e118e8)) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
             PlayBuffer(0, 0, 1);
@@ -485,7 +486,7 @@ static void Game_TickAmbientAudio()
         PlayBuffer(3, 0, 1);
         break;
     case MAP_DEVIAS:  // Devias
-        if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
+        if (gMapManager.Current().IsIndoor(DAT_07e118e8))
             Sound_StopBuffer(0);
         else
             PlayBuffer(0, 0, 1);
@@ -507,15 +508,12 @@ static void Game_TickAmbientAudio()
         break;
     }
 
-    // Corta los ambientales de los otros mapas
-    if (gMapManager.GetCurrentMap() != MAP_LORENCIA && gMapManager.GetCurrentMap() != MAP_DEVIAS && gMapManager.GetCurrentMap() != MAP_NORIA) Sound_StopBuffer(0);
-    if (gMapManager.GetCurrentMap() != MAP_LORENCIA && gMapManager.GetCurrentMap() != MAP_DEVIL_SQUARE1)                       Sound_StopBuffer(1);
-    if (gMapManager.GetCurrentMap() != MAP_DUNGEON)                                             Sound_StopBuffer(3);
-    if (gMapManager.GetCurrentMap() != MAP_NORIA)                                             Sound_StopBuffer(2);
-    if (gMapManager.GetCurrentMap() != MAP_LOST_TOWER)                                             Sound_StopBuffer(5);
-    if (gMapManager.GetCurrentMap() != MAP_ATLANS)                                             Sound_StopBuffer(6);
-    if (gMapManager.GetCurrentMap() != MAP_TARKAN)                                             Sound_StopBuffer(7);
-    if (gMapManager.GetCurrentMap() != MAP_ICARUS)                                            Sound_StopBuffer(0x14);
+    // Corta los ambientales que el mapa actual no usa (`ambient` en
+    // Content/map/maps.toml).
+    for (const int sound : MapInfo_AllAmbient()) {
+        const auto& kept = gMapManager.Current().ambient;
+        if (std::find(kept.begin(), kept.end(), sound) == kept.end()) Sound_StopBuffer(sound);
+    }
 
     // Música de fondo del mapa (IDA 0x00526D0C..0x00527475): ver CMapManager.
     gMapManager.UpdateMusic();

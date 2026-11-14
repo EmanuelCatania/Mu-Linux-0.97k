@@ -625,7 +625,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     {
       goto LABEL_22;
     }
-    if ( HeroTile == 4 )
+    if ( gMapManager.Current().IsIndoor(HeroTile) )
     {
       *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
     }
@@ -639,7 +639,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     v4 = *(WORD *)(o + 2);
     if ( v4 == 81 || v4 == 82 || v4 == 96 || v4 == 98 || v4 == 99 )
     {
-      if ( HeroTile == 3 || HeroTile >= 10 )
+      if ( gMapManager.Current().IsIndoor(HeroTile) )
       {
         *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
       }

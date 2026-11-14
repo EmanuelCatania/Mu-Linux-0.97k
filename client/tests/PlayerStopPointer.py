@@ -12,7 +12,7 @@ import re
 import tempfile
 
 from SoundPointer import harness as sound_harness
-from SceneObjectPointer import build_and_run, function, read_source
+from SceneObjectPointer import MAP_INFO_STUB, build_and_run, function, read_source
 
 OBJECT_RECORD = r'''
 #ifndef _WIN32
@@ -57,10 +57,13 @@ using uint = unsigned int;
 SERVICES = r'''
 int SceneFlag;
 BYTE DAT_0838bc70[0x10000];
+MAP_INFO_STUB
 struct Map {
     int world; bool swimming;
     int GetCurrentMap() const { return world; }
     bool IsSwimmable(int value) const { Require(value == world); return swimming; }
+    MapInfoStub Current() const { return MapInfoFor(world); }
+    MapInfoStub Info(int map) const { return MapInfoFor(map); }
 } gMapManager;
 int randomValues[2], randomDraws, terrainCalls;
 int NextRandom() { Require(randomDraws < 2); return randomValues[randomDraws++]; }
@@ -69,6 +72,7 @@ std::uint32_t seed;
 std::uint32_t Input() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return seed; }
 template<class T, std::size_t N> T Pick(const T (&values)[N]) { return values[Input() % N]; }
 '''
+SERVICES = SERVICES.replace("MAP_INFO_STUB", MAP_INFO_STUB)
 
 MAIN = r'''
 void Call(CHARACTER* character) { CALL_STOP; }
