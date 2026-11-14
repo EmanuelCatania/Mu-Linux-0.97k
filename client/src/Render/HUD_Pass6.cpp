@@ -1126,9 +1126,29 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
-    // The original IDA function ends here; close button is NOT drawn by
-    // this function (the C panel close is handled via the bottom-HUD
-    // "C" button toggle in Player_InputTick, NOT via an X overlay).
+    // The original IDA function ends here; the IDA binary draws no close
+    // button.  Port del fix del cliente 0.97.32: el hit-test de cierre
+    // (CharacterInfo_HitTest) vive en [panelX+25,+49) x [panelY+395,+419);
+    // se dibuja el control que ocupa ese rectangulo para que sea visible,
+    // igual que en el panel de eventos.
+    {
+        const float closeX = (float)iPosX + 25.0f;
+        const float closeY = (float)iPosY + 395.0f;
+        const bool hover = (float)MouseX >= closeX && (float)MouseX < closeX + 24.0f &&
+                           (float)MouseY >= closeY && (float)MouseY < closeY + 24.0f;
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+        GL_DrawTexture(0x118, closeX, closeY, 24.0f, 24.0f,
+                       0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture((hover && MouseLButton) ? 281 : 280,
+                       closeX, closeY, 24.0f, 24.0f,
+                       0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if (hover) {
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            m_dwTextColor = 0xFFFFFFFFu;
+            m_dwBackColor = 0xFF000000u;
+            RenderTipText((int)closeX, (int)closeY - 13, GlobalText[221]);
+        }
+    }
 }
 
 // =============================================================================
