@@ -118,7 +118,7 @@ void ValidatePrimary() {
     allocation = allocation.replace("malloc(0x8000)", "AllocateShadow(0x8000)")
     data = read_source("src/assets/data/Item_Data.cpp", revision)
     scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
-    sample = ROOT / "bin/Client/Content/table/item.bmd"
+    sample = __import__("data_paths").asset(ROOT, "Local/item.bmd")
     if not sample.is_file():
         raise FileNotFoundError(sample)
     return (IO_PREAMBLE.split("BYTE* reservation;")[0] + "\n#ifndef _MSC_VER\n#define __forceinline inline\n#endif\n" + item_max + EXTRA + declarations + accessors + setup + TEXT

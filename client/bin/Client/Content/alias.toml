@@ -49,26 +49,37 @@
 # Sprites de efectos (los modelos de Data/Skill van por entidad en effect/model).
 "Effect" = "effect/sprite"
 
-# Data/Local repartido: textos por idioma, tablas del juego y pantallas de carga.
-# Font/, Enc1.dat/Dec2.dat y Macro.txt quedan en Data (lo mínimo para arrancar).
-"Local/Text.bmd" = "text/Text.bmd"
-"Local/Text_Eng.bmd" = "text/Text_Eng.bmd"
-"Local/Text_Por.bmd" = "text/Text_Por.bmd"
-"Local/Text_Spn.bmd" = "text/Text_Spn.bmd"
-"Local/Dialog.bmd" = "text/Dialog.bmd"
-"Local/Dialog_Eng.bmd" = "text/Dialog_Eng.bmd"
-"Local/Dialog_Por.bmd" = "text/Dialog_Por.bmd"
-"Local/Dialog_Spn.bmd" = "text/Dialog_Spn.bmd"
-"Local/NPCName.txt" = "text/NPCName.txt"
-"Local/NPCName(kor).txt" = "text/NPCName(kor).txt"
-"Local/item.bmd" = "table/item.bmd"
-"Local/skill.bmd" = "table/skill.bmd"
-"Local/quest.bmd" = "table/quest.bmd"
-"Local/Filter.bmd" = "table/Filter.bmd"
-"Local/FilterName.bmd" = "table/FilterName.bmd"
+# Data/Local repartido. Font/, Enc1.dat/Dec2.dat y Macro.txt quedan en Data (lo
+# mínimo para arrancar).
+#
+# Textos: una carpeta por idioma con los nombres sin sufijo. Text.bmd y
+# Dialog.bmd (sin idioma) eran copias del español: apuntan a esos.
+"Local/Text.bmd" = "text/spn/Text.bmd"
+"Local/Text_Spn.bmd" = "text/spn/Text.bmd"
+"Local/Text_Eng.bmd" = "text/eng/Text.bmd"
+"Local/Text_Por.bmd" = "text/por/Text.bmd"
+"Local/Dialog.bmd" = "text/spn/Dialog.bmd"
+"Local/Dialog_Spn.bmd" = "text/spn/Dialog.bmd"
+"Local/Dialog_Eng.bmd" = "text/eng/Dialog.bmd"
+"Local/Dialog_Por.bmd" = "text/por/Dialog.bmd"
+"Local/NPCName.txt" = "text/eng/NPCName.txt"
+"Local/NPCName(kor).txt" = "text/kor/NPCName.txt"
+# Filtro de palabras del chat y de nombres de personaje.
+"Local/Filter.bmd" = "text/filter/Filter.bmd"
+"Local/FilterName.bmd" = "text/filter/FilterName.bmd"
+# Tablas con su tema. item.bmd, skill.bmd y Gate.bmd son además el respaldo de
+# lo que manda el server en el catálogo (si lo manda, gana el catálogo).
+"Local/item.bmd" = "item/item.bmd"
+"Local/skill.bmd" = "skill/skill.bmd"
+"Local/quest.bmd" = "quest/quest.bmd"
 "Local/Loading01.ozj" = "ui/loading/Loading01.ozj"
 "Local/Loading02.ozj" = "ui/loading/Loading02.ozj"
 "Local/Loading03.ozj" = "ui/loading/Loading03.ozj"
 "Local/Webzenlogo.ozj" = "ui/loading/Webzenlogo.ozj"
 "Local/Everyone.OZJ" = "ui/loading/Everyone.OZJ"
-"Gate.bmd" = "table/Gate.bmd"
+"Gate.bmd" = "map/Gate.bmd"
+
+# Great Dragon: el catálogo lo pide en Player/Custom/21 y el cargador de sets en
+# Player/. Es una sola carpeta (set/21-GreatDragon); hide y level_man01 de esa
+# carpeta son versiones propias del set y sólo se usan por esta ruta.
+"Player/Custom/21" = "set/21-GreatDragon"

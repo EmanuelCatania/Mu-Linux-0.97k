@@ -451,12 +451,26 @@ ship only `-hd` files, but the `-hd` in `Data` does not override what a pack
 replaced. Layers are read at startup and logged in `User/debug.log`.
 
 Items, monsters, NPCs and armor sets are already per entity: each one is a folder
-(`Content/item/00-swords/000/`, `Content/monster/01-BullFighter/`, `Content/npc/Smith/`,
+(`Content/item/00-swords/000/`, `Content/monster/01-BullFighter/`, `Content/npc/251-HanzoTheBlacksmith/`,
 `Content/set/01-Dragon/`) with its model, textures and a `.toml` of its type
 (`item.toml`, `monster.toml`, `npc.toml`, `set.toml`) naming the Data folder it replaces (`source`). The skeleton, class
 bodies, wings and helpers are in `Content/player/base/`. At
 startup every file in those folders answers for `Data/<source>/<file>`, so no
 alias has to be written by hand.
+
+The rest of `Content/`:
+
+- `text/<language>/` (`spn`, `eng`, `por`, `kor`): `Text.bmd`, `Dialog.bmd` and
+  `NPCName.txt` for each language, without a suffix in the name. `text/filter/`
+  holds the chat and character-name word filters.
+- Tables live with their topic: `item/item.bmd`, `skill/skill.bmd`,
+  `map/Gate.bmd` and `quest/quest.bmd`. The first three are also the fallback
+  for what the server sends in the catalog.
+- `audio/sound/<kind>/`: sounds split into `ambient`, `effect`, `interface`,
+  `monster`, `npc`, `player` and `skill`.
+- `monster/unused/` and `npc/unused/`: models the 0.97k does not load, from
+  later versions (monsters grouped by the 5.2 map that creates them: Kalima,
+  Aida, Castle Siege, Crywolf...). They are kept for custom content.
 
 ---
 

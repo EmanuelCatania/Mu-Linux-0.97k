@@ -124,7 +124,7 @@ def harness(revision=None):
         f"void Call0(BYTE* p, int n) {{ {call0} }}\n"
         "void Call1(BYTE* p, int n) { BuxConvert_1(p, n); }\n"
         f"void CallTerrain(BYTE* p, int n) {{ {call_terrain} }}\n")
-    samples = [ROOT / "bin/Client/Content/table" / name
+    samples = [__import__("data_paths").asset(ROOT, "Local/" + name)
                for name in ("item.bmd", "skill.bmd", "quest.bmd")]
     for sample in samples:
         if not sample.is_file():

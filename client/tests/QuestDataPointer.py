@@ -90,7 +90,7 @@ def harness(revision=None):
     prefix += SERVICES
     prefix += function(read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision), "BuxConvert_1")
     body = function(read_source("src/assets/data/Quest_Data.cpp", revision), "CSQuest_OpenQuestScript")
-    sample = ROOT / "bin/Client/Content/table/quest.bmd"
+    sample = __import__("data_paths").asset(ROOT, "Local/quest.bmd")
     if not sample.is_file():
         raise FileNotFoundError(sample)
     arg = "destination" if "BYTE* handle" in body else "static_cast<int>(reinterpret_cast<std::uintptr_t>(destination))"
