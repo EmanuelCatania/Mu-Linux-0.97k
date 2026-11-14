@@ -361,13 +361,13 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             AsJoint(param_1)->Position[2] = AsJoint(param_1)->TargetPosition[2] + 50.0f;
         } else {
             float delta_4e2[3] = {
-                *(float *)(owner_4e2 + 0x10) - *(float *)(owner_4e2 + EntityOffset(0x170)),
-                *(float *)(owner_4e2 + 0x14) - *(float *)(owner_4e2 + EntityOffset(0x174)),
-                *(float *)(owner_4e2 + 0x18) - *(float *)(owner_4e2 + EntityOffset(0x178))
+                *(float *)(owner_4e2 + 0x10) - AsObject(owner_4e2)->StartPosition[0],
+                *(float *)(owner_4e2 + 0x14) - AsObject(owner_4e2)->StartPosition[1],
+                *(float *)(owner_4e2 + 0x18) - AsObject(owner_4e2)->StartPosition[2]
             };
-            AsJoint(param_1)->TargetPosition[0] = *(float *)(owner_4e2 + EntityOffset(0x170));
-            AsJoint(param_1)->TargetPosition[1] = *(float *)(owner_4e2 + EntityOffset(0x174));
-            AsJoint(param_1)->TargetPosition[2] = *(float *)(owner_4e2 + EntityOffset(0x178));
+            AsJoint(param_1)->TargetPosition[0] = AsObject(owner_4e2)->StartPosition[0];
+            AsJoint(param_1)->TargetPosition[1] = AsObject(owner_4e2)->StartPosition[1];
+            AsJoint(param_1)->TargetPosition[2] = AsObject(owner_4e2)->StartPosition[2];
             float entityAngle_4e2[3] = { *(float *)(owner_4e2 + 0x28), *(float *)(owner_4e2 + 0x2c), *(float *)(owner_4e2 + 0x30) };
             float jointMatrix_4e2[12];
             Matrix_BuildFromEuler(AsJoint(param_1)->Angle, jointMatrix_4e2);
@@ -446,9 +446,9 @@ LAB_00473578_498:
                 local_d8[0] = local_d8[0] * _DAT_00552900 + *pfVar14;
                 local_d8[1] = local_d8[1] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[1];
                 local_d8[2] = local_d8[2] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[2];
-                local_a8[0] = *(float *)(iVar16 + EntityOffset(0x188));
-                local_a8[1] = *(float *)(iVar16 + EntityOffset(0x18c));
-                local_a8[2] = *(float *)(iVar16 + EntityOffset(0x190));
+                local_a8[0] = AsObject(iVar16)->PosSword[0];
+                local_a8[1] = AsObject(iVar16)->PosSword[1];
+                local_a8[2] = AsObject(iVar16)->PosSword[2];
                 // Blend: out[i] = t * rand_pos[i] + inv_t * bone_pos[i]
                 pfVar15[0] = t * local_d8[0] + inv_t * local_a8[0];
                 pfVar15[1] = t * local_d8[1] + inv_t * local_a8[1];
@@ -489,7 +489,7 @@ LAB_004702ce:
             *pfVar15 = (float)(fVar22 * fVar24 + (double)*pfVar15);
             if (iVar16 == 0) goto switchD_caseD_4ef;
             {
-                int hp_val = *(int *)(iVar16 + EntityOffset(0x60));
+                int hp_val = AsObject(iVar16)->LifeTime;
                 float fVar28;
                 if (hp_val < 0x33) {
                     fVar28 = (float)hp_val * _DAT_00552a00;
@@ -553,9 +553,9 @@ LAB_0047036e:
 
         // Update anchor from linked entity current position
         iVar16   = (intptr_t)AsJoint(param_1)->Target;
-        *pfVar14 = *(float *)(iVar16 + EntityOffset(0x10));
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(iVar16 + EntityOffset(0x14));
-        AsJoint(param_1)->TargetPosition[2]      = *(float *)(iVar16 + EntityOffset(0x18)) + _DAT_00552488;
+        *pfVar14 = AsObject(iVar16)->Position[0];
+        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4*)&AsObject(iVar16)->Position[1];
+        AsJoint(param_1)->TargetPosition[2]      = AsObject(iVar16)->Position[2] + _DAT_00552488;
 
         iVar16 = AsJoint(param_1)->SubType;
 
@@ -1174,8 +1174,8 @@ switchD_caseD_4fd:
             // 00470030 LABEL_301/case 14.
             intptr_t owner = (intptr_t)AsJoint(param_1)->Target;
             if (owner != 0) {
-                *(DWORD *)&AsJoint(param_1)->StartPosition[0] = *(DWORD *)(owner + EntityOffset(392));
-                *(DWORD *)&AsJoint(param_1)->StartPosition[1] = *(DWORD *)(owner + EntityOffset(396));
+                *(DWORD *)&AsJoint(param_1)->StartPosition[0] = *(DWORD*)&AsObject(owner)->PosSword[0];
+                *(DWORD *)&AsJoint(param_1)->StartPosition[1] = *(DWORD*)&AsObject(owner)->PosSword[1];
             }
             const int life = AsJoint(param_1)->LifeTime;
             const short pk = AsJoint(param_1)->PKKey;

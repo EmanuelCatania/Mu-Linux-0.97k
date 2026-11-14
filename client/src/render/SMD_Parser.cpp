@@ -266,7 +266,7 @@ void __cdecl ClearCharacters(int param_1) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
         // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.
-        if (param_1 == -1 || *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
+        if (param_1 == -1 || *(short*)&AsCharacter(puVar1)->Key != (short)param_1) {
             JOINT* joints = AsJoint(DAT_07b27150);
             for (size_t jointIndex = 0; jointIndex < sizeof(DAT_07b27150) / sizeof(JOINT); ++jointIndex) {
                 JOINT& joint = joints[jointIndex];
@@ -275,7 +275,7 @@ void __cdecl ClearCharacters(int param_1) {
                     joint.Live = 0;
             }
         }
-        if (*puVar1 != '\0' && *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
+        if (*puVar1 != '\0' && *(short*)&AsCharacter(puVar1)->Key != (short)param_1) {
             *puVar1 = 0;
             char* pcVar2 = DAT_083a1218;
             do {
@@ -402,11 +402,11 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
             if ((intptr_t)ent == (intptr_t)owner) continue;
             if (*ent == 0) continue;
             // visibility flag at +332
-            if (*(unsigned char*)(ent + EntityOffset(352)) == 0) continue;
+            if (AsObject(ent)->Visible == 0) continue;
             // skip hero
             if (ent == (char*)(uintptr_t)DAT_07abf5d8) continue;
             // skip if "dead" flag at +745+20
-            if (*(unsigned char*)(ent + EntityOffset(765)) != 0) continue;
+            if (AsCharacter(ent)->Dead != 0) continue;
             // distance check (XY only, sqrt <= 100)
             float dx = *(float*)(T + 16) - *(float*)(ent + 16);
             float dy = *(float*)(T + 20) - *(float*)(ent + 20);

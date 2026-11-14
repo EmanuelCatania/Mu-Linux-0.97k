@@ -173,7 +173,7 @@ static void Tamachan_Move(char *o, int life)
         float dy = *(float *)(o + 20) - *(float *)&((OBJECT*)(uintptr_t)(o))->StartPosition[1];
         *(int *)(o + 96) = 10;
         float dist = (float)sqrt(dy * dy + dx * dx);
-        MoveHumming((float *)(o + 16), (float *)(o + 28), (float *)(o + EntityOffset(368)), 3000.0f / dist);
+        MoveHumming((float *)(o + 16), (float *)(o + 28), (float*)&AsObject(o)->StartPosition[0], 3000.0f / dist);
         *(float *)(o + 28) = -10.0f;
         *(float *)(o + 32) = 0.0f;
         // En el binario el valor es el st0 de RequestTerrainHeight menos 10
@@ -191,7 +191,7 @@ static void Tamachan_Move(char *o, int life)
             Matrix_BuildFromEuler(angle, matrix);
             Vector_Rotate(offset, matrix, rotated);
             for (int i = 0; i < 3; ++i)
-                ((float *)(o + EntityOffset(368)))[i] = rotated[i] + ((float *)(o + 52))[i];
+                ((float*)&AsObject(o)->StartPosition[0])[i] = rotated[i] + ((float *)(o + 52))[i];
             *(int *)(o + 96) = rand() % 100 + 50;
             int state = rand() % 3;
             o[EntityOffset(260)] = (char)state;
@@ -887,7 +887,7 @@ LAB_0046a366:
             *(float *)&AsObject(param_1)->LifeTime = 4.2039e-44;
           }
           else {
-            fVar4 = *(float *)(pcVar11 + EntityOffset(0x15c));
+            fVar4 = AsObject(pcVar11)->OBB[11];
             fVar5 = AsObject(pcVar11)->Position[2];
             AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
             AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];

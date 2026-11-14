@@ -284,7 +284,7 @@ void Recv_CreateChar(const BYTE* Msg)
             return;
         }
         // +446 (WORD) = 1 — selected/visible flag; el nombre va desde Msg+5.
-        *(WORD*)(c + EntityOffset(446)) = 1;
+        AsCharacter(c)->Level = 1;
         char name[EntityName::Capacity];
         NetText::FromServer(name, sizeof(name), Msg + 5, NetText::CharacterNameSize);
         EntityName::Set(c, name);
@@ -762,7 +762,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     float z;
     if ((int)gMapManager.GetCurrentMap() == -1 ||
-        *(const WORD*)(heroPtr + EntityOffset(696)) != 819 ||        // sin Dinorant
+        *(const WORD*)&AsCharacter(heroPtr)->Helper.Type != 819 ||        // sin Dinorant
         AsCharacter(heroPtr)->SafeZone != 0) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]);
     } else if (gMapManager.Current().mountFlies) {

@@ -169,7 +169,7 @@ void RenderPartyHP_(void)
             float Position[3];
             Position[0] = *(const float*)(character + 16);
             Position[1] = *(const float*)(character + 20);
-            Position[2] = *(const float*)(character + EntityOffset(300))  // [75]
+            Position[2] = *(const float*)&AsObject(character)->BoundingBoxMax[2]  // [75]
                         + *(const float*)(character + 24)   // [6]
                         + 100.0f;
 

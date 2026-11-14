@@ -115,7 +115,7 @@ static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t obj
     if (!attributes || !Hero || !item)
         return 0;
 
-    const BYTE selected = attributes[(BYTE)*(BYTE*)(Hero + EntityOffset(913)) + 87];   // IDA L558
+    const BYTE selected = attributes[(BYTE)AsCharacter(Hero)->CurrentSkill + 87];   // IDA L558
     const int  count    = (int)item[36];                                 // IDA: SpecialNum
     char result = 0;                                                     // IDA: v136
 
@@ -145,7 +145,7 @@ static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t obj
             const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
             g_dwLatestMagicTick = now;
-            const WORD heroKey = *(WORD*)(Hero + EntityOffset(476)); // IDA: *(_WORD *)(Hero + EntityOffset(476))
+            const WORD heroKey = AsCharacter(Hero)->Key; // IDA: *(_WORD *)(Hero + EntityOffset(476))
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
             gNetwork.Send(packet, sizeof(packet));
@@ -192,7 +192,7 @@ char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA:
 
     // IDA L251-283.
     if (skill == 47) {
-        const WORD mount = *(WORD*)(Hero + EntityOffset(696));       // IDA: v17
+        const WORD mount = *(WORD*)&AsCharacter(Hero)->Helper.Type;       // IDA: v17
         if (mount != MODEL_HELPER_UNIRIA && mount != MODEL_HELPER_DINORANT) {
             // IDA L256: sin montura NO devuelve 0 — cae en LABEL_25 y el skill
             // puede salir igual por la lista de opciones del arma. El port
@@ -201,7 +201,7 @@ char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA:
         } else {
             if (type != 390)
                 return 0;
-            const WORD weapon = *(WORD*)(Hero + EntityOffset(624));  // IDA: v26
+            const WORD weapon = *(WORD*)&AsCharacter(Hero)->Weapon[0].Type;  // IDA: v26
             if (weapon == 0xFFFF || weapon < 496 || weapon >= 528)
                 return 0;
         }
@@ -211,7 +211,7 @@ char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA:
         } else {
             if (type != 390)
                 return 0;
-            const WORD weapon = *(WORD*)(Hero + EntityOffset(624));  // IDA: v21
+            const WORD weapon = *(WORD*)&AsCharacter(Hero)->Weapon[0].Type;  // IDA: v21
             if (weapon == 0xFFFF || (weapon >= 560 && weapon < 592))
                 return 0;
         }

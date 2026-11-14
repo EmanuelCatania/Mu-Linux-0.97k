@@ -191,7 +191,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         for (int s = 0; s < 400; ++s) {
             BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-            if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == targetId) {
+            if (sp[0] && AsCharacter(sp)->Key == targetId) {
                 tgtSlot = sp; break;
             }
         }
@@ -225,7 +225,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (targetId == g_HeroKey && DAT_07cf1ff4) {
             WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
             if (damage < *pHP) *pHP -= damage; else *pHP = 0;
-            *(WORD*)(tgtSlot + EntityOffset(760)) = (WORD)damage;
+            AsCharacter(tgtSlot)->Hit = (WORD)damage;
             SyncHeroLife(Msg, Size, pHP);
         }
         return;
@@ -271,7 +271,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // action before MoveCharacter's native death sequence.
 
     // ── Cachea el último daño en la entidad (+0x2F8 = 760) per IDA ──
-    *(WORD*)(tgtSlot + EntityOffset(760)) = damage;
+    AsCharacter(tgtSlot)->Hit = damage;
 
     // ── Hit reaction (anim + grunt) — SetPlayerShock ─────────────
     // Imported from companion-DLL `IgnoreRandomStuck`
@@ -385,7 +385,7 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int slotIdx = -1;
     for (int s = 0; s < 400; ++s) {
         BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-        if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == entityKey) {
+        if (sp[0] && AsCharacter(sp)->Key == entityKey) {
             slot = sp; slotIdx = s; break;
         }
     }
@@ -499,7 +499,7 @@ void NetRecv_07(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* entity = entityBase + slotIndex * CHARACTER_STRIDE;
         // FindCharacterIndex (0045AC80) requires an active slot.
-        if (!entity[0] || *(WORD*)(entity + EntityOffset(476)) != entityKey) continue;
+        if (!entity[0] || AsCharacter(entity)->Key != entityKey) continue;
 
         // ProtocolCore 004389A0 llama a Insert/Clear sólo cuando el
         // requested mask changes the entity's physical-effects
@@ -562,7 +562,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* candidate = entityBase + slotIndex * CHARACTER_STRIDE;
-        if (*(WORD*)(candidate + EntityOffset(476)) == casterKey) {
+        if (AsCharacter(candidate)->Key == casterKey) {
             caster = candidate;
             break;
         }
@@ -645,7 +645,7 @@ void NetRecv_1B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* caster = entityBase + slotIndex * CHARACTER_STRIDE;
-        if (caster[0] && *(WORD*)(caster + EntityOffset(476)) == casterKey) {
+        if (caster[0] && AsCharacter(caster)->Key == casterKey) {
             // La misma limpieza que ReceiveEffectState(state=0): apenas
             // clearing +120 leaves Mana Shield's joint 266 (and
             // other owner-bound visuals) alive after cancellation.
@@ -703,9 +703,9 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
-                *(BYTE*) (hero + EntityOffset(756)) = 2;        // gate de las esferas de EXP
-                *(WORD*) (hero + EntityOffset(758)) = (WORD)dmg;
-                *(WORD*) (hero + EntityOffset(784)) = (WORD)index;
+                AsCharacter(hero)->AttackFlag = 2;        // gate de las esferas de EXP
+                AsCharacter(hero)->Damage = (WORD)dmg;
+                *(WORD*)&AsCharacter(hero)->TargetCharacter = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
             AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
@@ -742,7 +742,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else if (basePtr) {
         for (int slot = 0; slot < 400; ++slot) {
             BYTE* candidate = basePtr + slot * CHARACTER_STRIDE;
-            if (candidate[0] && *(WORD*)(candidate + EntityOffset(0x1DC)) == entityId) {
+            if (candidate[0] && AsCharacter(candidate)->Key == entityId) {
                 entity = candidate;
                 break;
             }
@@ -788,21 +788,21 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             AsCharacter(entity)->Object.Velocity = (float)(rand() % 20) + 20.0f;
             const float angle = (float)(rand() % 10) + 85.0f;
             if ((TerrainWall[(wallIndex + 1) & 0xFFFF] & 8) == 8) {
-                *(float*)(entity + EntityOffset(416)) = -angle;
-                *(int*)(entity + EntityOffset(408)) = 0;
-                *(int*)(entity + EntityOffset(412)) = 0;
+                AsObject(entity)->DownAngle[2] = -angle;
+                *(int*)&AsObject(entity)->DownAngle[0] = 0;
+                *(int*)&AsObject(entity)->DownAngle[1] = 0;
             } else if ((TerrainWall[(wallIndex - 1) & 0xFFFF] & 8) == 8) {
-                *(float*)(entity + EntityOffset(416)) = angle;
-                *(int*)(entity + EntityOffset(408)) = 0;
-                *(int*)(entity + EntityOffset(412)) = 0;
+                AsObject(entity)->DownAngle[2] = angle;
+                *(int*)&AsObject(entity)->DownAngle[0] = 0;
+                *(int*)&AsObject(entity)->DownAngle[1] = 0;
             }
-            *(int *)&AsCharacter(entity)->Object.Angle[2]  = *(int*)(entity + EntityOffset(416));
+            *(int *)&AsCharacter(entity)->Object.Angle[2]  = *(int*)&AsObject(entity)->DownAngle[2];
             *(float*)(entity + 192) = (float)(rand() % 6) + 8.0f;
             *(float*)(entity + 196) = (float)(-(rand() % 2)) + 13.0f;
             const int spin = rand();
-            *(int*)(entity + EntityOffset(424)) = *(int *)&AsCharacter(entity)->Object.Position[1];
-            *(int*)(entity + EntityOffset(428)) = *(int *)&AsCharacter(entity)->Object.Position[2];
-            *(int*)(entity + EntityOffset(420)) = *(int *)&AsCharacter(entity)->Object.Position[0];
+            *(int*)&AsObject(entity)->DeadPosition[1] = *(int *)&AsCharacter(entity)->Object.Position[1];
+            *(int*)&AsObject(entity)->DeadPosition[2] = *(int *)&AsCharacter(entity)->Object.Position[2];
+            *(int*)&AsObject(entity)->DeadPosition[0] = *(int *)&AsCharacter(entity)->Object.Position[0];
             *(float*)(entity + 200) = (float)(spin % 45);
         }
         if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
@@ -868,9 +868,9 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
-                *(BYTE*) (hero + EntityOffset(756)) = 2;        // gate de las esferas
-                *(WORD*) (hero + EntityOffset(758)) = (WORD)dmg;
-                *(WORD*) (hero + EntityOffset(784)) = (WORD)index;
+                AsCharacter(hero)->AttackFlag = 2;        // gate de las esferas
+                AsCharacter(hero)->Damage = (WORD)dmg;
+                *(WORD*)&AsCharacter(hero)->TargetCharacter = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
             AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
@@ -909,7 +909,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* caster = nullptr;
     for (int s = 0; s < 400; ++s) {
         BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-        if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == casterId) {
+        if (sp[0] && AsCharacter(sp)->Key == casterId) {
             caster = sp; break;
         }
     }
@@ -933,14 +933,14 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             } else {
                 for (int s = 0; s < 400; ++s) {
                     BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-                    if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == tgtId) {
+                    if (sp[0] && AsCharacter(sp)->Key == tgtId) {
                         tgt = sp; break;
                     }
                 }
             }
             if (!tgt) continue;
             // Daño cacheado en +760 (0x2F8) por el 0x15 — se usa como visual
-            WORD dmg = *(WORD*)(tgt + EntityOffset(760));
+            WORD dmg = AsCharacter(tgt)->Hit;
             // ReceiveMagicPosition tira el mismo 50/50 de reacción
             // que usaba el original antes de dibujar el daño en área.
             const unsigned r = (unsigned)rand() & 0x80000001u;

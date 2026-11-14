@@ -393,7 +393,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // sub_513260, y gana la MAS CERCANA A LA CAMARA.
         {
             float box[12];
-            memcpy(box, (const void*)(ent + EntityOffset(0x130)), sizeof(box));
+            memcpy(box, (const void*)&AsObject(ent)->OBB[0], sizeof(box));
             if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
@@ -536,7 +536,7 @@ int __cdecl SpecialObject_HoverTest(void)
         if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;
 
         float box[12];
-        memcpy(box, (const void *)(obj + EntityOffset(0x130)), sizeof(box));
+        memcpy(box, (const void*)&AsObject(obj)->OBB[0], sizeof(box));
 
         if (Collision_SegmentToOBB((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
             *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte

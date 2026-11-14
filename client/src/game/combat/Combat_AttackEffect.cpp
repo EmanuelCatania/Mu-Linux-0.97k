@@ -392,7 +392,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   switch ( v3 )
   {
     case 35:
-      v171 = (char *)(Owner + EntityOffset(770));
+      v171 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v172 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -455,7 +455,7 @@ LABEL_263:
       HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + EntityOffset(770));
 LABEL_265:
       Ownert = *v171;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v242 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -515,7 +515,7 @@ LABEL_269:
       break;
     case 38:
     case 67:
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v187 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerv = 0;
@@ -529,7 +529,7 @@ LABEL_269:
             {
               break;
             }
-            v189 = (char *)(Owner + EntityOffset(770));
+            v189 = (char*)&AsCharacter(Owner)->Skill;
             v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v192 == -1 )
             {
@@ -569,7 +569,7 @@ LABEL_291:
         CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v188 = operator_new(2u);
-      v189 = (char *)(Owner + EntityOffset(770));
+      v189 = (char*)&AsCharacter(Owner)->Skill;
       *(BYTE *)(v188 + 1) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + EntityOffset(770));
 LABEL_293:
@@ -592,7 +592,7 @@ LABEL_293:
       }
       break;
     case 42:
-      v152 = (char *)(Owner + EntityOffset(770));
+      v152 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v153 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -655,7 +655,7 @@ LABEL_236:
       HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + EntityOffset(770));
 LABEL_238:
       Ownerr = *v152;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v241 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -747,7 +747,7 @@ LABEL_242:
         TransformPosition(v2, (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 3024), v248, TargetPosition, 1);
         CreateEffect(1211, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
-      v131 = (char *)(Owner + EntityOffset(770));
+      v131 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v132 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -810,7 +810,7 @@ LABEL_208:
       HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + EntityOffset(770));
 LABEL_210:
       Ownerp = *v131;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v240 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -887,8 +887,8 @@ LABEL_214:
       }
       if ( AsCharacter(Owner)->SkillStage == 14 && AsCharacter(Owner)->MonsterIndex == 59 )
       {
-        v117 = (char *)(Owner + EntityOffset(770));
-        v244 = (const char *)(Owner + EntityOffset(770));
+        v117 = (char*)&AsCharacter(Owner)->Skill;
+        v244 = (const char*)&AsCharacter(Owner)->Skill;
         Ownerl = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
@@ -945,7 +945,7 @@ LABEL_179:
         HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + EntityOffset(770));
 LABEL_181:
         Ownerm = *v117;
-        v244 = (const char *)(Owner + EntityOffset(770));
+        v244 = (const char*)&AsCharacter(Owner)->Skill;
         v239 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
@@ -963,7 +963,7 @@ LABEL_181:
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  Packet_EncryptByte(v126, (BYTE *)(Owner + EntityOffset(770)));
+                  Packet_EncryptByte(v126, (BYTE*)&AsCharacter(Owner)->Skill);
                 }
               }
               break;
@@ -1035,7 +1035,7 @@ LABEL_185:
           FUN_00466300(Owner + 16);
           CreateEffect(MODEL_SKILL_INFERNO, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         }
-        v80 = (char *)(Owner + EntityOffset(770));
+        v80 = (char*)&AsCharacter(Owner)->Skill;
         v243 = Owner + EntityOffset(770);
         v81 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
@@ -1098,7 +1098,7 @@ LABEL_114:
         HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + EntityOffset(770));
 LABEL_116:
         Ownerh = *v80;
-        v244 = (const char *)(Owner + EntityOffset(770));
+        v244 = (const char*)&AsCharacter(Owner)->Skill;
         v237 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
@@ -1174,7 +1174,7 @@ LABEL_120:
       }
       break;
     case 66:
-      v98 = (char *)(Owner + EntityOffset(770));
+      v98 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v99 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -1237,7 +1237,7 @@ LABEL_146:
       HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + EntityOffset(770));
 LABEL_148:
       Ownerk = *v98;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v238 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -1309,7 +1309,7 @@ LABEL_152:
       }
       break;
     case 72:
-      v27 = (char *)(Owner + EntityOffset(770));
+      v27 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v28 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -1372,7 +1372,7 @@ LABEL_44:
       HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + EntityOffset(770));
 LABEL_46:
       Ownerd = *v27;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v235 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -1515,7 +1515,7 @@ LABEL_50:
       }
       break;
     case 77:
-      v61 = (char *)(Owner + EntityOffset(770));
+      v61 = (char*)&AsCharacter(Owner)->Skill;
       v243 = Owner + EntityOffset(770);
       v62 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
@@ -1578,7 +1578,7 @@ LABEL_82:
       HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + EntityOffset(770));
 LABEL_84:
       Ownerf = *v61;
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v236 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
@@ -1650,8 +1650,8 @@ LABEL_88:
     case 124:
     case -126:
     case -120:
-      v4 = (char *)(Owner + EntityOffset(770));
-      v244 = (const char *)(Owner + EntityOffset(770));
+      v4 = (char*)&AsCharacter(Owner)->Skill;
+      v244 = (const char*)&AsCharacter(Owner)->Skill;
       v5 = AE_ht_hash(Owner + EntityOffset(770));
       v243 = 0;
       Ownera = 0;
@@ -1776,7 +1776,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 50 )
+      if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE*)&AsCharacter(Owner)->Skill) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
         v198 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
@@ -1797,7 +1797,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + CHARACTER_STRIDE * v202;
-    if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 17 )
+    if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE*)&AsCharacter(Owner)->Skill) == 17 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {
@@ -2014,7 +2014,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 3 )
+    else if ( HashTable_ReadByte(&MAIN_HASH_CLASS, (BYTE*)&AsCharacter(Owner)->Skill) == 3 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {
