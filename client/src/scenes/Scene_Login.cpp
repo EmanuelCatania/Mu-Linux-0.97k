@@ -46,7 +46,7 @@
 //   DAT_055c9fec   — m_hFontDC (HDC usado para GetTextExtentPointA)
 //   DAT_055ca00c   — g_hFont
 //   DAT_005616a4   — base Y panel credenciales
-//   DAT_083a427c/4278 — MouseX/MouseY
+//   MouseX/4278 — MouseX/MouseY
 //   DAT_083a7ac8   — tick base progress bar
 //   DAT_083a7af4   — fade state
 //   DAT_005615e8   — fade counter
@@ -127,9 +127,9 @@ uint Scene_Login(void)
 
         // OK button hit-test
         tStack_74.cx = iVar3 + 0x5f;
-        if ((0x142 < DAT_083a427c) &&
-            ((DAT_083a427c < 0x189) && (tStack_74.cx <= DAT_083a4278)) &&
-            (DAT_083a4278 < iVar3 + 0x72))
+        if ((0x142 < MouseX) &&
+            ((MouseX < 0x189) && (tStack_74.cx <= MouseY)) &&
+            (MouseY < iVar3 + 0x72))
         {
             GL_DrawTexture(0xd, 323.0f, (float)tStack_74.cx, 70.0f, 19.0f,
                          0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
@@ -142,8 +142,8 @@ uint Scene_Login(void)
 
         // Exit/Cancel button hit-test
         tStack_74.cx = iVar3 + 0xb4;
-        if (((0x11c < DAT_083a427c) && (DAT_083a427c < 0x163)) &&
-            ((tStack_74.cx <= DAT_083a4278) && (DAT_083a4278 < iVar3 + 200)))
+        if (((0x11c < MouseX) && (MouseX < 0x163)) &&
+            ((tStack_74.cx <= MouseY) && (MouseY < iVar3 + 200)))
         {
             GL_DrawTexture(0xe, 285.0f, (float)tStack_74.cx, 70.0f, 20.0f,
                          0.0f, 0.0f, 0.546875f, 0.625f, '\x01', '\x01');
@@ -263,8 +263,8 @@ uint Scene_Login(void)
         GL_ResetState();   // DisableAlphaBlend
 
         // Cancel button (0xf3=normal, 0xf4=highlighted)
-        if (((((DAT_083a427c < 0x11d) || (0x162 < DAT_083a427c)) ||
-              (DAT_083a4278 < 0x106)) || (0x119 < DAT_083a4278)) ||
+        if (((((MouseX < 0x11d) || (0x162 < MouseX)) ||
+              (MouseY < 0x106)) || (0x119 < MouseY)) ||
             ((DAT_083a7c14 == 0xc) && (DAT_083a4320 < 4)))
         {
             iVar3 = 0xf3;

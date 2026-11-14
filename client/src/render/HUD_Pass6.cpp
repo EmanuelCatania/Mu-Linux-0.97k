@@ -105,7 +105,6 @@ extern "C" BYTE   ShopItems[];   // pool dedicado de la tienda
 extern "C" void   __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int gridW);
 extern "C" DWORD  DAT_07eaa131;
 
-#define TradeOpened              DAT_07eaa11b
 #define g_bEventChipDialogEnable _g_bEventChipDialogEnable
 #define ItemAttribute            ((ITEM_ATTRIBUTE*)DAT_07d78068)
 
@@ -926,15 +925,15 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         float btnY = (float)(iPosY + 115 + 60 * row);
         bool hover = ((double)MouseX >= btnX && (double)MouseX < btnX + 24.0 &&
                       (double)MouseY >= btnY && (double)MouseY < btnY + 24.0);
-        // Tap clicks (DOWN+UP within one frame) lose DAT_083a4124 before this render
+        // Tap clicks (DOWN+UP within one frame) lose MouseLButtonPush before this render
         // runs — WM_LBUTTONUP clears it.  Use the latched click-event flag
-        // DAT_083a413c instead (set on UP, sticks until consumed). Hover-without-click
+        // MouseLButtonPop instead (set on UP, sticks until consumed). Hover-without-click
         // still highlights via 4124 for held clicks.
         // SOLO render + highlight: el CLICK (y el envío del F3/06) lo maneja
         // `CharacterInfo_HitTest` (port de sub_4E5DE0 L85-244), que es donde el
         // binario original tiene el hit-test de estos botones. Mandarlo también acá
         // duplicaría el paquete.
-        bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
+        bool pressed = hover && (MouseLButtonPush != 0 || MouseLButtonPop != 0);
         (void)statSlot;
         BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(pressed ? 0x121 : 0x120,
@@ -1509,7 +1508,7 @@ extern "C" void __cdecl RenderShopInterface(void)
             BufferedDraw::Color3f(0.5f, 0.69999999f, 1.0f);
             GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             if (over(bx, by)) {
-                if (DAT_083a4124)
+                if (MouseLButtonPush)
                     GL_DrawTexture(287, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
                 tip(bx, by, 237);
             }
@@ -1924,9 +1923,9 @@ extern "C" void __cdecl RenderEventWindow(void)
         const float closeY = (float)dword_7EAA0CC + 395.0f;
         if ((float)MouseX >= closeX && (float)MouseX < closeX + 24.0f &&
             (float)MouseY >= closeY && (float)MouseY < closeY + 24.0f &&
-            DAT_083a4124 != 0)
+            MouseLButtonPush != 0)
         {
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
             // Al cerrar NO se manda [C1][03][97]: la ventana de evento (Devil Square /
             // Blood Castle) la abre un NPC via 0x30, `CloseInventoryRelatedWindows`
             // (0x4CBA60) no manda NADA al cerrarla, y el unico paquete que el binario

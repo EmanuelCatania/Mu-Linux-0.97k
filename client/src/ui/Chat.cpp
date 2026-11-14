@@ -342,7 +342,7 @@ void UI_RenderChatLogOverlay(void)
       lpsz = &local_108;
       iVar3 = Platform::TextLength(local_100);
       gFont.MeasureText(gFont.GetTextDC(),local_100,iVar3,lpsz);
-      iVar3 = (int)DAT_083a427c;
+      iVar3 = (int)MouseX;
       // DESVIACION (Fase 4, pantalla ancha): las líneas van pegadas al borde
       // izquierdo de la ventana (x = -shift), no al del 4:3.
       bVar8 = gWindow.PanelOrigin(Ui::WindowLeft) - 1 < iVar3;
@@ -353,7 +353,7 @@ void UI_RenderChatLogOverlay(void)
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
       uVar2 = SetBackgroundTextColor;
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) + gWindow.PanelOrigin(Ui::WindowLeft))) &&
-           (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
+           (iVar7 <= MouseY)) && ((MouseY < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0')) {
         pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
         do {
@@ -425,10 +425,10 @@ void UI_TickHoverBubbles(void)
     }
     // Click derecho sobre el nombre de otro jugador (estando en zona segura):
     // lo copia al campo de destinatario del whisper.
-    if ((c->x <= DAT_083a427c) &&
-        (DAT_083a427c < (int)((uint)(c->Width * 0x280) / gWindow.GetWidth() + c->x)) &&
-        (c->y <= DAT_083a4278) &&
-        (DAT_083a4278 < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
+    if ((c->x <= MouseX) &&
+        (MouseX < (int)((uint)(c->Width * 0x280) / gWindow.GetWidth() + c->x)) &&
+        (c->y <= MouseY) &&
+        (MouseY < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
         (DAT_00559c84 != '\0') && (AsCharacter(DAT_07abf5d8)->SafeZone != '\0') &&
         strcmp(ChatDisplayName(c), EntityName::Get(DAT_07abf5d8)) != 0 &&
         (MouseRButtonPush != '\0')) {
@@ -594,8 +594,8 @@ void Chat_TickPresentation() {
         if (GuildCreatorOpened && DAT_07eaa144 && index==0) ++cursors;
         if (GoldenArcherOpenType==3 && index==0) ++cursors;
     }
-    if (index==0 && (DAT_083a7c24==0x74 || DAT_083a7c24==0x72 ||
-        DAT_083a7c24==0x7e || DAT_083a7c24==0x98)) ++cursors;
+    if (index==0 && (ErrorMessage==0x74 || ErrorMessage==0x72 ||
+        ErrorMessage==0x7e || ErrorMessage==0x98)) ++cursors;
     DAT_07e11d2c+=cursors;
     if (SceneFlag == 5 && !gUserSettings.GetAntilag(ANTILAG_INTERFACE))
         ChatListBox_TickPresentation();

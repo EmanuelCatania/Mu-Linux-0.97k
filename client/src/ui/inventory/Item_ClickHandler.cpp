@@ -113,7 +113,7 @@ extern uintptr_t DAT_07eaa160;                     // IDA `CheckInventory`
 // Índices de los IDs de mensaje "trade ocupado" / "no podés usar esto" — declarados como DWORD o
 // char en globals.h, y se acceden con aritmética de offsets sobre UIChatLogWindow_AddText.
 // En el original de IDA, byte_7EAA184/188/18C son strings de id de slot. Nuestro build
-// los referencia vía la familia DAT_07eaa11b, que tiene otra semántica —
+// los referencia vía la familia TradeOpened, que tiene otra semántica —
 // los mensajes se mandan con ID vacío porque la UI del chat lo acepta así.
 
 // ── Declaraciones adelantadas de los helpers que usamos ──────────────────────
@@ -146,7 +146,7 @@ extern "C" BYTE OffsetTradeItems[];
 
 // ── sub_4D6020 (367 bytes) — port FIEL desde IDA ────────────────────────────
 // Busca un slot vacío en la grilla destino donde entre pPickedItem, y después
-// engancha el cursor del mouse (DAT_083a427c/DAT_083a4278) al centro de
+// engancha el cursor del mouse (MouseX/MouseY) al centro de
 // ese slot. Devuelve 1 si lo encontró, 0 si no.
 //
 // Args: (origin_x, origin_y, grid_base, grid_w, grid_h)
@@ -186,10 +186,10 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
             }
             if (empty == itemW * itemH) {
                 // Snap mouse to slot center
-                DAT_083a427c = (DWORD)(int)(
+                MouseX = (DWORD)(int)(
                     ((double)itemW * 0.5 + (double)x - 0.5) * 20.0
                     + (double)origin_x);
-                DAT_083a4278 = (DWORD)(int)(
+                MouseY = (DWORD)(int)(
                     ((double)itemH * 0.5 + (double)y - 0.5) * 20.0
                     + (double)origin_y);
                 return 1;
@@ -228,11 +228,9 @@ extern char DAT_083a44c4[7 * 0x26];      // g_lpszMessageBoxCustom (266 bytes)
 // proyecta dentro de DAT_083a42f8, y declararlo como array independiente
 // dejaba los botones Yes/No escritos en memoria que el render no lee.
 
-// NextErrorMessage vive en DAT_083a7c28.
-extern DWORD DAT_083a7c24;               // ErrorMessage (currently-shown dialog)
-extern DWORD DAT_083a7c28;               // NextErrorMessage (queued)
-#define ErrorMessage      DAT_083a7c24
-#define NextErrorMessage  DAT_083a7c28
+// NextErrorMessage vive en NextErrorMessage.
+extern DWORD ErrorMessage;               // ErrorMessage (currently-shown dialog)
+extern DWORD NextErrorMessage;               // NextErrorMessage (queued)
 
 void __cdecl ShowCheckBox(int num, int index, int message)
 {
@@ -591,7 +589,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
 {
 
     // ── Guards (IDA lines 307-318) ──────────────────────────────────────────
-    bool wasClick = (DAT_083a4124 != 0);
+    bool wasClick = (MouseLButtonPush != 0);
 
 
     if (grid_h <= 0)                { return; }
@@ -635,8 +633,8 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
             int cellY = rowY;
 
             // Hit-test: el mouse está adentro de esta celda Y el slot tiene un item
-            if ((int)DAT_083a427c < cellX || (int)DAT_083a427c >= cellX + 20 ||
-                (int)DAT_083a4278 < cellY || (int)DAT_083a4278 >= cellY + 20 ||
+            if ((int)MouseX < cellX || (int)MouseX >= cellX + 20 ||
+                (int)MouseY < cellY || (int)MouseY >= cellY + 20 ||
                 rowSlot[0] == -1)
             {
                 // Asignación de hotkey (Ctrl+Q/W/E) cuando no se está sobre un item
@@ -645,7 +643,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                 continue;
             }
             // DIAG: cell passed hit-test
-            if (DAT_083a4124 != 0) {
+            if (MouseLButtonPush != 0) {
             }
 
             // ── Hovered cell with item: highlight footprint (color=2) ──────
@@ -680,17 +678,17 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
             int   itemW     = attr[type].Width;
             int   itemH     = attr[type].Height;
             if (itemW <= 0 || itemW > 8 || itemH <= 0 || itemH > 8) {
-                if (DAT_083a4124) {
+                if (MouseLButtonPush) {
                 }
                 continue;
             }
             if ((int)slotX + itemW > grid_w) {
-                if (DAT_083a4124) {
+                if (MouseLButtonPush) {
                 }
                 continue;
             }
             if ((int)slotY + itemH > grid_h) {
-                if (DAT_083a4124) {
+                if (MouseLButtonPush) {
                 }
                 continue;
             }
@@ -740,9 +738,9 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
             // Server espera: [C1][04][32][slot], C3-encrypted (PMSG_ITEM_BUY_RECV,
             // HackPacketCheck Encrypt=1; ItemManager.h:63).
             if (mode_flag != 0) {
-                if (!DAT_083a4124) return;   // no LMB push — wait
+                if (!MouseLButtonPush) return;   // no LMB push — wait
                 if ((int)dword_5826D18 != 0) return;  // buy cooldown activo
-                DAT_083a4124 = 0;            // consume click
+                MouseLButtonPush = 0;            // consume click
 
                 int slotIdx = ((BYTE*)rowSlot)[62] + grid_w * ((BYTE*)rowSlot)[63];
                 // guarda el precio para que el server pueda confirmar (anti-dupe)
@@ -768,9 +766,9 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                       kind == 143 || kind >= ITEM_POTION_BASE ||
                       (kind >= 391 && kind <= 403) ||
                       (kind >= 430 && kind <= 435))
-                    && DAT_083a4124)
+                    && MouseLButtonPush)
                 {
-                    DAT_083a4124 = 0;
+                    MouseLButtonPush = 0;
 
                     // Per IDA sub_4D23B0 L588-640 el paquete es
                     //   [C1][05][34][slot][RepairEnable]
@@ -791,11 +789,11 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
             }
 
             // ── BRANCH D: Left-click → PICKUP ──────────────────────────────
-            if (DAT_083a4124 != 0) {     // MouseLButtonPush
+            if (MouseLButtonPush != 0) {     // MouseLButtonPush
                 int sx = ((BYTE*)rowSlot)[62];
                 int sy = ((BYTE*)rowSlot)[63];
                 int abs = grid_w * sy + sx;
-                DAT_083a4124 = 0;
+                MouseLButtonPush = 0;
 
                 dword_7EA9800 = reinterpret_cast<BYTE*>(inv_base);
                 memcpy(pPickedItem, (BYTE*)(inv_base + 34 * abs), 0x44);
@@ -817,7 +815,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
 
                 // Trade: cuando el item está en la grilla de trade Y ya
                 // confirmed our side (m_bMyConfirm), uncomfirm + tell server.
-                if (DAT_07eaa11b != 0 &&
+                if (TradeOpened != 0 &&
                     m_bMyConfirm != 0 &&     // m_bMyConfirm
                     (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0])
                 {
@@ -848,7 +846,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
                     // Teleport = 0x05826D14 (Teleport).
                     if (Teleport != 0) return;
-                    if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
+                    if (WarehouseOpened != 0 || TradeOpened != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;
                     }
@@ -901,12 +899,12 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     (useType >= 456 && useType <= 457) ||
                      useType == 468)
                 {
-                    if (DAT_07eaa119 != 0) {
+                    if (WarehouseOpened != 0) {
                         // Baúl abierto → no se puede usar
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;
                     }
-                    if (DAT_07eaa11b != 0) {
+                    if (TradeOpened != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;
                     }
@@ -940,7 +938,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     {
                         continue;
                     }
-                    if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
+                    if (WarehouseOpened != 0 || TradeOpened != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;
                     }
@@ -984,26 +982,26 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                 // con lógica extra de auto-drop cuando el baúl está abierto.
                 dword_7EA9800 = reinterpret_cast<BYTE*>(inv_base);
                 memcpy(pPickedItem, (BYTE*)(inv_base + 34 * gridSlotIdx), 68);
-                g_PickupLatchX = (DWORD)DAT_083a427c;
-                g_PickupLatchY = (DWORD)DAT_083a4278;
+                g_PickupLatchX = (DWORD)MouseX;
+                g_PickupLatchY = (DWORD)MouseY;
 
                 if ((BYTE*)inv_base == (BYTE*)&OffsetInventoryItems[0]) {
                     // Pickup from main inventory
                     // DESVIACION (DLL RightClickMove.cpp MoveItemToInterface):
                     // además del baúl, el trade y el chaos (sin mezcla en curso).
-                    if (DAT_07eaa11b != 0) {                         // TradeOpened
+                    if (TradeOpened != 0) {                         // TradeOpened
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(TradeInventoryStartX + 15),
                             (int)(TradeInventoryStartY + 0x10E),
                             &OffsetTradeItems[0],
                             8, 4);
-                    } else if (DAT_07eaa11a != 0 && MixState != 1) {  // ChaosMixOpened
+                    } else if (ChaosMixOpened != 0 && MixState != 1) {  // ChaosMixOpened
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 0x6E),
                             &OffsetMixItems[0],
                             8, 4);
-                    } else if (DAT_07eaa119 != 0) {
+                    } else if (WarehouseOpened != 0) {
                         // Warehouse open → try auto-drop into warehouse
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
@@ -1033,7 +1031,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     if (!byte_83A42EB) {
                         const ITEM* stackItem = (const ITEM*)pPickedItem;
                         if (ItemStack_GetMaxStack(stackItem->Type, (stackItem->Level >> 3) & 0xF) != 0) {
-                            if (DAT_07eaa11b || (DAT_07eaa11a && MixState != 1) || DAT_07eaa119) {
+                            if (TradeOpened || (ChaosMixOpened && MixState != 1) || WarehouseOpened) {
                                 UIChatLogWindow_AddText("", GlobalText[474], 2);
                             } else {
                                 const BYTE slot = (BYTE)(grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12);
@@ -1061,7 +1059,7 @@ void __cdecl InventoryGrid_Tick(char* origin_x, int origin_y, short* inv_base,
                     // InventoryStartY+200) — los VALORES, igual que en el resto de los call sites.
                     // DESVIACION (DLL RightClickMove.cpp): también desde el
                     // trade y el chaos, no sólo con el baúl abierto.
-                    if (DAT_07eaa119 != 0 ||
+                    if (WarehouseOpened != 0 ||
                         (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0] ||
                         (BYTE*)inv_base == (BYTE*)&OffsetMixItems[0]) {
                         byte_83A42EB = (char)sub_4D6020(
@@ -1164,9 +1162,9 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     // ── Header: ChaosMix state machine ───────────────────────────────────────
     // (IDA L200-217). Con ChaosMixOpened, refresca MixType según el contenido de la grilla.
     // Este bloque no depende del item levantado — corre en cada tick.
-    extern char DAT_07eaa11a;        // ChaosMixOpened
+    extern char ChaosMixOpened;        // ChaosMixOpened
     extern DWORD DAT_07eaa140;       // MixState
-    if (DAT_07eaa11a != 0) {
+    if (ChaosMixOpened != 0) {
         // IDA 004DF410: la receta se deriva de la Chaos Box en cada tick. En
         // el cliente original el tipo 1 podía quedar reservado a variantes de
         // evento recibidas en el talk packet; MuEmu no expone esa variante y
@@ -1245,7 +1243,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         &OffsetInventoryItems[0], 8, 8, 0);
     // Trade grid (8x4, origin = TradeStart + 15,270) if trade open
     unsigned int dropTrade = 0;
-    if (DAT_07eaa11b != 0) {
+    if (TradeOpened != 0) {
         extern DWORD DAT_07ea5290, DAT_07ea528c;   // TradeInventoryStartX/Y
         dropTrade = CallDropItem((int)a1,
             (int)(DAT_07ea5290 + 15),
@@ -1255,7 +1253,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
 
     // Warehouse grid (8x15) if warehouse open
     unsigned int dropWH = 0;
-    if (DAT_07eaa119 != 0) {
+    if (WarehouseOpened != 0) {
         dropWH = CallDropItem((int)a1,
             (int)(DAT_07eaa0c8 + 15),
             (int)(DAT_07eaa0cc + 50),
@@ -1264,7 +1262,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
 
     // Grilla de mezcla del caos (8x4) si está abierta y la mezcla no se está procesando
     unsigned int dropMix = 0;
-    if (DAT_07eaa11a != 0 && DAT_07eaa140 != 1) {
+    if (ChaosMixOpened != 0 && DAT_07eaa140 != 1) {
         dropMix = CallDropItem((int)a1,
             (int)(DAT_07eaa0c8 + 15),
             (int)(DAT_07eaa0cc + 110),
@@ -1274,14 +1272,14 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     // ── Mouse-up → drop didn't land in any inventory: shop sell or ground ──
     // A successful grid drop leaves the mouse edge set until the next input
     // update.  The fallback must therefore be gated by the return values, not
-    // merely by DAT_083a4124: otherwise the Chaos panel cancel path restores
+    // merely by MouseLButtonPush: otherwise the Chaos panel cancel path restores
     // the source after it has already sent its authoritative 0x24 request.
     const bool gridDropSent = (dropMain || dropTrade || dropWH || dropMix);
     if (gridDropSent) {
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         return;
     }
-    if (DAT_083a4124) {
+    if (MouseLButtonPush) {
         // El panel Chaos real consume el click en toda su superficie antes de
         // que el dispatcher llegue al fallback de soltar al suelo. Mientras se
         // conserva el render genérico, esa capa de hit-test no existe y un
@@ -1289,13 +1287,13 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // derecho, filtrarse a EquipmentHitTest.  El rectángulo es el panel
         // izquierdo de Chaos (origen dword_7EAA0C8/CC, ancho 190) más su borde
         // de 5 px, que coincide con la franja observada x=451.
-        if (DAT_07eaa11a != 0 &&
-            (int)DAT_083a427c >= (int)DAT_07eaa0c8 &&
-            (int)DAT_083a427c <  (int)DAT_07eaa0c8 + 195 &&
-            (int)DAT_083a4278 >= (int)DAT_07eaa0cc &&
-            (int)DAT_083a4278 <  (int)DAT_07eaa0cc + 450)
+        if (ChaosMixOpened != 0 &&
+            (int)MouseX >= (int)DAT_07eaa0c8 &&
+            (int)MouseX <  (int)DAT_07eaa0c8 + 195 &&
+            (int)MouseY >= (int)DAT_07eaa0cc &&
+            (int)MouseY <  (int)DAT_07eaa0cc + 450)
         {
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
             RestorePickedItemToSource();
@@ -1310,13 +1308,13 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // para que le llegue.
         if (!dropMain && !dropTrade && !dropWH && !dropMix &&
             InventoryOpened != 0 &&
-            (int)DAT_083a427c >= (int)InventoryStartX &&
-            (int)DAT_083a4278 <  (int)(InventoryStartY + 200))
+            (int)MouseX >= (int)InventoryStartX &&
+            (int)MouseY <  (int)(InventoryStartY + 200))
         {
             return;
         }
 
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         // NB: MouseUpdateTime (DAT_07e11d28) and MouseUpdateTimeMax
         // (DAT_00559bec) se resetea para hacer debounce de la UI en el frame siguiente.
         DAT_07e11d28 = 0;
@@ -1327,11 +1325,11 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             int   pickLevel = (((int*)pPickedItem)[1] >> 3) & 0xF;
 
             // Shop NPC open + mouse over shop area → sell-with-confirm
-            if (DAT_07eaa118 != 0   // ShopOpened
-                && (int)DAT_083a427c >= (int)(DAT_07eaa0c8 + 15)
-                && (int)DAT_083a427c <  (int)(DAT_07eaa0c8 + 195)
-                && (int)DAT_083a4278 >= (int)(DAT_07eaa0cc + 50)
-                && (int)DAT_083a4278 <  (int)(DAT_07eaa0cc + 370))
+            if (ShopOpened != 0   // ShopOpened
+                && (int)MouseX >= (int)(DAT_07eaa0c8 + 15)
+                && (int)MouseX <  (int)(DAT_07eaa0c8 + 195)
+                && (int)MouseY >= (int)(DAT_07eaa0cc + 50)
+                && (int)MouseY <  (int)(DAT_07eaa0cc + 370))
             {
                 // Items que piden confirmacion al venderlos (joyas, armas
                 // especiales, +5 o mas, y EXCELLENT).  Lista 1:1 con IDA
@@ -1405,7 +1403,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // item al suelo (la zona de abajo del grid son la barra de zen y los
             // botones). Con v144 = 0 el bloque del suelo no corre y la ejecucion cae en
             // LABEL_301: `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.
-            if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
+            if (InventoryOpened != 0 && (int)MouseX >= (int)InventoryStartX) {
                 Item_ReturnPickedItem();
                 return;
             }
@@ -1418,8 +1416,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // `Inventory_DropItemEx` (solo las celdas) y este dispatcher, asi
             // que el hueco hay que taparlo aca, con el mismo criterio que el guard de las
             // casillas de equipo.
-            if ((DAT_07eaa119 != 0 || DAT_07eaa11a != 0)) {
-                const int px = (int)DAT_083a427c, py = (int)DAT_083a4278;
+            if ((WarehouseOpened != 0 || ChaosMixOpened != 0)) {
+                const int px = (int)MouseX, py = (int)MouseY;
                 const int ox = (int)DAT_07eaa0c8, oy = (int)DAT_07eaa0cc;
                 if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
                     // IDA L1004-1010 (baul/chaos && MouseX >= dword_7EAA0C8 ->

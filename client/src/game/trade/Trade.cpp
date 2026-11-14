@@ -42,7 +42,7 @@
 //   lpString_05826bfc  char[4]  active_shop_name  4-byte NPC name key
 //   DAT_00559684  int   cached_shop_slot_index
 //   DAT_07eaa0d0  dword  — set to 0xffffffff on trade entity clear (0x5d)
-//   DAT_07eaa114  byte  — set to 0 on trade entity clear (0x5d)
+//   GuildOpened  byte  — set to 0 on trade entity clear (0x5d)
 //
 // ── ENTITY TRADE OFFSETS (new, stride 0x394) ─────────────────────────────────
 //
@@ -274,7 +274,7 @@ void PacketHandler_0x5c(BYTE* pkt)
 // Packet: [C1][len][5d][entity_hi][entity_lo]
 //   entity_id = byte[3]*256 + byte[2]
 //   entity[+0x1da] = 0xffff
-//   DAT_07eaa114 = 0; DAT_07eaa0d0 = 0xffffffff
+//   GuildOpened = 0; DAT_07eaa0d0 = 0xffffffff
 // ============================================================
 void PacketHandler_0x5d(BYTE* pkt)
 {
@@ -287,7 +287,7 @@ void PacketHandler_0x5d(BYTE* pkt)
     *(SHORT*)&((CHARACTER*)(uintptr_t)(ent))->GuildMarkIndex = (SHORT)0xFFFF;
     // Símbolos del linker para 0x07eaa114 y 0x07eaa0d0 (no las direcciones
     // literales del binario).
-    DAT_07eaa114 = 0;
+    GuildOpened = 0;
     DAT_07eaa0d0 = 0xFFFFFFFF;
 }
 

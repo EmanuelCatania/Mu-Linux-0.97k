@@ -17,12 +17,12 @@
 // GLOBALS DE ESTADO DEL INPUT
 // ─────────────────────────────────────────────────────────────────────────────
 //
-//   DAT_083a427c  g_MouseX             Posición X del mouse (0..639, normalizada a 640×480)
-//   DAT_083a4278  g_MouseY             Posición Y del mouse (0..479)
-//   DAT_083a4124  g_ClickFlag          1 = LButton pressed (cleared on release; no se setea si DblClick pending)
-//   DAT_083a413c  g_DialogClose        1 = LButton released (set on WM_LBUTTONUP)
+//   MouseX  g_MouseX             Posición X del mouse (0..639, normalizada a 640×480)
+//   MouseY  g_MouseY             Posición Y del mouse (0..479)
+//   MouseLButtonPush  g_ClickFlag          1 = LButton pressed (cleared on release; no se setea si DblClick pending)
+//   MouseLButtonPop  g_DialogClose        1 = LButton released (set on WM_LBUTTONUP)
 //                                      Se limpia si mouse se movió desde el down (055ca03c/40)
-//   DAT_083a42c4  g_DblClickPending    1 = LButton held/down (previene double-fire de g_ClickFlag)
+//   MouseLButton  g_DblClickPending    1 = LButton held/down (previene double-fire de g_ClickFlag)
 //   DAT_083a4299  g_DblClickFlag       1 = WM_LBUTTONDBLCLK (doble click)
 //   DAT_055ca03c  g_MouseX_at_down     X del mouse cuando se presionó LButton (para detectar drag)
 //   DAT_055ca040  g_MouseY_at_down     Y del mouse cuando se presionó LButton
@@ -49,7 +49,7 @@
 //   DAT_07e11d71  g_IME_Mode           Korean/DBCS IME input active
 //   GoldInputEnable  g_DigitOnly          Modo solo dígitos (0-9) — PIN/second password
 //   GoldenArcherLuckyNumberTicket  g_UppercaseOnly      Modo solo mayúsculas
-//   DAT_083a7c24  g_UIScene            Si == 0x7E o 0x98: texto activo aunque otras flags == 0
+//   ErrorMessage  g_UIScene            Si == 0x7E o 0x98: texto activo aunque otras flags == 0
 //
 //   Para Korean DBCS (WM_IME_COMPOSITION, 0x10F):
 //   DAT_07e11cec  g_DBCS_Hi[slot*4]    Byte alto del carácter DBCS
@@ -329,9 +329,9 @@ void Input_CycleChatSize(void)
   int x, y;
   if (g_bUseChatListBox != 1) {
     x = -10; y = Ui::ClassicChatY;           // modo clasico (debajo de los avisos del sistema)
-  } else if (DAT_07eaa117 == 0 ||
-             (DAT_07eaa116 == 0 && DAT_07eaa11b == 0 && DAT_07eaa119 == 0 &&
-              DAT_07eaa11a == 0 && DAT_07eaa11c == 0 && DAT_07eaa118 == 0)) {
+  } else if (InventoryOpened == 0 ||
+             (CharacterOpened == 0 && TradeOpened == 0 && WarehouseOpened == 0 &&
+              ChaosMixOpened == 0 && EventWindowOpened == 0 && ShopOpened == 0)) {
     x = 0xba; y = 0x1a4;                     // recuadro, sin paneles al costado
   } else {
     x = 0; y = 0x1a4;                        // recuadro con un panel abierto

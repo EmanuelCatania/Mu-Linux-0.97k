@@ -351,8 +351,8 @@
 //     GL_ResetBlend();
 //     DAT_00559c78 = 0xffff8080;
 //
-//     // Botón 1 (DAT_07eaa124 != '\0')
-//     if (DAT_07eaa124 != '\0') {
+//     // Botón 1 (GuildCreatorOpened != '\0')
+//     if (GuildCreatorOpened != '\0') {
 //       FUN_004f0480(0x1c2, 0);   // PrepareButton1(state)
 //       glColor3f(1,1,1);
 //       fVar1 = (float)DAT_07ea5b1c + _DAT_005524fc;
@@ -368,8 +368,8 @@
 //       Texture_Draw2D(iVar4, ...);
 //     }
 //
-//     // Botón ícono pequeño 1 (DAT_07eaa114 != '\0')
-//     if (DAT_07eaa114 != '\0') {
+//     // Botón ícono pequeño 1 (GuildOpened != '\0')
+//     if (GuildOpened != '\0') {
 //       FUN_004f0810(0x1c2, 0);   // PrepareIconButton1(state)
 //       glColor3f(1,1,1);
 //       fVar1 = (float)DAT_07e91788 + _DAT_00552464;
@@ -380,8 +380,8 @@
 //         DrawText(ftol(), ftol()-13, &DAT_07d39ef4, ...);
 //     }
 //
-//     // Botón ícono pequeño 2 (DAT_07eaa116 != '\0')
-//     if (DAT_07eaa116 != '\0') {
+//     // Botón ícono pequeño 2 (CharacterOpened != '\0')
+//     if (CharacterOpened != '\0') {
 //       FUN_004ecc60(0x1c2, 0);   // PrepareIconButton2(state)
 //       // similar al anterior pero con DAT_07ea982c/9830 y tooltip DAT_07d3a14c
 //     }
@@ -399,9 +399,9 @@
 //   }
 //
 //   Globals:
-//   DAT_07eaa124   — flag botón 1 visible
-//   DAT_07eaa114   — flag icono 1 visible
-//   DAT_07eaa116   — flag icono 2 visible
+//   GuildCreatorOpened   — flag botón 1 visible
+//   GuildOpened   — flag icono 1 visible
+//   CharacterOpened   — flag icono 2 visible
 //   DAT_07ea5b1c/20 — posición X/Y botón 1
 //   DAT_07e91788/84 — posición X/Y icono 1
 //   DAT_07ea982c/30 — posición X/Y icono 2
@@ -556,8 +556,8 @@
 //
 //   void __cdecl Render_CharNameTags(int param_1)
 //   {
-//     // [Anti-tamper HashTable sobre DAT_07eaa11b — ~25 líneas, omitido]
-//     char antiFlag = DAT_07eaa11b;
+//     // [Anti-tamper HashTable sobre TradeOpened — ~25 líneas, omitido]
+//     char antiFlag = TradeOpened;
 //
 //     if (antiFlag != '\x01') {   // '\x01' = bloqueado por anti-tamper
 //
@@ -614,7 +614,7 @@
 //   }
 //
 //   Globals:
-//   DAT_07eaa11b          — anti-tamper flag ('\x01' → skip toda la función)
+//   TradeOpened          — anti-tamper flag ('\x01' → skip toda la función)
 //   DAT_07eaa0e0          — count HP bars (>0 → offset 50px desde derecha)
 //   DAT_07cf1ffc + 0x218  — lista entidades on-screen (stride 0x44, 12 slots)
 //   entity[+0xd]          — HP byte actual (0 = muerto)

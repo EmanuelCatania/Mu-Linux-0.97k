@@ -1,5 +1,5 @@
 // UI_InGameMenu.cpp — UI_InGameMenu @ 0x00514310
-// Secondary in-game UI state machine (DAT_083a7c24).
+// Secondary in-game UI state machine (ErrorMessage).
 // Handles: escape menu, NPC shop, buy confirmation, item lists, server/char transitions.
 // Called every frame from Game_MainLoop.
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
@@ -113,11 +113,11 @@ static void SaveOptionsToServer97k(void)
 void __cdecl UI_InGameMenu(void)
 {
     // Mouse coordinates (updated by input layer)
-    int mouseX = (int)DAT_083a427c;
-    int mouseY = (int)DAT_083a4278;
+    int mouseX = (int)MouseX;
+    int mouseY = (int)MouseY;
 
-    DWORD state = DAT_083a7c24;
-    DWORD pending = DAT_083a7c28;
+    DWORD state = ErrorMessage;
+    DWORD pending = NextErrorMessage;
 
     // ── ESC key toggle (IDA 00514310 lines 534-572) ─────────────────────────
     // v2 = PressKey(27);  // VK_ESCAPE
@@ -126,20 +126,20 @@ void __cdecl UI_InGameMenu(void)
     //     else if (!ErrorMessage) ErrorMessage = 110;   // open ESC menu
     //     PlayBuffer(25);
     // }
-    // DAT_083a7c24 ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
+    // ErrorMessage ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
     // EquipmentItem (0x07EAA165) = movimiento de equipo pendiente con el server.
     int escHit = PressKey(27);  // PressKey(27)
     if (escHit && !DAT_07eaa165) {            // EquipmentItem
-        if (DAT_083a7c24) {                   // ErrorMessage
-            if (DAT_083a7c24 == 110 || DAT_083a7c24 == 150) {
-                DAT_083a7c24 = DAT_083a7c28;  // ErrorMessage = NextErrorMessage
-                DAT_083a7c28 = 0;
+        if (ErrorMessage) {                   // ErrorMessage
+            if (ErrorMessage == 110 || ErrorMessage == 150) {
+                ErrorMessage = NextErrorMessage;  // ErrorMessage = NextErrorMessage
+                NextErrorMessage = 0;
             }
         } else {
-            DAT_083a7c24 = 110;
+            ErrorMessage = 110;
             if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         }
-        state = DAT_083a7c24;
+        state = ErrorMessage;
         PlayBuffer(0x19, 0, 0);             // PlayBuffer(25), siempre
     }
 
@@ -193,11 +193,11 @@ void __cdecl UI_InGameMenu(void)
         bool okClick = (mouseX >= 284 && mouseX < 354 &&
                         mouseY >= 98 && mouseY < 119 && IsClickPushed());
         if (okClick || enterHit) {
-            DAT_083a4124 = 0;
+            MouseLButtonPush = 0;
             DAT_055ca038 = '\0';                     // consume Enter
             gWindow.RequestCloseApplication();  // cierra el cliente
-            DAT_083a7c24 = DAT_083a7c28;             // ErrorMessage = NextErrorMessage
-            DAT_083a7c28 = 0;
+            ErrorMessage = NextErrorMessage;             // ErrorMessage = NextErrorMessage
+            NextErrorMessage = 0;
         }
         return;   // persiste hasta OK (click o Enter)
     }
@@ -226,7 +226,7 @@ void __cdecl UI_InGameMenu(void)
                 int btnY = (3 * i + 6) * 10;
                 if (mouseY >= btnY && mouseY < btnY + 0x16)
                 {
-                    DAT_083a4124 = 0;  // consume click
+                    MouseLButtonPush = 0;  // consume click
 
                     // Decide acción semántica según (estado, índice).
                     // semantic: 0=Exit 1=JoinSrv 2=JoinChar 3=Options 4=Close
@@ -296,7 +296,7 @@ void __cdecl UI_InGameMenu(void)
                             if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
                                 SaveOptionsToServer97k();
                                 SaveMacroText(Platform::UserMacroPath());  // IDA L1071
-                            if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
+                            if (ChaosMixOpened != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
                                 gReconnect.MarkIntentional();
@@ -305,7 +305,7 @@ void __cdecl UI_InGameMenu(void)
                             }
                         } else if (SceneFlag == 2) {
                             // Login: case 1 = Options
-                            DAT_083a7c28 = 0x96;
+                            NextErrorMessage = 0x96;
                         }
                     }
                     break;
@@ -340,20 +340,20 @@ void __cdecl UI_InGameMenu(void)
                             // que Recv_LogOut maneje todo cuando llegue el ack.
                         } else if (SceneFlag == 4) {
                             // Char-select: case 2 = Options
-                            DAT_083a7c28 = 0x96;
+                            NextErrorMessage = 0x96;
                         } else {
                             // Login: case 2 = Close
-                            DAT_083a7c28 = 0;
+                            NextErrorMessage = 0;
                         }
                     }
                     break;
 
                     case 3:  // Opciones → abre submenú 0x96
-                        DAT_083a7c28 = 0x96;
+                        NextErrorMessage = 0x96;
                         break;
 
                     case 4:  // Cancelar → cerrar menú
-                        DAT_083a7c28 = 0;
+                        NextErrorMessage = 0;
                         break;
                     }
                     goto tail;
@@ -377,7 +377,7 @@ void __cdecl UI_InGameMenu(void)
                          (mouseX >= 373 && mouseX < 413 &&
                           mouseY >= 98 && mouseY < 119 && IsClickPushed());
         if (!yes && !no) return;
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
 
         if (yes) {
             // IDA: sub_513C10 (0x00513C10).  PMSG_CHARACTER_DELETE_RECV =
@@ -436,8 +436,8 @@ void __cdecl UI_InGameMenu(void)
             (unsigned long long)gold > (unsigned long long)DAT_07eaa0f4 +
                 *(DWORD*)((BYTE*)CharacterMachine + 1352);
         if (invalidGold || insufficientTradeGold) {
-            DAT_083a7c24 = invalidGold ? 118 : 117;
-            DAT_083a7c28 = 0;
+            ErrorMessage = invalidGold ? 118 : 117;
+            NextErrorMessage = 0;
             ClearInput(0);
             Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);   // InputTextMax[0]
             InputNumber = 2;           // InputNumber
@@ -504,9 +504,9 @@ void __cdecl UI_InGameMenu(void)
 
         // IDA: el diálogo modal consume el ciclo completo del click; de otro
         // modo el estado sostenido llega a MoveHero en el mismo frame.
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
-        DAT_083a413c = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
+        MouseLButtonPop = 0;
         const WORD key = (WORD)DAT_07eaa0d8;
         // 0x51 pide Encrypt=0 (C1 plano). Acá el chain-XOR sí importa: el
         // paquete tiene payload, y el server lo descifra con XorData.
@@ -530,9 +530,9 @@ void __cdecl UI_InGameMenu(void)
             return;
 
         // IDA: el click del modal Trade se consume completo antes de MoveHero.
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
-        DAT_083a413c = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
+        MouseLButtonPop = 0;
         // PMSG_TRADE_RESPONSE_RECV de MuEmu usa C1 plano y conserva los
         // campos de identidad desde +4; el binario original ya los guarda en
         // DAT_07EA9834 al recibir 0x36.
@@ -584,9 +584,9 @@ void __cdecl UI_InGameMenu(void)
         // IDA: la rama de aceptación consume MouseLButtonPush antes de
         // construir C1:53; consumimos también los latches del tick para que
         // el mismo click modal no llegue al movimiento del mundo.
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
-        DAT_083a413c = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
+        MouseLButtonPop = 0;
 
         int memberIdx = dword_5615E4;
         if (memberIdx < 0 || memberIdx >= kGuildMemberRecordCount) goto tail;
@@ -614,7 +614,7 @@ void __cdecl UI_InGameMenu(void)
     {
         // Hover de los dos botones de DAT_083a42f8 (5 ints: estado, x, y, w, h).
         int  clicked = -1;
-        bool push    = (DAT_083a4124 != 0);
+        bool push    = (MouseLButtonPush != 0);
         int* entry   = (int*)&DAT_083a42f8[0];
         for (int i = 0; i < 2; ++i, entry += 5) {
             if (entry[0] < 1) continue;
@@ -627,25 +627,25 @@ void __cdecl UI_InGameMenu(void)
                 if (push) {
                     push = false;
                     clicked = i;
-                    DAT_083a42c4 = 0;                    // MouseLButton
+                    MouseLButton = 0;                    // MouseLButton
                 }
             }
         }
-        DAT_083a4124 = push ? 1 : 0;                     // MouseLButtonPush
+        MouseLButtonPush = push ? 1 : 0;                     // MouseLButtonPush
 
         if (state == 0x8d) {
             int page = -1;
-            if (mouseX >= 249 && mouseY >= 202 && mouseX <= 264 && mouseY <= 222 && DAT_083a4124) {
+            if (mouseX >= 249 && mouseY >= 202 && mouseX <= 264 && mouseY <= 222 && MouseLButtonPush) {
                 page = (int)(signed char)(BYTE)DAT_083a7c08 - 1;
                 if (page <= 0) page = 0;
-            } else if (mouseX >= 377 && mouseY >= 202 && mouseX <= 392 && mouseY <= 222 && DAT_083a4124) {
+            } else if (mouseX >= 377 && mouseY >= 202 && mouseX <= 392 && mouseY <= 222 && MouseLButtonPush) {
                 page = (int)(signed char)(BYTE)DAT_083a7c08 + 1;
                 if (page >= (int)(BYTE)DAT_083a7c09) page = (BYTE)DAT_083a7c09;
             }
             if (page >= 0) {
                 // Una pulsación cambia una página, aunque haya varios renders por tick.
-                DAT_083a4124 = 0;
-                DAT_083a42c4 = 0;
+                MouseLButtonPush = 0;
+                MouseLButton = 0;
                 DAT_083a7c08 = (DWORD)page;
                 const char* src = (const char*)
                     ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + page));
@@ -660,8 +660,8 @@ void __cdecl UI_InGameMenu(void)
             return;                                      // persiste
         }
         DAT_00559bec = 6;                                // MouseUpdateTimeMax
-        DAT_083a7c24 = DAT_083a7c28;                     // ErrorMessage = NextErrorMessage
-        DAT_083a7c28 = 0;
+        ErrorMessage = NextErrorMessage;                     // ErrorMessage = NextErrorMessage
+        NextErrorMessage = 0;
         DAT_07e11d28 = 0;                                // MouseUpdateTime
         PlayBuffer(0x19, 0, 0);
         return;
@@ -694,7 +694,7 @@ void __cdecl UI_InGameMenu(void)
             if (v353 >= 0) {
                 if (numAnswer <= 1) numAnswer = 1;   // IDA L3910-3912
                 if (v353 < numAnswer) {
-                    DAT_083a4124 = 0;
+                    MouseLButtonPush = 0;
                     DAT_07e11d28 = 0;
                     DAT_00559bec = 6;
                     PlayBuffer(25, 0, 0);   // IDA L3917: un solo sonido, el 25
@@ -711,12 +711,12 @@ void __cdecl UI_InGameMenu(void)
                         link = g_DialogScript[cur].m_iLinkForAnswer[v353];
 
                     if (link < 0) {
-                        int prev = (int)DAT_083a7c28;      // NextErrorMessage
-                        DAT_083a7c28 = 0;
-                        DAT_083a7c24 = (DWORD)prev;        // ErrorMessage
+                        int prev = (int)NextErrorMessage;      // NextErrorMessage
+                        NextErrorMessage = 0;
+                        ErrorMessage = (DWORD)prev;        // ErrorMessage
                     } else {
-                        DAT_083a7c24 = DAT_083a7c28;
-                        DAT_083a7c28 = 0;
+                        ErrorMessage = NextErrorMessage;
+                        NextErrorMessage = 0;
                         ItemList_Select(link);
                     }
                 }
@@ -743,10 +743,10 @@ void __cdecl UI_InGameMenu(void)
         }
         if (choice < 0) return; // el modal no se cierra al click exterior
 
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         DAT_083a7c2c = (DWORD)choice;
-        DAT_083a7c24 = DAT_083a7c28;
-        DAT_083a7c28 = 0;
+        ErrorMessage = NextErrorMessage;
+        NextErrorMessage = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         PlayBuffer(0x19, 0, 0);
@@ -759,8 +759,8 @@ void __cdecl UI_InGameMenu(void)
     // expandido; un click fuera de él se descarta, como hacía el DLL.
     case 0x96:
         if (!gOptionsMenu.UpdateMouse()) {
-            DAT_083a42c4 = 0;   // MouseLButton
-            DAT_083a4124 = 0;   // MouseLButtonPush
+            MouseLButton = 0;   // MouseLButton
+            MouseLButtonPush = 0;   // MouseLButtonPush
             DAT_07e11d28 = 0;   // MouseUpdateTime
             DAT_00559bec = 6;   // MouseUpdateTimeMax
         }
@@ -787,12 +787,12 @@ void __cdecl UI_InGameMenu(void)
             }
             rect += 5;
         }
-        DAT_083a4124 = 0;                    // consume MouseLButtonPush
+        MouseLButtonPush = 0;                    // consume MouseLButtonPush
 
         if (clickResult[0] == 0 || clickResult[1] == 1) {
             DAT_00559f5e = (clickResult[1] == 1) ? (char)2 : (char)1;  // No=2, Yes=1
-            DAT_083a7c24 = DAT_083a7c28;     // ErrorMessage = NextErrorMessage
-            DAT_083a7c28 = 0;
+            ErrorMessage = NextErrorMessage;     // ErrorMessage = NextErrorMessage
+            NextErrorMessage = 0;
             PlayBuffer(0x19, 0, 0);        // PlayBuffer(25)
         }
         return;
@@ -825,9 +825,9 @@ void __cdecl UI_InGameMenu(void)
         //   };
         gNetwork.Send(pkt, sizeof(pkt));
 
-        DAT_083a4124 = 0;
-        DAT_083a7c24 = DAT_083a7c28;
-        DAT_083a7c28 = 0;
+        MouseLButtonPush = 0;
+        ErrorMessage = NextErrorMessage;
+        NextErrorMessage = 0;
         PlayBuffer(0x19, 0, 0);
         return;
     }
@@ -849,9 +849,9 @@ void __cdecl UI_InGameMenu(void)
         gNetwork.SendC1(pkt, sizeof(pkt));
         GuildWar_ResetClientState();
 
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
-        DAT_083a413c = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
+        MouseLButtonPop = 0;
         goto tail;
     }
 
@@ -868,9 +868,9 @@ void __cdecl UI_InGameMenu(void)
                          (mouseX >= 373 && mouseX < 413 &&
                           mouseY >= 98 && mouseY < 119 && IsClickPushed());
         if (!yes && !no) return;
-        DAT_083a4124 = 0;
-        DAT_083a42c4 = 0;
-        DAT_083a413c = 0;
+        MouseLButtonPush = 0;
+        MouseLButton = 0;
+        MouseLButtonPop = 0;
         if (yes) {
             char pinText[11];
             memcpy(pinText, (const char*)&DAT_07ea9814, 10);   // dword_7EA9814
@@ -915,12 +915,12 @@ void __cdecl UI_InGameMenu(void)
             }
             rect += 5;
         }
-        DAT_083a4124 = 0;                    // consume MouseLButtonPush
+        MouseLButtonPush = 0;                    // consume MouseLButtonPush
 
         if (clickResult[0] == 0) {
             // ── SI: usar el item ────────────────────────────────────────────
             const BYTE slot = DAT_07ea5249_byte;
-            if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
+            if (WarehouseOpened != 0 || TradeOpened != 0) {
                 // Baul o trade abiertos: no se puede usar.
                 UIChatLogWindow_AddText("", GlobalText[474], 2);
             } else if ((int)EnableUse <= 0) {
@@ -951,8 +951,8 @@ void __cdecl UI_InGameMenu(void)
     default:
         // Los estados no manejados (incluidos los códigos de ErrorMessage del login
         // — 0x16 wrong-pass, 0x65 sin-pass, etc., que comparten el global
-        // DAT_083a7c24) NO deben caer al `tail` cada frame: el `tail` hace
-        // `DAT_083a7c24 = DAT_083a7c28` (dismissea el cartel) + PlayBuffer(25).  El
+        // ErrorMessage) NO deben caer al `tail` cada frame: el `tail` hace
+        // `ErrorMessage = NextErrorMessage` (dismissea el cartel) + PlayBuffer(25).  El
         // dismiss pasa SOLO con el click en el botón OK, que RenderErrorMessage
         // dibuja en (284,98)-(354,119), o con Enter.  Sin eso el cartel persiste,
         // fiel al original.
@@ -986,7 +986,7 @@ void __cdecl UI_InGameMenu(void)
             }
 
             if (okClick || enterHit) {
-                DAT_083a4124 = 0;     // consume click
+                MouseLButtonPush = 0;     // consume click
                 DAT_055ca038 = '\0';  // consume Enter
                 // IDA L1786 `case 144`: igual que el default, mas sub_4E9250(6)
                 // (re-baraja el teclado del segundo password, modo 6).
@@ -1003,7 +1003,7 @@ void __cdecl UI_InGameMenu(void)
     // close button overlay. Requires click — not hover.
     if (mouseX >= 0x175 && mouseX <= 0x185 && IsClickPushed())
     {
-        DAT_083a4124 = 0;
+        MouseLButtonPush = 0;
         switch (state)
         {
         // (Los cases 0x72/0x77/0x79 que habia aca no se alcanzaban: el primer
@@ -1017,8 +1017,8 @@ void __cdecl UI_InGameMenu(void)
             // IDA consume MouseLButtonPush al cancelar. Estos dos latches son
             // el equivalente del pump reconstruido y evitan propagar el click
             // del modal al movimiento en el mismo frame.
-            DAT_083a42c4 = 0;
-            DAT_083a413c = 0;
+            MouseLButton = 0;
+            MouseLButtonPop = 0;
             break;
 
         default:
@@ -1028,9 +1028,9 @@ void __cdecl UI_InGameMenu(void)
 
 tail:
     // ── Apply queued state transition ────────────────────────────────────
-    // Pattern: DAT_083a7c24 = DAT_083a7c28; DAT_083a7c28 = 0
-    DAT_083a7c24  = DAT_083a7c28;
-    DAT_083a7c28  = 0;
+    // Pattern: ErrorMessage = NextErrorMessage; NextErrorMessage = 0
+    ErrorMessage  = NextErrorMessage;
+    NextErrorMessage  = 0;
     DAT_07e11d28  = 0;
     DAT_00559bec  = 6;
     PlayBuffer(0x19, 0, 0);

@@ -43,8 +43,8 @@ void __cdecl Cursor_Render(void) {
     if (frame == 1 || frame == 3 || frame == 5) u_bits = 0x3F000000;  // 0.5f
     if (frame == 2 || frame == 3 || frame == 4) v_bits = 0x3F000000;  // 0.5f
 
-    float cx = (float)(int)DAT_083a427c - _DAT_0055264c;  // MouseX - 2
-    float cy = (float)(int)DAT_083a4278 - _DAT_0055264c;  // MouseY - 2
+    float cx = (float)(int)MouseX - _DAT_0055264c;  // MouseX - 2
+    float cy = (float)(int)MouseY - _DAT_0055264c;  // MouseY - 2
 
     // ── LABEL_43: default arrow cursor ───────────────────────────────────────
     auto draw_arrow = [&](){
@@ -52,7 +52,7 @@ void __cdecl Cursor_Render(void) {
     };
 
     // Error message o diálogo bloqueante → arrow
-    if (DAT_07eaa14c != 0 || DAT_083a7c24 != 0) { draw_arrow(); return; }
+    if (DAT_07eaa14c != 0 || ErrorMessage != 0) { draw_arrow(); return; }
 
     // SelectedItem (hover sobre ítem en el piso)
     if (SelectedItem != -1) {
@@ -114,18 +114,18 @@ void __cdecl Cursor_Render(void) {
     if (DAT_07eaa134 == 2) {
         float10 fv = fsin((float10)(long long)WorldTime * (float10)_DAT_00552914);
         if (fv <= (float10)FloatZero) {
-            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552660,
-                            (float)(int)DAT_083a4278 + _DAT_005529fc,
+            GL_DrawRotatedRect(7, (float)(int)MouseX + _DAT_00552660,
+                            (float)(int)MouseY + _DAT_005529fc,
                          24.0f, 24.0f, 0x42340000);
         } else {
-            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552488,
-                            (float)(int)DAT_083a4278 + _DAT_00552488,
+            GL_DrawRotatedRect(7, (float)(int)MouseX + _DAT_00552488,
+                            (float)(int)MouseY + _DAT_00552488,
                          24.0f, 24.0f, 0);
         }
         return;
     }
     // Sin LMB → arrow. Con LMB → move (3) / DontMove (10).
-    if (DAT_083a42c4 == 0) { draw_arrow(); return; }
+    if (MouseLButton == 0) { draw_arrow(); return; }
     if (DAT_07e11d64 != 0)
         GL_DrawTexture(10, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
     else

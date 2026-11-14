@@ -866,16 +866,16 @@ int      TradeYourWait = 0;
 int      TradeMyWait = 0;
 DWORD    TradeRemoteGuildKey = 0;
 WORD     TradeRemoteLevel = 0;
-char     DAT_07eaa114  = 0;
-char     DAT_07eaa115  = 0;
-char     DAT_07eaa116  = 0;
-char     DAT_07eaa117  = 0;
-char     DAT_07eaa118  = 0;
-char     DAT_07eaa119  = 0;
-char     DAT_07eaa11a  = 0;
-char     DAT_07eaa11b  = 0;
-char     DAT_07eaa11c  = 0;
-DWORD    DAT_07eaa124  = 0;
+char     GuildOpened  = 0;  // IDA: GuildOpened (0x07EAA114)
+char     PartyOpened  = 0;  // IDA: PartyOpened (0x07EAA115)
+char     CharacterOpened  = 0;  // IDA: CharacterOpened (0x07EAA116)
+char     InventoryOpened  = 0;  // IDA: InventoryOpened (0x07EAA117)
+char     ShopOpened  = 0;  // IDA: ShopOpened (0x07EAA118)
+char     WarehouseOpened  = 0;  // IDA: WarehouseOpened (0x07EAA119)
+char     ChaosMixOpened  = 0;  // IDA: ChaosMixOpened (0x07EAA11A)
+char     TradeOpened  = 0;  // IDA: TradeOpened (0x07EAA11B)
+char     EventWindowOpened  = 0;  // IDA: EventWindowOpened (0x07EAA11C)
+DWORD    GuildCreatorOpened  = 0;  // IDA: GuildCreatorOpened (0x07EAA124)
 DWORD    GoldenArcherOpenType  = 0;
 DWORD    DAT_07eaa13c  = 0;
 DWORD    MixType  = 0;
@@ -1006,8 +1006,8 @@ char     DAT_083a410c  = 0;
 // reserva los 12 bytes y los writes a out_ray[1]/[2] caen en globals vecinos.
 DWORD    DAT_083a4110_arr[3] = {0};
 DWORD&   DAT_083a4110 = DAT_083a4110_arr[0];
-DWORD    DAT_083a4124  = 0;
-DWORD    DAT_083a413c  = 0;
+DWORD    MouseLButtonPush  = 0;  // IDA: MouseLButtonPush (0x083A4124)
+DWORD    MouseLButtonPop  = 0;  // IDA: MouseLButtonPop (0x083A413C)
 // ─── View/camera 3x4 matrix (48 bytes = 12 DWORDs) ───────────────────────────
 // En el binario original 0x083a4140..0x083a416f es UN único buffer que
 // GL_GetModelViewMatrix llena con 3 filas × 4 floats.
@@ -1022,10 +1022,10 @@ DWORD&   DAT_083a415c = CameraMatrix[7];
 DWORD&   DAT_083a416c = CameraMatrix[11];
 // GrabFileName — "Screen %02d %02d %02d %02d - %04d" screenshot filename buffer.
 // Original declarado como DWORD pero crt_sprintf lo usa como char[]: la escritura
-// real es ~26 chars. Reservamos el gap completo hasta DAT_083a4278 (0x104 bytes).
+// real es ~26 chars. Reservamos el gap completo hasta MouseY (0x104 bytes).
 char     GrabFileName[0x104] = {0};
-DWORD    DAT_083a4278  = 0;  // MouseY
-DWORD    DAT_083a427c  = 0;  // MouseX
+DWORD    MouseY  = 0;  // IDA: MouseY (0x083A4278)
+DWORD    MouseX  = 0;  // IDA: MouseX (0x083A427C)
 DWORD    OpenglWindowWidth  = 0;  // viewport width
 // ── CameraRayOriginX..428c — camera world position (3 floats) ────────────────────
 // Camera_MouseRay (Camera_BuildMouseRay) escribe via Vector_InverseRotate(... &CameraRayOriginX) los
@@ -1041,7 +1041,7 @@ DWORD    ViewportCenterX  = 0;  // DAT_083A429C
 DWORD    ViewportCenterY  = 0;  // DAT_083A42A0
 DWORD    DAT_083a42a4  = 0;
 DWORD    DAT_083a42a8  = 0;
-DWORD    DAT_083a42ac  = 0;  // MouseRButton
+DWORD    MouseRButton  = 0;  // IDA: MouseRButton (0x083A42AC)
 DWORD    OpenglWindowHeight  = 0;  // viewport height
 // CameraAngle[3] @ 0x083a42b8 — 3 floats read by BeginOpengl via glRotatef and
 // written by MoveCamera/Scene_CharSelect. Must be contiguous; DWORD aliases
@@ -1053,7 +1053,7 @@ extern float    CameraAngle[3];         // defined later in this TU
 DWORD&   DAT_083a42b8 = *(DWORD*)&CameraAngle[0];
 DWORD&   DAT_083a42bc = *(DWORD*)&CameraAngle[1];
 DWORD&   DAT_083a42c0 = *(DWORD*)&CameraAngle[2];
-DWORD    DAT_083a42c4  = 0;  // MouseLButton
+DWORD    MouseLButton  = 0;  // IDA: MouseLButton (0x083A42C4)
 DWORD    OpenglWindowX  = 0;  // viewport x offset
 DWORD    OpenglWindowY  = 0;  // viewport y offset
 // CameraPosition[3] @ 0x083a42d4 — 3 floats read by BeginOpengl via glTranslatef
@@ -1111,8 +1111,8 @@ int      LoginSubState  = 0;
 DWORD    DAT_083a7c18  = 0;
 DWORD    DAT_083a7c1c  = 0;
 DWORD    DAT_083a7c20  = 0;
-DWORD    DAT_083a7c24  = 0;
-DWORD    DAT_083a7c28  = 0;
+DWORD    ErrorMessage  = 0;  // IDA: ErrorMessage (0x083A7C24)
+DWORD    NextErrorMessage  = 0;  // IDA: NextErrorMessage (0x083A7C28)
 DWORD    DAT_083a7c38  = 0;
 DWORD    DAT_083a7c3c  = 0;
 DWORD    DAT_083a7c40  = 0;  // cantidad de servers del F4/02 (ReceiveServerList)
@@ -1353,7 +1353,7 @@ int      DAT_00559c68  = 0;
 int      DAT_00559c70  = 0;
 int      DAT_00559ce8  = 0;
 DWORD    DAT_00559bec  = 0;
-// DAT_083a42ac already defined at line ~652
+// MouseRButton already defined at line ~652
 DWORD    MouseRButtonPush  = 0;
 // Lista `Operates` (0x083A2370): objetos interactuables del mundo -- sillas,
 // bancos, barandas y los orbes de Noria.  200 entradas de 12 bytes:
@@ -1508,8 +1508,8 @@ char     DAT_00559d54  = 0;
 char     DAT_00559d5c  = 0;
 
 // ── Guild system (opcodes 0x90-0x99) ─────────────────────────────────────────
-// DAT_07eaa117 — defined above (char)
-// DAT_07eaa116 — defined above (char)
+// InventoryOpened — defined above (char)
+// CharacterOpened — defined above (char)
 // GoldenArcherOpenType — defined above (DWORD)
 int      GoldenArcherItemCount  = 0;
 // StorageGoldFlag — defined above (DWORD)
@@ -1530,8 +1530,8 @@ WORD     DAT_00559f5c  = 0;
 // DAT_083a4324  — defined above (DWORD)
 // DAT_083a44c4  — defined above (char[7 * 0x26])
 DWORD    DAT_083a42f8[10] = {};
-// DAT_083a7c24  — defined above (DWORD)
-// DAT_083a7c28  — defined above (DWORD)
+// ErrorMessage  — defined above (DWORD)
+// NextErrorMessage  — defined above (DWORD)
 int      DAT_083a7c30  = 0;
 int      DAT_083a7c34  = 0;
 // Tabla de miembros de guild (UI_GuildLegacy): array de registros de 0x18 bytes:
@@ -1639,7 +1639,7 @@ char     DAT_083a4348[10][1][38] = {};   // g_lpszDialogAnswer (10 x 38 = 380)
 // DAT_083a7c08 — defined above (DWORD)
 // DAT_083a7c09 — defined above (char)
 // DAT_083a7c0c — defined above (DWORD)
-// DAT_083a4124 — defined above (DWORD)
+// MouseLButtonPush — defined above (DWORD)
 // _DAT_00552cac — defined above (float)
 // Options submenu (0x96) toggle labels — rendered by UI_StatsPanel RenderErrorMessage
 // L152-175. El render llama crt_sprintf(buf, s__s_On_...) sin argumentos, por
@@ -2582,7 +2582,7 @@ void  *DAT_055c9b98       = NULL;   // RB-tree sentinel (NIL)
 float  CameraAngle[3]     = {0};
 float  CameraPosition[3]  = {0};
 // InventoryOpened/CharacterOpened/etc. are now #define aliases for
-// DAT_07eaa117/116/etc. — see globals.h. Storage is the byte-sized DAT_
+// InventoryOpened/116/etc. — see globals.h. Storage is the byte-sized DAT_
 // globals defined above (lines ~745-753).
 FILE  *SMDFile             = NULL;
 // lpDefault_00583d88 already defined above (line ~1014)

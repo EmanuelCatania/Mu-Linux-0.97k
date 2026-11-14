@@ -329,11 +329,11 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     // MixState          = DAT_07eaa140 (chaos mix active flag)
     // EquipmentItem     = DAT_07eaa165 (equipment move in-progress guard)
     // InventoryOpened   = (extern) InventoryOpened
-    // WarehouseOpened   = DAT_07eaa119
-    // TradeOpened       = DAT_07eaa11b
-    // MouseX            = DAT_083a427c
-    // MouseY            = DAT_083a4278
-    // MouseLButtonPush  = DAT_083a4124
+    // WarehouseOpened   = WarehouseOpened
+    // TradeOpened       = TradeOpened
+    // MouseX            = MouseX
+    // MouseY            = MouseY
+    // MouseLButtonPush  = MouseLButtonPush
     // DAT_083a42eb      = auto-drop trigger flag
     // DAT_07e11e78      = target inventory slot index
     // DAT_07ea5b18      = source inventory slot index (picked-from)
@@ -370,9 +370,9 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     //   gridY = (MouseY - origin_y) * 0.05 - itemH * 0.5 + 0.5
     // The 0.05 factor = 1/20 (cells are 20 px wide). The half-width offset
     // centers the multi-cell footprint on the cursor.
-    int mouseGridX = (int)(((double)((int)DAT_083a427c - origin_x)) * 0.05
+    int mouseGridX = (int)(((double)((int)MouseX - origin_x)) * 0.05
                             - (double)itemWidth  * 0.5 + 0.5);
-    int mouseGridY = (int)(((double)((int)DAT_083a4278 - origin_y)) * 0.05
+    int mouseGridY = (int)(((double)((int)MouseY - origin_y)) * 0.05
                             - (double)itemHeight * 0.5 + 0.5);
 
     // Bounds check: negative grid coords = outside the grid (mouse left/up
@@ -432,7 +432,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     }
 
     // --- Check for mouse click to confirm drop ---
-    if (DAT_083a42eb == '\0' && DAT_083a4124 == 0) {
+    if (DAT_083a42eb == '\0' && MouseLButtonPush == 0) {
         // Sin click ni auto-drop: solo la vista previa.  IDA L661: return v487.
         return spaceFree ? 1u : 0u;
     }
@@ -486,7 +486,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 // Con el baul o el trade abiertos no se puede aplicar la
                 // jewel: IDA salta a LABEL_807, que muestra el mensaje. Por eso
                 // `canStack` queda en false en esos dos casos.
-                if (DAT_07eaa119 != '\0' || DAT_07eaa11b != '\0') {
+                if (WarehouseOpened != '\0' || TradeOpened != '\0') {
                     // IDA LABEL_807: jewel sobre un item con el baul o el trade
                     // abiertos.  Es el UNICO sitio de sub_4D6470 que muestra
                     // GlobalText[474]; el resto de la rama "no libre" sale en
@@ -643,8 +643,8 @@ drop_done:
     // devuelve el cursor a donde estaba y apaga el flag.  Sin esto el flag
     // quedaba prendido y los drops siguientes se disparaban solos.
     if (DAT_083a42eb) {
-        DAT_083a427c = g_PickupLatchX;
-        DAT_083a4278 = g_PickupLatchY;
+        MouseX = g_PickupLatchX;
+        MouseY = g_PickupLatchY;
     }
     DAT_083a42eb = 0;
     (void)actionTaken;

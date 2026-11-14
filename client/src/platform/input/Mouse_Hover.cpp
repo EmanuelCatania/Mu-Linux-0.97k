@@ -93,8 +93,8 @@ void Mouse_UpdateHoverTargets(void)
         //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
         //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
         if (Attacking == -1 ||
-            DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
-            DAT_083a42ac != '\0' || MouseRButtonPush != '\0' ||
+            MouseLButton != '\0' || MouseLButtonPush != 0 ||
+            MouseRButton != '\0' || MouseRButtonPush != '\0' ||
             *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead != '\0')
         {
             SelectedCharacter = -1;
@@ -476,8 +476,8 @@ int __cdecl ItemOnGround_HoverTest(void)
     // World_ToScreen) esté cerca del cursor. Screen-space, sin picker de terreno
     // (que dibujaba la cuadrícula). Umbral generoso ~24 px (el modelo del item
     // es chico en el suelo).
-    int mouseX = (int)DAT_083a427c;
-    int mouseY = (int)DAT_083a4278;
+    int mouseX = (int)MouseX;
+    int mouseY = (int)MouseY;
     int best = -1, bestD = 24 * 24 + 1;
     for (int i = 0; i < 1000; ++i) {
         BYTE* base = pool + i * GROUND_ITEM_STRIDE;
@@ -550,13 +550,13 @@ int __cdecl SpecialObject_HoverTest(void)
 // FUN_004afb00 — implemented in src/game/core/Party_NameMatch.cpp (Party_MatchEntityNames)
 // Party_HPBar_HoverCheck @ 0x004E5980 — Party_HPBar_HoverCheck(void)
 // Iterates the party HP bar array (DAT_07e11e9c, stride 0x24 = 9 uints) and checks
-// if the mouse cursor (DAT_083a427c, DAT_083a4278) is within any party member's
+// if the mouse cursor (MouseX, MouseY) is within any party member's
 // screen rect. Sets SelectedCharacter (hover entity index) and returns 1 if hovering.
-// SecondPassword UI state flags (DAT_07eaa115..130) control which X position band is used.
+// SecondPassword UI state flags (PartyOpened..130) control which X position band is used.
 // Anti-tamper HashTable blocks in the loop are skipped — only position comparison kept.
 char __cdecl Party_HPBar_HoverCheck(void)
 {
-    if (DAT_07eaa115 != '\0') return 0;
+    if (PartyOpened != '\0') return 0;
 
     // El HUD dibuja esta columna desde GetScreenWidth; compartir su origen
     // evita mantener una segunda lista de combinaciones de paneles abiertos.
@@ -590,8 +590,8 @@ char __cdecl Party_HPBar_HoverCheck(void)
                             pVal == 0xf  || pVal == 0x10);
 
             // Check mouse position within screen rect
-            float mouseX = (float)DAT_083a427c;
-            float mouseY = (float)DAT_083a4278;
+            float mouseX = (float)MouseX;
+            float mouseY = (float)MouseY;
             bool bPosOk = (mouseX >= local_14 - _DAT_00552540) &&
                           (mouseX <= local_14 + _DAT_00552598) &&
                           (mouseY >= local_24) &&

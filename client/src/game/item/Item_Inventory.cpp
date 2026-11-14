@@ -407,15 +407,15 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
 //                          dword_46F37C=0; *(WORD*)(off_46F064+388)=999;
 //   sub_407BA0 (op 0x54): clears every flag, dword_7A51B00=0
 //
-// En 0.97 el flag InventoryOpened está unificado con DAT_07eaa117 (per
+// En 0.97 el flag InventoryOpened está unificado con InventoryOpened (per
 // nuestra refactor).  Estos handlers simplemente lo flippean.
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void __cdecl Recv_InventoryOpen(const BYTE* /*Msg*/)
 {
-    DAT_07eaa117 = 1;                               // InventoryOpened = true
+    InventoryOpened = 1;                               // InventoryOpened = true
 }
 
 extern "C" void __cdecl Recv_InventoryClose(const BYTE* /*Msg*/)
 {
-    DAT_07eaa117 = 0;                               // InventoryOpened = false
+    InventoryOpened = 0;                               // InventoryOpened = false
 }

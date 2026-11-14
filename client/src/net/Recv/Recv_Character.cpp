@@ -666,7 +666,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
            (unsigned)*(const WORD*)(Msg + 8), (unsigned)*(const WORD*)(Msg + 10));
 
     // (1) Reset de input + estado de teleport, y baja del slot del héroe viejo.
-    DAT_083a42c4 = 0;                                  // MouseLButton = 0
+    MouseLButton = 0;                                  // MouseLButton = 0
     Teleport = 0;                                  // Teleport = 0
     if (DAT_07abf5d8) *(BYTE*)DAT_07abf5d8 = 0;        // *(BYTE *)Hero = 0
 

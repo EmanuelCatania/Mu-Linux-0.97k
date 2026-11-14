@@ -15,12 +15,12 @@ void RenderInfomation3D(void)
   byte option1;
   uint level;
 
-  if (DAT_083a7c24 == 0x97) {
+  if (ErrorMessage == 0x97) {
     if (DAT_07eaa13c != 1) {
       return;
     }
   }
-  else if (DAT_083a7c24 != 0x99) {
+  else if (ErrorMessage != 0x99) {
     return;
   }
 
@@ -41,7 +41,7 @@ void RenderInfomation3D(void)
   level = DAT_07e91354;
   itemType = *(short*)DAT_07e91350;
   option1 = DAT_07e9136b;
-  if (DAT_083a7c24 == 0x99) {
+  if (ErrorMessage == 0x99) {
     level = DAT_07ea5244;
     itemType = *(short*)DAT_07ea5240;
     option1 = DAT_07ea525b;

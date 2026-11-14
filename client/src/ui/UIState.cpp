@@ -9,7 +9,7 @@ bool HasTextInput()
     return InputEnable || GuildInputEnable || GoldInputEnable || DAT_07e11d71;
 }
 
-bool HasModalDialog() { return DAT_083a7c24 != 0; } // ErrorMessage
+bool HasModalDialog() { return ErrorMessage != 0; } // ErrorMessage
 bool IsItemMovePending() { return DAT_07eaa165 != 0; } // EquipmentItem
 bool IsMixBusy() { return MixState != 0; }
 

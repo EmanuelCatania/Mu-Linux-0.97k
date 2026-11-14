@@ -157,7 +157,7 @@ int __cdecl GuildOverview_Render(void)
 // IDA: FUN_0051D6F0 (0x0051D6F0)
 // CreateOkMessageBox — show an OK dialog by setting the UI state.
 // Wraps text at 7 chars / 0x26 lines into DAT_083a44c4, sets a fixed panel descriptor,
-// then transitions DAT_083a7c24 or DAT_083a7c28 to state 0x8b.
+// then transitions ErrorMessage or NextErrorMessage to state 0x8b.
 void __cdecl CreateOkMessageBox(char *msg)
 {
     DAT_083a4324 = SeparateTextIntoLines(msg, (char *)&DAT_083a44c4, 7, 0x26);
@@ -170,18 +170,18 @@ void __cdecl CreateOkMessageBox(char *msg)
     DAT_083a42f8[2] = 0x8c;
     DAT_083a42f8[3] = 0x46;
     DAT_083a42f8[4] = 0x15;
-    if (DAT_083a7c24 != 0)
-        DAT_083a7c28 = 0x8b;
+    if (ErrorMessage != 0)
+        NextErrorMessage = 0x8b;
     else
-        DAT_083a7c24 = 0x8b;
+        ErrorMessage = 0x8b;
 }
 
 // GuildMemberList_Update @ 0x0051D9E0 — GuildMemberList_Update
 // Sets UI state 0x8c, stores count/param2, copies menu descriptor and member list data.
 void __cdecl GuildMemberList_Update(int count, int p2, void *data)
 {
-    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x8c;
-    else                   DAT_083a7c28 = 0x8c;
+    if (ErrorMessage == 0) ErrorMessage = 0x8c;
+    else                   NextErrorMessage = 0x8c;
     DAT_083a7c34 = (DWORD)p2;
     DAT_083a7c30 = count;
     // Copy menu descriptor: 5 DWORDs
@@ -205,8 +205,8 @@ void __cdecl GuildMemberList_Update(int count, int p2, void *data)
 // Sets UI state 0x9a, stores param_1 as member count, copies 5-entry menu desc + 6 DWORDs data.
 void __cdecl GuildMemberList_Add(int p1, void *data)
 {
-    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x9a;
-    else                   DAT_083a7c28 = 0x9a;
+    if (ErrorMessage == 0) ErrorMessage = 0x9a;
+    else                   NextErrorMessage = 0x9a;
     DAT_083a7c30 = (int)(DWORD)p1;
     DWORD desc[5] = { 1, 0x47, 0x82, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
@@ -256,8 +256,8 @@ int __cdecl ItemList_Select(int param_1) {
     }
 
     // IDA: ErrorMessage = 142, o NextErrorMessage si ya hay un cartel arriba.
-    if (DAT_083a7c24 != 0) DAT_083a7c28 = 142;
-    else                   DAT_083a7c24 = 142;
+    if (ErrorMessage != 0) NextErrorMessage = 142;
+    else                   ErrorMessage = 142;
     return 1;
 }
 // CServerSelWin_UpdateWhileActive — implemented in src/scenes/Scene_ServerSelect_Input.cpp

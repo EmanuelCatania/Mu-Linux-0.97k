@@ -28,7 +28,7 @@
 //   DAT_07abf20c   — character page/slot counter
 //   DAT_07cf1ffc   — character data pointer
 //   DAT_07cf1ff4   — character name buffer
-//   DAT_07eaa114..  — anti-tamper counters
+//   GuildOpened..  — anti-tamper counters
 //   DAT_05826cb0   — server response code
 //     0x33 = char list received
 //     0x34 = char-select request sent
@@ -49,7 +49,7 @@
 extern "C" void DbgLogPublic(const char*);
 
 // ── CLICK-FLAG WATCHDOG ─────────────────────────────────────────────────────
-// DAT_083a4124 (MouseLButtonPush) only toma valores {0,1} en el código fuente
+// MouseLButtonPush (MouseLButtonPush) only toma valores {0,1} en el código fuente
 // (WndProc lo settea a 1 en LBUTTONDOWN, todos los handlers lo limpian a 0).
 // El runtime mostraba clk=1133983066 (0x4397355A) cada frame en char-select →
 // phantom slot-clicks → state oscilando 0x18↔0x17.  La causa es algún stomp
@@ -59,7 +59,7 @@ extern "C" void DbgLogPublic(const char*);
 // tanto.
 static void Clk_Watch(const char* label)
 {
-    DWORD v = DAT_083a4124;
+    DWORD v = MouseLButtonPush;
     if (v != 0 && v != 1) {
         static unsigned s_count = 0;
         if (s_count < 60) {
@@ -68,7 +68,7 @@ static void Clk_Watch(const char* label)
             Platform::TextFormat(dbg, "CLK-CORRUPT @ %s: 0x%08X (decimal %u)", label, v, v);
             DbgLogPublic(dbg);
         }
-        DAT_083a4124 = 0;  // clamp — only WndProc-set value 1 is trusted
+        MouseLButtonPush = 0;  // clamp — only WndProc-set value 1 is trusted
     }
 }
 #define CLK_WATCH(LABEL) Clk_Watch(LABEL)
@@ -159,9 +159,9 @@ void Game_EnterWorldTick(void)
 
         // Limpia flags de click heredados de la escena anterior: un doble click en
         // login/server-select deja DAT_083a4299=1 y en char-select dispararía la
-        // entrada al mundo sin elegir slot. También se limpia DAT_083a4124.
+        // entrada al mundo sin elegir slot. También se limpia MouseLButtonPush.
         DAT_083a4299 = 0;   // double-click flag
-        DAT_083a4124 = 0;   // single-click flag
+        MouseLButtonPush = 0;   // single-click flag
         Clk_Watch("scene-init");
 
         Scene_LoadCharSelectResources(); // OpenCharacterSceneData (IDA)
@@ -220,11 +220,11 @@ void Game_EnterWorldTick(void)
         }
 
         // Clear anti-tamper counters
-        DAT_07eaa114 = 0; DAT_07eaa115 = 0;
-        DAT_07eaa116 = 0; DAT_07eaa117 = 0;
-        DAT_07eaa118 = 0; DAT_07eaa119 = 0;
-        DAT_07eaa11b = 0;
-        DAT_07eaa124 = 0; DAT_07eaa144 = 0;
+        GuildOpened = 0; PartyOpened = 0;
+        CharacterOpened = 0; InventoryOpened = 0;
+        ShopOpened = 0; WarehouseOpened = 0;
+        TradeOpened = 0;
+        GuildCreatorOpened = 0; DAT_07eaa144 = 0;
         DAT_07eaa14c = 0;
 
         GuildInputEnable = 0; DAT_07e11d71 = 0; GoldInputEnable = 0;
@@ -319,7 +319,7 @@ void Game_EnterWorldTick(void)
         ((char*)DAT_07abf5d0)[DAT_005615e0 * CHARACTER_STRIDE] = '\0';
     }
 
-    int mouseX = DAT_083a427c;
+    int mouseX = MouseX;
 
     // ── CHARACTER SELECTION (no char selected yet) ────────────────────────────
     if (DAT_005616b0 == -1) {
@@ -331,13 +331,13 @@ void Game_EnterWorldTick(void)
         // Click arrow → select char (0x11d-0x164, Y in [dialogY+0x4b, dialogY+0x64])
         if (hasFreeSlot &&
             mouseX > 0x11d && mouseX < 0x164 &&
-            DAT_083a4278 >= dialogY + 0x4b &&
-            DAT_083a4278 < dialogY + 0x64 &&
+            MouseY >= dialogY + 0x4b &&
+            MouseY < dialogY + 0x64 &&
             IsClickPushed())
         {
-            DAT_083a4124 = '\0';
-            DAT_083a7c24 = DAT_083a7c28;
-            DAT_083a7c28 = 0;
+            MouseLButtonPush = '\0';
+            ErrorMessage = NextErrorMessage;
+            NextErrorMessage = 0;
 
             // Find first free entity slot
             int slotFound = DAT_005616b0;
@@ -364,26 +364,26 @@ void Game_EnterWorldTick(void)
         if (hasFreeSlot &&
             mouseX >= (int)DAT_005616a8 + 0x80 - gWindow.GetRightShift() &&
             mouseX < (int)DAT_005616a8 + 0xc6 - gWindow.GetRightShift() &&
-            DAT_083a4278 > 0x93 && DAT_083a4278 < 0xa7 &&
+            MouseY > 0x93 && MouseY < 0xa7 &&
             IsClickPushed())
         {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             ushort lvl = *(ushort*)&AsCharacter(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE)->Level;
             BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
 
             if (lvl < 40) {
                 // Level too low error
                 if (flags & 0x12) {
-                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x19; else DAT_083a7c28 = 0x19;
+                    if (ErrorMessage == 0) ErrorMessage = 0x19; else NextErrorMessage = 0x19;
                 } else {
-                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x72; else DAT_083a7c28 = 0x72;
+                    if (ErrorMessage == 0) ErrorMessage = 0x72; else NextErrorMessage = 0x72;
                     ClearInput(1);
                     DAT_00559c84 = 1; InputNumber = 1;
                     InputTextMax = DAT_083a7acc;
                     DAT_07e113d8[0] = 1;
                 }
             } else {
-                if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x84; else DAT_083a7c28 = 0x84;
+                if (ErrorMessage == 0) ErrorMessage = 0x84; else NextErrorMessage = 0x84;
             }
             PlayBuffer(0x19, 0, 0);
         }
@@ -400,34 +400,34 @@ void Game_EnterWorldTick(void)
             int slotY = dialogY + 0x32;
             bool confirmed = false;
             int  selSlot   = DAT_005616ac;
-            int  pendingB  = DAT_083a7c28;
+            int  pendingB  = NextErrorMessage;
 
             for (int i = 0; i < 5; i++, slotY += 0x14) {
                 if (i == SelectedCharacter) {
                     if (DAT_083a4299 != '\0') {
                         DAT_083a4299 = '\0';
-                        DAT_083a7c28 = 0;
+                        NextErrorMessage = 0;
                         confirmed = true;
                         selSlot   = i;
                         pendingB  = 0;
                         DAT_005616ac = i;
-                        DAT_083a7c24 = pendingB;
+                        ErrorMessage = pendingB;
                     } else if (IsClickPushed()) {
                         // ── DIAGNOSTIC: capture state at slot-click trigger ──
-                        DAT_083a4124 = '\0';
-                        DAT_083a7c28 = 0;
+                        MouseLButtonPush = '\0';
+                        NextErrorMessage = 0;
                         DAT_005616ac = i;
-                        DAT_083a7c24 = pendingB;
+                        ErrorMessage = pendingB;
                         PlayBuffer(0x19, 0, 0);
                         if (DAT_083a7c14 != 0x17 && DAT_083a7c14 != 0x15)
                             PlayBuffer(0x1b, 0, 0);
                         DAT_083a7c14 = 0x18;
                         DAT_083a7c18 = 0x17;
                         selSlot = DAT_005616ac;
-                        pendingB = DAT_083a7c28;
+                        pendingB = NextErrorMessage;
                     }
                 }
-                pendingB = DAT_083a7c28;
+                pendingB = NextErrorMessage;
             }
 
             // IDA original (00521D80) gates the dword_83A7C14 = 25 path with:
@@ -441,11 +441,11 @@ void Game_EnterWorldTick(void)
             if (DAT_005616ac != -1) {
                 // v40 = 1 path (line 545 IDA): confirm flag from button trigger
                 if (hasFreeSlot && !confirmed) {
-                    if (DAT_083a7c24 == 0 && DAT_055ca038 != '\0') {
+                    if (ErrorMessage == 0 && DAT_055ca038 != '\0') {
                         DAT_055ca038 = '\0';
-                        DAT_083a7c28 = 0;
+                        NextErrorMessage = 0;
                         confirmed = true;
-                        DAT_083a7c24 = pendingB;
+                        ErrorMessage = pendingB;
                         PlayBuffer(0x19, 0, 0);
                     }
                 }
@@ -455,12 +455,12 @@ void Game_EnterWorldTick(void)
                 //   && MouseY >= 148 && MouseY < 167
                 if (mouseX >= 441 - (int)DAT_005616a8 + gWindow.GetRightShift() &&
                     mouseX < 441 - (int)DAT_005616a8 + gWindow.GetRightShift() + 70 &&
-                    DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
+                    MouseY >= 148 && MouseY < 167 &&
                     IsClickPushed())
                 {
-                    DAT_083a4124 = '\0';
-                    DAT_083a7c28 = 0;
-                    DAT_083a7c24 = pendingB;
+                    MouseLButtonPush = '\0';
+                    NextErrorMessage = 0;
+                    ErrorMessage = pendingB;
                     PlayBuffer(0x19, 0, 0);
                     selectClicked = true;
                 }
@@ -476,7 +476,7 @@ void Game_EnterWorldTick(void)
                     DAT_083a7c14 = 0x19;
                     PlayBuffer(0x1b, 0, 0);
                 } else {
-                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x85; else DAT_083a7c28 = 0x85;
+                    if (ErrorMessage == 0) ErrorMessage = 0x85; else NextErrorMessage = 0x85;
                 }
             }
         }
@@ -492,10 +492,10 @@ void Game_EnterWorldTick(void)
         // Fila superior (dialogY+196..215 = 0xc4..0xd7): flecha izq [0x16b,0x17f)=clase--,
         // flecha der [0x180,0x194)=clase++. Re-crea el preview char (tipo = clase+170).
         if (mouseX > 0x16a && mouseX < 0x17f &&
-            DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
+            MouseY >= dialogY + 0xc4 && MouseY < dialogY + 0xd7 &&
             IsClickPushed())
         {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             if ((char)DAT_07abf20c == '\0') {
                 PlayBuffer(0x1a, 0, 0);
             } else {
@@ -513,10 +513,10 @@ void Game_EnterWorldTick(void)
                 if (*e != '\0' && *(ushort*)&((CHARACTER*)(uintptr_t)(e))->Level > 0xdb) { maxPage = 3; break; }
         }
         if (mouseX > 0x17f && mouseX < 0x194 &&
-            DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
+            MouseY >= dialogY + 0xc4 && MouseY < dialogY + 0xd7 &&
             IsClickPushed())
         {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             if ((DAT_07abf20c & 0xff) >= maxPage) {
                 // Tope de rotacion: sonido de "bloqueado". Faltaba — IDA
                 // Game_EnterWorldTick L635-638 tiene las dos ramas.
@@ -531,15 +531,15 @@ void Game_EnterWorldTick(void)
         }
 
         bool backClick = (mouseX > 0xea && mouseX < 0x133 &&
-                          DAT_083a4278 >= dialogY + 0x15d &&
-                          DAT_083a4278 < dialogY + 0x172 &&
+                          MouseY >= dialogY + 0x15d &&
+                          MouseY < dialogY + 0x172 &&
                           IsClickPushed());
         bool clearBtn = (DAT_055ca038 != '\0');
         if (clearBtn) DAT_055ca038 = '\0';
 
         // "Back" path — pure cancel back to slot list (IDA path A)
         if (backClick) {
-            DAT_083a4124 = '\0';
+            MouseLButtonPush = '\0';
             DAT_005616b0 = -1;
             PlayBuffer(0x19, 0, 0);
             DAT_083a7c14 = 0x1c;
@@ -549,11 +549,11 @@ void Game_EnterWorldTick(void)
         else {
             // "OK button" hit-test (0x14f..0x196)
             bool okClick = (mouseX >= 0x14f && mouseX <= 0x196 &&
-                            DAT_083a4278 >= dialogY + 0x15d &&
-                            DAT_083a4278 < dialogY + 0x172 &&
+                            MouseY >= dialogY + 0x15d &&
+                            MouseY < dialogY + 0x172 &&
                             IsClickPushed());
             if (okClick || clearBtn) {
-                if (okClick) DAT_083a4124 = '\0';
+                if (okClick) MouseLButtonPush = '\0';
                 DAT_005616b0 = -1;
                 PlayBuffer(0x19, 0, 0);
                 DAT_083a7c14 = 0x1c;
@@ -563,16 +563,16 @@ void Game_EnterWorldTick(void)
                 // Validate username length
                 int ulen = (int)strlen((char*)DAT_07db8710);
                 if (ulen < 4) {
-                    if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x7a; else DAT_083a7c28 = 0x7a;
+                    if (ErrorMessage == 0) ErrorMessage = 0x7a; else NextErrorMessage = 0x7a;
                 } else {
                     if (Chat_ValidateInputCommand() == '\0' && !CheckSpecialText((const BYTE*)DAT_07db8710)) { // IDA: FUN_00406B30
                         DAT_083a7c18 = 0x1c;
-                        DAT_083a7c24 = DAT_083a7c28;
-                        DAT_083a7c28 = 0;
+                        ErrorMessage = NextErrorMessage;
+                        NextErrorMessage = 0;
                         DAT_05826cb0 = 0x34;
                         Send_CharCreatePacket();   // F3/01 crear (no F3/03 select)
                     } else {
-                        if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x73; else DAT_083a7c28 = 0x73;
+                        if (ErrorMessage == 0) ErrorMessage = 0x73; else NextErrorMessage = 0x73;
                     }
                 }
             }
@@ -627,8 +627,8 @@ void Game_EnterWorldTick(void)
             PlayBuffer(0x1b, 0, 0);
             if (DAT_05826cb0 == 0x3a) {
                 int code = DAT_05826cb0;
-                if (DAT_083a7c24 == 0) { DAT_083a7c24 = 0x3a; DAT_05826cb0 = 0x33; }
-                else                   { DAT_083a7c28 = 0x3a; DAT_05826cb0 = 0x33; }
+                if (ErrorMessage == 0) { ErrorMessage = 0x3a; DAT_05826cb0 = 0x33; }
+                else                   { NextErrorMessage = 0x3a; DAT_05826cb0 = 0x33; }
             }
         }
         break;
@@ -659,8 +659,8 @@ void Game_EnterWorldTick(void)
                 // Handle specific response codes
                 if (code == 0x36 || code == 0x37) {
                     int r = code;
-                    if (DAT_083a7c24 == 0) { DAT_083a7c24 = r; }
-                    else { DAT_083a7c28 = r; }
+                    if (ErrorMessage == 0) { ErrorMessage = r; }
+                    else { NextErrorMessage = r; }
                 }
 
                 // ── WORLD ENTRY: copy char data → transition to Loading ──────
@@ -709,9 +709,9 @@ void Game_EnterWorldTick(void)
                 // Propagate response code
                 if (code == 0x36 || code == 0x37) {
                     int r = code;
-                    if (DAT_05826cb0 == 0) { DAT_083a7c28 = r; DAT_083a7c24 = DAT_083a7c28; }
-                    else if (DAT_083a7c24 == 0) { DAT_083a7c24 = r; }
-                    else { DAT_083a7c28 = r; }
+                    if (DAT_05826cb0 == 0) { NextErrorMessage = r; ErrorMessage = NextErrorMessage; }
+                    else if (ErrorMessage == 0) { ErrorMessage = r; }
+                    else { NextErrorMessage = r; }
                 }
             } else if (DAT_083a7c18 == 0x15) {
                 DAT_083a7c14 = 0x15;

@@ -19,8 +19,8 @@ extern void __cdecl operator_delete(void* ptr);
 //   DAT_083a7c04 = dialog text id (a1)
 //   DAT_083a7c09 = flag byte (a2)
 //   DAT_083a7c08 = state (cleared to 0)
-//   ErrorMessage  = DAT_083a7c24 (via SetErrorMessage helper)
-//   NextErrorMessage = DAT_083a7c28
+//   ErrorMessage  = ErrorMessage (via SetErrorMessage helper)
+//   NextErrorMessage = NextErrorMessage
 // IDA: CreateDialogInterface (0x0051D780)
 void __cdecl CreateDialogInterface(int a1, int a2)
 {
@@ -39,9 +39,9 @@ void __cdecl CreateDialogInterface(int a1, int a2)
     DAT_083a42f8[3] = 70;
     DAT_083a42f8[4] = 21;
 
-    if (DAT_083a7c24 != 0) {
-        DAT_083a7c28 = 141;
+    if (ErrorMessage != 0) {
+        NextErrorMessage = 141;
     } else {
-        DAT_083a7c24 = 141;
+        ErrorMessage = 141;
     }
 }

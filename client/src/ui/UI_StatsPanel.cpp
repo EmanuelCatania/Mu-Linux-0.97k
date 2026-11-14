@@ -49,8 +49,8 @@ int RenderErrorMessage(void)
   gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
   SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
-  if (DAT_083a7c24 != 0) {
-    if (DAT_083a7c24 == 0x6e) {
+  if (ErrorMessage != 0) {
+    if (ErrorMessage == 0x6e) {
       if (SceneFlag == 5) {
         pCVar6 = (LPCSTR)0x5;
       }
@@ -64,8 +64,8 @@ int RenderErrorMessage(void)
           fVar1 = (float)(int)local_dc;
           local_e4.cx = (LONG)fVar1;
           GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-          if ((((gWindow.PanelOrigin(Ui::Menu) - 1 < DAT_083a427c) && (DAT_083a427c < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width)) && ((int)local_dc <= DAT_083a4278)
-              ) && (DAT_083a4278 < (int)local_dc + 0x16)) {
+          if ((((gWindow.PanelOrigin(Ui::Menu) - 1 < MouseX) && (MouseX < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width)) && ((int)local_dc <= MouseY)
+              ) && (MouseY < (int)local_dc + 0x16)) {
             Gfx::Color3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
             GL_SetBlendAdditive();
             GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
@@ -133,18 +133,18 @@ int RenderErrorMessage(void)
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),uVar10,
                    (LPCSTR)lpString_07d45f24,(LPSIZE)0x0,'\0',0);
     }
-    else if (DAT_083a7c24 == 0x96) {
+    else if (ErrorMessage == 0x96) {
       // DESVIACION (DLL OptionsMenu, hook 0x0051B3CA): menú de opciones expandido
       // en lugar de los 4 botones del 0.97k (volver, ataque automático, susurros, cerrar).
       gOptionsMenu.Render();
     }
-    else if ((((DAT_083a7c24 == 0x8b) || (DAT_083a7c24 == 0x8e)) || (DAT_083a7c24 == 0x8d)) ||
-            ((DAT_083a7c24 == 0x8c || (DAT_083a7c24 == 0x9a)))) {
+    else if ((((ErrorMessage == 0x8b) || (ErrorMessage == 0x8e)) || (ErrorMessage == 0x8d)) ||
+            ((ErrorMessage == 0x8c || (ErrorMessage == 0x9a)))) {
       local_d8 = 0x3c;
       GL_DrawTexture(0xfc,213.0,60.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x41;
       iVar3 = 7;
-      switch(DAT_083a7c24) {
+      switch(ErrorMessage) {
       case 0x8b:
       case 0x8d:
       case 0x9a:
@@ -185,7 +185,7 @@ switchD_0051bea9_caseD_8b:
         }
         piVar7 = piVar7 + 5;
       }
-      if (DAT_083a7c24 == 0x8d) {
+      if (ErrorMessage == 0x8d) {
         // El render consulta el clic; sólo la lógica del diálogo debe consumirlo.
         GL_SetBlendSrcOver('\x01');
         Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
@@ -196,9 +196,9 @@ switchD_0051bea9_caseD_8b:
 LAB_0051c08c:
           Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
-        else if (((0xf8 < DAT_083a427c) && (0xc9 < DAT_083a4278)) &&
-                ((DAT_083a427c < 0x109 && (DAT_083a4278 < 0xdf)))) {
-          if (DAT_083a4124 == '\0') {
+        else if (((0xf8 < MouseX) && (0xc9 < MouseY)) &&
+                ((MouseX < 0x109 && (MouseY < 0xdf)))) {
+          if (MouseLButtonPush == '\0') {
             uVar16 = 0x3f333333;
             uVar15 = 0x3f333333;
             uVar10 = 0x3f333333;
@@ -215,9 +215,9 @@ LAB_0051c08c:
 LAB_0051c13d:
           Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
-        else if ((((0x178 < DAT_083a427c) && (0xc9 < DAT_083a4278)) && (DAT_083a427c < 0x189)) &&
-                (DAT_083a4278 < 0xdf)) {
-          if (DAT_083a4124 == '\0') {
+        else if ((((0x178 < MouseX) && (0xc9 < MouseY)) && (MouseX < 0x189)) &&
+                (MouseY < 0xdf)) {
+          if (MouseLButtonPush == '\0') {
             uVar16 = 0x3f333333;
             uVar15 = 0x3f333333;
             uVar10 = 0x3f333333;
@@ -229,7 +229,7 @@ LAB_0051c13d:
         Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       }
     }
-    else if (DAT_083a7c24 == 0x8f) {
+    else if (ErrorMessage == 0x8f) {
       Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       local_d8 = 0x78;
       GL_DrawTexture(0xfc,213.0,120.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
@@ -246,9 +246,9 @@ LAB_0051c13d:
       local_dc = 0x43340000u;
       iVar3 = 0;
       do {
-        if ((((float)DAT_083a4278 < *(float*)&local_dc) ||
-            (*(float*)&local_dc + _DAT_00552a2c < (float)DAT_083a4278)) ||
-           (((float)DAT_083a427c < _DAT_00552cac || (_DAT_0055246c < (float)DAT_083a427c)))) {
+        if ((((float)MouseY < *(float*)&local_dc) ||
+            (*(float*)&local_dc + _DAT_00552a2c < (float)MouseY)) ||
+           (((float)MouseX < _DAT_00552cac || (_DAT_0055246c < (float)MouseX)))) {
           uVar16 = 0x3f333333;
           uVar15 = 0x3f333333;
           uVar10 = 0x3f333333;
@@ -298,7 +298,7 @@ LAB_0051c13d:
       } while (iVar3 < 2);
       Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
     }
-    else if ((DAT_083a7c24 == 0x97) || (DAT_083a7c24 == 0x99)) {
+    else if ((ErrorMessage == 0x97) || (ErrorMessage == 0x99)) {
       local_d8 = 0x64;
       GL_DrawTexture(0xfc,213.0,100.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x69;
@@ -328,51 +328,51 @@ LAB_0051c13d:
     else {
       local_d8 = 0x3c;
       GL_DrawTexture(0xf0,213.0,60.0,213.0,64.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-      if (DAT_083a7c24 == 0x74) {
+      if (ErrorMessage == 0x74) {
         DAT_00559c8c = 100;
         UI_RenderInputField(0x116,0x62,0);
         DAT_00559c8c = 0x100;
       }
-      else if (((DAT_083a7c24 == 0x72) || (DAT_083a7c24 == 0x7e)) || (DAT_083a7c24 == 0x98)) {
+      else if (((ErrorMessage == 0x72) || (ErrorMessage == 0x7e)) || (ErrorMessage == 0x98)) {
         DAT_00559c8c = 100;
         UI_RenderInputField(0xf3,0x62,0);
         DAT_00559c8c = 0x100;
-        if (((DAT_083a427c < 0x143) || (0x16a < DAT_083a427c)) ||
-           ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
+        if (((MouseX < 0x143) || (0x16a < MouseX)) ||
+           ((MouseY < 0x62 || (0x76 < MouseY)))) {
           iVar3 = 0xf1;
         }
         else {
           iVar3 = 0xf2;
         }
         GL_DrawTexture(iVar3,323.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
-        if (((DAT_083a427c < 0x175) || (0x19c < DAT_083a427c)) ||
-           ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
+        if (((MouseX < 0x175) || (0x19c < MouseX)) ||
+           ((MouseY < 0x62 || (0x76 < MouseY)))) {
           GL_DrawTexture(0xf3,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
         else {
           GL_DrawTexture(0xf4,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
       }
-      else if ((((DAT_083a7c24 == 0x80) || (DAT_083a7c24 == 0x77)) || (DAT_083a7c24 == 0x78)) ||
-              (DAT_083a7c24 == 0x79)) {
-        if (((DAT_083a427c < 0xea) || (0x12f < DAT_083a427c)) ||
-           ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
+      else if ((((ErrorMessage == 0x80) || (ErrorMessage == 0x77)) || (ErrorMessage == 0x78)) ||
+              (ErrorMessage == 0x79)) {
+        if (((MouseX < 0xea) || (0x12f < MouseX)) ||
+           ((MouseY < 0x62 || (0x76 < MouseY)))) {
           iVar3 = 0xf1;
         }
         else {
           iVar3 = 0xf2;
         }
         GL_DrawTexture(iVar3,234.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
-        if (((DAT_083a427c < 0x14e) || (0x193 < DAT_083a427c)) ||
-           ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
+        if (((MouseX < 0x14e) || (0x193 < MouseX)) ||
+           ((MouseY < 0x62 || (0x76 < MouseY)))) {
           GL_DrawTexture(0xf3,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
         else {
           GL_DrawTexture(0xf4,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
       }
-      else if ((((DAT_083a427c < 0x11c) || (0x161 < DAT_083a427c)) || (DAT_083a4278 < 0x62)) ||
-              (0x76 < DAT_083a4278)) {
+      else if ((((MouseX < 0x11c) || (0x161 < MouseX)) || (MouseY < 0x62)) ||
+              (0x76 < MouseY)) {
         GL_DrawTexture(0xf1,284.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
       }
       else {
@@ -383,7 +383,7 @@ LAB_0051c13d:
   GL_SetBlendSrcOver('\x01');
   pCVar2 = (LPCSTR)(uintptr_t)local_d8;
   pCVar6 = (LPCSTR)(uintptr_t)(local_d8 + 0xf);
-  switch(DAT_083a7c24) {
+  switch(ErrorMessage) {
   case 0x15:
   case 0x47:
     ptVar17 = &local_e4;
@@ -468,7 +468,7 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d48120;
     break;
   default:
-    return DAT_083a7c24 + -0x15;
+    return ErrorMessage + -0x15;
   case 0x22:
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)lpString_07d558c0);
@@ -784,7 +784,7 @@ LAB_0051c13d:
   case 0x8d:
   case 0x8e:
     iVar3 = (((7 - DAT_083a7c0c) - DAT_083a4324) * 0x12) / 2 + 0x4c;
-    if ((DAT_083a7c24 == 0x8e) && (iVar3 < 0x46)) {
+    if ((ErrorMessage == 0x8e) && (iVar3 < 0x46)) {
       iVar3 = 0x46;
     }
     local_dc = 0;
@@ -801,16 +801,16 @@ LAB_0051c13d:
         pCVar6 = pCVar6 + 0x26;
       } while ((int)local_dc < DAT_083a4324);
     }
-    local_d4 = (float)((DAT_083a4278 - iVar3) / 0x12);
-    if (DAT_083a4278 - iVar3 < 0) {
+    local_d4 = (float)((MouseY - iVar3) / 0x12);
+    if (MouseY - iVar3 < 0) {
       local_d4 = -NAN;
     }
-    if ((DAT_083a7c24 == 0x8e) && (local_dc = 0, 0 < DAT_083a7c0c)) {
+    if ((ErrorMessage == 0x8e) && (local_dc = 0, 0 < DAT_083a7c0c)) {
       const char* answer = (const char*)DAT_083a4348;
       do {
         if (((int)local_d4 == (int)local_dc) &&
-           (uVar5 = (int)(0x13fU - DAT_083a427c) >> 0x1f,
-           (int)((0x13fU - DAT_083a427c ^ uVar5) - uVar5) < 0x6b)) {
+           (uVar5 = (int)(0x13fU - MouseX) >> 0x1f,
+           (int)((0x13fU - MouseX ^ uVar5) - uVar5) < 0x6b)) {
           uVar10 = 0;
         }
         else {
@@ -863,7 +863,7 @@ LAB_0051c13d:
   case 0x99:
     local_dc = local_d8 + 0x1e;
     local_d8 = 0x15e;
-    if (DAT_083a7c24 == 0x99) goto LAB_0051d371;
+    if (ErrorMessage == 0x99) goto LAB_0051d371;
     if (DAT_07eaa13c != 2) {
       if (DAT_07eaa13c != 3) {
         if (DAT_07eaa13c != 4) goto LAB_0051d371;

@@ -142,9 +142,9 @@ void ItemMove_ApplyServerSlot(BYTE* pool, int slot, const BYTE* itemWire12, cons
 
 BYTE* ItemMove_GetActiveSecondaryPool()
 {
-    if (DAT_07eaa11b) return OffsetTradeItems;
-    if (DAT_07eaa119) return OffsetWarehouseItems;
-    if (DAT_07eaa11a) return OffsetMixItems;
+    if (TradeOpened) return OffsetTradeItems;
+    if (WarehouseOpened) return OffsetWarehouseItems;
+    if (ChaosMixOpened) return OffsetMixItems;
     return OffsetTradeItems;
 }
 
@@ -260,7 +260,7 @@ void ItemMove_ClearPickedState()
     DAT_07ea9844 = 0;
     DAT_07ea9800 = 0;
     DAT_07eaa160 = 0;
-    DAT_083a4124 = 0;
+    MouseLButtonPush = 0;
     DAT_083a42eb = 0;
     g_ItemMoveSourcePool = 0;
     g_ItemMoveTargetPool = 0;
@@ -590,7 +590,7 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         return;
     }
 
-    if (DAT_07eaa119 != 0) {
+    if (WarehouseOpened != 0) {
         ClearItemPool(OffsetWarehouseItems, 120);
         for (int i = 0; i < count && cursor + 13 <= Size; ++i) {
             BYTE slot = Msg[cursor];
@@ -728,7 +728,7 @@ void NetRecv_81(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 void NetRecv_82(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     NetLog("NET:  -> 0x82 StorageExit");
-    DAT_07eaa119 = 0;
+    WarehouseOpened = 0;
     DAT_00559f5f = 0;
     DAT_07eaa14c = 0;
 }
@@ -838,7 +838,7 @@ void NetRecv_87(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     DAT_07e91388 = 0;
     // The category selector is client-local (unlike the original
     // box lifecycle), so dismiss it if a close ACK races it.
-    if (DAT_083a7c24 == 143) {
+    if (ErrorMessage == 143) {
         SetErrorMessage(0);
     }
 }

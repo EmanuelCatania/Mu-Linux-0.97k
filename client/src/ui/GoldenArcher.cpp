@@ -48,11 +48,11 @@ extern "C" int g_GoldenArcherCustom = 0;
 #define GA_ChipCount16       (*(short*)&GoldenArcherItemCount)
 #define GA_GiftName          ((char*)GoldenArcherLuckyNumberText)         // g_strGiftName[64]
 #define GA_ScratchTicket     GoldenArcherLuckyNumberTicket                  // g_bScratchTicket
-#define GA_MouseX            ((int)DAT_083a427c)
-#define GA_MouseY            ((int)DAT_083a4278)
-#define GA_MouseLButtonPush  DAT_083a4124
-#define GA_MouseLButtonPop   DAT_083a413c
-#define GA_MouseLButton      DAT_083a42c4
+#define GA_MouseX            ((int)MouseX)
+#define GA_MouseY            ((int)MouseY)
+#define GA_MouseLButtonPush  MouseLButtonPush
+#define GA_MouseLButtonPop   MouseLButtonPop
+#define GA_MouseLButton      MouseLButton
 #define GA_MouseOnWindow     DAT_07d78094
 #define GA_MouseUpdateTime   DAT_07e11d28
 #define GA_MouseUpdateMax    DAT_00559bec

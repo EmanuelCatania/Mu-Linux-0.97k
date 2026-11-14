@@ -15,8 +15,8 @@
 //   DAT_083a42ea  — cleared to 0 at frame start
 //   CameraTopViewEnabled  — special/debug view flag (affects viewport + skips some passes)
 //   DAT_083a4110  — out: world-space mouse ray direction [3 floats]
-//   DAT_083a427c  — mouse X (screen coords)
-//   DAT_083a4278  — mouse Y
+//   MouseX  — mouse X (screen coords)
+//   MouseY  — mouse Y
 //   DAT_07abf5d8  — entity array (stride 0x394); slot used for camera
 //   DAT_0055283c  — float: viewport→FOV scale factor
 //   World  — World (drives clear color)
@@ -129,7 +129,7 @@
 //                         SetBlendMode + glColor3f(1,1,1)
 //                         ftol()%6 → UV offset: {1,3,5}→local_4=0.5; {2,3,4}→local_8=0.5
 //   RenderInfomation3D()    → SpecialMap_Render3D()       — pasada 3D para mapas especiales
-//                         guard: DAT_083a7c24 ∈ {0x97, 0x99} && DAT_07eaa13c==1
+//                         guard: ErrorMessage ∈ {0x97, 0x99} && DAT_07eaa13c==1
 //                         glMatrixMode(GL_PROJECTION) + gluPerspective + LoadCameraMatrix
 //   Render watchdog: if (DAT_055c9ff8+8==1) && (++DAT_083a7c50 > 10):
 //     DAT_083a7c50 = 0; FUN_0040f670(DAT_055c9ff8) → Watchdog_Reset()
@@ -557,7 +557,7 @@ void Render_Scene3D(void)
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
     int vpHeight = (topView || noInterface || gWindow.IsWide()) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
-    Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
+    Camera_BuildMouseRay(MouseX, MouseY, (float*)&DAT_083a4110);
     // DESVIACION: sombras proyectadas (opción). Lo que se dibuja hasta
     // EndShadowScene proyecta y recibe sombra; centradas en el héroe.
     Gfx::BeginShadowScene(camPos);

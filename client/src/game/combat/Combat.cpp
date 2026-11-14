@@ -663,7 +663,7 @@ void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* objec
     // IDA 00491C40, justo después del camino de envío por la red:
     // acá se activa la ruta generada localmente. Player_InputTick sólo la
     // avanza/interpola mientras este byte esté seteado.
-    if (DAT_083a7c24 != 113)
+    if (ErrorMessage != 113)
         AsCharacter(param_1)->Movement = 1;
 
     SendMove_CloseWindows97k();
@@ -1496,11 +1496,11 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     bool bSuccess = false;                   // IDA: Success
     if (DAT_07e11dc0 != 0) {                 // IDA: byte_7E11DC0
         // Movimiento bloqueado: sólo seguir si se apretó el botón izquierdo
-        if (DAT_083a4124 == 0 && DAT_083a42c4 == 0) return;
-        DAT_083a4124 = 0;  // MouseLButtonPush = 0
+        if (MouseLButtonPush == 0 && MouseLButton == 0) return;
+        MouseLButtonPush = 0;  // MouseLButtonPush = 0
     } else {
         // Normal: RMB triggers attack
-        if (MouseRButtonPush != 0 || DAT_083a42ac != 0) {
+        if (MouseRButtonPush != 0 || MouseRButton != 0) {
             MouseRButtonPush = 0;
             bSuccess = true;
         }
@@ -1524,7 +1524,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
             (WorldTime - g_RightButtonReleaseTime_Attack) * 0.001f;
         if (g_RightButtonPressSeconds_Attack >= 3600.0f) {
             MouseRButtonPush = 0;
-            DAT_083a42ac = 0;
+            MouseRButton = 0;
             return;
         }
     }

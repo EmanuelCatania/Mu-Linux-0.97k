@@ -47,7 +47,7 @@
 //
 //   glClearColor(0,0,0,1.0);
 //   GL_BeginViewport(0, 0, 0x280, 0x1e0);
-//   Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
+//   Camera_BuildMouseRay(MouseX, MouseY, &DAT_083a4110); → Camera_Update(mx,my,mat)
 //   Terrain_Render();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
@@ -147,8 +147,8 @@
 //   SelectedCharacter   — slot local player index
 //   DAT_083a021c   — puntero a entidad del char hovereado
 //   DAT_083a4110   — camera matrix output
-//   DAT_083a427c   — mouse X
-//   DAT_083a4278   — mouse Y
+//   MouseX   — mouse X
+//   MouseY   — mouse Y
 //   DAT_083a7c4d   — warning flag
 //   DAT_07abf20c   — char class byte (low byte = slot)
 //   DAT_0056156c   — screen_width
@@ -241,7 +241,7 @@ int Scene_CharSelect(void)
         // 0x3f800000 son los bits de 1.0f, no la magnitud.
         Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
-        Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
+        Camera_BuildMouseRay(MouseX, MouseY, (float *)&DAT_083a4110);
 
         SceneCharSelect_PrepareLighting();
 
@@ -487,8 +487,8 @@ int Scene_CharSelect(void)
             fVar1 = (float)(iVar9 + 0xc4);
             local_70 = fVar1;
             // Arrow up (stat increment): tex 0x1a or 0x1b depending on hover
-            if ((((0x16a < DAT_083a427c) && (DAT_083a427c < 0x17f)) && ((int)fVar1 <= DAT_083a4278)) &&
-                ((DAT_083a4278 < iVar9 + 0xd7) && (DAT_083a42c4 != '\0')))
+            if ((((0x16a < MouseX) && (MouseX < 0x17f)) && ((int)fVar1 <= MouseY)) &&
+                ((MouseY < iVar9 + 0xd7) && (MouseLButton != '\0')))
             {
                 GL_DrawTexture(0x1a, 363.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
@@ -499,8 +499,8 @@ int Scene_CharSelect(void)
                 Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
             local_70 = fVar1;
-            if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
-                (((int)fVar1 <= DAT_083a4278) && ((DAT_083a4278 < iVar9 + 0xd7) && (DAT_083a42c4 != '\0'))))
+            if (((0x17f < MouseX) && (MouseX < 0x194)) &&
+                (((int)fVar1 <= MouseY) && ((MouseY < iVar9 + 0xd7) && (MouseLButton != '\0'))))
             {
                 GL_DrawTexture(0x1b, 384.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
@@ -515,14 +515,14 @@ int Scene_CharSelect(void)
             GL_SetBlendSrcOver('\x01');
             fVar1 = (float)(iVar9 + 0xd7);
             // Arrow down (stat decrement): tex 0x1c or 0x1d
-            if ((((0x16a < DAT_083a427c) && (DAT_083a427c < 0x17f)) && ((int)fVar1 <= DAT_083a4278)) &&
-                ((DAT_083a4278 < iVar9 + 0xe9) && (DAT_083a42c4 != '\0')))
+            if ((((0x16a < MouseX) && (MouseX < 0x17f)) && ((int)fVar1 <= MouseY)) &&
+                ((MouseY < iVar9 + 0xe9) && (MouseLButton != '\0')))
             {
                 local_70 = fVar1;
                 GL_DrawTexture(0x1c, 363.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
             }
-            if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
-                (((int)fVar1 <= DAT_083a4278) && ((DAT_083a4278 < iVar9 + 0xe9) && (DAT_083a42c4 != '\0'))))
+            if (((0x17f < MouseX) && (MouseX < 0x194)) &&
+                (((int)fVar1 <= MouseY) && ((MouseY < iVar9 + 0xe9) && (MouseLButton != '\0'))))
             {
                 local_70 = fVar1;
                 GL_DrawTexture(0x1d, 384.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
@@ -530,15 +530,15 @@ int Scene_CharSelect(void)
 
             // OK button (tex 0x18/0x19)
             fVar1 = (float)(iVar9 + 0x15d);
-            if ((((0xea < DAT_083a427c) && (DAT_083a427c < 0x133)) && ((int)fVar1 <= DAT_083a4278)) &&
-                (DAT_083a4278 < iVar9 + 0x172))
+            if ((((0xea < MouseX) && (MouseX < 0x133)) && ((int)fVar1 <= MouseY)) &&
+                (MouseY < iVar9 + 0x172))
             {
                 local_70 = fVar1;
                 GL_DrawTexture(0x18, 235.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
             local_70 = fVar1;
-            if (((0x14e < DAT_083a427c) && (DAT_083a427c < 0x197)) &&
-                (((int)fVar1 <= DAT_083a4278) && (DAT_083a4278 < iVar9 + 0x172)))
+            if (((0x14e < MouseX) && (MouseX < 0x197)) &&
+                (((int)fVar1 <= MouseY) && (MouseY < iVar9 + 0x172)))
             {
                 GL_DrawTexture(0x19, 335.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
@@ -621,8 +621,8 @@ int Scene_CharSelect(void)
             local_70 = (float)(iVar9 + 0x4b);
             // Como el original, el hover-text "NEW CHARACTER" (sprite 0x11) sólo se muestra
             // si queda algún slot libre (`bVar10`, el mismo gate del botón base 0x10).
-            if (bVar10 && ((0x11d < DAT_083a427c) && (DAT_083a427c < 0x164)) &&
-                (((int)local_70 <= DAT_083a4278) && (DAT_083a4278 < iVar9 + 100)))
+            if (bVar10 && ((0x11d < MouseX) && (MouseX < 0x164)) &&
+                (((int)local_70 <= MouseY) && (MouseY < iVar9 + 100)))
             {
                 GL_DrawTexture(0x11, 286.0f, (float)(int)local_70, 70.0f, 25.0f, 0.0f, 0.0f, 0.546875f, 0.78125f, '\x01', '\x01');
             }
@@ -641,8 +641,8 @@ int Scene_CharSelect(void)
             local_70 = DAT_005616a8;
             GL_DrawTexture(0x12, (float)((int)DAT_005616a8 - s), 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
             local_70 = (float)((int)fVar1 + 0x80 - s);
-            if ((((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) && ((int)DAT_083a427c < (int)fVar1 + 0xc6 - s)) &&
-                ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7)))
+            if ((((!bVar10) && ((int)local_70 <= (int)MouseX)) && ((int)MouseX < (int)fVar1 + 0xc6 - s)) &&
+                ((0x93 < MouseY) && (MouseY < 0xa7)))
             {
                 GL_DrawTexture(0x13, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }
@@ -651,8 +651,8 @@ int Scene_CharSelect(void)
             local_70 = (float)(iVar9 + 0x1b2 + s);
             GL_DrawTexture(0x14, (float)(int)local_70, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
             local_70 = (float)(iVar9 + 0x1b9 + s);
-            if (((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) &&
-                (((int)DAT_083a427c < iVar9 + 0x1ff + s) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
+            if (((!bVar10) && ((int)local_70 <= (int)MouseX)) &&
+                (((int)MouseX < iVar9 + 0x1ff + s) && ((0x93 < MouseY) && (MouseY < 0xa7))))
             {
                 GL_DrawTexture(0x15, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }

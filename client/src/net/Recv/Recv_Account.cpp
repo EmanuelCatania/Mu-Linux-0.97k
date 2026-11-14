@@ -185,7 +185,7 @@ void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c4c = 0;                // CharSelect per-tick init
         DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
         DAT_083a4299 = 0;                // double-click flag
-        DAT_083a4124 = 0;                // single-click flag
+        MouseLButtonPush = 0;                // single-click flag
         DAT_005616ac = -1;               // selected slot
         DAT_005616b0 = -1;               // creation slot
         // Manda el pedido de lista de personajes F3/00 vía gNetwork.Send para que

@@ -122,11 +122,11 @@ def harness(revision=None):
     prefix += "inline CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }\n"
     prefix += "inline CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }\n"
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
-    for name in ("g_csQuest", "Hero", "DAT_07cf1ff4", "DAT_07cf1ffc", "GoldenArcherOpenType", "DAT_07eaa117", "DAT_07eaa116"):
+    for name in ("g_csQuest", "Hero", "DAT_07cf1ff4", "DAT_07cf1ffc", "GoldenArcherOpenType", "InventoryOpened", "CharacterOpened"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
     aliases = header + read_source("src/structs.h", revision)
-    for name in ("DAT_07abf5d8", "CharacterAttribute", "_g_bEventChipDialogEnable", "InventoryOpened", "CharacterOpened"):
+    for name in ("DAT_07abf5d8", "CharacterAttribute", "_g_bEventChipDialogEnable"):
         prefix += "\n" + re.search(rf"^#define\s+{name}\s+[^\n]+", aliases, re.M).group() + "\n"
     prefix += SERVICES
     scene = read_source("src/scenes/Scene_CharSelect_Nav.cpp", revision)
