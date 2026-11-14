@@ -1,0 +1,63 @@
+# Pose de los items 3D en las grillas: inventario, equipo, tienda, baúl, trade y
+# Chaos Goblin (RenderObjectScreen). Las claves son modelos de item (400 + sección *
+# 32 + índice): "primero-último" o uno solo. Las reglas se aplican en el orden del
+# archivo y una posterior pisa a las anteriores en los modelos que comparten.
+#
+# Sin regla un modelo usa ángulo (270, -10, 0), altura 0 y escala 0.0025. La pose
+# que manda el server en el catálogo (CatalogItemPose) se aplica encima de esto.
+
+# [X, Y, Z] en grados. Un cuarto valor cambia Z o X según el item:
+#   "two_hand"  Z = 25 si el arma es de dos manos (ItemAttribute.TwoHand), si no 15
+#   "level"     nivel 0: X = 180; nivel 1: X = 270 e Y = 90
+[angle]
+"400-591" = [180.0, 270.0, 15.0, "two_hand"]   # MODEL_SWORD .. MODEL_SHIELD - 1
+"592-623" = [270.0, 270.0, 0.0]   # MODEL_SHIELD .. MODEL_HELM - 1
+"536-559" = [90.0, 180.0, 20.0]   # 536 .. MODEL_STAFF - 1
+"506" = [180.0, 270.0, 20.0]   # 506
+"535" = [0.0, 270.0, 15.0]   # 535
+"543" = [0.0, 270.0, 15.0]   # 543
+"545" = [0.0, 90.0, 15.0]   # 545
+"819" = [-90.0, -20.0, 0.0]   # MODEL_HELPER_DINORANT
+"828-847" = [360.0, 0.0, 0.0]   # 828 .. MODEL_POTION - 1
+"830-833" = [270.0, -10.0, 0.0]   # 830 .. 833 — Anillos, Blood Bone y Scroll of Archangel.
+"834" = [290.0, 0.0, 0.0]   # 834 — Cloak of Invisibility: no es un ala.
+"860" = [90.0, 0.0, 0.0, "level"]   # 860
+"868" = [270.0, 0.0, 0.0]   # 868
+"952-954" = [270.0, 0.0, 0.0]   # 952 .. 954
+"953" = [270.0, 90.0, 0.0]   # 953
+"958" = [-90.0, -20.0, -20.0]   # 958
+
+# [altura del cuerpo, escala]. La altura es BodyHeight del modelo; las piezas de
+# armadura se dibujan con el cuerpo del jugador (modelo 390).
+[size]
+"624-655" = [-156.0, 0.0039]   # MODEL_HELM .. MODEL_ARMOR - 1
+"656-687" = [-96.0, 0.0039]   # MODEL_ARMOR .. MODEL_PANTS - 1
+"688-719" = [-48.0, 0.0038]   # MODEL_PANTS .. MODEL_GLOVES - 1
+"720-751" = [-72.0, 0.0032]   # MODEL_GLOVES .. MODEL_BOOTS - 1
+"752-783" = [0.0, 0.0033]   # MODEL_BOOTS .. MODEL_WING_ELF - 1
+"784-815" = [0.0, 0.002]   # MODEL_WING_ELF .. MODEL_HELPER_ANGEL - 1
+"790" = [0.0, 0.0015]   # MODEL_WING_DARKNESS
+"496-527" = [0.0, 0.0018]   # MODEL_SPEAR .. MODEL_BOW - 1
+"560-591" = [0.0, 0.0022]   # MODEL_STAFF .. MODEL_SHIELD - 1
+"848-879" = [0.0, 0.0035]   # MODEL_POTION .. MODEL_ETC - 1
+"535" = [0.0, 0.0012]   # 535
+"543" = [0.0, 0.0011]   # 543
+"570" = [0.0, 0.0019]   # 570
+"830-831" = [0.0, 0.003]   # 830 .. 831
+"832" = [0.0, 0.002]   # 832
+"833-834" = [0.0, 0.0018]   # 833 .. 834
+"869" = [0.0, 0.002]   # 869
+"870-872" = [0.0, 0.0025]   # 870 .. 872
+"873-874" = [0.0, 0.0028]   # 873 .. 874
+"953" = [0.0, 0.0039]   # 953
+"955" = [0.0, 0.0015]   # 955
+"956" = [0.0, 0.0019]   # 956
+"957" = [0.0, 0.001]   # 957
+"958" = [0.0, 0.0015]   # 958
+
+# Escala cuando el item viene con nivel negativo (las reglas de [size] la igualan
+# a la escala normal; estas la cambian después).
+[negative_level_scale]
+"419" = 0.001
+"570" = 0.001
+"546" = 0.0015
