@@ -32,7 +32,7 @@
 14,009		1		1000		*		// Ale
 14,013		*		9000000		*		// Jewel of Bless
 14,014		*		6000000		*		// Jewel of Soul
-14,016		*		45000000	*		// Jewel of Life
+14,016		*		45000000	450000000		// Jewel of Life
 14,017		1		15000		*		// Devil's Eye 1
 14,017		2		21000		*		// Devil's Eye 2
 14,017		3		30000		*		// Devil's Eye 3
